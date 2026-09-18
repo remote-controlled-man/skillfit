@@ -1,0 +1,133 @@
+{
+  "$schema": "./agents.schema.json",
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-19",
+  "agents": [
+    {
+      "id": "claude-code",
+      "displayName": "Claude Code",
+      "vendor": "Anthropic",
+      "detect": {
+        "binaries": ["claude"],
+        "userDirs": ["~/.claude"],
+        "userFiles": ["~/.claude.json"]
+      },
+      "rules": {
+        "projectFiles": ["CLAUDE.md"],
+        "userFiles": ["~/.claude/CLAUDE.md"],
+        "readsAgentsMd": false,
+        "agentsMdBridge": "Add `@AGENTS.md` import line to CLAUDE.md",
+        "notes": "Officially reads CLAUDE.md only; AGENTS.md requires an @import bridge."
+      },
+      "skills": {
+        "projectDirs": [".claude/skills"],
+        "userDirs": ["~/.claude/skills"],
+        "sharedDirs": []
+      },
+      "mcp": {
+        "projectFiles": [".mcp.json"],
+        "userFiles": ["~/.claude.json"],
+        "format": "json-mcpServers"
+      },
+      "hooks": {
+        "projectFiles": [".claude/settings.json"],
+        "userFiles": ["~/.claude/settings.json"],
+        "eventCasing": "PascalCase"
+      },
+      "subagents": {
+        "projectDirs": [".claude/agents"],
+        "userDirs": ["~/.claude/agents"]
+      },
+      "docs": {
+        "rules": "https://code.claude.com/docs/en/memory",
+        "skills": "https://code.claude.com/docs/en/skills",
+        "mcp": "https://code.claude.com/docs/en/mcp",
+        "hooks": "https://code.claude.com/docs/en/hooks"
+      }
+    },
+    {
+      "id": "codex",
+      "displayName": "OpenAI Codex CLI",
+      "vendor": "OpenAI",
+      "detect": {
+        "binaries": ["codex"],
+        "userDirs": ["~/.codex"],
+        "userFiles": []
+      },
+      "rules": {
+        "projectFiles": ["AGENTS.md", "AGENTS.override.md"],
+        "userFiles": ["~/.codex/AGENTS.md"],
+        "readsAgentsMd": true,
+        "agentsMdBridge": null,
+        "notes": "Layered merge home/repo/cwd; ~32 KiB default budget; project-level config.toml only loads for trusted projects."
+      },
+      "skills": {
+        "projectDirs": [".agents/skills"],
+        "userDirs": ["~/.agents/skills"],
+        "sharedDirs": [".agents/skills", "~/.agents/skills"]
+      },
+      "mcp": {
+        "projectFiles": [".codex/config.toml"],
+        "userFiles": ["~/.codex/config.toml"],
+        "format": "toml-mcp_servers"
+      },
+      "hooks": {
+        "projectFiles": [".codex/hooks.json"],
+        "userFiles": ["~/.codex/hooks.json"],
+        "eventCasing": "PascalCase"
+      },
+      "subagents": {
+        "projectDirs": [".codex/agents"],
+        "userDirs": ["~/.codex/agents"]
+      },
+      "docs": {
+        "rules": "https://developers.openai.com/codex/config-basic",
+        "skills": "https://developers.openai.com/codex/skills",
+        "mcp": "https://developers.openai.com/codex/config-basic",
+        "hooks": "https://developers.openai.com/codex/hooks"
+      }
+    },
+    {
+      "id": "kimi-code",
+      "displayName": "Kimi Code",
+      "vendor": "Moonshot AI",
+      "detect": {
+        "binaries": ["kimi"],
+        "userDirs": ["~/.kimi-code"],
+        "userFiles": []
+      },
+      "rules": {
+        "projectFiles": ["AGENTS.md"],
+        "userFiles": ["~/.kimi-code/AGENTS.md", "~/.agents/AGENTS.md"],
+        "readsAgentsMd": true,
+        "agentsMdBridge": null,
+        "notes": "Also supports SYSTEM.md full prompt override and cross-tool ~/.agents/AGENTS.md."
+      },
+      "skills": {
+        "projectDirs": [".kimi-code/skills", ".agents/skills"],
+        "userDirs": ["~/.kimi-code/skills", "~/.agents/skills"],
+        "sharedDirs": [".agents/skills", "~/.agents/skills"]
+      },
+      "mcp": {
+        "projectFiles": [".kimi-code/mcp.json"],
+        "userFiles": ["~/.kimi-code/mcp.json"],
+        "format": "json-mcpServers"
+      },
+      "hooks": {
+        "projectFiles": [],
+        "userFiles": ["~/.kimi-code/config.toml"],
+        "eventCasing": "PascalCase"
+      },
+      "subagents": {
+        "projectDirs": [".kimi-code/agents", ".agents/agents"],
+        "userDirs": ["~/.kimi-code/agents", "~/.agents/agents"]
+      },
+      "docs": {
+        "rules": "https://moonshotai.github.io/kimi-code/",
+        "skills": "https://moonshotai.github.io/kimi-code/zh/customization/skills.html",
+        "mcp": "https://moonshotai.github.io/kimi-code/zh/customization/mcp.html",
+        "hooks": "https://moonshotai.github.io/kimi-code/zh/customization/hooks.html"
+      }
+    }
+  ]
+}

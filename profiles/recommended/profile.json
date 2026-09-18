@@ -1,0 +1,12 @@
+{
+  "name": "recommended",
+  "version": "1.0.0",
+  "description": "Baseline AI-coding workflow rules plus a commit-message skill. Installed content is deny-by-default: only the rules template and skills explicitly declared here are installed.",
+  "agents": ["claude-code", "codex", "kimi-code"],
+  "rules": {
+    "template": "rules/core-workflow.md"
+  },
+  "skills": [
+    { "name": "commit-message", "source": "skills/commit-message" }
+  ]
+}

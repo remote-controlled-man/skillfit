@@ -1,0 +1,9 @@
+node_modules/
+dist/
+runs/
+
+# The internal lab workbench lives here locally and must never be committed
+# or published. WARNING: never run `git clean -fdx` in this repository —
+# it would delete this ignored directory. Use `git clean -fd` (without -x)
+# and review with `git clean -nd` first.
+/workspace4skills/

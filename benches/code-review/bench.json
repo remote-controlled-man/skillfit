@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "name": "code-review",
+  "description": "Review a small pull request against a spec and find the seeded defects.",
+  "tasks": [
+    {
+      "id": "review-r1",
+      "fixture": "fixtures/review-r1",
+      "prompt": "prompts/review-r1.md",
+      "verifier": "node verifiers/seeded-bugs.mjs",
+      "rubric": "ground-truth/r1.md"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+# Contributing
+
+Thanks for helping make agent configuration evidence-driven.
+
+## The highest-value contributions
+
+1. **A bench from your real workflow.** Take a task you actually give your agent, build a minimal fixture + deterministic verifier around it, and submit it under `benches/contrib/<name>/`. See [benches/README.md](benches/README.md) for the format.
+2. **Reproductions.** Run an existing evidence experiment on your model/agent and report agreement or disagreement (as an issue with your `manifest.json` attached).
+3. **Agent matrix corrections.** Vendor config surfaces change fast. If `src/matrix/agents.json` is stale, a PR with the official docs link is always welcome.
+
+## Ground rules
+
+- **Zero runtime dependencies** is a hard rule. Discuss in an issue before proposing one.
+- `npm test` must be green. Tests must run offline (no real API calls).
+- PRs must describe *observable* changes: what the CLI printed/did before and after.
+- AI-generated PRs are welcome, but say so, and you are responsible for having run the code. Unverifiable PRs will be closed without review.
+- **Never run `git clean -fdx` in your clone** if you keep a local `workspace4skills/` lab directory — it deletes ignored directories.
+
+## Submitting evidence
+
+We do not accept unverifiable numbers ("skill X gave me +20%"). Submit the reproducible configuration instead:
+
+1. Your bench (or a reference to an existing one)
+2. The skill source pinned to a commit
+3. The executor/agent + model identity + trials count
+
+Maintainers re-run it in CI; the published evidence entry credits you.

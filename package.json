@@ -1,0 +1,40 @@
+{
+  "name": "skillfit",
+  "version": "0.1.0",
+  "description": "Evidence-driven configuration for AI coding agents: measure which skills, rules and MCP servers actually help — then install only those.",
+  "type": "module",
+  "bin": {
+    "skillfit": "dist/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "benches",
+    "evidence",
+    "profiles"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test \"dist/**/*.test.js\"",
+    "doctor": "npm run build && node dist/cli.js doctor",
+    "check": "npm run build && node --test \"dist/**/*.test.js\""
+  },
+  "keywords": [
+    "ai-coding-agent",
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "mcp",
+    "agents-md",
+    "eval",
+    "benchmark"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}
