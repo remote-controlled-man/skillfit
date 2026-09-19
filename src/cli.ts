@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
-import { runBenchCheck, runBenchInit } from './commands/bench.js';
+import { runBenchAdd, runBenchCheck, runBenchInit } from './commands/bench.js';
 import { runDoctor } from './commands/doctor.js';
 import { runEval } from './commands/eval.js';
 import { runInstall } from './commands/install.js';
@@ -14,6 +14,7 @@ Usage:
   skillfit eval <skill-path> [options]      A/B-test a skill against a bench
   skillfit bench init [dir]                 Scaffold a new bench directory
   skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
+  skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit install [options]                Install evidence-backed configuration
 
 Options:
@@ -28,6 +29,14 @@ Options:
   --help, -h          Show help
   --version, -v       Show version
 
+bench add --freeze options:
+  --task <id>            Task id (required)
+  --prompt <text>        Task prompt, or --prompt-file <path> (required)
+  --verifier-cmd <cmd>   Command run in the task run dir; exit 0 = pass
+  --expect <string>      Alternative: pass when the agent's final output contains <string>
+  --source-dir <dir>     Directory to snapshot as the fixture (default: cwd; git-tracked files only when inside a git repo)
+  --should-trigger <yes|no>  Label for trigger-mode evaluation
+
 Docs: https://github.com/remote-controlled-man/skillfit
 `;
 
@@ -41,6 +50,14 @@ async function main(): Promise<void> {
       bench: { type: 'string' },
       trials: { type: 'string' },
       profile: { type: 'string' },
+      task: { type: 'string' },
+      prompt: { type: 'string' },
+      'prompt-file': { type: 'string' },
+      freeze: { type: 'boolean', default: false },
+      'source-dir': { type: 'string' },
+      'verifier-cmd': { type: 'string' },
+      expect: { type: 'string' },
+      'should-trigger': { type: 'string' },
       'dry-run': { type: 'boolean', default: false },
       project: { type: 'boolean', default: false },
       yes: { type: 'boolean', default: false },
@@ -106,7 +123,28 @@ async function main(): Promise<void> {
         if (report.failures > 0) process.exitCode = 1;
         return;
       }
-      console.error('Usage: skillfit bench init [dir] | skillfit bench check [dir]');
+      if (subcommand === 'add') {
+        const shouldTrigger = values['should-trigger'];
+        if (shouldTrigger !== undefined && shouldTrigger !== 'yes' && shouldTrigger !== 'no') {
+          console.error(`Unknown --should-trigger value: ${shouldTrigger} (expected "yes" or "no")`);
+          process.exitCode = 2;
+          return;
+        }
+        await runBenchAdd({
+          ...common,
+          benchDir: positionals[2],
+          task: values.task,
+          prompt: values.prompt,
+          promptFile: values['prompt-file'],
+          freeze: values.freeze ?? false,
+          sourceDir: values['source-dir'],
+          verifierCmd: values['verifier-cmd'],
+          expect: values.expect,
+          shouldTrigger: shouldTrigger === undefined ? undefined : shouldTrigger === 'yes',
+        });
+        return;
+      }
+      console.error('Usage: skillfit bench init [dir] | skillfit bench check [dir] | skillfit bench add <dir> --freeze ...');
       process.exitCode = 2;
       return;
     }

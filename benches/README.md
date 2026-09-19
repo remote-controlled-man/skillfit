@@ -49,6 +49,7 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 | `tasks[].fixture` | yes | Directory (relative to the bench root) with the synthetic repository. Convention: `fixtures/<task-id>/`. |
 | `tasks[].prompt` | yes | Markdown file with the task instructions. Convention: `prompts/<task-id>.md`. |
 | `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Convention: `node verifiers/<task-id>.mjs`. |
+| `tasks[].verifierKind` | no | `output` (default): the verifier grades the agent's final message at `_output.md`. `command`: the verifier runs a real command (e.g. a test suite) inside the run directory, for tasks where the agent edits files. |
 | `tasks[].rubric` | no | Markdown file injected into the optional LLM judge prompt (never shown to the agent under test). |
 | `tasks[].shouldTrigger` | no | Whether an in-scope skill *should* fire on this task. Required for `--mode trigger` (unlabeled tasks are skipped there). Include negative controls (`false`) — aim for ≥30% of tasks. |
 
@@ -62,6 +63,7 @@ The verifier is the heart of a bench. It must be **deterministic**: same run dir
 - **Exit code 0 = pass, anything else = fail.** That is the only signal the harness aggregates.
 - Print a one-line JSON summary to stdout for humans (the harness saves it to `_verifier.txt`), e.g. `{"passed":true,"hits":["a","b"],"missed":[]}`.
 - The run directory contains the agent's raw final message at `_output.md`, the full prompt at `_prompt.txt`, plus any files the agent created or modified in place (CLI executors run inside the run directory).
+- Two kinds: `output` verifiers (default) grade `_output.md`; `command` verifiers (`verifierKind: "command"`) run a real command — e.g. the repo's test suite — inside the run directory, for tasks where the agent edits files. A command verifier must *fail on the untouched fixture* (the task is unsolved as shipped); `bench check` verifies exactly that.
 
 Node is the recommended verifier runtime because it is everywhere skillfit runs: `node verifiers/<task-id>.mjs`.
 
@@ -112,6 +114,16 @@ Every task needs a `shouldTrigger` label:
 The manifest reports recall, false-trigger rate, precision, and F1 with Wilson 95% CIs. Executor errors and undetectable transcripts are excluded from the rates and surfaced as warnings. Trigger capture is currently verified for **Kimi Code** only; agents without a `streamJson` template fail with a clear error.
 
 ## Porting your production scenario
+
+The fastest path is freezing a failure you just watched happen:
+
+```bash
+skillfit bench add <bench-dir> --freeze --task <id> \
+  --prompt "What went wrong and what the agent should have done" \
+  --verifier-cmd "node --test"   # or: --expect "string the output must contain"
+```
+
+This snapshots the current directory (git-tracked files only, so `node_modules` and build output stay out) into `fixtures/<task-id>/`, generates the verifier wrapper, and registers the task. The manual path, for shaping a task by hand:
 
 1. Pick one recurring, expensive task shape (reviewing a PR, migrating a module, writing a migration plan).
 2. Shrink a real instance into `fixtures/<task-id>/` — keep the trap, drop everything else.

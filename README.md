@@ -66,7 +66,7 @@ Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capabil
 
 ## Bring your own bench
 
-Evals are only as good as their tasks. A bench is just a directory — `bench.json` + fixtures + a deterministic verifier. Scaffold one with `npx skillfit bench init`, validate it offline with `npx skillfit bench check`, and model it on your own production scenarios: [benches/README.md](benches/README.md).
+Evals are only as good as their tasks. A bench is just a directory — `bench.json` + fixtures + a deterministic verifier. Scaffold one with `npx skillfit bench init`, freeze a real failure you just watched your agent botch with `npx skillfit bench add <bench> --freeze`, validate offline with `npx skillfit bench check`, and model it on your own production scenarios: [benches/README.md](benches/README.md).
 
 ## Design principles
 

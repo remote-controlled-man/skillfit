@@ -60,7 +60,9 @@ function runProcess(
   return new Promise((resolvePromise) => {
     let child;
     try {
-      child = spawn(command, args, { cwd, shell: false });
+      const env = { ...process.env };
+      delete env['NODE_TEST_CONTEXT'];
+      child = spawn(command, args, { cwd, shell: false, env });
     } catch (error) {
       resolvePromise({ exitCode: null, output: '', error: (error as Error).message });
       return;

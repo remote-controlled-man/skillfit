@@ -44,6 +44,14 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
   const rubric = task['rubric'];
   const shouldTrigger = task['shouldTrigger'];
   const promptTrigger = task['promptTrigger'];
+  const verifierKind = task['verifierKind'];
+  if (verifierKind !== undefined && verifierKind !== 'output' && verifierKind !== 'command') {
+    throw new Error(
+      `bench.json task "${id}" has an invalid "verifierKind" field (expected "output" or "command")`,
+    );
+  }
+  const verifierKindField: { verifierKind?: 'output' | 'command' } =
+    verifierKind === undefined ? {} : { verifierKind: verifierKind as 'output' | 'command' };
   if (shouldTrigger !== undefined && typeof shouldTrigger !== 'boolean') {
     throw new Error(`bench.json task "${id}" has an invalid "shouldTrigger" field`);
   }
@@ -82,9 +90,9 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
     if (!existsSync(rubricAbs) || !statSync(rubricAbs).isFile()) {
       throw new Error(`task "${id}" rubric file not found: ${rubric}`);
     }
-    return { id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField };
+    return { id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField, ...verifierKindField };
   }
-  return { id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField };
+  return { id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField, ...verifierKindField };
 }
 
 export function loadBench(benchDir: string): Bench {

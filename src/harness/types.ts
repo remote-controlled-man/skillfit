@@ -31,6 +31,7 @@ export interface BenchTask {
   prompt: string;
   promptTrigger?: string;
   verifier: string;
+  verifierKind?: 'output' | 'command';
   rubric?: string;
   shouldTrigger?: boolean;
 }
