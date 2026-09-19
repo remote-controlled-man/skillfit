@@ -1,6 +1,6 @@
 {
   "name": "skillfit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Evidence-driven configuration for AI coding agents: measure which skills, rules and MCP servers actually help — then install only those.",
   "type": "module",
   "bin": {
@@ -15,11 +15,18 @@
     "evidence",
     "profiles"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/remote-controlled-man/skillfit.git"
+  },
+  "homepage": "https://github.com/remote-controlled-man/skillfit#readme",
+  "bugs": "https://github.com/remote-controlled-man/skillfit/issues",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test \"dist/**/*.test.js\"",
     "doctor": "npm run build && node dist/cli.js doctor",
-    "check": "npm run build && node --test \"dist/**/*.test.js\""
+    "check": "npm run build && node --test \"dist/**/*.test.js\"",
+    "prepublishOnly": "npm test"
   },
   "keywords": [
     "ai-coding-agent",

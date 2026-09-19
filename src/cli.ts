@@ -5,7 +5,7 @@ import { runDoctor } from './commands/doctor.js';
 import { runEval } from './commands/eval.js';
 import { runInstall } from './commands/install.js';
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
 
