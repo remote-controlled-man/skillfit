@@ -28,6 +28,10 @@ function makeTriggerBench(t: import('node:test').TestContext): string {
   }
   mkdirSync(join(dir, 'prompts'), { recursive: true });
   writeFileSync(join(dir, 'prompts', 'pos.md'), 'Review this code and finish with done.\n');
+  writeFileSync(
+    join(dir, 'prompts', 'pos.trigger.md'),
+    'TRIGGER variant: Review this code on disk and finish with done.\n',
+  );
   writeFileSync(join(dir, 'prompts', 'neg.md'), 'Explain this library and finish with done.\n');
   mkdirSync(join(dir, 'verifiers'), { recursive: true });
   writeFileSync(join(dir, 'verifiers', 'pass.mjs'), PASS_VERIFIER);
@@ -37,7 +41,7 @@ function makeTriggerBench(t: import('node:test').TestContext): string {
       schemaVersion: 1,
       name: 'trigger-bench',
       tasks: [
-        { id: 'pos-task', fixture: 'fixtures/pos-task', prompt: 'prompts/pos.md', verifier: 'node verifiers/pass.mjs', shouldTrigger: true },
+        { id: 'pos-task', fixture: 'fixtures/pos-task', prompt: 'prompts/pos.md', promptTrigger: 'prompts/pos.trigger.md', verifier: 'node verifiers/pass.mjs', shouldTrigger: true },
         { id: 'neg-task', fixture: 'fixtures/neg-task', prompt: 'prompts/neg.md', verifier: 'node verifiers/pass.mjs', shouldTrigger: false },
       ],
     }),
@@ -110,6 +114,8 @@ test('runTriggerExperiment measures recall and false-trigger rate', async (t) =>
   const prompt = readFileSync(join(trialDir, '_prompt.txt'), 'utf8');
   assert.ok(!prompt.includes('<skill name='), 'skill is not injected into the prompt');
   assert.ok(!prompt.includes('Experiment isolation rules'), 'no no-tools isolation block');
+  assert.ok(!prompt.includes('Repository snapshot'), 'trigger mode never inlines the repository snapshot');
+  assert.ok(prompt.includes('TRIGGER variant'), 'promptTrigger file is used when present');
   assert.ok(existsSync(join(plan.runsRoot, 'trigger-group', 'manifest.json')));
 });
 

@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
-import { OUTPUT_CONTRACT, snapshotRepoFiles } from './prompt.js';
+import { OUTPUT_CONTRACT } from './prompt.js';
 import { gitInit, runVerifier } from './runner.js';
 import { wilson95 } from './stats.js';
 import type {
@@ -88,9 +88,11 @@ async function runTriggerTrial(
   rmSync(join(runDir, MOCK_MARKER_FILE), { force: true });
   const gitInitialized = await gitInit(runDir);
 
-  const taskPromptText = readFileSync(join(plan.bench.dir, task.prompt), 'utf8');
-  const snapshot = snapshotRepoFiles(runDir);
-  const prompt = `${[taskPromptText.trimEnd(), `Repository snapshot:\n\n${snapshot}`, OUTPUT_CONTRACT].join('\n\n')}\n`;
+  const taskPromptText = readFileSync(
+    join(plan.bench.dir, task.promptTrigger ?? task.prompt),
+    'utf8',
+  );
+  const prompt = `${[taskPromptText.trimEnd(), OUTPUT_CONTRACT].join('\n\n')}\n`;
   writeFileSync(join(runDir, '_prompt.txt'), prompt, 'utf8');
 
   const skillDest = join(runDir, plan.skillInstallDir, plan.skill.name);

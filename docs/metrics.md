@@ -46,6 +46,11 @@ is the next milestone**.)
   `-p --output-format stream-json --verbose` (`--bare` forbidden: it skips skill discovery); Codex CLI —
   `exec --json` (no skill event exists → canary: the benched skill is instructed to emit
   `SKILLFIT_SKILL:<name>`); Kimi Code — `-p --output-format stream-json` (assistant `tool_calls` events).
+- **Presentation fidelity**: trigger-mode tasks present work as files on disk with a natural request; the
+  harness never inlines a repository snapshot in trigger mode. A self-contained prompt suppresses skill
+  consultation (measured: 0/9 trigger recall with an inline snapshot vs. the skill firing on the same tasks
+  from disk — see evidence/2026-09-trigger-snapshot-correction.md). Trigger-mode prompt variants live in
+  per-task `promptTrigger` files.
 - **Environment fidelity caveats**: routing quality depends on the *whole installed skill set* (lexical
   competition), so L1 runs install the skill into a sandboxed skills directory containing the user's real
   set, not an isolated one. A triggered skill cannot unload mid-session — one false trigger taxes the rest

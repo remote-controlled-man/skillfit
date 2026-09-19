@@ -29,6 +29,7 @@ export interface BenchTask {
   id: string;
   fixture: string;
   prompt: string;
+  promptTrigger?: string;
   verifier: string;
   rubric?: string;
   shouldTrigger?: boolean;

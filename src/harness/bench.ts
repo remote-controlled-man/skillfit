@@ -43,10 +43,15 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
   const verifier = task['verifier'] as string;
   const rubric = task['rubric'];
   const shouldTrigger = task['shouldTrigger'];
+  const promptTrigger = task['promptTrigger'];
   if (shouldTrigger !== undefined && typeof shouldTrigger !== 'boolean') {
     throw new Error(`bench.json task "${id}" has an invalid "shouldTrigger" field`);
   }
   const triggerField = shouldTrigger === undefined ? {} : { shouldTrigger };
+  if (promptTrigger !== undefined && (typeof promptTrigger !== 'string' || promptTrigger.trim() === '')) {
+    throw new Error(`bench.json task "${id}" has an invalid "promptTrigger" field`);
+  }
+  const promptTriggerField = promptTrigger === undefined ? {} : { promptTrigger };
 
   const fixtureAbs = assertRelativeInside(benchDir, fixture, `task "${id}" fixture`);
   if (!existsSync(fixtureAbs) || !statSync(fixtureAbs).isDirectory()) {
@@ -55,6 +60,12 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
   const promptAbs = assertRelativeInside(benchDir, prompt, `task "${id}" prompt`);
   if (!existsSync(promptAbs) || !statSync(promptAbs).isFile()) {
     throw new Error(`task "${id}" prompt file not found: ${prompt}`);
+  }
+  if (promptTrigger !== undefined) {
+    const promptTriggerAbs = assertRelativeInside(benchDir, promptTrigger, `task "${id}" promptTrigger`);
+    if (!existsSync(promptTriggerAbs) || !statSync(promptTriggerAbs).isFile()) {
+      throw new Error(`task "${id}" promptTrigger file not found: ${promptTrigger}`);
+    }
   }
   for (const token of verifier.split(/\s+/).filter(Boolean)) {
     if (!token.includes('/') && !token.includes('\\')) continue;
@@ -71,9 +82,9 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
     if (!existsSync(rubricAbs) || !statSync(rubricAbs).isFile()) {
       throw new Error(`task "${id}" rubric file not found: ${rubric}`);
     }
-    return { id, fixture, prompt, verifier, rubric, ...triggerField };
+    return { id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField };
   }
-  return { id, fixture, prompt, verifier, ...triggerField };
+  return { id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField };
 }
 
 export function loadBench(benchDir: string): Bench {

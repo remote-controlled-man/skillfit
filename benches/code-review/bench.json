@@ -7,6 +7,7 @@
       "id": "review-r1",
       "fixture": "fixtures/review-r1",
       "prompt": "prompts/review-r1.md",
+      "promptTrigger": "prompts/review-r1.trigger.md",
       "verifier": "node verifiers/seeded-bugs.mjs",
       "rubric": "ground-truth/r1.md",
       "shouldTrigger": true
@@ -15,6 +16,7 @@
       "id": "review-r2",
       "fixture": "fixtures/review-r2",
       "prompt": "prompts/review-r2.md",
+      "promptTrigger": "prompts/review-r2.trigger.md",
       "verifier": "node verifiers/review-r2.mjs",
       "rubric": "ground-truth/r2.md",
       "shouldTrigger": true
@@ -23,6 +25,7 @@
       "id": "review-r3",
       "fixture": "fixtures/review-r3",
       "prompt": "prompts/review-r3.md",
+      "promptTrigger": "prompts/review-r3.trigger.md",
       "verifier": "node verifiers/review-r3.mjs",
       "rubric": "ground-truth/r3.md",
       "shouldTrigger": true
@@ -31,6 +34,7 @@
       "id": "explain-x1",
       "fixture": "fixtures/explain-x1",
       "prompt": "prompts/explain-x1.md",
+      "promptTrigger": "prompts/explain-x1.trigger.md",
       "verifier": "node verifiers/explain-x1.mjs",
       "rubric": "ground-truth/x1.md",
       "shouldTrigger": false

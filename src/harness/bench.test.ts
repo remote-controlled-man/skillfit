@@ -38,6 +38,7 @@ test('loadBench loads the bundled code-review bench', () => {
   assert.equal(bench.tasks[0]?.id, 'review-r1');
   assert.equal(bench.tasks[0]?.rubric, 'ground-truth/r1.md');
   assert.equal(bench.tasks[0]?.shouldTrigger, true);
+  assert.equal(bench.tasks[0]?.promptTrigger, 'prompts/review-r1.trigger.md');
   assert.equal(bench.tasks[1]?.id, 'review-r2');
   assert.equal(bench.tasks[1]?.verifier, 'node verifiers/review-r2.mjs');
   assert.equal(bench.tasks[2]?.id, 'review-r3');
