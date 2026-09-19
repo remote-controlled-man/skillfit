@@ -27,6 +27,18 @@ For this model (Kimi Code CLI v2.0.0, 2026-09), **small-PR review against an exp
 
 The evidence-backed next bench is **hard-bug diagnosis**, not a harder review task: the [July baseline](2026-07-skill-baseline.md) shows skills can have measurable effect there (+66.7pp for `diagnosing-bugs`), so a debugging bench has actual headroom to measure.
 
+## Trigger-mode follow-up (same day, `eval-20260919-120407`)
+
+After the L1 trigger mode landed, we ran the same bench with the skill **installed** (`.kimi-code/skills/`, never injected) and invocation detected from the stream-json transcript:
+
+| Metric | Value |
+|---|---|
+| Trigger recall (should-fire tasks) | **0/9 (0%)**, 95% CI [0%, 30%] |
+| False-trigger rate (negative control) | 0/3 (0%), 95% CI [0%, 56%] |
+| Task pass rate | 3/3 on every task, skill or no skill |
+
+The agent never once loaded the skill, yet scored 100% everywhere — so for this model the skill's *realized* value is zero regardless of its content. Two confounders to note honestly: the task prompts are fully self-contained (snapshot inline), which may suppress skill consultation; and the run environment also exposed the user's other installed skills, so routing competition existed. Verifier credit was still genuine — this measures *activation*, and activation was zero.
+
 ## Limitations
 
 - Single model, single harness, 3 trials per cell — pass rates are coarse-grained.

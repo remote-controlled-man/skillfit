@@ -46,18 +46,21 @@ npx skillfit doctor
 # 2. A/B-test a skill before installing it (bring your own API key)
 npx skillfit eval ~/.agents/skills/some-skill --trials 3
 
+# 2b. Or measure whether the agent triggers the skill on its own (and only when it should)
+npx skillfit eval ~/.agents/skills/some-skill --mode trigger --agent kimi-code
+
 # 3. Install only the evidence-backed minimal set (dry-run by default)
 npx skillfit install
 ```
 
-Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked).
+Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code only.
 
 ## The three commands
 
 | Command | What it does | Writes? |
 |---|---|---|
 | `doctor` | Detects installed agents, checks rules bloat, skill validity/conflicts, MCP config parseability, silent-failure traps (e.g. AGENTS.md that Claude Code never reads) | Never |
-| `eval <skill>` | Paired baseline/treatment runs against a bench, deterministic verifier + optional blind LLM judge, token-cost delta, verdict: effective / ineffective / inconclusive | `runs/` locally |
+| `eval <skill>` | Default (`--mode inject`): paired baseline/treatment runs, deterministic verifier + optional blind LLM judge, token-cost delta, verdicts via McNemar exact test + paired bootstrap CI. `--mode trigger`: installs the skill instead of injecting it and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
 | `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent, atomic), skill copy with conflict protection, commit-pinned lockfile, post-install verification | Only after confirmation |
 
 ## Bring your own bench
@@ -69,7 +72,7 @@ Evals are only as good as their tasks. A bench is just a directory — `bench.js
 - **Standards, not formats.** AGENTS.md (AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — we write what agents already read.
 - **Deny by default.** We install only what a profile explicitly declares, pinned by content hash.
 - **Dry-run first.** Every write command prints its plan before touching a file. Backups always.
-- **Honest numbers.** Every claim links to a manifest with model version, skill hash, date, and variance.
+- **Honest numbers.** Every claim links to a manifest with model version, skill hash, date, and variance. Verdict semantics are frozen in [docs/metrics.md](docs/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and underpowered runs are labeled *indicative*, never "effective".
 
 ## Disclaimer
 
@@ -79,6 +82,10 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 - [x] doctor / eval / install core loop
 - [x] Paired A/B harness with blind judging
+- [x] Statistical verdicts (McNemar exact + paired bootstrap CI, manifest v2)
+- [x] Trigger-rate measurement (`--mode trigger`: recall / false-trigger rate with Wilson CIs)
+- [ ] Trigger capture for Claude Code / Codex (needs verified stream-json shapes)
+- [ ] Bench scaffolding (`bench new` / calibration commands)
 - [ ] Community bench & evidence submissions (reproducible-config CI re-runs, not trust-me results)
 - [ ] Cursor / Gemini CLI / OpenCode adapters
 - [ ] MCP server config evaluation

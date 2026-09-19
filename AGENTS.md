@@ -19,14 +19,16 @@ node dist/cli.js doctor    # smoke against the real machine (read-only)
 - All agent-specific paths/behaviors come from `src/matrix/agents.json` — never hardcode a path in command code. Matrix edits require a `verifiedAt` bump and a docs link.
 - Every write operation: dry-run plan first, backup before write, verify after write. No exceptions.
 - Tests are `node:test`, offline, and must never call a real model API or agent CLI — use `MockExecutor` / injected fs roots.
+- Verdict semantics and the statistical protocol are frozen in `docs/metrics.md` — change the doc and the code together.
 - User-facing CLI output is English. README/docs are bilingual (README.md is the English source of truth; README.zh-CN.md mirrors it).
 
 ## Layout
 
 - `src/commands/` — doctor / eval / install entry points (thin shells over testable functions)
-- `src/harness/` — eval experiment engine (executors, bench loading, judge, runner)
+- `src/harness/` — eval experiment engine (executors, bench loading, judge, runner, trigger mode, stats)
 - `src/matrix/agents.json` — agent capability matrix (the data-driven core)
 - `benches/` — public bench format + bundled benches
+- `docs/` — design contracts (`metrics.md` freezes the metrics and verdict protocol)
 - `profiles/` — installable profiles (deny-by-default manifests)
 - `evidence/` — published experiment reports, dated and pinned
 - `runs/` — local eval output, gitignored

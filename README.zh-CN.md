@@ -42,18 +42,21 @@ npx skillfit doctor
 # 2. 装之前先 A/B 测一个 skill（需要自带 API key）
 npx skillfit eval ~/.agents/skills/some-skill --trials 3
 
+# 2b. 或者测 agent 自己会不会触发这个 skill（以及不该触发时会不会乱触发）
+npx skillfit eval ~/.agents/skills/some-skill --mode trigger --agent kimi-code
+
 # 3. 只装实测有效的最小集（默认 dry-run）
 npx skillfit install
 ```
 
-支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。
+支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前只对 Kimi Code 验证过。
 
 ## 三个命令
 
 | 命令 | 干什么 | 写文件？ |
 |---|---|---|
 | `doctor` | 探测已装 agent，检查规则膨胀、skill 合法性/冲突、MCP 配置可解析性、静默失效坑（比如 Claude Code 根本不会读的 AGENTS.md） | 从不 |
-| `eval <skill>` | 配对 baseline/treatment 跑 bench，确定性 verifier + 可选盲评，token 成本差值，判定：有效 / 无效 / 不确定 | 仅本地 `runs/` |
+| `eval <skill>` | 默认（`--mode inject`）：配对 baseline/treatment，确定性 verifier + 可选盲评，token 成本差值，判定走 McNemar 精确检验 + 配对 bootstrap CI。`--mode trigger`：skill 改为真实安装而不注入 prompt，从 transcript 机械判定触发召回率 / 误触发率 | 仅本地 `runs/` |
 | `install` | 受管区域规则写入（`<!-- SKILLFIT_START/END -->`，幂等原子）、skill 复制带冲突保护、内容哈希锁定的 lockfile、安装后校验 | 确认后才写 |
 
 ## 自带 bench
@@ -65,7 +68,7 @@ npx skillfit install
 - **站上标准，不造格式。** AGENTS.md（AAIF）、SKILL.md、`.agents/skills/`、`.mcpb`——只写 agent 本来就读的东西。
 - **deny by default。** 只装 profile 显式声明的内容，按内容哈希锁定。
 - **dry-run 优先。** 任何写命令先打印计划再动文件，永远有备份。
-- **诚实的数字。** 每个结论都链到带模型版本、skill 哈希、日期和方差的 manifest。
+- **诚实的数字。** 每个结论都链到带模型版本、skill 哈希、日期和方差的 manifest。判定语义冻结在 [docs/metrics.md](docs/metrics.md)：显著性来自不一致对的 McNemar 精确检验，差值带配对 bootstrap 置信区间，样本不足的运行一律标注 *indicative*，绝不写"有效"。
 
 ## 免责声明
 
@@ -75,6 +78,10 @@ npx skillfit install
 
 - [x] doctor / eval / install 核心闭环
 - [x] 配对 A/B harness + 盲评
+- [x] 统计判定（McNemar 精确检验 + 配对 bootstrap CI，manifest v2）
+- [x] 触发率测量（`--mode trigger`：召回率 / 误触发率，带 Wilson 置信区间）
+- [ ] Claude Code / Codex 的触发捕获（stream-json 格式待验证）
+- [ ] bench 脚手架（`bench new` / 校准命令）
 - [ ] 社区 bench 与 evidence 提交（CI 重跑可复现配置，不收无法验证的结果）
 - [ ] Cursor / Gemini CLI / OpenCode 适配器
 - [ ] MCP server 配置评测

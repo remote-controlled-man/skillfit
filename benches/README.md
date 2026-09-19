@@ -50,6 +50,7 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 | `tasks[].prompt` | yes | Markdown file with the task instructions. Convention: `prompts/<task-id>.md`. |
 | `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Convention: `node verifiers/<task-id>.mjs`. |
 | `tasks[].rubric` | no | Markdown file injected into the optional LLM judge prompt (never shown to the agent under test). |
+| `tasks[].shouldTrigger` | no | Whether an in-scope skill *should* fire on this task. Required for `--mode trigger` (unlabeled tasks are skipped there). Include negative controls (`false`) — aim for ≥30% of tasks. |
 
 All paths must stay inside the bench directory.
 
@@ -96,6 +97,19 @@ Verdicts: `effective` (treatment pass rate higher), `ineffective` (lower), `inco
 ## Optional LLM judge
 
 Verifiers measure pass/fail. For a second, softer dimension, set `SKILLFIT_JUDGE=1` (plus `SKILLFIT_API_KEY` or `SKILLFIT_JUDGE_API_KEY`; tune with `SKILLFIT_JUDGE_MODEL` / `SKILLFIT_JUDGE_BASE_URL`). After each trial pair, the two outputs are shown to the judge in a hash-randomized A/B order (anti position-bias) and scored 1–10; means land in the manifest under `tasks[].judge`. The judge never replaces the deterministic verifier.
+
+## Trigger mode (`--mode trigger`)
+
+Inject mode answers "does the skill help when it is used?". Trigger mode answers the prior question — "does the agent use it at all?" — and its flip side, "does it fire when it shouldn't?".
+
+In trigger mode the skill is **installed** into each run directory (the agent's project skills directory from the capability matrix, e.g. `.kimi-code/skills/`), never injected into the prompt. The agent runs headless with structured (stream-json) output, and skillfit detects invocation mechanically from the transcript: a call to the agent's skill tool naming the skill under test (see `headless.streamJson` in `src/matrix/agents.json`). The raw transcript is saved as `_transcript.jsonl` for audit.
+
+Every task needs a `shouldTrigger` label:
+
+- `true` — in-domain tasks. Recall = fired / should-trigger runs.
+- `false` — negative controls: plausible, in-scope-looking tasks that are actually out of domain. False-trigger rate = fired / negative runs.
+
+The manifest reports recall, false-trigger rate, precision, and F1 with Wilson 95% CIs. Executor errors and undetectable transcripts are excluded from the rates and surfaced as warnings. Trigger capture is currently verified for **Kimi Code** only; agents without a `streamJson` template fail with a clear error.
 
 ## Porting your production scenario
 
