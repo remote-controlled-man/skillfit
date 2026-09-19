@@ -12,11 +12,9 @@ then install only what survives the experiment.
 [![CI](https://github.com/remote-controlled-man/skillfit/actions/workflows/ci.yml/badge.svg)](https://github.com/remote-controlled-man/skillfit/actions/workflows/ci.yml)
 [![Zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-blue)](package.json)
 
-[Quick start](#quick-start) ·
-[Bench guide](benches/README.md) ·
-[Metrics protocol](docs/metrics.md) ·
-[Evidence](evidence/) ·
-[中文 README](README.zh-CN.md)
+[English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
+
+[Quick start](#quick-start) · [Bench guide](benches/README.md) · [Metrics protocol](docs/metrics.md) · [Evidence](evidence/)
 
 </div>
 

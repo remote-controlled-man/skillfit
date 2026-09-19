@@ -10,13 +10,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
 [![CI](https://github.com/remote-controlled-man/skillfit/actions/workflows/ci.yml/badge.svg)](https://github.com/remote-controlled-man/skillfit/actions/workflows/ci.yml)
-[![零运行时依赖](https://img.shields.io/badge/runtime%20deps-0-blue)](package.json)
+[![Zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-blue)](package.json)
 
-[快速开始](#快速开始) ·
-[Bench 指南](benches/README.md) ·
-[指标协议](docs/metrics.md) ·
-[证据库](evidence/) ·
-[English README](README.md)
+[English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
+
+[快速开始](#快速开始) · [Bench 指南](benches/README.md) · [指标协议](docs/metrics.md) · [证据库](evidence/)
 
 </div>
 

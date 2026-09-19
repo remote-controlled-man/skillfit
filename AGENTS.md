@@ -20,7 +20,7 @@ node dist/cli.js doctor    # smoke against the real machine (read-only)
 - Every write operation: dry-run plan first, backup before write, verify after write. No exceptions.
 - Tests are `node:test`, offline, and must never call a real model API or agent CLI — use `MockExecutor` / injected fs roots.
 - Verdict semantics and the statistical protocol are frozen in `docs/metrics.md` — change the doc and the code together.
-- User-facing CLI output is English. README/docs are bilingual (README.md is the English source of truth; README.zh-CN.md mirrors it).
+- User-facing CLI output is English. README/docs are multilingual: README.md is the English source of truth; README.zh-CN.md, README.ja.md, README.ko.md, README.es.md mirror it section-by-section (badges, code blocks, and the demo console block stay verbatim in every language).
 
 ## Layout
 
