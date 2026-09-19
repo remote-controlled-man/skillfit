@@ -1,10 +1,12 @@
+import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
 import type { Condition, ExecutorDescriptor } from './types.js';
 
 export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
 
-export const MIN_TRIALS_FOR_VERDICT = 3;
-
 export const DISCRIMINATION_BASELINE_THRESHOLD = 0.9;
+
+export const CONCLUSIVE_TASKS = 8;
+export const CONCLUSIVE_TRIALS = 5;
 
 export interface VerdictOutcome {
   verdict: Verdict;
@@ -27,11 +29,18 @@ export interface JudgeSummary {
 export interface TaskSummary {
   id: string;
   conditions: Record<Condition, ConditionStats>;
+  outcomes: { baseline: boolean[]; treatment: boolean[] };
   deltaPassRate: number;
   tokenDelta: { input: number; output: number } | null;
   verdict: Verdict;
   verdictReason: string;
   judge: JudgeSummary | null;
+}
+
+export interface SignificanceStats {
+  discordant: { improved: number; regressed: number };
+  mcnemarP: number;
+  deltaCi: { point: number; lo: number; hi: number; resamples: number } | null;
 }
 
 export interface OverallSummary {
@@ -40,10 +49,11 @@ export interface OverallSummary {
   tokenDelta: { input: number; output: number } | null;
   verdict: Verdict;
   verdictReason: string;
+  stats: SignificanceStats;
 }
 
 export interface RunManifest {
-  schemaVersion: 1;
+  schemaVersion: 2;
   runGroup: string;
   createdAt: string;
   skill: { name: string; sourceDir: string; bundleSha256: string; files: string[] };
@@ -65,25 +75,32 @@ export function formatDeltaPp(delta: number): string {
   return `${pp > 0 ? '+' : ''}${pp}pp`;
 }
 
-export function verdictFor(
-  baselineRate: number,
-  treatmentRate: number,
-  trials: number,
-): VerdictOutcome {
-  if (trials < MIN_TRIALS_FOR_VERDICT) {
+export function formatP(p: number): string {
+  return p < 0.0001 ? '<0.0001' : p.toFixed(4);
+}
+
+export function verdictFor(input: {
+  improved: number;
+  regressed: number;
+  deltaPassRate: number;
+}): VerdictOutcome {
+  const { improved, regressed, deltaPassRate } = input;
+  const discordant = improved + regressed;
+  if (discordant < MIN_DISCORDANT_FOR_SIGNIFICANCE) {
     return {
       verdict: 'inconclusive',
-      reason: `insufficient samples: ${trials} trial(s) per condition, need at least ${MIN_TRIALS_FOR_VERDICT}`,
+      reason: `only ${discordant} discordant pair(s) (Δpass ${formatDeltaPp(deltaPassRate)}); significance needs at least ${MIN_DISCORDANT_FOR_SIGNIFICANCE}`,
     };
   }
-  const delta = treatmentRate - baselineRate;
-  if (delta > 0) {
-    return { verdict: 'effective', reason: `treatment pass rate is ${formatDeltaPp(delta)} higher` };
+  const p = mcnemarExactP(improved, regressed);
+  const detail = `${improved} improved vs ${regressed} regressed of ${discordant} discordant pair(s), McNemar exact p=${formatP(p)}`;
+  if (p < 0.05 && deltaPassRate > 0) {
+    return { verdict: 'effective', reason: detail };
   }
-  if (delta < 0) {
-    return { verdict: 'ineffective', reason: `treatment pass rate is ${formatDeltaPp(delta)} lower` };
+  if (p < 0.05 && deltaPassRate < 0) {
+    return { verdict: 'ineffective', reason: detail };
   }
-  return { verdict: 'inconclusive', reason: 'no measurable difference in pass rate' };
+  return { verdict: 'inconclusive', reason: `not significant: ${detail}` };
 }
 
 export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[] {
@@ -103,6 +120,13 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
   if (manifest.tasks.length > 1 && overallRate >= DISCRIMINATION_BASELINE_THRESHOLD) {
     warnings.push(
       `Overall baseline pass rate is ${Math.round(overallRate * 100)}% (>= 90%) — this bench may be too easy and the experiment may lack discriminative power.`,
+    );
+  }
+  const discordant =
+    manifest.overall.stats.discordant.improved + manifest.overall.stats.discordant.regressed;
+  if (discordant < MIN_DISCORDANT_FOR_SIGNIFICANCE) {
+    warnings.push(
+      `Only ${discordant} discordant pair(s) between conditions — a run this size can only certify very large effects; treat any delta as indicative.`,
     );
   }
   return warnings;
@@ -129,6 +153,21 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   lines.push(
     renderRow('OVERALL', idWidth, manifest.overall.conditions, manifest.overall.deltaPassRate, manifest.overall.verdict),
   );
+  lines.push('');
+  const stats = manifest.overall.stats;
+  lines.push(
+    `Significance (overall): ${stats.discordant.improved} improved vs ${stats.discordant.regressed} regressed discordant pair(s), McNemar exact p=${formatP(stats.mcnemarP)}`,
+  );
+  lines.push(
+    stats.deltaCi
+      ? `Δpass 95% CI (paired bootstrap, ${stats.deltaCi.resamples} resamples): [${formatDeltaPp(stats.deltaCi.lo)}, ${formatDeltaPp(stats.deltaCi.hi)}]`
+      : 'Δpass 95% CI: n/a (no trials)',
+  );
+  if (manifest.bench.taskCount < CONCLUSIVE_TASKS || manifest.trials < CONCLUSIVE_TRIALS) {
+    lines.push(
+      `Scale: ${manifest.bench.taskCount} task(s) × ${manifest.trials} trials per condition — below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials); results are indicative.`,
+    );
+  }
   const tokenLines = renderTokenDeltas(manifest);
   if (tokenLines.length > 0) {
     lines.push('');
@@ -168,6 +207,22 @@ function renderTokenDeltas(manifest: RunManifest): string[] {
   }
   const overall = manifest.overall.tokenDelta;
   if (overall) lines.push(`- overall: input ${signed(overall.input)}, output ${signed(overall.output)}`);
+  const baseline = manifest.overall.conditions.baseline;
+  const treatment = manifest.overall.conditions.treatment;
+  const totalTokens = (condition: ConditionStats): number | null =>
+    condition.tokens ? condition.tokens.input + condition.tokens.output : null;
+  const costBaseline = totalTokens(baseline);
+  const costTreatment = totalTokens(treatment);
+  if (
+    costBaseline !== null &&
+    costTreatment !== null &&
+    baseline.passRate > 0 &&
+    treatment.passRate > 0
+  ) {
+    const ratio =
+      costTreatment / treatment.trials / treatment.passRate / (costBaseline / baseline.trials / baseline.passRate);
+    lines.push(`- cost-of-pass ratio (treatment / baseline): ${ratio.toFixed(2)} (lower is better)`);
+  }
   return lines;
 }
 

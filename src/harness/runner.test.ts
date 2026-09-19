@@ -56,6 +56,7 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
     runGroup: 'test-group',
   });
 
+  assert.equal(manifest.schemaVersion, 2);
   assert.equal(manifest.tasks.length, 3);
   const task = manifest.tasks[0];
   assert.ok(task);
@@ -68,9 +69,14 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
     { passes: task.conditions.treatment.passes, trials: task.conditions.treatment.trials },
     { passes: 3, trials: 3 },
   );
-  assert.equal(task.verdict, 'effective');
+  assert.deepEqual(task.outcomes.baseline, [false, false, false]);
+  assert.deepEqual(task.outcomes.treatment, [true, true, true]);
+  assert.equal(task.verdict, 'inconclusive');
+  assert.match(task.verdictReason, /only 3 discordant pair/);
   assert.deepEqual(task.tokenDelta, { input: 2400, output: 240 });
   assert.equal(manifest.overall.verdict, 'effective');
+  assert.deepEqual(manifest.overall.stats.discordant, { improved: 9, regressed: 0 });
+  assert.equal(manifest.overall.stats.mcnemarP, 0.00390625);
   assert.equal(manifest.skill.bundleSha256.length, 64);
   assert.ok(manifest.warnings.some((w) => w.includes('synthetic')));
 
@@ -132,13 +138,13 @@ test('runExperiment keeps executor errors as failed trials instead of crashing',
   assert.match(readFileSync(errorFile, 'utf8'), /agent exploded/);
 });
 
-test('runExperiment marks verdicts inconclusive below 3 trials', async (t) => {
+test('runExperiment marks verdicts inconclusive when discordant pairs are too few', async (t) => {
   const runsRoot = tmp(t, 'skillfit-runs-');
   const manifest = await runExperiment(plan({ runsRoot, trials: 1 }));
   const task = manifest.tasks[0];
   assert.ok(task);
   assert.equal(task.verdict, 'inconclusive');
-  assert.match(task.verdictReason, /insufficient samples/);
+  assert.match(task.verdictReason, /only 1 discordant pair/);
 });
 
 test('runExperiment warns when the baseline already passes (bench too easy)', async (t) => {

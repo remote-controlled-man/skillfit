@@ -72,7 +72,7 @@ test('runEval runs the experiment and prints the summary table', async (t) => {
   assert.equal(manifest.overall.verdict, 'effective');
   assert.ok(existsSync(join(runsRoot, 'eval-group', 'manifest.json')));
   const output = lines.join('\n');
-  assert.match(output, /review-r1\s+0\/3 \(0%\)\s+3\/3 \(100%\)\s+\+100pp\s+effective/);
+  assert.match(output, /review-r1\s+0\/3 \(0%\)\s+3\/3 \(100%\)\s+\+100pp\s+inconclusive/);
   assert.match(output, /Token delta \(treatment - baseline\)/);
   assert.match(output, /Manifest: .*eval-group.*manifest\.json/);
 });

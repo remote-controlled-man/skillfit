@@ -9,6 +9,24 @@ import {
   type RunManifest,
   type TaskSummary,
 } from './report.js';
+import { mcnemarExactP, pairedDeltaBootstrapCI } from './stats.js';
+
+function flags(passes: number, trials: number): boolean[] {
+  return Array.from({ length: trials }, (_, i) => i < passes);
+}
+
+function discordants(outcomes: { baseline: boolean[]; treatment: boolean[] }): {
+  improved: number;
+  regressed: number;
+} {
+  let improved = 0;
+  let regressed = 0;
+  for (let i = 0; i < outcomes.baseline.length; i++) {
+    if (outcomes.treatment[i] && !outcomes.baseline[i]) improved++;
+    else if (outcomes.baseline[i] && !outcomes.treatment[i]) regressed++;
+  }
+  return { improved, regressed };
+}
 
 function stats(passes: number, trials: number) {
   return { passes, trials, passRate: passes / trials, tokens: null };
@@ -17,11 +35,14 @@ function stats(passes: number, trials: number) {
 function taskSummary(id: string, baselinePasses: number, treatmentPasses: number, trials: number): TaskSummary {
   const baseline = stats(baselinePasses, trials);
   const treatment = stats(treatmentPasses, trials);
-  const { verdict, reason } = verdictFor(baseline.passRate, treatment.passRate, trials);
+  const outcomes = { baseline: flags(baselinePasses, trials), treatment: flags(treatmentPasses, trials) };
+  const deltaPassRate = treatment.passRate - baseline.passRate;
+  const { verdict, reason } = verdictFor({ ...discordants(outcomes), deltaPassRate });
   return {
     id,
     conditions: { baseline, treatment },
-    deltaPassRate: treatment.passRate - baseline.passRate,
+    outcomes,
+    deltaPassRate,
     tokenDelta: null,
     verdict,
     verdictReason: reason,
@@ -36,9 +57,17 @@ function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunMani
   const totalTrials = tasks.reduce((sum, task) => sum + task.conditions.baseline.trials, 0);
   const baseline = stats(totalPasses('baseline'), totalTrials);
   const treatment = stats(totalPasses('treatment'), totalTrials);
-  const { verdict, reason } = verdictFor(baseline.passRate, treatment.passRate, trials);
+  const deltaPassRate = treatment.passRate - baseline.passRate;
+  const discordant = tasks.reduce(
+    (acc, task) => {
+      const d = discordants(task.outcomes);
+      return { improved: acc.improved + d.improved, regressed: acc.regressed + d.regressed };
+    },
+    { improved: 0, regressed: 0 },
+  );
+  const { verdict, reason } = verdictFor({ ...discordant, deltaPassRate });
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     runGroup: 'g',
     createdAt: '2026-09-19T00:00:00.000Z',
     skill: { name: 's', sourceDir: '/s', bundleSha256: 'a'.repeat(64), files: ['SKILL.md'] },
@@ -49,26 +78,36 @@ function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunMani
     tasks,
     overall: {
       conditions: { baseline, treatment },
-      deltaPassRate: treatment.passRate - baseline.passRate,
+      deltaPassRate,
       tokenDelta: null,
       verdict,
       verdictReason: reason,
+      stats: {
+        discordant,
+        mcnemarP: mcnemarExactP(discordant.improved, discordant.regressed),
+        deltaCi: pairedDeltaBootstrapCI(tasks.map((task) => task.outcomes)),
+      },
     },
   };
 }
 
-test('verdictFor requires at least 3 trials per condition', () => {
-  const outcome = verdictFor(0, 1, 2);
+test('verdictFor is inconclusive below 6 discordant pairs, however large the delta', () => {
+  const outcome = verdictFor({ improved: 5, regressed: 0, deltaPassRate: 1 });
   assert.equal(outcome.verdict, 'inconclusive');
-  assert.match(outcome.reason, /insufficient samples/);
+  assert.match(outcome.reason, /only 5 discordant pair/);
 });
 
-test('verdictFor maps the pass-rate delta to a verdict', () => {
-  assert.equal(verdictFor(0, 1, 3).verdict, 'effective');
-  assert.equal(verdictFor(1, 0, 3).verdict, 'ineffective');
-  const tie = verdictFor(0.5, 0.5, 3);
-  assert.equal(tie.verdict, 'inconclusive');
-  assert.match(tie.reason, /no measurable difference/);
+test('verdictFor reaches significance at 6 one-sided discordant pairs', () => {
+  assert.equal(verdictFor({ improved: 6, regressed: 0, deltaPassRate: 1 }).verdict, 'effective');
+  assert.equal(verdictFor({ improved: 0, regressed: 6, deltaPassRate: -1 }).verdict, 'ineffective');
+});
+
+test('verdictFor rejects balanced discordance and zero delta', () => {
+  const balanced = verdictFor({ improved: 3, regressed: 3, deltaPassRate: 0 });
+  assert.equal(balanced.verdict, 'inconclusive');
+  assert.match(balanced.reason, /not significant/);
+  const lopsidedButWeak = verdictFor({ improved: 5, regressed: 2, deltaPassRate: 0.43 });
+  assert.equal(lopsidedButWeak.verdict, 'inconclusive');
 });
 
 test('buildWarnings flags a bench the baseline already passes', () => {
@@ -77,9 +116,9 @@ test('buildWarnings flags a bench the baseline already passes', () => {
   assert.ok(warnings.some((w) => w.includes('"easy"') && w.includes('too easy')));
 });
 
-test('buildWarnings stays quiet below the 90% threshold', () => {
-  const manifest = manifestWith([taskSummary('ok', 2, 3, 4)], 'api');
-  assert.deepEqual(buildWarnings(manifest), []);
+test('buildWarnings stays quiet about difficulty below the 90% threshold', () => {
+  const manifest = manifestWith([taskSummary('ok', 2, 2, 4)], 'api');
+  assert.ok(!buildWarnings(manifest).some((w) => w.includes('too easy')));
 });
 
 test('buildWarnings flags mock executors as synthetic', () => {
@@ -87,15 +126,35 @@ test('buildWarnings flags mock executors as synthetic', () => {
   assert.ok(buildWarnings(manifest).some((w) => w.includes('synthetic')));
 });
 
-test('renderSummary prints the per-task table and warnings', () => {
+test('buildWarnings warns when discordant pairs cannot certify anything but huge effects', () => {
+  const manifest = manifestWith([taskSummary('t', 1, 3, 3)], 'api');
+  assert.ok(buildWarnings(manifest).some((w) => w.includes('Only 2 discordant pair')));
+});
+
+test('renderSummary prints the table, significance block, and indicative scale note', () => {
   const base = manifestWith([taskSummary('review-r1', 0, 3, 3)]);
   const manifest: RunManifest = { ...base, warnings: buildWarnings(base) };
   const output = renderSummary(manifest, 'runs/g/manifest.json');
   assert.match(output, /Skill\s+: s/);
-  assert.match(output, /review-r1\s+0\/3 \(0%\)\s+3\/3 \(100%\)\s+\+100pp\s+effective/);
+  assert.match(output, /review-r1\s+0\/3 \(0%\)\s+3\/3 \(100%\)\s+\+100pp\s+inconclusive/);
   assert.match(output, /OVERALL/);
+  assert.match(output, /Significance \(overall\): 3 improved vs 0 regressed discordant pair\(s\), McNemar exact p=0\.2500/);
+  assert.match(output, /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[\+100pp, \+100pp\]/);
+  assert.match(output, /Scale: 1 task\(s\) × 3 trials per condition — below the conclusive bar/);
   assert.match(output, /Manifest: runs\/g\/manifest\.json/);
-  assert.match(output, /Warnings:\n- /);
+});
+
+test('renderSummary shows a significant overall verdict when discordance suffices', () => {
+  const base = manifestWith([
+    taskSummary('a', 0, 3, 3),
+    taskSummary('b', 0, 3, 3),
+    taskSummary('c', 0, 3, 3),
+  ]);
+  const manifest: RunManifest = { ...base, warnings: buildWarnings(base) };
+  assert.equal(manifest.overall.verdict, 'effective');
+  const output = renderSummary(manifest, 'runs/g/manifest.json');
+  assert.match(output, /OVERALL\s+0\/9 \(0%\)\s+9\/9 \(100%\)\s+\+100pp\s+effective/);
+  assert.match(output, /9 improved vs 0 regressed discordant pair\(s\), McNemar exact p=0\.0039/);
 });
 
 test('format helpers', () => {

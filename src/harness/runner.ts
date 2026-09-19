@@ -12,6 +12,7 @@ import {
   type RunManifest,
   type TaskSummary,
 } from './report.js';
+import { mcnemarExactP, pairedDeltaBootstrapCI } from './stats.js';
 import type { Bench, Condition, Executor, SkillBundle, TokenUsage } from './types.js';
 import { CONDITIONS } from './types.js';
 
@@ -292,19 +293,44 @@ async function judgeTaskTrials(
   return results;
 }
 
+function trialFlags(records: TrialOutcome[]): boolean[] {
+  return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.passed);
+}
+
+function discordantCounts(
+  outcomeSets: Array<{ baseline: boolean[]; treatment: boolean[] }>,
+): { improved: number; regressed: number } {
+  let improved = 0;
+  let regressed = 0;
+  for (const outcomes of outcomeSets) {
+    for (let i = 0; i < outcomes.baseline.length && i < outcomes.treatment.length; i++) {
+      const baselinePassed = outcomes.baseline[i] === true;
+      const treatmentPassed = outcomes.treatment[i] === true;
+      if (treatmentPassed && !baselinePassed) improved++;
+      else if (baselinePassed && !treatmentPassed) regressed++;
+    }
+  }
+  return { improved, regressed };
+}
+
 function summarizeTask(
   taskId: string,
-  trials: number,
   outcomes: Record<Condition, TrialOutcome[]>,
   judgeResults: JudgeResult[],
 ): TaskSummary {
   const baseline = statsFor(outcomes.baseline);
   const treatment = statsFor(outcomes.treatment);
-  const { verdict, reason } = verdictFor(baseline.passRate, treatment.passRate, trials);
+  const flags = {
+    baseline: trialFlags(outcomes.baseline),
+    treatment: trialFlags(outcomes.treatment),
+  };
+  const deltaPassRate = treatment.passRate - baseline.passRate;
+  const { verdict, reason } = verdictFor({ ...discordantCounts([flags]), deltaPassRate });
   return {
     id: taskId,
     conditions: { baseline, treatment },
-    deltaPassRate: treatment.passRate - baseline.passRate,
+    outcomes: flags,
+    deltaPassRate,
     tokenDelta: tokenDelta(baseline.tokens, treatment.tokens),
     verdict,
     verdictReason: reason,
@@ -340,14 +366,17 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
       }
     }
     const judgeResults = await judgeTaskTrials(plan, task.id, outcomes);
-    taskSummaries.push(summarizeTask(task.id, plan.trials, outcomes, judgeResults));
+    taskSummaries.push(summarizeTask(task.id, outcomes, judgeResults));
   }
 
   const overallBaseline = statsFor(allOutcomes.baseline);
   const overallTreatment = statsFor(allOutcomes.treatment);
-  const overallVerdict = verdictFor(overallBaseline.passRate, overallTreatment.passRate, plan.trials);
+  const overallDelta = overallTreatment.passRate - overallBaseline.passRate;
+  const taskOutcomes = taskSummaries.map((task) => task.outcomes);
+  const discordant = discordantCounts(taskOutcomes);
+  const overallVerdict = verdictFor({ ...discordant, deltaPassRate: overallDelta });
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
     skill: {
@@ -371,10 +400,15 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
         baseline: overallBaseline,
         treatment: overallTreatment,
       },
-      deltaPassRate: overallTreatment.passRate - overallBaseline.passRate,
+      deltaPassRate: overallDelta,
       tokenDelta: tokenDelta(overallBaseline.tokens, overallTreatment.tokens),
       verdict: overallVerdict.verdict,
       verdictReason: overallVerdict.reason,
+      stats: {
+        discordant,
+        mcnemarP: mcnemarExactP(discordant.improved, discordant.regressed),
+        deltaCi: pairedDeltaBootstrapCI(taskOutcomes),
+      },
     },
   };
   const manifest: RunManifest = {
