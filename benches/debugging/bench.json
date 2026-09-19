@@ -34,6 +34,26 @@
       "shouldTrigger": true
     },
     {
+      "id": "async-queue",
+      "fixture": "fixtures/async-queue",
+      "prompt": "prompts/async-queue.md",
+      "promptTrigger": "prompts/async-queue.trigger.md",
+      "verifier": "node verifiers/async-queue.mjs",
+      "verifierKind": "command",
+      "rubric": "ground-truth/async-queue.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "chunked-decoder",
+      "fixture": "fixtures/chunked-decoder",
+      "prompt": "prompts/chunked-decoder.md",
+      "promptTrigger": "prompts/chunked-decoder.trigger.md",
+      "verifier": "node verifiers/chunked-decoder.mjs",
+      "verifierKind": "command",
+      "rubric": "ground-truth/chunked-decoder.md",
+      "shouldTrigger": true
+    },
+    {
       "id": "feat-slug",
       "fixture": "fixtures/feat-slug",
       "prompt": "prompts/feat-slug.md",
