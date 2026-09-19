@@ -39,6 +39,13 @@ export interface AgentSubagents {
   userDirs: string[];
 }
 
+export interface AgentHeadless {
+  argv: string[];
+  promptVia: 'stdin' | 'file';
+  promptFile?: string;
+  docs: string;
+}
+
 export interface AgentDef {
   id: string;
   displayName: string;
@@ -49,6 +56,7 @@ export interface AgentDef {
   mcp: AgentMcp;
   hooks: AgentHooks;
   subagents: AgentSubagents;
+  headless: AgentHeadless;
   docs: Record<string, string>;
 }
 

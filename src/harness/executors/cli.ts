@@ -1,12 +1,8 @@
 import { spawn } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { getAgent } from '../../agents.js';
 import type { Executor, ExecutorDescriptor, ExecutorResult } from '../types.js';
-
-export const DEFAULT_CLI_COMMANDS: Record<string, string[]> = {
-  'claude-code': ['claude', '-p'],
-  codex: ['codex', 'exec', '-'],
-  'kimi-code': ['kimi', '--print'],
-};
 
 export interface CliExecutorOptions {
   argv: string[];
@@ -14,9 +10,20 @@ export interface CliExecutorOptions {
   timeoutMs?: number;
   shell?: boolean;
   env?: NodeJS.ProcessEnv;
+  promptVia?: 'stdin' | 'file';
+  promptFile?: string;
 }
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+const DEFAULT_PROMPT_FILE = '_prompt.txt';
+const PROMPT_FILE_PLACEHOLDER = '{promptFile}';
+
+export function quoteShellArg(arg: string): string {
+  if (arg.length === 0) return '""';
+  if (arg.startsWith('"') && arg.endsWith('"')) return arg;
+  if (!/\s/.test(arg)) return arg;
+  return `"${arg}"`;
+}
 
 export class CliExecutor implements Executor {
   private readonly argv: string[];
@@ -24,25 +31,37 @@ export class CliExecutor implements Executor {
   private readonly timeoutMs: number;
   private readonly shell: boolean;
   private readonly env?: NodeJS.ProcessEnv;
+  private readonly promptVia: 'stdin' | 'file';
+  private readonly promptFile: string;
 
   constructor(options: CliExecutorOptions) {
     if (options.argv.length === 0) {
       throw new Error('CliExecutor requires a non-empty argv command template');
+    }
+    if (options.promptVia === 'file' && options.promptFile === '') {
+      throw new Error('CliExecutor promptVia "file" requires a non-empty promptFile');
     }
     this.argv = options.argv;
     this.label = options.label ?? options.argv[0] ?? 'cli';
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.shell = options.shell ?? true;
     this.env = options.env;
+    this.promptVia = options.promptVia ?? 'stdin';
+    this.promptFile = options.promptFile ?? DEFAULT_PROMPT_FILE;
   }
 
   static forAgent(agentId: string): CliExecutor {
     const agent = getAgent(agentId);
-    const argv = DEFAULT_CLI_COMMANDS[agent.id];
-    if (!argv) {
+    const headless = agent.headless;
+    if (!headless || headless.argv.length === 0) {
       throw new Error(`No default headless command template for agent "${agent.id}"`);
     }
-    return new CliExecutor({ argv, label: agent.id });
+    return new CliExecutor({
+      argv: headless.argv,
+      label: agent.id,
+      promptVia: headless.promptVia,
+      promptFile: headless.promptFile,
+    });
   }
 
   describe(): ExecutorDescriptor {
@@ -50,12 +69,23 @@ export class CliExecutor implements Executor {
   }
 
   run(prompt: string, workdir: string): Promise<ExecutorResult> {
-    const [command, ...args] = this.argv;
+    let argv = this.argv;
+    if (this.promptVia === 'file') {
+      if (!workdir) {
+        return Promise.reject(new Error('CliExecutor promptVia "file" requires a workdir'));
+      }
+      writeFileSync(join(workdir, this.promptFile), prompt, 'utf8');
+      argv = argv.map((arg) => arg.split(PROMPT_FILE_PLACEHOLDER).join(this.promptFile));
+    }
+    const [command, ...args] = argv;
     if (!command) {
       return Promise.reject(new Error('CliExecutor has an empty command'));
     }
+    const spawnArgv = this.shell ? [command, ...args].map(quoteShellArg) : [command, ...args];
+    const spawnCommand = spawnArgv[0] ?? command;
+    const spawnArgs = spawnArgv.slice(1);
     return new Promise((resolvePromise, rejectPromise) => {
-      const child = spawn(command, args, {
+      const child = spawn(spawnCommand, spawnArgs, {
         cwd: workdir,
         shell: this.shell,
         env: { ...process.env, ...this.env },
@@ -92,7 +122,9 @@ export class CliExecutor implements Executor {
         }
         resolvePromise({ output: stdout });
       });
-      child.stdin.write(prompt, 'utf8');
+      if (this.promptVia === 'stdin') {
+        child.stdin.write(prompt, 'utf8');
+      }
       child.stdin.end();
     });
   }

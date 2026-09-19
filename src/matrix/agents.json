@@ -38,6 +38,11 @@
         "projectDirs": [".claude/agents"],
         "userDirs": ["~/.claude/agents"]
       },
+      "headless": {
+        "argv": ["claude", "-p"],
+        "promptVia": "stdin",
+        "docs": "https://code.claude.com/docs/en/headless"
+      },
       "docs": {
         "rules": "https://code.claude.com/docs/en/memory",
         "skills": "https://code.claude.com/docs/en/skills",
@@ -80,6 +85,11 @@
         "projectDirs": [".codex/agents"],
         "userDirs": ["~/.codex/agents"]
       },
+      "headless": {
+        "argv": ["codex", "exec", "-"],
+        "promptVia": "stdin",
+        "docs": "https://developers.openai.com/codex/cli/"
+      },
       "docs": {
         "rules": "https://developers.openai.com/codex/config-basic",
         "skills": "https://developers.openai.com/codex/skills",
@@ -121,6 +131,12 @@
       "subagents": {
         "projectDirs": [".kimi-code/agents", ".agents/agents"],
         "userDirs": ["~/.kimi-code/agents", "~/.agents/agents"]
+      },
+      "headless": {
+        "argv": ["kimi", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
+        "promptVia": "file",
+        "promptFile": "_prompt.txt",
+        "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html"
       },
       "docs": {
         "rules": "https://moonshotai.github.io/kimi-code/",
