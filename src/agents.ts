@@ -39,10 +39,16 @@ export interface AgentSubagents {
   userDirs: string[];
 }
 
+export interface AgentHeadlessStreamJson {
+  argv: string[];
+  triggerToolName: string;
+}
+
 export interface AgentHeadless {
   argv: string[];
   promptVia: 'stdin' | 'file';
   promptFile?: string;
+  streamJson?: AgentHeadlessStreamJson;
   docs: string;
 }
 

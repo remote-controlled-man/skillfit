@@ -12,11 +12,14 @@ export interface CliExecutorOptions {
   env?: NodeJS.ProcessEnv;
   promptVia?: 'stdin' | 'file';
   promptFile?: string;
+  triggerSkillName?: string;
+  triggerToolName?: string;
 }
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 const DEFAULT_PROMPT_FILE = '_prompt.txt';
 const PROMPT_FILE_PLACEHOLDER = '{promptFile}';
+const DEFAULT_TRIGGER_TOOL_NAME = 'Skill';
 
 export function quoteShellArg(arg: string): string {
   if (arg.length === 0) return '""';
@@ -33,6 +36,8 @@ export class CliExecutor implements Executor {
   private readonly env?: NodeJS.ProcessEnv;
   private readonly promptVia: 'stdin' | 'file';
   private readonly promptFile: string;
+  private readonly triggerSkillName?: string;
+  private readonly triggerToolName: string;
 
   constructor(options: CliExecutorOptions) {
     if (options.argv.length === 0) {
@@ -48,11 +53,29 @@ export class CliExecutor implements Executor {
     this.env = options.env;
     this.promptVia = options.promptVia ?? 'stdin';
     this.promptFile = options.promptFile ?? DEFAULT_PROMPT_FILE;
+    this.triggerSkillName = options.triggerSkillName;
+    this.triggerToolName = options.triggerToolName ?? DEFAULT_TRIGGER_TOOL_NAME;
   }
 
-  static forAgent(agentId: string): CliExecutor {
+  static forAgent(agentId: string, opts?: { triggerSkillName?: string }): CliExecutor {
     const agent = getAgent(agentId);
     const headless = agent.headless;
+    if (opts?.triggerSkillName !== undefined) {
+      const streamJson = headless.streamJson;
+      if (!streamJson || streamJson.argv.length === 0) {
+        throw new Error(
+          `Agent "${agent.id}" has no headless streamJson command template; trigger detection is unavailable for it`,
+        );
+      }
+      return new CliExecutor({
+        argv: streamJson.argv,
+        label: agent.id,
+        promptVia: headless.promptVia,
+        promptFile: headless.promptFile,
+        triggerSkillName: opts.triggerSkillName,
+        triggerToolName: streamJson.triggerToolName,
+      });
+    }
     if (!headless || headless.argv.length === 0) {
       throw new Error(`No default headless command template for agent "${agent.id}"`);
     }
@@ -120,6 +143,12 @@ export class CliExecutor implements Executor {
           );
           return;
         }
+        if (this.triggerSkillName !== undefined) {
+          resolvePromise(
+            parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName),
+          );
+          return;
+        }
         resolvePromise({ output: stdout });
       });
       if (this.promptVia === 'stdin') {
@@ -128,4 +157,95 @@ export class CliExecutor implements Executor {
       child.stdin.end();
     });
   }
+}
+
+interface StreamJsonTranscript {
+  output: string;
+  skillTriggered?: boolean;
+  rawOutput?: string;
+}
+
+function parseStreamJsonTranscript(
+  stdout: string,
+  triggerToolName: string,
+  skillName: string,
+): StreamJsonTranscript {
+  const textParts: string[] = [];
+  let parsedAny = false;
+  let triggered = false;
+  for (const rawLine of stdout.split('\n')) {
+    const line = rawLine.trim();
+    if (line === '') {
+      continue;
+    }
+    let event: unknown;
+    try {
+      event = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    parsedAny = true;
+    if (typeof event !== 'object' || event === null) {
+      continue;
+    }
+    const record = event as Record<string, unknown>;
+    if (record.role === 'assistant') {
+      if (typeof record.content === 'string' && record.content !== '') {
+        textParts.push(record.content);
+      }
+      if (Array.isArray(record.tool_calls)) {
+        for (const call of record.tool_calls) {
+          if (typeof call !== 'object' || call === null) {
+            continue;
+          }
+          const fn = (call as Record<string, unknown>).function;
+          if (typeof fn !== 'object' || fn === null) {
+            continue;
+          }
+          const fnRecord = fn as Record<string, unknown>;
+          if (fnRecord.name !== triggerToolName) {
+            continue;
+          }
+          const args = fnRecord.arguments;
+          const argsText = typeof args === 'string' ? args : JSON.stringify(args ?? null);
+          if (argsText.includes(skillName)) {
+            triggered = true;
+          }
+        }
+      }
+    }
+    if (record.type === 'assistant') {
+      const message = record.message;
+      const content =
+        typeof message === 'object' && message !== null
+          ? (message as Record<string, unknown>).content
+          : undefined;
+      if (Array.isArray(content)) {
+        for (const block of content) {
+          if (typeof block !== 'object' || block === null) {
+            continue;
+          }
+          const blockRecord = block as Record<string, unknown>;
+          if (
+            blockRecord.type === 'text' &&
+            typeof blockRecord.text === 'string' &&
+            blockRecord.text !== ''
+          ) {
+            textParts.push(blockRecord.text);
+          }
+          if (
+            blockRecord.type === 'tool_use' &&
+            blockRecord.name === triggerToolName &&
+            JSON.stringify(blockRecord.input ?? null).includes(skillName)
+          ) {
+            triggered = true;
+          }
+        }
+      }
+    }
+  }
+  if (!parsedAny) {
+    return { output: stdout };
+  }
+  return { output: textParts.join('\n'), skillTriggered: triggered, rawOutput: stdout };
 }

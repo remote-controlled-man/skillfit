@@ -50,7 +50,7 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /Skill\s+: .* \(2 files, bundle sha256 [0-9a-f]{12}/);
   assert.match(output, /Bench\s+: code-review/);
   assert.match(output, /review-r1: fixture fixtures\/review-r1, verifier `node verifiers\/seeded-bugs\.mjs`/);
-  assert.match(output, /3 task\(s\) × 2 conditions × 3 = 18 runs/);
+  assert.match(output, /4 task\(s\) × 2 conditions × 3 = 24 runs/);
   assert.match(output, /Dry run — nothing was written\./);
 });
 
@@ -68,7 +68,7 @@ test('runEval runs the experiment and prints the summary table', async (t) => {
     runGroup: 'eval-group',
     log,
   });
-  assert.ok(manifest);
+  assert.ok(manifest && 'overall' in manifest);
   assert.equal(manifest.overall.verdict, 'effective');
   assert.ok(existsSync(join(runsRoot, 'eval-group', 'manifest.json')));
   const output = lines.join('\n');
@@ -187,4 +187,46 @@ test('runEval rejects bad trials values', async (t) => {
       }),
     /--trials must be/,
   );
+});
+
+test('runEval trigger mode requires --agent', async (t) => {
+  await assert.rejects(
+    () =>
+      runEval({
+        skillPath: makeSkill(t),
+        bench: BUNDLED_CODE_REVIEW,
+        trials: 3,
+        mode: 'trigger',
+        dryRun: false,
+        yes: true,
+        runsRoot: tmp(t, 'skillfit-eval-'),
+        runGroup: 'g',
+        log: () => {},
+      }),
+    /trigger mode requires --agent/,
+  );
+});
+
+test('runEval trigger mode dry-run prints the install plan and writes nothing', async (t) => {
+  const runsRoot = join(tmp(t, 'skillfit-eval-'), 'runs');
+  const { lines, log } = collector();
+  const result = await runEval({
+    skillPath: makeSkill(t),
+    bench: BUNDLED_CODE_REVIEW,
+    trials: 3,
+    mode: 'trigger',
+    agent: 'kimi-code',
+    dryRun: true,
+    yes: true,
+    runsRoot,
+    runGroup: 'trigger-dry',
+    log,
+  });
+  assert.equal(result, null);
+  assert.ok(!existsSync(runsRoot));
+  const output = lines.join('\n');
+  assert.match(output, /Trigger experiment plan \(dry run\)/);
+  assert.match(output, /installed into \.kimi-code\/skills/);
+  assert.match(output, /review-r1: should trigger/);
+  assert.match(output, /explain-x1: should NOT trigger \(negative control\)/);
 });

@@ -43,7 +43,7 @@ interface TrialOutcome {
   gitInitialized: boolean;
 }
 
-interface ProcessResult {
+export interface ProcessResult {
   exitCode: number | null;
   output: string;
   error: string | null;
@@ -198,7 +198,7 @@ async function runTrial(
   return record;
 }
 
-async function runVerifier(benchDir: string, command: string, runDir: string): Promise<ProcessResult> {
+export async function runVerifier(benchDir: string, command: string, runDir: string): Promise<ProcessResult> {
   const tokens = command.split(/\s+/).filter(Boolean);
   const executable = tokens[0];
   if (!executable) {

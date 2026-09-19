@@ -6,6 +6,8 @@ export interface TokenUsage {
 export interface ExecutorResult {
   output: string;
   tokens?: TokenUsage;
+  skillTriggered?: boolean;
+  rawOutput?: string;
 }
 
 export interface ExecutorDescriptor {
@@ -29,6 +31,7 @@ export interface BenchTask {
   prompt: string;
   verifier: string;
   rubric?: string;
+  shouldTrigger?: boolean;
 }
 
 export interface Bench {

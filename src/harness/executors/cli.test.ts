@@ -9,6 +9,36 @@ import { CliExecutor, quoteShellArg } from './cli.js';
 const ECHO_SCRIPT =
   'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write("len:"+d.length))';
 
+const PASSTHROUGH_SCRIPT =
+  'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write(d))';
+
+function toNdjson(events: unknown[]): string {
+  return events.map((event) => JSON.stringify(event)).join('\n');
+}
+
+const KIMI_SKILL_CALL_EVENTS = [
+  {
+    role: 'assistant',
+    tool_calls: [
+      {
+        type: 'function',
+        id: 'tool_x',
+        function: { name: 'Skill', arguments: JSON.stringify({ skill: 'banana-standards' }) },
+      },
+    ],
+  },
+  {
+    role: 'tool',
+    tool_call_id: 'tool_x',
+    content: 'Skill "banana-standards" loaded inline. Follow its instructions.',
+  },
+];
+
+const KIMI_ASSISTANT_TEXT_EVENTS = [
+  { role: 'assistant', content: 'A ripe banana is stage 5.' },
+  { role: 'assistant', content: 'Stage 6 has brown spots.' },
+];
+
 test('CliExecutor pipes the prompt over stdin and returns stdout', async () => {
   const executor = new CliExecutor({
     argv: [process.execPath, '-e', ECHO_SCRIPT],
@@ -122,5 +152,96 @@ test('CliExecutor with shell keeps a multi-word arg as one argument', async () =
     assert.deepEqual(JSON.parse(result.output), ['two words']);
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('CliExecutor trigger detection detects a Skill tool_call in kimi stream-json', async () => {
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    shell: false,
+    triggerSkillName: 'banana-standards',
+    triggerToolName: 'Skill',
+  });
+  const transcript = toNdjson([
+    { role: 'meta', type: 'system.version', version: '2.0.0' },
+    ...KIMI_SKILL_CALL_EVENTS,
+    ...KIMI_ASSISTANT_TEXT_EVENTS,
+  ]);
+  const result = await executor.run(transcript, process.cwd());
+  assert.equal(result.skillTriggered, true);
+  assert.equal(result.output, 'A ripe banana is stage 5.\nStage 6 has brown spots.');
+});
+
+test('CliExecutor trigger detection reports false when no Skill tool_call fires', async () => {
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    shell: false,
+    triggerSkillName: 'banana-standards',
+    triggerToolName: 'Skill',
+  });
+  const transcript = toNdjson([
+    { role: 'meta', type: 'system.version', version: '2.0.0' },
+    ...KIMI_ASSISTANT_TEXT_EVENTS,
+  ]);
+  const result = await executor.run(transcript, process.cwd());
+  assert.equal(result.skillTriggered, false);
+  assert.equal(result.output, 'A ripe banana is stage 5.\nStage 6 has brown spots.');
+});
+
+test('CliExecutor trigger detection passes raw output through when stdout is not NDJSON', async () => {
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    shell: false,
+    triggerSkillName: 'banana-standards',
+    triggerToolName: 'Skill',
+  });
+  const plain = 'plain text output, no json here\nanother prose line (not json)';
+  const result = await executor.run(plain, process.cwd());
+  assert.equal(result.skillTriggered, undefined);
+  assert.equal(result.output, plain);
+});
+
+test('CliExecutor trigger detection understands the claude stream-json assistant shape', async () => {
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    shell: false,
+    triggerSkillName: 'banana-standards',
+    triggerToolName: 'Skill',
+  });
+  const transcript = toNdjson([
+    { type: 'system', subtype: 'init' },
+    {
+      type: 'assistant',
+      message: {
+        content: [
+          { type: 'text', text: 'Let me check the skill.' },
+          { type: 'tool_use', name: 'Skill', input: { skill: 'banana-standards' } },
+        ],
+      },
+    },
+    {
+      type: 'assistant',
+      message: { content: [{ type: 'text', text: 'A ripe banana is stage 5.' }] },
+    },
+    { type: 'result' },
+  ]);
+  const result = await executor.run(transcript, process.cwd());
+  assert.equal(result.skillTriggered, true);
+  assert.equal(result.output, 'Let me check the skill.\nA ripe banana is stage 5.');
+});
+
+test('CliExecutor.forAgent with triggerSkillName uses the streamJson template', () => {
+  const streamJson = getAgent('kimi-code').headless.streamJson;
+  assert.ok(streamJson);
+  const executor = CliExecutor.forAgent('kimi-code', { triggerSkillName: 'banana-standards' });
+  assert.equal(executor.describe().detail, `kimi-code: ${streamJson.argv.join(' ')}`);
+});
+
+test('CliExecutor.forAgent with triggerSkillName rejects agents without streamJson', () => {
+  for (const agentId of ['claude-code', 'codex']) {
+    assert.throws(
+      () => CliExecutor.forAgent(agentId, { triggerSkillName: 'banana-standards' }),
+      /streamJson/,
+    );
   }
 });

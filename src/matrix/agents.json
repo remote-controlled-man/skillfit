@@ -136,6 +136,10 @@
         "argv": ["kimi", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
         "promptVia": "file",
         "promptFile": "_prompt.txt",
+        "streamJson": {
+          "argv": ["kimi", "--output-format=stream-json", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
+          "triggerToolName": "Skill"
+        },
         "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html"
       },
       "docs": {

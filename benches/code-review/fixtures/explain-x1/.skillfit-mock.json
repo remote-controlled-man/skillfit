@@ -1,0 +1,10 @@
+{
+  "baseline": {
+    "output": "The library exports compactObject, which removes null, undefined, and empty-string values from an object, and countDropped, which reports how many keys that removes. The tests cover removing empty values, keeping falsy-but-meaningful values like 0 and false, and not mutating the input.",
+    "tokens": { "input": 900, "output": 70 }
+  },
+  "treatment": {
+    "output": "This repository is a tiny utility that compacts an object by stripping null, undefined, and empty-string values while keeping meaningful falsy values like 0 and false. The tests cover the removal rule, falsy retention, input purity, and the countDropped helper.",
+    "tokens": { "input": 1300, "output": 80 }
+  }
+}

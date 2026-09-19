@@ -8,6 +8,11 @@ import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
+import {
+  renderTriggerSummary,
+  runTriggerExperiment,
+  type TriggerManifest,
+} from '../harness/trigger.js';
 import type { Bench, Executor, SkillBundle } from '../harness/types.js';
 
 export interface EvalOptions {
@@ -15,12 +20,14 @@ export interface EvalOptions {
   bench?: string;
   trials: number;
   agent?: string;
+  mode?: 'inject' | 'trigger';
   dryRun: boolean;
   yes: boolean;
   executor?: Executor;
   judgeExecutor?: Executor | null;
   runsRoot?: string;
   runGroup?: string;
+  skillInstallDir?: string;
   log?: (msg: string) => void;
 }
 
@@ -112,7 +119,94 @@ function renderPlan(
   return lines.join('\n');
 }
 
-export async function runEval(options: EvalOptions): Promise<RunManifest | null> {
+function renderTriggerPlan(
+  bench: Bench,
+  skill: SkillBundle,
+  executor: Executor | null,
+  trials: number,
+  runsRoot: string,
+  runGroup: string,
+  installDir: string | undefined,
+): string {
+  const lines: string[] = [];
+  lines.push('Trigger experiment plan (dry run)');
+  lines.push(`Skill    : ${skill.name} (${skill.files.length} files, bundle sha256 ${skill.sha256.slice(0, 12)}…)`);
+  lines.push(`           installed into ${installDir ?? 'unresolved'} of each run directory — never injected into the prompt`);
+  lines.push(`Bench    : ${bench.name} @ ${bench.dir}`);
+  lines.push(`           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`);
+  const descriptor = executor?.describe();
+  lines.push(
+    `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ''}` : 'unresolved (pass --agent with a streamJson-capable CLI)'}`,
+  );
+  lines.push(`Trials   : ${trials} per task (single arm: skill installed)`);
+  lines.push('Tasks    :');
+  for (const task of bench.tasks) {
+    const label =
+      task.shouldTrigger === undefined
+        ? 'unlabeled — skipped'
+        : task.shouldTrigger
+          ? 'should trigger'
+          : 'should NOT trigger (negative control)';
+    lines.push(`- ${task.id}: ${label}`);
+  }
+  lines.push(`Output   : ${join(runsRoot, runGroup)} (not created)`);
+  lines.push('Dry run — nothing was written.');
+  return lines.join('\n');
+}
+
+async function runEvalTrigger(
+  options: EvalOptions,
+  bench: Bench,
+  skill: SkillBundle,
+  log: (msg: string) => void,
+): Promise<TriggerManifest | null> {
+  let executor = options.executor ?? null;
+  if (!executor) {
+    if (!options.agent) {
+      throw new Error(
+        'trigger mode requires --agent (a CLI executor with trigger detection); API executors cannot measure skill triggering.',
+      );
+    }
+    try {
+      executor = CliExecutor.forAgent(options.agent, { triggerSkillName: skill.name });
+    } catch (error) {
+      if (!options.dryRun) throw error;
+      log(`Note: ${(error as Error).message}`);
+    }
+  }
+  const agent = options.agent ? getAgent(options.agent) : null;
+  const installDir = options.skillInstallDir ?? agent?.skills.projectDirs[0];
+  const runsRoot = options.runsRoot ?? resolve('runs');
+  const runGroup = options.runGroup ?? defaultRunGroup();
+
+  if (options.dryRun) {
+    log(renderTriggerPlan(bench, skill, executor, options.trials, runsRoot, runGroup, installDir));
+    return null;
+  }
+  if (!executor) {
+    throw new Error('No executor available for trigger mode; pass --agent.');
+  }
+  if (!installDir) {
+    throw new Error(
+      'trigger mode needs a skill install directory: pass --agent (the matrix provides one) or skillInstallDir.',
+    );
+  }
+
+  const manifest = await runTriggerExperiment({
+    bench,
+    skill,
+    executor,
+    trials: options.trials,
+    runsRoot,
+    runGroup,
+    skillInstallDir: installDir,
+    log,
+  });
+  log(renderTriggerSummary(manifest, join(runsRoot, runGroup, 'manifest.json')));
+  return manifest;
+}
+
+export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
   if (!Number.isInteger(options.trials) || options.trials < 1 || options.trials > 20) {
     throw new Error(`--trials must be an integer between 1 and 20, got ${options.trials}`);
@@ -120,6 +214,11 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | null>
   const benchDir = resolveBenchDir(options.bench);
   const bench = loadBench(benchDir);
   const skill = collectSkillBundle(options.skillPath);
+
+  if ((options.mode ?? 'inject') === 'trigger') {
+    return runEvalTrigger(options, bench, skill, log);
+  }
+
   let executor: Executor | null = null;
   try {
     executor = options.executor ?? resolveExecutor(options.agent);

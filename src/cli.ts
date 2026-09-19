@@ -15,6 +15,7 @@ Usage:
 
 Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
+  --mode <mode>       Eval mode: inject (default, skill in prompt) | trigger (skill installed, measure invocation)
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (default: 3)
   --profile <name>    Profile for install (default: "recommended")
@@ -33,6 +34,7 @@ async function main(): Promise<void> {
     allowPositionals: true,
     options: {
       agent: { type: 'string' },
+      mode: { type: 'string' },
       bench: { type: 'string' },
       trials: { type: 'string' },
       profile: { type: 'string' },
@@ -68,7 +70,13 @@ async function main(): Promise<void> {
     case 'eval': {
       const skillPath = positionals[1];
       if (!skillPath) {
-        console.error('Usage: skillfit eval <skill-path> [--bench <path>] [--trials <n>] [--agent <id>]');
+        console.error('Usage: skillfit eval <skill-path> [--bench <path>] [--trials <n>] [--agent <id>] [--mode <mode>]');
+        process.exitCode = 2;
+        return;
+      }
+      const mode = values.mode ?? 'inject';
+      if (mode !== 'inject' && mode !== 'trigger') {
+        console.error(`Unknown --mode: ${mode} (expected "inject" or "trigger")`);
         process.exitCode = 2;
         return;
       }
@@ -76,6 +84,7 @@ async function main(): Promise<void> {
         ...common,
         skillPath,
         bench: values.bench,
+        mode,
         trials: values.trials ? Number.parseInt(values.trials, 10) : 3,
       });
       return;

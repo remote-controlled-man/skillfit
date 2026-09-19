@@ -42,6 +42,11 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
   const prompt = task['prompt'] as string;
   const verifier = task['verifier'] as string;
   const rubric = task['rubric'];
+  const shouldTrigger = task['shouldTrigger'];
+  if (shouldTrigger !== undefined && typeof shouldTrigger !== 'boolean') {
+    throw new Error(`bench.json task "${id}" has an invalid "shouldTrigger" field`);
+  }
+  const triggerField = shouldTrigger === undefined ? {} : { shouldTrigger };
 
   const fixtureAbs = assertRelativeInside(benchDir, fixture, `task "${id}" fixture`);
   if (!existsSync(fixtureAbs) || !statSync(fixtureAbs).isDirectory()) {
@@ -66,9 +71,9 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
     if (!existsSync(rubricAbs) || !statSync(rubricAbs).isFile()) {
       throw new Error(`task "${id}" rubric file not found: ${rubric}`);
     }
-    return { id, fixture, prompt, verifier, rubric };
+    return { id, fixture, prompt, verifier, rubric, ...triggerField };
   }
-  return { id, fixture, prompt, verifier };
+  return { id, fixture, prompt, verifier, ...triggerField };
 }
 
 export function loadBench(benchDir: string): Bench {
