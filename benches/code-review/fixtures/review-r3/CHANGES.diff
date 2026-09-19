@@ -1,0 +1,76 @@
+diff --git a/src/pricing.js b/src/pricing.js
+--- a/src/pricing.js
++++ b/src/pricing.js
+@@ -1,20 +1,36 @@
+ import { roundCents } from './money.js';
+ import { AppError } from './errors.js';
+ 
++const BULK_QTY = 10;
++const BULK_RATE = 0.05;
++
++// Resolves the unit price for a line: promotional price when present, otherwise list price.
++export function effectiveUnitPrice(line) {
++  let unit = line.price;
++  if (line.promoPrice != null) {
++    unit = Math.min(line.promoPrice, line.price);
++  }
++  if (line.qty >= BULK_QTY) {
++    unit = unit * (1 - BULK_RATE);
++  }
++  return unit;
++}
++
+ export function lineAmount(line) {
+   if (line.qty < 0) {
+     throw new AppError('INVALID_QUANTITY', 'negative quantity');
+   }
+-  return line.price * line.qty;
++  return effectiveUnitPrice(line) * line.qty;
+ }
+ 
+ export function orderTotal(lines) {
+-  if (lines.length === 0) {
+-    throw new AppError('EMPTY_ORDER', 'cannot price an empty order');
+-  }
+   let total = 0;
+   for (const line of lines) {
+     total += lineAmount(line);
+   }
+   return roundCents(total);
+ }
++
++export function formatOrder(lines) {
++  return orderTotal(lines).toFixed(2);
++}
+diff --git a/tests/pricing.test.js b/tests/pricing.test.js
+--- a/tests/pricing.test.js
++++ b/tests/pricing.test.js
+@@ -1,15 +1,23 @@
+ import { test } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { lineAmount, orderTotal } from '../src/pricing.js';
++import { effectiveUnitPrice, formatOrder, lineAmount, orderTotal } from '../src/pricing.js';
+ 
+ test('lineAmount multiplies price by quantity', () => {
+   assert.equal(lineAmount({ price: 10, qty: 3 }), 30);
+ });
+ 
+-test('orderTotal rejects an empty order', () => {
+-  assert.throws(() => orderTotal([]), /EMPTY_ORDER/);
+-});
+-
+ test('orderTotal sums line amounts', () => {
+   assert.equal(orderTotal([{ price: 10, qty: 1 }, { price: 5, qty: 2 }]), 20);
+ });
++
++test('effectiveUnitPrice prefers the lower promotional price', () => {
++  assert.equal(effectiveUnitPrice({ price: 10, promoPrice: 8, qty: 1 }), 8);
++});
++
++test('effectiveUnitPrice applies the bulk discount at quantity 10', () => {
++  assert.equal(effectiveUnitPrice({ price: 10, qty: 10 }), 9.5);
++});
++
++test('formatOrder formats the total', () => {
++  assert.equal(formatOrder([{ price: 10, qty: 1 }]), '10.00');
++});

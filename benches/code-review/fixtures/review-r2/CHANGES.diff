@@ -1,0 +1,81 @@
+diff --git a/src/invoice.js b/src/invoice.js
+--- a/src/invoice.js
++++ b/src/invoice.js
+@@ -1,4 +1,5 @@
+ import { roundCents } from './money.js';
++import { AppError } from './errors.js';
+ 
+ export function subtotal(lines) {
+   let sum = 0;
+@@ -7,3 +8,30 @@ export function subtotal(lines) {
+   }
+   return sum;
+ }
++
++// Applies per-line tax and returns new lines sorted by taxed unit price, descending.
++export function applyLineTax(lines, taxRate) {
++  if (!taxRate || taxRate <= 0) {
++    throw new AppError('INVALID_RATE', 'taxRate must be positive');
++  }
++  const taxed = [];
++  for (const line of lines) {
++    if (line.qty < 0) {
++      throw new AppError('QTY_NEGATIVE', 'negative quantity');
++    }
++    const unitWithTax = roundCents(line.unitPrice * (1 + taxRate));
++    taxed.push({ ...line, unitPrice: unitWithTax });
++  }
++  taxed.sort((a, b) => b.unitPrice - a.unitPrice);
++  return taxed;
++}
++
++// Fills in missing quantities with the default of 1.
++export function normalizeQuantities(lines) {
++  for (const line of lines) {
++    if (line.qty == null) {
++      line.qty = 1;
++    }
++  }
++  return lines;
++}
+diff --git a/src/money.js b/src/money.js
+--- a/src/money.js
++++ b/src/money.js
+@@ -1,3 +1,7 @@
+ export function roundCents(value) {
+   return Math.round(value * 100) / 100;
+ }
++
++export function formatCents(amount) {
++  return roundCents(amount).toFixed(2);
++}
+diff --git a/tests/invoice.test.js b/tests/invoice.test.js
+--- a/tests/invoice.test.js
++++ b/tests/invoice.test.js
+@@ -1,6 +1,7 @@
+ import { test } from 'node:test';
+ import assert from 'node:assert/strict';
+-import { subtotal } from '../src/invoice.js';
++import { applyLineTax, normalizeQuantities, subtotal } from '../src/invoice.js';
++import { formatCents } from '../src/money.js';
+ 
+ test('subtotal sums line amounts', () => {
+   assert.equal(
+@@ -11,3 +12,17 @@ test('subtotal sums line amounts', () => {
+     20,
+   );
+ });
++
++test('applyLineTax applies the rate to each line', () => {
++  const taxed = applyLineTax([{ unitPrice: 10, qty: 2 }], 0.1);
++  assert.equal(taxed[0]?.unitPrice, 11);
++});
++
++test('normalizeQuantities defaults missing qty to 1', () => {
++  const [line] = normalizeQuantities([{ unitPrice: 2 }]);
++  assert.equal(line?.qty, 1);
++});
++
++test('formatCents formats a rounded amount', () => {
++  assert.equal(formatCents(11.1), '11.10');
++});

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "code-review",
-  "description": "Review a small pull request against a spec and find the seeded defects.",
+  "description": "Review small pull requests against a spec and find the seeded defects.",
   "tasks": [
     {
       "id": "review-r1",
@@ -9,6 +9,20 @@
       "prompt": "prompts/review-r1.md",
       "verifier": "node verifiers/seeded-bugs.mjs",
       "rubric": "ground-truth/r1.md"
+    },
+    {
+      "id": "review-r2",
+      "fixture": "fixtures/review-r2",
+      "prompt": "prompts/review-r2.md",
+      "verifier": "node verifiers/review-r2.mjs",
+      "rubric": "ground-truth/r2.md"
+    },
+    {
+      "id": "review-r3",
+      "fixture": "fixtures/review-r3",
+      "prompt": "prompts/review-r3.md",
+      "verifier": "node verifiers/review-r3.mjs",
+      "rubric": "ground-truth/r3.md"
     }
   ]
 }

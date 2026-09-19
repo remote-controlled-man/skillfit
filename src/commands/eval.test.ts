@@ -50,7 +50,7 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /Skill\s+: .* \(2 files, bundle sha256 [0-9a-f]{12}/);
   assert.match(output, /Bench\s+: code-review/);
   assert.match(output, /review-r1: fixture fixtures\/review-r1, verifier `node verifiers\/seeded-bugs\.mjs`/);
-  assert.match(output, /1 task\(s\) × 2 conditions × 3 = 6 runs/);
+  assert.match(output, /3 task\(s\) × 2 conditions × 3 = 18 runs/);
   assert.match(output, /Dry run — nothing was written\./);
 });
 

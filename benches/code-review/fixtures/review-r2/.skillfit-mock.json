@@ -1,0 +1,10 @@
+{
+  "baseline": {
+    "output": "Findings:\n\n- medium: src/invoice.js:33 `line.qty = 1` mutates the caller's line objects in place, violating SPEC §2 (purity); return new objects instead.",
+    "tokens": { "input": 1900, "output": 100 }
+  },
+  "treatment": {
+    "output": "Findings:\n\n- high: src/invoice.js:20 throws an `AppError` with code `QTY_NEGATIVE`, which is not in SPEC §1's stable-code table even though the table already defines `INVALID_QUANTITY` for exactly this case.\n- high: src/invoice.js:22 rounds the per-line unit price with `roundCents` before `subtotal` multiplies it by quantity, while SPEC §3 requires intermediate unit prices to stay at full precision and be rounded once in the final amount.\n- medium: src/invoice.js:33 `line.qty = 1` mutates the caller's line objects, violating SPEC §2 purity; return new objects instead.",
+    "tokens": { "input": 2700, "output": 220 }
+  }
+}

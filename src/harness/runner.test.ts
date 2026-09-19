@@ -56,7 +56,7 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
     runGroup: 'test-group',
   });
 
-  assert.equal(manifest.tasks.length, 1);
+  assert.equal(manifest.tasks.length, 3);
   const task = manifest.tasks[0];
   assert.ok(task);
   assert.equal(task.id, 'review-r1');
