@@ -42,3 +42,12 @@ test('buildTaskPrompt embeds the skill payload for treatment', () => {
   assert.ok(prompt.indexOf('<skill name=') > prompt.indexOf('Repository snapshot:'));
   assert.ok(prompt.indexOf('Output contract:') > prompt.indexOf('<skill name='));
 });
+
+test('buildTaskPrompt workspace mode swaps isolation rules for workspace rules', () => {
+  const prompt = buildTaskPrompt('Fix the code.', 'snapshot', null, { workspace: true });
+  assert.match(prompt, /Workspace rules:/);
+  assert.match(prompt, /inspect, edit, and run/);
+  assert.ok(!prompt.includes('Experiment isolation rules'));
+  const isolated = buildTaskPrompt('Fix the code.', 'snapshot', null);
+  assert.match(isolated, /Experiment isolation rules:/);
+});

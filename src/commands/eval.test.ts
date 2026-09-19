@@ -77,16 +77,31 @@ test('runEval runs the experiment and prints the summary table', async (t) => {
   assert.match(output, /Manifest: .*eval-group.*manifest\.json/);
 });
 
-test('runEval resolves the bundled bench when --bench is omitted', async (t) => {
+test('runEval requires --bench when several bundled benches exist, and resolves one by name', async (t) => {
   const runsRoot = tmp(t, 'skillfit-eval-');
+  await assert.rejects(
+    () =>
+      runEval({
+        skillPath: makeSkill(t),
+        trials: 1,
+        dryRun: false,
+        yes: true,
+        executor: new MockExecutor(),
+        runsRoot: join(runsRoot, 'a'),
+        runGroup: 'omitted-bench-group',
+        log: () => {},
+      }),
+    /pick one explicitly/,
+  );
   const manifest = await runEval({
     skillPath: makeSkill(t),
+    bench: 'code-review',
     trials: 1,
     dryRun: false,
     yes: true,
     executor: new MockExecutor(),
-    runsRoot,
-    runGroup: 'default-bench-group',
+    runsRoot: join(runsRoot, 'b'),
+    runGroup: 'by-name-group',
     log: () => {},
   });
   assert.equal(manifest?.bench.name, 'code-review');

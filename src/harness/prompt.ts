@@ -8,6 +8,10 @@ export const ISOLATION_RULES = `Experiment isolation rules:
 - Treat the repository snapshot below as the complete task input.
 - Hidden grading runs only after you exit; produce the deliverable the task asks for instead of explaining a possible solution.`;
 
+export const WORKSPACE_RULES = `Workspace rules:
+- The repository in the snapshot below is also your current working directory: inspect, edit, and run things there directly.
+- Hidden grading runs only after you exit; produce the deliverable the task asks for instead of explaining a possible solution.`;
+
 export const OUTPUT_CONTRACT = `Output contract:
 - Your final message is the deliverable; it is captured to _output.md and graded.
 - Follow the deliverable format requested by the task exactly.`;
@@ -32,12 +36,9 @@ export function buildTaskPrompt(
   taskPromptText: string,
   snapshot: string,
   skillPayload: string | null,
+  opts?: { workspace?: boolean },
 ): string {
-  const sections = [
-    taskPromptText.trimEnd(),
-    ISOLATION_RULES,
-    `Repository snapshot:\n\n${snapshot}`,
-  ];
+  const sections = [taskPromptText.trimEnd(), opts?.workspace ? WORKSPACE_RULES : ISOLATION_RULES, `Repository snapshot:\n\n${snapshot}`];
   if (skillPayload) sections.push(skillPayload);
   sections.push(OUTPUT_CONTRACT);
   return `${sections.join('\n\n')}\n`;

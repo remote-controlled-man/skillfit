@@ -39,11 +39,12 @@ skillfit 补上缺失的测量层：配对 A/B 实验 + 确定性 verifier + 盲
 # 1. 体检当前配置（只读，安全）
 npx skillfit doctor
 
-# 2. 装之前先 A/B 测一个 skill（需要自带 API key）
-npx skillfit eval ~/.agents/skills/some-skill --trials 3
+# 2. 装之前先 A/B 测一个 skill（按名字选内置 bench，或传自己的 bench 路径；
+#    也可以用 --agent 驱动本机 agent CLI 而不必配 API key）
+npx skillfit eval ~/.agents/skills/some-skill --bench code-review --trials 3
 
 # 2b. 或者测 agent 自己会不会触发这个 skill（以及不该触发时会不会乱触发）
-npx skillfit eval ~/.agents/skills/some-skill --mode trigger --agent kimi-code
+npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
 
 # 3. 只装实测有效的最小集（默认 dry-run）
 npx skillfit install

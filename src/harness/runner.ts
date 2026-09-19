@@ -135,6 +135,7 @@ async function runTrial(
     taskPromptText,
     snapshot,
     condition === 'treatment' ? skill.payload : null,
+    { workspace: task.verifierKind === 'command' },
   );
   writeFileSync(join(runDir, '_prompt.txt'), prompt, 'utf8');
 

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "name": "debugging",
+  "description": "Diagnose-and-fix tasks graded by command verifiers that run behavioral checks and the run directory's own test suite against the fixed code; includes one feature-implementation task (feat-slug) as a negative trigger control.",
+  "tasks": [
+    {
+      "id": "ttl-cache",
+      "fixture": "fixtures/ttl-cache",
+      "prompt": "prompts/ttl-cache.md",
+      "promptTrigger": "prompts/ttl-cache.trigger.md",
+      "verifier": "node verifiers/ttl-cache.mjs",
+      "verifierKind": "command",
+      "rubric": "ground-truth/ttl-cache.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "debug-redaction",
+      "fixture": "fixtures/debug-redaction",
+      "prompt": "prompts/debug-redaction.md",
+      "promptTrigger": "prompts/debug-redaction.trigger.md",
+      "verifier": "node verifiers/debug-redaction.mjs",
+      "verifierKind": "command",
+      "rubric": "ground-truth/debug-redaction.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "range-parser",
+      "fixture": "fixtures/range-parser",
+      "prompt": "prompts/range-parser.md",
+      "promptTrigger": "prompts/range-parser.trigger.md",
+      "verifier": "node verifiers/range-parser.mjs",
+      "verifierKind": "command",
+      "rubric": "ground-truth/range-parser.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "feat-slug",
+      "fixture": "fixtures/feat-slug",
+      "prompt": "prompts/feat-slug.md",
+      "promptTrigger": "prompts/feat-slug.trigger.md",
+      "verifier": "node verifiers/feat-slug.mjs",
+      "verifierKind": "command",
+      "rubric": "ground-truth/feat-slug.md",
+      "shouldTrigger": false
+    }
+  ]
+}

@@ -36,26 +36,30 @@ function bundledBenchesRoot(): string {
 }
 
 function resolveBenchDir(bench: string | undefined): string {
-  if (bench) {
-    const dir = resolve(bench);
-    if (!existsSync(join(dir, 'bench.json'))) {
-      throw new Error(`Not a bench directory (missing bench.json): ${dir}`);
-    }
-    return dir;
-  }
   const root = bundledBenchesRoot();
   const candidates = existsSync(root)
     ? readdirSync(root)
         .map((entry) => join(root, entry))
         .filter((dir) => statSync(dir).isDirectory() && existsSync(join(dir, 'bench.json')))
     : [];
+  if (bench) {
+    const dir = resolve(bench);
+    if (existsSync(join(dir, 'bench.json'))) {
+      return dir;
+    }
+    const byName = candidates.find((candidate) => candidate.split(/[\\/]/).pop() === bench);
+    if (byName) {
+      return byName;
+    }
+    throw new Error(`Not a bench directory (missing bench.json): ${dir}`);
+  }
   if (candidates.length === 1 && candidates[0]) {
     return candidates[0];
   }
   if (candidates.length === 0) {
     throw new Error(`No bundled benches found under ${root}; pass --bench <path>`);
   }
-  const names = candidates.map((dir) => `  --bench ${dir}`).join('\n');
+  const names = candidates.map((dir) => `  --bench ${dir.split(/[\\/]/).pop() ?? dir}`).join('\n');
   throw new Error(`More than one bundled bench is available; pick one explicitly:\n${names}`);
 }
 

@@ -43,11 +43,12 @@ Full methodology and raw manifests: [evidence/](evidence/). Reproduce it yoursel
 # 1. Health-check your current setup (read-only, safe)
 npx skillfit doctor
 
-# 2. A/B-test a skill before installing it (bring your own API key)
-npx skillfit eval ~/.agents/skills/some-skill --trials 3
+# 2. A/B-test a skill before installing it (pick a bundled bench by name, or pass your own path;
+#    use --agent to drive a local agent CLI instead of an API key)
+npx skillfit eval ~/.agents/skills/some-skill --bench code-review --trials 3
 
 # 2b. Or measure whether the agent triggers the skill on its own (and only when it should)
-npx skillfit eval ~/.agents/skills/some-skill --mode trigger --agent kimi-code
+npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
 
 # 3. Install only the evidence-backed minimal set (dry-run by default)
 npx skillfit install
