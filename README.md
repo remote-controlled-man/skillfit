@@ -55,17 +55,18 @@ npx skillfit install
 
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code only.
 
-## The three commands
+## The four commands
 
 | Command | What it does | Writes? |
 |---|---|---|
 | `doctor` | Detects installed agents, checks rules bloat, skill validity/conflicts, MCP config parseability, silent-failure traps (e.g. AGENTS.md that Claude Code never reads) | Never |
 | `eval <skill>` | Default (`--mode inject`): paired baseline/treatment runs, deterministic verifier + optional blind LLM judge, token-cost delta, verdicts via McNemar exact test + paired bootstrap CI. `--mode trigger`: installs the skill instead of injecting it and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
+| `bench` | `init` scaffolds a bench directory with a working example task; `check` validates a bench offline (verifier self-tests, mock-arm probes, fixture hygiene, trigger-label coverage) | `init` only after confirmation; `check` never |
 | `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent, atomic), skill copy with conflict protection, commit-pinned lockfile, post-install verification | Only after confirmation |
 
 ## Bring your own bench
 
-Evals are only as good as their tasks. A bench is just a directory — `bench.json` + fixtures + a deterministic verifier. Model it on your own production scenarios: [benches/README.md](benches/README.md).
+Evals are only as good as their tasks. A bench is just a directory — `bench.json` + fixtures + a deterministic verifier. Scaffold one with `npx skillfit bench init`, validate it offline with `npx skillfit bench check`, and model it on your own production scenarios: [benches/README.md](benches/README.md).
 
 ## Design principles
 
@@ -84,8 +85,9 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 - [x] Paired A/B harness with blind judging
 - [x] Statistical verdicts (McNemar exact + paired bootstrap CI, manifest v2)
 - [x] Trigger-rate measurement (`--mode trigger`: recall / false-trigger rate with Wilson CIs)
+- [x] Bench scaffolding (`bench init` + `bench check`)
+- [ ] Bench difficulty calibration runs and git-history / incident importers (`bench add`)
 - [ ] Trigger capture for Claude Code / Codex (needs verified stream-json shapes)
-- [ ] Bench scaffolding (`bench new` / calibration commands)
 - [ ] Community bench & evidence submissions (reproducible-config CI re-runs, not trust-me results)
 - [ ] Cursor / Gemini CLI / OpenCode adapters
 - [ ] MCP server config evaluation

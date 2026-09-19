@@ -2,7 +2,7 @@
 
 ## What this is
 
-Evidence-driven configuration CLI for AI coding agents. Three commands: `doctor` (read-only health check), `eval` (paired A/B experiment harness), `install` (idempotent, dry-run-first writer). Supports Claude Code, Codex CLI, Kimi Code.
+Evidence-driven configuration CLI for AI coding agents. Four commands: `doctor` (read-only health check), `eval` (paired A/B experiment harness + trigger mode), `bench` (scaffold + offline validation), `install` (idempotent, dry-run-first writer). Supports Claude Code, Codex CLI, Kimi Code.
 
 ## Commands
 
@@ -24,7 +24,7 @@ node dist/cli.js doctor    # smoke against the real machine (read-only)
 
 ## Layout
 
-- `src/commands/` — doctor / eval / install entry points (thin shells over testable functions)
+- `src/commands/` — doctor / eval / install / bench entry points (thin shells over testable functions)
 - `src/harness/` — eval experiment engine (executors, bench loading, judge, runner, trigger mode, stats)
 - `src/matrix/agents.json` — agent capability matrix (the data-driven core)
 - `benches/` — public bench format + bundled benches

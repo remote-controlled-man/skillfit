@@ -51,17 +51,18 @@ npx skillfit install
 
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前只对 Kimi Code 验证过。
 
-## 三个命令
+## 四个命令
 
 | 命令 | 干什么 | 写文件？ |
 |---|---|---|
 | `doctor` | 探测已装 agent，检查规则膨胀、skill 合法性/冲突、MCP 配置可解析性、静默失效坑（比如 Claude Code 根本不会读的 AGENTS.md） | 从不 |
 | `eval <skill>` | 默认（`--mode inject`）：配对 baseline/treatment，确定性 verifier + 可选盲评，token 成本差值，判定走 McNemar 精确检验 + 配对 bootstrap CI。`--mode trigger`：skill 改为真实安装而不注入 prompt，从 transcript 机械判定触发召回率 / 误触发率 | 仅本地 `runs/` |
+| `bench` | `init` 生成带可运行示例任务的 bench 骨架；`check` 离线校验（verifier 自测、mock 臂探针、fixture 体积、触发标签覆盖） | `init` 确认后才写；`check` 从不 |
 | `install` | 受管区域规则写入（`<!-- SKILLFIT_START/END -->`，幂等原子）、skill 复制带冲突保护、内容哈希锁定的 lockfile、安装后校验 | 确认后才写 |
 
 ## 自带 bench
 
-实验质量取决于任务质量。bench 就是一个目录——`bench.json` + fixtures + 确定性 verifier。照着你自己的生产场景造：[benches/README.md](benches/README.md)。
+实验质量取决于任务质量。bench 就是一个目录——`bench.json` + fixtures + 确定性 verifier。用 `npx skillfit bench init` 生成骨架，`npx skillfit bench check` 离线校验，照着你自己的生产场景造：[benches/README.md](benches/README.md)。
 
 ## 设计原则
 
@@ -80,8 +81,9 @@ npx skillfit install
 - [x] 配对 A/B harness + 盲评
 - [x] 统计判定（McNemar 精确检验 + 配对 bootstrap CI，manifest v2）
 - [x] 触发率测量（`--mode trigger`：召回率 / 误触发率，带 Wilson 置信区间）
+- [x] bench 脚手架（`bench init` + `bench check`）
+- [ ] bench 难度校准运行、git 历史 / 事故导入（`bench add`）
 - [ ] Claude Code / Codex 的触发捕获（stream-json 格式待验证）
-- [ ] bench 脚手架（`bench new` / 校准命令）
 - [ ] 社区 bench 与 evidence 提交（CI 重跑可复现配置，不收无法验证的结果）
 - [ ] Cursor / Gemini CLI / OpenCode 适配器
 - [ ] MCP server 配置评测
