@@ -32,10 +32,19 @@ A large capability wave. Everything in 0.2.0 plus:
   `promptTrigger` presentation variants.
 - **Driver skill** at `skills/skillfit/` — teaches agents to drive the CLI (command routing, spend
   discipline, interpretation discipline).
+- **Real token usage for all CLI executors**: Codex via stream events, Kimi Code by resolving each run's
+  session wire.jsonl through the documented workDirKey and summing its `usage.record` entries. Trigger
+  manifests also surface per-task token totals.
+- **Prompt-token cost estimates in dry-run plans** (inject: baseline vs treatment per run; trigger: prompt
+  size plus the skill body that loads only when fired).
 - Bundled benches: `code-review` gained review-r2/r3 tiers and the explain-x1 negative trigger control;
   new `debugging` bench (ttl-cache, debug-redaction, range-parser, async-queue, chunked-decoder,
   feat-slug).
-- CI: bench-integrity gate and report smoke on every push/PR. README in five languages.
+- **Evidence watch** (`.github/workflows/watch.yml`): opt-in weekly re-run of a pinned eval configuration,
+  gated on `SKILLFIT_WATCH=1` + `SKILLFIT_API_KEY`.
+- Community flow: `benches/contrib/` submission contract, GitHub issue templates for bugs and evidence.
+- CI: bench-integrity gate and report smoke on every push/PR. README in five languages. CHANGELOG and
+  SECURITY policies published.
 
 ### Fixed
 
@@ -49,6 +58,9 @@ A large capability wave. Everything in 0.2.0 plus:
 - Trigger detection on Codex now normalizes shell-escaped doubled backslashes before matching
   `SKILL.md` paths (real transcripts carry them doubled).
 - `report` Overall installed count deduplicates skills shared between agents.
+- Judge standard formalized: AB/BA position-swapped calls with winner-only-if-unanimous aggregation
+  (k=3 majority-ensemble considered and rejected — it can hide order bias inside the vote).
+- agents.json kimi docs links unified to the official docs domain; all 15 links re-verified live.
 
 ### Evidence
 

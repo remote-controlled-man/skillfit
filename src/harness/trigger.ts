@@ -56,6 +56,7 @@ export interface TriggerMetrics {
   f1: number | null;
   positives: { fired: number; runs: number };
   negatives: { fired: number; runs: number };
+  tokens: { input: number; output: number } | null;
 }
 
 export interface TriggerManifest {
@@ -203,6 +204,15 @@ export function triggerMetrics(tasks: TriggerTaskSummary[]): TriggerMetrics {
     recall !== null && precision !== null && recall + precision > 0
       ? (2 * precision * recall) / (precision + recall)
       : null;
+  let input = 0;
+  let output = 0;
+  let seenTokens = false;
+  for (const task of tasks) {
+    if (!task.tokens) continue;
+    seenTokens = true;
+    input += task.tokens.input;
+    output += task.tokens.output;
+  }
   return {
     recall,
     recallCi95: posRuns > 0 ? wilson95(posFired, posRuns) : null,
@@ -212,6 +222,7 @@ export function triggerMetrics(tasks: TriggerTaskSummary[]): TriggerMetrics {
     f1,
     positives: { fired: posFired, runs: posRuns },
     negatives: { fired: negFired, runs: negRuns },
+    tokens: seenTokens ? { input, output } : null,
   };
 }
 
@@ -353,6 +364,9 @@ export function renderTriggerSummary(manifest: TriggerManifest, manifestPath: st
     lines.push('');
     lines.push('Tokens used (per task):');
     lines.push(...tokenLines);
+    if (m.tokens) {
+      lines.push(`- total: input ${m.tokens.input}, output ${m.tokens.output}`);
+    }
   }
   lines.push('');
   lines.push('Warnings:');
