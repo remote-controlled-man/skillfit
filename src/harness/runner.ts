@@ -244,15 +244,17 @@ function tokenDelta(
 
 function summarizeJudge(judgeResults: JudgeResult[]): JudgeSummary | null {
   if (judgeResults.length === 0) return null;
-  const baselineMean =
-    judgeResults.reduce((sum, r) => sum + r.baselineScore, 0) / judgeResults.length;
-  const treatmentMean =
-    judgeResults.reduce((sum, r) => sum + r.treatmentScore, 0) / judgeResults.length;
-  const round = (value: number) => Math.round(value * 100) / 100;
+  const consistent = judgeResults.filter((r) => r.consistent);
+  const mean = (values: number[]): number | null => {
+    if (consistent.length === 0) return null;
+    const raw = values.reduce((sum, value) => sum + value, 0) / consistent.length;
+    return Math.round(raw * 100) / 100;
+  };
   return {
     judgedTrials: judgeResults.length,
-    baselineMean: round(baselineMean),
-    treatmentMean: round(treatmentMean),
+    consistentTrials: consistent.length,
+    baselineMean: mean(consistent.map((r) => r.baselineScore)),
+    treatmentMean: mean(consistent.map((r) => r.treatmentScore)),
   };
 }
 

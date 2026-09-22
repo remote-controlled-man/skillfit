@@ -207,9 +207,31 @@ test('runExperiment aggregates blind judge scores per task', async (t) => {
   assert.ok(task);
   assert.ok(task.judge);
   assert.equal(task.judge?.judgedTrials, 3);
-  assert.ok((task.judge?.baselineMean ?? 0) >= 4 && (task.judge?.baselineMean ?? 0) <= 9);
+  assert.equal(task.judge?.consistentTrials, 0, 'a judge that always favors A is inconsistent');
+  assert.equal(task.judge?.baselineMean, null);
+  assert.equal(task.judge?.treatmentMean, null);
   assert.equal(manifest.judge?.model, 'judge-model');
   assert.ok(existsSync(join(runsRoot, 'test-group', 'review-r1', 'judge-trial-1.json')));
+});
+
+test('runExperiment averages judge scores only over consistent trials', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-runs-');
+  const judge: Executor = {
+    describe: () => ({ kind: 'api', model: 'judge-model' }),
+    run: (prompt: string): Promise<ExecutorResult> => {
+      const aIndex = prompt.indexOf('Answer A:');
+      const bIndex = prompt.indexOf('Answer B:');
+      const aIsTreatment = prompt.slice(aIndex, bIndex).includes('bulk discount');
+      return Promise.resolve({ output: aIsTreatment ? '{"A": 8, "B": 3}' : '{"A": 3, "B": 8}' });
+    },
+  };
+  const manifest = await runExperiment({ ...plan({ runsRoot }), judge });
+  const task = manifest.tasks[0];
+  assert.ok(task?.judge);
+  assert.equal(task.judge?.judgedTrials, 3);
+  assert.equal(task.judge?.consistentTrials, 3);
+  assert.equal(task.judge?.baselineMean, 3);
+  assert.equal(task.judge?.treatmentMean, 8);
 });
 
 test('runExperiment strips the mock marker for non-mock executors', async (t) => {

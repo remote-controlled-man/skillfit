@@ -22,8 +22,9 @@ export interface ConditionStats {
 
 export interface JudgeSummary {
   judgedTrials: number;
-  baselineMean: number;
-  treatmentMean: number;
+  consistentTrials: number;
+  baselineMean: number | null;
+  treatmentMean: number | null;
 }
 
 export interface TaskSummary {

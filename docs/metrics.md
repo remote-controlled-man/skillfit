@@ -98,6 +98,12 @@ The deterministic verifier is the sole pass/fail authority; the judge never flip
   ([Thakur et al.](https://arxiv.org/abs/2406.12624)).
 - Agent output is quoted/sanitized in judge prompts — judge input is a prompt-injection surface.
 
+Implementation status (2026-09-22): blind pairwise with **AB/BA position-swapped double calls and
+winner-only-if-consistent aggregation** is implemented (`--judge-agent` drives any matrix agent CLI, or
+`SKILLFIT_JUDGE=1` + API key; means are computed over consistent trials only and `consistentTrials` is
+reported per task). k-samples beyond the two orders, binary rubric checklists, and the κ calibration gate
+are not yet implemented.
+
 ## Verdict protocol (what "effective" means)
 
 - Collect discordant pairs across the bench: `b` = pairs where only treatment passed, `c` = pairs where only

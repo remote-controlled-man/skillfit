@@ -4,6 +4,7 @@ import type { Condition, Executor } from './types.js';
 export interface JudgeResult {
   baselineScore: number;
   treatmentScore: number;
+  consistent: boolean;
   firstCondition: Condition;
   raw: string;
 }
@@ -61,16 +62,29 @@ export async function judgePair(
     workdir: string;
   },
 ): Promise<JudgeResult> {
-  const [firstCondition] = judgeOrder(args.seed);
-  const answerA = firstCondition === 'baseline' ? args.baselineOutput : args.treatmentOutput;
-  const answerB = firstCondition === 'baseline' ? args.treatmentOutput : args.baselineOutput;
-  const prompt = buildJudgePrompt(args.taskPromptText, args.rubricText ?? null, answerA, answerB);
-  const result = await judge.run(prompt, args.workdir);
-  const scores = parseScores(result.output);
+  const [first, second] = judgeOrder(args.seed);
+  const call = async (firstCondition: Condition) => {
+    const answerA = firstCondition === 'baseline' ? args.baselineOutput : args.treatmentOutput;
+    const answerB = firstCondition === 'baseline' ? args.treatmentOutput : args.baselineOutput;
+    const prompt = buildJudgePrompt(args.taskPromptText, args.rubricText ?? null, answerA, answerB);
+    const result = await judge.run(prompt, args.workdir);
+    const scores = parseScores(result.output);
+    return {
+      baseline: firstCondition === 'baseline' ? scores.a : scores.b,
+      treatment: firstCondition === 'baseline' ? scores.b : scores.a,
+      raw: result.output,
+    };
+  };
+  const forward = await call(first);
+  const reverse = await call(second);
+  const winner = (scores: { baseline: number; treatment: number }): number =>
+    Math.sign(scores.baseline - scores.treatment);
+  const consistent = winner(forward) === winner(reverse);
   return {
-    baselineScore: firstCondition === 'baseline' ? scores.a : scores.b,
-    treatmentScore: firstCondition === 'baseline' ? scores.b : scores.a,
-    firstCondition,
-    raw: result.output,
+    baselineScore: (forward.baseline + reverse.baseline) / 2,
+    treatmentScore: (forward.treatment + reverse.treatment) / 2,
+    consistent,
+    firstCondition: first,
+    raw: `${forward.raw}\n--- reverse order ---\n${reverse.raw}`,
   };
 }
