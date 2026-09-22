@@ -66,7 +66,7 @@ npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review
 npx skillfit install
 ```
 
-支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前只对 Kimi Code 验证过。
+支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
 ## 五个命令
 

@@ -66,7 +66,7 @@ npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review
 npx skillfit install
 ```
 
-Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente solo para Kimi Code.
+Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente para Kimi Code y Codex CLI.
 
 ## Los cinco comandos
 

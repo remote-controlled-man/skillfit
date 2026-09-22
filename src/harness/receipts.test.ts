@@ -107,3 +107,36 @@ test('collectReceipts filters to a single agent when asked', async (t) => {
   assert.equal(receipts.length, 1);
   assert.equal(receipts[0]?.agentId, 'kimi-code');
 });
+
+
+test('walkGlob supports ** for any depth', (t) => {
+  const home = makeHome(t);
+  const deep = join(home, '.codex', 'sessions', '2026', '09', '22');
+  mkdirSync(deep, { recursive: true });
+  writeFileSync(join(deep, 'rollout-x.jsonl'), '');
+  const files = walkGlob(join(home, '.codex', 'sessions'), '**/rollout-*.jsonl');
+  assert.equal(files.length, 1);
+});
+
+test('collectReceipts reads codex rollouts (custom_tool_call skill-path evidence)', async (t) => {
+  const home = makeHome(t);
+  const deep = join(home, '.codex', 'sessions', '2026', '09', '22');
+  mkdirSync(deep, { recursive: true });
+  writeFileSync(
+    join(deep, 'rollout-2026-09-22T00-00-00-aaaa.jsonl'),
+    [
+      '{"type":"response_item","payload":{"type":"message","role":"user"}}',
+      '{"type":"response_item","payload":{"type":"custom_tool_call","status":"completed","name":"exec","input":"Get-Content -Raw C:\\\\repo\\\\.agents\\\\skills\\\\alpha\\\\SKILL.md"}}',
+      '{"type":"response_item","payload":{"type":"custom_tool_call","status":"completed","name":"exec","input":"type src\\\\main.js"}}',
+    ].join('\n'),
+  );
+  mkdirSync(join(home, '.agents', 'skills', 'codex-only-skill'), { recursive: true });
+  writeFileSync(join(home, '.agents', 'skills', 'codex-only-skill', 'SKILL.md'), '# x\n');
+  const receipts = await collectReceipts({ homeDir: home, agent: 'codex' });
+  const codex = receipts[0];
+  assert.ok(codex);
+  assert.equal(codex.present, true);
+  const alpha = codex.skills.find((s) => s.name === 'alpha');
+  assert.equal(alpha?.fires, 1);
+  assert.deepEqual(codex.neverFired, ['beta', 'codex-only-skill', 'never-skill']);
+});

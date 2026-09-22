@@ -93,9 +93,19 @@
         "projectDirs": [".codex/agents"],
         "userDirs": ["~/.codex/agents"]
       },
+      "sessions": {
+        "dir": "~/.codex/sessions",
+        "transcriptGlob": "**/rollout-*.jsonl",
+        "wireShape": "codex-rollout",
+        "docs": null
+      },
       "headless": {
         "argv": ["codex", "exec", "-"],
         "promptVia": "stdin",
+        "streamJson": {
+          "argv": ["codex", "exec", "--json", "--sandbox", "workspace-write", "-"],
+          "wireShape": "codex-items"
+        },
         "docs": "https://developers.openai.com/codex/cli/"
       },
       "docs": {
@@ -154,7 +164,8 @@
         "promptFile": "_prompt.txt",
         "streamJson": {
           "argv": ["kimi", "--output-format=stream-json", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
-          "triggerToolName": "Skill"
+          "triggerToolName": "Skill",
+          "wireShape": "flat-tool-call"
         },
         "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html"
       },

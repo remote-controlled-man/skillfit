@@ -17,6 +17,7 @@ Two rules:
 | 2026-09 | [Correction: trigger-mode inline-snapshot artifact](2026-09-trigger-snapshot-correction.md) | Kimi Code | Inlining the repo snapshot suppresses skill triggering (0/9 recall artifact); on disk, the skill fires — but only ~11% of the time |
 | 2026-09 | [Debugging bench: diagnosing-bugs (exploratory)](2026-09-debugging-bench-exploratory.md) | Kimi Code | Quality saturation replicates July on 2/3 tasks; the July test-asset differential does not; prompt beats skill |
 | 2026-09 | [Bench hardening follow-up](2026-09-debugging-hardening.md) | Kimi Code | Even hand-designed race/boundary bugs saturate; discriminative material must come from real failures |
+| 2026-09-22 | [Codex trigger capture + cross-model divergence](2026-09-22-codex-trigger-capture.md) | Codex CLI + Kimi Code | Same skill, same bench: Codex 6/6 trigger recall vs Kimi 1/9 — routing behavior is agent-specific |
 
 ## Reproduce
 

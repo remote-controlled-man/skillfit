@@ -41,7 +41,8 @@ export interface AgentSubagents {
 
 export interface AgentHeadlessStreamJson {
   argv: string[];
-  triggerToolName: string;
+  triggerToolName?: string;
+  wireShape?: 'flat-tool-call' | 'content-blocks' | 'codex-items';
 }
 
 export interface AgentHeadless {
@@ -55,9 +56,9 @@ export interface AgentHeadless {
 export interface AgentSessions {
   dir: string;
   transcriptGlob: string;
-  wireShape: 'flat-tool-call' | 'content-blocks';
-  skillToolName: string;
-  skillKey: string;
+  wireShape: 'flat-tool-call' | 'content-blocks' | 'codex-rollout';
+  skillToolName?: string;
+  skillKey?: string;
   docs: string | null;
 }
 

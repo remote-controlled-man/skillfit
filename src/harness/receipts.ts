@@ -33,8 +33,15 @@ export function resolveHome(dirPattern: string, homeDir: string): string {
 
 function matchSegment(name: string, pattern: string): boolean {
   if (pattern === '*') return true;
-  if (pattern.startsWith('*')) return name.endsWith(pattern.slice(1));
-  return name === pattern;
+  const star = pattern.indexOf('*');
+  if (star === -1) return name === pattern;
+  const prefix = pattern.slice(0, star);
+  const suffix = pattern.slice(star + 1);
+  return (
+    name.startsWith(prefix) &&
+    name.endsWith(suffix) &&
+    name.length >= prefix.length + suffix.length
+  );
 }
 
 export function walkGlob(rootDir: string, pattern: string): string[] {
@@ -53,6 +60,15 @@ export function walkGlob(rootDir: string, pattern: string): string[] {
     } catch {
       return;
     }
+    if (segment === '**') {
+      walk(dir, depth + 1);
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          walk(join(dir, entry.name), depth);
+        }
+      }
+      return;
+    }
     for (const entry of entries) {
       if (matchSegment(entry.name, segment)) {
         walk(join(dir, entry.name), depth + 1);
@@ -65,6 +81,7 @@ export function walkGlob(rootDir: string, pattern: string): string[] {
 
 function extractSkillNames(event: Record<string, unknown>, cfg: AgentSessions): string[] {
   const names: string[] = [];
+  const skillKey = cfg.skillKey ?? 'skill';
   if (cfg.wireShape === 'flat-tool-call') {
     let target = event;
     if (event['type'] === 'context.append_loop_event') {
@@ -76,9 +93,24 @@ function extractSkillNames(event: Record<string, unknown>, cfg: AgentSessions): 
     if (target['type'] === 'tool.call' && target['name'] === cfg.skillToolName) {
       const args = target['args'];
       if (typeof args === 'object' && args !== null) {
-        const skill = (args as Record<string, unknown>)[cfg.skillKey];
+        const skill = (args as Record<string, unknown>)[skillKey];
         if (typeof skill === 'string' && skill !== '') names.push(skill);
       }
+    }
+    return names;
+  }
+  if (cfg.wireShape === 'codex-rollout') {
+    if (event['type'] !== 'response_item') return names;
+    const payload = event['payload'];
+    if (typeof payload !== 'object' || payload === null) return names;
+    const record = payload as Record<string, unknown>;
+    if (record['type'] !== 'custom_tool_call') return names;
+    const input = record['input'];
+    if (typeof input !== 'string') return names;
+    const normalized = input.replace(/\\+/g, '/');
+    for (const match of normalized.matchAll(/skills\/([\w.-]+)\/SKILL\.md/gi)) {
+      const name = match[1];
+      if (name) names.push(name);
     }
     return names;
   }
@@ -95,7 +127,7 @@ function extractSkillNames(event: Record<string, unknown>, cfg: AgentSessions): 
     if (record['type'] === 'tool_use' && record['name'] === cfg.skillToolName) {
       const input = record['input'];
       if (typeof input === 'object' && input !== null) {
-        const skill = (input as Record<string, unknown>)[cfg.skillKey];
+        const skill = (input as Record<string, unknown>)[skillKey];
         if (typeof skill === 'string' && skill !== '') names.push(skill);
       }
     }

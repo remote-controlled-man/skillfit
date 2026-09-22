@@ -238,10 +238,62 @@ test('CliExecutor.forAgent with triggerSkillName uses the streamJson template', 
 });
 
 test('CliExecutor.forAgent with triggerSkillName rejects agents without streamJson', () => {
-  for (const agentId of ['claude-code', 'codex']) {
-    assert.throws(
-      () => CliExecutor.forAgent(agentId, { triggerSkillName: 'banana-standards' }),
-      /streamJson/,
-    );
-  }
+  assert.throws(
+    () => CliExecutor.forAgent('claude-code', { triggerSkillName: 'banana-standards' }),
+    /streamJson/,
+  );
+  const codex = CliExecutor.forAgent('codex', { triggerSkillName: 'banana-standards' });
+  assert.match(codex.describe().detail ?? '', /--json/);
+});
+
+
+test('CliExecutor parses codex items: text, skill file-read trigger, and token usage', async () => {
+  const events = [
+    { type: 'thread.started', thread_id: 't1' },
+    { type: 'turn.started' },
+    {
+      type: 'item.completed',
+      item: {
+        id: 'item_1',
+        type: 'command_execution',
+        command: 'powershell -Command "Get-Content -Raw \'C:\\\\repo\\\\.agents\\\\skills\\\\banana-standards\\\\SKILL.md\'"',
+        status: 'completed',
+      },
+    },
+    { type: 'item.completed', item: { id: 'item_2', type: 'agent_message', text: 'Stage 5, yellow with brown flecks.' } },
+    {
+      type: 'turn.completed',
+      usage: { input_tokens: 42170, cached_input_tokens: 32896, output_tokens: 272 },
+    },
+  ];
+  const stdinScript =
+    'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write(d))';
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', stdinScript],
+    shell: false,
+    triggerSkillName: 'banana-standards',
+  });
+  const ndjson = events.map((event) => JSON.stringify(event)).join('\n') + '\n';
+  const result = await executor.run(ndjson, process.cwd());
+  assert.equal(result.output, 'Stage 5, yellow with brown flecks.');
+  assert.equal(result.skillTriggered, true);
+  assert.deepEqual(result.tokens, { input: 42170, output: 272 });
+});
+
+test('CliExecutor codex shape: no skill-path command means no trigger', async () => {
+  const events = [
+    { type: 'item.completed', item: { id: 'i1', type: 'command_execution', command: 'Get-Content README.md' } },
+    { type: 'item.completed', item: { id: 'i2', type: 'agent_message', text: 'Paris' } },
+    { type: 'turn.completed', usage: { input_tokens: 10, output_tokens: 3 } },
+  ];
+  const stdinScript =
+    'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write(d))';
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', stdinScript],
+    shell: false,
+    triggerSkillName: 'banana-standards',
+  });
+  const result = await executor.run(events.map((event) => JSON.stringify(event)).join('\n'), process.cwd());
+  assert.equal(result.output, 'Paris');
+  assert.equal(result.skillTriggered, false);
 });

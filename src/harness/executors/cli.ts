@@ -163,6 +163,7 @@ interface StreamJsonTranscript {
   output: string;
   skillTriggered?: boolean;
   rawOutput?: string;
+  tokens?: { input?: number; output?: number };
 }
 
 function parseStreamJsonTranscript(
@@ -173,6 +174,7 @@ function parseStreamJsonTranscript(
   const textParts: string[] = [];
   let parsedAny = false;
   let triggered = false;
+  let tokens: { input?: number; output?: number } | undefined;
   for (const rawLine of stdout.split('\n')) {
     const line = rawLine.trim();
     if (line === '') {
@@ -243,9 +245,41 @@ function parseStreamJsonTranscript(
         }
       }
     }
+    if (record.type === 'turn.completed') {
+      const usage = record.usage;
+      if (typeof usage === 'object' && usage !== null) {
+        const usageRecord = usage as Record<string, unknown>;
+        const input = typeof usageRecord.input_tokens === 'number' ? usageRecord.input_tokens : undefined;
+        const output =
+          typeof usageRecord.output_tokens === 'number' ? usageRecord.output_tokens : undefined;
+        if (input !== undefined || output !== undefined) {
+          tokens = { input, output };
+        }
+      }
+    }
+    if (record.type === 'item.completed' || record.type === 'item.started') {
+      const item = record.item;
+      if (typeof item === 'object' && item !== null) {
+        const itemRecord = item as Record<string, unknown>;
+        if (
+          record.type === 'item.completed' &&
+          itemRecord.type === 'agent_message' &&
+          typeof itemRecord.text === 'string' &&
+          itemRecord.text !== ''
+        ) {
+          textParts.push(itemRecord.text);
+        }
+        if (itemRecord.type === 'command_execution' && typeof itemRecord.command === 'string') {
+          const normalized = itemRecord.command.replace(/\\+/g, '/');
+          if (normalized.includes(`skills/${skillName}/SKILL.md`)) {
+            triggered = true;
+          }
+        }
+      }
+    }
   }
   if (!parsedAny) {
     return { output: stdout };
   }
-  return { output: textParts.join('\n'), skillTriggered: triggered, rawOutput: stdout };
+  return { output: textParts.join('\n'), skillTriggered: triggered, rawOutput: stdout, tokens };
 }
