@@ -44,6 +44,7 @@ export interface TriggerTaskSummary {
   unknown: number;
   errors: number;
   passes: number;
+  tokens: { input: number; output: number } | null;
 }
 
 export interface TriggerMetrics {
@@ -167,6 +168,15 @@ function summarizeTriggerTask(
   shouldTrigger: boolean,
   records: TriggerTrialRecord[],
 ): TriggerTaskSummary {
+  let input = 0;
+  let output = 0;
+  let seenTokens = false;
+  for (const record of records) {
+    if (!record.tokens) continue;
+    seenTokens = true;
+    input += record.tokens.input ?? 0;
+    output += record.tokens.output ?? 0;
+  }
   return {
     id: taskId,
     shouldTrigger,
@@ -175,6 +185,7 @@ function summarizeTriggerTask(
     unknown: records.filter((r) => r.error === null && r.triggered === null).length,
     errors: records.filter((r) => r.error !== null).length,
     passes: records.filter((r) => r.passed).length,
+    tokens: seenTokens ? { input, output } : null,
   };
 }
 
@@ -331,6 +342,18 @@ export function renderTriggerSummary(manifest: TriggerManifest, manifestPath: st
   );
   lines.push(`Precision           : ${m.precision === null ? 'n/a' : m.precision.toFixed(2)}`);
   lines.push(`F1                  : ${m.f1 === null ? 'n/a' : m.f1.toFixed(2)}`);
+  const tokenLines = manifest.tasks
+    .filter((task) => task.tokens !== null)
+    .map((task) => {
+      const tokens = task.tokens;
+      return tokens ? `- ${task.id}: input ${tokens.input}, output ${tokens.output}` : null;
+    })
+    .filter((line): line is string => line !== null);
+  if (tokenLines.length > 0) {
+    lines.push('');
+    lines.push('Tokens used (per task):');
+    lines.push(...tokenLines);
+  }
   lines.push('');
   lines.push('Warnings:');
   if (manifest.warnings.length === 0) {

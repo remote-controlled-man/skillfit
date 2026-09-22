@@ -170,10 +170,10 @@
         "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html"
       },
       "docs": {
-        "rules": "https://moonshotai.github.io/kimi-code/",
-        "skills": "https://moonshotai.github.io/kimi-code/zh/customization/skills.html",
-        "mcp": "https://moonshotai.github.io/kimi-code/zh/customization/mcp.html",
-        "hooks": "https://moonshotai.github.io/kimi-code/zh/customization/hooks.html"
+        "rules": "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html",
+        "skills": "https://www.kimi.com/code/docs/en/kimi-code-cli/customization/skills.html",
+        "mcp": "https://www.kimi.com/code/docs/en/kimi-code-cli/customization/mcp.html",
+        "hooks": "https://www.kimi.com/code/docs/en/kimi-code-cli/customization/hooks.html"
       }
     }
   ]
