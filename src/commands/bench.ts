@@ -306,7 +306,7 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     await calibrateBench(bench, options.calibrate, push, log);
   }
 
-  return finish(dir, checks, log);
+  return finish(dir, checks, log, options.calibrate !== false && options.calibrate !== undefined);
 }
 
 const CALIBRATE_DEFAULT_TRIALS = 2;
@@ -372,15 +372,22 @@ async function calibrateBench(
   }
 }
 
-function finish(dir: string, checks: Check[], log: (msg: string) => void): BenchCheckReport {
+function finish(
+  dir: string,
+  checks: Check[],
+  log: (msg: string) => void,
+  calibrated = false,
+): BenchCheckReport {
   const failures = checks.filter((c) => c.status === 'FAIL').length;
   const warnings = checks.filter((c) => c.status === 'WARN').length;
   const passes = checks.filter((c) => c.status === 'PASS').length;
   log('');
   log(`Summary: ${passes} passed, ${warnings} warning(s), ${failures} failure(s)`);
-  log('Next: calibrate difficulty against a real agent —');
-  log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 3`);
-  log('  target: baseline pass rate in the 30–70% discriminative band (docs/metrics.md).');
+  if (!calibrated) {
+    log('Next: calibrate difficulty against a real agent —');
+    log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 3`);
+    log('  target: baseline pass rate in the 30–70% discriminative band (docs/metrics.md).');
+  }
   return { dir, checks, failures, warnings };
 }
 
