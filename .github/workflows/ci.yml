@@ -20,3 +20,9 @@ jobs:
       - run: npm test
       - name: Smoke doctor (read-only)
         run: node dist/cli.js doctor
+      - name: Bench integrity (offline verifier self-tests)
+        run: |
+          node dist/cli.js bench check benches/code-review
+          node dist/cli.js bench check benches/debugging
+      - name: Smoke report (no session history on runners)
+        run: node dist/cli.js report --json
