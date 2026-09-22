@@ -16,6 +16,7 @@ Usage:
   skillfit eval <skill-path> [options]      A/B-test a skill against a bench
   skillfit bench init [dir]                 Scaffold a new bench directory
   skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
+  skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
   skillfit install [options]                Install evidence-backed configuration
@@ -71,6 +72,7 @@ async function main(): Promise<void> {
       'verifier-cmd': { type: 'string' },
       expect: { type: 'string' },
       'should-trigger': { type: 'string' },
+      calibrate: { type: 'boolean', default: false },
       json: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       project: { type: 'boolean', default: false },
@@ -137,7 +139,15 @@ async function main(): Promise<void> {
         return;
       }
       if (subcommand === 'check') {
-        const report = await runBenchCheck({ dir: positionals[2] });
+        const report = await runBenchCheck({
+          dir: positionals[2],
+          calibrate: values.calibrate
+            ? {
+                agent: values.agent,
+                trials: values.trials ? Number.parseInt(values.trials, 10) : undefined,
+              }
+            : false,
+        });
         if (report.failures > 0) process.exitCode = 1;
         return;
       }

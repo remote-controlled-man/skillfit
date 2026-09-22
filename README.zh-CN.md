@@ -117,8 +117,7 @@ cp -r skills/skillfit ~/.agents/skills/
 - [x] 配对 A/B harness + 盲评
 - [x] 统计判定（McNemar 精确检验 + 配对 bootstrap CI，manifest v2）
 - [x] 触发率测量（`--mode trigger`：召回率 / 误触发率，带 Wilson 置信区间）
-- [x] bench 脚手架（`bench init` + `bench check`）、翻车冻结（`--freeze`）与 git 历史挖矿（`--from-commit`）
-- [ ] bench 难度校准运行
+- [x] bench 脚手架（`bench init` + `bench check`）、翻车冻结（`--freeze`）、git 历史挖矿（`--from-commit`）与难度校准（`--calibrate`）
 - [ ] Claude Code 的触发捕获（卡在账号不可用）
 - [ ] 社区 bench 与 evidence 提交（CI 重跑可复现配置，不收无法验证的结果）
 - [ ] Cursor / Gemini CLI / OpenCode 适配器

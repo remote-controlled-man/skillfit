@@ -410,3 +410,66 @@ test('runBenchAdd --from-commit honors --include and dry-run', async (t) => {
   assert.ok(existsSync(join(benchDir, 'fixtures', result.taskId, 'src', 'add.js')));
   assert.ok(!existsSync(join(benchDir, 'fixtures', result.taskId, 'package.json')), 'include filters the fixture');
 });
+
+function makeCalibBench(t: import('node:test').TestContext): string {
+  const dir = tmp(t, 'skillfit-calib-bench-');
+  mkdirSync(join(dir, 'prompts'), { recursive: true });
+  mkdirSync(join(dir, 'verifiers'), { recursive: true });
+  writeFileSync(
+    join(dir, 'verifiers', 'ok.mjs'),
+    `import fs from 'node:fs';\nconst out = fs.readFileSync(process.argv[2] + '/_output.md', 'utf8');\nprocess.exit(out.includes('ok') ? 0 : 1);\n`,
+  );
+  for (const id of ['easy-task', 'hard-task']) {
+    mkdirSync(join(dir, 'fixtures', id), { recursive: true });
+    writeFileSync(join(dir, 'fixtures', id, 'index.txt'), 'x\n');
+    writeFileSync(join(dir, 'prompts', `${id}.md`), `${id} prompt: reply.\n`);
+  }
+  writeFileSync(
+    join(dir, 'bench.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      name: 'calib',
+      tasks: [
+        { id: 'easy-task', fixture: 'fixtures/easy-task', prompt: 'prompts/easy-task.md', verifier: 'node verifiers/ok.mjs', shouldTrigger: true },
+        { id: 'hard-task', fixture: 'fixtures/hard-task', prompt: 'prompts/hard-task.md', verifier: 'node verifiers/ok.mjs', shouldTrigger: true },
+      ],
+    }),
+  );
+  return dir;
+}
+
+test('runBenchCheck --calibrate bands tasks by real baseline pass rate', async (t) => {
+  const dir = makeCalibBench(t);
+  const executor = {
+    describe: () => ({ kind: 'stub', model: 'stub' }),
+    run: (prompt: string) => Promise.resolve({ output: prompt.includes('easy') ? 'ok done' : 'nope' }),
+  };
+  const report = await runBenchCheck({
+    dir,
+    calibrate: {
+      executor,
+      trials: 2,
+      runsRoot: join(tmp(t, 'skillfit-calib-runs-'), 'runs'),
+      runGroup: 'calib-group',
+    },
+    log: () => {},
+  });
+  assert.equal(report.failures, 0);
+  assert.ok(
+    report.checks.some(
+      (c) => c.message.includes('easy-task: baseline 2/2') && c.message.includes('too easy'),
+    ),
+  );
+  assert.ok(
+    report.checks.some(
+      (c) => c.message.includes('hard-task: baseline 0/2') && c.message.includes('too hard or broken'),
+    ),
+  );
+  assert.ok(report.checks.some((c) => c.message.includes('0/2 task(s) in the discriminative band')));
+});
+
+test('runBenchCheck --calibrate requires an agent or executor', async (t) => {
+  const dir = makeCalibBench(t);
+  const report = await runBenchCheck({ dir, calibrate: {}, log: () => {} });
+  assert.ok(report.checks.some((c) => c.status === 'FAIL' && c.message.includes('needs --agent')));
+});

@@ -4,9 +4,12 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { loadBench } from '../harness/bench.js';
+import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
 import { runVerifier } from '../harness/runner.js';
+import { runTriggerExperiment } from '../harness/trigger.js';
 import { MOCK_MARKER_FILE } from '../harness/constants.js';
+import type { Executor, SkillBundle } from '../harness/types.js';
 import type { Check } from './doctor.js';
 
 export interface BenchInitOptions {
@@ -18,9 +21,18 @@ export interface BenchInitOptions {
   log?: (msg: string) => void;
 }
 
+export interface BenchCheckCalibrateOptions {
+  agent?: string;
+  trials?: number;
+  executor?: Executor;
+  runsRoot?: string;
+  runGroup?: string;
+}
+
 export interface BenchCheckOptions {
   dir?: string;
   log?: (msg: string) => void;
+  calibrate?: BenchCheckCalibrateOptions | false;
 }
 
 export interface BenchCheckReport {
@@ -290,7 +302,74 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     );
   }
 
+  if (options.calibrate) {
+    await calibrateBench(bench, options.calibrate, push, log);
+  }
+
   return finish(dir, checks, log);
+}
+
+const CALIBRATE_DEFAULT_TRIALS = 2;
+
+async function calibrateBench(
+  bench: ReturnType<typeof loadBench>,
+  options: BenchCheckCalibrateOptions,
+  push: (status: Check['status'], message: string) => void,
+  log: (msg: string) => void,
+): Promise<void> {
+  if (!options.agent && !options.executor) {
+    push('FAIL', '--calibrate needs --agent (a CLI executor for real runs)');
+    return;
+  }
+  const trials = options.trials ?? CALIBRATE_DEFAULT_TRIALS;
+  const emptySkillDir = mkdtempSync(join(tmpdir(), 'skillfit-calibrate-'));
+  try {
+    const skill: SkillBundle = {
+      name: 'calibration-none',
+      sourceDir: emptySkillDir,
+      files: [],
+      sha256: '0'.repeat(64),
+      payload: '',
+    };
+    const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '');
+    const runGroup =
+      options.runGroup ??
+      `calibrate-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(Date.now() % 100000).padStart(5, '0')}`;
+    const manifest = await runTriggerExperiment({
+      bench,
+      skill,
+      executor,
+      trials,
+      runsRoot: options.runsRoot ?? resolve('runs'),
+      runGroup,
+      skillInstallDir: '.skillfit-empty-skills',
+      log,
+    });
+    push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty)`);
+    let discriminative = 0;
+    for (const task of manifest.tasks) {
+      const total = task.runs + task.unknown + task.errors;
+      const rate = total === 0 ? null : task.passes / total;
+      if (rate === null) {
+        push('WARN', `${task.id}: no completed runs — cannot assess difficulty`);
+        continue;
+      }
+      if (rate >= 0.9) {
+        push('WARN', `${task.id}: baseline ${task.passes}/${total} — too easy (saturated; cannot discriminate skill effects)`);
+      } else if (rate <= 0.1) {
+        push('WARN', `${task.id}: baseline ${task.passes}/${total} — too hard or broken (floor)`);
+      } else {
+        discriminative++;
+        push('PASS', `${task.id}: baseline ${task.passes}/${total} — discriminative band`);
+      }
+    }
+    push(
+      discriminative === manifest.tasks.length ? 'PASS' : 'INFO',
+      `calibration: ${discriminative}/${manifest.tasks.length} task(s) in the discriminative band (runs under ${runGroup}; use --trials 3+ for steadier reads)`,
+    );
+  } finally {
+    rmSync(emptySkillDir, { recursive: true, force: true });
+  }
 }
 
 function finish(dir: string, checks: Check[], log: (msg: string) => void): BenchCheckReport {

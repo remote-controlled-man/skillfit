@@ -117,8 +117,7 @@ Sin afiliación con Anthropic, OpenAI, Moonshot AI ni ningún otro proveedor de 
 - [x] Harness A/B emparejado con evaluación ciega
 - [x] Veredictos estadísticos (McNemar exacto + IC de bootstrap emparejado, manifest v2)
 - [x] Medición de la tasa de activación (`--mode trigger`: recall / tasa de falsas activaciones con IC de Wilson)
-- [x] Andamiaje de benches (`bench init` + `bench check`), congelación de fallos (`--freeze`) y minería del historial git (`--from-commit`)
-- [ ] Ejecuciones de calibración de dificultad de benches
+- [x] Andamiaje de benches (`bench init` + `bench check`), congelación de fallos (`--freeze`), minería del historial git (`--from-commit`) y calibración de dificultad (`--calibrate`)
 - [ ] Captura de activaciones para Claude Code (bloqueado: se necesita autenticación válida)
 - [ ] Benches y evidencia de la comunidad (re-ejecuciones en CI con configuración reproducible, no resultados de «créeme»)
 - [ ] Adaptadores para Cursor / Gemini CLI / OpenCode
