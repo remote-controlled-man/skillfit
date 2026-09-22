@@ -23,6 +23,7 @@ export interface AgentReceipt {
   sessionsFound: number;
   transcriptsRead: number;
   skills: SkillReceipt[];
+  installed: string[];
   installedCount: number;
   neverFired: string[];
   tax: {
@@ -244,6 +245,7 @@ export async function collectAgentReceipt(
       sessionsFound: 0,
       transcriptsRead: 0,
       skills: [],
+      installed: [],
       installedCount: 0,
       neverFired: [],
       tax: emptyTax,
@@ -269,6 +271,7 @@ export async function collectAgentReceipt(
       sessionsFound: 0,
       transcriptsRead: 0,
       skills: [],
+      installed: installed.map((skill) => skill.name),
       installedCount: installed.length,
       neverFired: installed.map((skill) => skill.name),
       tax,
@@ -306,6 +309,7 @@ export async function collectAgentReceipt(
     sessionsFound: allSessions.size,
     transcriptsRead: transcripts.length,
     skills,
+    installed: installed.map((skill) => skill.name),
     installedCount: installed.length,
     neverFired: installed.filter((skill) => !perSkill.has(skill.name)).map((skill) => skill.name),
     tax,

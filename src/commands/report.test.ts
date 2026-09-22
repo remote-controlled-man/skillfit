@@ -18,6 +18,7 @@ function fixtureReceipts(): AgentReceipt[] {
         { name: 'diagnosing-bugs', fires: 4, sessionCount: 3, lastSeen: Date.parse('2026-09-19T00:00:00Z') },
         { name: 'tdd', fires: 1, sessionCount: 1, lastSeen: Date.parse('2026-09-10T00:00:00Z') },
       ],
+      installed: ['alpha', 'beta', 'diagnosing-bugs', 'tdd'],
       installedCount: 4,
       neverFired: ['alpha', 'beta'],
       tax: {
@@ -33,6 +34,7 @@ function fixtureReceipts(): AgentReceipt[] {
       sessionsFound: 0,
       transcriptsRead: 0,
       skills: [],
+      installed: [],
       installedCount: 0,
       neverFired: [],
       tax: { descTokensTotal: 0, bodyTokensMedian: 0, heaviest: [] },
@@ -62,6 +64,7 @@ test('renderReceipts handles agents without history and without sessions config'
       sessionsFound: 0,
       transcriptsRead: 0,
       skills: [],
+      installed: ['x', 'y'],
       installedCount: 2,
       neverFired: ['x', 'y'],
       tax: { descTokensTotal: 0, bodyTokensMedian: 0, heaviest: [] },

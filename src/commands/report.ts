@@ -67,10 +67,10 @@ export function renderReceipts(receipts: AgentReceipt[]): string {
     renderAgent(receipt, lines);
     lines.push('');
   }
-  const installed = receipts.reduce((sum, r) => sum + r.installedCount, 0);
+  const installed = new Set(receipts.flatMap((r) => r.installed));
   const fired = receipts.reduce((sum, r) => sum + r.skills.length, 0);
   const never = receipts.reduce((sum, r) => sum + r.neverFired.length, 0);
-  lines.push(`Overall: ${installed} installed skill(s), ${fired} fired at least once, ${never} never fired.`);
+  lines.push(`Overall: ${installed.size} installed skill(s), ${fired} fired at least once, ${never} never fired.`);
   if (never > 0) {
     lines.push(
       'Skills that never fire are pure routing/context tax. Verify any of them with: skillfit eval <skill> --mode trigger',
