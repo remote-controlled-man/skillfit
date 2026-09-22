@@ -245,3 +245,46 @@ test('runEval trigger mode dry-run prints the install plan and writes nothing', 
   assert.match(output, /review-r1: should trigger/);
   assert.match(output, /explain-x1: should NOT trigger \(negative control\)/);
 });
+
+test('runEval --judge-agent plans a CLI judge and warns on same-family judging', async (t) => {
+  const runsRoot = join(tmp(t, 'skillfit-eval-'), 'runs');
+  const { lines, log } = collector();
+  const result = await runEval({
+    skillPath: makeSkill(t),
+    bench: 'code-review',
+    trials: 1,
+    agent: 'kimi-code',
+    judgeAgent: 'kimi-code',
+    dryRun: true,
+    yes: true,
+    runsRoot,
+    runGroup: 'judge-dry',
+    log,
+  });
+  assert.equal(result, null);
+  const output = lines.join('\n');
+  assert.match(output, /Judge\s+: cli \(cli-configured\)/);
+  assert.match(output, /self-preference bias risk/);
+});
+
+test('runEval without --judge-agent keeps the judge disabled by default', async (t) => {
+  const saved = process.env['SKILLFIT_JUDGE'];
+  delete process.env['SKILLFIT_JUDGE'];
+  t.after(() => {
+    if (saved === undefined) delete process.env['SKILLFIT_JUDGE'];
+    else process.env['SKILLFIT_JUDGE'] = saved;
+  });
+  const { lines, log } = collector();
+  await runEval({
+    skillPath: makeSkill(t),
+    bench: 'code-review',
+    trials: 1,
+    executor: new MockExecutor(),
+    dryRun: true,
+    yes: true,
+    runsRoot: join(tmp(t, 'skillfit-eval-'), 'runs'),
+    runGroup: 'no-judge-dry',
+    log,
+  });
+  assert.match(lines.join('\n'), /Judge\s+: disabled/);
+});

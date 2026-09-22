@@ -6,7 +6,7 @@ import { runEval } from './commands/eval.js';
 import { runInstall } from './commands/install.js';
 import { runReport } from './commands/report.js';
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 
 const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
 
@@ -22,6 +22,7 @@ Usage:
 
 Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
+  --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
   --mode <mode>       Eval mode: inject (default, skill in prompt) | trigger (skill installed, measure invocation)
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (default: 3)
@@ -55,6 +56,7 @@ async function main(): Promise<void> {
     allowPositionals: true,
     options: {
       agent: { type: 'string' },
+      'judge-agent': { type: 'string' },
       mode: { type: 'string' },
       bench: { type: 'string' },
       trials: { type: 'string' },
@@ -120,6 +122,7 @@ async function main(): Promise<void> {
         skillPath,
         bench: values.bench,
         mode,
+        judgeAgent: values['judge-agent'],
         trials: values.trials ? Number.parseInt(values.trials, 10) : 3,
       });
       return;

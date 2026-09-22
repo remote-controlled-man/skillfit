@@ -20,6 +20,7 @@ export interface EvalOptions {
   bench?: string;
   trials: number;
   agent?: string;
+  judgeAgent?: string;
   mode?: 'inject' | 'trigger';
   dryRun: boolean;
   yes: boolean;
@@ -71,9 +72,12 @@ function resolveExecutor(agent: string | undefined): Executor {
   return ApiExecutor.fromEnv();
 }
 
-function resolveJudge(): Executor | null {
+function resolveJudge(judgeAgent?: string): Executor | null {
   const flag = process.env['SKILLFIT_JUDGE'];
-  if (!flag || flag === '0' || flag === 'false') return null;
+  if (!judgeAgent && (!flag || flag === '0' || flag === 'false')) return null;
+  if (judgeAgent) {
+    return CliExecutor.forAgent(judgeAgent);
+  }
   try {
     return new ApiExecutor({
       apiKey: process.env['SKILLFIT_JUDGE_API_KEY'] ?? process.env['SKILLFIT_API_KEY'] ?? process.env['OPENAI_API_KEY'],
@@ -230,7 +234,10 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     if (!options.dryRun) throw error;
     log(`Note: ${(error as Error).message}`);
   }
-  const judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge();
+  const judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge(options.judgeAgent);
+  if (options.judgeAgent && options.judgeAgent === options.agent) {
+    log('Warning: judge and executor are the same agent — self-preference bias risk (docs/metrics.md L4).');
+  }
   const runsRoot = options.runsRoot ?? resolve('runs');
   const runGroup = options.runGroup ?? defaultRunGroup();
 
