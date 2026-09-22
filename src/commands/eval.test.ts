@@ -51,6 +51,7 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /Bench\s+: code-review/);
   assert.match(output, /review-r1: fixture fixtures\/review-r1, verifier `node verifiers\/seeded-bugs\.mjs`/);
   assert.match(output, /4 task\(s\) × 2 conditions × 3 = 24 runs/);
+  assert.match(output, /Est\. cost: ~[\d.k]+ prompt-tokens\/run baseline, ~[\d.k]+ treatment \(estimate, before replies\)/);
   assert.match(output, /Dry run — nothing was written\./);
 });
 

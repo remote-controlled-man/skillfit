@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent } from '../agents.js';
@@ -6,6 +6,7 @@ import { loadBench } from '../harness/bench.js';
 import { collectSkillBundle } from '../harness/bundle.js';
 import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor } from '../harness/executors/cli.js';
+import { listFilesRecursive } from '../harness/hash.js';
 import { renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
 import {
@@ -96,6 +97,26 @@ function defaultRunGroup(now: Date = new Date()): string {
   return `eval-${date}-${time}`;
 }
 
+function estimatePromptTokens(bench: Bench, skill: SkillBundle): { baseline: number; treatment: number } {
+  let fixtureBytes = 0;
+  let promptBytes = 0;
+  for (const task of bench.tasks) {
+    const fixtureDir = join(bench.dir, task.fixture);
+    for (const rel of listFilesRecursive(fixtureDir)) {
+      if (rel.split(/[\\/]/).some((part) => part === '.git' || part.startsWith('_')) || rel === '.skillfit-mock.json') continue;
+      fixtureBytes += statSync(join(fixtureDir, rel)).size;
+    }
+    promptBytes += statSync(join(bench.dir, task.prompt)).size;
+  }
+  const estimate = (bytes: number) => Math.ceil(bytes / 4);
+  const baseline = estimate(fixtureBytes + promptBytes);
+  return { baseline, treatment: baseline + estimate(skill.payload.length) };
+}
+
+function formatK(value: number): string {
+  return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value);
+}
+
 function renderPlan(
   bench: Bench,
   skill: SkillBundle,
@@ -110,6 +131,10 @@ function renderPlan(
   lines.push(`Skill    : ${skill.name} (${skill.files.length} files, bundle sha256 ${skill.sha256.slice(0, 12)}…)`);
   lines.push(`Bench    : ${bench.name} @ ${bench.dir}`);
   lines.push(`           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`);
+  const estimate = estimatePromptTokens(bench, skill);
+  lines.push(
+    `Est. cost: ~${formatK(estimate.baseline)} prompt-tokens/run baseline, ~${formatK(estimate.treatment)} treatment (estimate, before replies)`,
+  );
   const descriptor = executor?.describe();
   lines.push(
     `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ''}` : 'unresolved (pass --agent or set SKILLFIT_API_KEY)'}`,
@@ -146,6 +171,17 @@ function renderTriggerPlan(
   lines.push(
     `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ''}` : 'unresolved (pass --agent with a streamJson-capable CLI)'}`,
   );
+  {
+    let promptBytes = 0;
+    for (const task of bench.tasks) {
+      const file = join(bench.dir, task.promptTrigger ?? task.prompt);
+      if (existsSync(file)) promptBytes += statSync(file).size;
+    }
+    const bodyTokens = Math.ceil(skill.payload.length / 4);
+    lines.push(
+      `Est. cost: ~${formatK(Math.ceil(promptBytes / 4))} prompt-tokens/run; skill body ~${formatK(bodyTokens)} loads only if triggered (estimate, before replies)`,
+    );
+  }
   lines.push(`Trials   : ${trials} per task (single arm: skill installed)`);
   lines.push('Tasks    :');
   for (const task of bench.tasks) {
