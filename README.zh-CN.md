@@ -125,7 +125,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## 贡献
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。最有价值的贡献是用你真实工作流造的 bench。
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。最有价值的贡献是用你真实工作流造的 bench。发布说明见 [CHANGELOG.md](CHANGELOG.md)，安全问题报告见 [SECURITY.md](SECURITY.md)。
 
 ## License
 

@@ -125,7 +125,7 @@ Sin afiliación con Anthropic, OpenAI, Moonshot AI ni ningún otro proveedor de 
 
 ## Contribuir
 
-Consulta [CONTRIBUTING.md](CONTRIBUTING.md). La contribución de mayor valor es un bench construido a partir de tu flujo de trabajo real.
+Consulta [CONTRIBUTING.md](CONTRIBUTING.md). La contribución de mayor valor es un bench construido a partir de tu flujo de trabajo real. Las notas de versión están en [CHANGELOG.md](CHANGELOG.md) y los informes de seguridad en [SECURITY.md](SECURITY.md).
 
 ## Licencia
 

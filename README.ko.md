@@ -125,7 +125,7 @@ Anthropic, OpenAI, Moonshot AI 및 어떤 에이전트 벤더와도 제휴 관�
 
 ## 기여하기
 
-[CONTRIBUTING.md](CONTRIBUTING.md)를 참고하세요. 가장 가치 있는 기여는 여러분의 실제 워크플로로 만든 bench입니다.
+[CONTRIBUTING.md](CONTRIBUTING.md)를 참고하세요. 가장 가치 있는 기여는 여러분의 실제 워크플로로 만든 bench입니다. 릴리스 노트는 [CHANGELOG.md](CHANGELOG.md), 보안 신고는 [SECURITY.md](SECURITY.md)를 참고하세요.
 
 ## 라이선스
 

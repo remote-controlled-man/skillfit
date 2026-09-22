@@ -125,7 +125,7 @@ Anthropic、OpenAI、Moonshot AI、その他いかなるエージェントベン
 
 ## コントリビュート
 
-[CONTRIBUTING.md](CONTRIBUTING.md) を参照。最も価値のあるコントリビューションは、あなたの実際のワークフローから作られたベンチだ。
+[CONTRIBUTING.md](CONTRIBUTING.md) を参照。最も価値のあるコントリビューションは、あなたの実際のワークフローから作られたベンチだ。リリースノートは [CHANGELOG.md](CHANGELOG.md)、セキュリティ報告は [SECURITY.md](SECURITY.md) に。
 
 ## ライセンス
 
