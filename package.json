@@ -13,7 +13,8 @@
     "dist",
     "benches",
     "evidence",
-    "profiles"
+    "profiles",
+    "skills"
   ],
   "repository": {
     "type": "git",

@@ -28,6 +28,7 @@ node dist/cli.js doctor    # smoke against the real machine (read-only)
 - `src/harness/` — eval experiment engine (executors, bench loading, judge, runner, trigger mode, stats)
 - `src/matrix/agents.json` — agent capability matrix (the data-driven core)
 - `benches/` — public bench format + bundled benches
+- `skills/` — the driver skill (teaches agents to drive the CLI)
 - `docs/` — design contracts (`metrics.md` freezes the metrics and verdict protocol)
 - `profiles/` — installable profiles (deny-by-default manifests)
 - `evidence/` — published experiment reports, dated and pinned
