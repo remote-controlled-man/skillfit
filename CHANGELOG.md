@@ -25,8 +25,9 @@ A large capability wave. Everything in 0.2.0 plus:
   with a command or output verifier), `add --from-commit` (SWE-bench-style FAIL_TO_PASS mining: parent
   commit as fixture, the fix's own tests embedded in the verifier).
 - **`--judge-agent`**: drive the blind judge with a local agent CLI instead of an API key; same-family
-  judging prints a self-preference warning. Judge calls now run **AB/BA position-swapped** and only
-  consistent verdicts count toward means.
+  judging prints a self-preference warning. Judge calls run **AB/BA position-swapped** and only
+  unanimous verdicts count toward means, and answers are scored with a **binary checklist**
+  (`correct` / `complete` / `grounded`, 0–3) instead of a Likert scale.
 - **Agent matrix**: headless templates, stream-json capture configs, session-store paths, and
   `verifierKind` (`output` vs `command`) in the bench format. `shouldTrigger` task labels and
   `promptTrigger` presentation variants.

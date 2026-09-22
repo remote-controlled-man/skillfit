@@ -45,6 +45,8 @@ explain-x1  no     0/3      0        0       3/3
 
 Trigger recall      : 1/9 (11%) [95% CI 2%–44%]
 False-trigger rate  : 0/3 (0%) [95% CI 0%–56%]
+Precision           : 1.00
+F1                  : 0.20
 ```
 
 The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without it. That is a verdict no registry can give you.
