@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { collectReceipts, walkGlob } from './receipts.js';
+import { collectReceipts, measureSkillTax, walkGlob } from './receipts.js';
 
 function makeHome(t: import('node:test').TestContext): string {
   const home = mkdtempSync(join(tmpdir(), 'skillfit-receipts-'));
@@ -139,4 +139,25 @@ test('collectReceipts reads codex rollouts (custom_tool_call skill-path evidence
   const alpha = codex.skills.find((s) => s.name === 'alpha');
   assert.equal(alpha?.fires, 1);
   assert.deepEqual(codex.neverFired, ['beta', 'codex-only-skill', 'never-skill']);
+});
+
+
+test('measureSkillTax reads frontmatter description and body size', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-tax-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  writeFileSync(
+    join(dir, 'SKILL.md'),
+    '---\nname: demo\ndescription: Twelve chars\n---\n\n# Demo\n\nbody body body body\n',
+  );
+  const tax = measureSkillTax(dir);
+  assert.equal(tax.descTokens, 3);
+  assert.equal(tax.bodyTokens, Math.ceil('---\nname: demo\ndescription: Twelve chars\n---\n\n# Demo\n\nbody body body body\n'.length / 4));
+});
+
+test('measureSkillTax tolerates missing frontmatter and missing files', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-tax-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  assert.deepEqual(measureSkillTax(dir), { descTokens: 0, bodyTokens: 0 });
+  writeFileSync(join(dir, 'SKILL.md'), '# plain\n');
+  assert.deepEqual(measureSkillTax(dir), { descTokens: 0, bodyTokens: 2 });
 });

@@ -1,4 +1,4 @@
-import { createReadStream, existsSync, readdirSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -11,6 +11,11 @@ export interface SkillReceipt {
   lastSeen: number | null;
 }
 
+export interface SkillTax {
+  descTokens: number;
+  bodyTokens: number;
+}
+
 export interface AgentReceipt {
   agentId: string;
   sessionsDir: string;
@@ -20,6 +25,11 @@ export interface AgentReceipt {
   skills: SkillReceipt[];
   installedCount: number;
   neverFired: string[];
+  tax: {
+    descTokensTotal: number;
+    bodyTokensMedian: number;
+    heaviest: Array<{ name: string; descTokens: number }>;
+  };
 }
 
 export interface ReceiptsOptions {
@@ -173,24 +183,58 @@ async function scanTranscript(
   return fires;
 }
 
-export function installedUserSkills(agent: AgentDef, homeDir: string): string[] {
-  const names = new Set<string>();
+export function installedUserSkills(
+  agent: AgentDef,
+  homeDir: string,
+): Array<{ name: string; dir: string }> {
+  const skills = new Map<string, string>();
   for (const dirPattern of agent.skills.userDirs) {
     const dir = resolveHome(dirPattern, homeDir);
     if (!existsSync(dir)) continue;
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (entry.isDirectory() && existsSync(join(dir, entry.name, 'SKILL.md'))) {
-        names.add(entry.name);
+        if (!skills.has(entry.name)) skills.set(entry.name, join(dir, entry.name));
       }
     }
   }
-  return [...names].sort();
+  return [...skills.entries()].map(([name, dir]) => ({ name, dir })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+export function measureSkillTax(skillDir: string): SkillTax {
+  const file = join(skillDir, 'SKILL.md');
+  const empty = { descTokens: 0, bodyTokens: 0 };
+  if (!existsSync(file)) return empty;
+  const text = readFileSync(file, 'utf8');
+  let description = '';
+  if (text.startsWith('---')) {
+    const end = text.indexOf('\n---', 3);
+    if (end !== -1) {
+      const frontmatter = text.slice(3, end);
+      const match = /^description:\s*(.+)$/m.exec(frontmatter);
+      description = match?.[1]?.trim() ?? '';
+    }
+  }
+  return { descTokens: estimateTokens(description), bodyTokens: estimateTokens(text) };
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? Math.round(((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2)
+    : (sorted[mid] ?? 0);
 }
 
 export async function collectAgentReceipt(
   agent: AgentDef,
   homeDir: string,
 ): Promise<AgentReceipt> {
+  const emptyTax = { descTokensTotal: 0, bodyTokensMedian: 0, heaviest: [] };
   const cfg = agent.sessions;
   if (!cfg) {
     return {
@@ -202,10 +246,21 @@ export async function collectAgentReceipt(
       skills: [],
       installedCount: 0,
       neverFired: [],
+      tax: emptyTax,
     };
   }
   const sessionsDir = resolveHome(cfg.dir, homeDir);
   const installed = installedUserSkills(agent, homeDir);
+  const taxes = installed.map((skill) => ({ name: skill.name, ...measureSkillTax(skill.dir) }));
+  const tax = {
+    descTokensTotal: taxes.reduce((sum, entry) => sum + entry.descTokens, 0),
+    bodyTokensMedian: median(taxes.map((entry) => entry.bodyTokens)),
+    heaviest: [...taxes]
+      .sort((a, b) => b.descTokens - a.descTokens)
+      .filter((entry) => entry.descTokens > 0)
+      .slice(0, 3)
+      .map((entry) => ({ name: entry.name, descTokens: entry.descTokens })),
+  };
   if (!existsSync(sessionsDir)) {
     return {
       agentId: agent.id,
@@ -215,7 +270,8 @@ export async function collectAgentReceipt(
       transcriptsRead: 0,
       skills: [],
       installedCount: installed.length,
-      neverFired: installed,
+      neverFired: installed.map((skill) => skill.name),
+      tax,
     };
   }
   const transcripts = walkGlob(sessionsDir, cfg.transcriptGlob);
@@ -251,7 +307,8 @@ export async function collectAgentReceipt(
     transcriptsRead: transcripts.length,
     skills,
     installedCount: installed.length,
-    neverFired: installed.filter((name) => !perSkill.has(name)),
+    neverFired: installed.filter((skill) => !perSkill.has(skill.name)).map((skill) => skill.name),
+    tax,
   };
 }
 

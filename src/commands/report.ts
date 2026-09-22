@@ -49,6 +49,14 @@ function renderAgent(receipt: AgentReceipt, lines: string[]): void {
   if (receipt.neverFired.length > 0) {
     lines.push(`  never fired: ${receipt.neverFired.join(', ')}`);
   }
+  if (receipt.tax.descTokensTotal > 0) {
+    const heaviest = receipt.tax.heaviest
+      .map((entry) => `${entry.name} (${entry.descTokens} tok)`)
+      .join(', ');
+    lines.push(
+      `  context tax (estimate): ~${receipt.tax.descTokensTotal.toLocaleString('en-US')} tokens of skill descriptions load into every session; median skill body ~${receipt.tax.bodyTokensMedian.toLocaleString('en-US')} tokens when fired${heaviest ? `; heaviest: ${heaviest}` : ''}`,
+    );
+  }
 }
 
 export function renderReceipts(receipts: AgentReceipt[]): string {

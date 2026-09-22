@@ -20,6 +20,11 @@ function fixtureReceipts(): AgentReceipt[] {
       ],
       installedCount: 4,
       neverFired: ['alpha', 'beta'],
+      tax: {
+        descTokensTotal: 420,
+        bodyTokensMedian: 1600,
+        heaviest: [{ name: 'diagnosing-bugs', descTokens: 90 }],
+      },
     },
     {
       agentId: 'codex',
@@ -30,6 +35,7 @@ function fixtureReceipts(): AgentReceipt[] {
       skills: [],
       installedCount: 0,
       neverFired: [],
+      tax: { descTokensTotal: 0, bodyTokensMedian: 0, heaviest: [] },
     },
   ];
 }
@@ -43,6 +49,7 @@ test('renderReceipts renders the table, counts, and never-fired list', () => {
   assert.match(output, /never fired: alpha, beta/);
   assert.match(output, /codex: skipped — no verified skill-invocation signal/);
   assert.match(output, /Overall: 4 installed skill\(s\), 2 fired at least once, 2 never fired/);
+  assert.match(output, /context tax \(estimate\): ~420 tokens of skill descriptions load into every session; median skill body ~1,600 tokens when fired; heaviest: diagnosing-bugs \(90 tok\)/);
   assert.match(output, /pure routing\/context tax/);
 });
 
@@ -57,6 +64,7 @@ test('renderReceipts handles agents without history and without sessions config'
       skills: [],
       installedCount: 2,
       neverFired: ['x', 'y'],
+      tax: { descTokensTotal: 0, bodyTokensMedian: 0, heaviest: [] },
     },
   ]);
   assert.match(output, /no session history found/);
