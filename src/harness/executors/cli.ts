@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getAgent } from '../../agents.js';
+import { probeKimiSessionUsage } from '../kimi-usage.js';
 import type { Executor, ExecutorDescriptor, ExecutorResult } from '../types.js';
 
 export interface CliExecutorOptions {
@@ -92,6 +93,7 @@ export class CliExecutor implements Executor {
   }
 
   run(prompt: string, workdir: string): Promise<ExecutorResult> {
+    const startedAtMs = Date.now();
     let argv = this.argv;
     if (this.promptVia === 'file') {
       if (!workdir) {
@@ -143,13 +145,19 @@ export class CliExecutor implements Executor {
           );
           return;
         }
+        let result: ExecutorResult;
         if (this.triggerSkillName !== undefined) {
-          resolvePromise(
-            parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName),
-          );
-          return;
+          result = parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName);
+        } else {
+          result = { output: stdout };
         }
-        resolvePromise({ output: stdout });
+        if (this.label === 'kimi-code' && result.tokens === undefined) {
+          const usage = probeKimiSessionUsage(workdir, startedAtMs);
+          if (usage) {
+            result.tokens = { input: usage.input, output: usage.output };
+          }
+        }
+        resolvePromise(result);
       });
       if (this.promptVia === 'stdin') {
         child.stdin.write(prompt, 'utf8');
