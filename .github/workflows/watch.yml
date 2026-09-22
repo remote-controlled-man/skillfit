@@ -1,0 +1,40 @@
+name: Evidence watch
+
+# Re-runs a pinned eval configuration on a schedule so evidence can be refreshed
+# when models change. DISABLED by default: it only runs when the repository
+# variable SKILLFIT_WATCH is set to "1". Setup:
+#   1. Repo Settings > Secrets and variables > Actions > Secrets > SKILLFIT_API_KEY
+#      (any OpenAI-compatible key; optionally SKILLFIT_API_BASE_URL / SKILLFIT_API_MODEL)
+#   2. Settings > Variables > SKILLFIT_WATCH = "1"
+# The bundled bench and the bundled profile skill mean this needs no other setup.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1" # Mondays 04:17 UTC
+
+jobs:
+  watch:
+    if: vars.SKILLFIT_WATCH == '1'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+      - name: Evidence re-run (inject mode, 2 trials, indicative)
+        env:
+          SKILLFIT_API_KEY: ${{ secrets.SKILLFIT_API_KEY }}
+          SKILLFIT_API_BASE_URL: ${{ vars.SKILLFIT_API_BASE_URL }}
+          SKILLFIT_API_MODEL: ${{ vars.SKILLFIT_API_MODEL }}
+        run: node dist/cli.js eval profiles/recommended/skills/commit-message --bench code-review --trials 2 --yes
+      - name: Upload the manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: skillfit-watch-${{ github.run_id }}
+          path: runs/
+          retention-days: 30

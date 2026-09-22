@@ -25,4 +25,4 @@ We do not accept unverifiable numbers ("skill X gave me +20%"). Submit the repro
 2. The skill source pinned to a commit
 3. The executor/agent + model identity + trials count
 
-Maintainers re-run it in CI; the published evidence entry credits you.
+Maintainers re-run it in CI; the published evidence entry credits you. There is also an opt-in scheduled re-run: `.github/workflows/watch.yml` re-executes a pinned eval weekly once the repository has `SKILLFIT_API_KEY` (secret) and `SKILLFIT_WATCH=1` (variable), so evidence gets refreshed as models change — disabled by default.
