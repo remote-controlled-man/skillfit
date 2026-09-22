@@ -1,0 +1,29 @@
+name: Evidence submission
+description: Reproduce an experiment (or share a new one) with a reproducible configuration
+title: "evidence: "
+labels: [evidence]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We do not accept unverifiable numbers ("skill X gave me +20%"). Submit the reproducible
+        **configuration**; maintainers and CI re-run it.
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup
+      description: |
+        - Skill under test (source + commit hash if possible)
+        - Bench (path, or the bundled bench name) 
+        - Agent CLI + version, model identity if known
+        - Trials per condition
+        - The exact command you ran
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result
+      description: Paste the summary table and attach runs/<group>/manifest.json. For reproductions of published evidence, say whether your result agrees or disagrees with the published one.
+    validations:
+      required: true

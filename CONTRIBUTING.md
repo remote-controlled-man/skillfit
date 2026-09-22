@@ -19,7 +19,7 @@ Thanks for helping make agent configuration evidence-driven.
 
 ## Submitting evidence
 
-We do not accept unverifiable numbers ("skill X gave me +20%"). Submit the reproducible configuration instead:
+We do not accept unverifiable numbers ("skill X gave me +20%"). Submit the reproducible configuration instead (use the **Evidence submission** issue template):
 
 1. Your bench (or a reference to an existing one)
 2. The skill source pinned to a commit

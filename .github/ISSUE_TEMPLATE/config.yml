@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Bench format & contribution contract
+    url: https://github.com/remote-controlled-man/skillfit/tree/main/benches
+    about: Read this before submitting a bench or a PR that adds tasks.
+  - name: Security reports
+    url: https://github.com/remote-controlled-man/skillfit/blob/main/SECURITY.md
+    about: Do NOT open a public issue for security reports — follow SECURITY.md instead.

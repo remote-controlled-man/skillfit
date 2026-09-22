@@ -1,0 +1,33 @@
+name: Bug report
+description: Something in skillfit misbehaves
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened
+      description: What did you run, what did you expect, what did you get? Paste the command and the relevant output.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: skillfit version (`skillfit --version`), node version (`node --version`), OS
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent CLI(s) involved (if any)
+      description: e.g. kimi-code 2.0.0, codex 0.153.4, claude-code — plus their --version output
+    validations:
+      required: false
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Manifest / run artifacts (if an eval is involved)
+      description: Attach runs/<group>/manifest.json, _result.json, _verifier.txt, or the bench.json + task ids. Secrets are never included in these files; check them anyway before uploading.
+    validations:
+      required: false
