@@ -177,7 +177,7 @@ test('runTriggerExperiment skips tasks without a shouldTrigger label', async (t)
 
 test('triggerMetrics is null-safe at zero runs', () => {
   const metrics = triggerMetrics([
-    { id: 'a', shouldTrigger: true, runs: 0, fired: 0, unknown: 2, errors: 0, passes: 0 },
+    { id: 'a', shouldTrigger: true, runs: 0, fired: 0, unknown: 2, errors: 0, passes: 0, tokens: null },
   ]);
   assert.equal(metrics.recall, null);
   assert.equal(metrics.precision, null);
