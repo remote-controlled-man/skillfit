@@ -68,11 +68,12 @@ npx skillfit install
 
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code only.
 
-## The four commands
+## The five commands
 
 | Command | What it does | Writes? |
 |---|---|---|
 | `doctor` | Detects installed agents, checks rules bloat, skill validity/conflicts, MCP config parseability, silent-failure traps (e.g. AGENTS.md that Claude Code never reads) | Never |
+| `report` | Skill usage receipts from local session history: fires per skill per agent, and the never-fired list (the pure routing/context tax) | Never |
 | `eval <skill>` | Default (`--mode inject`): paired baseline/treatment runs, deterministic verifier + optional blind LLM judge, token-cost delta, verdicts via McNemar exact test + paired bootstrap CI. `--mode trigger`: installs the skill instead of injecting it and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
 | `bench` | `init` scaffolds a bench directory with a working example task; `check` validates a bench offline (verifier self-tests, mock-arm probes, fixture hygiene, trigger-label coverage); `add --freeze` turns a failure you just watched into a permanent bench task | `init`/`add` after confirmation; `check` never |
 | `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent, atomic), skill copy with conflict protection, commit-pinned lockfile, post-install verification | Only after confirmation |

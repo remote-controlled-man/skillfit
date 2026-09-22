@@ -68,11 +68,12 @@ npx skillfit install
 
 Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente solo para Kimi Code.
 
-## Los cuatro comandos
+## Los cinco comandos
 
 | Comando | Qué hace | ¿Escribe? |
 |---|---|---|
 | `doctor` | Detecta los agentes instalados, comprueba la hinchazón de reglas, la validez y los conflictos de skills, que la configuración MCP sea parseable y las trampas de fallo silencioso (p. ej., un AGENTS.md que Claude Code nunca lee) | Nunca |
+| `report` | Recuentos de uso real de skills desde el historial local de sesiones: activaciones por skill y la lista de nunca activadas (el puro impuesto de enrutamiento/contexto) | Nunca |
 | `eval <skill>` | Por defecto (`--mode inject`): ejecuciones baseline/treatment emparejadas, verificador determinista + juez LLM ciego opcional, delta de coste en tokens, veredictos mediante el test exacto de McNemar + IC de bootstrap emparejado. `--mode trigger`: instala el skill en lugar de inyectarlo y mide el recall de activación / la tasa de falsas activaciones a partir de la transcripción del agente | `runs/` en local |
 | `bench` | `init` genera el esqueleto de un directorio de bench con una tarea de ejemplo funcional; `check` valida un bench sin conexión (autopruebas del verificador, sondeos del brazo mock, higiene de fixtures, cobertura de etiquetas de trigger); `add --freeze` convierte en una tarea de bench permanente un fallo que acabas de presenciar | `init`/`add` tras confirmación; `check` nunca |
 | `install` | Reglas en bloque gestionado (`<!-- SKILLFIT_START/END -->`, idempotentes, atómicas), copia de skills con protección contra conflictos, lockfile fijado por commit, verificación posterior a la instalación | Solo tras confirmación |

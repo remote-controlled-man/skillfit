@@ -4,6 +4,7 @@ import { runBenchAdd, runBenchCheck, runBenchInit } from './commands/bench.js';
 import { runDoctor } from './commands/doctor.js';
 import { runEval } from './commands/eval.js';
 import { runInstall } from './commands/install.js';
+import { runReport } from './commands/report.js';
 
 const VERSION = '0.2.0';
 
@@ -11,6 +12,7 @@ const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI codi
 
 Usage:
   skillfit doctor [--agent <id>]            Inspect current agent configuration health
+  skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
   skillfit eval <skill-path> [options]      A/B-test a skill against a bench
   skillfit bench init [dir]                 Scaffold a new bench directory
   skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
@@ -58,6 +60,7 @@ async function main(): Promise<void> {
       'verifier-cmd': { type: 'string' },
       expect: { type: 'string' },
       'should-trigger': { type: 'string' },
+      json: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       project: { type: 'boolean', default: false },
       yes: { type: 'boolean', default: false },
@@ -86,6 +89,9 @@ async function main(): Promise<void> {
   switch (command) {
     case 'doctor':
       await runDoctor(common);
+      return;
+    case 'report':
+      await runReport({ agent: values.agent, json: values.json ?? false });
       return;
     case 'eval': {
       const skillPath = positionals[1];

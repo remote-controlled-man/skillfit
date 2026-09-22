@@ -68,11 +68,12 @@ npx skillfit install
 
 지원 에이전트: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([기능 매트릭스](src/matrix/agents.json) — 기계 판독 가능, 검증 날짜와 문서 링크 포함). trigger 모드 캡처는 현재 Kimi Code에서만 검증되었습니다.
 
-## 네 가지 명령어
+## 다섯 가지 명령어
 
 | 명령어 | 동작 | 파일 쓰기 |
 |---|---|---|
 | `doctor` | 설치된 에이전트 감지, 규칙 비대화, skill 유효성/충돌, MCP 설정 파싱 가능 여부, 조용한 실패 함정(예: Claude Code가 절대 읽지 않는 AGENTS.md) 점검 | 절대 안 함 |
+| `report` | 로컬 세션 기록에서 skill 실사용 집계: skill별 발화 횟수와 미발화 목록(순수 라우팅/컨텍스트 비용) | 절대 안 함 |
 | `eval <skill>` | 기본값(`--mode inject`): 페어드 baseline/treatment 실행, 결정적 verifier + 선택적 블라인드 LLM 심사, 토큰 비용 차이, McNemar exact test + paired bootstrap CI로 판정. `--mode trigger`: 프롬프트 주입 대신 skill을 실제로 설치하고 에이전트 transcript에서 트리거 재현율 / 오탐율 측정 | 로컬 `runs/`에만 |
 | `bench` | `init`은 동작하는 예시 작업이 포함된 bench 디렉터리를 생성하고, `check`는 bench를 오프라인으로 검증하며(verifier 자가 테스트, mock arm 프로브, fixture 위생 상태, 트리거 라벨 커버리지), `add --freeze`는 방금 목격한 실패를 영구적인 bench 작업으로 고정 | `init`/`add`는 확인 후에만, `check`는 절대 안 함 |
 | `install` | 관리 블록 규칙(`<!-- SKILLFIT_START/END -->`, 멱등, 원자적), 충돌 보호가 적용된 skill 복사, 커밋 고정 lockfile, 설치 후 검증 | 확인 후에만 |

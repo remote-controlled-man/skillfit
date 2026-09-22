@@ -52,6 +52,15 @@ export interface AgentHeadless {
   docs: string;
 }
 
+export interface AgentSessions {
+  dir: string;
+  transcriptGlob: string;
+  wireShape: 'flat-tool-call' | 'content-blocks';
+  skillToolName: string;
+  skillKey: string;
+  docs: string | null;
+}
+
 export interface AgentDef {
   id: string;
   displayName: string;
@@ -62,6 +71,7 @@ export interface AgentDef {
   mcp: AgentMcp;
   hooks: AgentHooks;
   subagents: AgentSubagents;
+  sessions?: AgentSessions;
   headless: AgentHeadless;
   docs: Record<string, string>;
 }

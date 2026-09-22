@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-19",
+  "verifiedAt": "2026-09-22",
   "agents": [
     {
       "id": "claude-code",
@@ -37,6 +37,14 @@
       "subagents": {
         "projectDirs": [".claude/agents"],
         "userDirs": ["~/.claude/agents"]
+      },
+      "sessions": {
+        "dir": "~/.claude/projects",
+        "transcriptGlob": "*/*.jsonl",
+        "wireShape": "content-blocks",
+        "skillToolName": "Skill",
+        "skillKey": "skill",
+        "docs": null
       },
       "headless": {
         "argv": ["claude", "-p"],
@@ -131,6 +139,14 @@
       "subagents": {
         "projectDirs": [".kimi-code/agents", ".agents/agents"],
         "userDirs": ["~/.kimi-code/agents", "~/.agents/agents"]
+      },
+      "sessions": {
+        "dir": "~/.kimi-code/sessions",
+        "transcriptGlob": "*/*/agents/*/wire.jsonl",
+        "wireShape": "flat-tool-call",
+        "skillToolName": "Skill",
+        "skillKey": "skill",
+        "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html"
       },
       "headless": {
         "argv": ["kimi", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
