@@ -117,9 +117,9 @@ Anthropic、OpenAI、Moonshot AI、その他いかなるエージェントベン
 - [x] ブラインド審査付きペア A/B ハーネス
 - [x] 統計的判定（McNemar 正確検定 + ペア bootstrap CI、manifest v2）
 - [x] トリガー率の測定（`--mode trigger`：再現率 / 誤発火率、Wilson 信頼区間付き）
-- [x] ベンチのスキャフォールド（`bench init` + `bench check`）と失敗の凍結（`bench add --freeze`）
-- [ ] ベンチ難易度のキャリブレーション実行と git 履歴インポーター（`bench add --from-commit`）
-- [ ] Claude Code / Codex 向けトリガーキャプチャ（検証済みの stream-json 形式が必要）
+- [x] ベンチのスキャフォールド（`bench init` + `bench check`）、失敗の凍結（`--freeze`）、git 履歴マイニング（`--from-commit`）
+- [ ] ベンチ難易度のキャリブレーション実行
+- [ ] Claude Code 向けトリガーキャプチャ（認証不可で保留中）
 - [ ] コミュニティのベンチ＆エビデンス投稿（trust-me な結果ではなく、再現可能な設定の CI 再実行）
 - [ ] Cursor / Gemini CLI / OpenCode アダプター
 - [ ] MCP サーバー設定の評価

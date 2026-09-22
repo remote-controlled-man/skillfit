@@ -117,9 +117,9 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 - [x] Paired A/B harness with blind judging
 - [x] Statistical verdicts (McNemar exact + paired bootstrap CI, manifest v2)
 - [x] Trigger-rate measurement (`--mode trigger`: recall / false-trigger rate with Wilson CIs)
-- [x] Bench scaffolding (`bench init` + `bench check`) and failure freezing (`bench add --freeze`)
-- [ ] Bench difficulty calibration runs and git-history importer (`bench add --from-commit`)
-- [ ] Trigger capture for Claude Code / Codex (needs verified stream-json shapes)
+- [x] Bench scaffolding (`bench init` + `bench check`), failure freezing (`--freeze`), git-history mining (`--from-commit`)
+- [ ] Bench difficulty calibration runs
+- [ ] Trigger capture for Claude Code (blocked: needs working auth)
 - [ ] Community bench & evidence submissions (reproducible-config CI re-runs, not trust-me results)
 - [ ] Cursor / Gemini CLI / OpenCode adapters
 - [ ] MCP server config evaluation

@@ -237,7 +237,7 @@ test('runBenchAdd validates flags and rejects duplicates', async (t) => {
   );
   await assert.rejects(
     () => runBenchAdd({ ...base, verifierCmd: 'true', freeze: false }),
-    /only --freeze/,
+    /needs an importer/,
   );
 });
 
@@ -282,4 +282,131 @@ test('runBenchAdd works in a non-git source directory (filtered copy)', async (t
   assert.ok(existsSync(join(fixture, 'main.js')));
   assert.ok(!existsSync(join(fixture, 'node_modules')));
   assert.ok(!existsSync(join(fixture, '.git')));
+});
+
+function gitRepoWithFixHistory(t: import('node:test').TestContext): {
+  repo: string;
+  buggyCommit: string;
+  testOnlyCommit: string;
+  fixCommit: string;
+} {
+  const repo = tmp(t, 'skillfit-mine-repo-');
+  mkdirSync(join(repo, 'src'), { recursive: true });
+  writeFileSync(join(repo, 'src', 'add.js'), 'export function add(a, b) {\n  return a - b;\n}\n');
+  writeFileSync(join(repo, 'package.json'), '{ "type": "module" }\n');
+  const git = (args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  git(['init', '-q']);
+  git(['config', 'user.email', 't@t']);
+  git(['config', 'user.name', 't']);
+  git(['add', '-A']);
+  git(['commit', '-qm', 'initial: buggy add']);
+  const buggyCommit = git(['rev-parse', 'HEAD']);
+
+  mkdirSync(join(repo, 'test'), { recursive: true });
+  writeFileSync(
+    join(repo, 'test', 'sanity.test.js'),
+    `import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { add } from '../src/add.js';\ntest('add returns a number', () => { assert.equal(typeof add(1, 2), 'number'); });\n`,
+  );
+  git(['add', '-A']);
+  git(['commit', '-qm', 'test: add sanity check']);
+  const testOnlyCommit = git(['rev-parse', 'HEAD']);
+
+  writeFileSync(join(repo, 'src', 'add.js'), 'export function add(a, b) {\n  return a + b;\n}\n');
+  writeFileSync(
+    join(repo, 'test', 'add-fix.test.js'),
+    `import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { add } from '../src/add.js';\ntest('add sums two numbers', () => { assert.equal(add(1, 2), 3); });\ntest('add handles zero', () => { assert.equal(add(0, 0), 0); });\n`,
+  );
+  git(['add', '-A']);
+  git(['commit', '-qm', 'fix: add was subtracting instead of adding']);
+  const fixCommit = git(['rev-parse', 'HEAD']);
+  return { repo, buggyCommit, testOnlyCommit, fixCommit };
+}
+
+test('runBenchAdd --from-commit mines parent fixture + embedded FAIL_TO_PASS verifier', async (t) => {
+  const { repo, fixCommit } = gitRepoWithFixHistory(t);
+  const benchDir = await freezeBench(t);
+  const result = await runBenchAdd({
+    benchDir,
+    fromCommit: fixCommit,
+    sourceDir: repo,
+    shouldTrigger: true,
+    yes: true,
+    log: () => {},
+  });
+  assert.ok(result);
+  assert.match(result.taskId, /^fix-[0-9a-f]{7}$/);
+  const fixture = join(benchDir, 'fixtures', result.taskId);
+  assert.match(readFileSync(join(fixture, 'src', 'add.js'), 'utf8'), /return a - b/, 'fixture is the parent (buggy) state');
+  assert.ok(existsSync(join(fixture, 'package.json')));
+  assert.ok(existsSync(join(fixture, 'test', 'sanity.test.js')), 'parent tests come along');
+  assert.ok(!existsSync(join(fixture, 'test', 'add-fix.test.js')), 'the fix tests stay hidden in the verifier');
+  const bench = loadBench(benchDir);
+  const task = bench.tasks.find((entry) => entry.id === result.taskId);
+  assert.equal(task?.verifierKind, 'command');
+  assert.equal(task?.shouldTrigger, true);
+
+  const runDir = mkdtempSync(join(tmpdir(), 'skillfit-mine-run-'));
+  t.after(() => rmSync(runDir, { recursive: true, force: true }));
+  writeFileSync(join(runDir, 'package.json'), readFileSync(join(fixture, 'package.json')));
+  mkdirSync(join(runDir, 'src'), { recursive: true });
+  writeFileSync(join(runDir, 'src', 'add.js'), readFileSync(join(fixture, 'src', 'add.js')));
+  const pristine = spawnSync('node', [join(benchDir, 'verifiers', `${result.taskId}.mjs`), runDir], {
+    cwd: benchDir,
+    encoding: 'utf8',
+  });
+  assert.notEqual(pristine.status, 0, 'embedded fix tests fail on the parent state');
+  writeFileSync(join(runDir, 'src', 'add.js'), 'export function add(a, b) {\n  return a + b;\n}\n');
+  const fixed = spawnSync('node', [join(benchDir, 'verifiers', `${result.taskId}.mjs`), runDir], {
+    cwd: benchDir,
+    encoding: 'utf8',
+  });
+  assert.equal(fixed.status, 0, 'embedded fix tests pass once the fix is implemented');
+
+  const report = await runBenchCheck({ dir: benchDir, log: () => {} });
+  assert.equal(report.failures, 0);
+});
+
+test('runBenchAdd --from-commit rejects test-only and test-less commits', async (t) => {
+  const { repo, buggyCommit, testOnlyCommit, fixCommit } = gitRepoWithFixHistory(t);
+  const benchDir = await freezeBench(t);
+  const base = { benchDir, sourceDir: repo, yes: true, log: () => {} };
+  await assert.rejects(
+    () => runBenchAdd({ ...base, fromCommit: testOnlyCommit }),
+    /only test files/,
+  );
+  await assert.rejects(
+    () => runBenchAdd({ ...base, fromCommit: buggyCommit }),
+    /no test files/,
+  );
+  await assert.rejects(
+    () => runBenchAdd({ ...base, fromCommit: fixCommit, freeze: true, prompt: 'x', verifierCmd: 'y' }),
+    /not both/,
+  );
+});
+
+test('runBenchAdd --from-commit honors --include and dry-run', async (t) => {
+  const { repo, fixCommit } = gitRepoWithFixHistory(t);
+  const benchDir = await freezeBench(t);
+  const { lines, log } = collector();
+  const dry = await runBenchAdd({
+    benchDir,
+    fromCommit: fixCommit,
+    sourceDir: repo,
+    include: ['src'],
+    dryRun: true,
+    log,
+  });
+  assert.equal(dry, null);
+  assert.ok(!existsSync(join(benchDir, 'fixtures', `fix-${fixCommit.slice(0, 7)}`)));
+  const result = await runBenchAdd({
+    benchDir,
+    fromCommit: fixCommit,
+    sourceDir: repo,
+    include: ['src'],
+    yes: true,
+    log: () => {},
+  });
+  assert.ok(result);
+  assert.ok(existsSync(join(benchDir, 'fixtures', result.taskId, 'src', 'add.js')));
+  assert.ok(!existsSync(join(benchDir, 'fixtures', result.taskId, 'package.json')), 'include filters the fixture');
 });

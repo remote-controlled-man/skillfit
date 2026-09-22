@@ -117,9 +117,9 @@ Anthropic, OpenAI, Moonshot AI 및 어떤 에이전트 벤더와도 제휴 관�
 - [x] 블라인드 심사가 적용된 페어드 A/B harness
 - [x] 통계적 판정(McNemar exact + paired bootstrap CI, manifest v2)
 - [x] 트리거율 측정(`--mode trigger`: 재현율 / 오탐율, Wilson CI 포함)
-- [x] bench 스캐폴딩(`bench init` + `bench check`)과 실패 고정(`bench add --freeze`)
-- [ ] bench 난이도 보정 실행과 git 히스토리 임포터(`bench add --from-commit`)
-- [ ] Claude Code / Codex용 트리거 캡처(검증된 stream-json 형식 필요)
+- [x] bench 스캐폴딩(`bench init` + `bench check`), 실패 고정(`--freeze`), git 히스토리 마이닝(`--from-commit`)
+- [ ] bench 난이도 보정 실행
+- [ ] Claude Code용 트리거 캡처(인증 불가로 보류)
 - [ ] 커뮤니티 bench 및 evidence 제출(검증 없이 믿는 결과가 아니라, 재현 가능한 설정의 CI 재실행)
 - [ ] Cursor / Gemini CLI / OpenCode 어댑터
 - [ ] MCP server 설정 평가

@@ -123,7 +123,15 @@ skillfit bench add <bench-dir> --freeze --task <id> \
   --verifier-cmd "node --test"   # or: --expect "string the output must contain"
 ```
 
-This snapshots the current directory (git-tracked files only, so `node_modules` and build output stay out) into `fixtures/<task-id>/`, generates the verifier wrapper, and registers the task. The manual path, for shaping a task by hand:
+This snapshots the current directory (git-tracked files only, so `node_modules` and build output stay out) into `fixtures/<task-id>/`, generates the verifier wrapper, and registers the task. Or mine a fix straight out of git history:
+
+```bash
+skillfit bench add <bench-dir> --from-commit <sha> [--source-dir <repo>] [--include <dir>...]
+```
+
+The commit must change at least one test file and one non-test file: the parent commit becomes the fixture, and the fix's own tests are embedded into the verifier (hidden from the agent; they must fail on the parent state and pass once the fix is re-implemented — the SWE-bench FAIL_TO_PASS pattern). Root commits, test-only commits, and fixtures over 200 files / 1 MB are rejected with clear errors.
+
+Constraints for both importers: the verifier must run against the copied fixture **without a build step or installed dependencies** (a TypeScript repo that needs `tsc`, or tests that need `node_modules`, will not work as mined fixtures — narrow with `--include` or hand-port a self-contained slice instead). The manual path, for shaping a task by hand:
 
 1. Pick one recurring, expensive task shape (reviewing a PR, migrating a module, writing a migration plan).
 2. Shrink a real instance into `fixtures/<task-id>/` — keep the trap, drop everything else.

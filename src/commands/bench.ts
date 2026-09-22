@@ -314,6 +314,8 @@ export interface BenchAddOptions {
   prompt?: string;
   promptFile?: string;
   freeze?: boolean;
+  fromCommit?: string;
+  include?: string[];
   sourceDir?: string;
   verifierCmd?: string;
   expect?: string;
@@ -382,12 +384,25 @@ process.exit(passed ? 0 : 1);
 `;
 }
 
+interface PreparedAdd {
+  defaultTaskId: string;
+  promptText: string;
+  verifierSource: string;
+  verifierKind: 'output' | 'command';
+  fixtureFiles: Array<{ rel: string; content: Buffer }>;
+  groundTruth: string;
+  planFixtureLine: string;
+}
+
 export async function runBenchAdd(
   options: BenchAddOptions,
 ): Promise<{ dir: string; taskId: string; files: string[] } | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
-  if (!options.freeze) {
-    throw new Error('bench add currently supports only --freeze (git-history and other importers are planned).');
+  if (!options.freeze && !options.fromCommit) {
+    throw new Error('bench add needs an importer: --freeze (current directory) or --from-commit <sha> (git history).');
+  }
+  if (options.freeze && options.fromCommit) {
+    throw new Error('Pass exactly one importer: --freeze OR --from-commit, not both.');
   }
   const cwd = options.cwd ?? process.cwd();
   const benchDir = resolve(cwd, options.benchDir ?? '.');
@@ -395,18 +410,88 @@ export async function runBenchAdd(
   if (!existsSync(benchJsonPath)) {
     throw new Error(`Not a bench directory (missing bench.json): ${benchDir} — run \`skillfit bench init\` first.`);
   }
-  const taskId = options.task ?? '';
-  if (!TASK_ID_PATTERN.test(taskId)) {
-    throw new Error(`Invalid --task id "${taskId}" (must match ${TASK_ID_PATTERN}).`);
-  }
   const benchJson = JSON.parse(readFileSync(benchJsonPath, 'utf8')) as {
     tasks?: Array<{ id?: unknown }>;
   } & Record<string, unknown>;
   const tasks = Array.isArray(benchJson.tasks) ? benchJson.tasks : [];
+
+  const prepared = options.fromCommit
+    ? prepareFromCommit(options, cwd)
+    : prepareFreeze(options, cwd);
+  const taskId = options.task ?? prepared.defaultTaskId;
+  if (!TASK_ID_PATTERN.test(taskId)) {
+    throw new Error(`Invalid --task id "${taskId}" (must match ${TASK_ID_PATTERN}).`);
+  }
   if (tasks.some((task) => task?.id === taskId)) {
     throw new Error(`Task "${taskId}" already exists in ${benchJsonPath}.`);
   }
 
+  const generated: Record<string, string> = {
+    [`prompts/${taskId}.md`]: `${prepared.promptText.trimEnd()}\n`,
+    [`prompts/${taskId}.trigger.md`]: `${prepared.promptText.trimEnd()}\n\nThe repository is in your current working directory.\n`,
+    [`verifiers/${taskId}.mjs`]: prepared.verifierSource,
+    [`ground-truth/${taskId}.md`]: prepared.groundTruth,
+  };
+  const taskEntry = {
+    id: taskId,
+    fixture: `fixtures/${taskId}`,
+    prompt: `prompts/${taskId}.md`,
+    promptTrigger: `prompts/${taskId}.trigger.md`,
+    verifier: `node verifiers/${taskId}.mjs`,
+    verifierKind: prepared.verifierKind,
+    rubric: `ground-truth/${taskId}.md`,
+    ...(options.shouldTrigger !== undefined ? { shouldTrigger: options.shouldTrigger } : {}),
+  };
+
+  if (options.dryRun) {
+    log(`bench add plan (dry run) — task "${taskId}" into ${benchDir}:`);
+    log(`  + fixtures/${taskId}/ (${prepared.planFixtureLine})`);
+    for (const rel of Object.keys(generated)) log(`  + ${rel}`);
+    log('  ~ bench.json (register task)');
+    log('Dry run — nothing was written. Re-run with --yes to apply.');
+    return null;
+  }
+  if (!options.yes) {
+    const confirm = options.confirm ?? defaultConfirm;
+    const ok = await confirm(
+      `Add ${prepared.fixtureFiles.length} fixture file(s) + ${Object.keys(generated).length} generated file(s) into ${benchDir}? [y/N] `,
+    );
+    if (!ok) {
+      log('Aborted — nothing was written.');
+      return null;
+    }
+  }
+
+  for (const file of prepared.fixtureFiles) {
+    const target = join(benchDir, 'fixtures', taskId, file.rel);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, file.content);
+  }
+  for (const [rel, content] of Object.entries(generated)) {
+    const target = join(benchDir, rel);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, content, 'utf8');
+  }
+  benchJson.tasks = [...tasks, taskEntry];
+  writeFileSync(benchJsonPath, `${JSON.stringify(benchJson, null, 2)}\n`, 'utf8');
+  loadBench(benchDir);
+
+  log(`Task "${taskId}" added to ${benchDir} (${prepared.fixtureFiles.length} fixture file(s), verifier: ${prepared.verifierKind}).`);
+  log('Next:');
+  log(`  skillfit bench check ${benchDir}`);
+  log(`  skillfit eval <skill-path> --bench ${benchDir} --agent <id> --trials 3`);
+  return {
+    dir: benchDir,
+    taskId,
+    files: [
+      ...prepared.fixtureFiles.map((file) => `fixtures/${taskId}/${file.rel}`),
+      ...Object.keys(generated),
+      'bench.json',
+    ],
+  };
+}
+
+function prepareFreeze(options: BenchAddOptions, cwd: string): PreparedAdd {
   const promptText =
     options.prompt ??
     (options.promptFile ? readFileSync(resolve(cwd, options.promptFile), 'utf8') : undefined);
@@ -429,14 +514,15 @@ export async function runBenchAdd(
     throw new Error(`No capturable files in ${sourceDir} (empty git index or directory).`);
   }
 
-  const verifierKind = options.verifierCmd ? 'command' : 'output';
-  const generated: Record<string, string> = {
-    [`prompts/${taskId}.md`]: `${promptText.trimEnd()}\n`,
-    [`prompts/${taskId}.trigger.md`]: `${promptText.trimEnd()}\n\nThe repository is in your current working directory.\n`,
-    [`verifiers/${taskId}.mjs`]: options.verifierCmd
+  return {
+    defaultTaskId: 'frozen-task',
+    promptText: promptText.trimEnd(),
+    verifierSource: options.verifierCmd
       ? verifierForCmd(options.verifierCmd)
       : verifierForExpect(options.expect ?? ''),
-    [`ground-truth/${taskId}.md`]: `# Ground truth — ${taskId}
+    verifierKind: options.verifierCmd ? 'command' : 'output',
+    fixtureFiles: captured.map((rel) => ({ rel, content: readFileSync(join(sourceDir, rel)) })),
+    groundTruth: `# Ground truth — frozen task
 
 Frozen from a real failure on ${new Date().toISOString().slice(0, 10)}.
 
@@ -445,62 +531,171 @@ Frozen from a real failure on ${new Date().toISOString().slice(0, 10)}.
 
 TODO: describe what a correct outcome looks like, so future bench edits stay honest.
 `,
+    planFixtureLine: `${captured.length} file(s) from ${sourceDir}`,
   };
-  const taskEntry = {
-    id: taskId,
-    fixture: `fixtures/${taskId}`,
-    prompt: `prompts/${taskId}.md`,
-    promptTrigger: `prompts/${taskId}.trigger.md`,
-    verifier: `node verifiers/${taskId}.mjs`,
-    verifierKind,
-    rubric: `ground-truth/${taskId}.md`,
-    ...(options.shouldTrigger !== undefined ? { shouldTrigger: options.shouldTrigger } : {}),
-  };
+}
 
-  if (options.dryRun) {
-    log(`bench add --freeze plan (dry run) — task "${taskId}" into ${benchDir}:`);
-    log(`  + fixtures/${taskId}/ (${captured.length} file(s) from ${sourceDir})`);
-    for (const rel of Object.keys(generated)) log(`  + ${rel}`);
-    log('  ~ bench.json (register task)');
-    log('Dry run — nothing was written. Re-run with --yes to apply.');
-    return null;
+const MINED_TEST_PATH = /(^|\/)(tests?|__tests__|spec)(\/|$)|\.(test|spec)\.[cm]?[jt]sx?$/i;
+const MINED_MAX_FILES = 200;
+const MINED_MAX_BYTES = 1024 * 1024;
+
+function gitRun(
+  repo: string,
+  args: string[],
+): { status: number | null; stdout: string; stderr: string } {
+  const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  return { status: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
+}
+
+function gitMust(repo: string, args: string[]): string {
+  const result = gitRun(repo, args);
+  if (result.status !== 0) {
+    throw new Error(`git ${args.join(' ')} failed in ${repo}: ${result.stderr.trim() || `exit ${result.status}`}`);
   }
-  if (!options.yes) {
-    const confirm = options.confirm ?? defaultConfirm;
-    const ok = await confirm(
-      `Freeze ${captured.length} fixture file(s) + ${Object.keys(generated).length} generated file(s) into ${benchDir}? [y/N] `,
+  return result.stdout;
+}
+
+function gitShow(repo: string, ref: string, path: string): Buffer {
+  const result = spawnSync('git', ['show', `${ref}:${path}`], {
+    cwd: repo,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.status !== 0 || result.stdout === undefined) {
+    throw new Error(`git show ${ref}:${path} failed in ${repo}`);
+  }
+  return result.stdout as Buffer;
+}
+
+function verifierForMinedTests(tests: Array<{ rel: string; content: Buffer }>, cmd: string): string {
+  const embedded: Record<string, string> = {};
+  for (const test of tests) {
+    embedded[test.rel] = test.content.toString('utf8');
+  }
+  return `import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const runDir = process.argv[2];
+if (!runDir) {
+  console.error('usage: node <verifier> <run-dir>');
+  process.exit(2);
+}
+function scrubbedEnv() {
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  return env;
+}
+
+const TEST_FILES = ${JSON.stringify(embedded, null, 2)};
+for (const [rel, content] of Object.entries(TEST_FILES)) {
+  const target = path.join(runDir, ...rel.split('/'));
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, content);
+}
+
+const result = spawnSync(${JSON.stringify(cmd)}, { cwd: runDir, shell: true, encoding: 'utf8', env: scrubbedEnv() });
+if (result.stdout) process.stdout.write(result.stdout);
+if (result.stderr) process.stderr.write(result.stderr);
+if (result.error) {
+  console.error(String(result.error));
+  process.exit(1);
+}
+process.exit(result.status ?? 1);
+`;
+}
+
+function prepareFromCommit(options: BenchAddOptions, cwd: string): PreparedAdd {
+  const repo = resolve(cwd, options.sourceDir ?? '.');
+  if (!existsSync(repo)) {
+    throw new Error(`--source-dir does not exist: ${repo}`);
+  }
+  const sha = gitMust(repo, ['rev-parse', '--verify', `${options.fromCommit}^{commit}`]).trim();
+  const shortSha = sha.slice(0, 7);
+  const subject = gitMust(repo, ['show', '-s', '--format=%s', sha]).trim();
+  const body = gitMust(repo, ['show', '-s', '--format=%b', sha]).trim();
+
+  const changed = gitMust(repo, ['diff-tree', '--no-commit-id', '--name-status', '-r', sha])
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [status, ...rest] = line.split('\t');
+      return { status: status ?? '', path: rest.join('\t') };
+    });
+  const minedTests = changed.filter((entry) => MINED_TEST_PATH.test(entry.path) && entry.status !== 'D');
+  const nonTests = changed.filter((entry) => !MINED_TEST_PATH.test(entry.path));
+  if (minedTests.length === 0) {
+    throw new Error(
+      `Commit ${shortSha} changes no test files — --from-commit needs a fix that ships a test (the test becomes the verifier).`,
     );
-    if (!ok) {
-      log('Aborted — nothing was written.');
-      return null;
+  }
+  if (nonTests.length === 0) {
+    throw new Error(`Commit ${shortSha} changes only test files — there is no fix for the agent to write.`);
+  }
+
+  const parentLookup = gitRun(repo, ['rev-parse', '--verify', `${sha}^`]);
+  if (parentLookup.status !== 0) {
+    throw new Error(
+      `Commit ${shortSha} has no parent — --from-commit needs a fix commit with a parent state to use as the fixture.`,
+    );
+  }
+  const parent = parentLookup.stdout.trim();
+  const parentShort = parent.slice(0, 8);
+
+  let tree = gitMust(repo, ['ls-tree', '-r', '--format=%(objectsize) %(path)', parent])
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const match = line.match(/^(\S+)\s(.+)$/);
+      return { size: Number(match?.[1] ?? 0), path: match?.[2] ?? '' };
+    })
+    .filter((entry) => entry.path !== '');
+  if (options.include && options.include.length > 0) {
+    const prefixes = options.include.map((prefix) => prefix.replace(/\/?$/, '/'));
+    tree = tree.filter((entry) => prefixes.some((prefix) => entry.path.startsWith(prefix)));
+    if (tree.length === 0) {
+      throw new Error(`--include pathspec(s) ${options.include.join(', ')} match nothing at ${parentShort}.`);
     }
   }
-
-  for (const rel of captured) {
-    const target = join(benchDir, 'fixtures', taskId, rel);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, readFileSync(join(sourceDir, rel)));
+  const totalBytes = tree.reduce((sum, entry) => sum + entry.size, 0);
+  if (tree.length > MINED_MAX_FILES || totalBytes > MINED_MAX_BYTES) {
+    throw new Error(
+      `Repo state at ${parentShort} is ${tree.length} files / ${Math.round(totalBytes / 1024)} KB — too large for a bench fixture. Narrow it with --include <dir> (repeatable).`,
+    );
   }
-  for (const [rel, content] of Object.entries(generated)) {
-    const target = join(benchDir, rel);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, content, 'utf8');
-  }
-  benchJson.tasks = [...tasks, taskEntry];
-  writeFileSync(benchJsonPath, `${JSON.stringify(benchJson, null, 2)}\n`, 'utf8');
-  loadBench(benchDir);
 
-  log(`Task "${taskId}" frozen into ${benchDir} (${captured.length} fixture file(s), verifier: ${verifierKind}).`);
-  log('Next:');
-  log(`  skillfit bench check ${benchDir}`);
-  log(`  skillfit eval <skill-path> --bench ${benchDir} --agent <id> --trials 3`);
+  const fixtureFiles = tree.map((entry) => ({ rel: entry.path, content: gitShow(repo, parent, entry.path) }));
+  const tests = minedTests.map((entry) => ({ rel: entry.path, content: gitShow(repo, sha, entry.path) }));
+  const verifierCmd = options.verifierCmd ?? 'node --test';
+
   return {
-    dir: benchDir,
-    taskId,
-    files: [
-      ...captured.map((rel) => `fixtures/${taskId}/${rel}`),
-      ...Object.keys(generated),
-      'bench.json',
-    ],
+    defaultTaskId: `fix-${shortSha}`,
+    promptText: `# Task: implement the following change request
+
+The repository below is \`${basename(repo)}\` at commit \`${parentShort}\` — the state before the fix that resolved this request was applied.
+
+## Change request
+
+${subject}${body !== '' ? `\n\n${body}` : ''}
+
+## Rules
+
+- Do not change public export names.
+- Hidden grading runs the project's tests afterward — make the behavior correct, not merely plausible.`,
+    verifierSource: verifierForMinedTests(tests, verifierCmd),
+    verifierKind: 'command',
+    fixtureFiles,
+    groundTruth: `# Ground truth — fix-${shortSha}
+
+Mined from git history on ${new Date().toISOString().slice(0, 10)}.
+
+- Repository: \`${repo}\`
+- Fix commit: \`${sha}\` — ${subject}
+- Parent (fixture state): \`${parent}\`
+- Verifier: the fix commit's own tests (${tests.map((test) => `\`${test.rel}\``).join(', ')}), run via \`${verifierCmd}\` — they fail on the parent state and pass once the fix is implemented (FAIL_TO_PASS).
+- The fix itself: see \`git show ${sha}\` in the source repository.
+
+TODO: summarize the correct fix here so future bench edits stay honest.
+`,
+    planFixtureLine: `${fixtureFiles.length} file(s) at parent ${parentShort} from ${repo} (+${tests.length} hidden test file(s) embedded in the verifier)`,
   };
 }

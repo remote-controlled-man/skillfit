@@ -17,6 +17,7 @@ Usage:
   skillfit bench init [dir]                 Scaffold a new bench directory
   skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
+  skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
   skillfit install [options]                Install evidence-backed configuration
 
 Options:
@@ -39,6 +40,12 @@ bench add --freeze options:
   --source-dir <dir>     Directory to snapshot as the fixture (default: cwd; git-tracked files only when inside a git repo)
   --should-trigger <yes|no>  Label for trigger-mode evaluation
 
+bench add --from-commit options:
+  --task <id>            Task id (default: fix-<short-sha>)
+  --source-dir <dir>     Repository to mine (default: cwd)
+  --include <dir>        Restrict the fixture to these paths (repeatable; required for large repos)
+  --verifier-cmd <cmd>   Override the test command (default: node --test)
+
 Docs: https://github.com/remote-controlled-man/skillfit
 `;
 
@@ -56,6 +63,8 @@ async function main(): Promise<void> {
       prompt: { type: 'string' },
       'prompt-file': { type: 'string' },
       freeze: { type: 'boolean', default: false },
+      'from-commit': { type: 'string' },
+      include: { type: 'string', multiple: true },
       'source-dir': { type: 'string' },
       'verifier-cmd': { type: 'string' },
       expect: { type: 'string' },
@@ -143,6 +152,8 @@ async function main(): Promise<void> {
           prompt: values.prompt,
           promptFile: values['prompt-file'],
           freeze: values.freeze ?? false,
+          fromCommit: values['from-commit'],
+          include: values.include,
           sourceDir: values['source-dir'],
           verifierCmd: values['verifier-cmd'],
           expect: values.expect,
