@@ -33,22 +33,38 @@ ${answerA}
 Answer B:
 ${answerB}
 
-Score each answer from 1 (worthless) to 10 (perfect) for correctness and completeness against the task${rubricText ? ' and rubric' : ''}.
-Reply with only a JSON object: {"A": <scoreA>, "B": <scoreB>}`;
+For EACH answer, independently decide three yes/no checks against the task${rubricText ? ' and rubric' : ''}:
+1. "correct" — it contains no false claims and nothing that violates the task.
+2. "complete" — it addresses every explicit requirement of the task.
+3. "grounded" — every claim it makes is supported by the task material (no speculation or invention).
+
+Reply with only a JSON object: {"A": {"correct": true|false, "complete": true|false, "grounded": true|false}, "B": {"correct": true|false, "complete": true|false, "grounded": true|false}}`;
+}
+
+const CHECKS = ['correct', 'complete', 'grounded'] as const;
+
+function parseChecklist(raw: string, label: 'A' | 'B'): number {
+  const match = /\{\s*"A"\s*:\s*\{[^{}]*\}\s*,\s*"B"\s*:\s*\{[^{}]*\}\s*\}/.exec(raw);
+  if (!match) throw new Error('Judge response did not contain a checklist JSON object');
+  const parsed = JSON.parse(match[0]) as Record<string, unknown>;
+  const side = parsed[label];
+  if (typeof side !== 'object' || side === null) {
+    throw new Error(`Judge checklist missing the "${label}" object`);
+  }
+  const record = side as Record<string, unknown>;
+  let score = 0;
+  for (const check of CHECKS) {
+    const value = record[check];
+    if (typeof value !== 'boolean') {
+      throw new Error(`Judge checklist "${label}.${check}" is not a boolean: ${String(value)}`);
+    }
+    if (value) score++;
+  }
+  return score;
 }
 
 function parseScores(raw: string): { a: number; b: number } {
-  const match = /\{[\s\S]*?\}/.exec(raw);
-  if (!match) throw new Error('Judge response did not contain a JSON object');
-  const parsed = JSON.parse(match[0]) as Record<string, unknown>;
-  const a = parsed['A'];
-  const b = parsed['B'];
-  for (const [label, value] of [['A', a], ['B', b]] as const) {
-    if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > 10) {
-      throw new Error(`Judge score ${label} is not an integer in [1, 10]: ${String(value)}`);
-    }
-  }
-  return { a: a as number, b: b as number };
+  return { a: parseChecklist(raw, 'A'), b: parseChecklist(raw, 'B') };
 }
 
 export async function judgePair(

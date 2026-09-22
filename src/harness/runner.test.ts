@@ -200,7 +200,11 @@ test('runExperiment aggregates blind judge scores per task', async (t) => {
   const runsRoot = tmp(t, 'skillfit-runs-');
   const judge: Executor = {
     describe: () => ({ kind: 'api', model: 'judge-model' }),
-    run: (): Promise<ExecutorResult> => Promise.resolve({ output: '{"A": 9, "B": 4}' }),
+    run: (): Promise<ExecutorResult> =>
+      Promise.resolve({
+        output:
+          '{"A": {"correct":true,"complete":true,"grounded":true}, "B": {"correct":false,"complete":false,"grounded":false}}',
+      }),
   };
   const manifest = await runExperiment({ ...plan({ runsRoot }), judge });
   const task = manifest.tasks[0];
@@ -222,7 +226,9 @@ test('runExperiment averages judge scores only over consistent trials', async (t
       const aIndex = prompt.indexOf('Answer A:');
       const bIndex = prompt.indexOf('Answer B:');
       const aIsTreatment = prompt.slice(aIndex, bIndex).includes('bulk discount');
-      return Promise.resolve({ output: aIsTreatment ? '{"A": 8, "B": 3}' : '{"A": 3, "B": 8}' });
+      const win = '{"correct":true,"complete":true,"grounded":true}';
+      const partial = '{"correct":true,"complete":false,"grounded":true}';
+      return Promise.resolve({ output: aIsTreatment ? `{"A": ${win}, "B": ${partial}}` : `{"A": ${partial}, "B": ${win}}` });
     },
   };
   const manifest = await runExperiment({ ...plan({ runsRoot }), judge });
@@ -230,8 +236,8 @@ test('runExperiment averages judge scores only over consistent trials', async (t
   assert.ok(task?.judge);
   assert.equal(task.judge?.judgedTrials, 3);
   assert.equal(task.judge?.consistentTrials, 3);
-  assert.equal(task.judge?.baselineMean, 3);
-  assert.equal(task.judge?.treatmentMean, 8);
+  assert.equal(task.judge?.baselineMean, 2);
+  assert.equal(task.judge?.treatmentMean, 3);
 });
 
 test('runExperiment strips the mock marker for non-mock executors', async (t) => {

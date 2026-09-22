@@ -3,6 +3,9 @@ import { test } from 'node:test';
 import { judgeOrder, judgePair } from './judge.js';
 import type { Executor, ExecutorResult } from './types.js';
 
+const WIN = '{"correct":true,"complete":true,"grounded":true}';
+const LOSE = '{"correct":false,"complete":false,"grounded":false}';
+
 function fakeJudge(answer: string | ((prompt: string) => string), capture?: string[]): Executor {
   return {
     describe: () => ({ kind: 'mock', model: 'judge' }),
@@ -28,7 +31,7 @@ test('judgeOrder is deterministic and covers both orders', () => {
 test('judgePair runs AB/BA and flags an order-biased judge as inconsistent', async () => {
   for (const seed of ['seed-0', 'seed-1']) {
     const captured: string[] = [];
-    const result = await judgePair(fakeJudge('{"A": 9, "B": 4}', captured), {
+    const result = await judgePair(fakeJudge(`{"A": ${WIN}, "B": ${LOSE}}`, captured), {
       taskPromptText: 'task',
       baselineOutput: 'baseline-answer',
       treatmentOutput: 'treatment-answer',
@@ -50,8 +53,8 @@ test('judgePair runs AB/BA and flags an order-biased judge as inconsistent', asy
       reversePrompt.slice(raIndex, rbIndex).includes(first === 'baseline' ? 'treatment-answer' : 'baseline-answer'),
     );
     assert.equal(result.consistent, false, 'a judge that always favors A disagrees with itself');
-    assert.equal(result.baselineScore, 6.5);
-    assert.equal(result.treatmentScore, 6.5);
+    assert.equal(result.baselineScore, 1.5);
+    assert.equal(result.treatmentScore, 1.5);
     assert.equal(result.firstCondition, first);
   }
 });
@@ -61,7 +64,10 @@ test('judgePair reports a consistent verdict when both orders agree', async () =
     const aIndex = prompt.indexOf('Answer A:');
     const bIndex = prompt.indexOf('Answer B:');
     const aIsBaseline = prompt.slice(aIndex, bIndex).includes('baseline-answer');
-    return aIsBaseline ? '{"A": 3, "B": 9}' : '{"A": 9, "B": 3}';
+    const partial = '{"correct":true,"complete":false,"grounded":true}';
+    return aIsBaseline
+      ? `{"A": ${partial}, "B": ${WIN}}`
+      : `{"A": ${WIN}, "B": ${partial}}`;
   };
   for (const seed of ['seed-0', 'seed-1']) {
     const result = await judgePair(fakeJudge(orderAware), {
@@ -72,14 +78,14 @@ test('judgePair reports a consistent verdict when both orders agree', async () =
       workdir: '/tmp',
     });
     assert.equal(result.consistent, true);
-    assert.equal(result.baselineScore, 3);
-    assert.equal(result.treatmentScore, 9);
+    assert.equal(result.baselineScore, 2);
+    assert.equal(result.treatmentScore, 3);
   }
 });
 
 test('judgePair includes the rubric when provided', async () => {
   const captured: string[] = [];
-  await judgePair(fakeJudge('{"A": 5, "B": 5}', captured), {
+  await judgePair(fakeJudge(`{"A": ${WIN}, "B": ${WIN}}`, captured), {
     taskPromptText: 'task',
     rubricText: 'the rubric',
     baselineOutput: 'b',
@@ -104,13 +110,25 @@ test('judgePair rejects malformed judge responses', async () => {
   );
   await assert.rejects(
     () =>
-      judgePair(fakeJudge('{"A": 99, "B": 1}'), {
+      judgePair(fakeJudge('{"A": {"correct": "yes"}, "B": {}}'), {
         taskPromptText: 'task',
         baselineOutput: 'b',
         treatmentOutput: 't',
         seed: 's',
         workdir: '/tmp',
       }),
-    /integer in \[1, 10\]/,
+    /not a boolean/,
   );
+});
+
+test('judgePair finds the checklist JSON amid prose and stray braces', async () => {
+  const noisy = `Let me think about {braces} and {other: "things"} first.\n\nVerdict:\n\n\`\`\`json\n{"A": ${WIN}, "B": ${LOSE}}\n\`\`\`\n\nHope that helps!`;
+  const result = await judgePair(fakeJudge(noisy), {
+    taskPromptText: 'task',
+    baselineOutput: 'baseline-answer',
+    treatmentOutput: 'treatment-answer',
+    seed: 's',
+    workdir: '/tmp',
+  });
+  assert.equal(result.consistent, false);
 });

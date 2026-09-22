@@ -101,10 +101,11 @@ The deterministic verifier is the sole pass/fail authority; the judge never flip
 Implementation status (2026-09-22): blind pairwise with **AB/BA position-swapped double calls and
 winner-only-if-unanimous aggregation** is implemented (`--judge-agent` drives any matrix agent CLI, or
 `SKILLFIT_JUDGE=1` + API key; means are computed over unanimous trials only and `consistentTrials` is
-reported per task). The k=3 majority-ensemble recommendation was **considered and rejected**: a
-position-biased judge can still win a 2-of-3 majority by order luck, which hides the bias inside the
-vote instead of surfacing it; the unanimous AB/BA gate is stricter and reports `consistentTrials` as the
-bias signal. Binary rubric checklists and the κ calibration gate remain open.
+reported per task). The judge scores answers with a **binary checklist** (`correct` / `complete` /
+`grounded`, 0–3 per answer) instead of a Likert scale. The k=3 majority-ensemble recommendation was
+**considered and rejected**: a position-biased judge can still win a 2-of-3 majority by order luck,
+which hides the bias inside the vote instead of surfacing it; the unanimous AB/BA gate is stricter and
+reports `consistentTrials` as the bias signal. The κ calibration gate remains open.
 
 ## Verdict protocol (what "effective" means)
 
