@@ -39,6 +39,9 @@ bench add --freeze options:
   --prompt <text>        Task prompt, or --prompt-file <path> (required)
   --verifier-cmd <cmd>   Command run in the task run dir; exit 0 = pass
   --expect <string>      Alternative: pass when the agent's final output contains <string>
+  --decompose            Draft verifier.mjs + oracle.mjs with an agent (--agent <id>), gated by NOP + oracle checks
+  --verifier-kind <k>    With --decompose: output (default, grades _output.md) | command (grades file state)
+  --oracle <cmd>         Register an oracle (reference-solution) command for the new task
   --source-dir <dir>     Directory to snapshot as the fixture (default: cwd; git-tracked files only when inside a git repo)
   --should-trigger <yes|no>  Label for trigger-mode evaluation
 
@@ -71,6 +74,9 @@ async function main(): Promise<void> {
       'source-dir': { type: 'string' },
       'verifier-cmd': { type: 'string' },
       expect: { type: 'string' },
+      oracle: { type: 'string' },
+      decompose: { type: 'boolean', default: false },
+      'verifier-kind': { type: 'string' },
       'should-trigger': { type: 'string' },
       calibrate: { type: 'boolean', default: false },
       json: { type: 'boolean', default: false },
@@ -158,6 +164,12 @@ async function main(): Promise<void> {
           process.exitCode = 2;
           return;
         }
+        const verifierKind = values['verifier-kind'];
+        if (verifierKind !== undefined && verifierKind !== 'output' && verifierKind !== 'command') {
+          console.error(`Unknown --verifier-kind value: ${verifierKind} (expected "output" or "command")`);
+          process.exitCode = 2;
+          return;
+        }
         await runBenchAdd({
           ...common,
           benchDir: positionals[2],
@@ -170,6 +182,9 @@ async function main(): Promise<void> {
           sourceDir: values['source-dir'],
           verifierCmd: values['verifier-cmd'],
           expect: values.expect,
+          oracle: values.oracle,
+          decompose: values.decompose ?? false,
+          verifierKind,
           shouldTrigger: shouldTrigger === undefined ? undefined : shouldTrigger === 'yes',
         });
         return;

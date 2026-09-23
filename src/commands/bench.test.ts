@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { loadBench } from '../harness/bench.js';
+import type { Executor } from '../harness/types.js';
 import { runBenchAdd, runBenchCheck, runBenchInit } from './bench.js';
 
 const PACKAGE_ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -102,6 +103,121 @@ test('runBenchCheck fails cleanly on a non-bench directory', async (t) => {
   const report = await runBenchCheck({ dir, log: () => {} });
   assert.equal(report.failures, 1);
   assert.match(report.checks[0]?.message ?? '', /does not load/);
+});
+
+function oracleBench(
+  t: import('node:test').TestContext,
+  verifierSrc: string,
+  oracleSrc: string,
+): string {
+  const dir = tmp(t, 'skillfit-bench-oracle-');
+  mkdirSync(join(dir, 'fixtures', 't1'), { recursive: true });
+  mkdirSync(join(dir, 'prompts'), { recursive: true });
+  mkdirSync(join(dir, 'verifiers'), { recursive: true });
+  mkdirSync(join(dir, 'ground-truth'), { recursive: true });
+  writeFileSync(join(dir, 'fixtures', 't1', 'index.txt'), 'x\n');
+  writeFileSync(join(dir, 'prompts', 't1.md'), 'Do something.\n');
+  writeFileSync(join(dir, 'verifiers', 'v.mjs'), verifierSrc);
+  writeFileSync(join(dir, 'ground-truth', 'o.mjs'), oracleSrc);
+  writeFileSync(
+    join(dir, 'bench.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      tasks: [
+        {
+          id: 't1',
+          fixture: 'fixtures/t1',
+          prompt: 'prompts/t1.md',
+          verifier: 'node verifiers/v.mjs',
+          oracle: 'node ground-truth/o.mjs',
+        },
+      ],
+    }),
+  );
+  return dir;
+}
+
+const EXACT_VERIFIER = `import fs from 'node:fs';
+import path from 'node:path';
+let out = '';
+try {
+  out = fs.readFileSync(path.join(process.argv[2], '_output.md'), 'utf8').trim();
+} catch {
+  console.log(JSON.stringify({ passed: false, checks: [{ name: 'answer', pass: false }] }));
+  process.exit(1);
+}
+const passed = out === 'right';
+console.log(JSON.stringify({ passed, checks: [{ name: 'answer', pass: passed }] }));
+process.exit(passed ? 0 : 1);
+`;
+
+test('runBenchCheck passes when the oracle aces the verifier', async (t) => {
+  const oracle = `import fs from 'node:fs';
+import path from 'node:path';
+fs.writeFileSync(path.join(process.argv[2], '_output.md'), 'right\\n');
+`;
+  const dir = oracleBench(t, EXACT_VERIFIER, oracle);
+  const report = await runBenchCheck({ dir, log: () => {} });
+  assert.equal(report.failures, 0);
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'PASS' && c.message.includes('oracle solution passes the verifier with full checks'),
+    ),
+  );
+});
+
+test('runBenchCheck fails when the oracle does not solve the task', async (t) => {
+  const oracle = `import fs from 'node:fs';
+import path from 'node:path';
+fs.writeFileSync(path.join(process.argv[2], '_output.md'), 'wrong\\n');
+`;
+  const dir = oracleBench(t, EXACT_VERIFIER, oracle);
+  const report = await runBenchCheck({ dir, log: () => {} });
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'FAIL' && c.message.includes('oracle solution does not pass the verifier'),
+    ),
+  );
+});
+
+test('runBenchCheck fails when the oracle passes the exit code but not every check', async (t) => {
+  const partialVerifier = `import fs from 'node:fs';
+import path from 'node:path';
+let out = '';
+try {
+  out = fs.readFileSync(path.join(process.argv[2], '_output.md'), 'utf8');
+} catch {
+  console.log(JSON.stringify({ passed: false }));
+  process.exit(1);
+}
+if (out.trim() === '') {
+  console.log(JSON.stringify({ passed: false }));
+  process.exit(1);
+}
+console.log(JSON.stringify({ passed: true, checks: [{ name: 'a', pass: true }, { name: 'b', pass: false }] }));
+process.exit(0);
+`;
+  const oracle = `import fs from 'node:fs';
+import path from 'node:path';
+fs.writeFileSync(path.join(process.argv[2], '_output.md'), 'something\\n');
+`;
+  const dir = oracleBench(t, partialVerifier, oracle);
+  const report = await runBenchCheck({ dir, log: () => {} });
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'FAIL' && c.message.includes('scores 0.50 on its checks'),
+    ),
+  );
+});
+
+test('runBenchCheck fails when the oracle command itself errors', async (t) => {
+  const dir = oracleBench(t, EXACT_VERIFIER, 'process.exit(1);\n');
+  const report = await runBenchCheck({ dir, log: () => {} });
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'FAIL' && c.message.includes('oracle command itself failed'),
+    ),
+  );
 });
 
 function gitRepoWithBug(t: import('node:test').TestContext): string {
@@ -207,6 +323,175 @@ test('runBenchAdd --freeze supports --expect output verifiers', async (t) => {
     encoding: 'utf8',
   });
   assert.equal(bad.status, 1);
+});
+
+function stubDrafter(verifierSrc: string, oracleSrc: string): Executor {
+  return {
+    describe: () => ({ kind: 'mock', model: 'stub-drafter' }),
+    run: (_prompt: string, workdir: string) => {
+      writeFileSync(join(workdir, 'verifier.mjs'), verifierSrc);
+      writeFileSync(join(workdir, 'oracle.mjs'), oracleSrc);
+      return Promise.resolve({ output: '' });
+    },
+  };
+}
+
+const DRAFTED_COMMAND_VERIFIER = `import { spawnSync } from 'node:child_process';
+const result = spawnSync('node --test', { cwd: process.argv[2], shell: true, encoding: 'utf8' });
+const passed = result.status === 0;
+console.log(JSON.stringify({ passed, checks: [{ name: 'tests-pass', pass: passed }] }));
+process.exit(passed ? 0 : 1);
+`;
+
+const DRAFTED_ORACLE = `import fs from 'node:fs';
+import path from 'node:path';
+fs.writeFileSync(path.join(process.argv[2], 'add.js'), 'export function add(a, b) {\\n  return a + b;\\n}\\n');
+`;
+
+test('runBenchAdd --freeze --decompose installs a gated draft with its oracle', async (t) => {
+  const source = gitRepoWithBug(t);
+  const benchDir = await freezeBench(t);
+  const result = await runBenchAdd({
+    benchDir,
+    task: 'add-bug-drafted',
+    prompt: 'The add function is broken. Fix it so the tests pass.',
+    freeze: true,
+    sourceDir: source,
+    decompose: true,
+    verifierKind: 'command',
+    executor: stubDrafter(DRAFTED_COMMAND_VERIFIER, DRAFTED_ORACLE),
+    yes: true,
+    log: () => {},
+  });
+  assert.ok(result);
+  const bench = loadBench(benchDir);
+  const task = bench.tasks.find((entry) => entry.id === 'add-bug-drafted');
+  assert.equal(task?.verifierKind, 'command');
+  assert.equal(task?.oracle, 'node ground-truth/oracle-add-bug-drafted.mjs');
+  assert.ok(existsSync(join(benchDir, 'ground-truth', 'oracle-add-bug-drafted.mjs')));
+  assert.match(
+    readFileSync(join(benchDir, 'verifiers', 'add-bug-drafted.mjs'), 'utf8'),
+    /tests-pass/,
+  );
+  const report = await runBenchCheck({ dir: benchDir, log: () => {} });
+  assert.equal(report.failures, 0);
+});
+
+test('runBenchAdd --decompose needs an agent or injected executor', async (t) => {
+  const source = gitRepoWithBug(t);
+  const benchDir = await freezeBench(t);
+  await assert.rejects(
+    () =>
+      runBenchAdd({
+        benchDir,
+        task: 'x1',
+        prompt: 'p',
+        freeze: true,
+        sourceDir: source,
+        decompose: true,
+        yes: true,
+        log: () => {},
+      }),
+    /needs an agent/,
+  );
+});
+
+test('runBenchAdd --decompose rejects a draft that passes the untouched fixture', async (t) => {
+  const source = gitRepoWithBug(t);
+  const benchDir = await freezeBench(t);
+  const laxVerifier = 'console.log(JSON.stringify({ passed: true }));\nprocess.exit(0);\n';
+  await assert.rejects(
+    () =>
+      runBenchAdd({
+        benchDir,
+        task: 'x1',
+        prompt: 'p',
+        freeze: true,
+        sourceDir: source,
+        decompose: true,
+        executor: stubDrafter(laxVerifier, DRAFTED_ORACLE),
+        yes: true,
+        log: () => {},
+      }),
+    /NOP gate/,
+  );
+  const bench = loadBench(benchDir);
+  assert.ok(!bench.tasks.some((entry) => entry.id === 'x1'), 'nothing was registered');
+});
+
+test('runBenchAdd --decompose rejects a draft whose oracle does not solve the task', async (t) => {
+  const source = gitRepoWithBug(t);
+  const benchDir = await freezeBench(t);
+  const idleOracle = '// does nothing\n';
+  await assert.rejects(
+    () =>
+      runBenchAdd({
+        benchDir,
+        task: 'x1',
+        prompt: 'p',
+        freeze: true,
+        sourceDir: source,
+        decompose: true,
+        verifierKind: 'command',
+        executor: stubDrafter(DRAFTED_COMMAND_VERIFIER, idleOracle),
+        yes: true,
+        log: () => {},
+      }),
+    /oracle gate/,
+  );
+});
+
+test('runBenchAdd --decompose validates flag combinations', async (t) => {
+  const source = gitRepoWithBug(t);
+  const benchDir = await freezeBench(t);
+  const base = {
+    benchDir,
+    task: 'x1',
+    prompt: 'p',
+    freeze: true,
+    sourceDir: source,
+    yes: true,
+    log: () => {},
+  };
+  await assert.rejects(
+    () => runBenchAdd({ ...base, decompose: true, verifierCmd: 'node --test' }),
+    /drafts the verifier/,
+  );
+  await assert.rejects(
+    () => runBenchAdd({ ...base, decompose: true, oracle: 'node ground-truth/o.mjs' }),
+    /own oracle/,
+  );
+  await assert.rejects(
+    () => runBenchAdd({ ...base, freeze: false, fromCommit: 'HEAD', decompose: true }),
+    /only with --freeze/,
+  );
+});
+
+test('runBenchAdd --decompose dry-run skips the agent and writes nothing', async (t) => {
+  const source = gitRepoWithBug(t);
+  const benchDir = await freezeBench(t);
+  let invoked = false;
+  const spy: Executor = {
+    describe: () => ({ kind: 'mock', model: 'spy' }),
+    run: () => {
+      invoked = true;
+      return Promise.resolve({ output: '' });
+    },
+  };
+  const result = await runBenchAdd({
+    benchDir,
+    task: 'x1',
+    prompt: 'p',
+    freeze: true,
+    sourceDir: source,
+    decompose: true,
+    executor: spy,
+    dryRun: true,
+    log: () => {},
+  });
+  assert.equal(result, null);
+  assert.equal(invoked, false);
+  assert.ok(!existsSync(join(benchDir, 'verifiers', 'x1.mjs')));
 });
 
 test('runBenchAdd validates flags and rejects duplicates', async (t) => {

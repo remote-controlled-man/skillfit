@@ -24,6 +24,16 @@ function assertRelativeInside(benchDir: string, rel: string, label: string): str
   return abs;
 }
 
+function assertCommandTokensExist(benchDir: string, command: string, label: string): void {
+  for (const token of command.split(/\s+/).filter(Boolean)) {
+    if (!token.includes('/') && !token.includes('\\')) continue;
+    const tokenAbs = assertRelativeInside(benchDir, token, label);
+    if (!existsSync(tokenAbs)) {
+      throw new Error(`${label} references a missing file: ${token}`);
+    }
+  }
+}
+
 function validateTask(benchDir: string, raw: unknown, index: number): BenchTask {
   if (typeof raw !== 'object' || raw === null) {
     throw new Error(`bench.json task #${index + 1} must be an object`);
@@ -75,13 +85,15 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
       throw new Error(`task "${id}" promptTrigger file not found: ${promptTrigger}`);
     }
   }
-  for (const token of verifier.split(/\s+/).filter(Boolean)) {
-    if (!token.includes('/') && !token.includes('\\')) continue;
-    const tokenAbs = assertRelativeInside(benchDir, token, `task "${id}" verifier`);
-    if (!existsSync(tokenAbs)) {
-      throw new Error(`task "${id}" verifier references a missing file: ${token}`);
+  assertCommandTokensExist(benchDir, verifier, `task "${id}" verifier`);
+  const oracle = task['oracle'];
+  if (oracle !== undefined) {
+    if (typeof oracle !== 'string' || oracle.trim() === '') {
+      throw new Error(`bench.json task "${id}" has an invalid "oracle" field`);
     }
+    assertCommandTokensExist(benchDir, oracle, `task "${id}" oracle`);
   }
+  const oracleField = oracle === undefined ? {} : { oracle: oracle as string };
   if (rubric !== undefined) {
     if (typeof rubric !== 'string' || rubric.trim() === '') {
       throw new Error(`bench.json task "${id}" has an invalid "rubric" field`);
@@ -90,9 +102,9 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
     if (!existsSync(rubricAbs) || !statSync(rubricAbs).isFile()) {
       throw new Error(`task "${id}" rubric file not found: ${rubric}`);
     }
-    return { id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField, ...verifierKindField };
+    return { id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField, ...verifierKindField, ...oracleField };
   }
-  return { id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField, ...verifierKindField };
+  return { id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField, ...verifierKindField, ...oracleField };
 }
 
 export function loadBench(benchDir: string): Bench {

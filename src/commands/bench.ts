@@ -9,6 +9,7 @@ import { listFilesRecursive } from '../harness/hash.js';
 import { runVerifier } from '../harness/runner.js';
 import { runTriggerExperiment } from '../harness/trigger.js';
 import { MOCK_MARKER_FILE } from '../harness/constants.js';
+import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { Executor, SkillBundle } from '../harness/types.js';
 import type { Check } from './doctor.js';
 
@@ -57,6 +58,7 @@ function templateFiles(benchName: string): Record<string, string> {
             fixture: 'fixtures/example-task',
             prompt: 'prompts/example-task.md',
             verifier: 'node verifiers/example-task.mjs',
+            oracle: 'node ground-truth/oracle-example-task.mjs',
             rubric: 'ground-truth/example-task.md',
           },
         ],
@@ -91,12 +93,25 @@ let output;
 try {
   output = fs.readFileSync(path.join(runDir, '_output.md'), 'utf8').trim();
 } catch {
-  console.log(JSON.stringify({ passed: false, error: 'missing _output.md' }));
+  console.log(JSON.stringify({ passed: false, checks: [{ name: 'exact-answer', pass: false }], error: 'missing _output.md' }));
   process.exit(1);
 }
 const passed = output === 'skillfit-ok';
-console.log(JSON.stringify({ passed }));
+console.log(JSON.stringify({ passed, checks: [{ name: 'exact-answer', pass: passed }] }));
 process.exit(passed ? 0 : 1);
+`,
+    'ground-truth/oracle-example-task.mjs': `import fs from 'node:fs';
+import path from 'node:path';
+
+const runDir = process.argv[2];
+if (!runDir) {
+  console.error('usage: node oracle-example-task.mjs <run-dir>');
+  process.exit(2);
+}
+
+// The oracle applies the reference solution: the exact contents of answer.txt.
+const answer = fs.readFileSync(path.join(runDir, 'answer.txt'), 'utf8').trim();
+fs.writeFileSync(path.join(runDir, '_output.md'), answer + '\\n', 'utf8');
 `,
     'ground-truth/example-task.md': `# Ground truth — example-task
 
@@ -188,6 +203,78 @@ async function probeVerifier(
   }
 }
 
+function copyFixture(fixtureDir: string, dest: string): void {
+  for (const rel of listFilesRecursive(fixtureDir)) {
+    const target = join(dest, rel);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, readFileSync(join(fixtureDir, rel)));
+  }
+}
+
+type OracleGateOutcome =
+  | { kind: 'oracle-failed'; exitCode: number | null }
+  | { kind: 'verifier-failed' }
+  | { kind: 'low-score'; score: number }
+  | { kind: 'pass'; score: number | null };
+
+async function runOracleGate(
+  benchDir: string,
+  fixtureDir: string,
+  oracle: string,
+  verifier: string,
+): Promise<OracleGateOutcome> {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
+  try {
+    copyFixture(fixtureDir, dir);
+    const oracleRun = await runVerifier(benchDir, oracle, dir);
+    if (oracleRun.exitCode !== 0) {
+      return { kind: 'oracle-failed', exitCode: oracleRun.exitCode };
+    }
+    const graded = await runVerifier(benchDir, verifier, dir);
+    if (graded.exitCode !== 0) {
+      return { kind: 'verifier-failed' };
+    }
+    const score = verdictFromOutput(graded.output)?.score ?? null;
+    if (score !== null && score < 1) {
+      return { kind: 'low-score', score };
+    }
+    return { kind: 'pass', score };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+async function probeOracle(
+  benchDir: string,
+  fixture: string,
+  oracle: string,
+  verifier: string,
+): Promise<{ status: Check['status']; message: string }> {
+  const gate = await runOracleGate(benchDir, join(benchDir, fixture), oracle, verifier);
+  switch (gate.kind) {
+    case 'oracle-failed':
+      return {
+        status: 'FAIL',
+        message: `oracle command itself failed (exit ${gate.exitCode ?? 'null'}) — the reference solution cannot run`,
+      };
+    case 'verifier-failed':
+      return {
+        status: 'FAIL',
+        message: 'oracle solution does not pass the verifier — the task is unwinnable or the oracle is stale',
+      };
+    case 'low-score':
+      return {
+        status: 'FAIL',
+        message: `oracle passes the verifier but scores ${gate.score.toFixed(2)} on its checks — the checks are stricter than the exit code`,
+      };
+    case 'pass':
+      return {
+        status: 'PASS',
+        message: `oracle solution passes the verifier${gate.score !== null ? ' with full checks' : ''}`,
+      };
+  }
+}
+
 function renderCheck({ status, message }: Check): string {
   return `[${status}] ${message}`;
 }
@@ -216,12 +303,7 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     if ((task.verifierKind ?? 'output') === 'command') {
       const fixtureCopy = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
       try {
-        const fixtureDir = join(bench.dir, task.fixture);
-        for (const rel of listFilesRecursive(fixtureDir)) {
-          const target = join(fixtureCopy, rel);
-          mkdirSync(dirname(target), { recursive: true });
-          writeFileSync(target, readFileSync(join(fixtureDir, rel)));
-        }
+        copyFixture(join(bench.dir, task.fixture), fixtureCopy);
         const pristine = await runVerifier(bench.dir, task.verifier, fixtureCopy);
         if (pristine.exitCode === 0) {
           push(
@@ -250,6 +332,11 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
       } else {
         push('PASS', `${task.id}: verifier rejects empty output`);
       }
+    }
+
+    if (task.oracle) {
+      const oracleResult = await probeOracle(bench.dir, task.fixture, task.oracle, task.verifier);
+      push(oracleResult.status, `${task.id}: ${oracleResult.message}`);
     }
 
     const markerPath = join(bench.dir, task.fixture, MOCK_MARKER_FILE);
@@ -405,6 +492,11 @@ export interface BenchAddOptions {
   sourceDir?: string;
   verifierCmd?: string;
   expect?: string;
+  oracle?: string;
+  decompose?: boolean;
+  verifierKind?: 'output' | 'command';
+  agent?: string;
+  executor?: Executor;
   shouldTrigger?: boolean;
   dryRun?: boolean;
   yes?: boolean;
@@ -475,9 +567,128 @@ interface PreparedAdd {
   promptText: string;
   verifierSource: string;
   verifierKind: 'output' | 'command';
+  oracleSource?: string;
   fixtureFiles: Array<{ rel: string; content: Buffer }>;
   groundTruth: string;
   planFixtureLine: string;
+}
+
+function buildDecomposePrompt(
+  taskPrompt: string,
+  fixtureFiles: string[],
+  verifierKind: 'output' | 'command',
+): string {
+  const listing = fixtureFiles.map((rel) => `- fixture/${rel}`).join('\n');
+  const grading =
+    verifierKind === 'command'
+      ? 'The verifier runs a real command inside the run directory and grades the final file state (the agent edits files).'
+      : "The verifier grades the agent's final message at <run-dir>/_output.md.";
+  const solving =
+    verifierKind === 'command'
+      ? 'applies the reference fix to the files inside <run-dir>'
+      : 'writes the reference answer to <run-dir>/_output.md';
+  return `You are drafting a skillfit bench task verifier and its oracle (reference solution).
+
+# The task the bench measures
+
+${taskPrompt}
+
+# The fixture
+
+A pristine copy of the task fixture lives at ./fixture/ (${fixtureFiles.length} file(s)):
+
+${listing}
+
+Read whatever fixture files you need. Do NOT modify anything under fixture/ — it is the
+untouched starting state and must stay that way.
+
+# What you must write
+
+Two files in the current directory (NOT under fixture/):
+
+1. verifier.mjs — run as \`node verifier.mjs <run-dir>\`. ${grading}
+   - Deterministic: same run directory in, same verdict out. No network, no clocks, no randomness.
+   - Exit code 0 = pass, anything else = fail. That is the only pass/fail signal.
+   - The LAST stdout line must be one JSON object: {"passed": boolean, "checks": [{"name": string, "pass": boolean}]}.
+     Decompose the task's acceptance criteria into named checks (2–8 of them); "passed" is true
+     exactly when every check passes. Grade the outcome, not the path taken.
+   - It MUST exit non-zero on the untouched fixture (the task starts unsolved).
+
+2. oracle.mjs — run as \`node oracle.mjs <run-dir>\`; it ${solving}.
+   After the oracle runs, \`node verifier.mjs <run-dir>\` must exit 0 with every check passing.
+
+Both scripts run with the bench root as cwd and receive the run directory as argv[2]. Use only
+Node built-ins. Your draft is validated automatically: the verifier must fail the untouched
+fixture and pass the oracle-solved one, so test both directions before you finish.
+`;
+}
+
+async function draftVerifierWithOracle(
+  options: BenchAddOptions,
+  prepared: PreparedAdd,
+  log: (msg: string) => void,
+): Promise<{ verifierSource: string; oracleSource: string }> {
+  const executor =
+    options.executor ?? (options.agent ? CliExecutor.forAgent(options.agent) : undefined);
+  if (!executor) {
+    throw new Error('bench add --decompose needs an agent to draft with: --agent <id>.');
+  }
+  const staging = mkdtempSync(join(tmpdir(), 'skillfit-decompose-'));
+  try {
+    const fixtureDir = join(staging, 'fixture');
+    for (const file of prepared.fixtureFiles) {
+      const target = join(fixtureDir, file.rel);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, file.content);
+    }
+    log(`Drafting verifier + oracle with ${executor.describe().kind} (${executor.describe().model})…`);
+    await executor.run(
+      buildDecomposePrompt(prepared.promptText, prepared.fixtureFiles.map((f) => f.rel), prepared.verifierKind),
+      staging,
+    );
+    const verifierPath = join(staging, 'verifier.mjs');
+    const oraclePath = join(staging, 'oracle.mjs');
+    if (!existsSync(verifierPath) || !existsSync(oraclePath)) {
+      throw new Error(
+        'the drafting agent did not write verifier.mjs and oracle.mjs into its working directory — nothing was added',
+      );
+    }
+
+    const nopDir = mkdtempSync(join(tmpdir(), 'skillfit-decompose-nop-'));
+    try {
+      copyFixture(fixtureDir, nopDir);
+      const nop = await runVerifier(staging, 'node verifier.mjs', nopDir);
+      if (nop.exitCode === 0) {
+        throw new Error(
+          'draft rejected: the verifier passes the untouched fixture — the task would start solved (NOP gate)',
+        );
+      }
+    } finally {
+      rmSync(nopDir, { recursive: true, force: true });
+    }
+
+    const solvedGate = await runOracleGate(staging, fixtureDir, 'node oracle.mjs', 'node verifier.mjs');
+    if (solvedGate.kind === 'oracle-failed') {
+      throw new Error('draft rejected: the oracle command failed on a fresh fixture copy');
+    }
+    if (solvedGate.kind === 'verifier-failed') {
+      throw new Error(
+        'draft rejected: the verifier fails even after the oracle solved the task (oracle gate)',
+      );
+    }
+    if (solvedGate.kind === 'low-score') {
+      throw new Error(
+        `draft rejected: the oracle scores ${solvedGate.score.toFixed(2)} on the drafted checks — checks are stricter than the oracle`,
+      );
+    }
+
+    return {
+      verifierSource: readFileSync(verifierPath, 'utf8'),
+      oracleSource: readFileSync(oraclePath, 'utf8'),
+    };
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
+  }
 }
 
 export async function runBenchAdd(
@@ -489,6 +700,12 @@ export async function runBenchAdd(
   }
   if (options.freeze && options.fromCommit) {
     throw new Error('Pass exactly one importer: --freeze OR --from-commit, not both.');
+  }
+  if (options.decompose && !options.freeze) {
+    throw new Error('--decompose works only with --freeze.');
+  }
+  if (options.decompose && options.oracle) {
+    throw new Error('--decompose writes its own oracle — do not pass --oracle as well.');
   }
   const cwd = options.cwd ?? process.cwd();
   const benchDir = resolve(cwd, options.benchDir ?? '.');
@@ -512,12 +729,21 @@ export async function runBenchAdd(
     throw new Error(`Task "${taskId}" already exists in ${benchJsonPath}.`);
   }
 
+  if (options.decompose && !options.dryRun) {
+    const drafted = await draftVerifierWithOracle(options, prepared, log);
+    prepared.verifierSource = drafted.verifierSource;
+    prepared.oracleSource = drafted.oracleSource;
+  }
+
   const generated: Record<string, string> = {
     [`prompts/${taskId}.md`]: `${prepared.promptText.trimEnd()}\n`,
     [`prompts/${taskId}.trigger.md`]: `${prepared.promptText.trimEnd()}\n\nThe repository is in your current working directory.\n`,
     [`verifiers/${taskId}.mjs`]: prepared.verifierSource,
     [`ground-truth/${taskId}.md`]: prepared.groundTruth,
   };
+  if (prepared.oracleSource) {
+    generated[`ground-truth/oracle-${taskId}.mjs`] = prepared.oracleSource;
+  }
   const taskEntry = {
     id: taskId,
     fixture: `fixtures/${taskId}`,
@@ -526,6 +752,8 @@ export async function runBenchAdd(
     verifier: `node verifiers/${taskId}.mjs`,
     verifierKind: prepared.verifierKind,
     rubric: `ground-truth/${taskId}.md`,
+    ...(prepared.oracleSource ? { oracle: `node ground-truth/oracle-${taskId}.mjs` } : {}),
+    ...(options.oracle ? { oracle: options.oracle } : {}),
     ...(options.shouldTrigger !== undefined ? { shouldTrigger: options.shouldTrigger } : {}),
   };
 
@@ -533,6 +761,9 @@ export async function runBenchAdd(
     log(`bench add plan (dry run) — task "${taskId}" into ${benchDir}:`);
     log(`  + fixtures/${taskId}/ (${prepared.planFixtureLine})`);
     for (const rel of Object.keys(generated)) log(`  + ${rel}`);
+    if (options.decompose) {
+      log('  ~ draft verifier.mjs + oracle.mjs with an agent, validated by the NOP + oracle gates (skipped in dry run)');
+    }
     log('  ~ bench.json (register task)');
     log('Dry run — nothing was written. Re-run with --yes to apply.');
     return null;
@@ -584,11 +815,17 @@ function prepareFreeze(options: BenchAddOptions, cwd: string): PreparedAdd {
   if (!promptText || promptText.trim() === '') {
     throw new Error('bench add --freeze needs a task prompt: --prompt <text> or --prompt-file <path>.');
   }
-  if (options.verifierCmd && options.expect !== undefined) {
-    throw new Error('Pass exactly one verifier: --verifier-cmd OR --expect, not both.');
-  }
-  if (!options.verifierCmd && options.expect === undefined) {
-    throw new Error('bench add --freeze needs a verifier: --verifier-cmd <cmd> or --expect <string>.');
+  if (options.decompose) {
+    if (options.verifierCmd || options.expect !== undefined) {
+      throw new Error('--decompose drafts the verifier for you — do not pass --verifier-cmd or --expect.');
+    }
+  } else {
+    if (options.verifierCmd && options.expect !== undefined) {
+      throw new Error('Pass exactly one verifier: --verifier-cmd OR --expect, not both.');
+    }
+    if (!options.verifierCmd && options.expect === undefined) {
+      throw new Error('bench add --freeze needs a verifier: --verifier-cmd <cmd> or --expect <string>.');
+    }
   }
 
   const sourceDir = resolve(cwd, options.sourceDir ?? '.');
@@ -603,17 +840,23 @@ function prepareFreeze(options: BenchAddOptions, cwd: string): PreparedAdd {
   return {
     defaultTaskId: 'frozen-task',
     promptText: promptText.trimEnd(),
-    verifierSource: options.verifierCmd
-      ? verifierForCmd(options.verifierCmd)
-      : verifierForExpect(options.expect ?? ''),
-    verifierKind: options.verifierCmd ? 'command' : 'output',
+    verifierSource: options.decompose
+      ? ''
+      : options.verifierCmd
+        ? verifierForCmd(options.verifierCmd)
+        : verifierForExpect(options.expect ?? ''),
+    verifierKind: options.decompose
+      ? (options.verifierKind ?? 'output')
+      : options.verifierCmd
+        ? 'command'
+        : 'output',
     fixtureFiles: captured.map((rel) => ({ rel, content: readFileSync(join(sourceDir, rel)) })),
     groundTruth: `# Ground truth — frozen task
 
 Frozen from a real failure on ${new Date().toISOString().slice(0, 10)}.
 
 - Source directory: \`${sourceDir}\`
-- Verifier: ${options.verifierCmd ? `\`${options.verifierCmd}\` (command, run in the task run directory)` : `agent output contains ${JSON.stringify(options.expect)}`}
+- Verifier: ${options.decompose ? 'drafted by an agent (--decompose), gated by the NOP + oracle checks' : options.verifierCmd ? `\`${options.verifierCmd}\` (command, run in the task run directory)` : `agent output contains ${JSON.stringify(options.expect)}`}
 
 TODO: describe what a correct outcome looks like, so future bench edits stay honest.
 `,

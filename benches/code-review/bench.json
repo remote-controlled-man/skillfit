@@ -9,6 +9,7 @@
       "prompt": "prompts/review-r1.md",
       "promptTrigger": "prompts/review-r1.trigger.md",
       "verifier": "node verifiers/seeded-bugs.mjs",
+      "oracle": "node ground-truth/oracle-r1.mjs",
       "rubric": "ground-truth/r1.md",
       "shouldTrigger": true
     },
@@ -18,6 +19,7 @@
       "prompt": "prompts/review-r2.md",
       "promptTrigger": "prompts/review-r2.trigger.md",
       "verifier": "node verifiers/review-r2.mjs",
+      "oracle": "node ground-truth/oracle-r2.mjs",
       "rubric": "ground-truth/r2.md",
       "shouldTrigger": true
     },
@@ -27,6 +29,7 @@
       "prompt": "prompts/review-r3.md",
       "promptTrigger": "prompts/review-r3.trigger.md",
       "verifier": "node verifiers/review-r3.mjs",
+      "oracle": "node ground-truth/oracle-r3.mjs",
       "rubric": "ground-truth/r3.md",
       "shouldTrigger": true
     },
@@ -36,6 +39,7 @@
       "prompt": "prompts/explain-x1.md",
       "promptTrigger": "prompts/explain-x1.trigger.md",
       "verifier": "node verifiers/explain-x1.mjs",
+      "oracle": "node ground-truth/oracle-x1.mjs",
       "rubric": "ground-truth/x1.md",
       "shouldTrigger": false
     }

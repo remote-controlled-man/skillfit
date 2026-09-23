@@ -32,6 +32,7 @@ export interface BenchTask {
   promptTrigger?: string;
   verifier: string;
   verifierKind?: 'output' | 'command';
+  oracle?: string;
   rubric?: string;
   shouldTrigger?: boolean;
 }
