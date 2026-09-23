@@ -23,6 +23,7 @@ fails, tell the user to install from https://github.com/remote-controlled-man/sk
 | "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger` |
 | "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]` |
 | "把这次翻车存成任务" | `skillfit bench add <bench> --freeze --task <id> --prompt "..." --verifier-cmd "<cmd>"` |
+| "帮我起草 verifier" | same but `--decompose --agent <id>` — an agent drafts verifier + oracle; admitted only if the NOP + oracle gates pass |
 
 Executor choice: `--agent kimi-code` or `--agent codex` drives the local CLI (no API key needed).
 Without `--agent`, eval needs `SKILLFIT_API_KEY`/`OPENAI_API_KEY`. Trigger mode currently verified for

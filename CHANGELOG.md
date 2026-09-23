@@ -3,6 +3,33 @@
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/). Dates are when the work landed on `main`.
 
+## [Unreleased]
+
+Graded facet scoring and verifier/oracle acceptance gates, informed by a Skill2Env review
+(see `docs/metrics.md` v2). The exit code remains the sole pass/fail authority; the McNemar verdict
+protocol is unchanged.
+
+### Added
+
+- **Facet scores**: verifiers may emit `"checks": [{"name", "pass"}]` in their JSON summary. Trials get a
+  graded score (fraction of checks passed); manifests upgrade to `schemaVersion: 3` with per-trial
+  scores, per-task facet tables, and a paired-bootstrap 95% CI for pooled Δscore alongside the existing
+  Δpass CI — resolving effects binary pass/fail cannot at personal sample sizes. `_result.json` bumps to
+  `schemaVersion: 2`. Trigger-mode trial records also carry score/checks.
+- **Oracle gate**: new optional `tasks[].oracle` command (reference solution, same invocation convention
+  as the verifier). `bench check` now fails when the oracle-solved fixture does not exit 0 with every
+  check passing — the positive counterpart to the existing NOP gate.
+- **`bench add --decompose --agent <id>`**: an agent drafts `verifier.mjs` + `oracle.mjs` from the frozen
+  fixture (acceptance criteria as named checks); the draft is admitted only when both gates pass locally,
+  otherwise nothing is written. `--verifier-kind` selects output/command grading; `--oracle <cmd>`
+  registers a hand-written reference solution on any importer.
+- **New warnings**: baseline floor (≤10%, "too hard or broken"), per-facet saturation (≥90% baseline),
+  and verifier-consistency notes when the exit code disagrees with the JSON summary.
+- Bundled benches: all `code-review` and `debugging` verifiers emit facet checks; `code-review` tasks
+  register oracle scripts (validated by the gate in CI). The `debugging` bench intentionally has no
+  oracles yet — its command-kind tasks need verified reference patches, which are follow-up work.
+  `bench init` templates now include checks and a working oracle.
+
 ## [0.3.0] — 2026-09-22
 
 A large capability wave. Everything in 0.2.0 plus:

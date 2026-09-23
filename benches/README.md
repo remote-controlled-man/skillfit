@@ -2,7 +2,7 @@
 
 A **bench** is a portable, deterministic test suite for measuring whether a skill (or rules file, or MCP configuration) actually improves an AI coding agent on tasks that resemble your real work. Skills markets tell you what is popular; benches tell you what works.
 
-`skillfit eval <skill-path> --bench <bench-dir>` pairs every task twice — once **baseline** (no skill injected) and once **treatment** (skill injected into the prompt) — for `N` trials each, then compares pass rates. `skillfit bench init` scaffolds a new bench (with a working example task) and `skillfit bench check` validates one offline — verifier self-tests, mock-arm probes, fixture hygiene — before you spend a single token on runs. Add `--calibrate --agent <id>` to also run real baseline-difficulty probes (no skill installed): each task is banded as discriminative (30–70% baseline pass rate), too easy (saturated), or too hard/broken, so you know the bench can discriminate *before* paying for paired evals.
+`skillfit eval <skill-path> --bench <bench-dir>` pairs every task twice — once **baseline** (no skill injected) and once **treatment** (skill injected into the prompt) — for `N` trials each, then compares pass rates. `skillfit bench init` scaffolds a new bench (with a working example task) and `skillfit bench check` validates one offline — verifier self-tests, oracle/NOP gates, mock-arm probes, fixture hygiene — before you spend a single token on runs. Add `--calibrate --agent <id>` to also run real baseline-difficulty probes (no skill installed): each task is banded as discriminative (30–70% baseline pass rate), too easy (saturated), or too hard/broken, so you know the bench can discriminate *before* paying for paired evals.
 
 ## Bench directory layout
 
@@ -35,6 +35,7 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
       "fixture": "fixtures/review-r1",
       "prompt": "prompts/review-r1.md",
       "verifier": "node verifiers/seeded-bugs.mjs",
+      "oracle": "node ground-truth/oracle-r1.mjs",
       "rubric": "ground-truth/r1.md"
     }
   ]
@@ -50,6 +51,7 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 | `tasks[].prompt` | yes | Markdown file with the task instructions. Convention: `prompts/<task-id>.md`. |
 | `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Convention: `node verifiers/<task-id>.mjs`. |
 | `tasks[].verifierKind` | no | `output` (default): the verifier grades the agent's final message at `_output.md`. `command`: the verifier runs a real command (e.g. a test suite) inside the run directory, for tasks where the agent edits files. |
+| `tasks[].oracle` | no | Command (same invocation convention as the verifier) that applies the reference solution to a fixture copy — writes `_output.md` for `output` tasks, edits files for `command` tasks. `bench check` fails when the oracle-solved fixture does not pass the verifier with every check green. Convention: `node ground-truth/oracle-<task-id>.mjs`. |
 | `tasks[].rubric` | no | Markdown file injected into the optional LLM judge prompt (never shown to the agent under test). |
 | `tasks[].shouldTrigger` | no | Whether an in-scope skill *should* fire on this task. Required for `--mode trigger` (unlabeled tasks are skipped there). Include negative controls (`false`) — aim for ≥30% of tasks. |
 
@@ -60,10 +62,13 @@ All paths must stay inside the bench directory.
 The verifier is the heart of a bench. It must be **deterministic**: same run directory in, same verdict out — no network, no clocks, no randomness.
 
 - Invocation: `<verifier command> <absolute run directory>`, working directory = bench root.
-- **Exit code 0 = pass, anything else = fail.** That is the only signal the harness aggregates.
-- Print a one-line JSON summary to stdout for humans (the harness saves it to `_verifier.txt`), e.g. `{"passed":true,"hits":["a","b"],"missed":[]}`.
+- **Exit code 0 = pass, anything else = fail.** That is the only pass/fail signal the harness aggregates.
+- Print a one-line JSON summary as the **last stdout line**. The harness parses it (tolerating surrounding noise) and saves the raw output to `_verifier.txt`:
+  - `passed` (boolean) — informational; the exit code is authoritative, and a disagreement is flagged as a warning.
+  - `checks` (optional) — `[{"name": "discount-boundary", "pass": true}, ...]`: the acceptance criteria decomposed into 2–8 named programmatic checks. The trial **score** is the fraction of checks passed; scores feed the per-facet table and the paired-bootstrap Δscore CI in the report, letting a bench resolve effects binary pass/fail cannot at small sample sizes. Checks never flip a verdict. Keep them deterministic and outcome-focused.
+  - Anything else (`hits`, `missed`, `decoys`, …) is free-form and preserved for humans.
 - The run directory contains the agent's raw final message at `_output.md`, the full prompt at `_prompt.txt`, plus any files the agent created or modified in place (CLI executors run inside the run directory).
-- Two kinds: `output` verifiers (default) grade `_output.md`; `command` verifiers (`verifierKind: "command"`) run a real command — e.g. the repo's test suite — inside the run directory, for tasks where the agent edits files. A command verifier must *fail on the untouched fixture* (the task is unsolved as shipped); `bench check` verifies exactly that.
+- Two kinds: `output` verifiers (default) grade `_output.md`; `command` verifiers (`verifierKind: "command"`) run a real command — e.g. the repo's test suite — inside the run directory, for tasks where the agent edits files. A command verifier must *fail on the untouched fixture* (the task is unsolved as shipped); `bench check` verifies exactly that. When the task registers an `oracle`, `bench check` also verifies the other direction: the oracle-solved fixture must exit 0 with every check passing. Together these are the NOP/oracle gates — they catch broken verifiers and unwinnable tasks before you spend tokens.
 
 Node is the recommended verifier runtime because it is everywhere skillfit runs: `node verifiers/<task-id>.mjs`.
 
@@ -91,10 +96,10 @@ Each run writes to `runs/<runGroup>/<task-id>/<condition>/trial-<n>/`:
 - `_prompt.txt` — the exact prompt sent to the executor (task prompt + isolation rules + repository snapshot + skill payload for treatment + output contract)
 - `_output.md` — the raw agent output
 - `_verifier.txt` — verifier stdout/stderr
-- `_result.json` — timing, pass flag, verifier exit code, token usage, skill bundle hash
-- `runs/<runGroup>/manifest.json` — model/executor identity, skill bundle sha256, bench content sha256, date, per-task per-condition pass rates, token deltas, verdicts, and warnings
+- `_result.json` — timing, pass flag, verifier exit code, facet checks + score, token usage, skill bundle hash
+- `runs/<runGroup>/manifest.json` — model/executor identity, skill bundle sha256, bench content sha256, date, per-task per-condition pass rates and facet scores, token deltas, verdicts, and warnings
 
-Verdicts: `effective` (treatment pass rate higher), `ineffective` (lower), `inconclusive` (equal, or fewer than 3 trials per condition — sample too small). If a task's baseline pass rate is ≥ 90%, the report warns that the bench may be too easy to discriminate anything.
+Verdicts: `effective` (treatment pass rate higher), `ineffective` (lower), `inconclusive` (equal, or fewer than 3 trials per condition — sample too small). The report warns when a task's baseline pass rate is ≥ 90% (too easy to discriminate anything) or ≤ 10% (too hard or broken), and flags any individual check the baseline already passes ≥ 90% of the time as saturated.
 
 ## Optional LLM judge
 
@@ -123,7 +128,17 @@ skillfit bench add <bench-dir> --freeze --task <id> \
   --verifier-cmd "node --test"   # or: --expect "string the output must contain"
 ```
 
-This snapshots the current directory (git-tracked files only, so `node_modules` and build output stay out) into `fixtures/<task-id>/`, generates the verifier wrapper, and registers the task. Or mine a fix straight out of git history:
+This snapshots the current directory (git-tracked files only, so `node_modules` and build output stay out) into `fixtures/<task-id>/`, generates the verifier wrapper, and registers the task. If writing the verifier by hand is the bottleneck, let an agent draft it — and get a reference solution in the bargain:
+
+```bash
+skillfit bench add <bench-dir> --freeze --task <id> \
+  --prompt "What went wrong and what the agent should have done" \
+  --decompose --agent <id> [--verifier-kind command]
+```
+
+`--decompose` stages the frozen fixture, has the agent write `verifier.mjs` + `oracle.mjs` (acceptance criteria as named checks), and **admits the draft only if both gates pass locally**: the verifier must fail the untouched fixture (NOP gate) and must exit 0 with full checks after the oracle solves it (oracle gate). A draft that fails either gate is rejected and nothing is written. Note the provenance rule: a bench generated *from the skill under test* is fine as a smoke test but proves nothing about efficacy — decompose from real failures, not from the skill's own content. Already have a reference-solution script? Register it with `--oracle "node ground-truth/oracle-<id>.mjs"` so `bench check` gates on it.
+
+Or mine a fix straight out of git history:
 
 ```bash
 skillfit bench add <bench-dir> --from-commit <sha> [--source-dir <repo>] [--include <dir>...]

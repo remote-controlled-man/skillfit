@@ -1,15 +1,25 @@
-# skillfit metrics (v1, frozen 2026-09-19)
+# skillfit metrics (v2, frozen 2026-09-23)
 
 This document defines what skillfit measures and how verdicts are computed. It is the contract that
 `src/harness/` implements and that bench authors design against. Changes here are deliberate: edit with a
 reasoned PR, cite sources, and bump the date.
 
+v2 (2026-09-23): adds graded facet scores (L2), the oracle gate, and floor/facet-saturation warnings.
+Motivation: binary pass/fail extracts one bit per trial, which is why quality claims stayed unprovable at
+individual-user sample sizes. [Skill2Env](https://github.com/NVlabs/Skill2Env) (Table 1) shows the
+sensitivity gap empirically: the same training moved its graded S2EBench mean 56.6→75.1 while pass@1
+moved only 33.4→37.7. Its counter-evidence shapes the design too: mixing an LLM-judged process rubric
+into the reward *reduced* task pass rates (50.1% vs 54.1% outcome-only), so facet checks must be
+programmatic and the judge stays advisory. Skill-sourced task generation (its S2EBench was built from the
+same distribution it evaluated) is rejected here for efficacy claims.
+
 Grounding: the framework synthesizes [SkillsBench](https://arxiv.org/abs/2602.12670) (paired evaluation,
 per-task pass rates), [SWE-Skills-Bench](https://www.alphaxiv.org/abs/2603.15401) (ΔP / token overhead ρ),
 the [STARS](https://arxiv.org/abs/2604.10286) capability-vs-activation split, [OpenAI's skill eval
 guidance](https://developers.openai.com/blog/eval-skills) (trigger test classes), [Anthropic's eval
-guidance](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (bench composition), and
-the LLM-judge literature cited in §5.
+guidance](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (bench composition),
+[Skill2Env](https://github.com/NVlabs/Skill2Env) (graded programmatic scoring, oracle/NOP acceptance
+gates), and the LLM-judge literature cited in §5.
 
 ## Unit of analysis
 
@@ -24,8 +34,10 @@ A bench that cannot discriminate must not produce verdicts.
 - **Ceiling**: warn when a task's baseline pass rate ≥ 90% (implemented). Saturated tasks "graduate" to
   regression duty — they verify no harm, but measure no lift
   ([SWE-Skills-Bench found 24/49 skills ceiling-bound](https://www.alphaxiv.org/abs/2603.15401)).
-- **Floor**: warn when baseline pass rate ≤ 10% — the task is too hard or broken, and all-zero arms are
-  equally uninformative.
+  The same rule applies per facet: a check whose baseline pass rate ≥ 90% is flagged as saturated
+  (implemented).
+- **Floor**: warn when baseline pass rate ≤ 10% (implemented) — the task is too hard or broken, and
+  all-zero arms are equally uninformative.
 - **Engagement sanity**: if the agent never touched the fixture (empty output, executor error), the trial is
   excluded from rates and reported as an error, not a failure (implemented).
 
@@ -69,6 +81,27 @@ Measured with the skill force-injected (today's `eval` behavior), isolating cont
 - Per-task numbers are **descriptive** (a few trials can never be significant alone); inference happens only
   at bench level (§4).
 
+### Facet scores (graded outcome signal)
+
+A verifier may decompose its acceptance criteria into named **checks** and report them in its JSON summary:
+`{"passed": bool, "checks": [{"name": string, "pass": bool}]}`. The trial **score** is the fraction of
+checks passed ∈ [0,1].
+
+- **The exit code remains the sole pass/fail authority** — checks never flip a verdict, and the McNemar
+  protocol below is unchanged. When the exit code and the checks disagree, the run records a warning and
+  the exit code wins. This is the Skill2Env rubric lesson applied: graded signals must be *programmatic*
+  (its LLM-judged rubric reward cost 4pp of task pass rate), so the judge is never a check source.
+- **Δscore** = treatment mean score − baseline mean score, reported per task (descriptive) and pooled at
+  bench level with a paired bootstrap 95% CI (tasks as the resampling unit, ≥1000 resamples, seeded) —
+  the same protocol as ΔP, one level down in granularity. Trials without checks are excluded; a task
+  enters the CI only when both arms have at least one scored trial.
+- Equal weight per check, per bench version: the check list is frozen by the bench content hash, and the
+  report prints the per-facet table so the weighting is transparent rather than hidden.
+- Why bother: at personal sample sizes binary ΔP rarely reaches significance; graded scores carry several
+  bits per trial and resolve effects pass/fail cannot (Skill2Env Table 1: graded mean moved ~4× more than
+  pass@1 under the same treatment). Scores do not fix *saturation* — a facet the baseline always passes is
+  1.0 on both arms — which is why facet-saturation warnings exist (L0).
+
 ## L3 — realized value (the "should I install it" answer)
 
 `EV ≈ P(trigger | relevant) · ΔP · V − P(trigger) · C_body − P(false trigger) · (C_body + δ_derail · V) − C_metadata`
@@ -86,7 +119,10 @@ Measured with the skill force-injected (today's `eval` behavior), isolating cont
 
 ## L4 — judge (soft quality, optional)
 
-The deterministic verifier is the sole pass/fail authority; the judge never flips a verdict.
+The deterministic verifier is the sole pass/fail authority; the judge never flips a verdict. This is not
+just conservatism: Skill2Env's rubric arm (LLM-judged process score mixed into the reward at fixed
+weight) *reduced* task pass rates relative to outcome-only training — process-signal contamination of
+outcome optimization is a measured failure mode, not a hypothetical one.
 
 - Blind pairwise comparison, **AB/BA position-swapped** double call; winner only on consistent verdicts,
   else tie ([Zheng et al.](https://arxiv.org/abs/2306.05685)).
@@ -116,12 +152,13 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
   reason states the discordant count.
 - Verdict `effective` iff p < 0.05 and ΔP > 0; `ineffective` iff p < 0.05 and ΔP < 0; else `inconclusive`.
 - Always report alongside: b/c counts, **paired bootstrap 95% CI** for ΔP (≥1000 resamples over tasks,
-  seeded and deterministic, pairs kept together), and the CI half-width as the run's resolution
+  seeded and deterministic, pairs kept together), the **paired bootstrap 95% CI for Δscore** when the
+  bench emits checks, and the CI half-width as the run's resolution
   ("this bench resolves effects ≳ ±Xpp").
 - Scale labels: below 5 trials × 8 tasks, results are stamped **indicative**, not conclusive
   (SkillsBench norm: 5 trials/task).
-- Manifest `schemaVersion: 2` carries per-trial pass flags per (task, condition) so all of the above is
-  recomputed from raw outcomes, never from aggregates.
+- Manifest `schemaVersion: 3` carries per-trial pass flags and per-trial facet scores per
+  (task, condition) so all of the above is recomputed from raw outcomes, never from aggregates.
 
 ## Bench composition guidance (for authors and the upcoming scaffolding tooling)
 
@@ -130,9 +167,14 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
   failures, stop at theoretical saturation.
 - ≥30% negative-trigger tasks once L1 lands; difficulty mix roughly 50% easy / 30% medium / 20% hard.
 - Adopt [SkillsBench's contribution gates](https://arxiv.org/html/2602.12670v1): human-authored prompts
-  (LLM-written tasks under-measure the model), oracle solution passes the verifier at 100%, minimal
-  deterministic assertions, realistic data, anti-cheat layout (tests and ground truth never enter the
-  fixture), grade the outcome not the path.
+  (LLM-written tasks under-measure the model), oracle solution passes the verifier at 100% (**enforced**:
+  register an `oracle` command per task and `bench check` fails when the oracle-solved fixture does not
+  exit 0 with every check passing — the NOP half, verifier must fail the untouched fixture, was already
+  enforced), minimal deterministic assertions, realistic data, anti-cheat layout (tests and ground truth
+  never enter the fixture), grade the outcome not the path. An agent may *draft* the verifier + oracle
+  (`bench add --freeze --decompose`), but the draft is admitted only after both gates pass locally, and a
+  bench generated from the skill under test is inadmissible for efficacy claims (same-distribution
+  contamination — the S2EBench lesson).
 - Layout stays [Harbor](https://github.com/harbor-framework/benchmark-template)-compatible so personal
   benches can graduate into shared benchmark tooling.
 
