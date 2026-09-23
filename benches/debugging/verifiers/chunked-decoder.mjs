@@ -191,13 +191,16 @@ const checks = [
 ];
 
 const failures = [];
+const checkList = [];
 for (const [name, check] of checks) {
   try {
     check();
+    checkList.push({ name, pass: true });
   } catch (error) {
+    checkList.push({ name, pass: false });
     failures.push(`${name}: ${error.message}`);
   }
 }
 const passed = failures.length === 0;
-console.log(JSON.stringify({ score: checks.length - failures.length, maxScore: checks.length, passed, failures, evidence }));
+console.log(JSON.stringify({ score: checks.length - failures.length, maxScore: checks.length, passed, failures, checks: checkList, evidence }));
 process.exit(passed ? 0 : 1);

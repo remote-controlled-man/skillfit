@@ -40,6 +40,10 @@ const regressionChecks = [
 ];
 const regressionScore = regressionChecks.filter(([, passed]) => passed).length;
 const behaviorScore = checks.length - failures.length;
+const checkList = [
+  ...checks.map(([name]) => ({ name, pass: !failures.some((f) => f.startsWith(`${name}:`)) })),
+  ...regressionChecks.map(([name, ok]) => ({ name, pass: ok })),
+];
 const passed = failures.length === 0 && regressionScore === regressionChecks.length;
 console.log(JSON.stringify({
   score: behaviorScore + regressionScore,
@@ -49,5 +53,6 @@ console.log(JSON.stringify({
   regressionScore,
   testCount,
   failures,
+  checks: checkList,
 }));
 process.exit(passed ? 0 : 1);

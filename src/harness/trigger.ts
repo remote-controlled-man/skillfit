@@ -4,6 +4,7 @@ import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
 import { OUTPUT_CONTRACT } from './prompt.js';
 import { gitInit, runVerifier } from './runner.js';
 import { wilson95 } from './stats.js';
+import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import type {
   Bench,
   Executor,
@@ -32,6 +33,8 @@ export interface TriggerTrialRecord {
   durationSeconds: number;
   triggered: boolean | null;
   passed: boolean;
+  score: number | null;
+  checks: VerifierCheck[] | null;
   error: string | null;
   tokens: TokenUsage | null;
 }
@@ -123,9 +126,16 @@ async function runTriggerTrial(
   }
 
   let passed = false;
+  let score: number | null = null;
+  let checks: VerifierCheck[] | null = null;
   if (error === null) {
     const verifier = await runVerifier(plan.bench.dir, task.verifier, runDir);
     passed = verifier.exitCode === 0;
+    const verdict = verdictFromOutput(verifier.output);
+    if (verdict) {
+      checks = verdict.checks;
+      score = verdict.score;
+    }
     const verifierLog = verifier.error ? `${verifier.output}\n[${verifier.error}]` : verifier.output;
     writeFileSync(join(runDir, '_verifier.txt'), verifierLog, 'utf8');
   } else {
@@ -141,6 +151,8 @@ async function runTriggerTrial(
     durationSeconds: Math.round(((finished.getTime() - started.getTime()) / 1000) * 1000) / 1000,
     triggered,
     passed,
+    score,
+    checks,
     error,
     tokens,
   };

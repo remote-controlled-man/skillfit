@@ -7,17 +7,6 @@ if (!runDir) {
   process.exit(2);
 }
 
-const outputPath = path.join(runDir, '_output.md');
-let output;
-try {
-  output = fs.readFileSync(outputPath, 'utf8');
-} catch {
-  console.log(JSON.stringify({ passed: false, hits: [], missed: ['*'], decoys: [], error: `missing ${outputPath}` }));
-  process.exit(1);
-}
-
-const lines = output.split(/\r?\n/);
-
 const bugs = [
   {
     id: 'bare-error',
@@ -41,6 +30,18 @@ const decoys = [
   { id: 'percentoff', anchor: /money\.js/, evidence: [/percentOff/] },
 ];
 
+const outputPath = path.join(runDir, '_output.md');
+let output;
+try {
+  output = fs.readFileSync(outputPath, 'utf8');
+} catch {
+  const checks = bugs.map((bug) => ({ name: bug.id, pass: false }));
+  console.log(JSON.stringify({ passed: false, hits: [], missed: ['*'], decoys: [], checks, error: `missing ${outputPath}` }));
+  process.exit(1);
+}
+
+const lines = output.split(/\r?\n/);
+
 function hit(rule) {
   return lines.some((line) => rule.anchor.test(line) && rule.evidence.some((re) => re.test(line)));
 }
@@ -48,6 +49,7 @@ function hit(rule) {
 const hits = bugs.filter(hit).map((bug) => bug.id);
 const missed = bugs.filter((bug) => !hits.includes(bug.id)).map((bug) => bug.id);
 const decoyHits = decoys.filter(hit).map((decoy) => decoy.id);
+const checks = bugs.map((bug) => ({ name: bug.id, pass: hits.includes(bug.id) }));
 const passed = missed.length === 0;
-console.log(JSON.stringify({ passed, hits, missed, decoys: decoyHits }));
+console.log(JSON.stringify({ passed, hits, missed, decoys: decoyHits, checks }));
 process.exit(passed ? 0 : 1);

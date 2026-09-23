@@ -28,22 +28,27 @@ interface PairedOutcomes {
   treatment: boolean[];
 }
 
-function pooledDelta(tasks: readonly PairedOutcomes[]): number {
-  let baselinePasses = 0;
+export interface PairedScores {
+  baseline: number[];
+  treatment: number[];
+}
+
+function pooledDelta(tasks: readonly PairedScores[]): number {
+  let baselineSum = 0;
   let baselineTrials = 0;
-  let treatmentPasses = 0;
+  let treatmentSum = 0;
   let treatmentTrials = 0;
   for (const task of tasks) {
     baselineTrials += task.baseline.length;
     treatmentTrials += task.treatment.length;
-    for (const pass of task.baseline) if (pass) baselinePasses += 1;
-    for (const pass of task.treatment) if (pass) treatmentPasses += 1;
+    for (const value of task.baseline) baselineSum += value;
+    for (const value of task.treatment) treatmentSum += value;
   }
-  return treatmentPasses / treatmentTrials - baselinePasses / baselineTrials;
+  return treatmentSum / treatmentTrials - baselineSum / baselineTrials;
 }
 
-export function pairedDeltaBootstrapCI(
-  tasks: PairedOutcomes[],
+function pairedBootstrapCI(
+  tasks: readonly PairedScores[],
   options: { resamples?: number; alpha?: number; seed?: number } = {},
 ): { point: number; lo: number; hi: number; resamples: number } | null {
   const resamples = options.resamples ?? 2000;
@@ -58,7 +63,7 @@ export function pairedDeltaBootstrapCI(
   const rand = mulberry32(seed);
   const deltas: number[] = [];
   for (let r = 0; r < resamples; r++) {
-    const sample: PairedOutcomes[] = [];
+    const sample: PairedScores[] = [];
     for (let i = 0; i < tasks.length; i++) {
       const picked = tasks[Math.floor(rand() * tasks.length)];
       if (picked !== undefined) sample.push(picked);
@@ -71,6 +76,26 @@ export function pairedDeltaBootstrapCI(
     return deltas[index] ?? 0;
   };
   return { point, lo: percentile(alpha / 2), hi: percentile(1 - alpha / 2), resamples };
+}
+
+export function pairedDeltaBootstrapCI(
+  tasks: PairedOutcomes[],
+  options: { resamples?: number; alpha?: number; seed?: number } = {},
+): { point: number; lo: number; hi: number; resamples: number } | null {
+  return pairedBootstrapCI(
+    tasks.map((task) => ({
+      baseline: task.baseline.map((pass) => (pass ? 1 : 0)),
+      treatment: task.treatment.map((pass) => (pass ? 1 : 0)),
+    })),
+    options,
+  );
+}
+
+export function pairedScoreBootstrapCI(
+  tasks: PairedScores[],
+  options: { resamples?: number; alpha?: number; seed?: number } = {},
+): { point: number; lo: number; hi: number; resamples: number } | null {
+  return pairedBootstrapCI(tasks, options);
 }
 
 export function wilson95(passes: number, trials: number): { lo: number; hi: number } {

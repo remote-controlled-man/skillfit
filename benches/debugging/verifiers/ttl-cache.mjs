@@ -104,7 +104,8 @@ const checks = [
   ['non-finite ttl rejected', () => { const c=new TtlCache(()=>0); assert.throws(()=>c.set('x',1,Infinity), TypeError); }],
 ];
 const failures=[];
-for(const [name,check] of checks){try{check();}catch(error){failures.push(`${name}: ${error.message}`);}}
+const checkList=[];
+for(const [name,check] of checks){try{check();checkList.push({name,pass:true});}catch(error){checkList.push({name,pass:false});failures.push(`${name}: ${error.message}`);}}
 const passed = failures.length===0;
-console.log(JSON.stringify({score:checks.length-failures.length,maxScore:checks.length,passed,failures,evidence}));
+console.log(JSON.stringify({score:checks.length-failures.length,maxScore:checks.length,passed,failures,checks:checkList,evidence}));
 process.exit(passed ? 0 : 1);

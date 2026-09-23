@@ -17,12 +17,15 @@ const sectionScores = {
   secrecy: { score: 0, maxScore: 2 },
 };
 const failures = [];
+const checkResults = [];
 
 async function check(section, name, operation) {
   try {
     await operation();
     sectionScores[section].score += 1;
+    checkResults.push({ name, pass: true });
   } catch (error) {
+    checkResults.push({ name, pass: false });
     failures.push(`${name}: ${error.message}`);
   }
 }
@@ -283,6 +286,7 @@ console.log(JSON.stringify({
   secrecyScore: sectionScores.secrecy.score,
   secrecyMaxScore: sectionScores.secrecy.maxScore,
   failures,
+  checks: checkResults,
   evidence,
 }));
 process.exit(passed ? 0 : 1);

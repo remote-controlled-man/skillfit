@@ -4,6 +4,7 @@ import type { Condition, ExecutorDescriptor } from './types.js';
 export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
 
 export const DISCRIMINATION_BASELINE_THRESHOLD = 0.9;
+export const FLOOR_BASELINE_THRESHOLD = 0.1;
 
 export const CONCLUSIVE_TASKS = 8;
 export const CONCLUSIVE_TRIALS = 5;
@@ -17,6 +18,7 @@ export interface ConditionStats {
   passes: number;
   trials: number;
   passRate: number;
+  meanScore: number | null;
   tokens: { input: number; output: number } | null;
 }
 
@@ -27,11 +29,23 @@ export interface JudgeSummary {
   treatmentMean: number | null;
 }
 
+export interface FacetSummary {
+  name: string;
+  baselinePassRate: number;
+  treatmentPassRate: number;
+  baselineTrials: number;
+  treatmentTrials: number;
+}
+
 export interface TaskSummary {
   id: string;
   conditions: Record<Condition, ConditionStats>;
   outcomes: { baseline: boolean[]; treatment: boolean[] };
+  scores: { baseline: (number | null)[]; treatment: (number | null)[] };
   deltaPassRate: number;
+  scoreDelta: number | null;
+  facets: FacetSummary[];
+  verifierNotes: string[];
   tokenDelta: { input: number; output: number } | null;
   verdict: Verdict;
   verdictReason: string;
@@ -42,11 +56,13 @@ export interface SignificanceStats {
   discordant: { improved: number; regressed: number };
   mcnemarP: number;
   deltaCi: { point: number; lo: number; hi: number; resamples: number } | null;
+  scoreDeltaCi: { point: number; lo: number; hi: number; resamples: number } | null;
 }
 
 export interface OverallSummary {
   conditions: Record<Condition, ConditionStats>;
   deltaPassRate: number;
+  scoreDelta: number | null;
   tokenDelta: { input: number; output: number } | null;
   verdict: Verdict;
   verdictReason: string;
@@ -54,7 +70,7 @@ export interface OverallSummary {
 }
 
 export interface RunManifest {
-  schemaVersion: 2;
+  schemaVersion: 3;
   runGroup: string;
   createdAt: string;
   skill: { name: string; sourceDir: string; bundleSha256: string; files: string[] };
@@ -116,6 +132,19 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
         `Task "${task.id}": baseline pass rate is ${Math.round(rate * 100)}% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power.`,
       );
     }
+    if (task.conditions.baseline.trials > 0 && rate <= FLOOR_BASELINE_THRESHOLD) {
+      warnings.push(
+        `Task "${task.id}": baseline pass rate is ${Math.round(rate * 100)}% (<= 10%) — this bench task may be too hard or broken, and all-zero arms are uninformative.`,
+      );
+    }
+    for (const facet of task.facets) {
+      if (facet.baselineTrials > 0 && facet.baselinePassRate >= DISCRIMINATION_BASELINE_THRESHOLD) {
+        warnings.push(
+          `Task "${task.id}" facet "${facet.name}": baseline check pass rate is ${Math.round(facet.baselinePassRate * 100)}% (>= 90%) — this facet is saturated and measures no lift.`,
+        );
+      }
+    }
+    warnings.push(...task.verifierNotes);
   }
   const overallRate = manifest.overall.conditions.baseline.passRate;
   if (manifest.tasks.length > 1 && overallRate >= DISCRIMINATION_BASELINE_THRESHOLD) {
@@ -164,6 +193,14 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
       ? `Δpass 95% CI (paired bootstrap, ${stats.deltaCi.resamples} resamples): [${formatDeltaPp(stats.deltaCi.lo)}, ${formatDeltaPp(stats.deltaCi.hi)}]`
       : 'Δpass 95% CI: n/a (no trials)',
   );
+  const anyScores = manifest.tasks.some((task) => task.scoreDelta !== null);
+  if (anyScores) {
+    lines.push(
+      stats.scoreDeltaCi
+        ? `Δscore 95% CI (paired bootstrap, ${stats.scoreDeltaCi.resamples} resamples): [${signedScore(stats.scoreDeltaCi.lo)}, ${signedScore(stats.scoreDeltaCi.hi)}]`
+        : 'Δscore 95% CI: n/a (no task scored in both arms)',
+    );
+  }
   if (manifest.bench.taskCount < CONCLUSIVE_TASKS || manifest.trials < CONCLUSIVE_TRIALS) {
     lines.push(
       `Scale: ${manifest.bench.taskCount} task(s) × ${manifest.trials} trials per condition — below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials); results are indicative.`,
@@ -173,6 +210,11 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   if (tokenLines.length > 0) {
     lines.push('');
     lines.push(...tokenLines);
+  }
+  const facetLines = renderFacetScores(manifest);
+  if (facetLines.length > 0) {
+    lines.push('');
+    lines.push(...facetLines);
   }
   lines.push('');
   lines.push('Warnings:');
@@ -229,6 +271,30 @@ function renderTokenDeltas(manifest: RunManifest): string[] {
 
 function signed(value: number): string {
   return value > 0 ? `+${value}` : String(value);
+}
+
+function signedScore(value: number): string {
+  return `${value > 0 ? '+' : ''}${value.toFixed(2)}`;
+}
+
+function renderFacetScores(manifest: RunManifest): string[] {
+  const rows = manifest.tasks.filter((task) => task.facets.length > 0);
+  if (rows.length === 0) return [];
+  const percent = (rate: number): string => `${Math.round(rate * 100)}%`;
+  const mean = (value: number | null): string => (value === null ? 'n/a' : value.toFixed(2));
+  const delta = (value: number | null): string => (value === null ? 'n/a' : signedScore(value));
+  const lines = ['Facet scores (mean checks passed, baseline → treatment):'];
+  for (const task of rows) {
+    lines.push(
+      `- ${task.id}: score ${mean(task.conditions.baseline.meanScore)} → ${mean(task.conditions.treatment.meanScore)} (Δ ${delta(task.scoreDelta)})`,
+    );
+    for (const facet of task.facets) {
+      lines.push(
+        `  - ${facet.name}: ${percent(facet.baselinePassRate)} → ${percent(facet.treatmentPassRate)}`,
+      );
+    }
+  }
+  return lines;
 }
 
 function describeExecutor(descriptor: ExecutorDescriptor): string {

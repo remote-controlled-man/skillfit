@@ -18,4 +18,6 @@ if (result.error) {
   console.error(String(result.error));
   process.exit(1);
 }
+const passed = result.status === 0;
+console.log(JSON.stringify({ passed, checks: [{ name: 'tests-pass', pass: passed }] }));
 process.exit(result.status ?? 1);

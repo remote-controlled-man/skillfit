@@ -56,7 +56,7 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
     runGroup: 'test-group',
   });
 
-  assert.equal(manifest.schemaVersion, 2);
+  assert.equal(manifest.schemaVersion, 3);
   assert.equal(manifest.tasks.length, 4);
   const task = manifest.tasks[0];
   assert.ok(task);
@@ -74,11 +74,39 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   assert.equal(task.verdict, 'inconclusive');
   assert.match(task.verdictReason, /only 3 discordant pair/);
   assert.deepEqual(task.tokenDelta, { input: 2400, output: 240 });
+  assert.equal(task.conditions.treatment.meanScore, 1);
+  assert.ok(task.conditions.baseline.meanScore !== null);
+  assert.ok(Math.abs((task.conditions.baseline.meanScore as number) - 1 / 3) < 1e-9);
+  assert.ok(task.scoreDelta !== null);
+  assert.ok(Math.abs((task.scoreDelta as number) - 2 / 3) < 1e-9);
+  assert.deepEqual(task.scores.baseline, [1 / 3, 1 / 3, 1 / 3]);
+  assert.deepEqual(task.scores.treatment, [1, 1, 1]);
+  assert.deepEqual(
+    task.facets.find((facet) => facet.name === 'discount-boundary'),
+    {
+      name: 'discount-boundary',
+      baselinePassRate: 0,
+      treatmentPassRate: 1,
+      baselineTrials: 3,
+      treatmentTrials: 3,
+    },
+  );
+  assert.equal(task.verifierNotes.length, 0);
   assert.equal(manifest.overall.verdict, 'effective');
   assert.deepEqual(manifest.overall.stats.discordant, { improved: 9, regressed: 0 });
   assert.equal(manifest.overall.stats.mcnemarP, 0.00390625);
+  const scoreDeltaCi = manifest.overall.stats.scoreDeltaCi;
+  assert.ok(scoreDeltaCi !== null);
+  // pooled treatment mean 12/12 minus pooled baseline mean 5/12
+  assert.ok(Math.abs(scoreDeltaCi.point - 7 / 12) < 1e-9);
   assert.equal(manifest.skill.bundleSha256.length, 64);
   assert.ok(manifest.warnings.some((w) => w.includes('synthetic')));
+  assert.ok(
+    manifest.warnings.some((w) => w.includes('"review-r3"') && w.includes('too hard or broken')),
+  );
+  assert.ok(
+    manifest.warnings.some((w) => w.includes('"explain-x1"') && w.includes('facet "states-purpose"')),
+  );
 
   const trialDir = join(runsRoot, 'test-group', 'review-r1', 'treatment', 'trial-1');
   assert.ok(existsSync(join(runsRoot, 'test-group', 'manifest.json')));
@@ -99,11 +127,17 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   assert.ok(!baselinePrompt.includes('<skill name='));
 
   const result = JSON.parse(readFileSync(join(trialDir, '_result.json'), 'utf8')) as {
+    schemaVersion: number;
     passed: boolean;
+    score: number | null;
+    checks: { name: string; pass: boolean }[] | null;
     gitInitialized: boolean;
     skillBundleSha256: string | null;
   };
+  assert.equal(result.schemaVersion, 2);
   assert.equal(result.passed, true);
+  assert.equal(result.score, 1);
+  assert.equal(result.checks?.length, 3);
   assert.equal(result.gitInitialized, true);
   assert.equal(result.skillBundleSha256, manifest.skill.bundleSha256);
 

@@ -28,11 +28,17 @@ function discordants(outcomes: { baseline: boolean[]; treatment: boolean[] }): {
   return { improved, regressed };
 }
 
-function stats(passes: number, trials: number) {
-  return { passes, trials, passRate: passes / trials, tokens: null };
+function stats(passes: number, trials: number, meanScore: number | null = null) {
+  return { passes, trials, passRate: passes / trials, meanScore, tokens: null };
 }
 
-function taskSummary(id: string, baselinePasses: number, treatmentPasses: number, trials: number): TaskSummary {
+function taskSummary(
+  id: string,
+  baselinePasses: number,
+  treatmentPasses: number,
+  trials: number,
+  extras: Partial<TaskSummary> = {},
+): TaskSummary {
   const baseline = stats(baselinePasses, trials);
   const treatment = stats(treatmentPasses, trials);
   const outcomes = { baseline: flags(baselinePasses, trials), treatment: flags(treatmentPasses, trials) };
@@ -42,11 +48,19 @@ function taskSummary(id: string, baselinePasses: number, treatmentPasses: number
     id,
     conditions: { baseline, treatment },
     outcomes,
+    scores: {
+      baseline: Array<number | null>(trials).fill(null),
+      treatment: Array<number | null>(trials).fill(null),
+    },
     deltaPassRate,
+    scoreDelta: null,
+    facets: [],
+    verifierNotes: [],
     tokenDelta: null,
     verdict,
     verdictReason: reason,
     judge: null,
+    ...extras,
   };
 }
 
@@ -67,7 +81,7 @@ function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunMani
   );
   const { verdict, reason } = verdictFor({ ...discordant, deltaPassRate });
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     runGroup: 'g',
     createdAt: '2026-09-19T00:00:00.000Z',
     skill: { name: 's', sourceDir: '/s', bundleSha256: 'a'.repeat(64), files: ['SKILL.md'] },
@@ -79,6 +93,7 @@ function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunMani
     overall: {
       conditions: { baseline, treatment },
       deltaPassRate,
+      scoreDelta: null,
       tokenDelta: null,
       verdict,
       verdictReason: reason,
@@ -86,6 +101,7 @@ function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunMani
         discordant,
         mcnemarP: mcnemarExactP(discordant.improved, discordant.regressed),
         deltaCi: pairedDeltaBootstrapCI(tasks.map((task) => task.outcomes)),
+        scoreDeltaCi: null,
       },
     },
   };
@@ -162,4 +178,85 @@ test('format helpers', () => {
   assert.equal(formatDeltaPp(2 / 3), '+67pp');
   assert.equal(formatDeltaPp(-1 / 3), '-33pp');
   assert.equal(formatDeltaPp(0), '0pp');
+});
+
+test('buildWarnings flags a task the baseline never passes (floor)', () => {
+  const manifest = manifestWith([taskSummary('hard', 0, 3, 3)], 'api');
+  assert.ok(
+    buildWarnings(manifest).some((w) => w.includes('"hard"') && w.includes('too hard or broken')),
+  );
+});
+
+test('buildWarnings flags a saturated facet', () => {
+  const manifest = manifestWith(
+    [
+      taskSummary('t', 2, 2, 4, {
+        facets: [
+          {
+            name: 'style',
+            baselinePassRate: 1,
+            treatmentPassRate: 1,
+            baselineTrials: 4,
+            treatmentTrials: 4,
+          },
+          {
+            name: 'correctness',
+            baselinePassRate: 0.5,
+            treatmentPassRate: 0.75,
+            baselineTrials: 4,
+            treatmentTrials: 4,
+          },
+        ],
+      }),
+    ],
+    'api',
+  );
+  const warnings = buildWarnings(manifest);
+  assert.ok(warnings.some((w) => w.includes('facet "style"') && w.includes('saturated')));
+  assert.ok(!warnings.some((w) => w.includes('facet "correctness"')));
+});
+
+test('buildWarnings surfaces verifier consistency notes', () => {
+  const manifest = manifestWith(
+    [taskSummary('t', 2, 2, 4, { verifierNotes: ['Task "t": exit code and checks disagree.'] })],
+    'api',
+  );
+  assert.ok(buildWarnings(manifest).some((w) => w.includes('exit code and checks disagree')));
+});
+
+test('renderSummary adds facet score lines only when scores exist', () => {
+  const withoutScores = manifestWith([taskSummary('plain', 1, 3, 3)]);
+  const plainOutput = renderSummary(
+    { ...withoutScores, warnings: buildWarnings(withoutScores) },
+    'runs/g/manifest.json',
+  );
+  assert.ok(!plainOutput.includes('Facet scores'));
+  assert.ok(!plainOutput.includes('Δscore 95% CI'));
+
+  const scored = taskSummary('scored', 1, 3, 3, {
+    conditions: {
+      baseline: stats(1, 3, 0.5),
+      treatment: stats(3, 3, 1),
+    },
+    scoreDelta: 0.5,
+    facets: [
+      {
+        name: 'finds-bug',
+        baselinePassRate: 0.5,
+        treatmentPassRate: 1,
+        baselineTrials: 3,
+        treatmentTrials: 3,
+      },
+    ],
+  });
+  const withScores = manifestWith([scored]);
+  withScores.overall.stats.scoreDeltaCi = { point: 0.5, lo: 0.5, hi: 0.5, resamples: 2000 };
+  const output = renderSummary(
+    { ...withScores, warnings: buildWarnings(withScores) },
+    'runs/g/manifest.json',
+  );
+  assert.match(output, /Δscore 95% CI \(paired bootstrap, 2000 resamples\): \[\+0\.50, \+0\.50\]/);
+  assert.match(output, /Facet scores \(mean checks passed, baseline → treatment\):/);
+  assert.match(output, /- scored: score 0\.50 → 1\.00 \(Δ \+0\.50\)/);
+  assert.match(output, /- finds-bug: 50% → 100%/);
 });

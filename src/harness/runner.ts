@@ -8,13 +8,15 @@ import {
   buildWarnings,
   verdictFor,
   type ConditionStats,
+  type FacetSummary,
   type JudgeSummary,
   type RunManifest,
   type TaskSummary,
 } from './report.js';
-import { mcnemarExactP, pairedDeltaBootstrapCI } from './stats.js';
+import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
 import type { Bench, Condition, Executor, SkillBundle, TokenUsage } from './types.js';
 import { CONDITIONS } from './types.js';
+import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 
 export interface ExperimentPlan {
   bench: Bench;
@@ -37,6 +39,9 @@ interface TrialOutcome {
   durationSeconds: number;
   passed: boolean;
   verifierExitCode: number | null;
+  verifierPassed: boolean | null;
+  score: number | null;
+  checks: VerifierCheck[] | null;
   error: string | null;
   output: string;
   tokens: TokenUsage | null;
@@ -155,10 +160,19 @@ async function runTrial(
 
   let verifierExitCode: number | null = null;
   let passed = false;
+  let verifierPassed: boolean | null = null;
+  let score: number | null = null;
+  let checks: VerifierCheck[] | null = null;
   if (error === null) {
     const verifier = await runVerifier(bench.dir, task.verifier, runDir);
     verifierExitCode = verifier.exitCode;
     passed = verifier.exitCode === 0;
+    const verdict = verdictFromOutput(verifier.output);
+    if (verdict) {
+      verifierPassed = verdict.passed;
+      checks = verdict.checks;
+      score = verdict.score;
+    }
     const verifierLog = verifier.error
       ? `${verifier.output}\n[${verifier.error}]`
       : verifier.output;
@@ -177,6 +191,9 @@ async function runTrial(
     durationSeconds: Math.round(((finished.getTime() - started.getTime()) / 1000) * 1000) / 1000,
     passed,
     verifierExitCode,
+    verifierPassed,
+    score,
+    checks,
     error,
     output,
     tokens,
@@ -187,7 +204,7 @@ async function runTrial(
     join(runDir, '_result.json'),
     `${JSON.stringify(
       {
-        schemaVersion: 1,
+        schemaVersion: 2,
         ...serializable,
         runGroup: plan.runGroup,
         skillBundleSha256: condition === 'treatment' ? skill.sha256 : null,
@@ -226,10 +243,16 @@ function sumTokens(records: TrialOutcome[]): { input: number; output: number } |
 function statsFor(records: TrialOutcome[]): ConditionStats {
   const passes = records.filter((r) => r.passed).length;
   const trials = records.length;
+  const scored = records.filter((r) => r.score !== null);
+  const meanScore =
+    scored.length === 0
+      ? null
+      : scored.reduce((sum, r) => sum + (r.score as number), 0) / scored.length;
   return {
     passes,
     trials,
     passRate: trials === 0 ? 0 : passes / trials,
+    meanScore,
     tokens: sumTokens(records),
   };
 }
@@ -302,6 +325,69 @@ function trialFlags(records: TrialOutcome[]): boolean[] {
   return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.passed);
 }
 
+function trialScores(records: TrialOutcome[]): (number | null)[] {
+  return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.score);
+}
+
+function facetStats(outcomes: Record<Condition, TrialOutcome[]>): FacetSummary[] {
+  const names: string[] = [];
+  for (const condition of CONDITIONS) {
+    for (const record of outcomes[condition]) {
+      for (const check of record.checks ?? []) {
+        if (!names.includes(check.name)) names.push(check.name);
+      }
+    }
+  }
+  return names.map((name) => {
+    const rateFor = (records: TrialOutcome[]): { trials: number; passRate: number } => {
+      const relevant = records.filter((r) => r.checks?.some((c) => c.name === name));
+      const passes = relevant.filter(
+        (r) => r.checks?.find((c) => c.name === name)?.pass === true,
+      ).length;
+      return { trials: relevant.length, passRate: relevant.length === 0 ? 0 : passes / relevant.length };
+    };
+    const baseline = rateFor(outcomes.baseline);
+    const treatment = rateFor(outcomes.treatment);
+    return {
+      name,
+      baselinePassRate: baseline.passRate,
+      treatmentPassRate: treatment.passRate,
+      baselineTrials: baseline.trials,
+      treatmentTrials: treatment.trials,
+    };
+  });
+}
+
+function verifierConsistencyNotes(
+  taskId: string,
+  outcomes: Record<Condition, TrialOutcome[]>,
+): string[] {
+  const notes = new Set<string>();
+  for (const condition of CONDITIONS) {
+    for (const record of outcomes[condition]) {
+      if (record.verifierPassed !== null && record.verifierPassed !== record.passed) {
+        notes.add(
+          `Task "${taskId}": the verifier's JSON "passed" flag disagrees with its exit code — the exit code is authoritative, fix the summary line.`,
+        );
+      }
+      if (record.checks !== null && record.verifierExitCode !== null) {
+        const allPass = record.checks.every((c) => c.pass);
+        if (record.passed && !allPass) {
+          notes.add(
+            `Task "${taskId}": the verifier exits 0 while some checks fail — exit code and checks disagree.`,
+          );
+        }
+        if (!record.passed && allPass) {
+          notes.add(
+            `Task "${taskId}": all checks pass but the verifier exits non-zero — exit code and checks disagree.`,
+          );
+        }
+      }
+    }
+  }
+  return [...notes];
+}
+
 function discordantCounts(
   outcomeSets: Array<{ baseline: boolean[]; treatment: boolean[] }>,
 ): { improved: number; regressed: number } {
@@ -330,12 +416,23 @@ function summarizeTask(
     treatment: trialFlags(outcomes.treatment),
   };
   const deltaPassRate = treatment.passRate - baseline.passRate;
+  const scoreDelta =
+    baseline.meanScore !== null && treatment.meanScore !== null
+      ? treatment.meanScore - baseline.meanScore
+      : null;
   const { verdict, reason } = verdictFor({ ...discordantCounts([flags]), deltaPassRate });
   return {
     id: taskId,
     conditions: { baseline, treatment },
     outcomes: flags,
+    scores: {
+      baseline: trialScores(outcomes.baseline),
+      treatment: trialScores(outcomes.treatment),
+    },
     deltaPassRate,
+    scoreDelta,
+    facets: facetStats(outcomes),
+    verifierNotes: verifierConsistencyNotes(taskId, outcomes),
     tokenDelta: tokenDelta(baseline.tokens, treatment.tokens),
     verdict,
     verdictReason: reason,
@@ -380,8 +477,16 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const taskOutcomes = taskSummaries.map((task) => task.outcomes);
   const discordant = discordantCounts(taskOutcomes);
   const overallVerdict = verdictFor({ ...discordant, deltaPassRate: overallDelta });
+  const scoreTasks = taskSummaries
+    .map((task) => ({
+      baseline: task.scores.baseline.filter((s): s is number => s !== null),
+      treatment: task.scores.treatment.filter((s): s is number => s !== null),
+    }))
+    .filter((task) => task.baseline.length > 0 && task.treatment.length > 0);
+  const scoreDeltaCi = pairedScoreBootstrapCI(scoreTasks);
+  const scoreDelta = scoreDeltaCi ? scoreDeltaCi.point : null;
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
     skill: {
@@ -406,6 +511,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
         treatment: overallTreatment,
       },
       deltaPassRate: overallDelta,
+      scoreDelta,
       tokenDelta: tokenDelta(overallBaseline.tokens, overallTreatment.tokens),
       verdict: overallVerdict.verdict,
       verdictReason: overallVerdict.reason,
@@ -413,6 +519,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
         discordant,
         mcnemarP: mcnemarExactP(discordant.improved, discordant.regressed),
         deltaCi: pairedDeltaBootstrapCI(taskOutcomes),
+        scoreDeltaCi,
       },
     },
   };

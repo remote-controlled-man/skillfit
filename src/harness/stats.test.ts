@@ -4,6 +4,7 @@ import {
   MIN_DISCORDANT_FOR_SIGNIFICANCE,
   mcnemarExactP,
   pairedDeltaBootstrapCI,
+  pairedScoreBootstrapCI,
   wilson95,
 } from './stats.js';
 
@@ -32,6 +33,10 @@ test('MIN_DISCORDANT_FOR_SIGNIFICANCE is the first discordant count reaching p <
 });
 
 function task(baseline: boolean[], treatment: boolean[]) {
+  return { baseline, treatment };
+}
+
+function scoreTask(baseline: number[], treatment: number[]) {
   return { baseline, treatment };
 }
 
@@ -82,4 +87,49 @@ test('wilson95 handles empty and saturated arms', () => {
   const full = wilson95(3, 3);
   assert.ok(full.lo > 0.3 && full.lo < 0.6, `lo=${full.lo}`);
   assert.equal(full.hi, 1);
+});
+
+const SAMPLE_SCORE_TASKS = [
+  scoreTask([0.5, 0.75], [1, 1]),
+  scoreTask([0.25, 0.5], [0.75, 1]),
+  scoreTask([1, 0.5], [1, 1]),
+  scoreTask([0, 0.25], [0.5, 0.75]),
+];
+
+test('pairedScoreBootstrapCI is deterministic for a fixed seed', () => {
+  const first = pairedScoreBootstrapCI(SAMPLE_SCORE_TASKS);
+  const second = pairedScoreBootstrapCI(SAMPLE_SCORE_TASKS);
+  assert.deepEqual(first, second);
+});
+
+test('pairedScoreBootstrapCI brackets the pooled score delta', () => {
+  const result = pairedScoreBootstrapCI(SAMPLE_SCORE_TASKS, { resamples: 500 });
+  assert.ok(result !== null);
+  assert.equal(result.resamples, 500);
+  const baselineMean = (0.5 + 0.75 + 0.25 + 0.5 + 1 + 0.5 + 0 + 0.25) / 8;
+  const treatmentMean = (1 + 1 + 0.75 + 1 + 1 + 1 + 0.5 + 0.75) / 8;
+  assert.equal(result.point, treatmentMean - baselineMean);
+  assert.ok(result.lo <= result.point);
+  assert.ok(result.point <= result.hi);
+});
+
+test('pairedScoreBootstrapCI returns a positive lower bound when treatment always outscores', () => {
+  const tasks = Array.from({ length: 8 }, () => scoreTask([0.2, 0.4], [0.8, 1]));
+  const result = pairedScoreBootstrapCI(tasks);
+  assert.ok(result !== null);
+  assert.ok(result.point > 0);
+  assert.ok(result.lo > 0);
+});
+
+test('pairedScoreBootstrapCI matches pairedDeltaBootstrapCI on 0/1 inputs', () => {
+  const asScores = SAMPLE_TASKS.map((t) => ({
+    baseline: t.baseline.map((pass) => (pass ? 1 : 0)),
+    treatment: t.treatment.map((pass) => (pass ? 1 : 0)),
+  }));
+  assert.deepEqual(pairedScoreBootstrapCI(asScores), pairedDeltaBootstrapCI(SAMPLE_TASKS));
+});
+
+test('pairedScoreBootstrapCI returns null when there are no scored trials', () => {
+  assert.equal(pairedScoreBootstrapCI([]), null);
+  assert.equal(pairedScoreBootstrapCI([scoreTask([], [])]), null);
 });
