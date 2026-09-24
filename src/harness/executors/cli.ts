@@ -166,6 +166,17 @@ export class CliExecutor implements Executor {
         resolvePromise(result);
       });
       if (this.promptVia === 'stdin') {
+        // A child that exits before draining stdin makes the write fail (EPIPE on POSIX, EOF on
+        // Windows). With no listener that surfaces as an uncaught exception rather than a rejection,
+        // so the caller's catch never runs and the process dies mid-trial leaving a half-populated
+        // run group behind. Reject instead, and kill the child so it cannot outlive the failure.
+        child.stdin.on('error', (error: Error) => {
+          clearTimeout(timer);
+          child.kill();
+          rejectPromise(
+            new Error(`Failed to write the prompt to "${command}" on stdin: ${error.message}`),
+          );
+        });
         child.stdin.write(prompt, 'utf8');
       }
       child.stdin.end();

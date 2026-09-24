@@ -138,6 +138,13 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   an error naming `--yes` otherwise, where nothing could ever have answered. Sharing it is the point —
   `parseFrontmatter` had the same two-copies problem and the two drifted (C8).
 
+- **A CLI executor whose agent exits early no longer takes the process down with it (C3).** Writing the
+  prompt to `child.stdin` had no `'error'` listener, so an agent CLI that exited before draining stdin
+  (a bad flag, an auth failure) raised EPIPE — or `EOF` on Windows — as an *uncaught exception* rather
+  than a promise rejection. `main().catch` never saw it, the process died mid-trial, and a
+  half-populated run group was left behind. It now rejects with a message naming the command, and kills
+  the child so it cannot outlive the failure.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier

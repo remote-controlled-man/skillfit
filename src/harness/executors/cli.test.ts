@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -296,4 +296,25 @@ test('CliExecutor codex shape: no skill-path command means no trigger', async ()
   const result = await executor.run(events.map((event) => JSON.stringify(event)).join('\n'), process.cwd());
   assert.equal(result.output, 'Paris');
   assert.equal(result.skillTriggered, false);
+});
+
+test('CliExecutor rejects when the child exits before draining stdin', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-epipe-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const instantExit = join(dir, 'instant-exit.cjs');
+  writeFileSync(instantExit, 'process.exit(0);\n', 'utf8');
+
+  const executor = new CliExecutor({
+    argv: [process.execPath, instantExit],
+    shell: false,
+    promptVia: 'stdin',
+    timeoutMs: 15_000,
+  });
+  // Larger than the OS pipe buffer, so the write cannot complete before the child is gone. An
+  // unhandled stdin 'error' event would be thrown as an uncaught exception and take the whole test
+  // process down; a rejection is what the caller's error path expects.
+  await assert.rejects(
+    executor.run('x'.repeat(8 * 1024 * 1024), dir),
+    /Failed to write the prompt .* on stdin/,
+  );
 });
