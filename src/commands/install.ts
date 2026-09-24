@@ -3,9 +3,9 @@ import { existsSync } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import * as readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { getAgent, type AgentDef } from '../agents.js';
+import { confirm as confirmPrompt } from './confirm.js';
 
 export const MARKER_START = '<!-- SKILLFIT_START -->';
 export const MARKER_END = '<!-- SKILLFIT_END -->';
@@ -134,7 +134,7 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
     return;
   }
   if (!opts.yes) {
-    const confirm = opts.confirm ?? defaultConfirm;
+    const confirm = opts.confirm ?? confirmPrompt;
     const ok = await confirm(`Apply ${writes.length} change(s)? [y/N] `);
     if (!ok) {
       log('Aborted; nothing was written.');
@@ -587,15 +587,5 @@ function recordEntries(lock: Lockfile, items: PlanItem[], manifest: ProfileManif
       // A refreshed skip was installed earlier; keep the original timestamp.
       installedAt: item.action === 'skip' && prior !== undefined ? prior.installedAt : installedAt,
     };
-  }
-}
-
-async function defaultConfirm(question: string): Promise<boolean> {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const answer = await new Promise<string>((resolve) => rl.question(question, resolve));
-    return /^(y|yes)$/i.test(answer.trim());
-  } finally {
-    rl.close();
   }
 }

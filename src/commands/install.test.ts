@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -18,6 +19,7 @@ import {
 } from './install.js';
 
 const PROFILES_DIR = fileURLToPath(new URL('../../profiles/', import.meta.url));
+const CLI_PATH = fileURLToPath(new URL('../../dist/cli.js', import.meta.url));
 
 async function tempDirs(t: test.TestContext): Promise<{ home: string; project: string }> {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'skillfit-install-'));
@@ -386,6 +388,22 @@ test('the lockfile is backed up before it is rewritten', async (t) => {
 
   assert.equal(await fs.readFile(lockPath + BACKUP_SUFFIX, 'utf8'), before, 'the previous lockfile survives');
   assert.match(await fs.readFile(lockPath, 'utf8'), /1\.1\.0/);
+});
+
+test('install fails fast when stdin closes without an answer', async (t) => {
+  const { project } = await tempDirs(t);
+  // Runs the real readline path in a child process: the defect is stdin closing without ever
+  // delivering a line, which an injected `confirm` stub cannot reproduce. --project keeps every
+  // write inside the temp directory.
+  const result = spawnSync(
+    process.execPath,
+    [CLI_PATH, 'install', '--project', '--agent', 'codex'],
+    { cwd: project, encoding: 'utf8', input: '', timeout: 30_000 },
+  );
+  assert.equal(result.signal, null, 'must not hang until the timeout');
+  assert.notEqual(result.status, 0, 'closed non-TTY stdin must fail, not exit 0 having written nothing');
+  assert.match(result.stderr, /--yes/);
+  assert.equal(await exists(path.join(project, LOCKFILE_NAME)), false, 'nothing was written');
 });
 
 test('dry-run prints the plan and writes nothing', async (t) => {

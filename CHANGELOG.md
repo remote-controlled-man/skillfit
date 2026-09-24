@@ -129,6 +129,15 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   a typo as a clean bill of health. Findings still never set an exit code; only usage errors do, using
   this CLI's existing code 2.
 
+- **`install` and `bench` no longer hang, or silently exit 0, when stdin cannot answer (C5).** Both
+  commands had their own copy of a `readline` confirmation prompt with no `'close'` handler, so when
+  stdin closed without delivering a line the promise never settled. Two outcomes, both bad: an
+  open-but-silent stdin (a CI pipe) **hung forever**, and a closed one let the event loop drain so the
+  process **exited 0 having written nothing** — which reads as success. Both now share one helper,
+  `src/commands/confirm.ts`: closed stdin means "no" on a terminal, where a human pressed Ctrl-D, and
+  an error naming `--yes` otherwise, where nothing could ever have answered. Sharing it is the point —
+  `parseFrontmatter` had the same two-copies problem and the two drifted (C8).
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier

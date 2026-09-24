@@ -1,4 +1,3 @@
-import * as readline from 'node:readline';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,6 +11,7 @@ import { MOCK_MARKER_FILE } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { VerifierCheck } from '../harness/verifier-summary.js';
 import type { Executor, SkillBundle } from '../harness/types.js';
+import { confirm as confirmPrompt } from './confirm.js';
 import type { Check } from './doctor.js';
 
 export interface BenchInitOptions {
@@ -142,16 +142,6 @@ a real task from your own work:
   };
 }
 
-function defaultConfirm(question: string): Promise<boolean> {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise((resolvePromise) => {
-    rl.question(question, (answer) => {
-      rl.close();
-      resolvePromise(/^(y|yes)$/i.test(answer.trim()));
-    });
-  });
-}
-
 export async function runBenchInit(
   options: BenchInitOptions,
 ): Promise<{ dir: string; created: string[] } | null> {
@@ -170,7 +160,7 @@ export async function runBenchInit(
     throw new Error(`Target directory is not empty: ${dir}`);
   }
   if (!options.yes) {
-    const confirm = options.confirm ?? defaultConfirm;
+    const confirm = options.confirm ?? confirmPrompt;
     const ok = await confirm(`Create ${created.length} file(s) in ${dir}? [y/N] `);
     if (!ok) {
       log('Aborted — nothing was written.');
@@ -856,7 +846,7 @@ export async function runBenchAdd(
     return null;
   }
   if (!options.yes) {
-    const confirm = options.confirm ?? defaultConfirm;
+    const confirm = options.confirm ?? confirmPrompt;
     const ok = await confirm(
       `Add ${prepared.fixtureFiles.length} fixture file(s) + ${Object.keys(generated).length} generated file(s) into ${benchDir}? [y/N] `,
     );

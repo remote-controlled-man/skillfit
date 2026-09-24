@@ -70,6 +70,25 @@ test('runBenchInit aborts when the user declines', async (t) => {
   assert.ok(!existsSync(join(cwd, 'skillfit-bench')));
 });
 
+// Exercises the real readline path in a child process, because the defect is about stdin closing
+// without ever delivering a line — something an injected `confirm` stub cannot reproduce.
+test('bench init fails fast when stdin closes without an answer', (t) => {
+  const cwd = tmp(t, 'skillfit-bench-stdin-');
+  const result = spawnSync(
+    process.execPath,
+    [join(PACKAGE_ROOT, 'dist', 'cli.js'), 'bench', 'init', join(cwd, 'stdin-probe')],
+    { cwd, encoding: 'utf8', input: '', timeout: 30_000 },
+  );
+  assert.equal(result.signal, null, 'must not hang until the timeout');
+  assert.notEqual(
+    result.status,
+    0,
+    'closed non-TTY stdin must fail, not exit 0 having written nothing',
+  );
+  assert.match(result.stderr, /--yes/);
+  assert.ok(!existsSync(join(cwd, 'stdin-probe')), 'nothing was written');
+});
+
 test('runBenchCheck passes on the bundled code-review bench', async () => {
   const { log } = collector();
   const report = await runBenchCheck({ dir: BUNDLED_CODE_REVIEW, log });
