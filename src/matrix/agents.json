@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-22",
+  "verifiedAt": "2026-09-25",
   "agents": [
     {
       "id": "claude-code",
@@ -162,6 +162,7 @@
         "argv": ["kimi", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
         "promptVia": "file",
         "promptFile": "_prompt.txt",
+        "usageFromSessionLog": true,
         "streamJson": {
           "argv": ["kimi", "--output-format=stream-json", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
           "triggerToolName": "Skill",

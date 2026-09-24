@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { agentIds, getAgent } from '../../agents.js';
 import { CliExecutor, quoteShellArg } from './cli.js';
 
@@ -384,4 +385,29 @@ test('CliExecutor accumulates token usage across multiple turns', async () => {
   const result = await executor.run(toNdjson(events), process.cwd());
   assert.deepEqual(result.tokens, { input: 1020, output: 105 }, 'usage records are per-turn increments');
   assert.equal(result.output, 'first\nsecond');
+});
+
+test('out-of-band token usage is a matrix capability, not an agent id in the harness', () => {
+  // kimi-code's headless transcript carries no usable token counts, so they are read from its
+  // session log after the run. That used to be `if (this.label === 'kimi-code')` in the executor,
+  // which is the one thing AGENTS.md forbids: agent-specific behavior belongs in the matrix.
+  assert.equal(getAgent('kimi-code').headless.usageFromSessionLog, true);
+  for (const id of agentIds()) {
+    if (id === 'kimi-code') continue;
+    assert.notEqual(
+      getAgent(id).headless.usageFromSessionLog,
+      true,
+      `${id} should not claim out-of-band usage without a session log to read`,
+    );
+  }
+
+  // Structural guard, so the rule survives a future edit: the executor module must not name an agent.
+  const source = readFileSync(
+    fileURLToPath(new URL('../../../src/harness/executors/cli.ts', import.meta.url)),
+    'utf8',
+  );
+  for (const id of agentIds()) {
+    assert.ok(!source.includes(`'${id}'`), `executors/cli.ts hardcodes the agent id "${id}"`);
+    assert.ok(!source.includes(`"${id}"`), `executors/cli.ts hardcodes the agent id "${id}"`);
+  }
 });

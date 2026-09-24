@@ -175,6 +175,15 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   indicators are handled. With one implementation, agreement is structural rather than something a
   test has to keep verifying, so the duplicated parser tests were consolidated rather than doubled.
 
+- **The harness no longer names an agent (C12).** `CliExecutor` decided whether to read token usage
+  out of the session log with `if (this.label === 'kimi-code')` — agent-specific behaviour hardcoded
+  in harness code, which `AGENTS.md` forbids outright. It is now a matrix capability,
+  `headless.usageFromSessionLog`, set on kimi-code (whose headless transcript carries no usable token
+  counts) and on no other agent. Adding a fourth agent whose CLI behaves the same way is now a
+  one-line matrix edit rather than a source change, and a test scans the executor module for quoted
+  agent ids so the rule survives future edits. Matrix `verifiedAt` bumped to 2026-09-25; the
+  capability depends on the session log location already documented at `sessions.docs` for that agent.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier

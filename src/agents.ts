@@ -49,6 +49,12 @@ export interface AgentHeadless {
   argv: string[];
   promptVia: 'stdin' | 'file';
   promptFile?: string;
+  /**
+   * The headless transcript carries no usable token counts, so usage has to be read out of band from
+   * the agent's own session log after the run. A capability, not an agent name: the harness must not
+   * know which vendor needs it (AGENTS.md — agent-specific behavior comes from the matrix).
+   */
+  usageFromSessionLog?: boolean;
   streamJson?: AgentHeadlessStreamJson;
   docs: string;
 }

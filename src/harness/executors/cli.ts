@@ -14,6 +14,7 @@ export interface CliExecutorOptions {
   env?: NodeJS.ProcessEnv;
   promptVia?: 'stdin' | 'file';
   promptFile?: string;
+  usageFromSessionLog?: boolean;
   triggerSkillName?: string;
   triggerToolName?: string;
 }
@@ -63,6 +64,7 @@ export class CliExecutor implements Executor {
   private readonly env?: NodeJS.ProcessEnv;
   private readonly promptVia: 'stdin' | 'file';
   private readonly promptFile: string;
+  private readonly usageFromSessionLog: boolean;
   private readonly triggerSkillName?: string;
   private readonly triggerToolName: string;
 
@@ -80,6 +82,7 @@ export class CliExecutor implements Executor {
     this.env = options.env;
     this.promptVia = options.promptVia ?? 'stdin';
     this.promptFile = options.promptFile ?? DEFAULT_PROMPT_FILE;
+    this.usageFromSessionLog = options.usageFromSessionLog ?? false;
     this.triggerSkillName = options.triggerSkillName;
     this.triggerToolName = options.triggerToolName ?? DEFAULT_TRIGGER_TOOL_NAME;
   }
@@ -99,6 +102,7 @@ export class CliExecutor implements Executor {
         label: agent.id,
         promptVia: headless.promptVia,
         promptFile: headless.promptFile,
+        usageFromSessionLog: headless.usageFromSessionLog ?? false,
         triggerSkillName: opts.triggerSkillName,
         triggerToolName: streamJson.triggerToolName,
       });
@@ -111,6 +115,7 @@ export class CliExecutor implements Executor {
       label: agent.id,
       promptVia: headless.promptVia,
       promptFile: headless.promptFile,
+      usageFromSessionLog: headless.usageFromSessionLog ?? false,
     });
   }
 
@@ -184,7 +189,10 @@ export class CliExecutor implements Executor {
         } else {
           result = { output: stdout };
         }
-        if (this.label === 'kimi-code' && result.tokens === undefined) {
+        // Capability from the matrix, not an agent name: this surface reports no usable token counts
+        // in its transcript, so they are read from its session log afterwards. probeKimiSessionUsage
+        // is currently the only implementation, which is why the flag is set on exactly one agent.
+        if (this.usageFromSessionLog && result.tokens === undefined) {
           const usage = probeKimiSessionUsage(workdir, startedAtMs);
           if (usage) {
             result.tokens = { input: usage.input, output: usage.output };
