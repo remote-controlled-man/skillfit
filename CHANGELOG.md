@@ -30,6 +30,64 @@ protocol is unchanged.
   oracles yet — its command-kind tasks need verified reference patches, which are follow-up work.
   `bench init` templates now include checks and a working oracle.
 
+### Changed
+
+Wave 1 of the `docs/audit-2026-09-24.md` remediation (see that document's Disposition section for the
+per-finding ledger). These change behaviour or weaken a claim that the code could not honour.
+
+- **Paired runs are now interleaved.** The trial loop is outermost, so the two arms of a pair execute
+  adjacently instead of all baselines before all treatments — condition is no longer confounded with
+  elapsed time (provider drift, rate-limit backoff).
+- **`docs/metrics.md` no longer claims a shared seed.** The headless CLI surfaces in the capability
+  matrix expose no seed or temperature knob, so the earlier "same fixture, prompt, and seed" was
+  unsatisfiable as written. The contract now states what *is* controlled (same fixture, same prompt,
+  adjacent order) and the manifest records `executor.sampling: null` where the surface offers nothing,
+  rather than implying a control that does not exist.
+- **`--calibrate` measures the inject path.** It previously routed through trigger mode, whose
+  `shouldTrigger` filter silently calibrated zero tasks on an unlabelled bench. Labels are no longer
+  required and only one arm per task runs, so calibration costs half what a paired eval would.
+- **`bench check` gained three warnings**: a task with no registered oracle (winnability unverified), a
+  verifier whose facet-check count falls outside the documented 2–8 range, and a negative-control
+  fraction below the 30% target. All three are warnings, not failures, so `bench add --freeze`
+  mid-authoring and CI are unaffected. Against the bundled benches this surfaces 11 warnings on
+  `debugging` and 1 on `code-review` — the teaching material is now visibly short of its own contract,
+  which the next wave closes.
+- **Trigger recall is documented as an upper bound.** Only the skill under test is installed into the
+  run directory; real routing quality depends on lexical competition with the user's whole installed
+  set, which the harness does not reproduce. Marked `(Status: spec)` in `docs/metrics.md` rather than
+  built, because copying a user's real skill set into a sandbox raises privacy questions this project
+  has not settled.
+- **Correction to the 0.3.0 entry below**: it claimed recall, false-trigger rate, precision *and* F1
+  all carry Wilson 95% CIs. Only the first two did. Precision does now; F1 deliberately does not, and
+  the report says why inline.
+
+### Fixed
+
+- **Errored trials are excluded, not scored as failures (B1).** An executor error left
+  `passed = false` on the record and both `statsFor` and `trialFlags` counted it, so a single API
+  timeout manufactured a discordant pair and moved Δpass, the McNemar p-value and the bootstrap CI —
+  enough to flip a verdict at the 3–5 trial scale this tool targets. `docs/metrics.md` L0 claimed this
+  was already handled; it was handled in the trigger path only. Exclusion is *pairwise*: dropping a
+  trial from one arm alone would misalign the (task, trial) pairs every statistic resamples, so an
+  error in either arm removes that pair from both. `ConditionStats` gains a required `errors` count,
+  and a warning names each exclusion. This also removes the per-arm score-array asymmetry the audit
+  filed separately as B9.
+- **The judge is actually blind (B3).** `judgePair` ran with cwd set to the task directory — the parent
+  of both arms — where a CLI judge with file tools could read either `_output.md` and their
+  `_result.json`, which names the condition and the skill bundle hash. It now runs in a fresh temp
+  directory holding only `answerA.md` / `answerB.md`, removed after the pair is judged.
+- **Judge input is fenced and parsed from the end (B7).** Both answers were interpolated verbatim into
+  the judge prompt and `parseChecklist` took the *first* checklist-shaped JSON in the reply, so an
+  answer that embedded one — and got echoed while the judge reasoned — took the verdict. Answers now
+  sit inside nonce-delimited markers marked as untrusted data, and the *last* JSON object wins.
+- **Precision carries a Wilson CI (B5)**, computed over the fired runs.
+- **`eval` refuses an API executor against a command-graded bench (B8)** at plan time, including during
+  `--dry-run`. Previously it issued an instruction the executor could not carry out, scored both arms
+  0, and then blamed bench difficulty via the floor warning.
+- **`--calibrate` fails loudly when it measured nothing (A3)** instead of printing
+  `PASS calibration: 0/0 task(s) in the discriminative band`. Errored runs are excluded from the
+  difficulty rate rather than counted as failures.
+
 ## [0.3.0] — 2026-09-22
 
 A large capability wave. Everything in 0.2.0 plus:
