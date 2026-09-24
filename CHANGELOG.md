@@ -164,6 +164,17 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   ever reports *cumulative* usage, accumulating would double-count, and the two readings are mutually
   exclusive.
 
+- **`doctor` and `install` now share one frontmatter parser (C8).** Each had its own, and they
+  disagreed on four inputs: a byte-order mark (install returned `null`, doctor parsed fine), trailing
+  spaces after the `---` fence (same), quoted values (install kept the quotes), and `>` / `|` block
+  scalars (install stored the literal marker as the description). So a `SKILL.md` could pass `doctor`
+  and then be rejected by `install`'s post-write validation — the two commands giving opposite
+  answers about the same file on disk. Both also stored `>-` as a two-character description, which
+  then passed a presence check because a non-empty string is truthy. Extracted to
+  `src/frontmatter.ts`; block scalars now fold (`>`) or keep line breaks (`|`) correctly and chomping
+  indicators are handled. With one implementation, agreement is structural rather than something a
+  test has to keep verifying, so the duplicated parser tests were consolidated rather than doubled.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier

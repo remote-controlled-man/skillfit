@@ -5,6 +5,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent, type AgentDef } from '../agents.js';
+import { parseFrontmatter } from '../frontmatter.js';
 import { confirm as confirmPrompt } from './confirm.js';
 
 export const MARKER_START = '<!-- SKILLFIT_START -->';
@@ -223,17 +224,6 @@ function safeJoin(base: string, rel: string): string {
     throw new Error(`Profile path "${rel}" escapes the profile directory`);
   }
   return abs;
-}
-
-export function parseFrontmatter(content: string): Record<string, string> | null {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(content);
-  if (!match || match[1] === undefined) return null;
-  const fields: Record<string, string> = {};
-  for (const line of match[1].split(/\r?\n/)) {
-    const m = /^([A-Za-z0-9_-]+):\s*(.*)$/.exec(line);
-    if (m && m[1] !== undefined) fields[m[1]] = (m[2] ?? '').trim();
-  }
-  return fields;
 }
 
 export function renderManagedBlock(body: string, profile: string, version: string): string {

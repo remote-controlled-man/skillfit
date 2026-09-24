@@ -6,7 +6,6 @@ import { after, test } from 'node:test';
 import {
   collectDoctorReport,
   formatDoctorReport,
-  parseFrontmatter,
   runDoctor,
   type Check,
   type DoctorOptions,
@@ -55,32 +54,8 @@ function hasCheck(checks: Check[], status: Check['status'], pattern: RegExp): bo
   return checks.some((c) => c.status === status && pattern.test(c.message));
 }
 
-test('parseFrontmatter parses name and description', () => {
-  const fields = parseFrontmatter('---\nname: demo\ndescription: does things\n---\nbody');
-  assert.equal(fields?.name, 'demo');
-  assert.equal(fields?.description, 'does things');
-});
-
-test('parseFrontmatter handles CRLF and quoted values', () => {
-  const fields = parseFrontmatter('---\r\nname: "demo skill"\r\ndescription: \'x\'\r\n---\r\n');
-  assert.equal(fields?.name, 'demo skill');
-  assert.equal(fields?.description, 'x');
-});
-
-test('parseFrontmatter joins folded block scalars', () => {
-  const fields = parseFrontmatter('---\nname: demo\ndescription: >\n  first line\n  second line\n---\n');
-  assert.equal(fields?.description, 'first line second line');
-});
-
-test('parseFrontmatter returns null without a closing fence', () => {
-  assert.equal(parseFrontmatter('---\nname: demo\n'), null);
-  assert.equal(parseFrontmatter('no frontmatter here'), null);
-});
-
-test('parseFrontmatter tolerates a BOM', () => {
-  const fields = parseFrontmatter('\uFEFF---\nname: demo\n---\n');
-  assert.equal(fields?.name, 'demo');
-});
+// parseFrontmatter's own tests live in src/frontmatter.test.ts, next to the single implementation
+// doctor and install now share.
 
 test('detects nothing on a clean machine', () => {
   const report = collectDoctorReport(makeOptions(tempDir(), tempDir()));

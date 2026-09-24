@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync, type Dirent, type Stats } from 'no
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { agentIds, getAgent, loadMatrix, type AgentDef } from '../agents.js';
+import { parseFrontmatter } from '../frontmatter.js';
 
 const CLAUDE_MD_MAX_LINES = 200;
 const AGENTS_MD_MAX_BYTES = 32 * 1024;
@@ -118,40 +119,6 @@ function defaultWhich(binary: string): string | null {
   if (result.error || result.status !== 0) return null;
   const first = (result.stdout ?? '').split(/\r?\n/).find((line) => line.trim() !== '');
   return first?.trim() ?? null;
-}
-
-function unquote(value: string): string {
-  const match = /^(['"])([\s\S]*)\1$/.exec(value);
-  return match?.[2] ?? value;
-}
-
-export function parseFrontmatter(content: string): Record<string, string> | null {
-  const text = content.replace(/^\uFEFF/, '');
-  const match = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(text);
-  if (!match || match[1] === undefined) return null;
-  const fields: Record<string, string> = {};
-  let blockKey: string | null = null;
-  for (const line of match[1].split(/\r?\n/)) {
-    const kv = /^([A-Za-z0-9_-]+):(?:[ \t]+(.*))?$/.exec(line);
-    if (kv && kv[1] !== undefined) {
-      const value = (kv[2] ?? '').trim();
-      if (value === '>' || value === '|') {
-        fields[kv[1]] = '';
-        blockKey = kv[1];
-      } else {
-        fields[kv[1]] = unquote(value);
-        blockKey = null;
-      }
-      continue;
-    }
-    if (blockKey !== null && /^\s+\S/.test(line)) {
-      const prior = fields[blockKey] ?? '';
-      fields[blockKey] = prior === '' ? line.trim() : `${prior} ${line.trim()}`;
-      continue;
-    }
-    blockKey = null;
-  }
-  return fields;
 }
 
 function skillFrontmatterError(content: string): string | null {

@@ -5,13 +5,13 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { parseFrontmatter } from '../frontmatter.js';
 import {
   BACKUP_SUFFIX,
   LOCKFILE_NAME,
   MARKER_END,
   MARKER_START,
   loadProfile,
-  parseFrontmatter,
   renderManagedBlock,
   runInstall,
   upsertManagedBlock,
@@ -497,14 +497,8 @@ test('the bundled recommended profile passes validation', async () => {
   assert.deepEqual([...manifest.agents].sort(), ['claude-code', 'codex', 'kimi-code']);
 });
 
-test('parseFrontmatter parses simple YAML frontmatter', () => {
-  const fm = parseFrontmatter('---\nname: x\ndescription: hello world\n---\nbody\n');
-  assert.equal(fm?.name, 'x');
-  assert.equal(fm?.description, 'hello world');
-  assert.equal(parseFrontmatter('no frontmatter'), null);
-  assert.equal(parseFrontmatter('---\nname: x\n'), null);
-  assert.equal(parseFrontmatter('---\r\nname: x\r\n---\r\n')?.name, 'x');
-});
+// parseFrontmatter's own tests live in src/frontmatter.test.ts, next to the single implementation
+// doctor and install now share.
 
 test('upsertManagedBlock creates, appends and replaces', () => {
   const block = renderManagedBlock('body', 'p', '1.0.0');
