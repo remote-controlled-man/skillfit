@@ -83,7 +83,7 @@ cp -r skills/skillfit ~/.agents/skills/
 | `report` | 로컬 세션 기록에서 skill 실사용 집계: skill별 발화 횟수와 미발화 목록(순수 라우팅/컨텍스트 비용) | 절대 안 함 |
 | `eval <skill>` | 기본값(`--mode inject`): 페어드 baseline/treatment 실행, 결정적 verifier + 선택적 블라인드 LLM 심사, 토큰 비용 차이, McNemar exact test + paired bootstrap CI로 판정하며 bench가 checks를 낼 때는 단계적 facet 점수 CI도 보고. `--mode trigger`: 프롬프트 주입 대신 skill을 실제로 설치하고 에이전트 transcript에서 트리거 재현율 / 오탐율 측정 | 로컬 `runs/`에만 |
 | `bench` | `init`은 동작하는 예시 작업이 포함된 bench 디렉터리를 생성하고, `check`는 bench를 오프라인으로 검증하며(verifier 자가 테스트, oracle/NOP 게이트, mock arm 프로브, fixture 위생 상태, 트리거 라벨 커버리지), `add --freeze`는 방금 목격한 실패를 영구적인 bench 작업으로 고정하고, `--decompose`는 에이전트가 verifier + oracle을 초안 작성해 두 게이트를 모두 통과할 때만 채택 | `init`/`add`는 확인 후에만, `check`는 절대 안 함 |
-| `install` | 관리 블록 규칙(`<!-- SKILLFIT_START/END -->`, 멱등), 충돌 보호가 적용된 skill 복사, 커밋 고정 lockfile, 설치 후 검증. 쓰기는 먼저 임시 저장한 뒤 rename하므로 중간에 실패해도 아무것도 적용되지 않습니다. 원본은 `<file>.skillfit-bak`에 보관되며 첫 백업이 우선하므로 이후 업데이트가 덮어쓰지 못합니다 | 확인 후에만 |
+| `install` | 관리 블록 규칙(`<!-- SKILLFIT_START/END -->`, 멱등), 충돌 보호가 적용된 skill 복사, 커밋 고정 lockfile, 설치 후 검증. 쓰기는 먼저 임시 저장한 뒤 rename하므로 중간에 실패해도 아무것도 적용되지 않습니다. 원본은 `<file>.skillfit-bak`에 보관되며 첫 백업이 우선하므로 이후 업데이트가 덮어쓰지 못합니다. `--dry-run`은 충돌을 보고하고 0으로 종료하며, `--strict`를 추가하면 충돌 시 실패합니다(CI 게이트용) | 확인 후에만 |
 
 ## 나만의 bench 가져오기
 

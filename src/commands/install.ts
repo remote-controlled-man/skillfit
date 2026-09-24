@@ -19,6 +19,8 @@ export interface InstallOptions {
   profile: string;
   agent?: string;
   dryRun?: boolean;
+  /** Make conflicts fail a `--dry-run` instead of reporting them and exiting 0. For CI gates. */
+  strict?: boolean;
   yes?: boolean;
   project?: boolean;
   homeDir?: string;
@@ -108,6 +110,17 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
 
   const conflicts = items.filter((i) => i.action === 'conflict');
   if (conflicts.length > 0) {
+    // A dry run is a question, not an attempt: it reports what would block an install and exits 0, so
+    // a human reading the plan is not handed a failure code for asking. CI that wants conflicts to
+    // fail passes --strict. A real run always throws, since it cannot proceed.
+    if (opts.dryRun && !opts.strict) {
+      log('');
+      log(
+        `${conflicts.length} conflict(s) would block this install. Resolve the files listed above, then re-run. ` +
+          '(Dry run reports conflicts and exits 0; pass --strict to make them fail.)',
+      );
+      return;
+    }
     throw new Error(`${conflicts.length} conflict(s) found. Keep or remove the listed files manually and re-run. Nothing was written.`);
   }
 

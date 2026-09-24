@@ -212,6 +212,48 @@ test('modifying an installed skill turns the next run into a conflict', async (t
   assert.equal(await fs.readFile(skillTarget, 'utf8'), 'user edits\n');
 });
 
+async function foreignSkill(home: string): Promise<void> {
+  const skillDir = path.join(home, '.agents', 'skills', 'commit-message');
+  await fs.mkdir(skillDir, { recursive: true });
+  await fs.writeFile(
+    path.join(skillDir, 'SKILL.md'),
+    '---\nname: commit-message\ndescription: written by someone else\n---\nforeign body\n',
+  );
+}
+
+test('install --dry-run reports conflicts and returns instead of throwing', async (t) => {
+  const { home, project } = await tempDirs(t);
+  await foreignSkill(home);
+  const { lines, log } = captureLogs();
+
+  // A dry run is a question, not an attempt. Before this it exited non-zero, so CI that ran
+  // --dry-run as a pre-flight check failed on the very condition the check exists to surface.
+  await runInstall(makeOpts(home, project, { agent: 'codex', dryRun: true, yes: false, log }));
+
+  const output = lines.join('\n');
+  assert.match(output, /CONFLICT/);
+  assert.match(output, /conflict\(s\) would block this install/);
+  assert.match(output, /pass --strict to make them fail/);
+  assert.equal(
+    await exists(path.join(home, '.codex', 'AGENTS.md')),
+    false,
+    'a dry run still writes nothing',
+  );
+});
+
+test('install --dry-run --strict throws on conflicts', async (t) => {
+  const { home, project } = await tempDirs(t);
+  await foreignSkill(home);
+  const { lines, log } = captureLogs();
+
+  await assert.rejects(
+    runInstall(makeOpts(home, project, { agent: 'codex', dryRun: true, strict: true, yes: false, log })),
+    /conflict\(s\) found/,
+  );
+  assert.equal(await exists(path.join(home, '.codex', 'AGENTS.md')), false);
+});
+
+
 test('a skill update from the same profile overwrites a pristine install', async (t) => {
   const { home, project } = await tempDirs(t);
   await runInstall(makeOpts(home, project, { agent: 'codex' }));

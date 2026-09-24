@@ -30,6 +30,7 @@ Options:
   --profile <name>    Profile for install (default: "recommended")
   --project           Install into the current project instead of user-level config
   --dry-run           Print the plan without writing anything
+  --strict            With install --dry-run, exit non-zero on conflicts (for CI gates)
   --yes               Non-interactive mode (CI-friendly)
   --help, -h          Show help
   --version, -v       Show version
@@ -82,6 +83,7 @@ async function main(): Promise<void> {
       json: { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       project: { type: 'boolean', default: false },
+      strict: { type: 'boolean', default: false },
       yes: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
       version: { type: 'boolean', short: 'v', default: false },
@@ -136,7 +138,12 @@ async function main(): Promise<void> {
       return;
     }
     case 'install':
-      await runInstall({ ...common, profile: values.profile ?? 'recommended', project: values.project ?? false });
+      await runInstall({
+        ...common,
+        profile: values.profile ?? 'recommended',
+        project: values.project ?? false,
+        strict: values.strict ?? false,
+      });
       return;
     case 'bench': {
       const subcommand = positionals[1];

@@ -116,6 +116,13 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
     own partial writes match the profile, so the next run adopts them and completes. The second run in
     the reproduction recovered cleanly.
 
+- **`install --dry-run` reports conflicts instead of failing on them (C2).** The conflict check ran
+  before the dry-run early return, so a pre-flight `--dry-run` exited non-zero on exactly the condition
+  it exists to surface — a CI job using it as a check failed for asking the question. A dry run now
+  prints the conflicts, says what to do, and exits 0. New `--strict` restores the non-zero exit for
+  gates that want it; a real (non-dry) run still always throws, since it cannot proceed. Documented in
+  `--help` and in the `install` row of all five READMEs.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier
