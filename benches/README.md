@@ -53,7 +53,7 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 | `tasks[].verifierKind` | no | `output` (default): the verifier grades the agent's final message at `_output.md`. `command`: the verifier runs a real command (e.g. a test suite) inside the run directory, for tasks where the agent edits files. |
 | `tasks[].oracle` | no (warned when absent) | Command (same invocation convention as the verifier) that applies the reference solution to a fixture copy — writes `_output.md` for `output` tasks, edits files for `command` tasks. `bench check` fails when the oracle-solved fixture does not pass the verifier with every check green. A task that registers **no** oracle gets a WARN naming the consequence — winnability is unverified, so nothing proves the task is solvable — rather than a FAIL, because `bench add --freeze` legitimately produces oracle-less tasks mid-authoring. Convention: `node ground-truth/oracle-<task-id>.mjs`. |
 | `tasks[].rubric` | no | Markdown file injected into the optional LLM judge prompt (never shown to the agent under test). |
-| `tasks[].shouldTrigger` | no | Whether an in-scope skill *should* fire on this task. Required for `--mode trigger` (unlabeled tasks are skipped there). Include negative controls (`false`) — aim for ≥30% of tasks. |
+| `tasks[].shouldTrigger` | no | Whether an in-scope skill *should* fire on this task. Required for `--mode trigger` (unlabeled tasks are skipped there). Include negative controls (`false`) — aim for ≥30% of tasks; `bench check` reports the fraction and warns below that target, because false-trigger rate is the metric a thin negative sample undermines first. |
 
 All paths must stay inside the bench directory.
 

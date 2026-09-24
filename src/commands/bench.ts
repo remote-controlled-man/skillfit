@@ -50,6 +50,10 @@ const FIXTURE_SIZE_WARN_BYTES = 64 * 1024;
 const MIN_FACET_CHECKS = 2;
 const MAX_FACET_CHECKS = 8;
 
+// docs/metrics.md: >=30% of trigger-labelled tasks should be negative controls.
+const NEGATIVE_CONTROL_TARGET = 0.3;
+const NEGATIVE_CONTROL_PERCENT = 30;
+
 function templateFiles(benchName: string): Record<string, string> {
   return {
     'bench.json': `${JSON.stringify(
@@ -421,11 +425,25 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     }
   }
 
-  if (labeledTasks > 0 && negativeTasks === 0) {
-    push(
-      'WARN',
-      'no shouldTrigger:false (negative-control) tasks — trigger mode cannot measure false-trigger rate (see docs/metrics.md)',
-    );
+  if (labeledTasks > 0) {
+    const fraction = negativeTasks / labeledTasks;
+    const percent = Math.round(fraction * 100);
+    if (negativeTasks === 0) {
+      push(
+        'WARN',
+        'no shouldTrigger:false (negative-control) tasks — trigger mode cannot measure false-trigger rate (see docs/metrics.md)',
+      );
+    } else if (fraction < NEGATIVE_CONTROL_TARGET) {
+      push(
+        'WARN',
+        `${negativeTasks}/${labeledTasks} labeled task(s) are negative controls (${percent}%) — below the ${NEGATIVE_CONTROL_PERCENT}% target in docs/metrics.md, so false-trigger rate rests on a thin sample`,
+      );
+    } else {
+      push(
+        'PASS',
+        `${negativeTasks}/${labeledTasks} labeled task(s) are negative controls (${percent}%) — at or above the ${NEGATIVE_CONTROL_PERCENT}% target`,
+      );
+    }
   }
 
   if (options.calibrate) {

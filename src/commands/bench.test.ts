@@ -338,6 +338,66 @@ test('runBenchCheck passes facet counts at both ends of the 2–8 contract', asy
   }
 });
 
+function triggerLabelBench(
+  t: import('node:test').TestContext,
+  labeled: number,
+  negatives: number,
+): string {
+  const dir = tmp(t, 'skillfit-bench-negatives-');
+  mkdirSync(join(dir, 'prompts'), { recursive: true });
+  mkdirSync(join(dir, 'verifiers'), { recursive: true });
+  writeFileSync(join(dir, 'verifiers', 'v.mjs'), EXACT_VERIFIER);
+  const tasks: Record<string, unknown>[] = [];
+  for (let i = 0; i < labeled; i++) {
+    const id = `task-${i + 1}`;
+    mkdirSync(join(dir, 'fixtures', id), { recursive: true });
+    writeFileSync(join(dir, 'fixtures', id, 'index.txt'), 'x\n');
+    writeFileSync(join(dir, 'prompts', `${id}.md`), `${id} prompt.\n`);
+    tasks.push({
+      id,
+      fixture: `fixtures/${id}`,
+      prompt: `prompts/${id}.md`,
+      verifier: 'node verifiers/v.mjs',
+      shouldTrigger: i >= negatives,
+    });
+  }
+  writeFileSync(join(dir, 'bench.json'), JSON.stringify({ schemaVersion: 1, tasks }));
+  return dir;
+}
+
+function negativeControlLine(report: { checks: { status: string; message: string }[] }): {
+  status: string;
+  message: string;
+} | undefined {
+  return report.checks.find((c) => c.message.includes('negative controls'));
+}
+
+test('runBenchCheck warns when negative controls fall below the 30% target', async (t) => {
+  const report = await runBenchCheck({ dir: triggerLabelBench(t, 5, 1), log: () => {} });
+  const line = negativeControlLine(report);
+  assert.ok(line, 'expected a negative-control line');
+  assert.equal(line.status, 'WARN', '1/5 = 20% must warn');
+  assert.match(line.message, /^1\/5 labeled task\(s\) are negative controls \(20%\)/);
+  assert.match(line.message, /below the 30% target/);
+});
+
+test('runBenchCheck passes negative controls at exactly the 30% target', async (t) => {
+  const report = await runBenchCheck({ dir: triggerLabelBench(t, 10, 3), log: () => {} });
+  const line = negativeControlLine(report);
+  assert.ok(line, 'expected a negative-control line');
+  assert.equal(line.status, 'PASS', '3/10 = 30% is at the target and must not warn');
+  assert.match(line.message, /^3\/10 labeled task\(s\) are negative controls \(30%\)/);
+});
+
+test('runBenchCheck still warns hardest when a labelled bench has no negative controls', async (t) => {
+  const report = await runBenchCheck({ dir: triggerLabelBench(t, 3, 0), log: () => {} });
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'WARN' && c.message.includes('cannot measure false-trigger rate'),
+    ),
+  );
+});
+
 function gitRepoWithBug(t: import('node:test').TestContext): string {
   const dir = tmp(t, 'skillfit-freeze-src-');
   writeFileSync(join(dir, 'add.js'), 'export function add(a, b) {\n  return a - b;\n}\n');
