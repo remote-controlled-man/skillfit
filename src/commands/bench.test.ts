@@ -876,3 +876,100 @@ test('runBenchCheck --calibrate requires an agent or executor', async (t) => {
   const report = await runBenchCheck({ dir, calibrate: {}, log: () => {} });
   assert.ok(report.checks.some((c) => c.status === 'FAIL' && c.message.includes('needs --agent')));
 });
+
+// Same shape as makeCalibBench but with no shouldTrigger labels. Calibration used to route
+// through trigger mode, whose label filter dropped every task here and then reported PASS 0/0.
+function makeUnlabelledCalibBench(t: import('node:test').TestContext): string {
+  const dir = tmp(t, 'skillfit-calib-unlabelled-');
+  mkdirSync(join(dir, 'prompts'), { recursive: true });
+  mkdirSync(join(dir, 'verifiers'), { recursive: true });
+  writeFileSync(
+    join(dir, 'verifiers', 'ok.mjs'),
+    `import fs from 'node:fs';\nconst out = fs.readFileSync(process.argv[2] + '/_output.md', 'utf8');\nprocess.exit(out.includes('ok') ? 0 : 1);\n`,
+  );
+  for (const id of ['easy-task', 'hard-task']) {
+    mkdirSync(join(dir, 'fixtures', id), { recursive: true });
+    writeFileSync(join(dir, 'fixtures', id, 'index.txt'), 'x\n');
+    writeFileSync(join(dir, 'prompts', `${id}.md`), `${id} prompt: reply.\n`);
+  }
+  writeFileSync(
+    join(dir, 'bench.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      name: 'calib-unlabelled',
+      tasks: [
+        { id: 'easy-task', fixture: 'fixtures/easy-task', prompt: 'prompts/easy-task.md', verifier: 'node verifiers/ok.mjs' },
+        { id: 'hard-task', fixture: 'fixtures/hard-task', prompt: 'prompts/hard-task.md', verifier: 'node verifiers/ok.mjs' },
+      ],
+    }),
+  );
+  return dir;
+}
+
+test('runBenchCheck --calibrate measures a bench with no shouldTrigger labels', async (t) => {
+  const dir = makeUnlabelledCalibBench(t);
+  const executor = {
+    describe: () => ({ kind: 'stub', model: 'stub' }),
+    run: (prompt: string) => Promise.resolve({ output: prompt.includes('easy') ? 'ok done' : 'nope' }),
+  };
+  const report = await runBenchCheck({
+    dir,
+    calibrate: {
+      executor,
+      trials: 2,
+      runsRoot: join(tmp(t, 'skillfit-calib-runs-unlabelled-'), 'runs'),
+      runGroup: 'calib-unlabelled-group',
+    },
+    log: () => {},
+  });
+  assert.equal(report.failures, 0);
+  assert.ok(
+    !report.checks.some((c) => c.message.includes('0/0 task(s) in the discriminative band')),
+    'calibration must never report a 0/0 band summary',
+  );
+  assert.ok(
+    report.checks.some(
+      (c) => c.message.includes('easy-task: baseline 2/2') && c.message.includes('too easy'),
+    ),
+  );
+  assert.ok(
+    report.checks.some(
+      (c) => c.message.includes('hard-task: baseline 0/2') && c.message.includes('too hard or broken'),
+    ),
+  );
+  assert.ok(report.checks.some((c) => c.message.includes('0/2 task(s) in the discriminative band')));
+});
+
+test('runBenchCheck --calibrate fails loudly when no task produced a completed run', async (t) => {
+  const dir = makeUnlabelledCalibBench(t);
+  const executor = {
+    describe: () => ({ kind: 'stub', model: 'stub' }),
+    run: (): Promise<{ output: string }> =>
+      Promise.reject(new Error('simulated executor failure')),
+  };
+  const report = await runBenchCheck({
+    dir,
+    calibrate: {
+      executor,
+      trials: 2,
+      runsRoot: join(tmp(t, 'skillfit-calib-runs-allerr-'), 'runs'),
+      runGroup: 'calib-allerr-group',
+    },
+    log: () => {},
+  });
+  // Errored runs are excluded from the rate, not counted as failures — and when that leaves
+  // nothing measured, the summary must fail rather than claim a band it never observed.
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'WARN' && c.message.includes('no completed runs') && c.message.includes('2 executor error(s)'),
+    ),
+  );
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'FAIL' && c.message.includes('calibration ran 0 task(s)'),
+    ),
+  );
+  assert.ok(
+    !report.checks.some((c) => c.status === 'PASS' && c.message.includes('discriminative band')),
+  );
+});

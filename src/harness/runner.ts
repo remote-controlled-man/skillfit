@@ -29,7 +29,7 @@ export interface ExperimentPlan {
   log?: (msg: string) => void;
 }
 
-interface TrialOutcome {
+export interface TrialOutcome {
   taskId: string;
   condition: Condition;
   trial: number;
@@ -114,7 +114,7 @@ export async function gitInit(dir: string): Promise<boolean> {
   return true;
 }
 
-async function runTrial(
+export async function runTrial(
   plan: ExperimentPlan,
   taskId: string,
   condition: Condition,

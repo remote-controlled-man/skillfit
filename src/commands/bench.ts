@@ -6,8 +6,8 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { loadBench } from '../harness/bench.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
-import { runVerifier } from '../harness/runner.js';
-import { runTriggerExperiment } from '../harness/trigger.js';
+import { runTrial, runVerifier } from '../harness/runner.js';
+import type { ExperimentPlan } from '../harness/runner.js';
 import { MOCK_MARKER_FILE } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { VerifierCheck } from '../harness/verifier-summary.js';
@@ -461,37 +461,60 @@ async function calibrateBench(
     const runGroup =
       options.runGroup ??
       `calibrate-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(Date.now() % 100000).padStart(5, '0')}`;
-    const manifest = await runTriggerExperiment({
+    // Calibration measures inject-mode baseline difficulty, so it drives the inject path with an
+    // empty skill payload (prompt.ts drops a falsy payload, so no skill block is injected) and runs
+    // one arm per task. This used to route through trigger mode, whose `shouldTrigger` filter
+    // silently calibrated zero tasks on an unlabelled bench and then reported PASS 0/0.
+    const plan: ExperimentPlan = {
       bench,
       skill,
       executor,
       trials,
       runsRoot: options.runsRoot ?? resolve('runs'),
       runGroup,
-      skillInstallDir: '.skillfit-empty-skills',
       log,
-    });
+    };
     push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty)`);
     let discriminative = 0;
-    for (const task of manifest.tasks) {
-      const total = task.runs + task.unknown + task.errors;
-      const rate = total === 0 ? null : task.passes / total;
-      if (rate === null) {
-        push('WARN', `${task.id}: no completed runs — cannot assess difficulty`);
+    let tasksRun = 0;
+    for (const task of bench.tasks) {
+      let passes = 0;
+      let completed = 0;
+      let errors = 0;
+      for (let trial = 1; trial <= trials; trial++) {
+        const outcome = await runTrial(plan, task.id, 'baseline', trial);
+        if (outcome.error !== null) {
+          errors++;
+          continue;
+        }
+        completed++;
+        if (outcome.passed) passes++;
+      }
+      if (completed === 0) {
+        push(
+          'WARN',
+          `${task.id}: no completed runs${errors > 0 ? ` (${errors} executor error(s))` : ''} — cannot assess difficulty`,
+        );
         continue;
       }
+      tasksRun++;
+      const rate = passes / completed;
       if (rate >= 0.9) {
-        push('WARN', `${task.id}: baseline ${task.passes}/${total} — too easy (saturated; cannot discriminate skill effects)`);
+        push('WARN', `${task.id}: baseline ${passes}/${completed} — too easy (saturated; cannot discriminate skill effects)`);
       } else if (rate <= 0.1) {
-        push('WARN', `${task.id}: baseline ${task.passes}/${total} — too hard or broken (floor)`);
+        push('WARN', `${task.id}: baseline ${passes}/${completed} — too hard or broken (floor)`);
       } else {
         discriminative++;
-        push('PASS', `${task.id}: baseline ${task.passes}/${total} — discriminative band`);
+        push('PASS', `${task.id}: baseline ${passes}/${completed} — discriminative band`);
       }
     }
+    if (tasksRun === 0) {
+      push('FAIL', `calibration ran 0 task(s): difficulty unmeasured (runs under ${runGroup})`);
+      return;
+    }
     push(
-      discriminative === manifest.tasks.length ? 'PASS' : 'INFO',
-      `calibration: ${discriminative}/${manifest.tasks.length} task(s) in the discriminative band (runs under ${runGroup}; use --trials 3+ for steadier reads)`,
+      discriminative === tasksRun ? 'PASS' : 'INFO',
+      `calibration: ${discriminative}/${tasksRun} task(s) in the discriminative band (runs under ${runGroup}; use --trials 3+ for steadier reads)`,
     );
   } finally {
     rmSync(emptySkillDir, { recursive: true, force: true });
@@ -512,7 +535,7 @@ function finish(
   if (!calibrated) {
     log('Next: calibrate difficulty against a real agent —');
     log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 3`);
-    log('  target: baseline pass rate in the 30–70% discriminative band (docs/metrics.md).');
+    log('  target: baseline pass rate 30–70%; --calibrate warns outside 10–90% (docs/metrics.md L0).');
   }
   return { dir, checks, failures, warnings };
 }
