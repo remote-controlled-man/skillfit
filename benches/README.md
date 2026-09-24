@@ -118,7 +118,7 @@ Every task needs a `shouldTrigger` label:
 - `true` — in-domain tasks. Recall = fired / should-trigger runs.
 - `false` — negative controls: plausible, in-scope-looking tasks that are actually out of domain. False-trigger rate = fired / negative runs.
 
-The manifest reports recall, false-trigger rate, precision, and F1 with Wilson 95% CIs. Executor errors and undetectable transcripts are excluded from the rates and surfaced as warnings. Trigger capture is currently verified for **Kimi Code** and **Codex CLI**; agents without a `streamJson` template fail with a clear error.
+The manifest reports recall, false-trigger rate, and precision, each with a Wilson 95% CI, plus F1 — which is deliberately bare, because a harmonic mean of two proportions has no closed-form binomial interval and printing one would be invented precision. Executor errors and undetectable transcripts are excluded from the rates and surfaced as warnings. Trigger capture is currently verified for **Kimi Code** and **Codex CLI**; agents without a `streamJson` template fail with a clear error.
 
 ## Porting your production scenario
 

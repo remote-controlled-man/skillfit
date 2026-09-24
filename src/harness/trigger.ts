@@ -56,6 +56,12 @@ export interface TriggerMetrics {
   falseTriggerRate: number | null;
   falseTriggerRateCi95: { lo: number; hi: number } | null;
   precision: number | null;
+  /**
+   * Wilson interval over the fired runs (precision is a proportion: positives fired / all fired).
+   * `f1` deliberately has none — it is a harmonic mean of two proportions and has no closed-form
+   * binomial interval, so printing one would be invented precision. See docs/metrics.md L1.
+   */
+  precisionCi95: { lo: number; hi: number } | null;
   f1: number | null;
   positives: { fired: number; runs: number };
   negatives: { fired: number; runs: number };
@@ -211,7 +217,8 @@ export function triggerMetrics(tasks: TriggerTaskSummary[]): TriggerMetrics {
   const negRuns = negatives.reduce((sum, t) => sum + t.runs, 0);
   const recall = posRuns > 0 ? posFired / posRuns : null;
   const falseTriggerRate = negRuns > 0 ? negFired / negRuns : null;
-  const precision = posFired + negFired > 0 ? posFired / (posFired + negFired) : null;
+  const firedTotal = posFired + negFired;
+  const precision = firedTotal > 0 ? posFired / firedTotal : null;
   const f1 =
     recall !== null && precision !== null && recall + precision > 0
       ? (2 * precision * recall) / (precision + recall)
@@ -231,6 +238,7 @@ export function triggerMetrics(tasks: TriggerTaskSummary[]): TriggerMetrics {
     falseTriggerRate,
     falseTriggerRateCi95: negRuns > 0 ? wilson95(negFired, negRuns) : null,
     precision,
+    precisionCi95: firedTotal > 0 ? wilson95(posFired, firedTotal) : null,
     f1,
     positives: { fired: posFired, runs: posRuns },
     negatives: { fired: negFired, runs: negRuns },
@@ -363,8 +371,13 @@ export function renderTriggerSummary(manifest: TriggerManifest, manifestPath: st
   lines.push(
     `False-trigger rate  : ${rateWithCi(m.negatives.fired, m.negatives.runs, m.falseTriggerRateCi95)}`,
   );
-  lines.push(`Precision           : ${m.precision === null ? 'n/a' : m.precision.toFixed(2)}`);
-  lines.push(`F1                  : ${m.f1 === null ? 'n/a' : m.f1.toFixed(2)}`);
+  const firedTotal = m.positives.fired + m.negatives.fired;
+  lines.push(
+    `Precision           : ${firedTotal === 0 ? 'n/a (nothing fired)' : rateWithCi(m.positives.fired, firedTotal, m.precisionCi95)}`,
+  );
+  lines.push(
+    `F1                  : ${m.f1 === null ? 'n/a' : `${m.f1.toFixed(2)} (no CI: a harmonic mean of two proportions has no closed-form binomial interval)`}`,
+  );
   const tokenLines = manifest.tasks
     .filter((task) => task.tokens !== null)
     .map((task) => {

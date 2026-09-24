@@ -181,6 +181,25 @@ test('triggerMetrics is null-safe at zero runs', () => {
   ]);
   assert.equal(metrics.recall, null);
   assert.equal(metrics.precision, null);
+  assert.equal(metrics.precisionCi95, null);
   assert.equal(metrics.f1, null);
   assert.equal(metrics.falseTriggerRate, null);
+});
+
+test('triggerMetrics carries a Wilson CI for precision and leaves F1 bare', () => {
+  const metrics = triggerMetrics([
+    { id: 'pos', shouldTrigger: true, runs: 10, fired: 8, unknown: 0, errors: 0, passes: 8, tokens: null },
+    { id: 'neg', shouldTrigger: false, runs: 10, fired: 2, unknown: 0, errors: 0, passes: 0, tokens: null },
+  ]);
+  // precision = positives fired / all fired = 8 / (8 + 2)
+  assert.equal(metrics.precision, 0.8);
+  const ci = metrics.precisionCi95;
+  assert.ok(ci, 'precision is a proportion over the fired runs, so it gets an interval');
+  assert.ok(ci.lo >= 0 && ci.hi <= 1, `interval must stay in [0,1], got ${ci.lo}-${ci.hi}`);
+  assert.ok(ci.lo < 0.8 && 0.8 < ci.hi, `interval must bracket the point estimate, got ${ci.lo}-${ci.hi}`);
+  assert.ok(ci.lo > 0.4 && ci.hi < 1, 'a 10-run interval should be wide but not degenerate');
+  // F1 is a harmonic mean of two proportions: no closed-form binomial interval exists, so the
+  // metric stays bare rather than printing invented precision.
+  assert.equal(typeof metrics.f1, 'number');
+  assert.ok(!('f1Ci95' in metrics));
 });

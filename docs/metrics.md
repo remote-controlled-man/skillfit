@@ -64,7 +64,9 @@ is the next milestone**.)
   (`should_trigger: false` — decoy tasks measuring over-triggering). Explicit and implicit results are
   reported separately; they exercise different mechanisms.
 - **Metrics**: trigger recall (fires on should-trigger tasks), false-trigger rate (fires on negative tasks),
-  precision, F1 — each with Wilson 95% CIs.
+  and precision (positives fired / all fired) — each a proportion over its own denominator, each with a
+  Wilson 95% CI. F1 is reported **bare**: it is a harmonic mean of two proportions and has no closed-form
+  binomial interval, so an interval printed for it would be invented precision rather than a measurement.
 - **Detection is mechanical, per agent** (see `src/matrix/agents.json`): Kimi Code —
   `-p --output-format=stream-json` (assistant `tool_calls` events naming the `Skill` tool); Codex CLI —
   `exec --json` (no skill event exists → detection via the `command_execution` item that reads the skill's
