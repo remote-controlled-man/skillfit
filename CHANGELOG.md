@@ -117,6 +117,18 @@ listed here.
   anyone would act on. Twelve checks become eight, inside the 2–8 range. Verified closed: the
   keyword-stuffed suite above now scores 7/8 and exits 1.
 
+- **`debugging/debug-redaction` no longer grades the agent's notes, and drops a keyword scan.** One check
+  required `_output.md` to match `/RED\s*:.*node\s+--test.*fail/is` and the GREEN equivalent — grading
+  bookkeeping about a red/green cycle the harness already verifies for itself, by restoring the original
+  leaking implementation and re-running the suite. It was satisfiable by typing the two strings. A fourth
+  regression check matched `/debug\s*:\s*true/` and a redaction keyword over test source, which a test
+  containing those words and no assertions would satisfy; the restore-original check strictly subsumes it.
+  Both are gone. The sentinel assertions also consolidate — the two behavior checks that inspected the same
+  debug report merge, and the two secrecy scopes (non-harness files, notes) merge into one property. Twelve
+  checks become eight, inside the 2–8 range. The prompt still asks for RED/GREEN notes; they are requested
+  but not graded, and are still scanned for the sentinel. This closes the last `metrics.md` divergence from
+  "grade the outcome not the path".
+
 ## [0.3.0] — 2026-09-22
 
 A large capability wave. Everything in 0.2.0 plus:

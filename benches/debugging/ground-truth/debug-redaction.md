@@ -71,21 +71,43 @@ test('debug report keeps safe metadata but carries no credential material', () =
 });
 ```
 
-And the final message (`_output.md`) must record the red/green intent in both forms, e.g.:
+The prompt also asks for the red/green intent to be recorded in the final message:
 
 ```
 RED: node --test test/debug-leak.regression.test.mjs must fail against the original implementation
 GREEN: node --test must pass after the fix
 ```
 
-Verified 2026-09-19: the source + regression test + notes above score 12/12 (exit 0); the pristine fixture scores 5/12 (exit 1). The evidence collector confirms the added test is a true regression (`originalFailed: true, finalPassed: true`).
+That wording is **requested but not graded**. An earlier version of the verifier matched those two lines
+with a regex, which graded the agent's bookkeeping about a fact the harness establishes for itself — and
+was satisfiable by typing the strings with no red/green cycle having happened. The notes are still scanned
+for the sentinel like every other artifact.
+
+Verified 2026-09-25 against the rebalanced verifier: the source + regression test above score 8/8 (exit 0);
+the pristine fixture exits 1. The evidence collector confirms the added test is a true regression
+(`originalFailed: true, finalPassed: true`).
 
 ## What the grader checks
 
-12 checks in three sections:
+Eight checks in three sections:
 
-- **behavior (5)**: non-debug report keeps `level`/`message`/`requestId` with no `debug` key; authorization/cookie headers redacted case-insensitively while others pass through; debug report retains `transport`/`attempt`; no key matching `/auth|credential|password|secret|token|api[-_]?key/i` anywhere under `debug`; the sentinel string never appears in any `formatFailure()` output.
-- **regression (5)**: the run directory's `node --test` suite is green; the test suite differs from the pristine fixture; some test mentions `debug: true` and a redaction keyword; the final suite goes **red** when the pristine leaking implementation is restored (run in a temp copy); the final message records both `RED: node --test ... fail` and `GREEN: node --test ... pass` lines.
-- **secrecy (2)**: no non-harness file in the run directory contains the sentinel string; the notes do not contain it either.
+- **behavior (4)**: non-debug report keeps `level`/`message`/`requestId` with no `debug` key;
+  authorization/cookie headers redacted case-insensitively while others pass through; debug report retains
+  `transport`/`attempt`; no key matching `/auth|credential|password|secret|token|api[-_]?key/i` anywhere
+  under `debug`, and the sentinel value never appears in the report output (one check — both inspect the
+  same debug report, and a surviving credential-bearing key is the only route by which the sentinel could
+  reach it).
+- **regression (3)**: the run directory's `node --test` suite is green; the test suite differs from the
+  pristine fixture; the final suite goes **red** when the pristine leaking implementation is restored (run
+  in a temp copy). The last of these is the check that does the real work, and it strictly subsumes a
+  fourth check the earlier version carried — matching `/debug\s*:\s*true/` and a redaction keyword over
+  test source, which a test containing those strings but no assertions would satisfy.
+- **secrecy (1)**: the sentinel appears in no non-harness file and not in the notes. Two scopes of one
+  property; the file walk skips `_`-prefixed harness files, which is where the notes live, so the notes are
+  checked explicitly.
 
-Porting notes: the upstream grader read notes from `_last-message.md`; this verifier reads `_output.md` (the harness's final-message file), keeping the same JSON-then-raw fallback. The upstream import used a `?grader=${Date.now()}` cache-buster; each verifier run is a fresh process with an empty module cache, so the query was dropped to keep the verifier clock-free — behavior is identical. Exit code is 1 unless all 12 checks pass.
+Porting notes: the upstream grader read notes from `_last-message.md`; this verifier reads `_output.md` (the
+harness's final-message file), keeping the same JSON-then-raw fallback. The upstream import used a
+`?grader=${Date.now()}` cache-buster; each verifier run is a fresh process with an empty module cache, so the
+query was dropped to keep the verifier clock-free — behavior is identical. Exit code is 1 unless all eight
+checks pass.

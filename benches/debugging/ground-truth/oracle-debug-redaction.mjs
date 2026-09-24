@@ -14,8 +14,9 @@ if (!runDir) {
 const here = dirname(fileURLToPath(import.meta.url));
 cpSync(join(here, 'solutions', 'debug-redaction'), runDir, { recursive: true });
 
-// The regression section also grades the final message, so a complete reference run records the
-// red/green intent the way the task asks.
+// A complete reference run also produces a final message. Nothing grades its wording — the harness
+// verifies red/green directly, by restoring the original implementation and re-running the suite —
+// but the notes are scanned for the sentinel like every other artifact.
 writeFileSync(
   join(runDir, '_output.md'),
   [
