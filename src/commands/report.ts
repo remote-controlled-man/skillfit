@@ -67,11 +67,18 @@ export function renderReceipts(receipts: AgentReceipt[]): string {
     renderAgent(receipt, lines);
     lines.push('');
   }
+  // One population: distinct installed skill names. `installed` was already deduped across agents
+  // while `fired` and `never` were per-agent sums, so a skill installed for three agents counted once
+  // in the first figure and up to three times in the other two, `fired` could exceed `installed`, and
+  // the three numbers never added up. Both are now restricted to the installed set, so
+  // installed = fired + never holds exactly, and a skill that fired but has since been uninstalled
+  // does not inflate the count.
   const installed = new Set(receipts.flatMap((r) => r.installed));
-  const fired = receipts.reduce((sum, r) => sum + r.skills.length, 0);
-  const never = receipts.reduce((sum, r) => sum + r.neverFired.length, 0);
-  lines.push(`Overall: ${installed.size} installed skill(s), ${fired} fired at least once, ${never} never fired.`);
-  if (never > 0) {
+  const firedNames = new Set(receipts.flatMap((r) => r.skills.map((s) => s.name)));
+  const fired = [...installed].filter((name) => firedNames.has(name)).sort();
+  const never = [...installed].filter((name) => !firedNames.has(name)).sort();
+  lines.push(`Overall: ${installed.size} installed skill(s), ${fired.length} fired at least once, ${never.length} never fired.`);
+  if (never.length > 0) {
     lines.push(
       'Skills that never fire are pure routing/context tax. Verify any of them with: skillfit eval <skill> --mode trigger',
     );

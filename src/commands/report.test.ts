@@ -55,6 +55,32 @@ test('renderReceipts renders the table, counts, and never-fired list', () => {
   assert.match(output, /pure routing\/context tax/);
 });
 
+test('renderReceipts counts each skill once across agents in the Overall line', () => {
+  const receipts = fixtureReceipts();
+  // The same four skills installed for a second agent. `installed` was already deduped across
+  // agents while `fired` and `never` summed per agent, so the three figures stopped describing one
+  // population and no longer added up.
+  receipts.push({
+    agentId: 'claude-code',
+    sessionsDir: '/home/x/.claude/projects',
+    present: true,
+    sessionsFound: 2,
+    transcriptsRead: 2,
+    skills: [
+      { name: 'diagnosing-bugs', fires: 3, sessionCount: 2, lastSeen: Date.parse('2026-09-20T00:00:00Z') },
+    ],
+    installed: ['alpha', 'beta', 'diagnosing-bugs', 'tdd'],
+    installedCount: 4,
+    neverFired: ['alpha', 'beta', 'tdd'],
+    tax: { descTokensTotal: 420, bodyTokensMedian: 1600, heaviest: [] },
+  });
+  const output = renderReceipts(receipts);
+  // Four distinct skills; two fired in at least one agent; two never fired in any. The per-agent
+  // lines still report per-agent counts — only the Overall line is a single deduped population.
+  assert.match(output, /Overall: 4 installed skill\(s\), 2 fired at least once, 2 never fired/);
+  assert.match(output, /installed: 4, fired at least once: 2, never fired: 2/);
+});
+
 test('renderReceipts handles agents without history and without sessions config', () => {
   const output = renderReceipts([
     {
