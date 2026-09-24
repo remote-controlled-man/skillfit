@@ -134,6 +134,17 @@ test('quoteShellArg quotes only whitespace-bearing args', () => {
   assert.equal(quoteShellArg('Read the file'), '"Read the file"');
   assert.equal(quoteShellArg(''), '""');
   assert.equal(quoteShellArg('"already quoted"'), '"already quoted"');
+  assert.equal(quoteShellArg('--output-format=stream-json'), '--output-format=stream-json');
+  // Backslashes must stay legal: every Windows path in the matrix is full of them.
+  assert.equal(quoteShellArg('C:\\tools\\node.exe'), 'C:\\tools\\node.exe');
+  // Parens stay legal too, so a `node -e` expression can still be passed through a shell.
+  assert.equal(quoteShellArg('process.stdout.write(1)'), 'process.stdout.write(1)');
+});
+
+test('quoteShellArg refuses arguments a shell would interpret', () => {
+  for (const payload of ['a;rm', 'a&&rm', 'a|rm', 'x$(whoami)', 'a`id`', 'a>out', 'a<in', 'a\nb']) {
+    assert.throws(() => quoteShellArg(payload), /shell-unsafe/, `${payload} must be refused`);
+  }
 });
 
 test('CliExecutor with shell keeps a multi-word arg as one argument', async () => {

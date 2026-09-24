@@ -23,7 +23,32 @@ const DEFAULT_PROMPT_FILE = '_prompt.txt';
 const PROMPT_FILE_PLACEHOLDER = '{promptFile}';
 const DEFAULT_TRIGGER_TOOL_NAME = 'Skill';
 
+// Characters that a shell would interpret as something other than literal argument text.
+// Backslash is deliberately absent: every Windows path in the matrix contains them and cmd.exe treats
+// them as separators, not escapes. Parentheses are absent too — a bare `(` after a command name is a
+// syntax error in sh and a block opener in cmd.exe, not a way to run a second command, and rejecting
+// them would break legitimate arguments such as a `node -e` expression. Every payload that actually
+// injects (`a;rm`, `a&&rm`, `a|rm`, `x$(whoami)`, "a`id`") is caught by the set below.
+const SHELL_UNSAFE = /[;&|<>`$\r\n]/;
+
+/**
+ * Quote an argument for a `shell: true` spawn.
+ *
+ * Arguments reach here from `src/matrix/agents.json` and from filenames skillfit chose — never from
+ * user input today. The function is exported, though, and the previous version returned anything
+ * without whitespace verbatim, so `a;rm`, `x$(whoami)` and `` a`id` `` all reached the shell
+ * untouched. Quoting harder is not the answer either: inside double quotes a POSIX shell still
+ * expands `$(...)` and backticks, and cmd.exe still expands `%VAR%`, so no single scheme is correct
+ * for both. Unsafe characters are therefore rejected rather than escaped — a loud refusal beats a
+ * silently injected command, and no command name, flag or path in the matrix contains any of them.
+ */
 export function quoteShellArg(arg: string): string {
+  if (SHELL_UNSAFE.test(arg)) {
+    throw new Error(
+      `Refusing to pass a shell-unsafe argument to a shell spawn: ${JSON.stringify(arg)} ` +
+        '(contains one of ; & | < > ` $ or a newline)',
+    );
+  }
   if (arg.length === 0) return '""';
   if (arg.startsWith('"') && arg.endsWith('"')) return arg;
   if (!/\s/.test(arg)) return arg;
