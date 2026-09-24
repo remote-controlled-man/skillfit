@@ -97,7 +97,9 @@ Each run writes to `runs/<runGroup>/<task-id>/<condition>/trial-<n>/`:
 - `_output.md` — the raw agent output
 - `_verifier.txt` — verifier stdout/stderr
 - `_result.json` — timing, pass flag, verifier exit code, facet checks + score, token usage, skill bundle hash
-- `runs/<runGroup>/manifest.json` — model/executor identity, skill bundle sha256, bench content sha256, date, per-task per-condition pass rates and facet scores, token deltas, verdicts, and warnings
+- `runs/<runGroup>/manifest.json` — model/executor identity, skill bundle sha256, bench content sha256, date, per-task per-condition pass rates, graded trial counts and executor-error counts, facet scores, token deltas, verdicts, and warnings
+
+A trial whose executor errored was never graded, so it is excluded from the rates rather than counted as a failure — and excluded *pairwise*, because every statistic here is paired: an error in either arm drops that (task, trial) pair from both. Each condition reports `errors` next to `trials`, and a warning names the exclusion.
 
 Verdicts: `effective` (treatment pass rate higher), `ineffective` (lower), `inconclusive` (equal, or fewer than 3 trials per condition — sample too small). The report warns when a task's baseline pass rate is ≥ 90% (too easy to discriminate anything) or ≤ 10% (too hard or broken), and flags any individual check the baseline already passes ≥ 90% of the time as saturated.
 

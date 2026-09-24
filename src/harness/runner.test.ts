@@ -292,3 +292,51 @@ test('gitInit initializes a real repository', async (t) => {
   assert.equal(ok, true);
   assert.ok(existsSync(join(dir, '.git')));
 });
+
+test('runExperiment drops an errored trial from both arms instead of scoring it as a failure', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-runs-errored-');
+  const inner = new MockExecutor();
+  const flaky: Executor = {
+    // Must report kind 'mock': runTrial deletes .skillfit-mock.json for any other kind, which
+    // would starve the delegate and fail both arms for the wrong reason.
+    describe: () => inner.describe(),
+    run: (prompt: string, workdir: string) => {
+      const tail = workdir.split(/[\\/]/).slice(-2).join('/');
+      if (tail === 'baseline/trial-2') {
+        return Promise.reject(new Error('simulated API timeout'));
+      }
+      return inner.run(prompt, workdir);
+    },
+  };
+  const manifest = await runExperiment(plan({ runsRoot, executor: flaky }));
+
+  const task = manifest.tasks[0];
+  assert.ok(task);
+  assert.equal(task.id, 'review-r1');
+  assert.equal(task.conditions.baseline.errors, 1);
+  assert.equal(task.conditions.treatment.errors, 0);
+  assert.equal(task.conditions.baseline.trials, 2);
+  assert.equal(task.conditions.treatment.trials, 2, 'the paired treatment trial is dropped too');
+  assert.equal(task.outcomes.baseline.length, 2);
+  assert.equal(task.outcomes.treatment.length, 2);
+  assert.equal(task.scores.baseline.length, 2);
+  assert.equal(task.scores.treatment.length, 2);
+
+  // Four tasks x two surviving pairs. review-r1/r2/r3 improve (6 discordant); explain-x1 passes in
+  // both arms, so its 2 pairs are concordant. Before the fix the errored baseline trial counted as
+  // a failure, which also flipped explain-x1's pairs to "improved" and reported 12/0 — a timeout
+  // masquerading as a result.
+  assert.deepEqual(manifest.overall.stats.discordant, { improved: 6, regressed: 0 });
+  assert.equal(manifest.overall.stats.mcnemarP, 0.03125);
+  assert.equal(manifest.overall.conditions.baseline.errors, 4);
+  assert.equal(manifest.overall.conditions.baseline.trials, 8);
+  assert.equal(manifest.overall.conditions.treatment.trials, 8);
+  assert.equal(manifest.overall.verdict, 'effective', 'the hole must not move the verdict');
+  assert.ok(
+    manifest.warnings.some(
+      (w) => w.includes('"review-r1" (baseline)') && w.includes('executor error'),
+    ),
+    'the exclusion is surfaced, not silent',
+  );
+});
+

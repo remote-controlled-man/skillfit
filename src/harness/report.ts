@@ -1,4 +1,5 @@
 import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
+import { CONDITIONS } from './types.js';
 import type { Condition, ExecutorDescriptor } from './types.js';
 
 export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
@@ -16,7 +17,10 @@ export interface VerdictOutcome {
 
 export interface ConditionStats {
   passes: number;
+  /** Trials that completed and were graded. Errored trials are excluded — see `errors`. */
   trials: number;
+  /** Trials where the executor failed, so nothing was graded. Never counted as failures. */
+  errors: number;
   passRate: number;
   meanScore: number | null;
   tokens: { input: number; output: number } | null;
@@ -126,6 +130,15 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
     warnings.push('Executor is a mock: results are synthetic and only exercise the harness.');
   }
   for (const task of manifest.tasks) {
+    for (const condition of CONDITIONS) {
+      const stats = task.conditions[condition];
+      if (stats.errors > 0) {
+        const other = condition === 'baseline' ? 'treatment' : 'baseline';
+        warnings.push(
+          `Task "${task.id}" (${condition}): ${stats.errors} trial(s) hit an executor error and were excluded from the rates, together with their paired ${other} trial(s) — an ungraded run is not a failure.`,
+        );
+      }
+    }
     const rate = task.conditions.baseline.passRate;
     if (rate >= DISCRIMINATION_BASELINE_THRESHOLD) {
       warnings.push(

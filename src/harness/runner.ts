@@ -240,7 +240,43 @@ function sumTokens(records: TrialOutcome[]): { input: number; output: number } |
   return seen ? { input, output } : null;
 }
 
-function statsFor(records: TrialOutcome[]): ConditionStats {
+function countErrors(records: TrialOutcome[]): number {
+  return records.filter((r) => r.error !== null).length;
+}
+
+/**
+ * Trials that were graded in BOTH arms, aligned by trial number.
+ *
+ * A trial whose executor errored was never graded, so counting it as a failure would manufacture a
+ * discordant pair out of an API timeout (docs/metrics.md L0, engagement sanity). Dropping it from one
+ * arm only would misalign the pairing that McNemar and the paired bootstrap depend on, so the whole
+ * (task, trial) pair goes. Filtering per arm independently is the bug this replaces.
+ */
+function pairedSurvivors(
+  outcomes: Record<Condition, TrialOutcome[]>,
+): Record<Condition, TrialOutcome[]> {
+  const byTrial = new Map<number, Partial<Record<Condition, TrialOutcome>>>();
+  for (const condition of CONDITIONS) {
+    for (const record of outcomes[condition]) {
+      const entry = byTrial.get(record.trial) ?? {};
+      entry[condition] = record;
+      byTrial.set(record.trial, entry);
+    }
+  }
+  const survivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
+  for (const trial of [...byTrial.keys()].sort((a, b) => a - b)) {
+    const pair = byTrial.get(trial);
+    const baseline = pair?.baseline;
+    const treatment = pair?.treatment;
+    if (!baseline || !treatment) continue;
+    if (baseline.error !== null || treatment.error !== null) continue;
+    survivors.baseline.push(baseline);
+    survivors.treatment.push(treatment);
+  }
+  return survivors;
+}
+
+function statsFor(records: TrialOutcome[], errors: number): ConditionStats {
   const passes = records.filter((r) => r.passed).length;
   const trials = records.length;
   const scored = records.filter((r) => r.score !== null);
@@ -251,6 +287,7 @@ function statsFor(records: TrialOutcome[]): ConditionStats {
   return {
     passes,
     trials,
+    errors,
     passRate: trials === 0 ? 0 : passes / trials,
     meanScore,
     tokens: sumTokens(records),
@@ -407,13 +444,14 @@ function discordantCounts(
 function summarizeTask(
   taskId: string,
   outcomes: Record<Condition, TrialOutcome[]>,
+  survivors: Record<Condition, TrialOutcome[]>,
   judgeResults: JudgeResult[],
 ): TaskSummary {
-  const baseline = statsFor(outcomes.baseline);
-  const treatment = statsFor(outcomes.treatment);
+  const baseline = statsFor(survivors.baseline, countErrors(outcomes.baseline));
+  const treatment = statsFor(survivors.treatment, countErrors(outcomes.treatment));
   const flags = {
-    baseline: trialFlags(outcomes.baseline),
-    treatment: trialFlags(outcomes.treatment),
+    baseline: trialFlags(survivors.baseline),
+    treatment: trialFlags(survivors.treatment),
   };
   const deltaPassRate = treatment.passRate - baseline.passRate;
   const scoreDelta =
@@ -426,12 +464,12 @@ function summarizeTask(
     conditions: { baseline, treatment },
     outcomes: flags,
     scores: {
-      baseline: trialScores(outcomes.baseline),
-      treatment: trialScores(outcomes.treatment),
+      baseline: trialScores(survivors.baseline),
+      treatment: trialScores(survivors.treatment),
     },
     deltaPassRate,
     scoreDelta,
-    facets: facetStats(outcomes),
+    facets: facetStats(survivors),
     verifierNotes: verifierConsistencyNotes(taskId, outcomes),
     tokenDelta: tokenDelta(baseline.tokens, treatment.tokens),
     verdict,
@@ -457,6 +495,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
 
   const taskSummaries: TaskSummary[] = [];
   const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
+  const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
   for (const task of plan.bench.tasks) {
     const outcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
     for (const condition of CONDITIONS) {
@@ -467,12 +506,15 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
         allOutcomes[condition].push(outcome);
       }
     }
+    const survivors = pairedSurvivors(outcomes);
+    allSurvivors.baseline.push(...survivors.baseline);
+    allSurvivors.treatment.push(...survivors.treatment);
     const judgeResults = await judgeTaskTrials(plan, task.id, outcomes);
-    taskSummaries.push(summarizeTask(task.id, outcomes, judgeResults));
+    taskSummaries.push(summarizeTask(task.id, outcomes, survivors, judgeResults));
   }
 
-  const overallBaseline = statsFor(allOutcomes.baseline);
-  const overallTreatment = statsFor(allOutcomes.treatment);
+  const overallBaseline = statsFor(allSurvivors.baseline, countErrors(allOutcomes.baseline));
+  const overallTreatment = statsFor(allSurvivors.treatment, countErrors(allOutcomes.treatment));
   const overallDelta = overallTreatment.passRate - overallBaseline.passRate;
   const taskOutcomes = taskSummaries.map((task) => task.outcomes);
   const discordant = discordantCounts(taskOutcomes);

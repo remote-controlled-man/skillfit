@@ -39,7 +39,10 @@ A bench that cannot discriminate must not produce verdicts.
 - **Floor**: warn when baseline pass rate ≤ 10% (implemented) — the task is too hard or broken, and
   all-zero arms are equally uninformative.
 - **Engagement sanity**: if the agent never touched the fixture (empty output, executor error), the trial is
-  excluded from rates and reported as an error, not a failure (implemented).
+  excluded from rates and reported as an error, not a failure (implemented). Exclusion is *pairwise*: since
+  every statistic here is paired, dropping a trial from one arm alone would misalign the (task, trial) pairs
+  that McNemar and the paired bootstrap resample, so an error in either arm removes that pair from both, and
+  each arm reports its `errors` count next to its graded `trials`.
 
 ## L1 — trigger quality (activation)
 
@@ -160,7 +163,11 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
 - Scale labels: below 5 trials × 8 tasks, results are stamped **indicative**, not conclusive
   (SkillsBench norm: 5 trials/task).
 - Manifest `schemaVersion: 3` carries per-trial pass flags and per-trial facet scores per
-  (task, condition) so all of the above is recomputed from raw outcomes, never from aggregates.
+  (task, condition) so all of the above is recomputed from raw outcomes, never from aggregates. Those
+  arrays hold **graded trials only** — an errored pair is removed from both arms, so the two arrays stay
+  index-aligned and re-pairing from the manifest is correct, but an index is no longer a trial number.
+  Each condition also reports `errors` alongside `trials`, and the per-trial `_result.json` files remain
+  the authoritative record of which trial was dropped and why.
 
 ## Bench composition guidance (for authors and the upcoming scaffolding tooling)
 

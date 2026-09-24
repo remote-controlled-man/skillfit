@@ -28,8 +28,8 @@ function discordants(outcomes: { baseline: boolean[]; treatment: boolean[] }): {
   return { improved, regressed };
 }
 
-function stats(passes: number, trials: number, meanScore: number | null = null) {
-  return { passes, trials, passRate: passes / trials, meanScore, tokens: null };
+function stats(passes: number, trials: number, meanScore: number | null = null, errors = 0) {
+  return { passes, trials, errors, passRate: passes / trials, meanScore, tokens: null };
 }
 
 function taskSummary(
@@ -259,4 +259,31 @@ test('renderSummary adds facet score lines only when scores exist', () => {
   assert.match(output, /Facet scores \(mean checks passed, baseline → treatment\):/);
   assert.match(output, /- scored: score 0\.50 → 1\.00 \(Δ \+0\.50\)/);
   assert.match(output, /- finds-bug: 50% → 100%/);
+});
+
+test('buildWarnings surfaces excluded executor errors per arm', () => {
+  const summary = taskSummary('flaky', 1, 2, 2);
+  const manifest = manifestWith(
+    [
+      {
+        ...summary,
+        conditions: {
+          ...summary.conditions,
+          baseline: { ...summary.conditions.baseline, errors: 1 },
+        },
+      },
+    ],
+    'api',
+  );
+  const warnings = buildWarnings(manifest);
+  assert.ok(
+    warnings.some(
+      (w) => w.includes('"flaky" (baseline)') && w.includes('1 trial(s) hit an executor error'),
+    ),
+  );
+  assert.ok(warnings.some((w) => w.includes('together with their paired treatment trial(s)')));
+  assert.ok(
+    !warnings.some((w) => w.includes('"flaky" (treatment)')),
+    'an arm with no errors stays quiet',
+  );
 });
