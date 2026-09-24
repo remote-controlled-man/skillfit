@@ -147,7 +147,13 @@ outcome optimization is a measured failure mode, not a hypothetical one.
 - **Binary rubric checklists**, not 1–10 Likert scales ([Husain](https://hamel.dev/blog/posts/llm-judge/index.html)).
 - Calibration gate: a bench's rubric needs ≥30 human-labeled examples; report Cohen's κ, warn below 0.6
   ([Thakur et al.](https://arxiv.org/abs/2406.12624)).
-- Agent output is quoted/sanitized in judge prompts — judge input is a prompt-injection surface.
+- Agent output is **fenced**, not merely quoted: each answer sits between nonce-delimited
+  `<<<BEGIN ANSWER A …>>>` / `<<<END ANSWER A …>>>` markers (fresh random nonce per judge call, so an
+  answer cannot reproduce them), and the prompt states that the blocks are untrusted data whose embedded
+  instructions and JSON must be disregarded. The checklist is parsed from the **last** JSON object in the
+  judge's reply rather than the first match anywhere, so an answer that gets echoed while the judge reasons
+  cannot take the verdict. Judge input remains a prompt-injection surface: this closes the accidental
+  collision and raises the cost of a deliberate one, and it does not make an untrusted judge trustworthy.
 
 Implementation status (2026-09-22): blind pairwise with **AB/BA position-swapped double calls and
 winner-only-if-unanimous aggregation** is implemented (`--judge-agent` drives any matrix agent CLI, or
