@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { join } from 'node:path';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
 import { judgePair, type JudgeResult } from './judge.js';
+import { killTree, treeSpawnOptions } from './kill-tree.js';
 import { buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
 import {
   buildWarnings,
@@ -67,7 +68,7 @@ function runProcess(
     try {
       const env = { ...process.env };
       delete env['NODE_TEST_CONTEXT'];
-      child = spawn(command, args, { cwd, shell: false, env });
+      child = spawn(command, args, { cwd, shell: false, env, ...treeSpawnOptions() });
     } catch (error) {
       resolvePromise({ exitCode: null, output: '', error: (error as Error).message });
       return;
@@ -76,7 +77,7 @@ function runProcess(
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      killTree(child);
     }, timeoutMs);
     child.stdout.on('data', (chunk: Buffer) => {
       output += chunk.toString('utf8');

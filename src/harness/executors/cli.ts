@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getAgent } from '../../agents.js';
+import { killTree, treeSpawnOptions } from '../kill-tree.js';
 import { probeKimiSessionUsage } from '../kimi-usage.js';
 import type { Executor, ExecutorDescriptor, ExecutorResult } from '../types.js';
 
@@ -120,13 +121,14 @@ export class CliExecutor implements Executor {
         cwd: workdir,
         shell: this.shell,
         env: { ...process.env, ...this.env },
+        ...treeSpawnOptions(),
       });
       let stdout = '';
       let stderr = '';
       let timedOut = false;
       const timer = setTimeout(() => {
         timedOut = true;
-        child.kill();
+        killTree(child);
       }, this.timeoutMs);
       child.stdout.on('data', (chunk: Buffer) => {
         stdout += chunk.toString('utf8');
@@ -172,7 +174,7 @@ export class CliExecutor implements Executor {
         // run group behind. Reject instead, and kill the child so it cannot outlive the failure.
         child.stdin.on('error', (error: Error) => {
           clearTimeout(timer);
-          child.kill();
+          killTree(child);
           rejectPromise(
             new Error(`Failed to write the prompt to "${command}" on stdin: ${error.message}`),
           );

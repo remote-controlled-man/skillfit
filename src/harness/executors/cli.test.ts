@@ -298,6 +298,43 @@ test('CliExecutor codex shape: no skill-path command means no trigger', async ()
   assert.equal(result.skillTriggered, false);
 });
 
+test('CliExecutor kills the whole process tree when a trial times out', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-tree-'));
+  const marker = join(dir, 'grandchild.pid');
+  const sleeper = join(dir, 'sleeper.cjs');
+  writeFileSync(
+    sleeper,
+    `require('fs').writeFileSync(${JSON.stringify(marker)}, String(process.pid));\nsetTimeout(() => {}, 30000);\n`,
+    'utf8',
+  );
+  t.after(() => {
+    // Do not leave a 30s orphan behind if the assertion below fails.
+    try {
+      const pid = Number(readFileSync(marker, 'utf8'));
+      if (Number.isFinite(pid) && pid > 0) process.kill(pid);
+    } catch {
+      // already gone
+    }
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  // shell defaults to true, which is the case that matters: child.kill() reaches the shell and the
+  // agent it started carries on running.
+  const executor = new CliExecutor({ argv: [process.execPath, sleeper], timeoutMs: 3_000 });
+  await assert.rejects(executor.run('ignored', dir), /timed out/);
+
+  const pid = Number(readFileSync(marker, 'utf8'));
+  assert.ok(Number.isFinite(pid) && pid > 0, 'the grandchild recorded its pid before the timeout');
+  await new Promise((resolve) => setTimeout(resolve, 2_000));
+  let alive = true;
+  try {
+    process.kill(pid, 0);
+  } catch {
+    alive = false;
+  }
+  assert.equal(alive, false, 'the agent process must not outlive the timeout and keep spending tokens');
+});
+
 test('CliExecutor rejects when the child exits before draining stdin', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-epipe-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));

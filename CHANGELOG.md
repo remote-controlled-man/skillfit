@@ -145,6 +145,15 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   half-populated run group was left behind. It now rejects with a message naming the command, and kills
   the child so it cannot outlive the failure.
 
+- **A timed-out trial now kills the agent, not just the shell (C4).** `child.kill()` signals only the
+  process that was spawned, and with `shell: true` — the default for every agent CLI in the matrix —
+  that process is the shell. Verified on Windows: the shell died and the grandchild kept running, so a
+  trial that hit its 10-minute timeout left a live agent spending tokens against a run the harness had
+  already given up on. The verifier's own 2-minute timeout had the same hole, and a verifier that runs
+  `node --test` starts children too. New `src/harness/kill-tree.ts` kills the process group on POSIX
+  (children spawned `detached`) and uses `taskkill /T /F` on Windows, where there is no equivalent
+  signal; both the executor and the verifier path use it.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier
