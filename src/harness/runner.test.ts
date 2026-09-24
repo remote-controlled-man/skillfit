@@ -76,10 +76,12 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   assert.deepEqual(task.tokenDelta, { input: 2400, output: 240 });
   assert.equal(task.conditions.treatment.meanScore, 1);
   assert.ok(task.conditions.baseline.meanScore !== null);
-  assert.ok(Math.abs((task.conditions.baseline.meanScore as number) - 1 / 3) < 1e-9);
+  // The mock baseline finds the bare-Error bug but reports the C-style-loop decoy, so it scores 1 of
+  // 4 checks: bare-error only. `no-false-positives` is what costs it the fourth.
+  assert.ok(Math.abs((task.conditions.baseline.meanScore as number) - 0.25) < 1e-9);
   assert.ok(task.scoreDelta !== null);
-  assert.ok(Math.abs((task.scoreDelta as number) - 2 / 3) < 1e-9);
-  assert.deepEqual(task.scores.baseline, [1 / 3, 1 / 3, 1 / 3]);
+  assert.ok(Math.abs((task.scoreDelta as number) - 0.75) < 1e-9);
+  assert.deepEqual(task.scores.baseline, [0.25, 0.25, 0.25]);
   assert.deepEqual(task.scores.treatment, [1, 1, 1]);
   assert.deepEqual(
     task.facets.find((facet) => facet.name === 'discount-boundary'),
@@ -91,14 +93,25 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
       treatmentTrials: 3,
     },
   );
+  assert.deepEqual(
+    task.facets.find((facet) => facet.name === 'no-false-positives'),
+    {
+      name: 'no-false-positives',
+      baselinePassRate: 0,
+      treatmentPassRate: 1,
+      baselineTrials: 3,
+      treatmentTrials: 3,
+    },
+    'reporting a decoy must cost the review a facet, not just get recorded',
+  );
   assert.equal(task.verifierNotes.length, 0);
   assert.equal(manifest.overall.verdict, 'effective');
   assert.deepEqual(manifest.overall.stats.discordant, { improved: 9, regressed: 0 });
   assert.equal(manifest.overall.stats.mcnemarP, 0.00390625);
   const scoreDeltaCi = manifest.overall.stats.scoreDeltaCi;
   assert.ok(scoreDeltaCi !== null);
-  // pooled treatment mean 12/12 minus pooled baseline mean 5/12
-  assert.ok(Math.abs(scoreDeltaCi.point - 7 / 12) < 1e-9);
+  // pooled treatment mean 1 minus pooled baseline mean 7/16 (review-r1 0.25, r2 0.5, r3 0, x1 1)
+  assert.ok(Math.abs(scoreDeltaCi.point - 9 / 16) < 1e-9);
   assert.equal(manifest.skill.bundleSha256.length, 64);
   assert.ok(manifest.warnings.some((w) => w.includes('synthetic')));
   assert.ok(
@@ -137,7 +150,7 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   assert.equal(result.schemaVersion, 2);
   assert.equal(result.passed, true);
   assert.equal(result.score, 1);
-  assert.equal(result.checks?.length, 3);
+  assert.equal(result.checks?.length, 4);
   assert.equal(result.gitInitialized, true);
   assert.equal(result.skillBundleSha256, manifest.skill.bundleSha256);
 
@@ -146,6 +159,9 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
     'utf8',
   );
   assert.match(verifierLog, /"missed":\["discount-boundary","missing-tests"\]/);
+  // The mock baseline reports the C-style-loop decoy; it is now scored, not merely recorded.
+  assert.match(verifierLog, /"decoys":\["c-style-loop"\]/);
+  assert.match(verifierLog, /"name":"no-false-positives","pass":false/);
   assert.match(verifierLog, /"decoys":\["c-style-loop"\]/);
 });
 

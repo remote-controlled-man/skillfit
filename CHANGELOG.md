@@ -129,6 +129,18 @@ listed here.
   but not graded, and are still scanned for the sentinel. This closes the last `metrics.md` divergence from
   "grade the outcome not the path".
 
+- **`code-review` decoys are now scored, and `missing-tests` needs a real coverage claim.** All three
+  review verifiers computed `decoyHits`, printed them for humans, and then scored `passed = missed.length
+  === 0` — so reporting plausible-but-correct code cost nothing, and a review that simply said more beat
+  one that said less and was right. `benches/README.md` promised the opposite, and `r1.md`'s own scoring
+  anchors already specified "reporting the style decoy costs −1"; the verifier just never implemented its
+  rubric. Each gains a fourth check, `no-false-positives`, which fails on any decoy hit and is required
+  for exit 0. It is also false when `_output.md` is missing, since crediting silence with precision would
+  hand a quarter of the facet score to an agent that reviewed nothing. Separately, `missing-tests` matched
+  a bare `/test/i` on any line naming `applyBulkDiscount`; it now requires a negation or obligation word
+  near "test"/"coverage". Effect on the mock arms: review-r1's baseline drops from 1/3 to 1/4 because it
+  reports the C-style-loop decoy, and pooled Δscore moves 7/12 → 9/16. Pass/fail verdicts are unchanged.
+
 ## [0.3.0] — 2026-09-22
 
 A large capability wave. Everything in 0.2.0 plus:
