@@ -24,7 +24,7 @@ export class MockExecutor implements Executor {
   constructor(private readonly markerFile: string = MOCK_MARKER_FILE) {}
 
   describe(): ExecutorDescriptor {
-    return { kind: 'mock', model: 'mock', detail: `marker:${this.markerFile}` };
+    return { kind: 'mock', model: 'mock', detail: `marker:${this.markerFile}`, sampling: null };
   }
 
   run(prompt: string, workdir: string): Promise<ExecutorResult> {

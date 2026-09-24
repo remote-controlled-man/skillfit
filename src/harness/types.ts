@@ -14,6 +14,12 @@ export interface ExecutorDescriptor {
   kind: string;
   model: string;
   detail?: string;
+  /**
+   * Sampling controls actually sent to the model, or null when the surface exposes none. Recorded
+   * explicitly so a reader can tell "seeded and reproducible" from "this surface has no knob" —
+   * an absent field would be ambiguous between the two.
+   */
+  sampling?: { seed: number | null; temperature: number | null } | null;
 }
 
 export interface Executor {

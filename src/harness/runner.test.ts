@@ -340,3 +340,32 @@ test('runExperiment drops an errored trial from both arms instead of scoring it 
   );
 });
 
+test('runExperiment interleaves conditions within each trial and records sampling', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-runs-order-');
+  const inner = new MockExecutor();
+  const order: string[] = [];
+  const spy: Executor = {
+    describe: () => inner.describe(),
+    run: (prompt: string, workdir: string) => {
+      order.push(workdir.split(/[\\/]/).slice(-3).join('/'));
+      return inner.run(prompt, workdir);
+    },
+  };
+  const manifest = await runExperiment(plan({ runsRoot, executor: spy, trials: 2 }));
+  assert.deepEqual(
+    order.slice(0, 4),
+    [
+      'review-r1/baseline/trial-1',
+      'review-r1/treatment/trial-1',
+      'review-r1/baseline/trial-2',
+      'review-r1/treatment/trial-2',
+    ],
+    'the two arms of a pair must run adjacently; all-baselines-first confounds condition with elapsed time',
+  );
+  assert.equal(
+    manifest.executor.sampling,
+    null,
+    'the matrix CLIs expose no seed or temperature knob, and the manifest says so rather than implying one',
+  );
+});
+

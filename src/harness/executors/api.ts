@@ -44,7 +44,7 @@ export class ApiExecutor implements Executor {
   }
 
   describe(): ExecutorDescriptor {
-    return { kind: 'api', model: this.model, detail: this.baseUrl };
+    return { kind: 'api', model: this.model, detail: this.baseUrl, sampling: null };
   }
 
   async run(prompt: string, _workdir?: string): Promise<ExecutorResult> {

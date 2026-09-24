@@ -14,7 +14,7 @@ import {
   type TaskSummary,
 } from './report.js';
 import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
-import type { Bench, Condition, Executor, SkillBundle, TokenUsage } from './types.js';
+import type { Bench, Condition, Executor, ExecutorDescriptor, SkillBundle, TokenUsage } from './types.js';
 import { CONDITIONS } from './types.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 
@@ -208,7 +208,7 @@ export async function runTrial(
         ...serializable,
         runGroup: plan.runGroup,
         skillBundleSha256: condition === 'treatment' ? skill.sha256 : null,
-        executor: executor.describe(),
+        executor: withSampling(executor.describe()),
       },
       null,
       2,
@@ -238,6 +238,15 @@ function sumTokens(records: TrialOutcome[]): { input: number; output: number } |
     output += record.tokens.output ?? 0;
   }
   return seen ? { input, output } : null;
+}
+
+/**
+ * Record sampling controls explicitly. An executor whose surface exposes no seed or temperature
+ * knob reports `sampling: null`, which is a statement about the surface — not an omission that a
+ * reader would have to guess at.
+ */
+function withSampling(descriptor: ExecutorDescriptor): ExecutorDescriptor {
+  return { ...descriptor, sampling: descriptor.sampling ?? null };
 }
 
 function countErrors(records: TrialOutcome[]): number {
@@ -498,8 +507,11 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
   for (const task of plan.bench.tasks) {
     const outcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
-    for (const condition of CONDITIONS) {
-      for (let trial = 1; trial <= plan.trials; trial++) {
+    // Interleaved: the trial loop is outermost so the two arms of a pair run adjacently. Running
+    // every baseline trial before every treatment trial confounds condition with elapsed time —
+    // provider drift or rate-limit degradation would land entirely on one arm.
+    for (let trial = 1; trial <= plan.trials; trial++) {
+      for (const condition of CONDITIONS) {
         plan.log?.(`Running ${task.id} / ${condition} / trial ${trial}…`);
         const outcome = await runTrial(plan, task.id, condition, trial);
         outcomes[condition].push(outcome);
@@ -543,8 +555,8 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
       contentSha256: plan.bench.contentSha256,
       taskCount: plan.bench.tasks.length,
     },
-    executor: plan.executor.describe(),
-    judge: plan.judge ? plan.judge.describe() : null,
+    executor: withSampling(plan.executor.describe()),
+    judge: plan.judge ? withSampling(plan.judge.describe()) : null,
     trials: plan.trials,
     tasks: taskSummaries,
     overall: {

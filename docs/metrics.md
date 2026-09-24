@@ -24,8 +24,16 @@ gates), and the LLM-judge literature cited in §5.
 ## Unit of analysis
 
 One **run** = one (task, condition, trial). Runs are **paired** on (task, trial): baseline and treatment see
-the same fixture, prompt, and seed. Statistical treatment is always *paired*: per-task first, then pooled
-across tasks with tasks as the resampling unit. Never pool unpaired.
+the same fixture and the same prompt, and the two arms of a pair are executed **adjacently** — the trial loop
+is outermost, so condition is never confounded with elapsed time (provider drift, rate-limit degradation,
+a filling cache would otherwise land entirely on whichever arm ran second).
+
+Sampling is **not pinned**, and this is a deliberate weakening of an earlier claim: the headless CLI surfaces
+in the capability matrix expose no seed or temperature knob, so the harness controls order rather than
+sampling. The manifest records `executor.sampling` as `null` where the surface offers nothing, instead of
+implying a control that does not exist; a future surface that accepts a seed should populate it. Statistical
+treatment is always *paired*: per-task first, then pooled across tasks with tasks as the resampling unit.
+Never pool unpaired.
 
 ## L0 — bench health (guard metrics)
 

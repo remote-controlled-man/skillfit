@@ -89,7 +89,13 @@ export class CliExecutor implements Executor {
   }
 
   describe(): ExecutorDescriptor {
-    return { kind: 'cli', model: 'cli-configured', detail: `${this.label}: ${this.argv.join(' ')}` };
+    // The headless CLI surfaces in the matrix expose no seed or temperature knob.
+    return {
+      kind: 'cli',
+      model: 'cli-configured',
+      detail: `${this.label}: ${this.argv.join(' ')}`,
+      sampling: null,
+    };
   }
 
   run(prompt: string, workdir: string): Promise<ExecutorResult> {
