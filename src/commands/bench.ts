@@ -384,7 +384,14 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
 
     const markerPath = join(bench.dir, task.fixture, MOCK_MARKER_FILE);
     if ((task.verifierKind ?? 'output') === 'command') {
-      push('INFO', `${task.id}: command verifier — mock-arm probes not applicable`);
+      push(
+        'INFO',
+        `${task.id}: command verifier — mock-arm probes not applicable (a mock writes _output.md text, not file edits)${
+          task.oracle
+            ? '; offline coverage comes from the oracle and NOP gates above'
+            : '; with no oracle registered, nothing offline shows this task is solvable'
+        }`,
+      );
     } else if (existsSync(markerPath)) {
       try {
         const marker = JSON.parse(readFileSync(markerPath, 'utf8')) as MockMarkerOutputs;

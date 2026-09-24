@@ -91,6 +91,8 @@ Node is the recommended verifier runtime because it is everywhere skillfit runs:
 
 The mock picks `treatment` whenever the prompt contains a `<skill name="…">` block, otherwise `baseline`. Optional `tokens: {"input": n, "output": n}` per condition feed the token-delta report; without them the mock estimates tokens as `length / 4`.
 
+`verifierKind: "command"` tasks cannot be mock-probed: a mock produces `_output.md` *text*, while a command verifier grades *file state*, so there is nothing for the marker to stand in for. Their offline coverage is the two gates instead — the NOP probe proves the task ships unsolved, and the oracle gate proves a correct solution passes with every check green. That is why registering an oracle matters more on a command-kind bench: without one, nothing offline shows the task is solvable, and `bench check` says so.
+
 ## What the harness records
 
 Each run writes to `runs/<runGroup>/<task-id>/<condition>/trial-<n>/`:

@@ -90,6 +90,47 @@ test('runBenchCheck gates every bundled debugging task with its oracle', async (
   );
 });
 
+function commandKindBench(t: import('node:test').TestContext, withOracle: boolean): string {
+  const dir = tmp(t, 'skillfit-bench-cmdkind-');
+  mkdirSync(join(dir, 'fixtures', 't1'), { recursive: true });
+  mkdirSync(join(dir, 'prompts'), { recursive: true });
+  mkdirSync(join(dir, 'verifiers'), { recursive: true });
+  mkdirSync(join(dir, 'ground-truth'), { recursive: true });
+  writeFileSync(join(dir, 'fixtures', 't1', 'index.txt'), 'x\n');
+  writeFileSync(join(dir, 'prompts', 't1.md'), 'Do something.\n');
+  writeFileSync(join(dir, 'verifiers', 'v.mjs'), EXACT_VERIFIER);
+  writeFileSync(
+    join(dir, 'ground-truth', 'o.mjs'),
+    `import fs from 'node:fs';
+import path from 'node:path';
+fs.writeFileSync(path.join(process.argv[2], '_output.md'), 'right\\n');
+`,
+  );
+  const task: Record<string, unknown> = {
+    id: 't1',
+    fixture: 'fixtures/t1',
+    prompt: 'prompts/t1.md',
+    verifier: 'node verifiers/v.mjs',
+    verifierKind: 'command',
+  };
+  if (withOracle) task['oracle'] = 'node ground-truth/o.mjs';
+  writeFileSync(join(dir, 'bench.json'), JSON.stringify({ schemaVersion: 1, tasks: [task] }));
+  return dir;
+}
+
+test('runBenchCheck names the offline coverage a command-kind task actually has', async (t) => {
+  const gated = await runBenchCheck({ dir: commandKindBench(t, true), log: () => {} });
+  assert.equal(gated.failures, 0);
+  const gatedInfo = gated.checks.find((c) => c.message.includes('mock-arm probes not applicable'));
+  assert.ok(gatedInfo, 'command-kind tasks always report why mock probes were skipped');
+  assert.match(gatedInfo.message, /offline coverage comes from the oracle and NOP gates/);
+
+  const ungated = await runBenchCheck({ dir: commandKindBench(t, false), log: () => {} });
+  const ungatedInfo = ungated.checks.find((c) => c.message.includes('mock-arm probes not applicable'));
+  assert.ok(ungatedInfo);
+  assert.match(ungatedInfo.message, /nothing offline shows this task is solvable/);
+});
+
 test('runBenchCheck fails a bench whose verifier accepts empty output', async (t) => {
   const dir = tmp(t, 'skillfit-bench-broken-');
   mkdirSync(join(dir, 'fixtures', 't1'), { recursive: true });
