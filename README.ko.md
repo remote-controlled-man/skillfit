@@ -87,7 +87,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## 나만의 bench 가져오기
 
-평가의 품질은 작업의 품질을 넘지 못합니다. bench는 그저 하나의 디렉터리입니다 — `bench.json` + fixture + 결정적 verifier. `npx skillfit bench init`으로 뼈대를 만들고, 에이전트가 방금 망친 실제 실패를 `npx skillfit bench add <bench> --freeze`로 영구 작업으로 고정하고, `npx skillfit bench check`로 오프라인 검증을 거친 뒤, 여러분의 실제 프로덕션 시나리오를 본떠 만드세요: [benches/README.md](benches/README.md).
+평가의 품질은 작업의 품질을 넘지 못합니다. bench는 그저 하나의 디렉터리입니다 — `bench.json` + fixture + 결정적 verifier. `npx skillfit bench init`으로 뼈대를 만들고, 에이전트가 방금 망친 실제 실패를 `npx skillfit bench add <bench> --freeze`로 영구 작업으로 고정하고, `npx skillfit bench check`로 오프라인 검증을 거친 뒤, 여러분의 실제 프로덕션 시나리오를 본떠 만드세요: [benches/README.md](benches/README.md). bench를 한 번도 작성해 본 적이 없다면 [docs/bench-authoring.md](docs/bench-authoring.md)부터 시작하세요. 실제 태스크 하나로 일곱 단계를 처음부터 끝까지 따라가고, bench가 확신에 차서 틀린 숫자를 내놓는 경로도 다룹니다.
 
 ## 자체 측정 데이터
 

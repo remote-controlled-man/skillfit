@@ -4,7 +4,7 @@ Thanks for helping make agent configuration evidence-driven.
 
 ## The highest-value contributions
 
-1. **A bench from your real workflow.** The fastest paths in: `skillfit bench init` for a scaffold, `skillfit bench add --freeze` to capture a failure you just watched, `skillfit bench add --from-commit` to mine a fix from git history, then `skillfit bench check [--calibrate]` before submitting under `benches/contrib/<name>/`. See [benches/README.md](benches/README.md) for the format and the determinism/self-containment rules.
+1. **A bench from your real workflow.** Read [docs/bench-authoring.md](docs/bench-authoring.md) first — it is the seven-step guide, walked end to end on one real task. The fastest paths in: `skillfit bench init` for a scaffold, `skillfit bench add --freeze` to capture a failure you just watched, `skillfit bench add --from-commit` to mine a fix from git history, then `skillfit bench check [--calibrate]` before submitting under `benches/contrib/<name>/`. See [benches/README.md](benches/README.md) for the format and the determinism/self-containment rules.
 2. **Reproductions.** Run an existing evidence experiment on your model/agent and report agreement or disagreement (as an issue with your `manifest.json` attached).
 3. **Agent matrix corrections.** Vendor config surfaces change fast. If `src/matrix/agents.json` is stale, a PR with the official docs link and a `verifiedAt` bump is always welcome.
 

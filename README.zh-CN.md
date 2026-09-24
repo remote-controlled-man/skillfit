@@ -87,7 +87,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## 自带 bench
 
-实验质量取决于任务质量。bench 就是一个目录——`bench.json` + fixtures + 确定性 verifier。用 `npx skillfit bench init` 生成骨架，用 `npx skillfit bench add <bench> --freeze` 把 agent 刚翻车的现场冻成任务，用 `npx skillfit bench check` 离线校验，照着你自己的生产场景造：[benches/README.md](benches/README.md)。
+实验质量取决于任务质量。bench 就是一个目录——`bench.json` + fixtures + 确定性 verifier。用 `npx skillfit bench init` 生成骨架，用 `npx skillfit bench add <bench> --freeze` 把 agent 刚翻车的现场冻成任务，用 `npx skillfit bench check` 离线校验，照着你自己的生产场景造：[benches/README.md](benches/README.md)。没写过 bench 的话，先看 [docs/bench-authoring.md](docs/bench-authoring.md)——它用一个真实任务把七个步骤从头走一遍，也讲了 bench 会在哪些地方给你一份自信的错数据。
 
 ## 我们自己的数据
 

@@ -1,7 +1,13 @@
 # benches/contrib — community benches
 
 Drop your bench here as `benches/contrib/<name>/` when you want to submit it. A contrib bench follows the
-same contract as the bundled ones ([benches/README.md](../README.md)), plus a few submission rules:
+same contract as the bundled ones ([benches/README.md](../README.md)), plus a few submission rules.
+
+**Read [docs/bench-authoring.md](../../docs/bench-authoring.md) first.** It is the guide this checklist
+assumes: the seven steps from "something went wrong" to a task you can measure, why each one is
+non-optional, and the ways a bench produces confident wrong numbers. The rules below are the short
+form; the guide is what makes them make sense, and rule 2 in particular is easy to satisfy while
+missing the point entirely.
 
 ## Before you open the PR
 

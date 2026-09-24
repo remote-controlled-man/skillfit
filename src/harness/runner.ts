@@ -243,7 +243,7 @@ const SPAWN_FAILURE = /ENOENT|EINVAL|EACCES|EPERM/i;
 export function verifierFailure(label: string, command: string, reason: string | null): string {
   const why = reason ?? 'no exit code';
   if (SPAWN_FAILURE.test(why)) {
-    return `${label} could not be started (${why}): ${command} — it is spawned without a shell, so the first token must be an executable the OS can start directly ("node verifiers/x.mjs"), not "npm", a shell builtin, or a .cmd/.bat wrapper`;
+    return `${label} could not be started (${why}): ${command} — it is spawned without a shell, so the first token must be an executable the OS can start directly ("node verifiers/x.mjs"); to grade with a shell command, wrap it via "bench add --freeze --verifier-cmd"`;
   }
   return `${label} produced no exit code (${why}): ${command}`;
 }

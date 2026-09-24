@@ -11,6 +11,20 @@ protocol is unchanged.
 
 ### Added
 
+- **`docs/bench-authoring.md` — the authoring guide (A11).** The paradigm was complete and well-sourced
+  but had no single home: `docs/metrics.md` carried the *why*, `benches/README.md` the *what*,
+  `benches/contrib/README.md` the *how to submit*, and the two bundled benches the *what one looks
+  like*. The mainline — the seven steps, why each is non-optional, one task walked end to end — was
+  reconstructable only by reading all four and reconciling them, and the reconciliation did not hold:
+  the examples contradicted the reference and the gates did not enforce the rules. Waves 1–2 fixed the
+  contradictions; this is the artifact they were for. Walked on `code-review/review-r1`, with the two
+  gates, what neither of them proves (gameability — `feat-slug` is the worked example), a table of the
+  ways a bench produces confident wrong numbers, and a PR checklist. Linked from all five READMEs,
+  `benches/README.md`, `benches/contrib/README.md`, `docs/metrics.md` and `CONTRIBUTING.md`; the contrib
+  checklist stays as the short form and names the guide as required reading before rule 1. New
+  `src/docs.test.ts` pins the links across all five languages and reads every threshold the guide
+  quotes back out of the source, so changing a constant breaks the doc's test rather than silently
+  making the doc wrong.
 - **Facet scores**: verifiers may emit `"checks": [{"name", "pass"}]` in their JSON summary. Trials get a
   graded score (fraction of checks passed); manifests upgrade to `schemaVersion: 3` with per-trial
   scores, per-task facet tables, and a paired-bootstrap 95% CI for pooled Δscore alongside the existing

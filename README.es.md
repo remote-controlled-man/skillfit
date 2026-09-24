@@ -87,7 +87,7 @@ Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matr
 
 ## Trae tu propio bench
 
-Una evaluación solo es tan buena como sus tareas. Un bench no es más que un directorio: `bench.json` + fixtures + un verificador determinista. Genera uno con `npx skillfit bench init`, congela un fallo real que acabas de ver cometer a tu agente con `npx skillfit bench add <bench> --freeze`, valida sin conexión con `npx skillfit bench check` y modélalo a partir de tus propios escenarios de producción: [benches/README.md](benches/README.md).
+Una evaluación solo es tan buena como sus tareas. Un bench no es más que un directorio: `bench.json` + fixtures + un verificador determinista. Genera uno con `npx skillfit bench init`, congela un fallo real que acabas de ver cometer a tu agente con `npx skillfit bench add <bench> --freeze`, valida sin conexión con `npx skillfit bench check` y modélalo a partir de tus propios escenarios de producción: [benches/README.md](benches/README.md). Si nunca has escrito uno, empieza por [docs/bench-authoring.md](docs/bench-authoring.md): recorre los siete pasos de principio a fin sobre una sola tarea real y cubre las formas en que un bench produce números equivocados con total confianza.
 
 ## Nuestros propios datos
 

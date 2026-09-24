@@ -4,6 +4,9 @@ This document defines what skillfit measures and how verdicts are computed. It i
 `src/harness/` implements and that bench authors design against. Changes here are deliberate: edit with a
 reasoned PR, cite sources, and bump the date.
 
+This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
+contract — is [bench-authoring.md](bench-authoring.md).
+
 v2 (2026-09-23): adds graded facet scores (L2), the oracle gate, and floor/facet-saturation warnings.
 Motivation: binary pass/fail extracts one bit per trial, which is why quality claims stayed unprovable at
 individual-user sample sizes. [Skill2Env](https://github.com/NVlabs/Skill2Env) (Table 1) shows the
@@ -195,6 +198,9 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
   the authoritative record of which trial was dropped and why.
 
 ## Bench composition guidance (for authors and the upcoming scaffolding tooling)
+
+These are the targets. [bench-authoring.md](bench-authoring.md) is the walkthrough that gets a bench to
+them, step by step, on one real task.
 
 - 20–50 tasks drawn from real failures is a healthy personal bench
   ([Anthropic](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)); grow from observed

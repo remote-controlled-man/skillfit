@@ -2,6 +2,10 @@
 
 A **bench** is a portable, deterministic test suite for measuring whether a skill (or rules file, or MCP configuration) actually improves an AI coding agent on tasks that resemble your real work. Skills markets tell you what is popular; benches tell you what works.
 
+> **This file is the reference** — layout, schema, the verifier contract, fixture rules. If you are
+> about to write a bench, read [docs/bench-authoring.md](../docs/bench-authoring.md) first: it walks the
+> seven steps end to end on one real task and explains why each one is non-optional.
+
 `skillfit eval <skill-path> --bench <bench-dir>` pairs every task twice — once **baseline** (no skill injected) and once **treatment** (skill injected into the prompt) — for `N` trials each, then compares pass rates. `skillfit bench init` scaffolds a new bench (with a working example task) and `skillfit bench check` validates one offline — verifier self-tests, oracle/NOP gates, facet-count bounds, mock-arm probes, fixture hygiene — before you spend a single token on runs. Add `--calibrate --agent <id>` to also run real baseline-difficulty probes: one inject-mode arm per task with an empty skill payload, so `shouldTrigger` labels are **not** required and you pay for one arm, not two. Each task is banded against the L0 floor/ceiling as too hard or broken (≤10% baseline pass rate), discriminative (in between), or too easy/saturated (≥90%); aim for 30–70%. A calibration that completes no runs fails loudly instead of reporting a band it never measured.
 
 ## Bench directory layout
@@ -63,7 +67,7 @@ All paths must stay inside the bench directory.
 
 The verifier is the heart of a bench. It must be **deterministic**: same run directory in, same verdict out — no network, no clocks, no randomness.
 
-- Invocation: `<verifier command> <absolute run directory>`, working directory = bench root. The command is split on whitespace and spawned **without a shell**, so its first token must be an executable the operating system can start directly: `node verifiers/x.mjs` works, while `npm test` and `.cmd`/`.bat` wrappers do not (`ENOENT` / `EINVAL` on Windows). That is deliberate, not an oversight — benches are contributed by third parties, and a shell here would turn `"verifier": "node v.mjs & curl …"` in somebody else's `bench.json` into code execution on your machine.
+- Invocation: `<verifier command> <absolute run directory>`, working directory = bench root. The command is split on whitespace and spawned **without a shell**, so its first token must be an executable the operating system can start directly: `node verifiers/x.mjs` works, while a bare `npm test` or a `.cmd`/`.bat` wrapper does not (`ENOENT` / `EINVAL` on Windows). If the verdict genuinely comes from a shell command, use `bench add --freeze --verifier-cmd "<cmd>"`, which writes a generated `verifiers/<task-id>.mjs` that node runs and that runs your command under a shell inside. Keeping the harness's own spawn shell-free is deliberate, not an oversight — benches are contributed by third parties, and a shell here would turn `"verifier": "node v.mjs & curl …"` in somebody else's `bench.json` into code execution on your machine.
 - A verifier that produces **no exit code at all** — unspawnable, or killed by the 2-minute timeout — has graded nothing, so it is never read as a verdict: `bench check` fails the task and names the cause, and `eval` excludes that trial *and its paired arm* from the rates rather than scoring a fabricated failure. Without that, a broken verifier command would look like a 0% pass rate in both arms and get reported as "bench too hard".
 - **Exit code 0 = pass, anything else = fail.** That is the only pass/fail signal the harness aggregates.
 - Print a one-line JSON summary as the **last stdout line**. The harness parses it (tolerating surrounding noise) and saves the raw output to `_verifier.txt`:
@@ -128,6 +132,9 @@ Every task needs a `shouldTrigger` label:
 The manifest reports recall, false-trigger rate, and precision, each with a Wilson 95% CI, plus F1 — which is deliberately bare, because a harmonic mean of two proportions has no closed-form binomial interval and printing one would be invented precision. Executor errors and undetectable transcripts are excluded from the rates and surfaced as warnings. Trigger capture is currently verified for **Kimi Code** and **Codex CLI**; agents without a `streamJson` template fail with a clear error.
 
 ## Porting your production scenario
+
+The command reference for the three import paths is below; [docs/bench-authoring.md](../docs/bench-authoring.md)
+is the version that explains what to do with them and in what order.
 
 The fastest path is freezing a failure you just watched happen:
 

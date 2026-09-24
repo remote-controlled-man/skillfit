@@ -87,7 +87,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## ベンチを持ち込む
 
-評価の質はタスクの質を超えられない。ベンチは単なるディレクトリ——`bench.json` + フィクスチャ + 決定的ベリファイアだ。`npx skillfit bench init` でスキャフォールドし、エージェントが失敗した現場を目撃したら `npx skillfit bench add <bench> --freeze` で恒久的なタスクとして凍結し、`npx skillfit bench check` でオフライン検証し、自分の本番シナリオに倣って作る：[benches/README.md](benches/README.md)。
+評価の質はタスクの質を超えられない。ベンチは単なるディレクトリ——`bench.json` + フィクスチャ + 決定的ベリファイアだ。`npx skillfit bench init` でスキャフォールドし、エージェントが失敗した現場を目撃したら `npx skillfit bench add <bench> --freeze` で恒久的なタスクとして凍結し、`npx skillfit bench check` でオフライン検証し、自分の本番シナリオに倣って作る：[benches/README.md](benches/README.md)。ベンチを書いたことがなければ、まず [docs/bench-authoring.md](docs/bench-authoring.md) から。実在するタスク 1 件で 7 ステップを最初から最後まで通しで示し、ベンチが自信たっぷりに間違った数値を出す経路も扱う。
 
 ## 私たち自身のデータ
 
