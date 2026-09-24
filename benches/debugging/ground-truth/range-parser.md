@@ -83,8 +83,24 @@ test('enforces maxItems with RangeError', () => {
 });
 ```
 
-Verified 2026-09-19: this source + suite scores 12/12 (exit 0); the pristine fixture scores 1/12 (exit 1 — only the accidental `null` `TypeError` passes).
+Verified 2026-09-25 against the hardened verifier: this source + suite scores 8/8 (exit 0); the
+pristine fixture scores 0/8 (exit 1 — the stub cannot even be imported as a working `parseRange` for the
+behavioural checks, and its single visible test does not detect the seeded bugs).
 
 ## What the grader checks
 
-10 behavioral checks imported from the run directory's `src/range-parser.mjs`: sorted+unique list, ascending range, descending range, mixed input, negative values/ranges, and `TypeError` for empty segment / decimal / text / non-string, plus `RangeError` when `maxItems` would be exceeded. 2 regression-breadth checks scan `test/*.mjs` source: at least 4 `test(` calls, and the text must mention `negative`, `maxItems`, `invalid`, or `reject`. Exit code is 1 unless all 12 checks pass.
+Seven behavioural checks, imported directly from the run directory's `src/range-parser.mjs`: sorted and
+unique list, ascending range, descending range, mixed input, negative values and negative ranges,
+`TypeError` for invalid input (one check asserting all four forms — empty segment, decimal, bare text,
+non-string — since they are a single rejection contract and scoring them separately inflated the facet
+count without adding a distinction anyone would act on), and `RangeError` when `maxItems` would be
+exceeded.
+
+The eighth grades the test suite **behaviourally**: it must pass against the final implementation *and*
+fail against the original buggy one, restored into a temporary copy of the workspace. That replaces two
+checks which scanned `test/*.mjs` source text — at least 4 `test(` occurrences, and a match on
+`/negative|maxItems|invalid|reject/i`. Both were satisfiable without writing a single assertion: four
+empty `test('invalid …', () => assert.ok(true))` blocks passed the old verifier for full marks. Verified
+closed — that exact suite now scores 7/8 and exits 1.
+
+Exit code is 1 unless all eight checks pass.

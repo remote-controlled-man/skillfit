@@ -162,6 +162,36 @@ test('trivial', () => {
   assert.match(tampered.output, /differs from the fixture copy/);
 });
 
+// The two checks this replaced scanned test source text — four `test(` occurrences and a match on
+// /negative|maxItems|invalid|reject/i — so empty tests containing the right words scored full marks.
+test('the bundled range-parser verifier rejects a keyword-stuffed empty test suite', async (t) => {
+  const runDir = tmp(t, 'skillfit-rangeparser-game-');
+  cpSync(join(BUNDLED_DEBUGGING, 'fixtures', 'range-parser'), runDir, { recursive: true });
+
+  const solve = await runVerifier(BUNDLED_DEBUGGING, 'node ground-truth/oracle-range-parser.mjs', runDir);
+  assert.equal(solve.exitCode, 0, 'the oracle must solve the pristine fixture');
+  const solved = await runVerifier(BUNDLED_DEBUGGING, 'node verifiers/range-parser.mjs', runDir);
+  assert.equal(solved.exitCode, 0, 'the reference solution must pass');
+
+  mkdirSync(join(runDir, 'test'), { recursive: true });
+  writeFileSync(
+    join(runDir, 'test', 'basic.test.mjs'),
+    `import test from 'node:test';
+import assert from 'node:assert/strict';
+
+test('invalid input handling', () => { assert.ok(true); });
+test('negative value handling', () => { assert.ok(true); });
+test('maxItems limit', () => { assert.ok(true); });
+test('rejects bad segments', () => { assert.ok(true); });
+`,
+    'utf8',
+  );
+  const gamed = await runVerifier(BUNDLED_DEBUGGING, 'node verifiers/range-parser.mjs', runDir);
+  assert.notEqual(gamed.exitCode, 0, 'a suite that asserts nothing is not a regression test');
+  assert.match(gamed.output, /red-to-green regression test/);
+  assert.match(gamed.output, /detects none of the seeded bugs/);
+});
+
 test('runBenchCheck fails a bench whose verifier accepts empty output', async (t) => {
   const dir = tmp(t, 'skillfit-bench-broken-');
   mkdirSync(join(dir, 'fixtures', 't1'), { recursive: true });

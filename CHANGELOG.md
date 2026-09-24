@@ -107,6 +107,16 @@ listed here.
   trailing or doubled separator) because the visible suite never specifies accent handling and both
   folding and dropping are defensible — pinning an output would grade an invented requirement.
 
+- **`debugging/range-parser` no longer accepts a test suite that asserts nothing.** Two of its twelve
+  checks graded the *text* of `test/*.mjs` — at least four `test(` occurrences, and a match on
+  `/negative|maxItems|invalid|reject/i` — so four empty `test('invalid …', () => assert.ok(true))`
+  blocks scored full marks. They are replaced by one behavioural check: the suite must pass against
+  the final implementation *and* fail against the original buggy one, restored into a temporary copy
+  of the workspace. The four `TypeError` cases also merge into a single check, since they assert one
+  rejection contract and scoring them separately inflated the count without adding a distinction
+  anyone would act on. Twelve checks become eight, inside the 2–8 range. Verified closed: the
+  keyword-stuffed suite above now scores 7/8 and exits 1.
+
 ## [0.3.0] — 2026-09-22
 
 A large capability wave. Everything in 0.2.0 plus:
