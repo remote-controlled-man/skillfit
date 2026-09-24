@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { loadBench } from '../harness/bench.js';
+import { runVerifier } from '../harness/runner.js';
 import type { Executor } from '../harness/types.js';
 import { runBenchAdd, runBenchCheck, runBenchInit } from './bench.js';
 
@@ -129,6 +130,36 @@ test('runBenchCheck names the offline coverage a command-kind task actually has'
   const ungatedInfo = ungated.checks.find((c) => c.message.includes('mock-arm probes not applicable'));
   assert.ok(ungatedInfo);
   assert.match(ungatedInfo.message, /nothing offline shows this task is solvable/);
+});
+
+// The visible suite IS this task's specification, so it is also the thing an agent can edit to win.
+// `bench check` covers the NOP and oracle directions but not tampering, so the cheat gets its own test.
+test('the bundled feat-slug verifier rejects a rewritten test suite', async (t) => {
+  const runDir = tmp(t, 'skillfit-featslug-tamper-');
+  cpSync(join(BUNDLED_DEBUGGING, 'fixtures', 'feat-slug'), runDir, { recursive: true });
+
+  const solve = await runVerifier(BUNDLED_DEBUGGING, 'node ground-truth/oracle-feat-slug.mjs', runDir);
+  assert.equal(solve.exitCode, 0, 'the oracle must solve the pristine fixture');
+  const solved = await runVerifier(BUNDLED_DEBUGGING, 'node verifiers/feat-slug.mjs', runDir);
+  assert.equal(solved.exitCode, 0, 'the reference solution must pass');
+
+  // A suite that the correct implementation still satisfies, so only the tamper check can catch it.
+  writeFileSync(
+    join(runDir, 'test', 'slug.test.mjs'),
+    `import test from 'node:test';
+import assert from 'node:assert/strict';
+import { slugify } from '../src/slug.mjs';
+
+test('trivial', () => {
+  assert.equal(typeof slugify('anything'), 'string');
+});
+`,
+    'utf8',
+  );
+  const tampered = await runVerifier(BUNDLED_DEBUGGING, 'node verifiers/feat-slug.mjs', runDir);
+  assert.notEqual(tampered.exitCode, 0, 'editing the specification is not satisfying it');
+  assert.match(tampered.output, /visible suite unmodified/);
+  assert.match(tampered.output, /differs from the fixture copy/);
 });
 
 test('runBenchCheck fails a bench whose verifier accepts empty output', async (t) => {

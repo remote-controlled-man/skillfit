@@ -91,6 +91,22 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   `PASS calibration: 0/0 task(s) in the discriminative band`. Errored runs are excluded from the
   difficulty rate rather than counted as failures.
 
+### Bench content (material)
+
+These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier
+version of these benches does not transfer**. Existing `evidence/` entries are append-only and describe
+the bench as it was; re-run `bench check --calibrate` before making any new claim against a bench
+listed here.
+
+- **`debugging/feat-slug` can no longer be passed by rewriting its own test suite.** The verifier was a
+  thin `node --test` wrapper run in place, so replacing the shipped assertions with `assert.equal(1, 1)`
+  was a complete solution — verified: it scored 1/1 and exited 0. It now carries six checks: the visible
+  suite is compared against the canonical fixture copy before it is run, and four further checks import
+  `src/slug.mjs` directly so a stub fails even with the suite untouched. `node --test` is invoked via
+  `process.execPath` instead of PATH `node`. The non-ASCII check asserts slug *shape* only (no leading,
+  trailing or doubled separator) because the visible suite never specifies accent handling and both
+  folding and dropping are defensible — pinning an output would grade an invented requirement.
+
 ## [0.3.0] — 2026-09-22
 
 A large capability wave. Everything in 0.2.0 plus:
