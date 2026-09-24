@@ -222,6 +222,35 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   run on every machine that checks it. Warnings that said "executor error" now say "executor or
   verifier error", since one channel carries both.
 
+- **The report's `Overall` line counts one population, not three (C11).** `installed` was a set
+  deduped across agents while `fired` and `never` were per-agent sums printed on the same line as
+  though all three described the same things. A skill installed for three agents counted once in the
+  first figure and up to three times in the other two, `fired` could exceed `installed`, and the
+  numbers never added up — the same four skills installed for a second agent printed "4 installed,
+  3 fired, 5 never", eight outcomes for four skills. Both are now restricted to the installed set, so
+  `installed = fired + never` holds exactly and a skill that fired but has since been uninstalled no
+  longer inflates the count. Per-agent lines are unchanged: only `Overall` is a deduped population, and
+  a test pins both so the distinction is not incidental. The mismatch was created by an earlier commit
+  that deduped one term of a three-term line.
+
+- **Shell-unsafe spawn arguments are refused instead of passed through (C13).** `quoteShellArg`
+  returned any argument without whitespace verbatim into a `shell: true` spawn, so `a;rm`, `a&&rm`,
+  `a|rm`, `x$(whoami)` and backtick forms all reached the command line unchanged. Not reachable today —
+  argv only ever comes from `src/matrix/agents.json` plus a `{promptFile}` substitution skillfit chose
+  itself — but the function is exported, and a latent hole in the one place that builds shell command
+  lines is a poor thing to leave behind. Quoting harder is not the fix: inside double quotes a POSIX
+  shell still expands `$(…)` and backticks while `cmd.exe` still expands `%VAR%`, and no single scheme
+  is correct for both. The rejected set is ``; & | < > ` $`` plus CR/LF, narrow on purpose so Windows
+  paths and `node -e` expressions keep working; every payload that actually injects is still caught,
+  and no token in the matrix contains a rejected character. `SECURITY.md` records the trust boundary.
+
+- **`bench add --verifier-cmd` says out loud that the string is persisted (audit note 1).** The command
+  is written into `verifiers/<task-id>.mjs` and re-executed with `shell: true` on every later
+  `bench check` and `eval`, so it outlives the invocation that created it. Both the dry-run plan and
+  the real run now log that before writing, because the scripted `--yes` path is exactly the one where
+  nobody reads a prompt. Severity is disclosure rather than escalation — a verifier is arbitrary code
+  by design, so accepting a contributed bench already means accepting code execution.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier
