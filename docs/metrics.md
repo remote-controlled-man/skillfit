@@ -167,10 +167,12 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
   failures, stop at theoretical saturation.
 - ≥30% negative-trigger tasks once L1 lands; difficulty mix roughly 50% easy / 30% medium / 20% hard.
 - Adopt [SkillsBench's contribution gates](https://arxiv.org/html/2602.12670v1): human-authored prompts
-  (LLM-written tasks under-measure the model), oracle solution passes the verifier at 100% (**enforced**:
-  register an `oracle` command per task and `bench check` fails when the oracle-solved fixture does not
-  exit 0 with every check passing — the NOP half, verifier must fail the untouched fixture, was already
-  enforced), minimal deterministic assertions, realistic data, anti-cheat layout (tests and ground truth
+  (LLM-written tasks under-measure the model), oracle solution passes the verifier at 100% (**enforced
+  when registered**: `bench check` fails a task whose oracle-solved fixture does not exit 0 with every
+  check passing, and *warns* on a task that registers no oracle at all, since winnability is then
+  unverified — a warning rather than a failure because `bench add --freeze` legitimately produces
+  oracle-less tasks mid-authoring; the NOP half, verifier must fail the untouched fixture, is enforced
+  unconditionally), minimal deterministic assertions, realistic data, anti-cheat layout (tests and ground truth
   never enter the fixture), grade the outcome not the path. An agent may *draft* the verifier + oracle
   (`bench add --freeze --decompose`), but the draft is admitted only after both gates pass locally, and a
   bench generated from the skill under test is inadmissible for efficacy claims (same-distribution

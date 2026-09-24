@@ -220,6 +220,53 @@ test('runBenchCheck fails when the oracle command itself errors', async (t) => {
   );
 });
 
+test('runBenchCheck warns when a task registers no oracle', async (t) => {
+  const dir = tmp(t, 'skillfit-bench-nooracle-');
+  mkdirSync(join(dir, 'fixtures', 't1'), { recursive: true });
+  mkdirSync(join(dir, 'prompts'), { recursive: true });
+  mkdirSync(join(dir, 'verifiers'), { recursive: true });
+  writeFileSync(join(dir, 'fixtures', 't1', 'index.txt'), 'x\n');
+  writeFileSync(join(dir, 'prompts', 't1.md'), 'Do something.\n');
+  writeFileSync(join(dir, 'verifiers', 'v.mjs'), EXACT_VERIFIER);
+  writeFileSync(
+    join(dir, 'bench.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      tasks: [
+        {
+          id: 't1',
+          fixture: 'fixtures/t1',
+          prompt: 'prompts/t1.md',
+          verifier: 'node verifiers/v.mjs',
+        },
+      ],
+    }),
+  );
+  const report = await runBenchCheck({ dir, log: () => {} });
+  const warning = report.checks.find(
+    (c) => c.status === 'WARN' && c.message.startsWith('t1: no oracle'),
+  );
+  assert.ok(warning, 'expected a WARN for the missing oracle');
+  assert.match(warning.message, /task winnability is unverified/);
+  // A missing oracle warns rather than fails: `bench add --freeze` legitimately
+  // produces oracle-less tasks mid-authoring, and a hard fail would block that flow.
+  assert.equal(report.failures, 0);
+});
+
+test('runBenchCheck does not warn about oracles when every task registers one', async (t) => {
+  const oracle = `import fs from 'node:fs';
+import path from 'node:path';
+fs.writeFileSync(path.join(process.argv[2], '_output.md'), 'right\\n');
+`;
+  const dir = oracleBench(t, EXACT_VERIFIER, oracle);
+  const report = await runBenchCheck({ dir, log: () => {} });
+  assert.equal(report.failures, 0);
+  assert.ok(
+    !report.checks.some((c) => c.message.includes('no oracle')),
+    'a bench with oracles registered must not warn about missing ones',
+  );
+});
+
 function gitRepoWithBug(t: import('node:test').TestContext): string {
   const dir = tmp(t, 'skillfit-freeze-src-');
   writeFileSync(join(dir, 'add.js'), 'export function add(a, b) {\n  return a - b;\n}\n');

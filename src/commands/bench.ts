@@ -337,6 +337,11 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     if (task.oracle) {
       const oracleResult = await probeOracle(bench.dir, task.fixture, task.oracle, task.verifier);
       push(oracleResult.status, `${task.id}: ${oracleResult.message}`);
+    } else {
+      push(
+        'WARN',
+        `${task.id}: no oracle — task winnability is unverified (nothing proves a correct solution passes this verifier; register one with --oracle or write ground-truth/oracle-${task.id}.mjs)`,
+      );
     }
 
     const markerPath = join(bench.dir, task.fixture, MOCK_MARKER_FILE);
