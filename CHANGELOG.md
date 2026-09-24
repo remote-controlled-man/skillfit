@@ -25,10 +25,13 @@ protocol is unchanged.
   registers a hand-written reference solution on any importer.
 - **New warnings**: baseline floor (≤10%, "too hard or broken"), per-facet saturation (≥90% baseline),
   and verifier-consistency notes when the exit code disagrees with the JSON summary.
-- Bundled benches: all `code-review` and `debugging` verifiers emit facet checks; `code-review` tasks
-  register oracle scripts (validated by the gate in CI). The `debugging` bench intentionally has no
-  oracles yet — its command-kind tasks need verified reference patches, which are follow-up work.
-  `bench init` templates now include checks and a working oracle.
+- Bundled benches: all `code-review` and `debugging` verifiers emit facet checks, and **every task in
+  both benches now registers an oracle** that the gate validates in CI. `debugging`'s six reference
+  solutions were already written down as verified code blocks in `ground-truth/*.md`; they are now
+  real files under `ground-truth/solutions/<task-id>/` that `ground-truth/oracle-<task-id>.mjs`
+  copies into the run directory. They live as files rather than embedded strings so the regexes and
+  template literals they contain need no escaping. `bench init` templates include checks and a
+  working oracle.
 
 ### Changed
 

@@ -19,6 +19,8 @@ my-bench/
     <task-id>.mjs            # deterministic grader; exit code 0 = pass
   ground-truth/              # seed answers / rubrics (never copied into run directories)
     <task-id>.md
+    oracle-<task-id>.mjs     # optional: applies the reference solution to a fixture copy
+    solutions/<task-id>/     # optional: the reference solution as real files, for the oracle to copy
 ```
 
 Only the task's `fixtures/<task-id>/` directory is copied into a run directory. Everything else — prompts, verifiers, ground truth — stays in the bench directory, so agents never see the answers.

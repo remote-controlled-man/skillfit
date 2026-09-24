@@ -10,6 +10,7 @@
       "promptTrigger": "prompts/ttl-cache.trigger.md",
       "verifier": "node verifiers/ttl-cache.mjs",
       "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-ttl-cache.mjs",
       "rubric": "ground-truth/ttl-cache.md",
       "shouldTrigger": true
     },
@@ -20,6 +21,7 @@
       "promptTrigger": "prompts/debug-redaction.trigger.md",
       "verifier": "node verifiers/debug-redaction.mjs",
       "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-debug-redaction.mjs",
       "rubric": "ground-truth/debug-redaction.md",
       "shouldTrigger": true
     },
@@ -30,6 +32,7 @@
       "promptTrigger": "prompts/range-parser.trigger.md",
       "verifier": "node verifiers/range-parser.mjs",
       "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-range-parser.mjs",
       "rubric": "ground-truth/range-parser.md",
       "shouldTrigger": true
     },
@@ -40,6 +43,7 @@
       "promptTrigger": "prompts/async-queue.trigger.md",
       "verifier": "node verifiers/async-queue.mjs",
       "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-async-queue.mjs",
       "rubric": "ground-truth/async-queue.md",
       "shouldTrigger": true
     },
@@ -50,6 +54,7 @@
       "promptTrigger": "prompts/chunked-decoder.trigger.md",
       "verifier": "node verifiers/chunked-decoder.mjs",
       "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-chunked-decoder.mjs",
       "rubric": "ground-truth/chunked-decoder.md",
       "shouldTrigger": true
     },
@@ -60,6 +65,7 @@
       "promptTrigger": "prompts/feat-slug.trigger.md",
       "verifier": "node verifiers/feat-slug.mjs",
       "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-feat-slug.mjs",
       "rubric": "ground-truth/feat-slug.md",
       "shouldTrigger": false
     }

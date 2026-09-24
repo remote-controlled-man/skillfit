@@ -11,6 +11,7 @@ import { runBenchAdd, runBenchCheck, runBenchInit } from './bench.js';
 
 const PACKAGE_ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const BUNDLED_CODE_REVIEW = join(PACKAGE_ROOT, 'benches', 'code-review');
+const BUNDLED_DEBUGGING = join(PACKAGE_ROOT, 'benches', 'debugging');
 
 function tmp(t: import('node:test').TestContext, prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -73,6 +74,20 @@ test('runBenchCheck passes on the bundled code-review bench', async () => {
   const report = await runBenchCheck({ dir: BUNDLED_CODE_REVIEW, log });
   assert.equal(report.failures, 0);
   assert.ok(!report.checks.some((c) => c.message.includes('negative-control')));
+});
+
+test('runBenchCheck gates every bundled debugging task with its oracle', async () => {
+  const { log } = collector();
+  const report = await runBenchCheck({ dir: BUNDLED_DEBUGGING, log });
+  assert.equal(report.failures, 0);
+  const oraclePasses = report.checks.filter(
+    (c) => c.status === 'PASS' && c.message.includes('oracle solution passes the verifier'),
+  );
+  assert.equal(oraclePasses.length, 6, 'every task registers an oracle and that oracle solves it');
+  assert.ok(
+    !report.checks.some((c) => c.message.includes('no oracle')),
+    'the bundled bench must not trip its own missing-oracle warning',
+  );
 });
 
 test('runBenchCheck fails a bench whose verifier accepts empty output', async (t) => {
