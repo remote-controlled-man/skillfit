@@ -10,6 +10,7 @@ import { runVerifier } from '../harness/runner.js';
 import { runTriggerExperiment } from '../harness/trigger.js';
 import { MOCK_MARKER_FILE } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
+import type { VerifierCheck } from '../harness/verifier-summary.js';
 import type { Executor, SkillBundle } from '../harness/types.js';
 import type { Check } from './doctor.js';
 
@@ -44,6 +45,10 @@ export interface BenchCheckReport {
 }
 
 const FIXTURE_SIZE_WARN_BYTES = 64 * 1024;
+
+// benches/README.md: a verifier decomposes its acceptance criteria into 2–8 named checks.
+const MIN_FACET_CHECKS = 2;
+const MAX_FACET_CHECKS = 8;
 
 function templateFiles(benchName: string): Record<string, string> {
   return {
@@ -190,17 +195,40 @@ async function probeVerifier(
   benchDir: string,
   verifier: string,
   output: string | null,
-): Promise<{ exitCode: number | null; error: string | null }> {
+): Promise<{ exitCode: number | null; error: string | null; checks: readonly VerifierCheck[] | null }> {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
   try {
     if (output !== null) {
       writeFileSync(join(dir, '_output.md'), output, 'utf8');
     }
     const result = await runVerifier(benchDir, verifier, dir);
-    return { exitCode: result.exitCode, error: result.error };
+    return {
+      exitCode: result.exitCode,
+      error: result.error,
+      checks: verdictFromOutput(result.output)?.checks ?? null,
+    };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+function facetCountCheck(taskId: string, checks: readonly VerifierCheck[] | null): Check | null {
+  // `checks` is optional in the verifier contract; with no checks there is no graded signal to gate.
+  if (checks === null) return null;
+  if (checks.length >= MIN_FACET_CHECKS && checks.length <= MAX_FACET_CHECKS) {
+    return {
+      status: 'PASS',
+      message: `${taskId}: ${checks.length} facet check(s), within the ${MIN_FACET_CHECKS}–${MAX_FACET_CHECKS} contract`,
+    };
+  }
+  const why =
+    checks.length < MIN_FACET_CHECKS
+      ? 'a single check is binary pass/fail in facet costume — it carries none of the graded signal facet scores exist to provide'
+      : 'the trial score is dominated by whatever these checks happen to measure, and the per-facet table stops being readable';
+  return {
+    status: 'WARN',
+    message: `${taskId}: ${checks.length} facet check(s) — outside the ${MIN_FACET_CHECKS}–${MAX_FACET_CHECKS} range in benches/README.md (${why})`,
+  };
 }
 
 function copyFixture(fixtureDir: string, dest: string): void {
@@ -300,11 +328,13 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
   let labeledTasks = 0;
   let negativeTasks = 0;
   for (const task of bench.tasks) {
+    let facetChecks: readonly VerifierCheck[] | null = null;
     if ((task.verifierKind ?? 'output') === 'command') {
       const fixtureCopy = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
       try {
         copyFixture(join(bench.dir, task.fixture), fixtureCopy);
         const pristine = await runVerifier(bench.dir, task.verifier, fixtureCopy);
+        facetChecks = verdictFromOutput(pristine.output)?.checks ?? null;
         if (pristine.exitCode === 0) {
           push(
             'FAIL',
@@ -327,12 +357,16 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
         push('PASS', `${task.id}: verifier rejects missing output`);
       }
       const empty = await probeVerifier(bench.dir, task.verifier, '');
+      facetChecks = empty.checks;
       if (empty.exitCode === 0 || empty.exitCode === null) {
         push('FAIL', `${task.id}: verifier passes an empty output — it cannot tell success from silence`);
       } else {
         push('PASS', `${task.id}: verifier rejects empty output`);
       }
     }
+
+    const facetGate = facetCountCheck(task.id, facetChecks);
+    if (facetGate) push(facetGate.status, facetGate.message);
 
     if (task.oracle) {
       const oracleResult = await probeOracle(bench.dir, task.fixture, task.oracle, task.verifier);

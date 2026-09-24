@@ -85,7 +85,9 @@ Measured with the skill force-injected (today's `eval` behavior), isolating cont
 
 A verifier may decompose its acceptance criteria into named **checks** and report them in its JSON summary:
 `{"passed": bool, "checks": [{"name": string, "pass": bool}]}`. The trial **score** is the fraction of
-checks passed ∈ [0,1].
+checks passed ∈ [0,1]. A bench should carry 2–8 checks per task — the bound `bench check` warns on
+when it is violated, because one check degenerates to the binary signal facets were introduced to
+replace, and a long tail lets an arbitrary subset dominate the score.
 
 - **The exit code remains the sole pass/fail authority** — checks never flip a verdict, and the McNemar
   protocol below is unchanged. When the exit code and the checks disagree, the run records a warning and

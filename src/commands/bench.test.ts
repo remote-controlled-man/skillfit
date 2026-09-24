@@ -267,6 +267,77 @@ fs.writeFileSync(path.join(process.argv[2], '_output.md'), 'right\\n');
   );
 });
 
+function facetCountBench(t: import('node:test').TestContext, count: number): string {
+  const dir = tmp(t, 'skillfit-bench-facets-');
+  mkdirSync(join(dir, 'fixtures', 't1'), { recursive: true });
+  mkdirSync(join(dir, 'prompts'), { recursive: true });
+  mkdirSync(join(dir, 'verifiers'), { recursive: true });
+  writeFileSync(join(dir, 'fixtures', 't1', 'index.txt'), 'x\n');
+  writeFileSync(join(dir, 'prompts', 't1.md'), 'Do something.\n');
+  const names = Array.from({ length: count }, (_, i) => `check-${i + 1}`);
+  writeFileSync(
+    join(dir, 'verifiers', 'v.mjs'),
+    `import fs from 'node:fs';
+import path from 'node:path';
+let out = '';
+try {
+  out = fs.readFileSync(path.join(process.argv[2], '_output.md'), 'utf8');
+} catch {
+  out = '';
+}
+const passed = out.trim() === 'right';
+const checks = ${JSON.stringify(names)}.map((name) => ({ name, pass: passed }));
+console.log(JSON.stringify({ passed, checks }));
+process.exit(passed ? 0 : 1);
+`,
+  );
+  writeFileSync(
+    join(dir, 'bench.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      tasks: [
+        {
+          id: 't1',
+          fixture: 'fixtures/t1',
+          prompt: 'prompts/t1.md',
+          verifier: 'node verifiers/v.mjs',
+        },
+      ],
+    }),
+  );
+  return dir;
+}
+
+function facetGate(report: { checks: { status: string; message: string }[] }): {
+  status: string;
+  message: string;
+} | undefined {
+  return report.checks.find((c) => c.message.includes('facet check(s)'));
+}
+
+test('runBenchCheck warns when the facet-check count falls outside 2–8', async (t) => {
+  for (const count of [1, 12]) {
+    const report = await runBenchCheck({ dir: facetCountBench(t, count), log: () => {} });
+    const gate = facetGate(report);
+    assert.ok(gate, `expected a facet-count line for ${count} checks`);
+    assert.equal(gate.status, 'WARN', `${count} checks must warn`);
+    assert.ok(
+      gate.message.startsWith(`t1: ${count} facet check(s)`),
+      `message should name the count, got: ${gate.message}`,
+    );
+  }
+});
+
+test('runBenchCheck passes facet counts at both ends of the 2–8 contract', async (t) => {
+  for (const count of [2, 8]) {
+    const report = await runBenchCheck({ dir: facetCountBench(t, count), log: () => {} });
+    const gate = facetGate(report);
+    assert.ok(gate, `expected a facet-count line for ${count} checks`);
+    assert.equal(gate.status, 'PASS', `${count} checks must pass`);
+    assert.equal(report.failures, 0);
+  }
+});
+
 function gitRepoWithBug(t: import('node:test').TestContext): string {
   const dir = tmp(t, 'skillfit-freeze-src-');
   writeFileSync(join(dir, 'add.js'), 'export function add(a, b) {\n  return a - b;\n}\n');
