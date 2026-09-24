@@ -1,4 +1,7 @@
 import { createHash } from 'node:crypto';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { Condition, Executor } from './types.js';
 
 export interface JudgeResult {
@@ -75,32 +78,42 @@ export async function judgePair(
     baselineOutput: string;
     treatmentOutput: string;
     seed: string;
-    workdir: string;
   },
 ): Promise<JudgeResult> {
   const [first, second] = judgeOrder(args.seed);
-  const call = async (firstCondition: Condition) => {
-    const answerA = firstCondition === 'baseline' ? args.baselineOutput : args.treatmentOutput;
-    const answerB = firstCondition === 'baseline' ? args.treatmentOutput : args.baselineOutput;
-    const prompt = buildJudgePrompt(args.taskPromptText, args.rubricText ?? null, answerA, answerB);
-    const result = await judge.run(prompt, args.workdir);
-    const scores = parseScores(result.output);
-    return {
-      baseline: firstCondition === 'baseline' ? scores.a : scores.b,
-      treatment: firstCondition === 'baseline' ? scores.b : scores.a,
-      raw: result.output,
+  // A CLI judge has file tools, so its working directory is part of what it can see. Running it in
+  // the task directory would expose both arms' _output.md and their _result.json — which names the
+  // condition and the skill bundle hash — and the AB/BA swap would be blindfolding a judge that can
+  // just look. It gets a fresh directory holding only the two positionally-anonymized answers.
+  const judgeDir = mkdtempSync(join(tmpdir(), 'skillfit-judge-'));
+  try {
+    const call = async (firstCondition: Condition) => {
+      const answerA = firstCondition === 'baseline' ? args.baselineOutput : args.treatmentOutput;
+      const answerB = firstCondition === 'baseline' ? args.treatmentOutput : args.baselineOutput;
+      writeFileSync(join(judgeDir, 'answerA.md'), answerA, 'utf8');
+      writeFileSync(join(judgeDir, 'answerB.md'), answerB, 'utf8');
+      const prompt = buildJudgePrompt(args.taskPromptText, args.rubricText ?? null, answerA, answerB);
+      const result = await judge.run(prompt, judgeDir);
+      const scores = parseScores(result.output);
+      return {
+        baseline: firstCondition === 'baseline' ? scores.a : scores.b,
+        treatment: firstCondition === 'baseline' ? scores.b : scores.a,
+        raw: result.output,
+      };
     };
-  };
-  const forward = await call(first);
-  const reverse = await call(second);
-  const winner = (scores: { baseline: number; treatment: number }): number =>
-    Math.sign(scores.baseline - scores.treatment);
-  const consistent = winner(forward) === winner(reverse);
-  return {
-    baselineScore: (forward.baseline + reverse.baseline) / 2,
-    treatmentScore: (forward.treatment + reverse.treatment) / 2,
-    consistent,
-    firstCondition: first,
-    raw: `${forward.raw}\n--- reverse order ---\n${reverse.raw}`,
-  };
+    const forward = await call(first);
+    const reverse = await call(second);
+    const winner = (scores: { baseline: number; treatment: number }): number =>
+      Math.sign(scores.baseline - scores.treatment);
+    const consistent = winner(forward) === winner(reverse);
+    return {
+      baselineScore: (forward.baseline + reverse.baseline) / 2,
+      treatmentScore: (forward.treatment + reverse.treatment) / 2,
+      consistent,
+      firstCondition: first,
+      raw: `${forward.raw}\n--- reverse order ---\n${reverse.raw}`,
+    };
+  } finally {
+    rmSync(judgeDir, { recursive: true, force: true });
+  }
 }

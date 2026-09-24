@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -250,6 +250,35 @@ test('runExperiment aggregates blind judge scores per task', async (t) => {
   assert.equal(task.judge?.treatmentMean, null);
   assert.equal(manifest.judge?.model, 'judge-model');
   assert.ok(existsSync(join(runsRoot, 'test-group', 'review-r1', 'judge-trial-1.json')));
+});
+
+test('runExperiment never runs the judge inside the run group', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-runs-judgecwd-');
+  const cwds: string[] = [];
+  const listings: string[][] = [];
+  const judge: Executor = {
+    describe: () => ({ kind: 'api', model: 'judge-model' }),
+    run: (_prompt: string, workdir: string): Promise<ExecutorResult> => {
+      cwds.push(workdir);
+      listings.push(readdirSync(workdir).sort());
+      return Promise.resolve({
+        output:
+          '{"A": {"correct":true,"complete":true,"grounded":true}, "B": {"correct":false,"complete":false,"grounded":false}}',
+      });
+    },
+  };
+  await runExperiment({ ...plan({ runsRoot }), judge, trials: 1 });
+  const groupDir = join(runsRoot, 'test-group');
+  assert.ok(cwds.length > 0, 'the judge ran');
+  cwds.forEach((cwd, index) => {
+    assert.ok(
+      !cwd.startsWith(groupDir),
+      `judge call ${index} ran inside the run group (${cwd}), where both arms and their _result.json live`,
+    );
+    assert.deepEqual(listings[index], ['answerA.md', 'answerB.md']);
+  });
+  // The transcript is still written to the task directory, after the call rather than around it.
+  assert.ok(existsSync(join(groupDir, 'review-r1', 'judge-trial-1.json')));
 });
 
 test('runExperiment averages judge scores only over consistent trials', async (t) => {

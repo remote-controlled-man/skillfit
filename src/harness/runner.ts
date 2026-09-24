@@ -343,7 +343,9 @@ async function judgeTaskTrials(
     const baseline = outcomes.baseline.find((r) => r.trial === trial);
     const treatment = outcomes.treatment.find((r) => r.trial === trial);
     if (!baseline || !treatment || baseline.error !== null || treatment.error !== null) continue;
-    const judgeDir = join(plan.runsRoot, plan.runGroup, task.id);
+    // Output location only — the judge never runs here (see judgePair, which sandboxes its own cwd
+    // so it cannot read either arm's _result.json and infer which answer is which).
+    const taskDir = join(plan.runsRoot, plan.runGroup, task.id);
     const seed = `${plan.runGroup}:${task.id}:${trial}`;
     try {
       const result = await judgePair(judge, {
@@ -352,11 +354,10 @@ async function judgeTaskTrials(
         baselineOutput: baseline.output,
         treatmentOutput: treatment.output,
         seed,
-        workdir: judgeDir,
       });
       results.push(result);
       writeFileSync(
-        join(judgeDir, `judge-trial-${trial}.json`),
+        join(taskDir, `judge-trial-${trial}.json`),
         `${JSON.stringify({ trial, seed, ...result }, null, 2)}\n`,
         'utf8',
       );

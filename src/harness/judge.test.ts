@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
 import { judgeOrder, judgePair } from './judge.js';
 import type { Executor, ExecutorResult } from './types.js';
@@ -36,7 +37,6 @@ test('judgePair runs AB/BA and flags an order-biased judge as inconsistent', asy
       baselineOutput: 'baseline-answer',
       treatmentOutput: 'treatment-answer',
       seed,
-      workdir: '/tmp',
     });
     assert.equal(captured.length, 2, 'one call per presentation order');
     const [first] = judgeOrder(seed);
@@ -75,7 +75,6 @@ test('judgePair reports a consistent verdict when both orders agree', async () =
       baselineOutput: 'baseline-answer',
       treatmentOutput: 'treatment-answer',
       seed,
-      workdir: '/tmp',
     });
     assert.equal(result.consistent, true);
     assert.equal(result.baselineScore, 2);
@@ -91,7 +90,6 @@ test('judgePair includes the rubric when provided', async () => {
     baselineOutput: 'b',
     treatmentOutput: 't',
     seed: 's',
-    workdir: '/tmp',
   });
   assert.match(captured[0] ?? '', /Grading rubric:\nthe rubric/);
 });
@@ -104,7 +102,6 @@ test('judgePair rejects malformed judge responses', async () => {
         baselineOutput: 'b',
         treatmentOutput: 't',
         seed: 's',
-        workdir: '/tmp',
       }),
     /JSON object/,
   );
@@ -115,7 +112,6 @@ test('judgePair rejects malformed judge responses', async () => {
         baselineOutput: 'b',
         treatmentOutput: 't',
         seed: 's',
-        workdir: '/tmp',
       }),
     /not a boolean/,
   );
@@ -128,7 +124,39 @@ test('judgePair finds the checklist JSON amid prose and stray braces', async () 
     baselineOutput: 'baseline-answer',
     treatmentOutput: 'treatment-answer',
     seed: 's',
-    workdir: '/tmp',
   });
   assert.equal(result.consistent, false);
 });
+
+test('judgePair sandboxes the judge cwd to the two anonymized answers', async () => {
+  const listings: string[][] = [];
+  const cwds: string[] = [];
+  const judge: Executor = {
+    describe: () => ({ kind: 'mock', model: 'judge' }),
+    run: (_prompt: string, workdir: string): Promise<ExecutorResult> => {
+      // Inspect during the call: judgePair removes the directory afterwards.
+      cwds.push(workdir);
+      listings.push(readdirSync(workdir).sort());
+      return Promise.resolve({ output: `{"A": ${WIN}, "B": ${LOSE}}` });
+    },
+  };
+  await judgePair(judge, {
+    taskPromptText: 'task',
+    baselineOutput: 'baseline-answer',
+    treatmentOutput: 'treatment-answer',
+    seed: 'seed-blind',
+  });
+  assert.equal(cwds.length, 2, 'one call per presentation order');
+  for (const entries of listings) {
+    assert.deepEqual(entries, ['answerA.md', 'answerB.md']);
+    assert.ok(!entries.includes('_result.json'));
+    assert.ok(
+      !entries.some((name) => /baseline|treatment/i.test(name)),
+      'nothing in the judge cwd may name a condition',
+    );
+  }
+  for (const cwd of cwds) {
+    assert.ok(!existsSync(cwd), 'the sandbox is removed after the pair is judged');
+  }
+});
+

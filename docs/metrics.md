@@ -150,7 +150,11 @@ outcome optimization is a measured failure mode, not a hypothetical one.
 Implementation status (2026-09-22): blind pairwise with **AB/BA position-swapped double calls and
 winner-only-if-unanimous aggregation** is implemented (`--judge-agent` drives any matrix agent CLI, or
 `SKILLFIT_JUDGE=1` + API key; means are computed over unanimous trials only and `consistentTrials` is
-reported per task). The judge scores answers with a **binary checklist** (`correct` / `complete` /
+reported per task). Blinding is enforced on the filesystem, not just in the prompt (2026-09-25): a CLI
+judge has file tools, so it runs in a fresh temporary directory containing only `answerA.md` and
+`answerB.md`, never in the run group where both arms' `_output.md` and `_result.json` (which names the
+condition and the skill bundle hash) are reachable. The directory is removed after the pair is judged;
+`judge-trial-N.json` is written to the task directory afterwards. The judge scores answers with a **binary checklist** (`correct` / `complete` /
 `grounded`, 0–3 per answer) instead of a Likert scale. The k=3 majority-ensemble recommendation was
 **considered and rejected**: a position-biased judge can still win a 2-of-3 majority by order luck,
 which hides the bias inside the vote instead of surfacing it; the unanimous AB/BA gate is stricter and
