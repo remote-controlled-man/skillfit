@@ -154,6 +154,16 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   (children spawned `detached`) and uses `taskkill /T /F` on Windows, where there is no equivalent
   signal; both the executor and the verifier path use it.
 
+- **Multi-turn token usage accumulates instead of being overwritten (C7).** Each `turn.completed`
+  event replaced the running total rather than adding to it, so a session with more than one turn
+  reported only its last turn's usage. That corrupts ρ and cost-of-pass — the two claims
+  `docs/metrics.md` L3 says *are* provable at personal sample sizes, which makes them the last place
+  to under-report. The sibling token path (`kimi-usage.ts`) already summed the same kind of per-entry
+  records, so the two paths in one codebase disagreed about whether usage records are increments.
+  They are; this one now treats them that way. The code comment records the residual risk: if a surface
+  ever reports *cumulative* usage, accumulating would double-count, and the two readings are mutually
+  exclusive.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier

@@ -355,3 +355,22 @@ test('CliExecutor rejects when the child exits before draining stdin', async (t)
     /Failed to write the prompt .* on stdin/,
   );
 });
+
+test('CliExecutor accumulates token usage across multiple turns', async () => {
+  const events = [
+    { type: 'item.completed', item: { id: 'i1', type: 'agent_message', text: 'first' } },
+    { type: 'turn.completed', usage: { input_tokens: 1000, output_tokens: 100 } },
+    { type: 'item.completed', item: { id: 'i2', type: 'agent_message', text: 'second' } },
+    { type: 'turn.completed', usage: { input_tokens: 20, output_tokens: 5 } },
+    // A turn carrying no usage must not reset the running total.
+    { type: 'turn.completed' },
+  ];
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    shell: false,
+    triggerSkillName: 'banana-standards',
+  });
+  const result = await executor.run(toNdjson(events), process.cwd());
+  assert.deepEqual(result.tokens, { input: 1020, output: 105 }, 'usage records are per-turn increments');
+  assert.equal(result.output, 'first\nsecond');
+});

@@ -280,7 +280,16 @@ function parseStreamJsonTranscript(
         const output =
           typeof usageRecord.output_tokens === 'number' ? usageRecord.output_tokens : undefined;
         if (input !== undefined || output !== undefined) {
-          tokens = { input, output };
+          // Accumulate, matching kimi-usage.ts, which sums the same kind of per-entry usage records
+          // from the session wire log. Overwriting kept only the last turn, so a multi-turn session
+          // undercounted and corrupted both the token delta and cost-of-pass — the two claims
+          // docs/metrics.md L3 says are actually provable at personal sample sizes. If a surface ever
+          // reports *cumulative* usage instead, this is the line to revisit: the two readings are
+          // mutually exclusive and guessing wrong double-counts.
+          tokens = {
+            input: (tokens?.input ?? 0) + (input ?? 0),
+            output: (tokens?.output ?? 0) + (output ?? 0),
+          };
         }
       }
     }
