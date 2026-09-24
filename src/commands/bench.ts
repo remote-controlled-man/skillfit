@@ -959,7 +959,14 @@ function gitRun(
   repo: string,
   args: string[],
 ): { status: number | null; stdout: string; stderr: string } {
-  const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  // `core.quotePath=false` is what stops git from quoting paths. Without it a non-ASCII path
+  // comes back octal-escaped and wrapped in quotes — `"caf\303\251-notes.txt"` — and the later
+  // `git show` then fails on a path that does not exist. `-z` on ls-tree alone does not help.
+  const result = spawnSync('git', ['-c', 'core.quotePath=false', ...args], {
+    cwd: repo,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
   return { status: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
 }
 
@@ -1057,14 +1064,25 @@ function prepareFromCommit(options: BenchAddOptions, cwd: string): PreparedAdd {
   const parent = parentLookup.stdout.trim();
   const parentShort = parent.slice(0, 8);
 
-  let tree = gitMust(repo, ['ls-tree', '-r', '--format=%(objectsize) %(path)', parent])
-    .split('\n')
+  // `-z` gives NUL-separated records, so a path containing a newline or a tab still parses.
+  let tree = gitMust(repo, ['ls-tree', '-r', '-z', '--format=%(objectsize) %(path)', parent])
+    .split('\0')
     .filter(Boolean)
-    .map((line) => {
-      const match = line.match(/^(\S+)\s(.+)$/);
-      return { size: Number(match?.[1] ?? 0), path: match?.[2] ?? '' };
-    })
-    .filter((entry) => entry.path !== '');
+    .map((record) => {
+      const separator = record.indexOf(' ');
+      const rawSize = separator === -1 ? '' : record.slice(0, separator);
+      const path = separator === -1 ? record : record.slice(separator + 1);
+      const size = /^\d+$/.test(rawSize) ? Number(rawSize) : Number.NaN;
+      if (!Number.isFinite(size)) {
+        // ls-tree reports `-` for a gitlink. A non-numeric size used to poison the running total
+        // with NaN, and `NaN > MINED_MAX_BYTES` is false — so the size guard silently stopped
+        // guarding and a repository of any size would have been accepted.
+        throw new Error(
+          `Repo state at ${parentShort} has a gitlink (submodule) at "${path}" — --from-commit cannot mine submodules, because the fixture would need the submodule's own checkout. Vendor the files in, or narrow with --include.`,
+        );
+      }
+      return { size, path };
+    });
   if (options.include && options.include.length > 0) {
     const prefixes = options.include.map((prefix) => prefix.replace(/\/?$/, '/'));
     tree = tree.filter((entry) => prefixes.some((prefix) => entry.path.startsWith(prefix)));

@@ -1001,6 +1001,79 @@ test('runBenchAdd --from-commit rejects test-only and test-less commits', async 
   );
 });
 
+test('runBenchAdd --from-commit mines a repository with non-ASCII paths', async (t) => {
+  const repo = tmp(t, 'skillfit-mine-unicode-');
+  mkdirSync(join(repo, 'src'), { recursive: true });
+  writeFileSync(join(repo, 'src', 'add.js'), 'export function add(a, b) {\n  return a - b;\n}\n');
+  // git quotes and octal-escapes this in default ls-tree output, which used to reach `git show`
+  // verbatim and fail: no repository containing an accented filename could be mined at all.
+  writeFileSync(join(repo, 'src', 'café-notes.txt'), 'pricing edge cases\n');
+  writeFileSync(join(repo, 'package.json'), '{ "type": "module" }\n');
+  const git = (args: string[]): string =>
+    execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  git(['init', '-q']);
+  git(['config', 'user.email', 't@t']);
+  git(['config', 'user.name', 't']);
+  git(['add', '-A']);
+  git(['commit', '-qm', 'initial: buggy add']);
+
+  mkdirSync(join(repo, 'test'), { recursive: true });
+  writeFileSync(join(repo, 'src', 'add.js'), 'export function add(a, b) {\n  return a + b;\n}\n');
+  writeFileSync(
+    join(repo, 'test', 'add-fix.test.js'),
+    `import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { add } from '../src/add.js';\ntest('add sums', () => { assert.equal(add(1, 2), 3); });\n`,
+  );
+  git(['add', '-A']);
+  git(['commit', '-qm', 'fix: add was subtracting']);
+  const fixCommit = git(['rev-parse', 'HEAD']);
+
+  const benchDir = await freezeBench(t);
+  const result = await runBenchAdd({
+    benchDir,
+    fromCommit: fixCommit,
+    sourceDir: repo,
+    yes: true,
+    log: () => {},
+  });
+  assert.ok(result);
+  const mined = join(benchDir, 'fixtures', result.taskId, 'src', 'café-notes.txt');
+  assert.ok(existsSync(mined), 'the accented file is part of the parent state and must be mined');
+  assert.equal(readFileSync(mined, 'utf8'), 'pricing edge cases\n');
+});
+
+test('runBenchAdd --from-commit refuses a parent state containing a submodule', async (t) => {
+  const repo = tmp(t, 'skillfit-mine-gitlink-');
+  mkdirSync(join(repo, 'src'), { recursive: true });
+  writeFileSync(join(repo, 'src', 'add.js'), 'export function add(a, b) {\n  return a - b;\n}\n');
+  writeFileSync(join(repo, 'package.json'), '{ "type": "module" }\n');
+  const git = (args: string[]): string =>
+    execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  git(['init', '-q']);
+  git(['config', 'user.email', 't@t']);
+  git(['config', 'user.name', 't']);
+  git(['add', '-A']);
+  // A gitlink with no checkout behind it: ls-tree reports its size as `-`, which used to make the
+  // fixture total NaN and quietly disable the size guard.
+  git(['update-index', '--add', '--cacheinfo', '160000,0123456789abcdef0123456789abcdef01234567,vendor/lib']);
+  git(['commit', '-qm', 'initial: buggy add']);
+
+  mkdirSync(join(repo, 'test'), { recursive: true });
+  writeFileSync(join(repo, 'src', 'add.js'), 'export function add(a, b) {\n  return a + b;\n}\n');
+  writeFileSync(
+    join(repo, 'test', 'add-fix.test.js'),
+    `import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { add } from '../src/add.js';\ntest('add sums', () => { assert.equal(add(1, 2), 3); });\n`,
+  );
+  git(['add', '-A']);
+  git(['commit', '-qm', 'fix: add was subtracting']);
+  const fixCommit = git(['rev-parse', 'HEAD']);
+
+  const benchDir = await freezeBench(t);
+  await assert.rejects(
+    runBenchAdd({ benchDir, fromCommit: fixCommit, sourceDir: repo, yes: true, log: () => {} }),
+    /gitlink \(submodule\) at "vendor\/lib"/,
+  );
+});
+
 test('runBenchAdd --from-commit honors --include and dry-run', async (t) => {
   const { repo, fixCommit } = gitRepoWithFixHistory(t);
   const benchDir = await freezeBench(t);

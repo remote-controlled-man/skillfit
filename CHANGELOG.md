@@ -175,6 +175,21 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   indicators are handled. With one implementation, agreement is structural rather than something a
   test has to keep verifying, so the duplicated parser tests were consolidated rather than doubled.
 
+- **`bench add --from-commit` can mine a repository whose paths are not ASCII (C9).** git quotes and
+  octal-escapes non-ASCII paths by default, so `src/café-notes.txt` came back from `ls-tree` as
+  `"src/caf\303\251-notes.txt"` — quotes included — and the follow-up `git show` then failed on a path
+  that does not exist. Any repository with an accented, Cyrillic or CJK filename was unminable, and the
+  error named the mangled path rather than the cause. Every git call in the mining path now passes
+  `-c core.quotePath=false`, and `ls-tree` records are NUL-separated so a path containing a newline or
+  a tab also survives. `-z` alone does not suppress the quoting; that was verified before the fix
+  rather than assumed.
+
+- **`--from-commit` says why it cannot mine a submodule, instead of disabling its own size guard
+  (C9).** `ls-tree` reports a gitlink's size as `-`, `Number('-')` is `NaN`, the running total became
+  `NaN`, and `NaN > MINED_MAX_BYTES` is `false` — so one submodule anywhere in the parent state turned
+  off the 1 MB / 200-file fixture limit for the whole repository. A non-numeric size is now an error
+  naming the offending path and explaining that the fixture would need the submodule's own checkout.
+
 - **The harness no longer names an agent (C12).** `CliExecutor` decided whether to read token usage
   out of the session log with `if (this.label === 'kimi-code')` — agent-specific behaviour hardcoded
   in harness code, which `AGENTS.md` forbids outright. It is now a matrix capability,
