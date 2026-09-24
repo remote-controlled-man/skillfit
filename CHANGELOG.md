@@ -123,6 +123,12 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   gates that want it; a real (non-dry) run still always throws, since it cannot proceed. Documented in
   `--help` and in the `install` row of all five READMEs.
 
+- **`doctor --agent <typo>` exits 2 instead of 0 (C6).** Findings are advisory and a clean report
+  exits 0 by design, but an unrecognised `--agent` means the health check never ran. It printed to
+  stderr and returned, so a CI job running `doctor --agent kimi-code` against a renamed agent id read
+  a typo as a clean bill of health. Findings still never set an exit code; only usage errors do, using
+  this CLI's existing code 2.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier

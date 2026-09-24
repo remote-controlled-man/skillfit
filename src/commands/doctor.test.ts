@@ -287,9 +287,13 @@ test('runDoctor prints the report and never sets an exit code', async () => {
   assert.equal(process.exitCode, undefined);
 });
 
-test('runDoctor reports an unknown agent without failing', async () => {
+test('runDoctor exits non-zero on an unknown agent', async (t) => {
   const errors: string[] = [];
   const original = console.error;
+  const priorExitCode = process.exitCode;
+  t.after(() => {
+    process.exitCode = priorExitCode;
+  });
   console.error = (message?: unknown) => {
     errors.push(String(message));
   };
@@ -299,5 +303,22 @@ test('runDoctor reports an unknown agent without failing', async () => {
     console.error = original;
   }
   assert.match(errors.join('\n'), /Unknown agent "nope"\. Known agents: claude-code, codex, kimi-code/);
-  assert.equal(process.exitCode, undefined);
+  // Findings stay advisory at exit 0; a typo in --agent is a usage error that never ran the check,
+  // and exiting 0 there lets CI read it as a clean bill of health.
+  assert.equal(process.exitCode, 2);
+});
+
+test('runDoctor still exits 0 when the report contains FAIL findings', async (t) => {
+  const priorExitCode = process.exitCode;
+  t.after(() => {
+    process.exitCode = priorExitCode;
+  });
+  const original = console.log;
+  console.log = () => {};
+  try {
+    await runDoctor({ agent: 'claude-code' });
+  } finally {
+    console.log = original;
+  }
+  assert.equal(process.exitCode, undefined, 'doctor is read-only and advisory: findings never set an exit code');
 });

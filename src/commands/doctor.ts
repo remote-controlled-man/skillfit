@@ -467,6 +467,10 @@ export function formatDoctorReport(report: DoctorReport): string {
 export async function runDoctor(args: RunDoctorArgs = {}): Promise<void> {
   if (args.agent !== undefined && !agentIds().includes(args.agent)) {
     console.error(`Unknown agent "${args.agent}". Known agents: ${agentIds().join(', ')}`);
+    // A usage error, not a finding. Findings are advisory and always exit 0, but an unrecognised
+    // --agent means the health check never ran, and exiting 0 there lets CI read a typo as a clean
+    // bill of health. 2 is this CLI's usage-error code.
+    process.exitCode = 2;
     return;
   }
   console.log(formatDoctorReport(collectDoctorReport({ agent: args.agent })));
