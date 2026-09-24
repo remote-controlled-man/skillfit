@@ -4,6 +4,7 @@ import {
   buildWarnings,
   formatDeltaPp,
   formatPassRate,
+  formatPp1,
   renderSummary,
   verdictFor,
   type RunManifest,
@@ -155,9 +156,22 @@ test('renderSummary prints the table, significance block, and indicative scale n
   assert.match(output, /review-r1\s+0\/3 \(0%\)\s+3\/3 \(100%\)\s+\+100pp\s+inconclusive/);
   assert.match(output, /OVERALL/);
   assert.match(output, /Significance \(overall\): 3 improved vs 0 regressed discordant pair\(s\), McNemar exact p=0\.2500/);
-  assert.match(output, /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[\+100pp, \+100pp\]/);
+  assert.match(output, /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[\+100\.0pp, \+100\.0pp\]/);
+  assert.match(output, /Run resolution: this bench resolves effects ≳ ±0\.0pp/);
   assert.match(output, /Scale: 1 task\(s\) × 3 trials per condition — below the conclusive bar/);
   assert.match(output, /Manifest: runs\/g\/manifest\.json/);
+});
+
+test('renderSummary reports the run resolution from the CI half-width', () => {
+  const base = manifestWith([taskSummary('a', 0, 3, 3), taskSummary('b', 1, 3, 3)]);
+  base.overall.stats.deltaCi = { point: 0.283, lo: -0.044, hi: 0.61, resamples: 2000 };
+  const manifest: RunManifest = { ...base, warnings: buildWarnings(base) };
+  const output = renderSummary(manifest, 'runs/g/manifest.json');
+  // Integer rounding printed [-4pp, +61pp], which hides both that the interval straddles zero and
+  // how wide it is — the two things a reader needs in order not to over-read the run.
+  assert.match(output, /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[-4\.4pp, \+61\.0pp\]/);
+  assert.match(output, /Run resolution: this bench resolves effects ≳ ±32\.7pp/);
+  assert.match(output, /anything smaller is indistinguishable from zero here/);
 });
 
 test('renderSummary shows a significant overall verdict when discordance suffices', () => {
@@ -178,6 +192,11 @@ test('format helpers', () => {
   assert.equal(formatDeltaPp(2 / 3), '+67pp');
   assert.equal(formatDeltaPp(-1 / 3), '-33pp');
   assert.equal(formatDeltaPp(0), '0pp');
+  // Interval bounds keep a decimal: the task table does not need it, a CI does.
+  assert.equal(formatPp1(-0.044), '-4.4pp');
+  assert.equal(formatPp1(0.61), '+61.0pp');
+  assert.equal(formatPp1(0), '0.0pp');
+  assert.equal(formatPp1(1), '+100.0pp');
 });
 
 test('buildWarnings flags a task the baseline never passes (floor)', () => {

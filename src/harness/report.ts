@@ -96,6 +96,17 @@ export function formatDeltaPp(delta: number): string {
   return `${pp > 0 ? '+' : ''}${pp}pp`;
 }
 
+/**
+ * Percentage points to one decimal. Interval bounds need this: rounding a CI to whole points turns
+ * [-0.044, 0.610] into [-4pp, +61pp], which reports the run's resolution as ±33pp when it is ±32.7 —
+ * and at the small sample sizes this tool targets, the tenths are the difference between "resolves a
+ * realistic effect" and "resolves nothing".
+ */
+export function formatPp1(value: number): string {
+  const pp = Math.round(value * 1000) / 10;
+  return `${pp > 0 ? '+' : ''}${pp.toFixed(1)}pp`;
+}
+
 export function formatP(p: number): string {
   return p < 0.0001 ? '<0.0001' : p.toFixed(4);
 }
@@ -203,9 +214,18 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   );
   lines.push(
     stats.deltaCi
-      ? `Δpass 95% CI (paired bootstrap, ${stats.deltaCi.resamples} resamples): [${formatDeltaPp(stats.deltaCi.lo)}, ${formatDeltaPp(stats.deltaCi.hi)}]`
+      ? `Δpass 95% CI (paired bootstrap, ${stats.deltaCi.resamples} resamples): [${formatPp1(stats.deltaCi.lo)}, ${formatPp1(stats.deltaCi.hi)}]`
       : 'Δpass 95% CI: n/a (no trials)',
   );
+  if (stats.deltaCi) {
+    // The half-width is the run's resolution: the smallest effect this bench, at this sample size,
+    // could distinguish from zero. Without it a wide interval reads as "no effect" rather than as
+    // "no measurement". Required by docs/metrics.md's verdict protocol.
+    const halfWidthPp = ((stats.deltaCi.hi - stats.deltaCi.lo) / 2) * 100;
+    lines.push(
+      `Run resolution: this bench resolves effects ≳ ±${halfWidthPp.toFixed(1)}pp (half-width of the Δpass CI); anything smaller is indistinguishable from zero here`,
+    );
+  }
   const anyScores = manifest.tasks.some((task) => task.scoreDelta !== null);
   if (anyScores) {
     lines.push(

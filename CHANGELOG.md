@@ -184,6 +184,15 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   agent ids so the rule survives future edits. Matrix `verifiedAt` bumped to 2026-09-25; the
   capability depends on the session log location already documented at `sessions.docs` for that agent.
 
+- **The report states the run's resolution, and CI bounds keep a decimal (B4).** `docs/metrics.md`'s
+  verdict protocol requires the CI half-width alongside every delta, as "this bench resolves effects
+  ≳ ±Xpp"; no such line existed. Worse, `formatDeltaPp` rounded to whole percentage points and was
+  applied to the interval bounds, so `[-0.044, 0.610]` printed as `[-4pp, +61pp]` — which hides both
+  that the interval straddles zero and how wide it is, the two things a reader needs in order not to
+  over-read an underpowered run. Bounds now print to one decimal via `formatPp1` and a `Run
+  resolution` line follows the CI. The task table keeps whole points, where the precision is noise.
+  This closes the last open row in the audit's document-vs-code divergence table.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier
