@@ -834,6 +834,16 @@ export async function runBenchAdd(
     ...(options.shouldTrigger !== undefined ? { shouldTrigger: options.shouldTrigger } : {}),
   };
 
+  if (options.verifierCmd) {
+    // The string is not used once and discarded: it is written into a generated .mjs and re-executed
+    // with a shell on every later `bench check` and `eval`. Disclose it before writing, in both the
+    // dry-run and the real path, because the scripted `--yes` case is the one where nobody is
+    // reading a prompt.
+    log(
+      `Note: --verifier-cmd ${JSON.stringify(options.verifierCmd)} is written into verifiers/${taskId}.mjs and re-executed with a shell on every later \`bench check\` and \`eval\` — it outlives this command.`,
+    );
+  }
+
   if (options.dryRun) {
     log(`bench add plan (dry run) — task "${taskId}" into ${benchDir}:`);
     log(`  + fixtures/${taskId}/ (${prepared.planFixtureLine})`);

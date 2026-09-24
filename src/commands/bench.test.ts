@@ -871,6 +871,10 @@ test('runBenchAdd --freeze dry-run writes nothing', async (t) => {
   assert.equal(result, null);
   assert.ok(!existsSync(join(benchDir, 'fixtures', 'add-bug')));
   assert.match(lines.join('\n'), /dry run/);
+  // The command string is persisted into a generated verifier and re-run under a shell on every
+  // later check and eval, so it is disclosed before anything is written.
+  assert.match(lines.join('\n'), /--verifier-cmd "node --test" is written into verifiers\/add-bug\.mjs/);
+  assert.match(lines.join('\n'), /re-executed with a shell/);
 });
 
 test('runBenchAdd works in a non-git source directory (filtered copy)', async (t) => {
