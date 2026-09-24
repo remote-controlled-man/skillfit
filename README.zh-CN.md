@@ -83,7 +83,7 @@ cp -r skills/skillfit ~/.agents/skills/
 | `report` | 从本地会话历史统计 skill 的真实使用：每个 skill 的触发次数、"从未触发"清单（纯路由/上下文税） | 从不 |
 | `eval <skill>` | 默认（`--mode inject`）：配对 baseline/treatment，确定性 verifier + 可选盲评，token 成本差值，判定走 McNemar 精确检验 + 配对 bootstrap CI，bench 发出 checks 时另有分级 facet 分数 CI。`--mode trigger`：skill 改为真实安装而不注入 prompt，从 transcript 机械判定触发召回率 / 误触发率 | 仅本地 `runs/` |
 | `bench` | `init` 生成带可运行示例任务的骨架；`check` 离线校验（verifier 自测、oracle/NOP 闸门、mock 臂探针、fixture 体积、触发标签覆盖）；`add --freeze` 把你刚目击的翻车冻成永久 bench 任务，`--decompose` 可让 agent 起草 verifier + 参考解，两道闸门都过才接纳 | `init`/`add` 确认后才写；`check` 从不 |
-| `install` | 受管区域规则写入（`<!-- SKILLFIT_START/END -->`，幂等原子）、skill 复制带冲突保护、内容哈希锁定的 lockfile、安装后校验 | 确认后才写 |
+| `install` | 受管区域规则写入（`<!-- SKILLFIT_START/END -->`，幂等）、skill 复制带冲突保护、内容哈希锁定的 lockfile、安装后校验。先暂存再重命名，中途失败则什么都不落地；原文件保留在 `<file>.skillfit-bak`，且首份备份优先，后续更新不会覆盖它 | 确认后才写 |
 
 ## 自带 bench
 

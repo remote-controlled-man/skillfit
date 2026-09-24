@@ -83,7 +83,7 @@ Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capabil
 | `report` | Skill usage receipts from local session history: fires per skill per agent, and the never-fired list (the pure routing/context tax) | Never |
 | `eval <skill>` | Default (`--mode inject`): paired baseline/treatment runs, deterministic verifier + optional blind LLM judge, token-cost delta, verdicts via McNemar exact test + paired bootstrap CI, plus graded facet-score CIs when the bench emits checks. `--mode trigger`: installs the skill instead of injecting it and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
 | `bench` | `init` scaffolds a bench directory with a working example task; `check` validates a bench offline (verifier self-tests, oracle/NOP gates, mock-arm probes, fixture hygiene, trigger-label coverage); `add --freeze` turns a failure you just watched into a permanent bench task, and `--decompose` has an agent draft the verifier + oracle, admitted only if both gates pass | `init`/`add` after confirmation; `check` never |
-| `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent, atomic), skill copy with conflict protection, commit-pinned lockfile, post-install verification | Only after confirmation |
+| `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent), skill copy with conflict protection, commit-pinned lockfile, post-install verification. Writes are staged then renamed, so a failure part-way applies nothing; your original is kept at `<file>.skillfit-bak` and the first backup wins, so later updates cannot overwrite it | Only after confirmation |
 
 ## Bring your own bench
 

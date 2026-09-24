@@ -233,6 +233,119 @@ test('a skill update from the same profile overwrites a pristine install', async
   assert.equal(lock.entries['codex:skill:commit-message']?.profileVersion, '1.1.0');
 });
 
+test('a second update preserves the first backup instead of clobbering it', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const profilesCopy = path.join(project, 'profiles-copy');
+  await fs.cp(PROFILES_DIR, profilesCopy, { recursive: true });
+  const skillSrc = path.join(profilesCopy, 'recommended', 'skills', 'commit-message', 'SKILL.md');
+  const skillTarget = path.join(home, '.agents', 'skills', 'commit-message', 'SKILL.md');
+  const backup = skillTarget + BACKUP_SUFFIX;
+
+  const installVersion = async (body: string) => {
+    await fs.writeFile(skillSrc, `---\nname: commit-message\ndescription: ${body}\n---\n${body}\n`);
+    await runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy }));
+  };
+
+  await installVersion('v1 body');
+  assert.equal(await exists(backup), false, 'a first install creates nothing to back up');
+
+  await installVersion('v2 body');
+  assert.match(await fs.readFile(skillTarget, 'utf8'), /v2 body/);
+  assert.match(await fs.readFile(backup, 'utf8'), /v1 body/, 'the first update backs up v1');
+
+  await installVersion('v3 body');
+  assert.match(await fs.readFile(skillTarget, 'utf8'), /v3 body/);
+  // The backup exists so a user can get their pre-skillfit file back. Overwriting it on every update
+  // means the second update destroys the only copy of the original.
+  assert.match(
+    await fs.readFile(backup, 'utf8'),
+    /v1 body/,
+    'the original must survive later updates',
+  );
+});
+
+test('a staging failure applies nothing, not even the items staged before it', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const profilesCopy = path.join(project, 'profiles-copy');
+  await fs.cp(PROFILES_DIR, profilesCopy, { recursive: true });
+  const agentsMd = path.join(home, '.codex', 'AGENTS.md');
+  const manifestPath = path.join(profilesCopy, 'recommended', 'profile.json');
+  const lockPath = path.join(home, LOCKFILE_NAME);
+
+  // Block the skill write by making its parent directory a regular file. readIfExists swallows the
+  // resulting error, so planning still succeeds and the failure lands inside the write phase —
+  // after the rules item has already been staged.
+  await fs.mkdir(path.join(home, '.agents', 'skills'), { recursive: true });
+  await fs.writeFile(path.join(home, '.agents', 'skills', 'commit-message'), 'not a directory\n');
+
+  // Bump the profile version so the rules block changes and the rules item is a real write.
+  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as { version: string };
+  manifest.version = '1.1.0';
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+
+  await assert.rejects(
+    runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy })),
+    'the failure must surface, not be swallowed',
+  );
+
+  assert.equal(await exists(agentsMd), false, 'the rules file must not be written when a later item fails');
+  assert.equal(await exists(lockPath), false, 'the lockfile must not record an install that did not happen');
+});
+
+test('a stale lockfile entry reconciles on the next successful run', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const profilesCopy = path.join(project, 'profiles-copy');
+  await fs.cp(PROFILES_DIR, profilesCopy, { recursive: true });
+  const skillSrc = path.join(profilesCopy, 'recommended', 'skills', 'commit-message', 'SKILL.md');
+  const lockPath = path.join(home, LOCKFILE_NAME);
+
+  await runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy }));
+
+  // Simulate what an older partial run left behind: the rules file on disk is current, but the
+  // lockfile entry describing it is stale. Nothing rewrites a skipped item, so without a reconcile
+  // step this record stays wrong forever.
+  const stale = JSON.parse(await fs.readFile(lockPath, 'utf8')) as {
+    entries: Record<string, { profileVersion: string; sha256: string }>;
+  };
+  const rulesEntry = stale.entries['codex:rules'];
+  assert.ok(rulesEntry);
+  rulesEntry.profileVersion = '0.0.1';
+  rulesEntry.sha256 = 'deadbeef';
+  await fs.writeFile(lockPath, JSON.stringify(stale, null, 2));
+
+  // The skill changes, so this run has something to write and reaches the recording step.
+  await fs.writeFile(skillSrc, '---\nname: commit-message\ndescription: v2\n---\nv2 body\n');
+  const manifestPath = path.join(profilesCopy, 'recommended', 'profile.json');
+  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as { version: string };
+  manifest.version = '1.1.0';
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+
+  await runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy }));
+
+  const lock = await readLock(home);
+  assert.equal(lock.entries['codex:rules']?.profileVersion, '1.1.0', 'the skipped item is reconciled');
+  assert.match(lock.entries['codex:rules']?.sha256 ?? '', /^[0-9a-f]{64}$/, 'and its hash is restored');
+  assert.equal(lock.entries['codex:skill:commit-message']?.profileVersion, '1.1.0');
+});
+
+test('the lockfile is backed up before it is rewritten', async (t) => {
+  const { home, project } = await tempDirs(t);
+  await runInstall(makeOpts(home, project, { agent: 'codex' }));
+  const lockPath = path.join(home, LOCKFILE_NAME);
+  const before = await fs.readFile(lockPath, 'utf8');
+
+  const profilesCopy = path.join(project, 'profiles-copy');
+  await fs.cp(PROFILES_DIR, profilesCopy, { recursive: true });
+  const manifestPath = path.join(profilesCopy, 'recommended', 'profile.json');
+  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as { version: string };
+  manifest.version = '1.1.0';
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+  await runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy }));
+
+  assert.equal(await fs.readFile(lockPath + BACKUP_SUFFIX, 'utf8'), before, 'the previous lockfile survives');
+  assert.match(await fs.readFile(lockPath, 'utf8'), /1\.1\.0/);
+});
+
 test('dry-run prints the plan and writes nothing', async (t) => {
   const { home, project } = await tempDirs(t);
   const { lines, log } = captureLogs();

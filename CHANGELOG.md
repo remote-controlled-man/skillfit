@@ -91,6 +91,31 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   `PASS calibration: 0/0 task(s) in the discriminative band`. Errored runs are excluded from the
   difficulty rate rather than counted as failures.
 
+- **`install` no longer destroys your original backup, and no longer leaves partial state (C1).** Four
+  real defects, found by reproducing the audit's claim rather than taking it at face value — and the
+  headline claim did *not* reproduce (see below).
+  - `.skillfit-bak` is a single slot and every update overwrote it, so a second `install` replaced the
+    user's pre-skillfit original with skillfit's own previous version. The one file the suffix exists to
+    protect was the one it destroyed. Backups are now taken at most once per path: the earliest copy
+    wins.
+  - Writes were applied one file at a time, so a failure part-way left earlier items on disk while
+    `validateWrites` and the lockfile update never ran. They are now staged beside their targets and
+    renamed in one pass; a staging failure removes every staged file and applies nothing.
+  - The lockfile was written with no backup, against the "backup before write, no exceptions" rule. It
+    is now backed up to `skillfit.lock.json.skillfit-bak` first. Its backup *is* overwritten on each
+    run, deliberately: for skillfit's own state the useful rollback target is the previous version,
+    whereas for user content it is the earliest.
+  - A run that failed part-way left the lockfile describing an older state than disk, and because later
+    runs skip items whose content already matches, that stale entry was never corrected. Entries for
+    skipped items that skillfit already owns are now refreshed on the next successful run, preserving
+    their original `installedAt`. Unmanaged skips (a `CLAUDE.md` bridge import skillfit did not write)
+    are still never claimed.
+  - **Not fixed, because it does not happen:** the audit claimed a partial write leaves `install`
+    permanently conflicting while reporting "Nothing was written". Reproduced and disproved — the
+    conflict path requires a file that *differs* from the profile with no lockfile entry, and skillfit's
+    own partial writes match the profile, so the next run adopts them and completes. The second run in
+    the reproduction recovered cleanly.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier

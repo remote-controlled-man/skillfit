@@ -137,7 +137,11 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
   }
   log(`Post-install validation passed (${writes.length} item(s) checked).`);
 
-  recordEntries(lock, writes, manifest, now().toISOString());
+  recordEntries(lock, items, manifest, now().toISOString());
+  // The lockfile is skillfit's own state rather than user content, so its backup is the previous
+  // version (the rollback target) and is deliberately overwritten — unlike content backups, which
+  // keep the earliest copy. AGENTS.md requires a backup before every write, and this one is a write.
+  if (existsSync(lockPath)) await fs.copyFile(lockPath, lockPath + BACKUP_SUFFIX);
   await writeFileAtomic(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
   log(`Lockfile updated: ${lockPath}`);
   log('Install complete.');
@@ -482,13 +486,45 @@ function printPlan(log: (line: string) => void, manifest: ProfileManifest, scope
 }
 
 async function executeWrites(writes: PlanItem[], log: (line: string) => void): Promise<void> {
-  for (const item of writes) {
-    for (const file of item.files) {
-      if (file.backup) await fs.copyFile(file.path, file.path + BACKUP_SUFFIX);
-      await writeFileAtomic(file.path, file.content);
-      log(`  wrote ${file.path}${file.backup ? ` (backup: ${file.path}${BACKUP_SUFFIX})` : ''}`);
+  // Two phases. Everything is backed up and staged beside its target first, so a failure while
+  // generating content leaves the install untouched; only then does anything become visible.
+  // writeFileAtomic is atomic per file, but a sequence of them is not atomic as a whole.
+  const staged: { target: string; tmp: string; backedUp: string | null }[] = [];
+  try {
+    for (const item of writes) {
+      for (const file of item.files) {
+        const backedUp = file.backup ? await backupOnce(file.path) : null;
+        const tmp = `${file.path}.${process.pid}.skillfit-staged`;
+        await fs.mkdir(path.dirname(file.path), { recursive: true });
+        await fs.writeFile(tmp, file.content, 'utf8');
+        staged.push({ target: file.path, tmp, backedUp });
+      }
     }
+  } catch (error) {
+    for (const entry of staged) await fs.rm(entry.tmp, { force: true });
+    throw error;
   }
+  for (const entry of staged) {
+    await fs.rename(entry.tmp, entry.target);
+    log(`  wrote ${entry.target}${entry.backedUp ? ` (backup: ${entry.backedUp})` : ''}`);
+  }
+}
+
+/**
+ * Back up a file at most once. `.skillfit-bak` is a single slot, and the copy worth keeping is the
+ * user's pre-skillfit original: overwriting it on a later update would destroy the only copy of the
+ * content the suffix exists to protect. Returns the backup path when one was created, else null.
+ */
+async function backupOnce(target: string): Promise<string | null> {
+  const backup = target + BACKUP_SUFFIX;
+  try {
+    await fs.access(backup);
+    return null;
+  } catch {
+    // absent — take the backup
+  }
+  await fs.copyFile(target, backup);
+  return backup;
 }
 
 async function writeFileAtomic(target: string, content: string): Promise<void> {
@@ -518,8 +554,16 @@ async function validateWrites(writes: PlanItem[]): Promise<string[]> {
   return problems;
 }
 
-function recordEntries(lock: Lockfile, writes: PlanItem[], manifest: ProfileManifest, installedAt: string): void {
-  for (const item of writes) {
+function recordEntries(lock: Lockfile, items: PlanItem[], manifest: ProfileManifest, installedAt: string): void {
+  for (const item of items) {
+    if (item.action === 'conflict') continue;
+    const prior = lock.entries[item.lockKey];
+    // A skip means the file on disk already matches what this profile wants. Refreshing its entry is
+    // what lets a run that failed partway — content applied, lockfile not yet written — reconcile on
+    // the next success instead of leaving a stale profileVersion behind permanently. Only refresh
+    // keys already recorded: a skip on an unmanaged file (a CLAUDE.md bridge import skillfit did not
+    // write) must not be claimed as ours.
+    if (item.action === 'skip' && prior === undefined) continue;
     lock.entries[item.lockKey] = {
       agent: item.agent,
       kind: item.kind,
@@ -527,7 +571,8 @@ function recordEntries(lock: Lockfile, writes: PlanItem[], manifest: ProfileMani
       sha256: item.sha256,
       profile: manifest.name,
       profileVersion: manifest.version,
-      installedAt,
+      // A refreshed skip was installed earlier; keep the original timestamp.
+      installedAt: item.action === 'skip' && prior !== undefined ? prior.installedAt : installedAt,
     };
   }
 }
