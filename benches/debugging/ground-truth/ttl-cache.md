@@ -2,6 +2,13 @@
 
 Fixture layout: `src/ttl-cache.mjs` holds the buggy cache; `test/basic.test.mjs` is the single visible test (it passes even against the buggy code — the real grading is the verifier's behavioral checks).
 
+**Task class: diagnosis.** The prompt reports three user-visible incidents and states the contract they
+violate; it does **not** list the defects below. That is deliberate — an earlier version enumerated all
+four bugs in the prompt, which made this a spec-implementation task wearing a debugging costume and put
+it at risk of saturating (any agent that can follow a precise written list passes). The list here is the
+answer key for authors and the judge rubric, not something the agent under test sees. `range-parser` is
+the bench's one deliberately spec-style task, and its ground truth explains the distinction.
+
 ## Bug list (4, all in `src/ttl-cache.mjs`)
 
 1. **Falsy values treated as missing**: `get()` does `if (!entry || !entry.value) return undefined;`, so cached `false`, `0`, and `''` all read as absent. The entry check must be `!entry` only.

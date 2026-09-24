@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "debugging",
-  "description": "Diagnose-and-fix tasks graded by command verifiers that run behavioral checks and the run directory's own test suite against the fixed code; includes one feature-implementation task (feat-slug) as a negative trigger control.",
+  "description": "Six command-graded tasks: four diagnosis tasks whose prompts report symptoms and state the contract but withhold the defect list (ttl-cache, debug-redaction, async-queue, chunked-decoder), one deliberately spec-style implementation task that states its acceptance criteria outright (range-parser — see its ground truth for why), and one feature-implementation task (feat-slug) that serves as the bench's negative trigger control.",
   "tasks": [
     {
       "id": "ttl-cache",

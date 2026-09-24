@@ -1,5 +1,20 @@
 # Ground truth — range-parser
 
+**Task class: spec implementation, deliberately.** This is the one task in the bench that states its
+acceptance criteria outright instead of asking the agent to infer them, and it is kept that way on
+purpose. The fixture ships a stub whose single visible test asserts the *wrong* behaviour
+(`parseRange('3, 1, 2')` → `[3, 1, 2]`, unsorted), so there is no buggy-but-working implementation to
+diagnose — the task is to write the thing to a written contract and replace the test that encoded the
+stub's behaviour. Enumerating the contract is the task, not a leak: the eight checks assert specific
+`TypeError` and `RangeError` behaviour that an agent could not otherwise know to implement, so
+withholding the list would make the task unwinnable rather than harder.
+
+The other five tasks in this bench are diagnosis tasks and their prompts must not enumerate defects the
+way this one legitimately enumerates requirements. When porting a task of your own, decide which of the
+two you are writing before you write the prompt — a spec task measures "can this agent follow a precise
+contract", a diagnosis task measures "can this agent find what is wrong", and a prompt that mixes them
+measures neither cleanly and tends to saturate.
+
 Fixture layout: `src/range-parser.mjs` holds a naive stub; `test/basic.test.mjs` holds one visible test.
 
 ## Bug list (spec violations in the stub)

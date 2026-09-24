@@ -141,6 +141,19 @@ listed here.
   near "test"/"coverage". Effect on the mock arms: review-r1's baseline drops from 1/3 to 1/4 because it
   reports the C-style-loop decoy, and pooled Δscore moves 7/12 → 9/16. Pass/fail verdicts are unchanged.
 
+- **`debugging/ttl-cache` is a diagnosis task again; `range-parser` is labelled as the bench's one
+  spec task.** The ttl-cache prompt enumerated all four seeded defects as "user reports", one per
+  verifier check, so it measured whether an agent could follow a precise written list rather than
+  whether it could find what was wrong — and it saturated for the same reason. It now reports three
+  user-visible incidents and states the contract they violate, withholding the defect list; the list
+  stays in `ground-truth/` as the author's answer key and the judge rubric. `range-parser` was flagged
+  by the same audit row but is a different case: its fixture ships a stub whose visible test asserts
+  the *wrong* behaviour, so there is nothing working to diagnose, and its eight checks assert specific
+  `TypeError`/`RangeError` behaviour an agent could not otherwise know to implement. Enumerating that
+  contract is the task, not a leak, so it is kept and labelled rather than de-specced — both ground
+  truth files now name their task class and explain the distinction, and `bench.json`'s description
+  records the mix. Difficulty changed for ttl-cache, so re-run `--calibrate` before making new claims.
+
 ## [0.3.0] — 2026-09-22
 
 A large capability wave. Everything in 0.2.0 plus:
