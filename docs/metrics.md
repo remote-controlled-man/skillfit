@@ -79,9 +79,13 @@ is the next milestone**.)
   from disk — see evidence/2026-09-trigger-snapshot-correction.md). Trigger-mode prompt variants live in
   per-task `promptTrigger` files.
 - **Environment fidelity caveats**: routing quality depends on the *whole installed skill set* (lexical
-  competition), so L1 runs install the skill into a sandboxed skills directory containing the user's real
-  set, not an isolated one. A triggered skill cannot unload mid-session — one false trigger taxes the rest
-  of the session, which is why false-trigger rate is a first-class metric.
+  competition). (Status: **spec, not implemented** — the harness installs only the skill under test into an
+  otherwise empty sandboxed skills directory, so measured recall is *optimistic*: it faces no competition from
+  the user's real set. Reproducing that competition means fingerprinting and copying a user's installed skills
+  into a sandbox, which raises privacy questions this project has not settled; it is tracked as a future
+  enhancement rather than built here. Read trigger recall as an upper bound until then.) A triggered skill
+  cannot unload mid-session — one false trigger taxes the rest of the session, which is why false-trigger rate
+  is a first-class metric.
 
 ## L2 — conditional efficacy (the paired A/B core)
 

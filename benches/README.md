@@ -113,6 +113,8 @@ Inject mode answers "does the skill help when it is used?". Trigger mode answers
 
 In trigger mode the skill is **installed** into each run directory (the agent's project skills directory from the capability matrix, e.g. `.kimi-code/skills/`), never injected into the prompt. The agent runs headless with structured (stream-json) output, and skillfit detects invocation mechanically from the transcript: a call to the agent's skill tool naming the skill under test (see `headless.streamJson` in `src/matrix/agents.json`). The raw transcript is saved as `_transcript.jsonl` for audit.
 
+Only the skill under test is installed — the run directory's skills folder is otherwise empty. Real routing quality depends on lexical competition with everything else the user has installed, so **read trigger recall as an upper bound**. Reproducing that competition would mean copying the user's real skill set into a sandbox, which is tracked as a future enhancement rather than done here (see `docs/metrics.md` L1).
+
 Every task needs a `shouldTrigger` label:
 
 - `true` — in-domain tasks. Recall = fired / should-trigger runs.
