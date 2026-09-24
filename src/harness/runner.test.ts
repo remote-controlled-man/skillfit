@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -385,10 +385,58 @@ test('runExperiment drops an errored trial from both arms instead of scoring it 
   );
   assert.ok(
     manifest.warnings.some(
-      (w) => w.includes('"review-r1" (baseline)') && w.includes('executor error'),
+      (w) => w.includes('"review-r1" (baseline)') && w.includes('executor or verifier error'),
     ),
     'the exclusion is surfaced, not silent',
   );
+});
+
+test('runExperiment excludes a trial whose verifier could not be spawned', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-runs-nospawn-');
+  const benchDir = tmp(t, 'skillfit-bench-nospawn-');
+  cpSync(BUNDLED_CODE_REVIEW, benchDir, { recursive: true });
+  const benchJson = JSON.parse(readFileSync(join(benchDir, 'bench.json'), 'utf8')) as {
+    tasks: Array<{ id: string; verifier: string }>;
+  };
+  const broken = benchJson.tasks[0];
+  assert.ok(broken);
+  // Swap only the executable, so the path token still resolves: this is the shape a Windows author
+  // hits with `"verifier": "npm test"` (ENOENT) or a `.cmd` wrapper (EINVAL). There is no exit code,
+  // so there is no verdict — and "no verdict" used to be recorded as the agent failing the task.
+  broken.verifier = `no-such-verifier-binary ${broken.verifier.split(/\s+/).slice(1).join(' ')}`;
+  writeFileSync(join(benchDir, 'bench.json'), `${JSON.stringify(benchJson, null, 2)}\n`);
+
+  const manifest = await runExperiment({
+    bench: loadBench(benchDir),
+    skill: collectSkillBundle(makeSkillSync(runsRoot), 'review-skill'),
+    executor: new MockExecutor(),
+    trials: 1,
+    runsRoot,
+    runGroup: 'test-group',
+  });
+
+  const task = manifest.tasks[0];
+  assert.ok(task);
+  assert.equal(task.id, broken.id);
+  assert.equal(task.conditions.baseline.errors, 1);
+  assert.equal(task.conditions.baseline.passes, 0);
+  assert.equal(task.conditions.baseline.trials, 0, 'an unrunnable verifier grades nothing');
+  assert.equal(task.conditions.treatment.trials, 0, 'and its paired arm is dropped with it');
+  assert.ok(
+    manifest.warnings.some((w) => w.includes(`"${broken.id}" (baseline)`) && w.includes('executor or verifier error')),
+    'the exclusion is surfaced, not silent',
+  );
+
+  const result = JSON.parse(
+    readFileSync(
+      join(runsRoot, 'test-group', broken.id, 'baseline', 'trial-1', '_result.json'),
+      'utf8',
+    ),
+  ) as { error: string | null; passed: boolean; verifierExitCode: number | null };
+  assert.equal(result.passed, false);
+  assert.equal(result.verifierExitCode, null);
+  assert.match(result.error ?? '', /verifier could not be started/);
+  assert.match(result.error ?? '', /spawned without a shell/);
 });
 
 test('runExperiment interleaves conditions within each trial and records sampling', async (t) => {

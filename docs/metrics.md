@@ -46,7 +46,8 @@ A bench that cannot discriminate must not produce verdicts.
   (implemented).
 - **Floor**: warn when baseline pass rate ≤ 10% (implemented) — the task is too hard or broken, and
   all-zero arms are equally uninformative.
-- **Engagement sanity**: if the agent never touched the fixture (empty output, executor error), the trial is
+- **Engagement sanity**: if the agent never touched the fixture (empty output, executor error), or the
+  verifier produced no exit code at all (unspawnable command, or killed by its timeout), the trial is
   excluded from rates and reported as an error, not a failure (implemented). Exclusion is *pairwise*: since
   every statistic here is paired, dropping a trial from one arm alone would misalign the (task, trial) pairs
   that McNemar and the paired bootstrap resample, so an error in either arm removes that pair from both, and

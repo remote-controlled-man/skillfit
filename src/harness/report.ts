@@ -146,7 +146,7 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
       if (stats.errors > 0) {
         const other = condition === 'baseline' ? 'treatment' : 'baseline';
         warnings.push(
-          `Task "${task.id}" (${condition}): ${stats.errors} trial(s) hit an executor error and were excluded from the rates, together with their paired ${other} trial(s) — an ungraded run is not a failure.`,
+          `Task "${task.id}" (${condition}): ${stats.errors} trial(s) hit an executor or verifier error and were excluded from the rates, together with their paired ${other} trial(s) — an ungraded run is not a failure.`,
         );
       }
     }

@@ -297,7 +297,7 @@ test('buildWarnings surfaces excluded executor errors per arm', () => {
   const warnings = buildWarnings(manifest);
   assert.ok(
     warnings.some(
-      (w) => w.includes('"flaky" (baseline)') && w.includes('1 trial(s) hit an executor error'),
+      (w) => w.includes('"flaky" (baseline)') && w.includes('1 trial(s) hit an executor or verifier error'),
     ),
   );
   assert.ok(warnings.some((w) => w.includes('together with their paired treatment trial(s)')));

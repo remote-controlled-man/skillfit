@@ -165,6 +165,31 @@ test('runBenchCheck names the offline coverage a command-kind task actually has'
   assert.match(ungatedInfo.message, /nothing offline shows this task is solvable/);
 });
 
+test('runBenchCheck fails a command-kind task whose verifier cannot be spawned', async (t) => {
+  const dir = commandKindBench(t, true);
+  const manifest = JSON.parse(readFileSync(join(dir, 'bench.json'), 'utf8')) as {
+    tasks: Array<{ verifier: string }>;
+  };
+  const task = manifest.tasks[0];
+  assert.ok(task);
+  task.verifier = 'no-such-verifier-binary verifiers/v.mjs';
+  writeFileSync(join(dir, 'bench.json'), JSON.stringify(manifest));
+
+  const report = await runBenchCheck({ dir, log: () => {} });
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'FAIL' && c.message.includes('t1: verifier could not be started'),
+    ),
+    'a verifier that never ran is a bench defect and must say so',
+  );
+  assert.ok(
+    !report.checks.some(
+      (c) => c.status === 'PASS' && c.message.includes('fails on the untouched fixture'),
+    ),
+    'the NOP gate must not read "could not spawn" as the failure it exists to require',
+  );
+});
+
 // The visible suite IS this task's specification, so it is also the thing an agent can edit to win.
 // `bench check` covers the NOP and oracle directions but not tampering, so the cheat gets its own test.
 test('the bundled feat-slug verifier rejects a rewritten test suite', async (t) => {
@@ -1248,7 +1273,7 @@ test('runBenchCheck --calibrate fails loudly when no task produced a completed r
   // nothing measured, the summary must fail rather than claim a band it never observed.
   assert.ok(
     report.checks.some(
-      (c) => c.status === 'WARN' && c.message.includes('no completed runs') && c.message.includes('2 executor error(s)'),
+      (c) => c.status === 'WARN' && c.message.includes('no completed runs') && c.message.includes('2 ungraded run(s)'),
     ),
   );
   assert.ok(

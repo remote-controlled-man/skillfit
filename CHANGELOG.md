@@ -208,6 +208,20 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   resolution` line follows the CI. The task table keeps whole points, where the precision is noise.
   This closes the last open row in the audit's document-vs-code divergence table.
 
+- **A verifier that never ran is a bench defect, not an agent failure (audit note 2).** Verifiers and
+  oracles are spawned with `shell: false`, so on Windows a `.cmd`/`.bat` wrapper throws `spawn EINVAL`
+  and a bare `npm` throws `spawn ENOENT` — reproduced live on this host. Both surfaced as
+  `{exitCode: null}`, which `runTrial` read as `passed = false` with no error recorded, so the trial
+  looked exactly like the agent failing the task; both arms fail identically, and the report then
+  advised that the bench was too hard. The command-kind NOP gate had it worse: `exitCode !== 0` is the
+  condition it exists to require, so an unspawnable verifier *passed* the gate. A missing exit code is
+  now a named harness error on the trial (excluded pairwise, per B1), a `bench check` FAIL that quotes
+  the spawn error and the no-shell rule, and a rejection reason in `--decompose`'s gates. `shell: false`
+  itself is kept deliberately and documented in `SECURITY.md`: `CONTRIBUTING.md` solicits benches from
+  strangers, and a shell would make `"verifier": "node v.mjs & curl …"` in a contributed `bench.json`
+  run on every machine that checks it. Warnings that said "executor error" now say "executor or
+  verifier error", since one channel carries both.
+
 ### Bench content (material)
 
 These change what a bundled bench scores or how hard it is, so **evidence gathered against an earlier

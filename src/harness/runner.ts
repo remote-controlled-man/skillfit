@@ -167,17 +167,18 @@ export async function runTrial(
   if (error === null) {
     const verifier = await runVerifier(bench.dir, task.verifier, runDir);
     verifierExitCode = verifier.exitCode;
-    passed = verifier.exitCode === 0;
-    const verdict = verdictFromOutput(verifier.output);
-    if (verdict) {
-      verifierPassed = verdict.passed;
-      checks = verdict.checks;
-      score = verdict.score;
+    writeFileSync(join(runDir, '_verifier.txt'), verifierLogFor(verifier), 'utf8');
+    if (verifier.exitCode === null) {
+      error = verifierFailure('verifier', task.verifier, verifier.error);
+    } else {
+      passed = verifier.exitCode === 0;
+      const verdict = verdictFromOutput(verifier.output);
+      if (verdict) {
+        verifierPassed = verdict.passed;
+        checks = verdict.checks;
+        score = verdict.score;
+      }
     }
-    const verifierLog = verifier.error
-      ? `${verifier.output}\n[${verifier.error}]`
-      : verifier.output;
-    writeFileSync(join(runDir, '_verifier.txt'), verifierLog, 'utf8');
   } else {
     writeFileSync(join(runDir, '_executor-error.txt'), error, 'utf8');
   }
@@ -226,6 +227,25 @@ export async function runVerifier(benchDir: string, command: string, runDir: str
     return { exitCode: null, output: '', error: 'empty verifier command' };
   }
   return runProcess(executable, [...tokens.slice(1), runDir], benchDir, VERIFIER_TIMEOUT_MS);
+}
+
+export function verifierLogFor(result: ProcessResult): string {
+  return result.error ? `${result.output}\n[${result.error}]` : result.output;
+}
+
+const SPAWN_FAILURE = /ENOENT|EINVAL|EACCES|EPERM/i;
+
+/**
+ * A verifier that produced no exit code gave no verdict, so the trial says nothing about the agent.
+ * Reporting it as a failure would blame the model for a broken bench — and against a command-kind
+ * NOP gate it would look like the failure the gate exists to require.
+ */
+export function verifierFailure(label: string, command: string, reason: string | null): string {
+  const why = reason ?? 'no exit code';
+  if (SPAWN_FAILURE.test(why)) {
+    return `${label} could not be started (${why}): ${command} — it is spawned without a shell, so the first token must be an executable the OS can start directly ("node verifiers/x.mjs"), not "npm", a shell builtin, or a .cmd/.bat wrapper`;
+  }
+  return `${label} produced no exit code (${why}): ${command}`;
 }
 
 function sumTokens(records: TrialOutcome[]): { input: number; output: number } | null {

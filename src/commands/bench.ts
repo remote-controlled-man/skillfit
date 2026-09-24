@@ -5,7 +5,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { loadBench } from '../harness/bench.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
-import { runTrial, runVerifier } from '../harness/runner.js';
+import { runTrial, runVerifier, verifierFailure } from '../harness/runner.js';
 import type { ExperimentPlan } from '../harness/runner.js';
 import { MOCK_MARKER_FILE } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
@@ -234,8 +234,8 @@ function copyFixture(fixtureDir: string, dest: string): void {
 }
 
 type OracleGateOutcome =
-  | { kind: 'oracle-failed'; exitCode: number | null }
-  | { kind: 'verifier-failed' }
+  | { kind: 'oracle-failed'; exitCode: number | null; reason: string | null }
+  | { kind: 'verifier-failed'; reason: string | null }
   | { kind: 'low-score'; score: number }
   | { kind: 'pass'; score: number | null };
 
@@ -250,11 +250,18 @@ async function runOracleGate(
     copyFixture(fixtureDir, dir);
     const oracleRun = await runVerifier(benchDir, oracle, dir);
     if (oracleRun.exitCode !== 0) {
-      return { kind: 'oracle-failed', exitCode: oracleRun.exitCode };
+      return {
+        kind: 'oracle-failed',
+        exitCode: oracleRun.exitCode,
+        reason: oracleRun.exitCode === null ? verifierFailure('oracle', oracle, oracleRun.error) : null,
+      };
     }
     const graded = await runVerifier(benchDir, verifier, dir);
     if (graded.exitCode !== 0) {
-      return { kind: 'verifier-failed' };
+      return {
+        kind: 'verifier-failed',
+        reason: graded.exitCode === null ? verifierFailure('verifier', verifier, graded.error) : null,
+      };
     }
     const score = verdictFromOutput(graded.output)?.score ?? null;
     if (score !== null && score < 1) {
@@ -277,12 +284,15 @@ async function probeOracle(
     case 'oracle-failed':
       return {
         status: 'FAIL',
-        message: `oracle command itself failed (exit ${gate.exitCode ?? 'null'}) — the reference solution cannot run`,
+        message:
+          gate.reason ??
+          `oracle command itself failed (exit ${gate.exitCode}) — the reference solution cannot run`,
       };
     case 'verifier-failed':
       return {
         status: 'FAIL',
-        message: 'oracle solution does not pass the verifier — the task is unwinnable or the oracle is stale',
+        message:
+          gate.reason ?? 'oracle solution does not pass the verifier — the task is unwinnable or the oracle is stale',
       };
     case 'low-score':
       return {
@@ -329,7 +339,11 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
         copyFixture(join(bench.dir, task.fixture), fixtureCopy);
         const pristine = await runVerifier(bench.dir, task.verifier, fixtureCopy);
         facetChecks = verdictFromOutput(pristine.output)?.checks ?? null;
-        if (pristine.exitCode === 0) {
+        if (pristine.exitCode === null) {
+          // Without this branch a verifier that cannot even be spawned reads as a clean NOP gate:
+          // "fails on the untouched fixture" is exactly what `exitCode !== 0` looks like.
+          push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, pristine.error)}`);
+        } else if (pristine.exitCode === 0) {
           push(
             'FAIL',
             `${task.id}: command verifier already passes on the untouched fixture — the task is solved or the verifier is broken`,
@@ -345,14 +359,18 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
       }
     } else {
       const missing = await probeVerifier(bench.dir, task.verifier, null);
-      if (missing.exitCode === 0 || missing.exitCode === null) {
+      if (missing.exitCode === null) {
+        push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, missing.error)}`);
+      } else if (missing.exitCode === 0) {
         push('FAIL', `${task.id}: verifier does not reject a missing _output.md`);
       } else {
         push('PASS', `${task.id}: verifier rejects missing output`);
       }
       const empty = await probeVerifier(bench.dir, task.verifier, '');
       facetChecks = empty.checks;
-      if (empty.exitCode === 0 || empty.exitCode === null) {
+      if (empty.exitCode === null) {
+        push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, empty.error)}`);
+      } else if (empty.exitCode === 0) {
         push('FAIL', `${task.id}: verifier passes an empty output — it cannot tell success from silence`);
       } else {
         push('PASS', `${task.id}: verifier rejects empty output`);
@@ -508,7 +526,7 @@ async function calibrateBench(
       if (completed === 0) {
         push(
           'WARN',
-          `${task.id}: no completed runs${errors > 0 ? ` (${errors} executor error(s))` : ''} — cannot assess difficulty`,
+          `${task.id}: no completed runs${errors > 0 ? ` (${errors} ungraded run(s))` : ''} — cannot assess difficulty`,
         );
         continue;
       }
@@ -735,6 +753,9 @@ async function draftVerifierWithOracle(
     try {
       copyFixture(fixtureDir, nopDir);
       const nop = await runVerifier(staging, 'node verifier.mjs', nopDir);
+      if (nop.exitCode === null) {
+        throw new Error(`draft rejected: ${verifierFailure('verifier', 'node verifier.mjs', nop.error)}`);
+      }
       if (nop.exitCode === 0) {
         throw new Error(
           'draft rejected: the verifier passes the untouched fixture — the task would start solved (NOP gate)',
@@ -746,11 +767,15 @@ async function draftVerifierWithOracle(
 
     const solvedGate = await runOracleGate(staging, fixtureDir, 'node oracle.mjs', 'node verifier.mjs');
     if (solvedGate.kind === 'oracle-failed') {
-      throw new Error('draft rejected: the oracle command failed on a fresh fixture copy');
+      throw new Error(
+        `draft rejected: ${solvedGate.reason ?? 'the oracle command failed on a fresh fixture copy'}`,
+      );
     }
     if (solvedGate.kind === 'verifier-failed') {
       throw new Error(
-        'draft rejected: the verifier fails even after the oracle solved the task (oracle gate)',
+        `draft rejected: ${
+          solvedGate.reason ?? 'the verifier fails even after the oracle solved the task (oracle gate)'
+        }`,
       );
     }
     if (solvedGate.kind === 'low-score') {

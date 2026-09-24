@@ -2,7 +2,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { dirname, join } from 'node:path';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
 import { OUTPUT_CONTRACT } from './prompt.js';
-import { gitInit, runVerifier } from './runner.js';
+import { gitInit, runVerifier, verifierFailure, verifierLogFor } from './runner.js';
 import { wilson95 } from './stats.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import type {
@@ -136,14 +136,17 @@ async function runTriggerTrial(
   let checks: VerifierCheck[] | null = null;
   if (error === null) {
     const verifier = await runVerifier(plan.bench.dir, task.verifier, runDir);
-    passed = verifier.exitCode === 0;
-    const verdict = verdictFromOutput(verifier.output);
-    if (verdict) {
-      checks = verdict.checks;
-      score = verdict.score;
+    writeFileSync(join(runDir, '_verifier.txt'), verifierLogFor(verifier), 'utf8');
+    if (verifier.exitCode === null) {
+      error = verifierFailure('verifier', task.verifier, verifier.error);
+    } else {
+      passed = verifier.exitCode === 0;
+      const verdict = verdictFromOutput(verifier.output);
+      if (verdict) {
+        checks = verdict.checks;
+        score = verdict.score;
+      }
     }
-    const verifierLog = verifier.error ? `${verifier.output}\n[${verifier.error}]` : verifier.output;
-    writeFileSync(join(runDir, '_verifier.txt'), verifierLog, 'utf8');
   } else {
     writeFileSync(join(runDir, '_executor-error.txt'), error, 'utf8');
   }
@@ -261,7 +264,7 @@ function buildTriggerWarnings(manifest: Omit<TriggerManifest, 'warnings'>): stri
   }
   const errors = manifest.tasks.reduce((sum, t) => sum + t.errors, 0);
   if (errors > 0) {
-    warnings.push(`${errors} run(s) failed with executor errors — excluded from rates.`);
+    warnings.push(`${errors} run(s) hit an executor or verifier error — excluded from rates.`);
   }
   return warnings;
 }

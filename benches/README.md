@@ -51,7 +51,7 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 | `tasks` | yes | Non-empty array. Task `id`s must be unique and match `^[A-Za-z0-9][A-Za-z0-9._-]*$`. |
 | `tasks[].fixture` | yes | Directory (relative to the bench root) with the synthetic repository. Convention: `fixtures/<task-id>/`. |
 | `tasks[].prompt` | yes | Markdown file with the task instructions. Convention: `prompts/<task-id>.md`. |
-| `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Convention: `node verifiers/<task-id>.mjs`. |
+| `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Spawned without a shell, so the first token must be a real executable. Convention: `node verifiers/<task-id>.mjs`. |
 | `tasks[].verifierKind` | no | `output` (default): the verifier grades the agent's final message at `_output.md`. `command`: the verifier runs a real command (e.g. a test suite) inside the run directory, for tasks where the agent edits files. `command` tasks need a CLI executor (`--agent <id>`), because only that works inside the run directory — an API-key-only `eval` refuses the bench at plan time rather than silently scoring both arms 0. |
 | `tasks[].oracle` | no (warned when absent) | Command (same invocation convention as the verifier) that applies the reference solution to a fixture copy — writes `_output.md` for `output` tasks, edits files for `command` tasks. `bench check` fails when the oracle-solved fixture does not pass the verifier with every check green. A task that registers **no** oracle gets a WARN naming the consequence — winnability is unverified, so nothing proves the task is solvable — rather than a FAIL, because `bench add --freeze` legitimately produces oracle-less tasks mid-authoring. Convention: `node ground-truth/oracle-<task-id>.mjs`. |
 | `tasks[].rubric` | no | Markdown file injected into the optional LLM judge prompt (never shown to the agent under test). |
@@ -63,7 +63,8 @@ All paths must stay inside the bench directory.
 
 The verifier is the heart of a bench. It must be **deterministic**: same run directory in, same verdict out — no network, no clocks, no randomness.
 
-- Invocation: `<verifier command> <absolute run directory>`, working directory = bench root.
+- Invocation: `<verifier command> <absolute run directory>`, working directory = bench root. The command is split on whitespace and spawned **without a shell**, so its first token must be an executable the operating system can start directly: `node verifiers/x.mjs` works, while `npm test` and `.cmd`/`.bat` wrappers do not (`ENOENT` / `EINVAL` on Windows). That is deliberate, not an oversight — benches are contributed by third parties, and a shell here would turn `"verifier": "node v.mjs & curl …"` in somebody else's `bench.json` into code execution on your machine.
+- A verifier that produces **no exit code at all** — unspawnable, or killed by the 2-minute timeout — has graded nothing, so it is never read as a verdict: `bench check` fails the task and names the cause, and `eval` excludes that trial *and its paired arm* from the rates rather than scoring a fabricated failure. Without that, a broken verifier command would look like a 0% pass rate in both arms and get reported as "bench too hard".
 - **Exit code 0 = pass, anything else = fail.** That is the only pass/fail signal the harness aggregates.
 - Print a one-line JSON summary as the **last stdout line**. The harness parses it (tolerating surrounding noise) and saves the raw output to `_verifier.txt`:
   - `passed` (boolean) — informational; the exit code is authoritative, and a disagreement is flagged as a warning.

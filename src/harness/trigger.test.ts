@@ -142,7 +142,7 @@ test('runTriggerExperiment records executor errors without crashing', async (t) 
   const manifest = await runTriggerExperiment(makePlan(t, executor, { trials: 1 }));
   assert.equal(manifest.tasks[0]?.errors, 1);
   assert.equal(manifest.metrics.recall, null);
-  assert.ok(manifest.warnings.some((w) => w.includes('executor errors')));
+  assert.ok(manifest.warnings.some((w) => w.includes('executor or verifier error')));
 });
 
 test('runTriggerExperiment warns when the bench has no negative-control tasks', async (t) => {
