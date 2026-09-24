@@ -73,6 +73,27 @@ function resolveExecutor(agent: string | undefined): Executor {
   return ApiExecutor.fromEnv();
 }
 
+/**
+ * An API executor has no filesystem access, so it cannot satisfy a `verifierKind: "command"` task.
+ * Left unchecked, buildTaskPrompt still tells the model the repository "is also your current working
+ * directory: inspect, edit, and run things there directly", nothing is ever written into the run
+ * directory, every command verifier fails, both arms score 0 — and the run then reports a verdict
+ * plus a floor warning that blames bench difficulty for an executor mismatch. Fail at plan time.
+ */
+function assertExecutorSupportsBench(executor: Executor | null, bench: Bench): void {
+  if (!executor || executor.describe().kind !== 'api') return;
+  const commandTasks = bench.tasks
+    .filter((task) => (task.verifierKind ?? 'output') === 'command')
+    .map((task) => task.id);
+  if (commandTasks.length === 0) return;
+  throw new Error(
+    `${bench.name} has ${commandTasks.length} task(s) graded by running a command inside the run directory ` +
+      `(${commandTasks.join(', ')}), which an API executor cannot do — it has no filesystem access, so nothing ` +
+      'would be written and both arms would score 0. Use --agent <id> for a CLI executor that works in the run ' +
+      'directory, or re-grade those tasks as verifierKind "output".',
+  );
+}
+
 function resolveJudge(judgeAgent?: string): Executor | null {
   const flag = process.env['SKILLFIT_JUDGE'];
   if (!judgeAgent && (!flag || flag === '0' || flag === 'false')) return null;
@@ -270,6 +291,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     if (!options.dryRun) throw error;
     log(`Note: ${(error as Error).message}`);
   }
+  assertExecutorSupportsBench(executor, bench);
   const judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge(options.judgeAgent);
   if (options.judgeAgent && options.judgeAgent === options.agent) {
     log('Warning: judge and executor are the same agent — self-preference bias risk (docs/metrics.md L4).');

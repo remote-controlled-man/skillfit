@@ -5,10 +5,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { MockExecutor } from '../harness/executors/mock.js';
+import type { Executor } from '../harness/types.js';
 import { runEval } from './eval.js';
 
 const PACKAGE_ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const BUNDLED_CODE_REVIEW = join(PACKAGE_ROOT, 'benches', 'code-review');
+const BUNDLED_DEBUGGING = join(PACKAGE_ROOT, 'benches', 'debugging');
 
 function tmp(t: import('node:test').TestContext, prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -289,3 +291,65 @@ test('runEval without --judge-agent keeps the judge disabled by default', async 
   });
   assert.match(lines.join('\n'), /Judge\s+: disabled/);
 });
+
+function apiLikeExecutor(): Executor {
+  return {
+    describe: () => ({ kind: 'api', model: 'gpt-test' }),
+    run: (): Promise<{ output: string }> => Promise.resolve({ output: 'never used' }),
+  };
+}
+
+test('runEval refuses an API executor against a command-graded bench', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-eval-b8-');
+  await assert.rejects(
+    runEval({
+      skillPath: makeSkill(t),
+      bench: BUNDLED_DEBUGGING,
+      trials: 1,
+      dryRun: false,
+      yes: true,
+      executor: apiLikeExecutor(),
+      runsRoot,
+      runGroup: 'b8-group',
+      log: () => {},
+    }),
+    /graded by running a command inside the run directory/,
+  );
+  assert.ok(
+    !existsSync(join(runsRoot, 'b8-group')),
+    'the mismatch is caught at plan time, so no run directory is created',
+  );
+});
+
+test('runEval surfaces the API/command-bench mismatch during --dry-run too', async (t) => {
+  await assert.rejects(
+    runEval({
+      skillPath: makeSkill(t),
+      bench: BUNDLED_DEBUGGING,
+      trials: 1,
+      dryRun: true,
+      yes: true,
+      executor: apiLikeExecutor(),
+      runsRoot: join(tmp(t, 'skillfit-eval-b8dry-'), 'runs'),
+      runGroup: 'b8-dry-group',
+      log: () => {},
+    }),
+    /Use --agent <id> for a CLI executor/,
+  );
+});
+
+test('runEval allows an API executor against an output-graded bench', async (t) => {
+  const result = await runEval({
+    skillPath: makeSkill(t),
+    bench: BUNDLED_CODE_REVIEW,
+    trials: 1,
+    dryRun: true,
+    yes: true,
+    executor: apiLikeExecutor(),
+    runsRoot: join(tmp(t, 'skillfit-eval-b8ok-'), 'runs'),
+    runGroup: 'b8-ok-group',
+    log: () => {},
+  });
+  assert.equal(result, null, 'a dry run plans without throwing');
+});
+
