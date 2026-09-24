@@ -45,9 +45,13 @@ explain-x1  no     0/3      0        0       3/3
 
 Trigger recall      : 1/9 (11%) [95% CI 2%–44%]
 False-trigger rate  : 0/3 (0%) [95% CI 0%–56%]
+Precision           : 1/1 (100%) [95% CI 21%–100%]
+F1                  : 0.20 (no CI: a harmonic mean of two proportions has no closed-form binomial interval)
 ```
 
 9 个该触发的任务里它只被加载了一次——而且不加载也照样全做对。这种结论，应用市场给不了你。
+
+<sub>2026-09-22 在 Kimi Code 上针对当时的 4 任务 `code-review` bench 抓取。该 bench 之后新增了第 5 个任务；上面四行指标是用那次运行记录的每任务计数重新渲染的——运行是真实的，格式是当前的。</sub>
 
 ## 快速开始
 

@@ -34,7 +34,7 @@ test('loadBench loads the bundled code-review bench', () => {
   const bench = loadBench(BUNDLED_CODE_REVIEW);
   assert.equal(bench.name, 'code-review');
   assert.equal(bench.schemaVersion, 1);
-  assert.equal(bench.tasks.length, 4);
+  assert.equal(bench.tasks.length, 5);
   assert.equal(bench.tasks[0]?.id, 'review-r1');
   assert.equal(bench.tasks[0]?.rubric, 'ground-truth/r1.md');
   assert.equal(bench.tasks[0]?.oracle, 'node ground-truth/oracle-r1.mjs');
@@ -46,6 +46,9 @@ test('loadBench loads the bundled code-review bench', () => {
   assert.equal(bench.tasks[2]?.rubric, 'ground-truth/r3.md');
   assert.equal(bench.tasks[3]?.id, 'explain-x1');
   assert.equal(bench.tasks[3]?.shouldTrigger, false);
+  assert.equal(bench.tasks[4]?.id, 'summarize-s1');
+  assert.equal(bench.tasks[4]?.shouldTrigger, false);
+  assert.equal(bench.tasks[4]?.oracle, 'node ground-truth/oracle-summarize-s1.mjs');
   assert.match(bench.contentSha256, /^[0-9a-f]{64}$/);
 });
 

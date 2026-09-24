@@ -52,7 +52,7 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /Skill\s+: .* \(2 files, bundle sha256 [0-9a-f]{12}/);
   assert.match(output, /Bench\s+: code-review/);
   assert.match(output, /review-r1: fixture fixtures\/review-r1, verifier `node verifiers\/seeded-bugs\.mjs`/);
-  assert.match(output, /4 task\(s\) × 2 conditions × 3 = 24 runs/);
+  assert.match(output, /5 task\(s\) × 2 conditions × 3 = 30 runs/);
   assert.match(output, /Est\. cost: ~[\d.k]+ prompt-tokens\/run baseline, ~[\d.k]+ treatment \(estimate, before replies\)/);
   assert.match(output, /Dry run — nothing was written\./);
 });
@@ -72,7 +72,9 @@ test('runEval runs the experiment and prints the summary table', async (t) => {
     log,
   });
   assert.ok(manifest && 'overall' in manifest);
-  assert.equal(manifest.overall.verdict, 'effective');
+  // summarize-s1 is a negative control whose mock treatment arm fails, so the pooled mock run is
+  // 9 improved against 3 regressed — not significant at this sample size.
+  assert.equal(manifest.overall.verdict, 'inconclusive');
   assert.ok(existsSync(join(runsRoot, 'eval-group', 'manifest.json')));
   const output = lines.join('\n');
   assert.match(output, /review-r1\s+0\/3 \(0%\)\s+3\/3 \(100%\)\s+\+100pp\s+inconclusive/);

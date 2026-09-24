@@ -45,11 +45,13 @@ explain-x1  no     0/3      0        0       3/3
 
 Trigger recall      : 1/9 (11%) [95% CI 2%–44%]
 False-trigger rate  : 0/3 (0%) [95% CI 0%–56%]
-Precision           : 1.00
-F1                  : 0.20
+Precision           : 1/1 (100%) [95% CI 21%–100%]
+F1                  : 0.20 (no CI: a harmonic mean of two proportions has no closed-form binomial interval)
 ```
 
 The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without it. That is a verdict no registry can give you.
+
+<sub>Captured 2026-09-22 on Kimi Code against the four-task `code-review` bench. The bench has since gained a fifth task; the four metric lines above are re-rendered from that run's recorded per-task counts, so the run is real and the formatting is current.</sub>
 
 ## Quick start
 

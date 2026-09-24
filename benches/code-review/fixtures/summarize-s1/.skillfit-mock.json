@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "output": "- Orders of 10 items or more now get the 5% bulk discount; the threshold used to be 13.\n- Invalid quantities now fail with a stable INVALID_QUANTITY error code instead of a bare message.\n- Line prices are rounded once at the end, so totals no longer drift on multi-item orders.\n",
+    "tokens": {
+      "input": 1100,
+      "output": 90
+    }
+  },
+  "treatment": {
+    "output": "- Orders of 10 items or more now get the 5% bulk discount.\n- Reviewing the diff, src/discount.js:14 violates SPEC §3: roundCents is applied to the unit price before multiplying by qty, which is intermediate rounding and should be moved to lineTotal.\n- INVALID_QUANTITY is now a stable code.\n",
+    "tokens": {
+      "input": 1900,
+      "output": 140
+    }
+  }
+}

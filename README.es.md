@@ -45,9 +45,13 @@ explain-x1  no     0/3      0        0       3/3
 
 Trigger recall      : 1/9 (11%) [95% CI 2%–44%]
 False-trigger rate  : 0/3 (0%) [95% CI 0%–56%]
+Precision           : 1/1 (100%) [95% CI 21%–100%]
+F1                  : 0.20 (no CI: a harmonic mean of two proportions has no closed-form binomial interval)
 ```
 
 El skill se activó una vez entre nueve tareas de su dominio — y las tareas pasan 3/3 sin él. Ese es un veredicto que ningún registro puede ofrecer.
+
+<sub>Capturado el 2026-09-22 en Kimi Code contra el bench `code-review`, que entonces tenía cuatro tareas. Desde entonces el bench ha ganado una quinta; las cuatro líneas de métricas anteriores están re-renderizadas a partir de los recuentos por tarea registrados en aquella ejecución, así que la ejecución es real y el formato es el actual.</sub>
 
 ## Inicio rápido
 

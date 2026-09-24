@@ -68,6 +68,26 @@
       "oracle": "node ground-truth/oracle-feat-slug.mjs",
       "rubric": "ground-truth/feat-slug.md",
       "shouldTrigger": false
+    },
+    {
+      "id": "explain-cache",
+      "fixture": "fixtures/explain-cache",
+      "prompt": "prompts/explain-cache.md",
+      "promptTrigger": "prompts/explain-cache.trigger.md",
+      "verifier": "node verifiers/explain-cache.mjs",
+      "oracle": "node ground-truth/oracle-explain-cache.mjs",
+      "rubric": "ground-truth/explain-cache.md",
+      "shouldTrigger": false
+    },
+    {
+      "id": "document-queue",
+      "fixture": "fixtures/document-queue",
+      "prompt": "prompts/document-queue.md",
+      "promptTrigger": "prompts/document-queue.trigger.md",
+      "verifier": "node verifiers/document-queue.mjs",
+      "oracle": "node ground-truth/oracle-document-queue.mjs",
+      "rubric": "ground-truth/document-queue.md",
+      "shouldTrigger": false
     }
   ]
 }

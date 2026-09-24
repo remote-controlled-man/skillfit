@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "output": "## Ordering guarantees\n\nTasks run one at a time, in the order they were enqueued. enqueue() never starts a task concurrently with one already in flight, so the queue is safe for work that must not interleave.\n\nA task that rejects settles only its own promise. The tasks queued behind it still run, in order; a failure does not abandon the queue or flush the backlog.\n\nonIdle() resolves once every enqueued task has finished AND the promise each enqueue() returned has settled. It never fires while work is in flight, and it does not fire in the gap between a task completing and its caller being resumed.\n",
+    "tokens": {
+      "input": 900,
+      "output": 150
+    }
+  },
+  "treatment": {
+    "output": "## Ordering guarantees\n\nBefore documenting this, note two bugs in src/task-queue.mjs: _schedule() releases the pumping guard too early, so an enqueue() during flight can start a second drain loop; and _flushIdle() runs before item.resolve(), so onIdle() can fire while a caller is still pending. Tasks run one at a time in enqueue order.\n",
+    "tokens": {
+      "input": 1700,
+      "output": 160
+    }
+  }
+}

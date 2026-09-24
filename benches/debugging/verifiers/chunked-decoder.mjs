@@ -89,7 +89,7 @@ let FrameDecoder;
 try {
   ({ FrameDecoder } = await import(pathToFileURL(path.join(runDir, 'src/frame-decoder.mjs'))));
 } catch (error) {
-  console.log(JSON.stringify({ score: 0, maxScore: 10, passed: false, failures: [`import: ${error.message}`], evidence }));
+  console.log(JSON.stringify({ score: 0, maxScore: 8, passed: false, failures: [`import: ${error.message}`], evidence }));
   process.exit(1);
 }
 
@@ -157,30 +157,32 @@ const checks = [
     }
     assert.deepEqual(decoder.drain(), ['first', 'second', 'third']);
   }],
-  ['multibyte character split across chunks decodes cleanly', () => {
-    const decoder = new FrameDecoder();
-    const stream = frame('héllo');
-    pushInPieces(decoder, stream, [4, 1]);
-    assert.deepEqual(decoder.drain(), ['héllo']);
-  }],
-  ['payload split mid-character mid-payload decodes cleanly', () => {
-    const decoder = new FrameDecoder();
-    const stream = concat(frame('日本語'), frame('ok'));
-    pushInPieces(decoder, stream, [5, stream.length - 7]);
-    assert.deepEqual(decoder.drain(), ['日本語', 'ok']);
+  // One bug class, two shapes: per-chunk TextDecoder replaces a sequence split across a boundary
+  // with U+FFFD. Scoring the 2-byte and 3-byte cases separately inflated the facet count without
+  // adding a distinction an author would act on — both fail for the same reason and fix together.
+  ['multibyte sequences split across chunks decode cleanly', () => {
+    const twoByte = new FrameDecoder();
+    const twoByteStream = frame('héllo');
+    pushInPieces(twoByte, twoByteStream, [4, 1]);
+    assert.deepEqual(twoByte.drain(), ['héllo']);
+
+    const threeByte = new FrameDecoder();
+    const threeByteStream = concat(frame('日本語'), frame('ok'));
+    pushInPieces(threeByte, threeByteStream, [5, threeByteStream.length - 7]);
+    assert.deepEqual(threeByte.drain(), ['日本語', 'ok']);
   }],
   ['empty payload frame decodes', () => {
     const decoder = new FrameDecoder();
     decoder.push(frame(''));
     assert.deepEqual(decoder.drain(), ['']);
   }],
-  ['negative length prefix throws TypeError', () => {
-    const decoder = new FrameDecoder();
-    assertTypeErrorWithMessage(() => decoder.push(encode('-3\nabc')));
-  }],
-  ['absurd length prefix throws TypeError', () => {
-    const decoder = new FrameDecoder();
-    assertTypeErrorWithMessage(() => decoder.push(encode('99999999999999999999\nx')));
+  // One contract, two malformed inputs: a length prefix that is not a run of digits, and one that is
+  // digits but not a safe integer. Both must throw TypeError mentioning the length.
+  ['invalid length prefix throws TypeError', () => {
+    const negative = new FrameDecoder();
+    assertTypeErrorWithMessage(() => negative.push(encode('-3\nabc')));
+    const absurd = new FrameDecoder();
+    assertTypeErrorWithMessage(() => absurd.push(encode('99999999999999999999\nx')));
   }],
   ['flush returns frames not yet drained', () => {
     const decoder = new FrameDecoder();

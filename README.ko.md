@@ -45,9 +45,13 @@ explain-x1  no     0/3      0        0       3/3
 
 Trigger recall      : 1/9 (11%) [95% CI 2%–44%]
 False-trigger rate  : 0/3 (0%) [95% CI 0%–56%]
+Precision           : 1/1 (100%) [95% CI 21%–100%]
+F1                  : 0.20 (no CI: a harmonic mean of two proportions has no closed-form binomial interval)
 ```
 
 도메인 내 9개 작업에서 skill이 트리거된 것은 단 한 번뿐이고, 그 skill 없이도 작업은 3/3으로 모두 통과합니다. 이런 판정은 어떤 레지스트리도 줄 수 없습니다.
+
+<sub>2026-09-22에 Kimi Code에서 당시 4개 작업이던 `code-review` bench를 대상으로 캡처했습니다. 이후 bench에 다섯 번째 작업이 추가되었고, 위 네 줄의 지표는 그 실행에 기록된 작업별 횟수를 다시 렌더링한 것입니다. 즉 실행은 실제이고 형식은 현재 기준입니다.</sub>
 
 ## 빠른 시작
 

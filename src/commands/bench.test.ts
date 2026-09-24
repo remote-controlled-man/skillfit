@@ -75,6 +75,14 @@ test('runBenchCheck passes on the bundled code-review bench', async () => {
   const report = await runBenchCheck({ dir: BUNDLED_CODE_REVIEW, log });
   assert.equal(report.failures, 0);
   assert.ok(!report.checks.some((c) => c.message.includes('negative-control')));
+  // The teaching material must not trip the gates it is teaching. Warnings are asserted, not just
+  // failures, because a bundled bench that warns is a bundled bench modelling the wrong habit.
+  assert.equal(report.warnings, 0, report.checks.filter((c) => c.status === 'WARN').map((c) => c.message).join('; '));
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'PASS' && c.message.includes('negative controls (40%)'),
+    ),
+  );
 });
 
 test('runBenchCheck gates every bundled debugging task with its oracle', async () => {
@@ -84,10 +92,16 @@ test('runBenchCheck gates every bundled debugging task with its oracle', async (
   const oraclePasses = report.checks.filter(
     (c) => c.status === 'PASS' && c.message.includes('oracle solution passes the verifier'),
   );
-  assert.equal(oraclePasses.length, 6, 'every task registers an oracle and that oracle solves it');
+  assert.equal(oraclePasses.length, 8, 'every task registers an oracle and that oracle solves it');
   assert.ok(
     !report.checks.some((c) => c.message.includes('no oracle')),
     'the bundled bench must not trip its own missing-oracle warning',
+  );
+  assert.equal(report.warnings, 0, report.checks.filter((c) => c.status === 'WARN').map((c) => c.message).join('; '));
+  assert.ok(
+    report.checks.some(
+      (c) => c.status === 'PASS' && c.message.includes('negative controls (38%)'),
+    ),
   );
 });
 

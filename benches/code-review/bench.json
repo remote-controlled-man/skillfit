@@ -42,6 +42,16 @@
       "oracle": "node ground-truth/oracle-x1.mjs",
       "rubric": "ground-truth/x1.md",
       "shouldTrigger": false
+    },
+    {
+      "id": "summarize-s1",
+      "fixture": "fixtures/summarize-s1",
+      "prompt": "prompts/summarize-s1.md",
+      "promptTrigger": "prompts/summarize-s1.trigger.md",
+      "verifier": "node verifiers/summarize-s1.mjs",
+      "oracle": "node ground-truth/oracle-summarize-s1.mjs",
+      "rubric": "ground-truth/summarize-s1.md",
+      "shouldTrigger": false
     }
   ]
 }

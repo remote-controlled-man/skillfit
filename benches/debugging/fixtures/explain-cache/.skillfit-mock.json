@@ -1,0 +1,16 @@
+{
+  "baseline": {
+    "output": "An entry is readable from the moment you set it until ttlMs has elapsed; at exactly set + ttlMs it is gone. The deadline is fixed when you call set() and reading an entry does not push it back, so a hot key expires on the same schedule as a cold one. Expiry is lazy: nothing runs in the background, and the get() that first finds an entry past its deadline deletes it from the internal map and returns undefined. ttlMs must be a finite non-negative number; anything else, including Infinity and -1, throws TypeError. Falsy values like false, 0 and \"\" are stored and returned normally.\n",
+    "tokens": {
+      "input": 800,
+      "output": 120
+    }
+  },
+  "treatment": {
+    "output": "Looking at src/ttl-cache.mjs, there is a bug: get() should refresh expiresAt on read to implement sliding TTL, and the boundary check should be < rather than <=. The entry is readable until ttlMs elapses, ttlMs must be finite and non-negative, and expiry is lazy.\n",
+    "tokens": {
+      "input": 1500,
+      "output": 130
+    }
+  }
+}

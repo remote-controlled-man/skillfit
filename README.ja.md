@@ -45,9 +45,13 @@ explain-x1  no     0/3      0        0       3/3
 
 Trigger recall      : 1/9 (11%) [95% CI 2%–44%]
 False-trigger rate  : 0/3 (0%) [95% CI 0%–56%]
+Precision           : 1/1 (100%) [95% CI 21%–100%]
+F1                  : 0.20 (no CI: a harmonic mean of two proportions has no closed-form binomial interval)
 ```
 
 ドメイン内の 9 タスク中、このスキルが発火したのは 1 回だけ——しかもタスクはスキルなしでも 3/3 でパスしている。これはどんなレジストリも出せない判定だ。
+
+<sub>2026-09-22 に Kimi Code で、当時 4 タスクだった `code-review` ベンチに対して取得したもの。ベンチにはその後 5 番目のタスクが追加された。上の 4 行の指標は、その実行で記録されたタスクごとの件数から再レンダリングしており、実行は実在し表示形式は最新である。</sub>
 
 ## クイックスタート
 

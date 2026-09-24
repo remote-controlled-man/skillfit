@@ -154,6 +154,37 @@ listed here.
   truth files now name their task class and explain the distinction, and `bench.json`'s description
   records the mix. Difficulty changed for ttl-cache, so re-run `--calibrate` before making new claims.
 
+- **Three new negative controls; both bundled benches now clear every gate.** `code-review` gains
+  `summarize-s1` (write the changelog entry for this PR) and `debugging` gains `explain-cache` and
+  `document-queue`. Negative controls were 25% and 17% against a ≥30% target; they are now 40% (2/5)
+  and 38% (3/8), and `bench check` on both bundled benches reports **0 warnings and 0 failures** — the
+  teaching material no longer trips the gates it teaches.
+  The two new `debugging` controls are the hardest kind of decoy: their fixtures are the *correct*
+  implementations, byte-identical to the reference solutions `oracle-ttl-cache.mjs` and
+  `oracle-async-queue.mjs` install for the sibling tasks. Same domain, same file, opposite ask — a
+  debugging skill keyed to vocabulary rather than to the request fires on them. Both are also
+  behavioural discriminators, not just labels: the prompts state twice that nothing is broken and a
+  `no-defect-claims` check fails an answer that reports one anyway, and each mock's treatment arm does
+  exactly that (inventing, in `document-queue`'s case, the two bugs the sibling task really contains).
+  `summarize-s1` fails an answer that starts citing `SPEC §` and reporting violations. They are the
+  first `verifierKind: "output"` tasks in the `debugging` bench, because grading prose by running a
+  test suite would grade nothing.
+- **Consequence for the mock demo:** `code-review`'s pooled mock verdict moves from `effective` to
+  `inconclusive` (9 improved against 3 regressed, McNemar p ≈ 0.146, Δpass +40pp). That is the correct
+  reading of a skill that helps on three review tasks and derails a summarisation task at 3 trials × 5
+  tasks, and it is a better teaching artefact than a clean win was.
+- **`debugging/chunked-decoder` rebalanced from 10 checks to 8.** Not in the work order — the audit
+  listed it as out of range and Wave 2's table omitted it, which would have left the bundled bench
+  warning against its own gate. Two pairs merged, each asserting one contract: the 2-byte and 3-byte
+  multibyte-split cases (same per-chunk-decoding bug, same fix), and the negative and absurd length
+  prefixes (both must throw `TypeError` mentioning the length). Pristine fixture still scores 4/8.
+- **README trigger demo block corrected and dated.** B5 changed the Precision and F1 output format, so
+  the captured block no longer matched what the CLI prints. The four metric lines are re-rendered from
+  that run's recorded per-task counts — the run is real, only the formatting is current — and the block
+  is now labelled with its capture date and the fact that the bench has since gained a task. The four
+  translations were also missing the Precision and F1 lines entirely, violating the rule that the demo
+  console block stays verbatim in every language; all five are now byte-identical.
+
 ## [0.3.0] — 2026-09-22
 
 A large capability wave. Everything in 0.2.0 plus:

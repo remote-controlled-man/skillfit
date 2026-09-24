@@ -65,22 +65,27 @@ export class FrameDecoder {
 
 (Decoding each complete payload slice is equivalent to one streaming `TextDecoder`; either shape passes, since the wire format never splits a multi-byte sequence across frames.)
 
-Verified 2026-09-19: this exact source scores 10/10 (exit 0) against `verifiers/chunked-decoder.mjs`; the pristine fixture scores 4/10 (exit 1 — see below).
+Verified 2026-09-25 against the rebalanced verifier: this exact source scores 8/8 (exit 0); the pristine
+fixture scores 4/8 (exit 1 — see below).
 
 ## What the grader checks
 
-10 behavioral checks, imported directly from the run directory's `src/frame-decoder.mjs`, pure computation (no I/O, no timers):
+Eight behavioural checks, imported directly from the run directory's `src/frame-decoder.mjs`, pure
+computation (no I/O, no timers):
 
 1. Chunk-aligned frames decode, 2. `drain()` empties the backlog — pass on the buggy code.
 3. Header split across chunks — bug 1.
 4. Whole stream fed one byte at a time — bugs 1+2.
-5. Multi-byte character split across chunks (`héllo`, split between the two bytes of `é`) — bug 2.
-6. Payload split mid-character mid-payload (`日本語` + a second frame, split inside a 3-byte sequence) — bug 2.
-7. Empty payload frame (`0\n`) — passes on the buggy code.
-8. Negative length prefix (`-3\nabc`) throws `TypeError` mentioning "length" — bug 3.
-9. Absurd length prefix (`99999999999999999999\n…`) throws `TypeError` — bug 3.
-10. `flush()` returns frames not yet drained — passes on the buggy code.
+5. Multibyte sequences split across chunks — bug 2. Covers both shapes in one check: a 2-byte sequence
+   (`héllo`, split between the two bytes of `é`) and a 3-byte one (`日本語` plus a second frame, split
+   inside the sequence). They fail for the same reason and fix together, so scoring them separately
+   inflated the facet count without adding a distinction an author would act on.
+6. Empty payload frame (`0\n`) — passes on the buggy code.
+7. Invalid length prefix throws `TypeError` mentioning "length" — bug 3. One contract, two malformed
+   inputs: a prefix that is not all digits (`-3\nabc`) and one that is digits but not a safe integer
+   (`99999999999999999999\n…`).
+8. `flush()` returns frames not yet drained — passes on the buggy code.
 
-Pristine fixture scores 4/10 (exit 1): checks 3, 4, 5, 6, 8, 9 fail; checks 1, 2, 7, 10 pass.
+Pristine fixture scores 4/8 (exit 1): checks 3, 4, 5 and 7 fail; checks 1, 2, 6 and 8 pass.
 
 The JSON summary also carries an `evidence.testAssets` collector (informational only, does not affect the score): any test file the agent added is re-run against the final code and against the pristine fixture implementation to show whether it is a real red→green regression test.

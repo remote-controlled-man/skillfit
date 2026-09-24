@@ -57,7 +57,7 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   });
 
   assert.equal(manifest.schemaVersion, 3);
-  assert.equal(manifest.tasks.length, 4);
+  assert.equal(manifest.tasks.length, 5);
   const task = manifest.tasks[0];
   assert.ok(task);
   assert.equal(task.id, 'review-r1');
@@ -105,13 +105,16 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
     'reporting a decoy must cost the review a facet, not just get recorded',
   );
   assert.equal(task.verifierNotes.length, 0);
-  assert.equal(manifest.overall.verdict, 'effective');
-  assert.deepEqual(manifest.overall.stats.discordant, { improved: 9, regressed: 0 });
-  assert.equal(manifest.overall.stats.mcnemarP, 0.00390625);
+  // summarize-s1 is a negative control whose mock treatment arm slips into review framing and fails,
+  // so the pooled run regresses on 3 pairs. Nine improved against three regressed is not significant
+  // at this sample size — which is the honest reading, and the point of the task being in the bench.
+  assert.equal(manifest.overall.verdict, 'inconclusive');
+  assert.deepEqual(manifest.overall.stats.discordant, { improved: 9, regressed: 3 });
+  assert.equal(manifest.overall.stats.mcnemarP, 0.14599609375);
   const scoreDeltaCi = manifest.overall.stats.scoreDeltaCi;
   assert.ok(scoreDeltaCi !== null);
-  // pooled treatment mean 1 minus pooled baseline mean 7/16 (review-r1 0.25, r2 0.5, r3 0, x1 1)
-  assert.ok(Math.abs(scoreDeltaCi.point - 9 / 16) < 1e-9);
+  // pooled treatment mean 0.9333 minus pooled baseline mean 0.55 (r1 .25, r2 .5, r3 0, x1 1, s1 1)
+  assert.ok(Math.abs(scoreDeltaCi.point - 23 / 60) < 1e-9);
   assert.equal(manifest.skill.bundleSha256.length, 64);
   assert.ok(manifest.warnings.some((w) => w.includes('synthetic')));
   assert.ok(
@@ -367,16 +370,19 @@ test('runExperiment drops an errored trial from both arms instead of scoring it 
   assert.equal(task.scores.baseline.length, 2);
   assert.equal(task.scores.treatment.length, 2);
 
-  // Four tasks x two surviving pairs. review-r1/r2/r3 improve (6 discordant); explain-x1 passes in
-  // both arms, so its 2 pairs are concordant. Before the fix the errored baseline trial counted as
-  // a failure, which also flipped explain-x1's pairs to "improved" and reported 12/0 — a timeout
-  // masquerading as a result.
-  assert.deepEqual(manifest.overall.stats.discordant, { improved: 6, regressed: 0 });
-  assert.equal(manifest.overall.stats.mcnemarP, 0.03125);
-  assert.equal(manifest.overall.conditions.baseline.errors, 4);
-  assert.equal(manifest.overall.conditions.baseline.trials, 8);
-  assert.equal(manifest.overall.conditions.treatment.trials, 8);
-  assert.equal(manifest.overall.verdict, 'effective', 'the hole must not move the verdict');
+  // Five tasks x two surviving pairs. review-r1/r2/r3 improve (6 discordant), explain-x1 passes in
+  // both arms so its 2 pairs are concordant, and summarize-s1 regresses (2 more). Before the fix the
+  // errored baseline trial counted as a failure, which also flipped explain-x1's pairs to "improved"
+  // and inflated the count — a timeout masquerading as a result.
+  assert.deepEqual(manifest.overall.stats.discordant, { improved: 6, regressed: 2 });
+  assert.equal(manifest.overall.conditions.baseline.errors, 5);
+  assert.equal(manifest.overall.conditions.baseline.trials, 10);
+  assert.equal(manifest.overall.conditions.treatment.trials, 10);
+  assert.equal(
+    manifest.overall.verdict,
+    'inconclusive',
+    'the hole must not manufacture the significance a real effect would need',
+  );
   assert.ok(
     manifest.warnings.some(
       (w) => w.includes('"review-r1" (baseline)') && w.includes('executor error'),
