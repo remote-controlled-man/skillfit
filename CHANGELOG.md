@@ -49,6 +49,12 @@ protocol is unchanged.
 
 ### Changed
 
+- **`docs/metrics.md` L1 status corrected (2026-09-29).** Trigger-mode rates already exist, so the
+  old blanket "implementation is the next milestone" sentence was stale. Positive tasks currently
+  carry only a Boolean `shouldTrigger` label; explicit, implicit, and contextual classes are not
+  reported separately, and real installed-skill competition remains unimplemented. The verdict
+  protocol did not change.
+
 Wave 1 of the `docs/audit-2026-09-24.md` remediation (see that document's Disposition section for the
 per-finding ledger). These change behaviour or weaken a claim that the code could not honour.
 

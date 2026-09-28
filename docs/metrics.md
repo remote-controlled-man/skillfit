@@ -4,6 +4,9 @@ This document defines what skillfit measures and how verdicts are computed. It i
 `src/harness/` implements and that bench authors design against. Changes here are deliberate: edit with a
 reasoned PR, cite sources, and bump the date.
 
+Status reviewed 2026-09-29: L1 wording now distinguishes implemented trigger rates from task-class
+breakdowns and installed-skill competition that remain specification. The v2 verdict protocol is unchanged.
+
 This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
 contract — is [bench-authoring.md](bench-authoring.md).
 
@@ -60,13 +63,14 @@ A bench that cannot discriminate must not produce verdicts.
 
 Whether the agent invokes the skill when it should, and only then. A skill's realized value is gated by this:
 an excellent skill that never fires — or fires everywhere — is worthless. Public benchmarks measure efficacy
-conditional on injection; trigger quality is skillfit's differentiating layer. (Status: **spec; implementation
-is the next milestone**.)
+conditional on injection; trigger quality is skillfit's differentiating layer. (Status: **partial** — trigger
+mode measures the rates below, while positive task classes and real-set competition remain specification.)
 
 - **Task classes** (adopted from OpenAI's eval-skills taxonomy): `explicit` (skill named in prompt),
   `implicit` (in-domain task, skill not named), `contextual` (noisy realistic task), `negative`
-  (`should_trigger: false` — decoy tasks measuring over-triggering). Explicit and implicit results are
-  reported separately; they exercise different mechanisms.
+  (`shouldTrigger: false` — decoy tasks measuring over-triggering). The current manifest records only
+  `shouldTrigger: true/false` and pools the positive classes; reporting explicit and implicit results
+  separately remains specification because they exercise different mechanisms.
 - **Metrics**: trigger recall (fires on should-trigger tasks), false-trigger rate (fires on negative tasks),
   and precision (positives fired / all fired) — each a proportion over its own denominator, each with a
   Wilson 95% CI. F1 is reported **bare**: it is a harmonic mean of two proportions and has no closed-form
