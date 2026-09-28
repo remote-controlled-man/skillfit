@@ -336,6 +336,64 @@ test('a staging failure applies nothing, not even the items staged before it', a
   assert.equal(await exists(lockPath), false, 'the lockfile must not record an install that did not happen');
 });
 
+test('a rename failure after the first file does not leave a partial install', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const rulesTarget = path.join(home, '.codex', 'AGENTS.md');
+  const skillTarget = path.join(home, '.agents', 'skills', 'commit-message', 'SKILL.md');
+  const realRename = fs.rename.bind(fs);
+  t.mock.method(fs, 'rename', async (source: string, target: string) => {
+    if (target === skillTarget && source.includes('.skillfit-staged')) {
+      throw Object.assign(new Error('injected rename failure'), { code: 'EACCES' });
+    }
+    return realRename(source, target);
+  });
+
+  await assert.rejects(runInstall(makeOpts(home, project, { agent: 'codex' })), /injected rename failure/);
+
+  assert.equal(await exists(rulesTarget), false, 'the earlier rules write must be rolled back');
+  assert.equal(await exists(skillTarget), false);
+  assert.equal(await exists(path.join(home, LOCKFILE_NAME)), false);
+});
+
+test('a lockfile rename failure restores updated content and the old lockfile', async (t) => {
+  const { home, project } = await tempDirs(t);
+  await runInstall(makeOpts(home, project, { agent: 'codex' }));
+  const rulesTarget = path.join(home, '.codex', 'AGENTS.md');
+  const skillTarget = path.join(home, '.agents', 'skills', 'commit-message', 'SKILL.md');
+  const lockTarget = path.join(home, LOCKFILE_NAME);
+  const originalRules = await fs.readFile(rulesTarget, 'utf8');
+  const originalSkill = await fs.readFile(skillTarget, 'utf8');
+  const originalLock = await fs.readFile(lockTarget, 'utf8');
+
+  const profilesCopy = path.join(project, 'profiles-copy');
+  await fs.cp(PROFILES_DIR, profilesCopy, { recursive: true });
+  const skillSrc = path.join(profilesCopy, 'recommended', 'skills', 'commit-message', 'SKILL.md');
+  await fs.writeFile(skillSrc, '---\nname: commit-message\ndescription: v2\n---\nv2 body\n');
+  const manifestPath = path.join(profilesCopy, 'recommended', 'profile.json');
+  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as { version: string };
+  manifest.version = '1.1.0';
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+
+  const realRename = fs.rename.bind(fs);
+  t.mock.method(fs, 'rename', async (source: string, target: string) => {
+    if (target === lockTarget && source.includes('.skillfit-staged')) {
+      throw Object.assign(new Error('injected lockfile rename failure'), { code: 'EACCES' });
+    }
+    return realRename(source, target);
+  });
+  await assert.rejects(
+    runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy })),
+    /injected lockfile rename failure/,
+  );
+
+  assert.equal(await fs.readFile(rulesTarget, 'utf8'), originalRules);
+  assert.equal(await fs.readFile(skillTarget, 'utf8'), originalSkill);
+  assert.equal(await fs.readFile(lockTarget, 'utf8'), originalLock);
+  assert.equal(await fs.readFile(lockTarget + BACKUP_SUFFIX, 'utf8'), originalLock);
+  const files = Object.keys(await snapshot(home));
+  assert.ok(!files.some((name) => name.includes('.skillfit-staged') || name.includes('.skillfit-restore')));
+});
+
 test('a stale lockfile entry reconciles on the next successful run', async (t) => {
   const { home, project } = await tempDirs(t);
   const profilesCopy = path.join(project, 'profiles-copy');

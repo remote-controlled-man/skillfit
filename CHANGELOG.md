@@ -80,6 +80,15 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
 
 ### Fixed
 
+- **`install` now rolls back a failed apply, including its lockfile (2026-09-29).** Staging already
+  protected against failures before the first rename, but a later rename failure left earlier target
+  files changed with no updated lockfile. The installer now keeps temporary copies of each target's
+  immediate prior state, stages the lockfile with the content files, and restores applied targets if
+  a rename or post-install verification fails. Fault-injection tests cover a failure on the second
+  content file and a failure on the lockfile after an update. An abrupt process termination remains
+  outside this rollback path; the five READMEs now state that limit instead of promising that every
+  mid-install failure applies nothing.
+
 - **Errored trials are excluded, not scored as failures (B1).** An executor error left
   `passed = false` on the record and both `statsFor` and `trialFlags` counted it, so a single API
   timeout manufactured a discordant pair and moved Δpass, the McNemar p-value and the bootstrap CI —

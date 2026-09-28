@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import * as os from 'node:os';
@@ -143,20 +143,18 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
     }
   }
 
-  await executeWrites(writes, log);
-
-  const problems = await validateWrites(writes);
-  if (problems.length > 0) {
-    throw new Error(`Post-install validation failed:\n  ${problems.join('\n  ')}\nOriginals were backed up with the ${BACKUP_SUFFIX} suffix.`);
-  }
-  log(`Post-install validation passed (${writes.length} item(s) checked).`);
-
   recordEntries(lock, items, manifest, now().toISOString());
-  // The lockfile is skillfit's own state rather than user content, so its backup is the previous
-  // version (the rollback target) and is deliberately overwritten — unlike content backups, which
-  // keep the earliest copy. AGENTS.md requires a backup before every write, and this one is a write.
-  if (existsSync(lockPath)) await fs.copyFile(lockPath, lockPath + BACKUP_SUFFIX);
-  await writeFileAtomic(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+  const lockContent = `${JSON.stringify(lock, null, 2)}\n`;
+  await executeWrites(writes, lockPath, lockContent, async () => {
+    const problems = await validateWrites(writes);
+    if (problems.length > 0) {
+      throw new Error(`Post-install validation failed:\n  ${problems.join('\n  ')}`);
+    }
+    if (await fs.readFile(lockPath, 'utf8') !== lockContent) {
+      throw new Error(`Post-install validation failed: lockfile content differs from the plan at ${lockPath}`);
+    }
+  }, log);
+  log(`Post-install validation passed (${writes.length} item(s) checked).`);
   log(`Lockfile updated: ${lockPath}`);
   log('Install complete.');
 }
@@ -488,28 +486,92 @@ function printPlan(log: (line: string) => void, manifest: ProfileManifest, scope
   log(`Summary: ${counts.create} create, ${counts.update} update, ${counts.skip} skipped (unchanged), ${counts.conflict} conflict`);
 }
 
-async function executeWrites(writes: PlanItem[], log: (line: string) => void): Promise<void> {
-  // Two phases. Everything is backed up and staged beside its target first, so a failure while
-  // generating content leaves the install untouched; only then does anything become visible.
-  // writeFileAtomic is atomic per file, but a sequence of them is not atomic as a whole.
-  const staged: { target: string; tmp: string; backedUp: string | null }[] = [];
+interface StagedWrite {
+  target: string;
+  tmp: string;
+  restore: string | null;
+  backedUp: string | null;
+  isLockfile: boolean;
+}
+
+async function executeWrites(
+  writes: PlanItem[],
+  lockPath: string,
+  lockContent: string,
+  validate: () => Promise<void>,
+  log: (line: string) => void,
+): Promise<void> {
+  // Every target gets a temporary copy of its immediately previous state for rollback. The
+  // user-facing .skillfit-bak has a different purpose: it preserves the earliest original.
+  // Include the lockfile in this batch so its write and post-write validation can also roll back.
+  const files = writes.flatMap((item) => item.files.map((file) => ({ ...file, isLockfile: false })));
+  files.push({ path: lockPath, content: lockContent, backup: existsSync(lockPath), isLockfile: true });
+  const staged: StagedWrite[] = [];
   try {
-    for (const item of writes) {
-      for (const file of item.files) {
-        const backedUp = file.backup ? await backupOnce(file.path) : null;
-        const tmp = `${file.path}.${process.pid}.skillfit-staged`;
-        await fs.mkdir(path.dirname(file.path), { recursive: true });
-        await fs.writeFile(tmp, file.content, 'utf8');
-        staged.push({ target: file.path, tmp, backedUp });
+    for (const file of files) {
+      await fs.mkdir(path.dirname(file.path), { recursive: true });
+      const suffix = `${process.pid}.${randomUUID()}`;
+      const tmp = `${file.path}.${suffix}.skillfit-staged`;
+      const restore = existsSync(file.path) ? `${file.path}.${suffix}.skillfit-restore` : null;
+      const entry: StagedWrite = { target: file.path, tmp, restore, backedUp: null, isLockfile: file.isLockfile };
+      staged.push(entry);
+      if (restore) await fs.copyFile(file.path, restore);
+      if (file.backup) {
+        // The lockfile backup tracks the previous version; user-content backups keep the first.
+        if (file.isLockfile) {
+          await fs.copyFile(file.path, file.path + BACKUP_SUFFIX);
+          entry.backedUp = file.path + BACKUP_SUFFIX;
+        } else {
+          entry.backedUp = await backupOnce(file.path);
+        }
       }
+      await fs.writeFile(tmp, file.content, 'utf8');
     }
   } catch (error) {
-    for (const entry of staged) await fs.rm(entry.tmp, { force: true });
+    await cleanupStaged(staged);
     throw error;
   }
+
+  const applied: StagedWrite[] = [];
+  try {
+    for (const entry of staged) {
+      await fs.rename(entry.tmp, entry.target);
+      applied.push(entry);
+    }
+    await validate();
+  } catch (error) {
+    const rollbackFailures: string[] = [];
+    const preserveRestores = new Set<string>();
+    for (const entry of applied.reverse()) {
+      try {
+        if (entry.restore) await fs.copyFile(entry.restore, entry.target);
+        else await fs.rm(entry.target, { force: true });
+      } catch (rollbackError) {
+        rollbackFailures.push(`${entry.target}: ${(rollbackError as Error).message}`);
+        preserveRestores.add(entry.target);
+      }
+    }
+    await cleanupStaged(staged, preserveRestores);
+    if (rollbackFailures.length > 0) {
+      throw new Error(
+        `Install failed (${(error as Error).message}) and rollback failed for ${rollbackFailures.join('; ')}. ` +
+          `Recovery copies with the .skillfit-restore suffix were kept beside those targets.`,
+        { cause: error },
+      );
+    }
+    throw error;
+  }
+
+  await cleanupStaged(staged);
   for (const entry of staged) {
-    await fs.rename(entry.tmp, entry.target);
-    log(`  wrote ${entry.target}${entry.backedUp ? ` (backup: ${entry.backedUp})` : ''}`);
+    if (!entry.isLockfile) log(`  wrote ${entry.target}${entry.backedUp ? ` (backup: ${entry.backedUp})` : ''}`);
+  }
+}
+
+async function cleanupStaged(staged: StagedWrite[], preserveRestores: Set<string> = new Set()): Promise<void> {
+  for (const entry of staged) {
+    await fs.rm(entry.tmp, { force: true });
+    if (entry.restore && !preserveRestores.has(entry.target)) await fs.rm(entry.restore, { force: true });
   }
 }
 
@@ -528,13 +590,6 @@ async function backupOnce(target: string): Promise<string | null> {
   }
   await fs.copyFile(target, backup);
   return backup;
-}
-
-async function writeFileAtomic(target: string, content: string): Promise<void> {
-  await fs.mkdir(path.dirname(target), { recursive: true });
-  const tmp = path.join(path.dirname(target), `${path.basename(target)}.${process.pid}.skillfit-tmp`);
-  await fs.writeFile(tmp, content, 'utf8');
-  await fs.rename(tmp, target);
 }
 
 async function validateWrites(writes: PlanItem[]): Promise<string[]> {
