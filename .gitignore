@@ -1,6 +1,7 @@
 node_modules/
 dist/
 runs/
+.DS_Store
 
 # The internal lab workbench lives here locally and must never be committed
 # or published. WARNING: never run `git clean -fdx` in this repository —
