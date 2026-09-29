@@ -1,0 +1,4 @@
+interface:
+  display_name: "Autonomous Iteration"
+  short_description: "Drive multi-slice coding goals to verified completion"
+  default_prompt: "Use $autonomous-iteration to deliver this requirement end to end with bounded loops and evidence."

@@ -2,7 +2,7 @@
 
 ## What this is
 
-Evidence-driven configuration CLI for AI coding agents. Six commands: `doctor` (read-only health check), `report` (skill usage receipts from local session history), `eval` (paired A/B experiment harness + trigger mode), `bench` (scaffold + offline validation + failure freezing), `install` (idempotent, dry-run-first writer), `bundle` (portable Codex profile export). Supports Claude Code, Codex CLI, Kimi Code.
+Evidence-driven configuration CLI for AI coding agents. Seven commands: `doctor` (read-only health check), `report` (skill usage receipts from local session history), `eval` (paired A/B experiment harness + trigger mode), `bench` (scaffold + offline validation + failure freezing), `install` (idempotent, dry-run-first writer), `setup` (selectable Codex Skill sources), `bundle` (portable Codex profile export). Supports Claude Code, Codex CLI, Kimi Code.
 
 ## Commands
 
@@ -30,7 +30,7 @@ node dist/cli.js doctor    # smoke against the real machine (read-only)
 - `benches/` — public bench format + bundled benches
 - `skills/` — the driver skill (teaches agents to drive the CLI)
 - `docs/` — design contracts (`metrics.md` freezes the metrics and verdict protocol)
-- `profiles/` — installable profiles (deny-by-default manifests)
+- `profiles/` — installable profiles (deny-by-default manifests); `codex-curated` is the public selectable source profile
 - `evidence/` — published experiment reports, dated and pinned
 - `runs/` — local eval output, gitignored
 

@@ -116,3 +116,30 @@ test('refuses a changed upstream file before creating any installable profile', 
   );
   await assert.rejects(fs.stat(path.join(root, 'skills')), { code: 'ENOENT' });
 });
+
+test('retries transient upstream connection failures', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'skillfit-upstream-retry-'));
+  t.after(async () => fs.rm(root, { recursive: true, force: true }));
+  const bundle = path.join(root, 'portable');
+  await fs.mkdir(bundle);
+  await fs.writeFile(path.join(bundle, 'profile.json'), JSON.stringify({
+    name: 'portable', version: '1.0.0', agents: ['codex'], scope: 'user',
+    skills: [{ name: 'remote-skill', source: 'skills/remote-skill' }],
+  }));
+  await fs.writeFile(path.join(bundle, 'upstream.lock.json'), JSON.stringify({ version: 1, skills: [{
+    name: 'remote-skill', repo: 'owner/repo', commit, path: 'skills/remote-skill',
+    files: [{ path: 'SKILL.md', sha256: hash }],
+  }] }));
+  let attempts = 0;
+  const prepared = await prepareUpstreamProfile(bundle, { fetcher: async () => {
+    attempts++;
+    if (attempts === 1) throw new Error('transient network failure');
+    return new Response(body, { status: 200 });
+  } });
+  try {
+    assert.equal(attempts, 2);
+    assert.equal(await fs.readFile(path.join(prepared.profileDir, 'skills', 'remote-skill', 'SKILL.md'), 'utf8'), body);
+  } finally {
+    await prepared.cleanup();
+  }
+});

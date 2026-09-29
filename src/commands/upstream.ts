@@ -87,7 +87,18 @@ function sourceUrl(skill: UpstreamSkill, file: UpstreamFile): string {
 }
 
 async function fetchVerified(url: string, expected: string, fetcher: typeof fetch): Promise<Buffer> {
-  const response = await fetcher(url, { redirect: 'error', signal: AbortSignal.timeout(60_000) });
+  let response: Response | undefined;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      response = await fetcher(url, { redirect: 'error', signal: AbortSignal.timeout(60_000) });
+      if (![429, 500, 502, 503, 504].includes(response.status) || attempt === 2) break;
+      await response.body?.cancel();
+    } catch (error) {
+      if (attempt === 2) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  if (!response) throw new Error(`Upstream download failed: ${url}`);
   if (!response.ok) throw new Error(`Upstream download failed (${response.status}): ${url}`);
   const length = Number(response.headers.get('content-length'));
   if (Number.isFinite(length) && length > MAX_FILE_BYTES) throw new Error(`Upstream file exceeds size limit: ${url}`);
@@ -122,38 +133,59 @@ async function copyRegularTree(source: string, destination: string): Promise<voi
 /** Download pinned GitHub Skills into an isolated local profile before the normal install plan runs. */
 export async function prepareUpstreamProfile(
   bundleDir: string,
-  options: { fetcher?: typeof fetch; log?: (line: string) => void; tempRoot?: string } = {},
+  options: {
+    fetcher?: typeof fetch;
+    log?: (line: string) => void;
+    tempRoot?: string;
+    lockPath?: string;
+    selectedSkills?: string[];
+    /** null omits rules; a string replaces the profile's rules template. */
+    rulesContent?: string | null;
+  } = {},
 ): Promise<{ profileDir: string; cleanup: () => Promise<void> }> {
   const source = path.resolve(bundleDir);
-  const lock = await readUpstreamLock(path.join(source, 'upstream.lock.json'));
+  const lock = await readUpstreamLock(options.lockPath ?? path.join(source, 'upstream.lock.json'));
   const manifest = JSON.parse(await fs.readFile(path.join(source, 'profile.json'), 'utf8')) as ProfileManifest;
-  const selected = new Map((manifest.skills ?? []).map((skill) => [skill.name, skill]));
+  const available = new Map((manifest.skills ?? []).map((skill) => [skill.name, skill]));
   for (const skill of lock.skills) {
-    const entry = selected.get(skill.name);
+    const entry = available.get(skill.name);
     if (!entry || entry.source !== `skills/${skill.name}`) {
       throw new Error(`Upstream skill ${skill.name} does not match profile.json`);
     }
   }
+  const requested = options.selectedSkills ?? [...available.keys()];
+  if (new Set(requested).size !== requested.length) throw new Error('Duplicate selected Skill');
+  for (const name of requested) if (!available.has(name)) throw new Error(`Unknown selected Skill: ${name}`);
+  const chosen = new Set(requested);
+  const selectedManifest: ProfileManifest = {
+    ...manifest,
+    skills: (manifest.skills ?? []).filter((skill) => chosen.has(skill.name)),
+    rules: options.rulesContent === null ? undefined : manifest.rules,
+  };
+  const remoteSkills = lock.skills.filter((skill) => chosen.has(skill.name));
   const profileName = path.basename(source);
   if (!NAME.test(profileName) || manifest.name !== profileName) throw new Error('Portable profile name mismatch');
-  options.log?.(`Upstream source plan: ${lock.skills.length} GitHub Skills at pinned commits; verify all files before the install plan.`);
+  options.log?.(`Upstream source plan: ${remoteSkills.length} selected GitHub Skills at pinned commits; verify all files before the install plan.`);
   const root = await fs.mkdtemp(path.join(options.tempRoot ?? os.tmpdir(), 'skillfit-upstream-'));
   const destination = path.join(root, profileName);
   const cleanup = async (): Promise<void> => { await fs.rm(root, { recursive: true, force: true }); };
   try {
     await fs.mkdir(destination);
-    await fs.copyFile(path.join(source, 'profile.json'), path.join(destination, 'profile.json'));
-    if (manifest.rules) {
-      if (manifest.rules.template !== 'rules/global.md') throw new Error('Unsupported rules path in portable profile');
+    await fs.writeFile(path.join(destination, 'profile.json'), `${JSON.stringify(selectedManifest, null, 2)}\n`);
+    if (selectedManifest.rules) {
+      if (selectedManifest.rules.template !== 'rules/global.md') throw new Error('Unsupported rules path in portable profile');
       await copyRegularTree(path.join(source, 'rules'), path.join(destination, 'rules'));
+      if (options.rulesContent !== undefined && options.rulesContent !== null) {
+        await fs.writeFile(path.join(destination, 'rules', 'global.md'), options.rulesContent);
+      }
     }
-    for (const skill of manifest.skills ?? []) {
+    for (const skill of selectedManifest.skills ?? []) {
       if (skill.source !== `skills/${skill.name}` || !NAME.test(skill.name)) throw new Error(`Invalid portable source for ${skill.name}`);
       if (!lock.skills.some((remote) => remote.name === skill.name)) {
         await copyRegularTree(path.join(source, 'skills', skill.name), path.join(destination, 'skills', skill.name));
       }
     }
-    for (const skill of lock.skills) {
+    for (const skill of remoteSkills) {
       for (const file of skill.files) {
         const url = sourceUrl(skill, file);
         const content = await fetchVerified(url, file.sha256, options.fetcher ?? fetch);
