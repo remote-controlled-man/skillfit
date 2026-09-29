@@ -87,6 +87,8 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
+For the reviewed 11 GitHub Skills, add `--upstream-lock ./profiles/codex-upstream-sources.json` when exporting. Setup then downloads those Skills from pinned author commits and verifies each file; locally authored Skills stay in the bundle. See the [source audit](docs/codex-upstream-audit.md).
+
 ## The six commands
 
 | Command | What it does | Writes? |

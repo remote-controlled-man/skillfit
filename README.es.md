@@ -87,6 +87,8 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
+Para obtener los 11 Skills de GitHub revisados desde los repositorios de sus autores, añade `--upstream-lock ./profiles/codex-upstream-sources.json` al exportar. La instalación descarga archivos de commits fijados y verifica cada uno; los Skills propios permanecen en el paquete. Consulta la [auditoría de fuentes](docs/codex-upstream-audit.md).
+
 ## Los seis comandos
 
 | Comando | Qué hace | ¿Escribe? |

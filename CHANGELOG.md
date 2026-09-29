@@ -16,6 +16,11 @@ protocol is unchanged.
   global `AGENTS.md` block, preserves existing content, checks `CODEX_HOME` and active overrides,
   copies binary Skill assets, and verifies every written file. User-invoked-only Skills remain
   explicit-only in the generated routing guidance.
+- **Pinned upstream Skill sources:** `bundle export --upstream-lock` selects the lock's GitHub Skills
+  and local Skills as a portable set. On the new machine, the standalone setup fetches the GitHub
+  files from exact author commits, checks their SHA-256 hashes and invocation policy, then runs the
+  existing safe install plan. The reviewed Codex lock records 11 third-party and two local Skills;
+  the personal bundle stays outside Git.
 - **`docs/bench-authoring.md` — the authoring guide (A11).** The paradigm was complete and well-sourced
   but had no single home: `docs/metrics.md` carried the *why*, `benches/README.md` the *what*,
   `benches/contrib/README.md` the *how to submit*, and the two bundled benches the *what one looks

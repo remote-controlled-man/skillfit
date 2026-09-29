@@ -87,6 +87,8 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
+確認済みの 11 個の GitHub Skills を作者のリポジトリから取得するには、エクスポート時に `--upstream-lock ./profiles/codex-upstream-sources.json` を追加します。セットアップは固定コミットからダウンロードして各ファイルを検証し、自作 Skills はバンドルに残します。[ソース監査](docs/codex-upstream-audit.md)を参照してください。
+
 ## 6 つのコマンド
 
 | コマンド | 機能 | 書き込み？ |

@@ -133,3 +133,27 @@ test('export dry-run writes nothing and refuses an existing destination', async 
   );
   assert.equal(await fs.readFile(path.join(outputDir, 'keep.txt'), 'utf8'), 'keep');
 });
+
+test('upstream export pins a GitHub skill and keeps a self-written skill local', async (t) => {
+  const { root, home } = await fixture(t);
+  for (const name of ['local-skill']) {
+    const dir = path.join(home, '.agents', 'skills', name);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'SKILL.md'), `---\nname: ${name}\ndescription: ${name} tasks.\n---\nUse it.\n`);
+  }
+  const lockPath = path.join(root, 'sources.json');
+  await fs.writeFile(lockPath, JSON.stringify({ version: 1, skills: [{
+    name: 'remote-skill', repo: 'owner/repo', commit: 'a'.repeat(40), path: 'skills/remote-skill',
+    files: [{ path: 'SKILL.md', sha256: 'b'.repeat(64) }], explicitOnly: true,
+  }], localSkills: ['local-skill'] }));
+  const outputDir = path.join(root, 'portable-codex');
+  await runBundleExport({ outputDir, homeDir: home, upstreamLockPath: lockPath, yes: true, log: () => {}, loadUsage: async () => { throw new Error('usage selection should not run'); } });
+  await assert.rejects(fs.stat(path.join(outputDir, 'skills', 'remote-skill')), { code: 'ENOENT' });
+  assert.match(await fs.readFile(path.join(outputDir, 'skills', 'local-skill', 'SKILL.md'), 'utf8'), /Use it/);
+  const lock = JSON.parse(await fs.readFile(path.join(outputDir, 'upstream.lock.json'), 'utf8')) as { skills: { name: string }[]; localSkills: string[] };
+  assert.deepEqual(lock.skills.map((skill) => skill.name), ['remote-skill']);
+  assert.deepEqual(lock.localSkills, ['local-skill']);
+  assert.match(await fs.readFile(path.join(outputDir, 'setup.mjs'), 'utf8'), /prepareUpstreamProfile/);
+  const rules = await fs.readFile(path.join(outputDir, 'rules', 'global.md'), 'utf8');
+  assert.match(rules, /User-invoked only: `remote-skill`/);
+});

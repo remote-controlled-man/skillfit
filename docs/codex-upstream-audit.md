@@ -1,0 +1,29 @@
+# Codex portable Skill source audit — 2026-09-29
+
+This audit records the source choice behind [`codex-upstream-sources.json`](../profiles/codex-upstream-sources.json). The lock pins 11 third-party Skills to exact GitHub commits and SHA-256 hashes, and selects two locally authored Skills, `vibe-coding` and `autonomous-iteration`, to copy into the private portable bundle. The bundle also carries the user's global guidance; none of that private content is in this repository.
+
+## Source changes
+
+| Skills | Observed difference from local installation | Selection |
+| --- | --- | --- |
+| `code-review`, `doubt-driven-development`, `source-driven-development`, `writing-shape` | Selected files match current upstream. | Pin current commits. Keep `writing-shape` user-invoked only, following its `openai.yaml` policy. |
+| `api-and-interface-design`, `codebase-design`, `diagnosing-bugs`, `tdd` | Small text changes. The local API and codebase descriptions add a useful division between public and internal design. The local diagnosis and TDD files refer to `CONTEXT.md`; upstream now refers to `GLOSSARY.md`. One codebase reference also changed. | Pin current upstream. Preserve the public/internal and diagnosis/TDD routing distinction in generated `AGENTS.md`. Do not treat these edits as measured quality gains. |
+| `frontend-design` | Substantial change to typography, motion, anti-template examples, and design process. | Pin current upstream for new environments. Review against task-specific design benches before claiming it improves output over the local revision. |
+| `security-and-hardening` | Large examples moved from the root `SKILL.md` to `references/hardening-patterns.md`; the root is much shorter. | Pin both current files. Progressive disclosure is promising, but quality remains unmeasured. |
+| `edit-article` | Removed from the current `mattpocock/skills` tree. The last available revision at `f958fa17c1b62c3f7be38fc09512669acf6b64fc` matches the local file byte for byte. | Pin that historical commit; a moving branch would fail to install it. |
+
+The original repositories are [mattpocock/skills](https://github.com/mattpocock/skills), [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), and [anthropics/skills](https://github.com/anthropics/skills). Source commits and file hashes are in the lock rather than repeated here.
+
+## What the evidence says
+
+The local `skillfit report --agent codex --json` scan covered 1,372 sessions. It found `vibe-coding` in 33 sessions and `autonomous-iteration` in 15. Those receipts show use, not whether either Skill improved the result. Their scopes fit together: `vibe-coding` routes ordinary engineering work; `autonomous-iteration` governs substantial, multi-step work and calls the smaller workflow for each coding slice. Generated global guidance states this division and loads the smallest relevant specialist Skill. `writing-shape` remains explicit-only.
+
+The current `skillfit doctor --agent codex` smoke found 74 valid user Skills and warned about their routing cost. The portable selection installs 13. This is a smaller, task-focused starting set, not a verdict that the other 61 are ineffective.
+
+The existing debugging bench can measure `diagnosing-bugs` behavior, and the code-review bench can measure `code-review`. They do not measure frontend design quality, security review quality, or the two locally authored workflow Skills. A meaningful preference between old and new text requires suitable tasks and paired runs; file recency and usage counts alone are insufficient. The upstream lock therefore records a reproducible candidate for new environments, not a statistically proven best set.
+
+A one-trial real Codex CLI trigger run of the pinned upstream `diagnosing-bugs` on the eight-task debugging bench observed 3/5 intended triggers and 0/3 false triggers; seven tasks passed their verifiers. The 95% intervals are wide (recall 23%–88%, false-trigger rate 0%–56%). The run did not compare old and new versions, and this machine also has a user-level Skill with the same name, so it cannot establish a quality gain from the upstream revision. The local manifest is under ignored `runs/eval-20260929-231222/manifest.json`; it is not published as evidence.
+
+The current machine has six locally modified Skill directories relative to the pinned upstream versions. A setup dry run reports them as conflicts and preserves them. A clean, isolated home installed all 13 Skills and global `AGENTS.md`; a second run skipped all 14 installed items. To migrate an existing machine, compare and decide on the local edits before replacing any of those six Skills.
+
+This approach follows [OpenAI's current advice to keep Skill descriptions focused and avoid overlapping triggers](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra), as well as its [Codex Skill locations](https://learn.chatgpt.com/docs/build-skills) and [global `AGENTS.md` discovery rules](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
