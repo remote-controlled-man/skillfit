@@ -77,7 +77,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## 可选择的 Codex 配置
 
-新用户克隆仓库后，可逐项选 Skills，也可用 `--all`。脚本会构建 skillfit，从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南](docs/selectable-codex.md)。
+新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills，再重复 `--skill` 逐项选择；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 选原来的 13 个，`--all` 选全部 67 个，可能挤占 Codex 的 Skill 路由列表。脚本从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南](docs/selectable-codex.md)。
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -98,7 +98,7 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
-要让已核对的 11 个 GitHub Skills 从作者仓库安装，导出时加 `--upstream-lock ./profiles/codex-upstream-sources.json`。新环境会按固定提交下载并逐文件校验；自己写的 Skills 仍随包携带。详见[来源核查](docs/codex-upstream-audit.md)。
+要导出完整的 65 个上游 Skills 来源目录，可加 `--upstream-lock ./profiles/codex-upstream-sources.json`。新环境会按固定提交下载并逐文件校验；自己写的 Skills 仍随包携带。较小的新环境可用上面的选择安装流程。详见[来源核查](docs/codex-upstream-audit.md)。
 
 ## 七个命令
 

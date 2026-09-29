@@ -77,7 +77,7 @@ Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capabil
 
 ## Selectable Codex setup
 
-From a fresh clone, choose individual Skills or all 13. The script builds skillfit, fetches selected third-party Skills from their pinned author commits, verifies SHA-256 hashes, and plans a managed global `AGENTS.md` block. The two locally authored Skills live in this repository. See the [selectable setup guide](docs/selectable-codex.md).
+From a fresh clone, choose from 67 installable Skills with `--list` and repeated `--skill` flags. The seven retired local Skills are listed with reasons. `--starter` selects the original 13-Skill set; `--all` selects all 67 and may crowd Codex's Skill routing list. The script fetches selected third-party Skills from pinned author commits, verifies SHA-256 hashes, and plans a managed global `AGENTS.md` block. The two locally authored Skills live in this repository. See the [selectable setup guide](docs/selectable-codex.md).
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -98,7 +98,7 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
-For the reviewed 11 GitHub Skills, add `--upstream-lock ./profiles/codex-upstream-sources.json` when exporting. Setup then downloads those Skills from pinned author commits and verifies each file; locally authored Skills stay in the bundle. See the [source audit](docs/codex-upstream-audit.md).
+To export the full 65-Skill upstream source catalog, add `--upstream-lock ./profiles/codex-upstream-sources.json`. Setup then downloads those Skills from pinned author commits and verifies each file; locally authored Skills stay in the bundle. For a smaller new environment, use the selectable setup above. See the [source audit](docs/codex-upstream-audit.md).
 
 ## The seven commands
 

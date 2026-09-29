@@ -77,7 +77,7 @@ Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matr
 
 ## Configuración seleccionable de Codex
 
-En un entorno nuevo, clona el repositorio y elige Skills individuales o usa `--all`. El script compila skillfit, descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable](docs/selectable-codex.md).
+En un entorno nuevo, `--list` muestra 67 Skills instalables y puedes repetir `--skill` para elegir. También muestra siete Skills locales retirados con el motivo. `--starter` selecciona los 13 originales; `--all` selecciona los 67, lo que puede saturar la lista de enrutamiento de Codex. El script descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable](docs/selectable-codex.md).
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -98,7 +98,7 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
-Para obtener los 11 Skills de GitHub revisados desde los repositorios de sus autores, añade `--upstream-lock ./profiles/codex-upstream-sources.json` al exportar. La instalación descarga archivos de commits fijados y verifica cada uno; los Skills propios permanecen en el paquete. Consulta la [auditoría de fuentes](docs/codex-upstream-audit.md).
+Para exportar el catálogo completo de 65 Skills externos, añade `--upstream-lock ./profiles/codex-upstream-sources.json`. La instalación verifica cada archivo del commit fijado y los Skills propios permanecen en el paquete. Para un entorno nuevo más pequeño, usa la instalación seleccionable anterior. Consulta la [auditoría de fuentes](docs/codex-upstream-audit.md).
 
 ## Los siete comandos
 
