@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vibe Coding Workflow"
+  short_description: "Route coding work through disciplined engineering loops"
+  default_prompt: "Use $vibe-coding to implement this change with tests and verification."

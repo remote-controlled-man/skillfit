@@ -75,6 +75,17 @@ cp -r skills/skillfit ~/.agents/skills/
 
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
+## 可选择的 Codex 配置
+
+新用户克隆仓库后，可逐项选 Skills，也可用 `--all`。脚本会构建 skillfit，从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南](docs/selectable-codex.md)。
+
+```bash
+git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
+bash scripts/setup-codex.sh --list
+bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs
+bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
+```
+
 ## 可迁移的 Codex 配置
 
 导出至少在两个 Codex 会话中用过的用户级 Skills 和当前生效的全局规则。把生成的目录带到新机器后安装即可。范围与选项见[迁移指南](docs/portable-codex.md)。
@@ -89,7 +100,7 @@ node ./personal-codex/setup.mjs --yes
 
 要让已核对的 11 个 GitHub Skills 从作者仓库安装，导出时加 `--upstream-lock ./profiles/codex-upstream-sources.json`。新环境会按固定提交下载并逐文件校验；自己写的 Skills 仍随包携带。详见[来源核查](docs/codex-upstream-audit.md)。
 
-## 六个命令
+## 七个命令
 
 | 命令 | 干什么 | 写文件？ |
 |---|---|---|
@@ -98,6 +109,7 @@ node ./personal-codex/setup.mjs --yes
 | `eval <skill>` | 默认（`--mode inject`）：配对 baseline/treatment，确定性 verifier + 可选盲评，token 成本差值，判定走 McNemar 精确检验 + 配对 bootstrap CI，bench 发出 checks 时另有分级 facet 分数 CI。`--mode trigger`：skill 改为真实安装而不注入 prompt，从 transcript 机械判定触发召回率 / 误触发率 | 仅本地 `runs/` |
 | `bench` | `init` 生成带可运行示例任务的骨架；`check` 离线校验（verifier 自测、oracle/NOP 闸门、mock 臂探针、fixture 体积、触发标签覆盖）；`add --freeze` 把你刚目击的翻车冻成永久 bench 任务，`--decompose` 可让 agent 起草 verifier + 参考解，两道闸门都过才接纳 | `init`/`add` 确认后才写；`check` 从不 |
 | `install` | 受管区域规则写入（`<!-- SKILLFIT_START/END -->`，幂等）、skill 复制带冲突保护、内容哈希锁定的 lockfile、安装后校验。写入前先暂存；如果写入或校验失败，会回滚本次改动的目标文件，包括 lockfile。进程突然终止仍可能留下部分安装，可重新运行以协调状态。原文件保留在 `<file>.skillfit-bak`，且首份备份优先，后续更新不会覆盖它。`--dry-run` 会报告冲突并以 0 退出；加上 `--strict` 则让冲突失败（用于 CI 闸门） | 确认后才写 |
+| `setup codex` | 列出或安装所选的固定版本上游 Skills、本仓库自写 Skills 和全局触发指引；默认只展示计划 | 仅 `--yes` 写入 |
 | `bundle` | `export` 将用过的本地 Skills 和当前全局规则导出为可迁移的 Codex profile | 确认后才写 |
 
 ## 自带 bench

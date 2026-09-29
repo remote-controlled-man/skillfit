@@ -6,8 +6,9 @@ import { runDoctor } from './commands/doctor.js';
 import { runEval } from './commands/eval.js';
 import { runInstall } from './commands/install.js';
 import { runReport } from './commands/report.js';
+import { runCodexSetup } from './commands/setup.js';
 
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
 
@@ -21,6 +22,7 @@ Usage:
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
   skillfit install [options]                Install evidence-backed configuration
+  skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance
   skillfit bundle export <dir> [options]   Export used Codex skills and global guidance as a portable profile
 
 Options:
@@ -32,6 +34,10 @@ Options:
   --profile <name>    Profile for install (default: "recommended")
   --profile-path <dir>  Install a portable profile from a local directory
   --skill <name>     With bundle export, include a named installed skill (repeatable)
+                     With setup codex, select a Skill (repeatable)
+  --all              With setup codex, select all 13 Skills
+  --list             With setup codex, list choices without downloading
+  --no-rules         With setup codex, skip the global AGENTS.md block
   --min-sessions <n>  With bundle export, default selection needs this many sessions (default: 2)
   --upstream-lock <path>  With bundle export, fetch listed GitHub Skills at pinned commits during setup
   --project           Install into the current project instead of user-level config
@@ -74,6 +80,9 @@ async function main(): Promise<void> {
       profile: { type: 'string' },
       'profile-path': { type: 'string' },
       skill: { type: 'string', multiple: true },
+      all: { type: 'boolean', default: false },
+      list: { type: 'boolean', default: false },
+      'no-rules': { type: 'boolean', default: false },
       'min-sessions': { type: 'string' },
       'upstream-lock': { type: 'string' },
       task: { type: 'string' },
@@ -154,6 +163,18 @@ async function main(): Promise<void> {
         profilePath: values['profile-path'],
         project: values.project ?? false,
         strict: values.strict ?? false,
+      });
+      return;
+    case 'setup':
+      if (positionals[1] !== 'codex') {
+        console.error('Usage: skillfit setup codex [--list | --all | --skill <name> ...] [--no-rules] [--dry-run] [--yes]');
+        process.exitCode = 2;
+        return;
+      }
+      await runCodexSetup({
+        all: values.all, skills: values.skill, list: values.list,
+        noRules: values['no-rules'], dryRun: values['dry-run'],
+        strict: values.strict, yes: values.yes,
       });
       return;
     case 'bundle': {

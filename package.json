@@ -1,6 +1,6 @@
 {
   "name": "skillfit",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Evidence-driven configuration for AI coding agents: measure which skills, rules and MCP servers actually help — then install only those.",
   "type": "module",
   "bin": {

@@ -1,0 +1,23 @@
+{
+  "name": "codex-curated",
+  "version": "0.5.0",
+  "description": "Selectable Codex Skills with upstream source verification and global routing guidance",
+  "agents": ["codex"],
+  "scope": "user",
+  "rules": { "template": "rules/global.md" },
+  "skills": [
+    { "name": "api-and-interface-design", "source": "skills/api-and-interface-design" },
+    { "name": "code-review", "source": "skills/code-review" },
+    { "name": "codebase-design", "source": "skills/codebase-design" },
+    { "name": "diagnosing-bugs", "source": "skills/diagnosing-bugs" },
+    { "name": "doubt-driven-development", "source": "skills/doubt-driven-development" },
+    { "name": "edit-article", "source": "skills/edit-article" },
+    { "name": "frontend-design", "source": "skills/frontend-design" },
+    { "name": "security-and-hardening", "source": "skills/security-and-hardening" },
+    { "name": "source-driven-development", "source": "skills/source-driven-development" },
+    { "name": "tdd", "source": "skills/tdd" },
+    { "name": "writing-shape", "source": "skills/writing-shape" },
+    { "name": "autonomous-iteration", "source": "skills/autonomous-iteration" },
+    { "name": "vibe-coding", "source": "skills/vibe-coding" }
+  ]
+}

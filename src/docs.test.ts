@@ -36,6 +36,18 @@ test('portable Codex setup is linked and its command block matches across README
   }
 });
 
+test('selectable Codex setup commands match across README languages', () => {
+  const normalized = (file: string) => read(file).replace(/\r\n/g, '\n');
+  const english = normalized('README.md');
+  const commandBlock = /```bash\ngit clone https:\/\/github\.com\/remote-controlled-man\/skillfit\.git && cd skillfit[\s\S]*?bash scripts\/setup-codex\.sh --skill vibe-coding --skill diagnosing-bugs --yes\n```/.exec(english)?.[0];
+  assert.ok(commandBlock);
+  for (const readme of READMES) {
+    const content = normalized(readme);
+    assert.match(content, /\(docs\/selectable-codex\.md\)/, `${readme} must link the selectable setup guide`);
+    assert.ok(content.includes(commandBlock), `${readme} must use the same selectable setup commands`);
+  }
+});
+
 test('bench-authoring.md carries all seven steps and both gates', () => {
   const guide = read(GUIDE);
   for (const step of [
