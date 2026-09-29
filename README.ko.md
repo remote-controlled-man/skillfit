@@ -87,6 +87,8 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
+검토한 GitHub Skills 11개를 원 작성자의 저장소에서 받으려면 내보낼 때 `--upstream-lock ./profiles/codex-upstream-sources.json`을 추가하세요. 설치 과정에서 고정된 커밋의 파일을 내려받아 각각 검증하며, 직접 작성한 Skills는 번들에 남습니다. [출처 검토](docs/codex-upstream-audit.md)를 참고하세요.
+
 ## 여섯 가지 명령어
 
 | 명령어 | 동작 | 파일 쓰기 |

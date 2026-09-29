@@ -6,8 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { getAgent } from '../agents.js';
 import { collectReceipts } from '../harness/receipts.js';
 import { parseFrontmatter } from '../frontmatter.js';
+import { isImplicitInvocationDisabled } from '../invocation.js';
 import { BACKUP_SUFFIX, loadProfile, MARKER_END, MARKER_START } from './install.js';
 import { confirm as confirmPrompt } from './confirm.js';
+import { readUpstreamLock, type UpstreamSkill } from './upstream.js';
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -23,6 +25,8 @@ export interface BundleExportOptions {
   log?: (line: string) => void;
   confirm?: (question: string) => Promise<boolean>;
   loadUsage?: () => Promise<{ name: string; sessionCount: number }[]>;
+  /** Reviewed, commit-pinned GitHub sources; unmatched Skills remain local copies. */
+  upstreamLockPath?: string;
 }
 
 function expandHome(spec: string, homeDir: string): string {
@@ -78,24 +82,19 @@ function renderRules(source: string | null, selected: string[], explicitOnly: st
     `- Available for implicit routing in this portable profile: ${implicit.length > 0 ? implicit.map((name) => `\`${name}\``).join(', ') : 'none'}.`,
   ];
   if (explicitOnly.length > 0) lines.push(`- User-invoked only: ${explicitOnly.map((name) => `\`${name}\``).join(', ')}.`);
-  return `${lines.join('\n')}\n`;
-}
-
-function isImplicitInvocationDisabled(metadata: string | null): boolean {
-  if (metadata === null) return false;
-  const disabled = /(?:^|[\s{,])allow_implicit_invocation:\s*(?:false|"false"|'false')(?=\s*(?:[,}#]|$))/;
-  let inPolicy = false;
-  for (const line of metadata.split(/\r?\n/)) {
-    if (/^policy:/.test(line)) {
-      inPolicy = true;
-      if (disabled.test(line)) return true;
-    } else if (/^[A-Za-z_][\w-]*:/.test(line)) {
-      inPolicy = false;
-    } else if (inPolicy && /^\s+/.test(line) && disabled.test(line)) {
-      return true;
-    }
+  if (selected.includes('vibe-coding')) {
+    lines.push('- For ordinary coding changes, use `vibe-coding` as the workflow router and load only the specialist Skill the task needs.');
   }
-  return false;
+  if (selected.includes('autonomous-iteration')) {
+    lines.push('- Use `autonomous-iteration` for substantial work spanning multiple implementation steps; it uses `vibe-coding` for each coding slice when available.');
+  }
+  if (selected.includes('api-and-interface-design') && selected.includes('codebase-design')) {
+    lines.push('- Use `api-and-interface-design` for public contracts and `codebase-design` for internal module boundaries.');
+  }
+  if (selected.includes('diagnosing-bugs') && selected.includes('tdd')) {
+    lines.push('- Use `diagnosing-bugs` for uncertain failure causes and `tdd` for explicit test-first work or difficult test seams.');
+  }
+  return `${lines.join('\n')}\n`;
 }
 
 function isInstallerArtifact(file: string): boolean {
@@ -117,6 +116,34 @@ async function sha256(file: string): Promise<string> {
   return createHash('sha256').update(await fs.readFile(file)).digest('hex');
 }
 
+async function verifyUpstreamExport(
+  dir: string,
+  manifest: object,
+  lock: object,
+  rules: string,
+  sourceFiles: Map<string, string[]>,
+  skillsDir: string,
+): Promise<void> {
+  const actualManifest = JSON.parse(await fs.readFile(path.join(dir, 'profile.json'), 'utf8')) as object;
+  const actualLock = await readUpstreamLock(path.join(dir, 'upstream.lock.json'));
+  if (JSON.stringify(actualManifest) !== JSON.stringify(manifest) || JSON.stringify(actualLock) !== JSON.stringify(lock)) {
+    throw new Error('Portable export verification failed: manifest or source lock differs');
+  }
+  if (await fs.readFile(path.join(dir, 'rules', 'global.md'), 'utf8') !== rules) {
+    throw new Error('Portable export verification failed: global rules differ');
+  }
+  if (!(await fs.readFile(path.join(dir, 'setup.mjs'), 'utf8')).includes('prepareUpstreamProfile')) {
+    throw new Error('Portable export verification failed: setup script is missing');
+  }
+  for (const [name, files] of sourceFiles) {
+    for (const rel of files) {
+      if (await sha256(path.join(dir, 'skills', name, rel)) !== await sha256(path.join(skillsDir, name, rel))) {
+        throw new Error(`Portable export verification failed for ${name}/${rel}`);
+      }
+    }
+  }
+}
+
 async function defaultUsage(homeDir: string, env: NodeJS.ProcessEnv): Promise<{ name: string; sessionCount: number }[]> {
   const receipt = (await collectReceipts({ agent: 'codex', homeDir, env }))[0];
   const installed = new Set(receipt?.installed ?? []);
@@ -136,18 +163,30 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     throw new Error('Bundle directory name must use lowercase letters, digits and dashes');
   }
   const skillsDir = codexSkillsDir(homeDir);
-  const usage = opts.skillNames === undefined
+  const upstreamLock = opts.upstreamLockPath ? await readUpstreamLock(path.resolve(opts.upstreamLockPath)) : null;
+  const usage = opts.skillNames === undefined && !upstreamLock
     ? await (opts.loadUsage ?? (() => defaultUsage(homeDir, env)))()
     : [];
   const minSessions = opts.minSessions ?? 2;
   if (!Number.isInteger(minSessions) || minSessions < 1) throw new Error('--min-sessions must be a positive integer');
-  const candidates = [...new Set(opts.skillNames ?? usage.filter((item) => item.sessionCount >= minSessions).map((item) => item.name))].sort();
+  const candidates = [...new Set(upstreamLock
+    ? [...upstreamLock.skills.map((skill) => skill.name), ...(upstreamLock.localSkills ?? []), ...(opts.skillNames ?? [])]
+    : opts.skillNames ?? usage.filter((item) => item.sessionCount >= minSessions).map((item) => item.name))].sort();
   const names: string[] = [];
   const explicitOnly: string[] = [];
   const skipped: string[] = [];
   const sourceFiles = new Map<string, string[]>();
+  const upstreamByName = new Map((upstreamLock?.skills ?? []).map((skill) => [skill.name, skill]));
+  const selectedUpstream: UpstreamSkill[] = [];
   for (const name of candidates) {
     if (!NAME_PATTERN.test(name)) throw new Error(`Invalid skill name: ${name}`);
+    const remote = upstreamByName.get(name);
+    if (remote) {
+      names.push(name);
+      selectedUpstream.push(remote);
+      if (remote.explicitOnly) explicitOnly.push(name);
+      continue;
+    }
     const src = path.join(skillsDir, name);
     let files: string[];
     try {
@@ -157,7 +196,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
       files = (await walkFiles(src)).filter((file) => !isInstallerArtifact(file));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-      if (opts.skillNames === undefined) {
+      if (opts.skillNames === undefined && !upstreamLock) {
         skipped.push(name);
         continue;
       }
@@ -186,7 +225,8 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
   log(`Skills (${names.length}): ${names.join(', ') || '(none)'}`);
   if (explicitOnly.length > 0) log(`User-invoked-only skills (${explicitOnly.length}): ${explicitOnly.join(', ')}`);
   if (skipped.length > 0) log(`Skipped skills unavailable in the user skills directory: ${skipped.join(', ')}`);
-  log('The profile contains copies of the selected Skills and global guidance; review it before sharing.');
+  if (upstreamLock) log(`GitHub Skills pinned to reviewed commits (${selectedUpstream.length}); other Skills copied locally (${sourceFiles.size}).`);
+  log('The profile contains personal global guidance; review it before sharing.');
 
   let destinationExists = false;
   try {
@@ -212,6 +252,16 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     }
   }
 
+  const manifest = {
+    name: profileName,
+    version: '1.0.0',
+    description: 'Portable Codex setup exported from a user environment.',
+    agents: ['codex'],
+    scope: 'user',
+    rules: { template: 'rules/global.md' },
+    skills: names.map((name) => ({ name, source: `skills/${name}` })),
+  };
+  const exportedLock = { version: 1, skills: selectedUpstream, localSkills: [...sourceFiles.keys()] };
   await fs.mkdir(path.dirname(outputDir), { recursive: true });
   const stageRoot = await fs.mkdtemp(path.join(path.dirname(outputDir), `.${profileName}-skillfit-`));
   const stage = path.join(stageRoot, profileName);
@@ -219,25 +269,33 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     await fs.mkdir(stage);
     await fs.mkdir(path.join(stage, 'rules'), { recursive: true });
     await fs.writeFile(path.join(stage, 'rules', 'global.md'), rules, 'utf8');
-    const manifest = {
-      name: profileName,
-      version: '1.0.0',
-      description: 'Portable Codex setup exported from a user environment.',
-      agents: ['codex'],
-      scope: 'user',
-      rules: { template: 'rules/global.md' },
-      skills: names.map((name) => ({ name, source: `skills/${name}` })),
-    };
     await fs.writeFile(path.join(stage, 'profile.json'), `${JSON.stringify(manifest, null, 2)}\n`);
     await fs.writeFile(path.join(stage, 'package.json'), '{"private":true,"type":"module"}\n');
-    await fs.writeFile(path.join(stage, 'setup.mjs'), [
-      "import { fileURLToPath } from 'node:url';",
-      "const profileDir = fileURLToPath(new URL('.', import.meta.url));",
-      "const cli = fileURLToPath(new URL('./runtime/cli.js', import.meta.url));",
-      "process.argv = [process.argv[0], cli, 'install', '--profile-path', profileDir, '--agent', 'codex', ...process.argv.slice(2)];",
-      "await import('./runtime/cli.js');",
-      '',
-    ].join('\n'));
+    if (upstreamLock) {
+      await fs.writeFile(path.join(stage, 'upstream.lock.json'), `${JSON.stringify(exportedLock, null, 2)}\n`);
+      await fs.writeFile(path.join(stage, 'setup.mjs'), [
+        "import { parseArgs } from 'node:util';",
+        "import { fileURLToPath } from 'node:url';",
+        "import { prepareUpstreamProfile } from './runtime/commands/upstream.js';",
+        "import { runInstall } from './runtime/commands/install.js';",
+        "const profileDir = fileURLToPath(new URL('.', import.meta.url));",
+        "const { values } = parseArgs({ args: process.argv.slice(2), options: { 'dry-run': { type: 'boolean' }, yes: { type: 'boolean' }, strict: { type: 'boolean' } } });",
+        "const prepared = await prepareUpstreamProfile(profileDir, { log: console.log });",
+        "try {",
+        "  await runInstall({ profile: 'portable', profilePath: prepared.profileDir, agent: 'codex', dryRun: values['dry-run'] ?? false, yes: values.yes ?? false, strict: values.strict ?? false });",
+        "} finally { await prepared.cleanup(); }",
+        '',
+      ].join('\n'));
+    } else {
+      await fs.writeFile(path.join(stage, 'setup.mjs'), [
+        "import { fileURLToPath } from 'node:url';",
+        "const profileDir = fileURLToPath(new URL('.', import.meta.url));",
+        "const cli = fileURLToPath(new URL('./runtime/cli.js', import.meta.url));",
+        "process.argv = [process.argv[0], cli, 'install', '--profile-path', profileDir, '--agent', 'codex', ...process.argv.slice(2)];",
+        "await import('./runtime/cli.js');",
+        '',
+      ].join('\n'));
+    }
     const runtimeDir = fileURLToPath(new URL('../', import.meta.url));
     for (const rel of (await walkFiles(runtimeDir)).filter((file) => !file.endsWith('.test.js'))) {
       const src = path.join(runtimeDir, rel);
@@ -255,13 +313,17 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
         if (await sha256(src) !== await sha256(dst)) throw new Error(`Export verification failed for ${name}/${rel}`);
       }
     }
-    await loadProfile(stageRoot, profileName);
+    if (upstreamLock) await verifyUpstreamExport(stage, manifest, exportedLock, rules, sourceFiles, skillsDir);
+    else await loadProfile(stageRoot, profileName);
     await fs.rename(stage, outputDir);
   } catch (error) {
     await fs.rm(stageRoot, { recursive: true, force: true });
     throw error;
   }
   await fs.rmdir(stageRoot);
-  await loadProfile(path.dirname(outputDir), profileName);
-  log(`Export verified: ${outputDir}`);
+  if (upstreamLock) await verifyUpstreamExport(outputDir, manifest, exportedLock, rules, sourceFiles, skillsDir);
+  else await loadProfile(path.dirname(outputDir), profileName);
+  log(upstreamLock
+    ? `Export written: ${outputDir} (GitHub files are verified when setup runs)`
+    : `Export verified: ${outputDir}`);
 }

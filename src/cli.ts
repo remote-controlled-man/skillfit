@@ -7,7 +7,7 @@ import { runEval } from './commands/eval.js';
 import { runInstall } from './commands/install.js';
 import { runReport } from './commands/report.js';
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 
 const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
 
@@ -33,6 +33,7 @@ Options:
   --profile-path <dir>  Install a portable profile from a local directory
   --skill <name>     With bundle export, include a named installed skill (repeatable)
   --min-sessions <n>  With bundle export, default selection needs this many sessions (default: 2)
+  --upstream-lock <path>  With bundle export, fetch listed GitHub Skills at pinned commits during setup
   --project           Install into the current project instead of user-level config
   --dry-run           Print the plan without writing anything
   --strict            With install --dry-run, exit non-zero on conflicts (for CI gates)
@@ -74,6 +75,7 @@ async function main(): Promise<void> {
       'profile-path': { type: 'string' },
       skill: { type: 'string', multiple: true },
       'min-sessions': { type: 'string' },
+      'upstream-lock': { type: 'string' },
       task: { type: 'string' },
       prompt: { type: 'string' },
       'prompt-file': { type: 'string' },
@@ -156,7 +158,7 @@ async function main(): Promise<void> {
       return;
     case 'bundle': {
       if (positionals[1] !== 'export' || !positionals[2]) {
-        console.error('Usage: skillfit bundle export <dir> [--skill <name> ...] [--min-sessions <n>] [--dry-run] [--yes]');
+        console.error('Usage: skillfit bundle export <dir> [--skill <name> ...] [--upstream-lock <path>] [--min-sessions <n>] [--dry-run] [--yes]');
         process.exitCode = 2;
         return;
       }
@@ -164,6 +166,7 @@ async function main(): Promise<void> {
         outputDir: positionals[2],
         skillNames: values.skill,
         minSessions: values['min-sessions'] === undefined ? undefined : Number(values['min-sessions']),
+        upstreamLockPath: values['upstream-lock'],
         dryRun: values['dry-run'] ?? false,
         yes: values.yes ?? false,
       });

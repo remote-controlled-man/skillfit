@@ -87,6 +87,8 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
+要让已核对的 11 个 GitHub Skills 从作者仓库安装，导出时加 `--upstream-lock ./profiles/codex-upstream-sources.json`。新环境会按固定提交下载并逐文件校验；自己写的 Skills 仍随包携带。详见[来源核查](docs/codex-upstream-audit.md)。
+
 ## 六个命令
 
 | 命令 | 干什么 | 写文件？ |
