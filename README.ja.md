@@ -77,7 +77,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## 選択式 Codex セットアップ
 
-新しい環境では、リポジトリを clone して Skill を個別に選ぶか `--all` を使います。スクリプトは skillfit をビルドし、選択した外部 Skill を作者の固定コミットから取得して SHA-256 を検証し、グローバル `AGENTS.md` の管理ブロックを計画します。自作の 2 つの Skill はこのリポジトリにあります。[選択式セットアップガイド](docs/selectable-codex.md)も参照してください。
+新しい環境では、`--list` でインストール可能な 67 個の Skill を確認し、`--skill` を繰り返して選べます。廃止されたローカル Skill 7 個も理由付きで表示します。`--starter` は従来の 13 個、`--all` は全 67 個を選びますが、後者は Codex の Skill ルーティング一覧を圧迫する可能性があります。スクリプトは選択した外部 Skill を作者の固定コミットから取得して SHA-256 を検証し、グローバル `AGENTS.md` の管理ブロックを計画します。自作の 2 つの Skill はこのリポジトリにあります。[選択式セットアップガイド](docs/selectable-codex.md)も参照してください。
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -98,7 +98,7 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
-確認済みの 11 個の GitHub Skills を作者のリポジトリから取得するには、エクスポート時に `--upstream-lock ./profiles/codex-upstream-sources.json` を追加します。セットアップは固定コミットからダウンロードして各ファイルを検証し、自作 Skills はバンドルに残します。[ソース監査](docs/codex-upstream-audit.md)を参照してください。
+65 個の外部 Skill を含む完全なソースカタログをエクスポートするには、`--upstream-lock ./profiles/codex-upstream-sources.json` を追加します。セットアップは固定コミットから各ファイルを検証し、自作 Skills はバンドルに残します。小さな新環境には上記の選択式セットアップを使えます。[ソース監査](docs/codex-upstream-audit.md)を参照してください。
 
 ## 7 つのコマンド
 

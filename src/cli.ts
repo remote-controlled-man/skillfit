@@ -8,7 +8,7 @@ import { runInstall } from './commands/install.js';
 import { runReport } from './commands/report.js';
 import { runCodexSetup } from './commands/setup.js';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 
 const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
 
@@ -35,7 +35,8 @@ Options:
   --profile-path <dir>  Install a portable profile from a local directory
   --skill <name>     With bundle export, include a named installed skill (repeatable)
                      With setup codex, select a Skill (repeatable)
-  --all              With setup codex, select all 13 Skills
+  --all              With setup codex, select every installable catalog Skill
+  --starter          With setup codex, select the original 13-Skill starter set
   --list             With setup codex, list choices without downloading
   --no-rules         With setup codex, skip the global AGENTS.md block
   --min-sessions <n>  With bundle export, default selection needs this many sessions (default: 2)
@@ -81,6 +82,7 @@ async function main(): Promise<void> {
       'profile-path': { type: 'string' },
       skill: { type: 'string', multiple: true },
       all: { type: 'boolean', default: false },
+      starter: { type: 'boolean', default: false },
       list: { type: 'boolean', default: false },
       'no-rules': { type: 'boolean', default: false },
       'min-sessions': { type: 'string' },
@@ -167,12 +169,12 @@ async function main(): Promise<void> {
       return;
     case 'setup':
       if (positionals[1] !== 'codex') {
-        console.error('Usage: skillfit setup codex [--list | --all | --skill <name> ...] [--no-rules] [--dry-run] [--yes]');
+        console.error('Usage: skillfit setup codex [--list | --starter | --all | --skill <name> ...] [--no-rules] [--dry-run] [--yes]');
         process.exitCode = 2;
         return;
       }
       await runCodexSetup({
-        all: values.all, skills: values.skill, list: values.list,
+        all: values.all, starter: values.starter, skills: values.skill, list: values.list,
         noRules: values['no-rules'], dryRun: values['dry-run'],
         strict: values.strict, yes: values.yes,
       });

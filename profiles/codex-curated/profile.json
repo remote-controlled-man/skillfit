@@ -1,23 +1,282 @@
 {
   "name": "codex-curated",
-  "version": "0.5.0",
-  "description": "Selectable Codex Skills with upstream source verification and global routing guidance",
-  "agents": ["codex"],
+  "version": "0.6.0",
+  "description": "Selectable Codex Skill catalog with pinned author sources and global routing guidance",
+  "agents": [
+    "codex"
+  ],
   "scope": "user",
-  "rules": { "template": "rules/global.md" },
+  "rules": {
+    "template": "rules/global.md"
+  },
   "skills": [
-    { "name": "api-and-interface-design", "source": "skills/api-and-interface-design" },
-    { "name": "code-review", "source": "skills/code-review" },
-    { "name": "codebase-design", "source": "skills/codebase-design" },
-    { "name": "diagnosing-bugs", "source": "skills/diagnosing-bugs" },
-    { "name": "doubt-driven-development", "source": "skills/doubt-driven-development" },
-    { "name": "edit-article", "source": "skills/edit-article" },
-    { "name": "frontend-design", "source": "skills/frontend-design" },
-    { "name": "security-and-hardening", "source": "skills/security-and-hardening" },
-    { "name": "source-driven-development", "source": "skills/source-driven-development" },
-    { "name": "tdd", "source": "skills/tdd" },
-    { "name": "writing-shape", "source": "skills/writing-shape" },
-    { "name": "autonomous-iteration", "source": "skills/autonomous-iteration" },
-    { "name": "vibe-coding", "source": "skills/vibe-coding" }
+    {
+      "name": "api-and-interface-design",
+      "source": "skills/api-and-interface-design"
+    },
+    {
+      "name": "ask-matt",
+      "source": "skills/ask-matt"
+    },
+    {
+      "name": "ci-cd-and-automation",
+      "source": "skills/ci-cd-and-automation"
+    },
+    {
+      "name": "code-review",
+      "source": "skills/code-review"
+    },
+    {
+      "name": "code-simplification",
+      "source": "skills/code-simplification"
+    },
+    {
+      "name": "codebase-design",
+      "source": "skills/codebase-design"
+    },
+    {
+      "name": "deprecation-and-migration",
+      "source": "skills/deprecation-and-migration"
+    },
+    {
+      "name": "diagnosing-bugs",
+      "source": "skills/diagnosing-bugs"
+    },
+    {
+      "name": "domain-modeling",
+      "source": "skills/domain-modeling"
+    },
+    {
+      "name": "doubt-driven-development",
+      "source": "skills/doubt-driven-development"
+    },
+    {
+      "name": "edit-article",
+      "source": "skills/edit-article"
+    },
+    {
+      "name": "frontend-design",
+      "source": "skills/frontend-design"
+    },
+    {
+      "name": "git-guardrails-claude-code",
+      "source": "skills/git-guardrails-claude-code"
+    },
+    {
+      "name": "grill-me",
+      "source": "skills/grill-me"
+    },
+    {
+      "name": "grill-with-docs",
+      "source": "skills/grill-with-docs"
+    },
+    {
+      "name": "grilling",
+      "source": "skills/grilling"
+    },
+    {
+      "name": "handoff",
+      "source": "skills/handoff"
+    },
+    {
+      "name": "implement",
+      "source": "skills/implement"
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "source": "skills/improve-codebase-architecture"
+    },
+    {
+      "name": "lark-approval",
+      "source": "skills/lark-approval"
+    },
+    {
+      "name": "lark-apps",
+      "source": "skills/lark-apps"
+    },
+    {
+      "name": "lark-attendance",
+      "source": "skills/lark-attendance"
+    },
+    {
+      "name": "lark-base",
+      "source": "skills/lark-base"
+    },
+    {
+      "name": "lark-calendar",
+      "source": "skills/lark-calendar"
+    },
+    {
+      "name": "lark-contact",
+      "source": "skills/lark-contact"
+    },
+    {
+      "name": "lark-doc",
+      "source": "skills/lark-doc"
+    },
+    {
+      "name": "lark-drive",
+      "source": "skills/lark-drive"
+    },
+    {
+      "name": "lark-event",
+      "source": "skills/lark-event"
+    },
+    {
+      "name": "lark-im",
+      "source": "skills/lark-im"
+    },
+    {
+      "name": "lark-mail",
+      "source": "skills/lark-mail"
+    },
+    {
+      "name": "lark-markdown",
+      "source": "skills/lark-markdown"
+    },
+    {
+      "name": "lark-minutes",
+      "source": "skills/lark-minutes"
+    },
+    {
+      "name": "lark-note",
+      "source": "skills/lark-note"
+    },
+    {
+      "name": "lark-okr",
+      "source": "skills/lark-okr"
+    },
+    {
+      "name": "lark-openapi-explorer",
+      "source": "skills/lark-openapi-explorer"
+    },
+    {
+      "name": "lark-shared",
+      "source": "skills/lark-shared"
+    },
+    {
+      "name": "lark-sheets",
+      "source": "skills/lark-sheets"
+    },
+    {
+      "name": "lark-skill-maker",
+      "source": "skills/lark-skill-maker"
+    },
+    {
+      "name": "lark-slides",
+      "source": "skills/lark-slides"
+    },
+    {
+      "name": "lark-task",
+      "source": "skills/lark-task"
+    },
+    {
+      "name": "lark-vc",
+      "source": "skills/lark-vc"
+    },
+    {
+      "name": "lark-vc-agent",
+      "source": "skills/lark-vc-agent"
+    },
+    {
+      "name": "lark-whiteboard",
+      "source": "skills/lark-whiteboard"
+    },
+    {
+      "name": "lark-wiki",
+      "source": "skills/lark-wiki"
+    },
+    {
+      "name": "lark-workflow-meeting-summary",
+      "source": "skills/lark-workflow-meeting-summary"
+    },
+    {
+      "name": "lark-workflow-standup-report",
+      "source": "skills/lark-workflow-standup-report"
+    },
+    {
+      "name": "loop-me",
+      "source": "skills/loop-me"
+    },
+    {
+      "name": "migrate-to-shoehorn",
+      "source": "skills/migrate-to-shoehorn"
+    },
+    {
+      "name": "observability-and-instrumentation",
+      "source": "skills/observability-and-instrumentation"
+    },
+    {
+      "name": "performance-optimization",
+      "source": "skills/performance-optimization"
+    },
+    {
+      "name": "prototype",
+      "source": "skills/prototype"
+    },
+    {
+      "name": "scaffold-exercises",
+      "source": "skills/scaffold-exercises"
+    },
+    {
+      "name": "security-and-hardening",
+      "source": "skills/security-and-hardening"
+    },
+    {
+      "name": "setup-matt-pocock-skills",
+      "source": "skills/setup-matt-pocock-skills"
+    },
+    {
+      "name": "setup-pre-commit",
+      "source": "skills/setup-pre-commit"
+    },
+    {
+      "name": "shipping-and-launch",
+      "source": "skills/shipping-and-launch"
+    },
+    {
+      "name": "source-driven-development",
+      "source": "skills/source-driven-development"
+    },
+    {
+      "name": "tdd",
+      "source": "skills/tdd"
+    },
+    {
+      "name": "teach",
+      "source": "skills/teach"
+    },
+    {
+      "name": "to-spec",
+      "source": "skills/to-spec"
+    },
+    {
+      "name": "to-tickets",
+      "source": "skills/to-tickets"
+    },
+    {
+      "name": "triage",
+      "source": "skills/triage"
+    },
+    {
+      "name": "writing-beats",
+      "source": "skills/writing-beats"
+    },
+    {
+      "name": "writing-fragments",
+      "source": "skills/writing-fragments"
+    },
+    {
+      "name": "writing-shape",
+      "source": "skills/writing-shape"
+    },
+    {
+      "name": "autonomous-iteration",
+      "source": "skills/autonomous-iteration"
+    },
+    {
+      "name": "vibe-coding",
+      "source": "skills/vibe-coding"
+    }
   ]
 }

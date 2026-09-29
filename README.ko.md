@@ -77,7 +77,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## 선택형 Codex 설정
 
-새 환경에서는 저장소를 복제한 뒤 Skill을 개별 선택하거나 `--all`을 사용합니다. 스크립트가 skillfit을 빌드하고, 선택한 외부 Skill을 작성자의 고정 커밋에서 받아 SHA-256을 검증한 다음 전역 `AGENTS.md` 관리 블록의 설치 계획을 보여 줍니다. 직접 작성한 Skill 두 개는 이 저장소에 있습니다. [선택 설치 안내](docs/selectable-codex.md)를 참고하세요.
+새 환경에서는 `--list`로 설치 가능한 Skill 67개를 보고 `--skill`을 반복해 선택할 수 있습니다. 중단된 로컬 Skill 7개도 이유와 함께 표시합니다. `--starter`는 기존 13개를, `--all`은 67개 전부를 선택하지만 후자는 Codex의 Skill 라우팅 목록을 혼잡하게 할 수 있습니다. 스크립트가 선택한 외부 Skill을 작성자의 고정 커밋에서 받아 SHA-256을 검증한 뒤 전역 `AGENTS.md` 관리 블록의 설치 계획을 보여 줍니다. 직접 작성한 Skill 두 개는 이 저장소에 있습니다. [선택 설치 안내](docs/selectable-codex.md)를 참고하세요.
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -98,7 +98,7 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
-검토한 GitHub Skills 11개를 원 작성자의 저장소에서 받으려면 내보낼 때 `--upstream-lock ./profiles/codex-upstream-sources.json`을 추가하세요. 설치 과정에서 고정된 커밋의 파일을 내려받아 각각 검증하며, 직접 작성한 Skills는 번들에 남습니다. [출처 검토](docs/codex-upstream-audit.md)를 참고하세요.
+외부 Skill 65개의 전체 소스 카탈로그를 내보내려면 `--upstream-lock ./profiles/codex-upstream-sources.json`을 추가하세요. 설치 과정에서 고정된 커밋의 파일을 각각 검증하며, 직접 작성한 Skills는 번들에 남습니다. 더 작은 새 환경에는 위 선택 설치 흐름을 사용하세요. [출처 검토](docs/codex-upstream-audit.md)를 참고하세요.
 
 ## 일곱 가지 명령어
 

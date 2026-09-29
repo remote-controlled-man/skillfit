@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "starter": [
+    "api-and-interface-design",
+    "code-review",
+    "codebase-design",
+    "diagnosing-bugs",
+    "doubt-driven-development",
+    "edit-article",
+    "frontend-design",
+    "security-and-hardening",
+    "source-driven-development",
+    "tdd",
+    "writing-shape",
+    "autonomous-iteration",
+    "vibe-coding"
+  ],
+  "historical": ["edit-article"],
+  "retired": [
+    { "name": "caveman", "reason": "Removed from mattpocock/skills; use the original author's project if needed." },
+    { "name": "obsidian-vault", "reason": "Removed upstream because it hardcodes the author's private vault path; not portable." },
+    { "name": "qa", "reason": "Deprecated and removed upstream; its workflow was absorbed by newer Skills." },
+    { "name": "request-refactor-plan", "reason": "Deprecated and removed upstream; its workflow was absorbed by newer Skills." },
+    { "name": "resolving-merge-conflicts", "reason": "Removed upstream as no longer needed." },
+    { "name": "ubiquitous-language", "reason": "Deprecated and removed upstream; its workflow was absorbed by newer Skills." },
+    { "name": "zoom-out", "reason": "Removed upstream; no current author-maintained source." }
+  ]
+}
