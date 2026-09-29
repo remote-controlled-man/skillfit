@@ -500,6 +500,26 @@ test('an unreadable existing skill path stops planning before any write', async 
   assert.equal(await exists(path.join(home, '.codex', 'AGENTS.md')), false);
 });
 
+test('removed profile files cause a conflict rather than leaving an obsolete skill asset silently', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const profilesCopy = path.join(project, 'profiles-copy');
+  await fs.cp(PROFILES_DIR, profilesCopy, { recursive: true });
+  const skillDir = path.join(profilesCopy, 'recommended', 'skills', 'commit-message');
+  const oldSource = path.join(skillDir, 'scripts', 'old.mjs');
+  await fs.mkdir(path.dirname(oldSource), { recursive: true });
+  await fs.writeFile(oldSource, 'export const old = true;\n');
+  await runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy }));
+
+  await fs.rm(oldSource);
+  const { lines, log } = captureLogs();
+  await assert.rejects(
+    runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy, dryRun: true, strict: true, log })),
+    /conflict/,
+  );
+  assert.match(lines.join('\n'), /existing files absent from profile: scripts\/old\.mjs/);
+  assert.equal(await fs.readFile(path.join(home, '.agents', 'skills', 'commit-message', 'scripts', 'old.mjs'), 'utf8'), 'export const old = true;\n');
+});
+
 test('a stale lockfile entry reconciles on the next successful run', async (t) => {
   const { home, project } = await tempDirs(t);
   const profilesCopy = path.join(project, 'profiles-copy');

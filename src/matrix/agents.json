@@ -96,6 +96,7 @@
       },
       "sessions": {
         "dir": "~/.codex/sessions",
+        "homeOverride": { "env": "CODEX_HOME", "relativePath": "sessions" },
         "transcriptGlob": "**/rollout-*.jsonl",
         "wireShape": "codex-rollout",
         "docs": null

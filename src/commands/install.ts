@@ -480,6 +480,14 @@ async function planSkillItem(agent: AgentDef, skill: ProfileSkill, profileDir: s
   for (const rel of relPaths) desired.set(rel, await fs.readFile(path.join(srcDir, rel)));
   const desiredHash = hashFiles(desired);
   const targetDir = path.join(skillsTargetDir(agent, scope, homeDir, projectDir), skill.name);
+  let targetFiles: string[] = [];
+  try {
+    const stat = await fs.lstat(targetDir);
+    if (stat.isSymbolicLink()) throw new Error(`Target skill is a symlink: ${targetDir}`);
+    targetFiles = await walkFiles(targetDir);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
   const current = new Map<string, Buffer>();
   for (const rel of relPaths) {
     const content = await readBufferIfExists(path.join(targetDir, rel));
@@ -487,6 +495,10 @@ async function planSkillItem(agent: AgentDef, skill: ProfileSkill, profileDir: s
   }
   const lockKey = `${agent.id}:skill:${skill.name}`;
   const base = { agent: agent.id, kind: 'skill' as ItemKind, label: `skill "${skill.name}"`, targetPath: targetDir, lockKey, sha256: desiredHash };
+  const extras = targetFiles.filter((rel) => !desired.has(rel) && !rel.endsWith(BACKUP_SUFFIX));
+  if (extras.length > 0) {
+    return { ...base, action: 'conflict', detail: `existing files absent from profile: ${extras.join(', ')}`, files: [] };
+  }
 
   const missing = relPaths.filter((rel) => !current.has(rel));
   const differing = relPaths.filter((rel) => {

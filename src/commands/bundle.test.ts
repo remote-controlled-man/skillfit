@@ -24,6 +24,9 @@ test('exports a portable Codex profile and installs it into a fresh home', async
   await fs.writeFile(path.join(skill, 'SKILL.md'), '---\nname: example\ndescription: Handle example tasks.\n---\nDo the example.\n');
   const icon = Buffer.from([0, 0xff, 0x89, 0x50]);
   await fs.writeFile(path.join(skill, 'icon.png'), icon);
+  for (const artifact of ['SKILL.md.skillfit-bak', 'SKILL.md.123.skillfit-staged', 'SKILL.md.123.skillfit-restore']) {
+    await fs.writeFile(path.join(skill, artifact), 'Old private instructions');
+  }
   await fs.writeFile(path.join(home, '.codex', 'AGENTS.md'), '# My global rules\n\nUse concise answers.\n');
   const outputDir = path.join(root, 'personal-codex');
 
@@ -35,6 +38,9 @@ test('exports a portable Codex profile and installs it into a fresh home', async
   assert.deepEqual(manifest.agents, ['codex']);
   assert.deepEqual(manifest.skills, [{ name: 'example', source: 'skills/example' }]);
   assert.deepEqual(await fs.readFile(path.join(outputDir, 'skills', 'example', 'icon.png')), icon);
+  for (const artifact of ['SKILL.md.skillfit-bak', 'SKILL.md.123.skillfit-staged', 'SKILL.md.123.skillfit-restore']) {
+    await assert.rejects(fs.stat(path.join(outputDir, 'skills', 'example', artifact)), { code: 'ENOENT' });
+  }
   const rules = await fs.readFile(path.join(outputDir, 'rules', 'global.md'), 'utf8');
   assert.match(rules, /My global rules/);
   assert.match(rules, /example/);
@@ -87,12 +93,31 @@ test('exported global guidance preserves user-invoked-only skill routing', async
   const { root, home } = await fixture(t);
   const skillDir = path.join(home, '.agents', 'skills', 'explicit-skill');
   await fs.mkdir(skillDir, { recursive: true });
-  await fs.writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: explicit-skill\ndescription: Explicit writing help.\ndisable-model-invocation: true\n---\nUse when named.\n');
+  await fs.writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: explicit-skill\ndescription: Explicit writing help.\n---\nUse when named.\n');
+  await fs.mkdir(path.join(skillDir, 'agents'));
+  await fs.writeFile(path.join(skillDir, 'agents', 'openai.yaml'), 'interface:\n  display_name: Explicit Skill\npolicy:\n  allow_implicit_invocation: false\n');
   const outputDir = path.join(root, 'portable-codex');
   await runBundleExport({ outputDir, homeDir: home, skillNames: ['explicit-skill'], yes: true, log: () => {} });
   const rules = await fs.readFile(path.join(outputDir, 'rules', 'global.md'), 'utf8');
   assert.match(rules, /Available for implicit routing in this portable profile: none/);
   assert.match(rules, /User-invoked only: `explicit-skill`/);
+});
+
+test('export recognizes flow-style and quoted invocation policies', async (t) => {
+  const { root, home } = await fixture(t);
+  const skillDir = path.join(home, '.agents', 'skills', 'explicit-skill');
+  await fs.mkdir(path.join(skillDir, 'agents'), { recursive: true });
+  await fs.writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: explicit-skill\ndescription: Explicit writing help.\n---\nUse when named.\n');
+  for (const [index, metadata] of [
+    'policy: { allow_implicit_invocation: false }\n',
+    'policy:\n  allow_implicit_invocation: "false"\n',
+  ].entries()) {
+    await fs.writeFile(path.join(skillDir, 'agents', 'openai.yaml'), metadata);
+    const outputDir = path.join(root, `portable-codex-${index}`);
+    await runBundleExport({ outputDir, homeDir: home, skillNames: ['explicit-skill'], yes: true, log: () => {} });
+    const rules = await fs.readFile(path.join(outputDir, 'rules', 'global.md'), 'utf8');
+    assert.match(rules, /User-invoked only: `explicit-skill`/);
+  }
 });
 
 test('export dry-run writes nothing and refuses an existing destination', async (t) => {

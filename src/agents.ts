@@ -62,6 +62,7 @@ export interface AgentHeadless {
 
 export interface AgentSessions {
   dir: string;
+  homeOverride?: { env: string; relativePath: string };
   transcriptGlob: string;
   wireShape: 'flat-tool-call' | 'content-blocks' | 'codex-rollout';
   skillToolName?: string;

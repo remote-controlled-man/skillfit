@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { getAgent } from '../agents.js';
 import { collectReceipts } from '../harness/receipts.js';
 import { parseFrontmatter } from '../frontmatter.js';
-import { loadProfile, MARKER_END, MARKER_START } from './install.js';
+import { BACKUP_SUFFIX, loadProfile, MARKER_END, MARKER_START } from './install.js';
 import { confirm as confirmPrompt } from './confirm.js';
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
@@ -81,6 +81,27 @@ function renderRules(source: string | null, selected: string[], explicitOnly: st
   return `${lines.join('\n')}\n`;
 }
 
+function isImplicitInvocationDisabled(metadata: string | null): boolean {
+  if (metadata === null) return false;
+  const disabled = /(?:^|[\s{,])allow_implicit_invocation:\s*(?:false|"false"|'false')(?=\s*(?:[,}#]|$))/;
+  let inPolicy = false;
+  for (const line of metadata.split(/\r?\n/)) {
+    if (/^policy:/.test(line)) {
+      inPolicy = true;
+      if (disabled.test(line)) return true;
+    } else if (/^[A-Za-z_][\w-]*:/.test(line)) {
+      inPolicy = false;
+    } else if (inPolicy && /^\s+/.test(line) && disabled.test(line)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isInstallerArtifact(file: string): boolean {
+  return [BACKUP_SUFFIX, '.skillfit-staged', '.skillfit-restore'].some((suffix) => file.endsWith(suffix));
+}
+
 async function walkFiles(dir: string, prefix = ''): Promise<string[]> {
   const out: string[] = [];
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
@@ -96,8 +117,8 @@ async function sha256(file: string): Promise<string> {
   return createHash('sha256').update(await fs.readFile(file)).digest('hex');
 }
 
-async function defaultUsage(homeDir: string): Promise<{ name: string; sessionCount: number }[]> {
-  const receipt = (await collectReceipts({ agent: 'codex', homeDir }))[0];
+async function defaultUsage(homeDir: string, env: NodeJS.ProcessEnv): Promise<{ name: string; sessionCount: number }[]> {
+  const receipt = (await collectReceipts({ agent: 'codex', homeDir, env }))[0];
   const installed = new Set(receipt?.installed ?? []);
   return receipt?.skills
     .filter(({ name }) => installed.has(name))
@@ -108,7 +129,7 @@ async function defaultUsage(homeDir: string): Promise<{ name: string; sessionCou
 export async function runBundleExport(opts: BundleExportOptions): Promise<void> {
   const log = opts.log ?? ((line: string) => console.log(line));
   const homeDir = opts.homeDir ?? os.homedir();
-  const env = opts.env ?? process.env;
+  const env = opts.env ?? (opts.homeDir === undefined ? process.env : {});
   const outputDir = path.resolve(opts.outputDir);
   const profileName = path.basename(outputDir);
   if (!NAME_PATTERN.test(profileName)) {
@@ -116,7 +137,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
   }
   const skillsDir = codexSkillsDir(homeDir);
   const usage = opts.skillNames === undefined
-    ? await (opts.loadUsage ?? (() => defaultUsage(homeDir)))()
+    ? await (opts.loadUsage ?? (() => defaultUsage(homeDir, env)))()
     : [];
   const minSessions = opts.minSessions ?? 2;
   if (!Number.isInteger(minSessions) || minSessions < 1) throw new Error('--min-sessions must be a positive integer');
@@ -133,7 +154,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
       if ((await fs.lstat(src)).isSymbolicLink()) {
         throw new Error(`Symlinked skill cannot be exported safely: ${src}`);
       }
-      files = await walkFiles(src);
+      files = (await walkFiles(src)).filter((file) => !isInstallerArtifact(file));
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       if (opts.skillNames === undefined) {
@@ -148,7 +169,8 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
       throw new Error(`Skill "${name}" has an invalid SKILL.md`);
     }
     names.push(name);
-    if (frontmatter['disable-model-invocation'] === 'true') explicitOnly.push(name);
+    const codexMetadata = await readOptional(path.join(src, 'agents', 'openai.yaml'));
+    if (isImplicitInvocationDisabled(codexMetadata)) explicitOnly.push(name);
     sourceFiles.set(name, files);
   }
 

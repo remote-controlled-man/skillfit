@@ -24,7 +24,7 @@ node dist/cli.js doctor    # smoke against the real machine (read-only)
 
 ## Layout
 
-- `src/commands/` — doctor / eval / install / bench entry points (thin shells over testable functions)
+- `src/commands/` — doctor / report / eval / bench / install / bundle entry points (thin shells over testable functions)
 - `src/harness/` — eval experiment engine (executors, bench loading, judge, runner, trigger mode, stats)
 - `src/matrix/agents.json` — agent capability matrix (the data-driven core)
 - `benches/` — public bench format + bundled benches

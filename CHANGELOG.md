@@ -11,6 +11,11 @@ protocol is unchanged.
 
 ### Added
 
+- **Portable Codex setup:** `bundle export` captures frequently used user Skills and active global
+  guidance in a transferable profile with a standalone Node installer. Installation writes a managed
+  global `AGENTS.md` block, preserves existing content, checks `CODEX_HOME` and active overrides,
+  copies binary Skill assets, and verifies every written file. User-invoked-only Skills remain
+  explicit-only in the generated routing guidance.
 - **`docs/bench-authoring.md` — the authoring guide (A11).** The paradigm was complete and well-sourced
   but had no single home: `docs/metrics.md` carried the *why*, `benches/README.md` the *what*,
   `benches/contrib/README.md` the *how to submit*, and the two bundled benches the *what one looks

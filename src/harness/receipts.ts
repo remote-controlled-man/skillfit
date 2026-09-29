@@ -36,6 +36,7 @@ export interface AgentReceipt {
 export interface ReceiptsOptions {
   homeDir?: string;
   agent?: string;
+  env?: NodeJS.ProcessEnv;
 }
 
 export function resolveHome(dirPattern: string, homeDir: string): string {
@@ -234,6 +235,7 @@ function median(values: number[]): number {
 export async function collectAgentReceipt(
   agent: AgentDef,
   homeDir: string,
+  env: NodeJS.ProcessEnv = {},
 ): Promise<AgentReceipt> {
   const emptyTax = { descTokensTotal: 0, bodyTokensMedian: 0, heaviest: [] };
   const cfg = agent.sessions;
@@ -251,7 +253,11 @@ export async function collectAgentReceipt(
       tax: emptyTax,
     };
   }
-  const sessionsDir = resolveHome(cfg.dir, homeDir);
+  const homeOverride = cfg.homeOverride;
+  const overrideRoot = homeOverride === undefined ? undefined : env[homeOverride.env];
+  const sessionsDir = overrideRoot
+    ? resolve(overrideRoot, homeOverride!.relativePath)
+    : resolveHome(cfg.dir, homeDir);
   const installed = installedUserSkills(agent, homeDir);
   const taxes = installed.map((skill) => ({ name: skill.name, ...measureSkillTax(skill.dir) }));
   const tax = {
@@ -318,10 +324,11 @@ export async function collectAgentReceipt(
 
 export async function collectReceipts(options: ReceiptsOptions = {}): Promise<AgentReceipt[]> {
   const homeDir = options.homeDir ?? homedir();
+  const env = options.env ?? (options.homeDir === undefined ? process.env : {});
   const ids = options.agent ? [options.agent] : agentIds();
   const receipts: AgentReceipt[] = [];
   for (const id of ids) {
-    receipts.push(await collectAgentReceipt(getAgent(id), homeDir));
+    receipts.push(await collectAgentReceipt(getAgent(id), homeDir, env));
   }
   return receipts;
 }
