@@ -11,6 +11,7 @@ export interface AgentDetect {
 export interface AgentRules {
   projectFiles: string[];
   userFiles: string[];
+  userHomeOverride?: { env: string; relativePath: string; overrideRelativePath?: string };
   readsAgentsMd: boolean;
   agentsMdBridge: string | null;
   notes: string;

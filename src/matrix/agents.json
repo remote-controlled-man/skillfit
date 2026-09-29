@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-25",
+  "verifiedAt": "2026-09-29",
   "agents": [
     {
       "id": "claude-code",
@@ -70,6 +70,7 @@
       "rules": {
         "projectFiles": ["AGENTS.md", "AGENTS.override.md"],
         "userFiles": ["~/.codex/AGENTS.md"],
+        "userHomeOverride": { "env": "CODEX_HOME", "relativePath": "AGENTS.md", "overrideRelativePath": "AGENTS.override.md" },
         "readsAgentsMd": true,
         "agentsMdBridge": null,
         "notes": "Layered merge home/repo/cwd; ~32 KiB default budget; project-level config.toml only loads for trusted projects."
@@ -109,7 +110,7 @@
         "docs": "https://developers.openai.com/codex/cli/"
       },
       "docs": {
-        "rules": "https://developers.openai.com/codex/config-basic",
+        "rules": "https://developers.openai.com/codex/guides/agents-md",
         "skills": "https://developers.openai.com/codex/skills",
         "mcp": "https://developers.openai.com/codex/config-basic",
         "hooks": "https://developers.openai.com/codex/hooks"

@@ -2,7 +2,7 @@
 
 ## What this is
 
-Evidence-driven configuration CLI for AI coding agents. Five commands: `doctor` (read-only health check), `report` (skill usage receipts from local session history), `eval` (paired A/B experiment harness + trigger mode), `bench` (scaffold + offline validation + failure freezing), `install` (idempotent, dry-run-first writer). Supports Claude Code, Codex CLI, Kimi Code.
+Evidence-driven configuration CLI for AI coding agents. Six commands: `doctor` (read-only health check), `report` (skill usage receipts from local session history), `eval` (paired A/B experiment harness + trigger mode), `bench` (scaffold + offline validation + failure freezing), `install` (idempotent, dry-run-first writer), `bundle` (portable Codex profile export). Supports Claude Code, Codex CLI, Kimi Code.
 
 ## Commands
 

@@ -27,6 +27,7 @@ export interface InstallOptions {
   homeDir?: string;
   projectDir?: string;
   profilesDir?: string;
+  profilePath?: string;
   env?: NodeJS.ProcessEnv;
   confirm?: (question: string) => Promise<boolean>;
   log?: (line: string) => void;
@@ -43,6 +44,7 @@ export interface ProfileManifest {
   version: string;
   description?: string;
   agents: string[];
+  scope?: Scope;
   rules?: { template: string };
   skills?: ProfileSkill[];
 }
@@ -68,7 +70,7 @@ interface Lockfile {
 
 interface PlannedFile {
   path: string;
-  content: string;
+  content: string | Buffer;
   backup: boolean;
 }
 
@@ -94,14 +96,20 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
   const scope: Scope = opts.project ? 'project' : 'user';
   const scopeDir = opts.project ? projectDir : homeDir;
 
-  const { dir: profileDir, manifest } = await loadProfile(profilesDir, opts.profile);
+  const selectedProfileDir = opts.profilePath ? path.resolve(opts.profilePath) : null;
+  const { dir: profileDir, manifest } = selectedProfileDir
+    ? await loadProfile(path.dirname(selectedProfileDir), path.basename(selectedProfileDir))
+    : await loadProfile(profilesDir, opts.profile);
+  if (manifest.scope !== undefined && manifest.scope !== scope) {
+    throw new Error(`Profile "${manifest.name}" requires ${manifest.scope} scope`);
+  }
   const agents = selectAgents(manifest, opts.agent, homeDir, env);
   const lockPath = path.join(scopeDir, LOCKFILE_NAME);
   const lock = await readLockfile(lockPath);
 
   const items: PlanItem[] = [];
   for (const agent of agents) {
-    items.push(...await planRulesItems(agent, manifest, profileDir, scope, homeDir, projectDir));
+    items.push(...await planRulesItems(agent, manifest, profileDir, scope, homeDir, projectDir, env));
     for (const skill of manifest.skills ?? []) {
       items.push(await planSkillItem(agent, skill, profileDir, scope, homeDir, projectDir, lock));
     }
@@ -166,8 +174,9 @@ export async function loadProfile(profilesDir: string, name: string): Promise<{ 
   const dir = path.join(profilesDir, name);
   let raw: string;
   try {
-    raw = await fs.readFile(path.join(dir, 'profile.json'), 'utf8');
-  } catch {
+    raw = await readProfileFile(dir, 'profile.json');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     throw new Error(`Profile "${name}" not found at ${dir}`);
   }
   const manifest = JSON.parse(raw) as ProfileManifest;
@@ -177,21 +186,37 @@ export async function loadProfile(profilesDir: string, name: string): Promise<{ 
 }
 
 function validateManifest(manifest: ProfileManifest, expectedName: string): void {
+  if (typeof manifest !== 'object' || manifest === null) {
+    throw new Error('profile.json must be an object');
+  }
   if (manifest.name !== expectedName) {
     throw new Error(`profile.json name "${manifest.name}" does not match directory "${expectedName}"`);
   }
   if (typeof manifest.version !== 'string' || manifest.version.length === 0) {
     throw new Error('profile.json must declare a version string');
   }
+  if (manifest.scope !== undefined && manifest.scope !== 'user' && manifest.scope !== 'project') {
+    throw new Error('profile.json scope must be user or project');
+  }
   if (!Array.isArray(manifest.agents) || manifest.agents.length === 0) {
     throw new Error('profile.json must list at least one target agent');
   }
+  if (new Set(manifest.agents).size !== manifest.agents.length) {
+    throw new Error('profile.json lists duplicate agents');
+  }
   for (const id of manifest.agents) getAgent(id);
-  if (manifest.rules !== undefined && typeof manifest.rules.template !== 'string') {
+  if (manifest.rules !== undefined && (typeof manifest.rules !== 'object' || manifest.rules === null || typeof manifest.rules.template !== 'string')) {
     throw new Error('profile.json rules.template must be a relative path');
   }
+  if (manifest.skills !== undefined && !Array.isArray(manifest.skills)) {
+    throw new Error('profile.json skills must be an array');
+  }
+  const skillNames = new Set<string>();
   for (const skill of manifest.skills ?? []) {
+    if (typeof skill !== 'object' || skill === null) throw new Error('profile.json skills must contain objects');
     if (!NAME_PATTERN.test(skill.name)) throw new Error(`Invalid skill name "${skill.name}" in profile.json`);
+    if (skillNames.has(skill.name)) throw new Error(`Duplicate skill "${skill.name}" in profile.json`);
+    skillNames.add(skill.name);
     if (typeof skill.source !== 'string') throw new Error(`Skill "${skill.name}" must declare a source path`);
   }
 }
@@ -199,7 +224,8 @@ function validateManifest(manifest: ProfileManifest, expectedName: string): void
 async function validateProfileFiles(dir: string, manifest: ProfileManifest): Promise<void> {
   if (manifest.rules) await readProfileFile(dir, manifest.rules.template);
   for (const skill of manifest.skills ?? []) {
-    const skillMd = await readProfileFile(dir, `${skill.source}/SKILL.md`).catch(() => {
+    const skillMd = await readProfileFile(dir, `${skill.source}/SKILL.md`).catch((error: unknown) => {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       throw new Error(`Skill "${skill.name}" is missing SKILL.md at ${skill.source}`);
     });
     const fm = parseFrontmatter(skillMd);
@@ -213,7 +239,7 @@ async function validateProfileFiles(dir: string, manifest: ProfileManifest): Pro
 }
 
 async function readProfileFile(dir: string, rel: string): Promise<string> {
-  return await fs.readFile(safeJoin(dir, rel), 'utf8');
+  return await fs.readFile(await safeProfileFile(dir, rel), 'utf8');
 }
 
 function safeJoin(base: string, rel: string): string {
@@ -222,6 +248,18 @@ function safeJoin(base: string, rel: string): string {
     throw new Error(`Profile path "${rel}" escapes the profile directory`);
   }
   return abs;
+}
+
+async function safeProfileFile(base: string, rel: string): Promise<string> {
+  const target = safeJoin(base, rel);
+  let current = base;
+  for (const component of path.relative(base, target).split(path.sep)) {
+    current = path.join(current, component);
+    if ((await fs.lstat(current)).isSymbolicLink()) {
+      throw new Error(`Profile path "${rel}" contains a symlink: ${current}`);
+    }
+  }
+  return target;
 }
 
 export function renderManagedBlock(body: string, profile: string, version: string): string {
@@ -326,10 +364,14 @@ function resolveScoped(rel: string, scope: Scope, homeDir: string, projectDir: s
   return path.resolve(projectDir, rel);
 }
 
-function rulesTarget(agent: AgentDef, scope: Scope, homeDir: string, projectDir: string): { rulesFile: string; bridgeFile: string | null } {
+function rulesTarget(agent: AgentDef, scope: Scope, homeDir: string, projectDir: string, env: NodeJS.ProcessEnv): { rulesFile: string; bridgeFile: string | null } {
   const rel = scope === 'user' ? agent.rules.userFiles[0] : agent.rules.projectFiles[0];
   if (!rel) throw new Error(`${agent.displayName} has no ${scope}-level rules file in the matrix`);
-  const nativeFile = resolveScoped(rel, scope, homeDir, projectDir);
+  const override = scope === 'user' ? agent.rules.userHomeOverride : undefined;
+  const envHome = override === undefined ? undefined : env[override.env];
+  const nativeFile = override !== undefined && envHome
+    ? path.resolve(envHome, override.relativePath)
+    : resolveScoped(rel, scope, homeDir, projectDir);
   if (agent.rules.readsAgentsMd) return { rulesFile: nativeFile, bridgeFile: null };
   return {
     rulesFile: path.join(path.dirname(nativeFile), 'AGENTS.md'),
@@ -348,8 +390,18 @@ function skillsTargetDir(agent: AgentDef, scope: Scope, homeDir: string, project
 async function readIfExists(p: string): Promise<string | null> {
   try {
     return await fs.readFile(p, 'utf8');
-  } catch {
-    return null;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+async function readBufferIfExists(p: string): Promise<Buffer | null> {
+  try {
+    return await fs.readFile(p);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
   }
 }
 
@@ -368,11 +420,24 @@ async function readLockfile(lockPath: string): Promise<Lockfile> {
   return { version: 1, entries: parsed.entries ?? {} };
 }
 
-async function planRulesItems(agent: AgentDef, manifest: ProfileManifest, profileDir: string, scope: Scope, homeDir: string, projectDir: string): Promise<PlanItem[]> {
+async function planRulesItems(agent: AgentDef, manifest: ProfileManifest, profileDir: string, scope: Scope, homeDir: string, projectDir: string, env: NodeJS.ProcessEnv): Promise<PlanItem[]> {
   if (!manifest.rules) return [];
   const template = await readProfileFile(profileDir, manifest.rules.template);
-  const { rulesFile, bridgeFile } = rulesTarget(agent, scope, homeDir, projectDir);
+  const { rulesFile, bridgeFile } = rulesTarget(agent, scope, homeDir, projectDir, env);
   const block = renderManagedBlock(template, manifest.name, manifest.version);
+  const overrideName = scope === 'user' ? agent.rules.userHomeOverride?.overrideRelativePath : undefined;
+  if (overrideName) {
+    const overridePath = path.join(path.dirname(rulesFile), overrideName);
+    const overrideContent = await readIfExists(overridePath);
+    if (overrideContent !== null && overrideContent.trim().length > 0) {
+      return [{
+        agent: agent.id, kind: 'rules', label: 'rules', targetPath: rulesFile,
+        lockKey: `${agent.id}:rules`, sha256: sha256Hex(block), action: 'conflict',
+        detail: `${overridePath} shadows ${rulesFile}; remove the override before installing global rules`,
+        files: [],
+      }];
+    }
+  }
   const items = [await planBlockItem(agent.id, 'rules', 'rules', rulesFile, block)];
   if (bridgeFile !== null) {
     const bridgeBlock = renderManagedBlock(BRIDGE_LINE, manifest.name, manifest.version);
@@ -409,22 +474,26 @@ function skipItem(agentId: string, kind: ItemKind, label: string, targetPath: st
 }
 
 async function planSkillItem(agent: AgentDef, skill: ProfileSkill, profileDir: string, scope: Scope, homeDir: string, projectDir: string, lock: Lockfile): Promise<PlanItem> {
-  const srcDir = safeJoin(profileDir, skill.source);
+  const srcDir = await safeProfileFile(profileDir, skill.source);
   const relPaths = await walkFiles(srcDir);
-  const desired = new Map<string, string>();
-  for (const rel of relPaths) desired.set(rel, await fs.readFile(path.join(srcDir, rel), 'utf8'));
+  const desired = new Map<string, Buffer>();
+  for (const rel of relPaths) desired.set(rel, await fs.readFile(path.join(srcDir, rel)));
   const desiredHash = hashFiles(desired);
   const targetDir = path.join(skillsTargetDir(agent, scope, homeDir, projectDir), skill.name);
-  const current = new Map<string, string>();
+  const current = new Map<string, Buffer>();
   for (const rel of relPaths) {
-    const content = await readIfExists(path.join(targetDir, rel));
+    const content = await readBufferIfExists(path.join(targetDir, rel));
     if (content !== null) current.set(rel, content);
   }
   const lockKey = `${agent.id}:skill:${skill.name}`;
   const base = { agent: agent.id, kind: 'skill' as ItemKind, label: `skill "${skill.name}"`, targetPath: targetDir, lockKey, sha256: desiredHash };
 
   const missing = relPaths.filter((rel) => !current.has(rel));
-  const differing = relPaths.filter((rel) => current.get(rel) !== undefined && current.get(rel) !== desired.get(rel));
+  const differing = relPaths.filter((rel) => {
+    const before = current.get(rel);
+    const after = desired.get(rel);
+    return before !== undefined && after !== undefined && !before.equals(after);
+  });
   if (missing.length === 0 && differing.length === 0) {
     return { ...base, action: 'skip', detail: 'unchanged', files: [] };
   }
@@ -439,7 +508,7 @@ async function planSkillItem(agent: AgentDef, skill: ProfileSkill, profileDir: s
   const writeRels = [...missing, ...differing];
   const files = writeRels.map((rel) => ({
     path: path.join(targetDir, rel),
-    content: desired.get(rel) ?? '',
+    content: desired.get(rel) ?? Buffer.alloc(0),
     backup: current.has(rel),
   }));
   const action: PlanAction = missing.length === relPaths.length ? 'create' : 'update';
@@ -452,18 +521,19 @@ async function walkFiles(dir: string, prefix = ''): Promise<string[]> {
   const out: string[] = [];
   for (const entry of entries) {
     const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isSymbolicLink()) throw new Error(`Profile skill contains a symlink: ${path.join(dir, entry.name)}`);
     if (entry.isDirectory()) out.push(...await walkFiles(path.join(dir, entry.name), rel));
     else if (entry.isFile()) out.push(rel);
   }
   return out.sort();
 }
 
-function hashFiles(entries: Map<string, string>): string {
+function hashFiles(entries: Map<string, Buffer>): string {
   const hash = createHash('sha256');
   for (const [rel, content] of [...entries].sort(([a], [b]) => a.localeCompare(b))) {
     hash.update(rel, 'utf8');
     hash.update('\0');
-    hash.update(content, 'utf8');
+    hash.update(content);
     hash.update('\0');
   }
   return hash.digest('hex');
@@ -525,7 +595,7 @@ async function executeWrites(
           entry.backedUp = await backupOnce(file.path);
         }
       }
-      await fs.writeFile(tmp, file.content, 'utf8');
+      await fs.writeFile(tmp, file.content);
     }
   } catch (error) {
     await cleanupStaged(staged);
@@ -595,6 +665,13 @@ async function backupOnce(target: string): Promise<string | null> {
 async function validateWrites(writes: PlanItem[]): Promise<string[]> {
   const problems: string[] = [];
   for (const item of writes) {
+    for (const file of item.files) {
+      const actual = await readBufferIfExists(file.path);
+      const expected = Buffer.isBuffer(file.content) ? file.content : Buffer.from(file.content, 'utf8');
+      if (actual === null || !actual.equals(expected)) {
+        problems.push(`${file.path}: content differs from the install plan`);
+      }
+    }
     if (item.kind === 'skill') {
       const skillMd = path.join(item.targetPath, 'SKILL.md');
       const content = await readIfExists(skillMd);

@@ -117,6 +117,21 @@ test('AGENTS.md over 32 KiB warns about the budget', () => {
   assert.ok(hasCheck(checks, 'WARN', /exceeds the 32 KiB/));
 });
 
+test('Codex rules check resolves CODEX_HOME and warns when a global override shadows AGENTS.md', () => {
+  const home = tempDir();
+  const codexHome = path.join(home, 'alternate-codex');
+  writeFile(home, 'alternate-codex/AGENTS.md', '# Portable rules\n');
+  writeFile(home, 'alternate-codex/AGENTS.override.md', '# Temporary override\n');
+  const checks = healthChecks(
+    collectDoctorReport(makeOptions(home, tempDir(), {
+      agent: 'codex', env: { CODEX_HOME: codexHome },
+    })),
+    'codex', 'Rules',
+  );
+  assert.ok(hasCheck(checks, 'PASS', /AGENTS\.md — 1 lines/));
+  assert.ok(hasCheck(checks, 'WARN', /AGENTS\.override\.md.*shadows.*AGENTS\.md/));
+});
+
 test('rules notes from the matrix are surfaced', () => {
   const checks = healthChecks(
     collectDoctorReport(makeOptions(tempDir(), tempDir(), { agent: 'claude-code' })),
