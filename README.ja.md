@@ -75,7 +75,19 @@ cp -r skills/skillfit ~/.agents/skills/
 
 対応エージェント：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力マトリクス](src/matrix/agents.json) — 機械可読・検証日付付き・ドキュメントへのリンクあり）。トリガーモードのキャプチャは現在 Kimi Code と Codex CLI で検証済み。
 
-## 5 つのコマンド
+## 移行可能な Codex 設定
+
+2 つ以上の Codex セッションで使われたユーザー用 Skills と、現在有効なグローバル指示をエクスポートします。生成したディレクトリを新しいマシンへ移し、そこでインストールします。対象範囲とオプションは[移行ガイド](docs/portable-codex.md)を参照してください。
+
+```bash
+skillfit bundle export ./personal-codex --dry-run
+skillfit bundle export ./personal-codex --yes
+# transfer the personal-codex directory to the new machine
+node ./personal-codex/setup.mjs --dry-run
+node ./personal-codex/setup.mjs --yes
+```
+
+## 6 つのコマンド
 
 | コマンド | 機能 | 書き込み？ |
 |---|---|---|
@@ -83,7 +95,8 @@ cp -r skills/skillfit ~/.agents/skills/
 | `report` | ローカルセッション履歴からスキルの実使用を集計：スキルごとの発火回数と未発火リスト（純粋なルーティング/コンテキスト税） | 一切なし |
 | `eval <skill>` | デフォルト（`--mode inject`）：ペア baseline/treatment 実行、決定的ベリファイア + オプションのブラインド LLM 審査、トークンコスト差分、McNemar 正確検定 + ペア bootstrap CI に加え、ベンチが checks を出力する場合は段階的ファセットスコア CI も報告。`--mode trigger`：プロンプト注入の代わりにスキルを実際にインストールし、エージェントのトランスクリプトからトリガー再現率 / 誤発火率を測定 | ローカルの `runs/` のみ |
 | `bench` | `init` は動作するサンプルタスク付きのベンチディレクトリをスキャフォールド。`check` はベンチをオフラインで検証（ベリファイアの自己テスト、oracle/NOP ゲート、モックアームのプローブ、フィクスチャの健全性、トリガーラベルのカバレッジ）。`add --freeze` は目撃したばかりの失敗を恒久的なベンチタスクに変換し、`--decompose` はエージェントにベリファイア＋オラクルを起草させ、両ゲートを通過した場合のみ採用する | `init`/`add` は確認後のみ、`check` は一切なし |
-| `install` | 管理ブロックへのルール書き込み（`<!-- SKILLFIT_START/END -->`、冪等）、競合保護付きのスキルコピー、コミット固定のロックファイル、インストール後の検証。書き込み前にステージし、書き込みや検証に失敗した場合はロックファイルを含む変更済みの対象ファイルを元に戻す。プロセスが突然終了した場合は部分的なインストールが残る可能性があり、再実行して状態を調整できる。元のファイルは `<file>.skillfit-bak` に保持され、最初のバックアップが優先されるので後続の更新で上書きされない。`--dry-run` は競合を報告して 0 で終了し、`--strict` を付けると競合で失敗する（CI ゲート用） | 確認後のみ |
+| `install` | 管理ブロックへのルール書き込み（`<!-- SKILLFIT_START/END -->`、冪等）、競合保護付きのスキルコピー、コンテンツハッシュを記録するロックファイル、インストール後の検証。書き込み前にステージし、書き込みや検証に失敗した場合はロックファイルを含む変更済みの対象ファイルを元に戻す。プロセスが突然終了した場合は部分的なインストールが残る可能性があり、再実行して状態を調整できる。元のファイルは `<file>.skillfit-bak` に保持され、最初のバックアップが優先されるので後続の更新で上書きされない。`--dry-run` は競合を報告して 0 で終了し、`--strict` を付けると競合で失敗する（CI ゲート用） | 確認後のみ |
+| `bundle` | `export` は使用履歴のあるローカル Skills と有効なグローバル指示から移行可能な Codex プロファイルを作成 | 確認後のみ |
 
 ## ベンチを持ち込む
 

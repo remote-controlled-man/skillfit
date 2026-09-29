@@ -11,6 +11,7 @@ export interface AgentDetect {
 export interface AgentRules {
   projectFiles: string[];
   userFiles: string[];
+  userHomeOverride?: { env: string; relativePath: string; overrideRelativePath?: string };
   readsAgentsMd: boolean;
   agentsMdBridge: string | null;
   notes: string;
@@ -61,6 +62,7 @@ export interface AgentHeadless {
 
 export interface AgentSessions {
   dir: string;
+  homeOverride?: { env: string; relativePath: string };
   transcriptGlob: string;
   wireShape: 'flat-tool-call' | 'content-blocks' | 'codex-rollout';
   skillToolName?: string;

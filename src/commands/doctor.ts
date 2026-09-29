@@ -51,6 +51,7 @@ export interface DoctorOptions {
   agent?: string;
   homeDir?: string;
   cwd?: string;
+  env?: NodeJS.ProcessEnv;
   which?: (binary: string) => string | null;
 }
 
@@ -63,6 +64,7 @@ export interface RunDoctorArgs {
 interface Ctx {
   homeDir: string;
   cwd: string;
+  env: NodeJS.ProcessEnv;
   which: (binary: string) => string | null;
 }
 
@@ -107,6 +109,15 @@ function resolveSpecPath(spec: string, ctx: Ctx): string {
   if (spec.startsWith('~/') || spec.startsWith('~\\')) return path.join(ctx.homeDir, spec.slice(2));
   if (path.isAbsolute(spec)) return spec;
   return path.join(ctx.cwd, spec);
+}
+
+function resolveRulePath(agent: AgentDef, spec: string, ctx: Ctx): string {
+  const override = agent.rules.userHomeOverride;
+  const envHome = override === undefined ? undefined : ctx.env[override.env];
+  if (spec === agent.rules.userFiles[0] && override !== undefined && envHome) {
+    return path.resolve(envHome, override.relativePath);
+  }
+  return resolveSpecPath(spec, ctx);
 }
 
 function defaultWhich(binary: string): string | null {
@@ -174,25 +185,38 @@ function bridgeChecks(agent: AgentDef, ctx: Ctx): Check[] {
 function checkRules(agent: AgentDef, ctx: Ctx): Check[] {
   const checks: Check[] = [];
   for (const spec of [...agent.rules.userFiles, ...agent.rules.projectFiles]) {
-    const resolved = resolveSpecPath(spec, ctx);
+    const resolved = resolveRulePath(agent, spec, ctx);
+    const label = resolved === resolveSpecPath(spec, ctx) ? spec : resolved;
     const stat = statOrNull(resolved);
     if (stat === null || !stat.isFile()) {
-      checks.push(check('INFO', `${spec} — not present`));
+      checks.push(check('INFO', `${label} — not present`));
       continue;
     }
     const content = readText(resolved);
     if (content === null) {
-      checks.push(check('WARN', `${spec} — unreadable`));
+      checks.push(check('WARN', `${label} — unreadable`));
       continue;
     }
     const stats = `${countLines(content)} lines, ${formatBytes(stat.size)}`;
     const name = path.basename(resolved);
     if (name.toUpperCase() === 'CLAUDE.MD' && countLines(content) > CLAUDE_MD_MAX_LINES) {
-      checks.push(check('WARN', `${spec} — ${stats} — exceeds ${CLAUDE_MD_MAX_LINES} lines; long memory files dilute every prompt`));
+      checks.push(check('WARN', `${label} — ${stats} — exceeds ${CLAUDE_MD_MAX_LINES} lines; long memory files dilute every prompt`));
     } else if (isAgentsMdName(name) && stat.size > AGENTS_MD_MAX_BYTES) {
-      checks.push(check('WARN', `${spec} — ${stats} — exceeds the ${AGENTS_MD_MAX_BYTES / 1024} KiB AGENTS.md budget; the agent may truncate it`));
+      checks.push(check('WARN', `${label} — ${stats} — exceeds the ${AGENTS_MD_MAX_BYTES / 1024} KiB AGENTS.md budget; the agent may truncate it`));
     } else {
-      checks.push(check('PASS', `${spec} — ${stats}`));
+      checks.push(check('PASS', `${label} — ${stats}`));
+    }
+  }
+  const homeOverride = agent.rules.userHomeOverride;
+  if (homeOverride?.overrideRelativePath) {
+    const envHome = ctx.env[homeOverride.env];
+    const home = envHome
+      ? path.resolve(envHome)
+      : path.dirname(resolveSpecPath(agent.rules.userFiles[0] ?? '', ctx));
+    const overridePath = path.join(home, homeOverride.overrideRelativePath);
+    const overrideContent = readText(overridePath);
+    if (overrideContent !== null && overrideContent.trim().length > 0) {
+      checks.push(check('WARN', `${overridePath} shadows ${path.join(home, homeOverride.relativePath)}; the base global guidance is inactive`));
     }
   }
   checks.push(...bridgeChecks(agent, ctx));
@@ -365,6 +389,7 @@ export function collectDoctorReport(options: DoctorOptions = {}): DoctorReport {
   const ctx: Ctx = {
     homeDir: options.homeDir ?? homedir(),
     cwd: options.cwd ?? process.cwd(),
+    env: options.env ?? process.env,
     which: options.which ?? defaultWhich,
   };
   const matrix = loadMatrix();

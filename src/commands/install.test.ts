@@ -104,6 +104,97 @@ test('installs rules and skill for codex at user scope', async (t) => {
   assert.ok(rulesEntry.installedAt);
 });
 
+test('uses CODEX_HOME for global Codex rules while keeping user skills under home', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const codexHome = path.join(home, 'alternate-codex');
+  await runInstall(makeOpts(home, project, {
+    agent: 'codex',
+    env: { PATH: '', CODEX_HOME: codexHome },
+  }));
+
+  assert.ok(await exists(path.join(codexHome, 'AGENTS.md')));
+  assert.ok(await exists(path.join(home, '.agents', 'skills', 'commit-message', 'SKILL.md')));
+  assert.equal(await exists(path.join(home, '.codex', 'AGENTS.md')), false);
+});
+
+test('refuses a Codex global rules install shadowed by AGENTS.override.md', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const codexHome = path.join(home, '.codex');
+  await fs.mkdir(codexHome, { recursive: true });
+  await fs.writeFile(path.join(codexHome, 'AGENTS.override.md'), '# Active override\n');
+  const { lines, log } = captureLogs();
+  await assert.rejects(runInstall(makeOpts(home, project, {
+    agent: 'codex', log,
+  })), /conflict/i);
+  assert.match(lines.join('\n'), /AGENTS\.override\.md.*shadows/);
+  assert.equal(await exists(path.join(home, '.agents', 'skills', 'commit-message')), false);
+});
+
+test('installs a profile supplied by directory and preserves binary skill assets', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const profile = path.join(project, 'portable');
+  const skillDir = path.join(profile, 'skills', 'example');
+  await fs.mkdir(skillDir, { recursive: true });
+  await fs.writeFile(path.join(profile, 'profile.json'), JSON.stringify({
+    name: 'portable', version: '1.0.0', agents: ['codex'],
+    skills: [{ name: 'example', source: 'skills/example' }],
+  }));
+  await fs.writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: example\ndescription: Example skill.\n---\nUse it.\n');
+  const image = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x80]);
+  await fs.writeFile(path.join(skillDir, 'icon.png'), image);
+
+  await runInstall(makeOpts(home, project, { agent: 'codex', profilePath: profile }));
+
+  assert.deepEqual(
+    await fs.readFile(path.join(home, '.agents', 'skills', 'example', 'icon.png')),
+    image,
+  );
+});
+
+test('rejects a portable profile whose skill path is a symlink outside the profile', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const profile = path.join(project, 'portable');
+  const outside = path.join(project, 'outside');
+  await fs.mkdir(path.join(profile, 'skills'), { recursive: true });
+  await fs.mkdir(outside);
+  await fs.writeFile(path.join(outside, 'SKILL.md'), '---\nname: example\ndescription: Example.\n---\n');
+  await fs.writeFile(path.join(profile, 'profile.json'), JSON.stringify({
+    name: 'portable', version: '1.0.0', agents: ['codex'],
+    skills: [{ name: 'example', source: 'skills/example' }],
+  }));
+  try {
+    await fs.symlink(outside, path.join(profile, 'skills', 'example'), 'junction');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EPERM') return t.skip('symlinks unavailable');
+    throw error;
+  }
+  await assert.rejects(
+    runInstall(makeOpts(home, project, { agent: 'codex', profilePath: profile })),
+    /symlink/i,
+  );
+  assert.equal(await exists(path.join(home, '.agents', 'skills', 'example')), false);
+});
+
+test('rejects duplicate skills in a portable profile before staging files', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const profile = path.join(project, 'portable');
+  const skillDir = path.join(profile, 'skills', 'example');
+  await fs.mkdir(skillDir, { recursive: true });
+  await fs.writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: example\ndescription: Example.\n---\n');
+  await fs.writeFile(path.join(profile, 'profile.json'), JSON.stringify({
+    name: 'portable', version: '1.0.0', agents: ['codex'],
+    skills: [
+      { name: 'example', source: 'skills/example' },
+      { name: 'example', source: 'skills/example' },
+    ],
+  }));
+  await assert.rejects(
+    runInstall(makeOpts(home, project, { agent: 'codex', profilePath: profile })),
+    /duplicate skill/i,
+  );
+  assert.equal(await exists(path.join(home, '.agents', 'skills', 'example')), false);
+});
+
 test('second run skips unchanged items and writes nothing', async (t) => {
   const { home, project } = await tempDirs(t);
   await runInstall(makeOpts(home, project, { agent: 'codex' }));
@@ -316,11 +407,9 @@ test('a staging failure applies nothing, not even the items staged before it', a
   const manifestPath = path.join(profilesCopy, 'recommended', 'profile.json');
   const lockPath = path.join(home, LOCKFILE_NAME);
 
-  // Block the skill write by making its parent directory a regular file. readIfExists swallows the
-  // resulting error, so planning still succeeds and the failure lands inside the write phase —
+  // Block the skill write after planning, so the failure lands inside the write phase —
   // after the rules item has already been staged.
   await fs.mkdir(path.join(home, '.agents', 'skills'), { recursive: true });
-  await fs.writeFile(path.join(home, '.agents', 'skills', 'commit-message'), 'not a directory\n');
 
   // Bump the profile version so the rules block changes and the rules item is a real write.
   const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8')) as { version: string };
@@ -328,7 +417,13 @@ test('a staging failure applies nothing, not even the items staged before it', a
   await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
 
   await assert.rejects(
-    runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy })),
+    runInstall(makeOpts(home, project, {
+      agent: 'codex', profilesDir: profilesCopy, yes: false,
+      confirm: async () => {
+        await fs.writeFile(path.join(home, '.agents', 'skills', 'commit-message'), 'not a directory\n');
+        return true;
+      },
+    })),
     'the failure must surface, not be swallowed',
   );
 
@@ -392,6 +487,37 @@ test('a lockfile rename failure restores updated content and the old lockfile', 
   assert.equal(await fs.readFile(lockTarget + BACKUP_SUFFIX, 'utf8'), originalLock);
   const files = Object.keys(await snapshot(home));
   assert.ok(!files.some((name) => name.includes('.skillfit-staged') || name.includes('.skillfit-restore')));
+});
+
+test('an unreadable existing skill path stops planning before any write', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const skillFile = path.join(home, '.agents', 'skills', 'commit-message', 'SKILL.md');
+  await fs.mkdir(skillFile, { recursive: true });
+  await assert.rejects(
+    runInstall(makeOpts(home, project, { agent: 'codex' })),
+    (error: unknown) => ['EISDIR', 'EPERM', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? ''),
+  );
+  assert.equal(await exists(path.join(home, '.codex', 'AGENTS.md')), false);
+});
+
+test('removed profile files cause a conflict rather than leaving an obsolete skill asset silently', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const profilesCopy = path.join(project, 'profiles-copy');
+  await fs.cp(PROFILES_DIR, profilesCopy, { recursive: true });
+  const skillDir = path.join(profilesCopy, 'recommended', 'skills', 'commit-message');
+  const oldSource = path.join(skillDir, 'scripts', 'old.mjs');
+  await fs.mkdir(path.dirname(oldSource), { recursive: true });
+  await fs.writeFile(oldSource, 'export const old = true;\n');
+  await runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy }));
+
+  await fs.rm(oldSource);
+  const { lines, log } = captureLogs();
+  await assert.rejects(
+    runInstall(makeOpts(home, project, { agent: 'codex', profilesDir: profilesCopy, dryRun: true, strict: true, log })),
+    /conflict/,
+  );
+  assert.match(lines.join('\n'), /existing files absent from profile: scripts\/old\.mjs/);
+  assert.equal(await fs.readFile(path.join(home, '.agents', 'skills', 'commit-message', 'scripts', 'old.mjs'), 'utf8'), 'export const old = true;\n');
 });
 
 test('a stale lockfile entry reconciles on the next successful run', async (t) => {

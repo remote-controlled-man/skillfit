@@ -75,7 +75,19 @@ cp -r skills/skillfit ~/.agents/skills/
 
 Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente para Kimi Code y Codex CLI.
 
-## Los cinco comandos
+## Configuración de Codex transferible
+
+Exporta los Skills de usuario usados en al menos dos sesiones de Codex y las instrucciones globales activas. Lleva el directorio resultante al nuevo equipo e instálalo allí. Consulta la [guía de traslado](docs/portable-codex.md) para conocer el alcance y las opciones.
+
+```bash
+skillfit bundle export ./personal-codex --dry-run
+skillfit bundle export ./personal-codex --yes
+# transfer the personal-codex directory to the new machine
+node ./personal-codex/setup.mjs --dry-run
+node ./personal-codex/setup.mjs --yes
+```
+
+## Los seis comandos
 
 | Comando | Qué hace | ¿Escribe? |
 |---|---|---|
@@ -83,7 +95,8 @@ Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matr
 | `report` | Recuentos de uso real de skills desde el historial local de sesiones: activaciones por skill y la lista de nunca activadas (el puro impuesto de enrutamiento/contexto) | Nunca |
 | `eval <skill>` | Por defecto (`--mode inject`): ejecuciones baseline/treatment emparejadas, verificador determinista + juez LLM ciego opcional, delta de coste en tokens, veredictos mediante el test exacto de McNemar + IC de bootstrap emparejado, además de IC de puntuación por facetas graduada cuando el bench emite checks. `--mode trigger`: instala el skill en lugar de inyectarlo y mide el recall de activación / la tasa de falsas activaciones a partir de la transcripción del agente | `runs/` en local |
 | `bench` | `init` genera el esqueleto de un directorio de bench con una tarea de ejemplo funcional; `check` valida un bench sin conexión (autopruebas del verificador, puertas oracle/NOP, sondeos del brazo mock, higiene de fixtures, cobertura de etiquetas de trigger); `add --freeze` convierte en una tarea de bench permanente un fallo que acabas de presenciar, y `--decompose` hace que un agente redacte el verificador + oracle, admitido solo si supera ambas puertas | `init`/`add` tras confirmación; `check` nunca |
-| `install` | Reglas en bloque gestionado (`<!-- SKILLFIT_START/END -->`, idempotentes), copia de skills con protección contra conflictos, lockfile fijado por commit, verificación posterior a la instalación. Los archivos se preparan antes de escribir; si falla una escritura o la verificación, se revierten los archivos modificados en esta ejecución, incluido el lockfile. Una interrupción brusca aún puede dejar una instalación parcial; vuelve a ejecutar el comando para reconciliar el estado. El original se conserva en `<file>.skillfit-bak` y la primera copia de seguridad tiene prioridad, por lo que las actualizaciones posteriores no pueden sobrescribirla. `--dry-run` informa de los conflictos y termina con 0; añade `--strict` para que fallen (puertas de CI) | Solo tras confirmación |
+| `install` | Reglas en bloque gestionado (`<!-- SKILLFIT_START/END -->`, idempotentes), copia de skills con protección contra conflictos, lockfile con hashes de contenido, verificación posterior a la instalación. Los archivos se preparan antes de escribir; si falla una escritura o la verificación, se revierten los archivos modificados en esta ejecución, incluido el lockfile. Una interrupción brusca aún puede dejar una instalación parcial; vuelve a ejecutar el comando para reconciliar el estado. El original se conserva en `<file>.skillfit-bak` y la primera copia de seguridad tiene prioridad, por lo que las actualizaciones posteriores no pueden sobrescribirla. `--dry-run` informa de los conflictos y termina con 0; añade `--strict` para que fallen (puertas de CI) | Solo tras confirmación |
+| `bundle` | `export` crea un perfil de Codex transferible a partir de Skills locales usados y las instrucciones globales activas | Solo tras confirmación |
 
 ## Trae tu propio bench
 

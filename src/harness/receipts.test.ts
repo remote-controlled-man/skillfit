@@ -141,6 +141,20 @@ test('collectReceipts reads codex rollouts (custom_tool_call skill-path evidence
   assert.deepEqual(codex.neverFired, ['beta', 'codex-only-skill', 'never-skill']);
 });
 
+test('collectReceipts uses CODEX_HOME for Codex sessions', async (t) => {
+  const home = makeHome(t);
+  const codexHome = join(home, 'alternate-codex');
+  const sessionsDir = join(codexHome, 'sessions', '2026', '09', '29');
+  mkdirSync(sessionsDir, { recursive: true });
+  for (const id of ['one', 'two']) {
+    writeFileSync(join(sessionsDir, `rollout-${id}.jsonl`),
+      '{"type":"response_item","payload":{"type":"custom_tool_call","status":"completed","name":"exec","input":"Get-Content C:\\\\repo\\\\.agents\\\\skills\\\\example\\\\SKILL.md"}}\n');
+  }
+  const receipt = (await collectReceipts({ homeDir: home, agent: 'codex', env: { CODEX_HOME: codexHome } }))[0];
+  assert.equal(receipt?.sessionsDir, join(codexHome, 'sessions'));
+  assert.equal(receipt?.skills.find((skill) => skill.name === 'example')?.sessionCount, 2);
+});
+
 
 test('measureSkillTax reads frontmatter description and body size', (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-tax-'));

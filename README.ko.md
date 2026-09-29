@@ -75,7 +75,19 @@ cp -r skills/skillfit ~/.agents/skills/
 
 지원 에이전트: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([기능 매트릭스](src/matrix/agents.json) — 기계 판독 가능, 검증 날짜와 문서 링크 포함). trigger 모드 캡처는 현재 Kimi Code와 Codex CLI에서 검증되었습니다.
 
-## 다섯 가지 명령어
+## 옮길 수 있는 Codex 설정
+
+두 개 이상의 Codex 세션에서 사용한 사용자 Skills와 현재 적용 중인 전역 지침을 내보냅니다. 생성된 디렉터리를 새 컴퓨터로 옮긴 뒤 설치하세요. 범위와 옵션은 [이전 가이드](docs/portable-codex.md)를 참고하세요.
+
+```bash
+skillfit bundle export ./personal-codex --dry-run
+skillfit bundle export ./personal-codex --yes
+# transfer the personal-codex directory to the new machine
+node ./personal-codex/setup.mjs --dry-run
+node ./personal-codex/setup.mjs --yes
+```
+
+## 여섯 가지 명령어
 
 | 명령어 | 동작 | 파일 쓰기 |
 |---|---|---|
@@ -83,7 +95,8 @@ cp -r skills/skillfit ~/.agents/skills/
 | `report` | 로컬 세션 기록에서 skill 실사용 집계: skill별 발화 횟수와 미발화 목록(순수 라우팅/컨텍스트 비용) | 절대 안 함 |
 | `eval <skill>` | 기본값(`--mode inject`): 페어드 baseline/treatment 실행, 결정적 verifier + 선택적 블라인드 LLM 심사, 토큰 비용 차이, McNemar exact test + paired bootstrap CI로 판정하며 bench가 checks를 낼 때는 단계적 facet 점수 CI도 보고. `--mode trigger`: 프롬프트 주입 대신 skill을 실제로 설치하고 에이전트 transcript에서 트리거 재현율 / 오탐율 측정 | 로컬 `runs/`에만 |
 | `bench` | `init`은 동작하는 예시 작업이 포함된 bench 디렉터리를 생성하고, `check`는 bench를 오프라인으로 검증하며(verifier 자가 테스트, oracle/NOP 게이트, mock arm 프로브, fixture 위생 상태, 트리거 라벨 커버리지), `add --freeze`는 방금 목격한 실패를 영구적인 bench 작업으로 고정하고, `--decompose`는 에이전트가 verifier + oracle을 초안 작성해 두 게이트를 모두 통과할 때만 채택 | `init`/`add`는 확인 후에만, `check`는 절대 안 함 |
-| `install` | 관리 블록 규칙(`<!-- SKILLFIT_START/END -->`, 멱등), 충돌 보호가 적용된 skill 복사, 커밋 고정 lockfile, 설치 후 검증. 쓰기 전에 임시 저장하며, 쓰기 또는 검증이 실패하면 lockfile을 포함해 이번 실행에서 변경한 대상 파일을 되돌립니다. 프로세스가 갑자기 종료되면 부분 설치가 남을 수 있으며 다시 실행해 상태를 조정할 수 있습니다. 원본은 `<file>.skillfit-bak`에 보관되며 첫 백업이 우선하므로 이후 업데이트가 덮어쓰지 못합니다. `--dry-run`은 충돌을 보고하고 0으로 종료하며, `--strict`를 추가하면 충돌 시 실패합니다(CI 게이트용) | 확인 후에만 |
+| `install` | 관리 블록 규칙(`<!-- SKILLFIT_START/END -->`, 멱등), 충돌 보호가 적용된 skill 복사, 콘텐츠 해시 lockfile, 설치 후 검증. 쓰기 전에 임시 저장하며, 쓰기 또는 검증이 실패하면 lockfile을 포함해 이번 실행에서 변경한 대상 파일을 되돌립니다. 프로세스가 갑자기 종료되면 부분 설치가 남을 수 있으며 다시 실행해 상태를 조정할 수 있습니다. 원본은 `<file>.skillfit-bak`에 보관되며 첫 백업이 우선하므로 이후 업데이트가 덮어쓰지 못합니다. `--dry-run`은 충돌을 보고하고 0으로 종료하며, `--strict`를 추가하면 충돌 시 실패합니다(CI 게이트용) | 확인 후에만 |
+| `bundle` | `export`는 사용 기록이 있는 로컬 Skills와 전역 지침을 옮길 수 있는 Codex 프로필로 만듭니다 | 확인 후에만 |
 
 ## 나만의 bench 가져오기
 

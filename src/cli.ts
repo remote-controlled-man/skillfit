@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import { runBenchAdd, runBenchCheck, runBenchInit } from './commands/bench.js';
+import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
 import { runEval } from './commands/eval.js';
 import { runInstall } from './commands/install.js';
@@ -20,6 +21,7 @@ Usage:
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
   skillfit install [options]                Install evidence-backed configuration
+  skillfit bundle export <dir> [options]   Export used Codex skills and global guidance as a portable profile
 
 Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
@@ -28,6 +30,9 @@ Options:
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (default: 3)
   --profile <name>    Profile for install (default: "recommended")
+  --profile-path <dir>  Install a portable profile from a local directory
+  --skill <name>     With bundle export, include a named installed skill (repeatable)
+  --min-sessions <n>  With bundle export, default selection needs this many sessions (default: 2)
   --project           Install into the current project instead of user-level config
   --dry-run           Print the plan without writing anything
   --strict            With install --dry-run, exit non-zero on conflicts (for CI gates)
@@ -66,6 +71,9 @@ async function main(): Promise<void> {
       bench: { type: 'string' },
       trials: { type: 'string' },
       profile: { type: 'string' },
+      'profile-path': { type: 'string' },
+      skill: { type: 'string', multiple: true },
+      'min-sessions': { type: 'string' },
       task: { type: 'string' },
       prompt: { type: 'string' },
       'prompt-file': { type: 'string' },
@@ -141,10 +149,26 @@ async function main(): Promise<void> {
       await runInstall({
         ...common,
         profile: values.profile ?? 'recommended',
+        profilePath: values['profile-path'],
         project: values.project ?? false,
         strict: values.strict ?? false,
       });
       return;
+    case 'bundle': {
+      if (positionals[1] !== 'export' || !positionals[2]) {
+        console.error('Usage: skillfit bundle export <dir> [--skill <name> ...] [--min-sessions <n>] [--dry-run] [--yes]');
+        process.exitCode = 2;
+        return;
+      }
+      await runBundleExport({
+        outputDir: positionals[2],
+        skillNames: values.skill,
+        minSessions: values['min-sessions'] === undefined ? undefined : Number(values['min-sessions']),
+        dryRun: values['dry-run'] ?? false,
+        yes: values.yes ?? false,
+      });
+      return;
+    }
     case 'bench': {
       const subcommand = positionals[1];
       if (subcommand === 'init') {

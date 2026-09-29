@@ -75,7 +75,19 @@ cp -r skills/skillfit ~/.agents/skills/
 
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
-## The five commands
+## Portable Codex setup
+
+Export the user-level Skills seen in at least two Codex sessions and your active global guidance. Transfer the resulting directory to a new machine, then install it there. See [the portable setup guide](docs/portable-codex.md) for scope and options.
+
+```bash
+skillfit bundle export ./personal-codex --dry-run
+skillfit bundle export ./personal-codex --yes
+# transfer the personal-codex directory to the new machine
+node ./personal-codex/setup.mjs --dry-run
+node ./personal-codex/setup.mjs --yes
+```
+
+## The six commands
 
 | Command | What it does | Writes? |
 |---|---|---|
@@ -83,7 +95,8 @@ Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capabil
 | `report` | Skill usage receipts from local session history: fires per skill per agent, and the never-fired list (the pure routing/context tax) | Never |
 | `eval <skill>` | Default (`--mode inject`): paired baseline/treatment runs, deterministic verifier + optional blind LLM judge, token-cost delta, verdicts via McNemar exact test + paired bootstrap CI, plus graded facet-score CIs when the bench emits checks. `--mode trigger`: installs the skill instead of injecting it and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
 | `bench` | `init` scaffolds a bench directory with a working example task; `check` validates a bench offline (verifier self-tests, oracle/NOP gates, mock-arm probes, fixture hygiene, trigger-label coverage); `add --freeze` turns a failure you just watched into a permanent bench task, and `--decompose` has an agent draft the verifier + oracle, admitted only if both gates pass | `init`/`add` after confirmation; `check` never |
-| `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent), skill copy with conflict protection, commit-pinned lockfile, post-install verification. Writes are staged first; if a write or verification fails, the installer rolls back changed target files, including the lockfile. Abrupt termination can still leave a partial install; re-run to reconcile. Your original is kept at `<file>.skillfit-bak` and the first backup wins, so later updates cannot overwrite it. `--dry-run` reports conflicts and exits 0; add `--strict` to make them fail (CI gates) | Only after confirmation |
+| `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent), skill copy with conflict protection, content-hash lockfile, post-install verification. Writes are staged first; if a write or verification fails, the installer rolls back changed target files, including the lockfile. Abrupt termination can still leave a partial install; re-run to reconcile. Your original is kept at `<file>.skillfit-bak` and the first backup wins, so later updates cannot overwrite it. `--dry-run` reports conflicts and exits 0; add `--strict` to make them fail (CI gates) | Only after confirmation |
+| `bundle` | `export` creates a portable Codex profile from used local Skills and active global guidance | Only after confirmation |
 
 ## Bring your own bench
 

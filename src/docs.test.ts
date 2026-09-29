@@ -24,6 +24,18 @@ test('the bench authoring guide is linked from every README and every entry poin
   }
 });
 
+test('portable Codex setup is linked and its command block matches across README languages', () => {
+  const normalized = (file: string) => read(file).replace(/\r\n/g, '\n');
+  const english = normalized('README.md');
+  const commandBlock = /```bash\nskillfit bundle export \.\/personal-codex --dry-run[\s\S]*?node \.\/personal-codex\/setup\.mjs --yes\n```/.exec(english)?.[0];
+  assert.ok(commandBlock);
+  for (const readme of READMES) {
+    const content = normalized(readme);
+    assert.match(content, /\(docs\/portable-codex\.md\)/, `${readme} must link the portable setup guide`);
+    assert.ok(content.includes(commandBlock), `${readme} must use the same setup commands`);
+  }
+});
+
 test('bench-authoring.md carries all seven steps and both gates', () => {
   const guide = read(GUIDE);
   for (const step of [
