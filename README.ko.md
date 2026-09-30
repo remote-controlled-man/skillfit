@@ -77,7 +77,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## 선택형 Codex 설정
 
-새 환경에서는 `--list`로 설치 가능한 Skill 67개를 보고 `--skill`을 반복해 선택할 수 있습니다. 중단된 로컬 Skill 7개도 이유와 함께 표시합니다. `--starter`는 기존 13개를, `--all`은 67개 전부를 선택하지만 후자는 Codex의 Skill 라우팅 목록을 혼잡하게 할 수 있습니다. 스크립트가 선택한 외부 Skill을 작성자의 고정 커밋에서 받아 SHA-256을 검증한 뒤 전역 `AGENTS.md` 관리 블록의 설치 계획을 보여 줍니다. 직접 작성한 Skill 두 개는 이 저장소에 있습니다. [선택 설치 안내](docs/selectable-codex.md)를 참고하세요.
+새 환경에서는 `--list`로 설치 가능한 Skill 67개의 출처를 확인하고, 실제 작업에 필요한 것만 `--skill`을 반복해 선택할 수 있습니다. 중단된 로컬 Skill 7개도 이유와 함께 표시합니다. `--starter`는 기존 사용자용 13개 선택을 유지하지만 묶음 효과는 검증되지 않았습니다. `--all`은 67개 전부를 선택하며 권장 기본 설정이 아닙니다. 이 목록은 출처와 설치만 검증하며 효능을 입증하지 않습니다. 제한적인 과거 비교 실험이 있는 것은 8개뿐이고, 현재 고정된 Skill 버전과 현재 Codex 모델에서 효과가 입증된 항목은 없습니다. 스크립트가 선택한 외부 Skill을 작성자의 고정 커밋에서 받아 SHA-256을 검증한 뒤 전역 `AGENTS.md` 관리 블록의 설치 계획을 보여 줍니다. 직접 작성한 Skill 두 개는 이 저장소에 있습니다. [선택 설치 안내와 근거 요약](docs/selectable-codex.md)을 참고하세요.
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -118,11 +118,11 @@ node ./personal-codex/setup.mjs --yes
 
 ## 자체 측정 데이터
 
-skillfit의 harness로 인기 있는 워크플로 skill 8개를 측정했습니다(24쌍의 baseline/treatment, Codex CLI, 2026-07 고정 baseline). **8개 중 1개만이 재현 가능한 이점을 보였습니다**:
+skillfit의 harness로 인기 있는 워크플로 skill 8개를 측정했습니다(24쌍의 baseline/treatment, Codex CLI, 2026-07 고정 baseline). 1개에서 3회의 treatment 중 2회에 회귀 테스트 자산의 제한적인 신호가 있었지만, 작업 품질이 확실히 개선된 Skill은 없었습니다. 이 실험은 현재 67개 목록이나 기존 13개 묶음의 효과를 검증하지 않습니다:
 
 | Skill | 품질 Δ | 입력 토큰 | 판정 |
 |---|---:|---:|---|
-| `diagnosing-bugs` | 테스트 자산 +66.7pp 증가(3회 실행 중 2회) | +11.7% | **조건부** — 어려운 버그에서만 |
+| `diagnosing-bugs` | 테스트 자산 +66.7pp 증가(3회 실행 중 2회), 작업 품질 변화 없음 | +11.7% | 제한적인 과거 작업 절차 신호 |
 | `code-review` | +3.3pp(불안정) | +9.1% | 근거 부족 |
 | `tdd` | 0.00pp | +9.2% | 측정 가능한 이득 없음 |
 | `doubt-driven-development` | 0.00pp | +20.7% | 측정 가능한 이득 없음 |

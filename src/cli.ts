@@ -35,8 +35,8 @@ Options:
   --profile-path <dir>  Install a portable profile from a local directory
   --skill <name>     With bundle export, include a named installed skill (repeatable)
                      With setup codex, select a Skill (repeatable)
-  --all              With setup codex, select every installable catalog Skill
-  --starter          With setup codex, select the original 13-Skill starter set
+  --all              With setup codex, select all catalog Skills (not an efficacy recommendation)
+  --starter          With setup codex, select the legacy 13-Skill set (not evaluated as a set)
   --list             With setup codex, list choices without downloading
   --no-rules         With setup codex, skip the global AGENTS.md block
   --min-sessions <n>  With bundle export, default selection needs this many sessions (default: 2)
