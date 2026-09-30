@@ -27,7 +27,7 @@ test('the bench authoring guide is linked from every README and every entry poin
 test('portable Codex setup is linked and its command block matches across README languages', () => {
   const normalized = (file: string) => read(file).replace(/\r\n/g, '\n');
   const english = normalized('README.md');
-  const commandBlock = /```bash\nskillfit bundle export \.\/personal-codex --dry-run[\s\S]*?node \.\/personal-codex\/setup\.mjs --yes\n```/.exec(english)?.[0];
+  const commandBlock = /```bash\nnode dist\/cli\.js bundle export \.\/personal-codex --dry-run[\s\S]*?node \.\/personal-codex\/setup\.mjs --yes\n```/.exec(english)?.[0];
   assert.ok(commandBlock);
   for (const readme of READMES) {
     const content = normalized(readme);
@@ -45,6 +45,18 @@ test('selectable Codex setup commands match across README languages', () => {
     const content = normalized(readme);
     assert.match(content, /\(docs\/selectable-codex\.md\)/, `${readme} must link the selectable setup guide`);
     assert.ok(content.includes(commandBlock), `${readme} must use the same selectable setup commands`);
+  }
+});
+
+test('rules and MCP evaluation tour stays present across README languages', () => {
+  for (const readme of READMES) {
+    const content = read(readme).replace(/\r\n/g, '\n');
+    assert.match(content, /docs\/assets\/skillfit-flow\.svg/, `${readme} must show the evidence loop`);
+    assert.match(content, /node dist\/cli\.js mcp check \.\/my-server\.probe\.json/, `${readme} must show MCP preflight`);
+    assert.match(content, /node dist\/cli\.js eval \.\/context7-experiment --bench \.\/my-context7-bench --agent codex --trials 5/, `${readme} must show config A\/B`);
+    assert.match(content, /\(docs\/config-experiments\.md\)/, `${readme} must link the config experiment guide`);
+    assert.match(content, /\| `mcp check <spec>` \|/, `${readme} must list the MCP command`);
+    assert.match(content, /npm ci\nnpm run build\nnode dist\/cli\.js bench check benches\/code-review/, `${readme} must provide an offline first run`);
   }
 });
 

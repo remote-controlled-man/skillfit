@@ -17,6 +17,7 @@ export interface CliExecutorOptions {
   usageFromSessionLog?: boolean;
   triggerSkillName?: string;
   triggerToolName?: string;
+  projectTrustConfigArg?: string;
 }
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
@@ -44,15 +45,18 @@ const SHELL_UNSAFE = /[;&|<>`$\r\n]/;
  * silently injected command, and no command name, flag or path in the matrix contains any of them.
  */
 export function quoteShellArg(arg: string): string {
-  if (SHELL_UNSAFE.test(arg)) {
+  if (SHELL_UNSAFE.test(arg) || (process.platform === 'win32' && /[%!^]/.test(arg))) {
     throw new Error(
       `Refusing to pass a shell-unsafe argument to a shell spawn: ${JSON.stringify(arg)} ` +
-        '(contains one of ; & | < > ` $ or a newline)',
+        '(contains a shell expansion or control character)',
     );
   }
   if (arg.length === 0) return '""';
   if (arg.startsWith('"') && arg.endsWith('"')) return arg;
-  if (!/\s/.test(arg)) return arg;
+  // TOML quoted keys in a project-trust override contain apostrophes. If left bare, a POSIX shell
+  // consumes those quote characters before the CLI can parse the key; cmd.exe also needs the whole
+  // value kept as one argument when a Windows workdir contains spaces.
+  if (!/[\s']/.test(arg)) return arg;
   return `"${arg}"`;
 }
 
@@ -67,6 +71,7 @@ export class CliExecutor implements Executor {
   private readonly usageFromSessionLog: boolean;
   private readonly triggerSkillName?: string;
   private readonly triggerToolName: string;
+  private readonly projectTrustConfigArg?: string;
 
   constructor(options: CliExecutorOptions) {
     if (options.argv.length === 0) {
@@ -85,11 +90,16 @@ export class CliExecutor implements Executor {
     this.usageFromSessionLog = options.usageFromSessionLog ?? false;
     this.triggerSkillName = options.triggerSkillName;
     this.triggerToolName = options.triggerToolName ?? DEFAULT_TRIGGER_TOOL_NAME;
+    this.projectTrustConfigArg = options.projectTrustConfigArg;
   }
 
-  static forAgent(agentId: string, opts?: { triggerSkillName?: string }): CliExecutor {
+  static forAgent(agentId: string, opts?: { triggerSkillName?: string; trustProjectConfig?: boolean }): CliExecutor {
     const agent = getAgent(agentId);
     const headless = agent.headless;
+    const projectTrustConfigArg = opts?.trustProjectConfig ? headless.projectTrustConfigArg : undefined;
+    if (opts?.trustProjectConfig && !projectTrustConfigArg) {
+      throw new Error(`Agent "${agent.id}" has no project trust override in the matrix`);
+    }
     if (opts?.triggerSkillName !== undefined) {
       const streamJson = headless.streamJson;
       if (!streamJson || streamJson.argv.length === 0) {
@@ -105,6 +115,7 @@ export class CliExecutor implements Executor {
         usageFromSessionLog: headless.usageFromSessionLog ?? false,
         triggerSkillName: opts.triggerSkillName,
         triggerToolName: streamJson.triggerToolName,
+        projectTrustConfigArg,
       });
     }
     if (!headless || headless.argv.length === 0) {
@@ -116,6 +127,7 @@ export class CliExecutor implements Executor {
       promptVia: headless.promptVia,
       promptFile: headless.promptFile,
       usageFromSessionLog: headless.usageFromSessionLog ?? false,
+      projectTrustConfigArg,
     });
   }
 
@@ -124,7 +136,7 @@ export class CliExecutor implements Executor {
     return {
       kind: 'cli',
       model: 'cli-configured',
-      detail: `${this.label}: ${this.argv.join(' ')}`,
+      detail: `${this.label}: ${this.argv.join(' ')}${this.projectTrustConfigArg ? ' (trusts each disposable project for config loading)' : ''}`,
       sampling: null,
     };
   }
@@ -132,6 +144,15 @@ export class CliExecutor implements Executor {
   run(prompt: string, workdir: string): Promise<ExecutorResult> {
     const startedAtMs = Date.now();
     let argv = this.argv;
+    if (this.projectTrustConfigArg) {
+      if (!workdir || argv.at(-1) !== '-' || !this.projectTrustConfigArg.includes('{workdir}')) {
+        return Promise.reject(new Error('Project trust override requires a workdir and a stdin CLI template ending in "-"'));
+      }
+      if (/[\r\n'\"]/.test(workdir)) {
+        return Promise.reject(new Error('Project trust override cannot encode quotes or newlines in the workdir path'));
+      }
+      argv = [...argv.slice(0, -1), '-c', this.projectTrustConfigArg.replaceAll('{workdir}', workdir), '-'];
+    }
     if (this.promptVia === 'file') {
       if (!workdir) {
         return Promise.reject(new Error('CliExecutor promptVia "file" requires a workdir'));

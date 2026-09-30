@@ -484,11 +484,13 @@ async function calibrateBench(
   const emptySkillDir = mkdtempSync(join(tmpdir(), 'skillfit-calibrate-'));
   try {
     const skill: SkillBundle = {
+      kind: 'skill',
       name: 'calibration-none',
       sourceDir: emptySkillDir,
       files: [],
       sha256: '0'.repeat(64),
       payload: '',
+      overlays: {},
     };
     const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '');
     const runGroup =
@@ -500,7 +502,7 @@ async function calibrateBench(
     // silently calibrated zero tasks on an unlabelled bench and then reported PASS 0/0.
     const plan: ExperimentPlan = {
       bench,
-      skill,
+      target: skill,
       executor,
       trials,
       runsRoot: options.runsRoot ?? resolve('runs'),

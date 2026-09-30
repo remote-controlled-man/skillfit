@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -86,6 +86,11 @@ test('CliExecutor.forAgent rejects unknown agents', () => {
   assert.throws(() => CliExecutor.forAgent('not-an-agent'), /Unknown agent/);
 });
 
+test('CliExecutor.forAgent obtains project trust behavior only from the matrix', () => {
+  assert.match(CliExecutor.forAgent('codex', { trustProjectConfig: true }).describe().detail ?? '', /trusts each disposable project/);
+  assert.throws(() => CliExecutor.forAgent('kimi-code', { trustProjectConfig: true }), /no project trust override in the matrix/);
+});
+
 test('CliExecutor requires a non-empty argv', () => {
   assert.throws(() => new CliExecutor({ argv: [] }), /non-empty argv/);
 });
@@ -129,7 +134,7 @@ test('CliExecutor file mode rejects an empty promptFile', () => {
   );
 });
 
-test('quoteShellArg quotes only whitespace-bearing args', () => {
+test('quoteShellArg preserves plain args and groups whitespace or TOML quoted keys', () => {
   assert.equal(quoteShellArg('kimi'), 'kimi');
   assert.equal(quoteShellArg('-p'), '-p');
   assert.equal(quoteShellArg('Read the file'), '"Read the file"');
@@ -140,11 +145,36 @@ test('quoteShellArg quotes only whitespace-bearing args', () => {
   assert.equal(quoteShellArg('C:\\tools\\node.exe'), 'C:\\tools\\node.exe');
   // Parens stay legal too, so a `node -e` expression can still be passed through a shell.
   assert.equal(quoteShellArg('process.stdout.write(1)'), 'process.stdout.write(1)');
+  assert.equal(quoteShellArg("projects.'/tmp/run'.trust_level='trusted'"), "\"projects.'/tmp/run'.trust_level='trusted'\"");
+});
+
+test('CliExecutor passes a scoped project trust override as one argument', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-trust-'));
+  try {
+    const script = join(dir, 'argv.mjs');
+    const workdir = join(dir, 'with space');
+    mkdirSync(workdir);
+    writeFileSync(script, 'process.stdin.resume();process.stdin.on("end",()=>process.stdout.write(JSON.stringify(process.argv.slice(2))))');
+    const executor = new CliExecutor({
+      argv: [process.execPath, script, '-'],
+      shell: true,
+      projectTrustConfigArg: "projects.'{workdir}'.trust_level='trusted'",
+    });
+    const result = await executor.run('task', workdir);
+    assert.deepEqual(JSON.parse(result.output), ['-c', `projects.'${workdir}'.trust_level='trusted'`, '-']);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('quoteShellArg refuses arguments a shell would interpret', () => {
   for (const payload of ['a;rm', 'a&&rm', 'a|rm', 'x$(whoami)', 'a`id`', 'a>out', 'a<in', 'a\nb']) {
     assert.throws(() => quoteShellArg(payload), /shell-unsafe/, `${payload} must be refused`);
+  }
+  if (process.platform === 'win32') {
+    for (const payload of ['%TEMP%', '!PATH!', 'a^b']) {
+      assert.throws(() => quoteShellArg(payload), /shell-unsafe/, `${payload} must be refused`);
+    }
   }
 });
 

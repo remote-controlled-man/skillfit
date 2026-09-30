@@ -5,17 +5,19 @@ import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
 import { runEval } from './commands/eval.js';
 import { runInstall } from './commands/install.js';
+import { runMcpCheck } from './commands/mcp.js';
 import { runReport } from './commands/report.js';
 import { runCodexSetup } from './commands/setup.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 
 const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
 
 Usage:
   skillfit doctor [--agent <id>]            Inspect current agent configuration health
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
-  skillfit eval <skill-path> [options]      A/B-test a skill against a bench
+  skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
+  skillfit mcp check <spec.json>            Handshake with a stdio MCP server and audit its tool catalog
   skillfit bench init [dir]                 Scaffold a new bench directory
   skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
   skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
@@ -23,12 +25,12 @@ Usage:
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
   skillfit install [options]                Install evidence-backed configuration
   skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance
-  skillfit bundle export <dir> [options]   Export used Codex skills and global guidance as a portable profile
+  skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile
 
 Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
-  --mode <mode>       Eval mode: inject (default, skill in prompt) | trigger (skill installed, measure invocation)
+  --mode <mode>       Eval mode: inject (default; Skills, rules, MCP) | trigger (Skills only)
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (default: 3)
   --profile <name>    Profile for install (default: "recommended")
@@ -138,7 +140,7 @@ async function main(): Promise<void> {
     case 'eval': {
       const skillPath = positionals[1];
       if (!skillPath) {
-        console.error('Usage: skillfit eval <skill-path> [--bench <path>] [--trials <n>] [--agent <id>] [--mode <mode>]');
+        console.error('Usage: skillfit eval <target-path> [--bench <path>] [--trials <n>] [--agent <id>] [--mode <mode>]');
         process.exitCode = 2;
         return;
       }
@@ -156,6 +158,15 @@ async function main(): Promise<void> {
         judgeAgent: values['judge-agent'],
         trials: values.trials ? Number.parseInt(values.trials, 10) : 3,
       });
+      return;
+    }
+    case 'mcp': {
+      if (positionals[1] !== 'check' || !positionals[2]) {
+        console.error('Usage: skillfit mcp check <spec.json> [--dry-run]');
+        process.exitCode = 2;
+        return;
+      }
+      await runMcpCheck({ specPath: positionals[2], dryRun: values['dry-run'] ?? false });
       return;
     }
     case 'install':

@@ -242,7 +242,7 @@ test('TOML MCP configs are scanned without JSON parsing', () => {
   const home = tempDir();
   writeFile(home, '.codex/config.toml', 'model = "gpt-5"\n\n[mcp_servers.docs]\ncommand = "x"\n\n[mcp_servers.docs.env]\nFOO = "1"\n\n[mcp_servers.fs]\ncommand = "y"\n');
   const checks = healthChecks(collectDoctorReport(makeOptions(home, tempDir(), { agent: 'codex' })), 'codex', 'MCP');
-  assert.ok(hasCheck(checks, 'PASS', /2 MCP server\(s\): docs, fs/));
+  assert.ok(hasCheck(checks, 'INFO', /text declares 2 MCP server\(s\): docs, fs.*does not prove the agent loaded/));
   assert.ok(!checks.some((c) => c.status === 'FAIL'));
 });
 

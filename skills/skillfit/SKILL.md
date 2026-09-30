@@ -21,6 +21,8 @@ fails, tell the user to install from https://github.com/remote-controlled-man/sk
 | "这个配置健不健康" | `skillfit doctor` — read-only |
 | "这个 skill 值不值得装 / does this skill help" | `skillfit eval <skill-path> --bench <bench> --agent <id> --trials 3` |
 | "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger` |
+| "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
+| "这个 MCP / AGENTS.md 真的有帮助吗" | `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/config-experiments.md) |
 | "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]` |
 | "把这次翻车存成任务" | `skillfit bench add <bench> --freeze --task <id> --prompt "..." --verifier-cmd "<cmd>"` |
 | "帮我起草 verifier" | same but `--decompose --agent <id>` — an agent drafts verifier + oracle; admitted only if the NOP + oracle gates pass |
@@ -51,6 +53,7 @@ Real eval runs cost tokens and time. Before any non-dry-run eval:
 ## Safety
 
 - `report` and `doctor` are always read-only.
+- `mcp check` starts the configured local server and performs discovery only; it never calls a tool.
 - `eval` writes only under `runs/` (gitignored).
 - `bench init` / `bench add` print a plan and ask before writing; pass `--yes` only when the user has
   explicitly confirmed.

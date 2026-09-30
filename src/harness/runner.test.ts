@@ -8,7 +8,7 @@ import { loadBench } from './bench.js';
 import { collectSkillBundle } from './bundle.js';
 import { MockExecutor } from './executors/mock.js';
 import { gitInit, runExperiment, type ExperimentPlan } from './runner.js';
-import type { Executor, ExecutorResult } from './types.js';
+import type { EvaluationTarget, Executor, ExecutorResult } from './types.js';
 
 const PACKAGE_ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const BUNDLED_CODE_REVIEW = join(PACKAGE_ROOT, 'benches', 'code-review');
@@ -28,7 +28,7 @@ function makeSkill(t: import('node:test').TestContext): string {
 function plan(overrides: Partial<ExperimentPlan> & { runsRoot: string }): ExperimentPlan {
   return {
     bench: loadBench(BUNDLED_CODE_REVIEW),
-    skill: collectSkillBundle(makeSkillSync(overrides.runsRoot), 'review-skill'),
+    target: collectSkillBundle(makeSkillSync(overrides.runsRoot), 'review-skill'),
     executor: new MockExecutor(),
     trials: 3,
     runGroup: 'test-group',
@@ -49,14 +49,14 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   const skillDir = makeSkill(t);
   const manifest = await runExperiment({
     bench: loadBench(BUNDLED_CODE_REVIEW),
-    skill: collectSkillBundle(skillDir, 'review-skill'),
+    target: collectSkillBundle(skillDir, 'review-skill'),
     executor: new MockExecutor(),
     trials: 3,
     runsRoot,
     runGroup: 'test-group',
   });
 
-  assert.equal(manifest.schemaVersion, 3);
+  assert.equal(manifest.schemaVersion, 4);
   assert.equal(manifest.tasks.length, 5);
   const task = manifest.tasks[0];
   assert.ok(task);
@@ -115,7 +115,7 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   assert.ok(scoreDeltaCi !== null);
   // pooled treatment mean 0.9333 minus pooled baseline mean 0.55 (r1 .25, r2 .5, r3 0, x1 1, s1 1)
   assert.ok(Math.abs(scoreDeltaCi.point - 23 / 60) < 1e-9);
-  assert.equal(manifest.skill.bundleSha256.length, 64);
+  assert.equal(manifest.target.bundleSha256.length, 64);
   assert.ok(manifest.warnings.some((w) => w.includes('synthetic')));
   assert.ok(
     manifest.warnings.some((w) => w.includes('"review-r3"') && w.includes('too hard or broken')),
@@ -148,14 +148,14 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
     score: number | null;
     checks: { name: string; pass: boolean }[] | null;
     gitInitialized: boolean;
-    skillBundleSha256: string | null;
+    target: { kind: string; name: string; bundleSha256: string; applied: boolean };
   };
   assert.equal(result.schemaVersion, 2);
   assert.equal(result.passed, true);
   assert.equal(result.score, 1);
   assert.equal(result.checks?.length, 4);
   assert.equal(result.gitInitialized, true);
-  assert.equal(result.skillBundleSha256, manifest.skill.bundleSha256);
+  assert.equal(result.target.bundleSha256, manifest.target.bundleSha256);
 
   const verifierLog = readFileSync(
     join(runsRoot, 'test-group', 'review-r1', 'baseline', 'trial-1', '_verifier.txt'),
@@ -168,6 +168,71 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   assert.match(verifierLog, /"decoys":\["c-style-loop"\]/);
 });
 
+test('runExperiment applies workspace config after snapshotting so prompts stay identical', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-config-runs-');
+  const benchDir = join(runsRoot, 'bench');
+  mkdirSync(join(benchDir, 'fixtures', 't1'), { recursive: true });
+  mkdirSync(join(benchDir, 'prompts'), { recursive: true });
+  mkdirSync(join(benchDir, 'verifiers'), { recursive: true });
+  writeFileSync(join(benchDir, 'fixtures', 't1', 'input.txt'), 'same task input\n');
+  writeFileSync(join(benchDir, 'prompts', 't1.md'), 'Use the available project tools and say whether config was active.\n');
+  writeFileSync(
+    join(benchDir, 'verifiers', 't1.mjs'),
+    "import { readFileSync } from 'node:fs'; process.exit(readFileSync(process.argv[2] + '/_output.md', 'utf8').includes('configured') ? 0 : 1);\n",
+  );
+  writeFileSync(
+    join(benchDir, 'bench.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      tasks: [{ id: 't1', fixture: 'fixtures/t1', prompt: 'prompts/t1.md', verifier: 'node verifiers/t1.mjs', verifierKind: 'output' }],
+    }),
+  );
+  const treatment = join(runsRoot, 'experiment', 'treatment');
+  mkdirSync(join(treatment, '.codex'), { recursive: true });
+  writeFileSync(join(treatment, '.codex', 'config.toml'), '[mcp_servers.demo]\ncommand = "demo"\n');
+  const target: EvaluationTarget = {
+    kind: 'mcp',
+    name: 'demo-mcp',
+    sourceDir: join(runsRoot, 'experiment'),
+    files: ['treatment/.codex/config.toml'],
+    sha256: 'c'.repeat(64),
+    payload: null,
+    overlays: { treatment },
+  };
+  const executor: Executor = {
+    describe: () => ({ kind: 'cli', model: 'workspace-probe' }),
+    run: (_prompt, workdir) => Promise.resolve({
+      output: existsSync(join(workdir, '.codex', 'config.toml')) ? 'configured' : 'plain',
+    }),
+  };
+
+  const manifest = await runExperiment({
+    bench: loadBench(benchDir),
+    target,
+    executor,
+    trials: 1,
+    runsRoot,
+    runGroup: 'config-group',
+  });
+
+  assert.equal(manifest.target.kind, 'mcp');
+  assert.equal(manifest.tasks[0]?.conditions.baseline.passes, 0);
+  assert.equal(manifest.tasks[0]?.conditions.treatment.passes, 1);
+  const baselineDir = join(runsRoot, 'config-group', 't1', 'baseline', 'trial-1');
+  const treatmentDir = join(runsRoot, 'config-group', 't1', 'treatment', 'trial-1');
+  assert.ok(!existsSync(join(baselineDir, '.codex', 'config.toml')));
+  assert.ok(existsSync(join(treatmentDir, '.codex', 'config.toml')));
+  assert.equal(
+    readFileSync(join(baselineDir, '_prompt.txt'), 'utf8'),
+    readFileSync(join(treatmentDir, '_prompt.txt'), 'utf8'),
+    'only workspace configuration may differ between paired arms',
+  );
+  const prompt = readFileSync(join(treatmentDir, '_prompt.txt'), 'utf8');
+  assert.ok(!prompt.includes('mcp_servers.demo'));
+  assert.match(prompt, /inspect, edit, and run things there directly/);
+  assert.ok(!prompt.includes('Do not use tools'));
+});
+
 test('runExperiment keeps executor errors as failed trials instead of crashing', async (t) => {
   const runsRoot = tmp(t, 'skillfit-runs-');
   const failing: Executor = {
@@ -176,7 +241,7 @@ test('runExperiment keeps executor errors as failed trials instead of crashing',
   };
   const manifest = await runExperiment({
     bench: loadBench(BUNDLED_CODE_REVIEW),
-    skill: collectSkillBundle(makeSkill(t)),
+    target: collectSkillBundle(makeSkill(t)),
     executor: failing,
     trials: 1,
     runsRoot,
@@ -222,7 +287,7 @@ test('runExperiment warns when the baseline already passes (bench too easy)', as
   );
   const manifest = await runExperiment({
     bench: loadBench(benchDir),
-    skill: collectSkillBundle(makeSkill(t)),
+    target: collectSkillBundle(makeSkill(t)),
     executor: new MockExecutor(),
     trials: 3,
     runsRoot,
@@ -408,7 +473,7 @@ test('runExperiment excludes a trial whose verifier could not be spawned', async
 
   const manifest = await runExperiment({
     bench: loadBench(benchDir),
-    skill: collectSkillBundle(makeSkillSync(runsRoot), 'review-skill'),
+    target: collectSkillBundle(makeSkillSync(runsRoot), 'review-skill'),
     executor: new MockExecutor(),
     trials: 1,
     runsRoot,
@@ -467,4 +532,3 @@ test('runExperiment interleaves conditions within each trial and records samplin
     'the matrix CLIs expose no seed or temperature knob, and the manifest says so rather than implying one',
   );
 });
-

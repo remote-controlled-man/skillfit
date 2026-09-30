@@ -82,10 +82,10 @@ function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunMani
   );
   const { verdict, reason } = verdictFor({ ...discordant, deltaPassRate });
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     runGroup: 'g',
     createdAt: '2026-09-19T00:00:00.000Z',
-    skill: { name: 's', sourceDir: '/s', bundleSha256: 'a'.repeat(64), files: ['SKILL.md'] },
+    target: { kind: 'skill', name: 's', sourceDir: '/s', bundleSha256: 'a'.repeat(64), files: ['SKILL.md'] },
     bench: { name: 'b', dir: '/b', contentSha256: 'b'.repeat(64), taskCount: tasks.length },
     executor: { kind: executorKind, model: executorKind },
     judge: null,
@@ -152,7 +152,7 @@ test('renderSummary prints the table, significance block, and indicative scale n
   const base = manifestWith([taskSummary('review-r1', 0, 3, 3)]);
   const manifest: RunManifest = { ...base, warnings: buildWarnings(base) };
   const output = renderSummary(manifest, 'runs/g/manifest.json');
-  assert.match(output, /Skill\s+: s/);
+  assert.match(output, /Target\s+: s \(skill/);
   assert.match(output, /review-r1\s+0\/3 \(0%\)\s+3\/3 \(100%\)\s+\+100pp\s+inconclusive/);
   assert.match(output, /OVERALL/);
   assert.match(output, /Significance \(overall\): 3 improved vs 0 regressed discordant pair\(s\), McNemar exact p=0\.2500/);

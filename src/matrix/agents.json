@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-09-29",
+  "verifiedAt": "2026-10-01",
   "agents": [
     {
       "id": "claude-code",
@@ -104,6 +104,7 @@
       "headless": {
         "argv": ["codex", "exec", "-"],
         "promptVia": "stdin",
+        "projectTrustConfigArg": "projects.'{workdir}'.trust_level='trusted'",
         "streamJson": {
           "argv": ["codex", "exec", "--json", "--sandbox", "workspace-write", "-"],
           "wireShape": "codex-items"

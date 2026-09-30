@@ -27,5 +27,5 @@ export function collectSkillBundle(skillDir: string, name?: string): SkillBundle
     parts.join('\n'),
     '</skill>',
   ].join('\n');
-  return { name: skillName, sourceDir, files, sha256, payload };
+  return { kind: 'skill', name: skillName, sourceDir, files, sha256, payload, overlays: {} };
 }
