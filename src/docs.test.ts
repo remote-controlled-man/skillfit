@@ -50,7 +50,7 @@ test('selectable Codex setup commands match across README languages', () => {
 
 test('rules and MCP evaluation tour stays present across README languages', () => {
   for (const readme of READMES) {
-    const content = read(readme);
+    const content = read(readme).replace(/\r\n/g, '\n');
     assert.match(content, /docs\/assets\/skillfit-flow\.svg/, `${readme} must show the evidence loop`);
     assert.match(content, /node dist\/cli\.js mcp check \.\/my-server\.probe\.json/, `${readme} must show MCP preflight`);
     assert.match(content, /node dist\/cli\.js eval \.\/context7-experiment --bench \.\/my-context7-bench --agent codex --trials 5/, `${readme} must show config A\/B`);
