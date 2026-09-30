@@ -40,7 +40,7 @@ skillfit은 바로 이 빠진 측정 계층입니다. 결정적 verifier를 갖�
 실제 실행 결과입니다. skill이 설치만 되어 있고 아무도 언급하지 않을 때, 에이전트가 과연 *스스로 그 skill을 로드해 쓰는지* 측정했습니다:
 
 ```console
-$ npx skillfit eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
+$ node dist/cli.js eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
 
 TASK        FIRE?  FIRED    UNKNOWN  ERRORS  PASS
 review-r1   yes    1/3      0        0       3/3
@@ -61,22 +61,28 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## 빠른 시작
 
 ```bash
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+npm ci
+npm run build
+node dist/cli.js bench check benches/code-review
+
 # 1. 현재 설정 상태 점검(읽기 전용, 안전)
-npx skillfit doctor
+node dist/cli.js doctor
 
 # 2. 설치 전에 skill을 A/B 테스트(이름으로 번들 bench를 선택하거나 직접 경로를 전달;
 #    --agent를 쓰면 API 키 대신 로컬 에이전트 CLI를 구동합니다)
-npx skillfit eval ~/.agents/skills/some-skill --bench code-review --trials 3
+node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
 
 # 2b. 또는 에이전트가 스스로 skill을 트리거하는지, 그리고 트리거해야 할 때만 트리거하는지 측정
-npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
+node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
 
 # 3. 도구 호출 없이 MCP server 사전 점검
-npx skillfit mcp check ./my-server.probe.json --dry-run
-npx skillfit mcp check ./my-server.probe.json
+node dist/cli.js mcp check ./my-server.probe.json --dry-run
+node dist/cli.js mcp check ./my-server.probe.json
 
-# 4. 근거로 입증된 최소 세트만 설치(기본값은 dry-run)
-npx skillfit install
+# 4. 설치 계획 확인(기본값은 dry-run)
+node dist/cli.js install
 
 # 선택: 에이전트가 사용법을 배우도록 하기(driver skill을 agents 디렉터리에 복사)
 cp -r skills/skillfit ~/.agents/skills/
@@ -96,11 +102,13 @@ context7-experiment/
 ```
 
 ```bash
-skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
-skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
+node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
+node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
 ```
 
 먼저 `skillfit mcp check`로 stdio 핸드셰이크와 도구 카탈로그를 확인합니다. 이 명령은 `tools/list`만 요청해 이름, 설명, 입력 schema, annotations를 검사하며 도구를 호출하지 않습니다. 이후 페어드 실험으로 모델이 올바른 server를 고르는지와 작업 결과가 개선되는지를 측정합니다. 자세한 내용은 [규칙 및 MCP 실험](docs/config-experiments.md)을 참고하세요.
+
+Codex는 신뢰된 시험 작업공간에서만 프로젝트 MCP 설정을 읽습니다. Codex 결과를 해석하기 전에 이 조건을 확인하세요.
 
 ## 선택형 Codex 설정
 
@@ -118,8 +126,8 @@ bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
 두 개 이상의 Codex 세션에서 사용한 사용자 Skills와 현재 적용 중인 전역 지침을 내보냅니다. 생성된 디렉터리를 새 컴퓨터로 옮긴 뒤 설치하세요. 범위와 옵션은 [이전 가이드](docs/portable-codex.md)를 참고하세요.
 
 ```bash
-skillfit bundle export ./personal-codex --dry-run
-skillfit bundle export ./personal-codex --yes
+node dist/cli.js bundle export ./personal-codex --dry-run
+node dist/cli.js bundle export ./personal-codex --yes
 # transfer the personal-codex directory to the new machine
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
@@ -142,7 +150,7 @@ node ./personal-codex/setup.mjs --yes
 
 ## 나만의 bench 가져오기
 
-평가의 품질은 작업의 품질을 넘지 못합니다. bench는 그저 하나의 디렉터리입니다 — `bench.json` + fixture + 결정적 verifier. `npx skillfit bench init`으로 뼈대를 만들고, 에이전트가 방금 망친 실제 실패를 `npx skillfit bench add <bench> --freeze`로 영구 작업으로 고정하고, `npx skillfit bench check`로 오프라인 검증을 거친 뒤, 여러분의 실제 프로덕션 시나리오를 본떠 만드세요: [benches/README.md](benches/README.md). bench를 한 번도 작성해 본 적이 없다면 [docs/bench-authoring.md](docs/bench-authoring.md)부터 시작하세요. 실제 태스크 하나로 일곱 단계를 처음부터 끝까지 따라가고, bench가 확신에 차서 틀린 숫자를 내놓는 경로도 다룹니다.
+평가의 품질은 작업의 품질을 넘지 못합니다. bench는 그저 하나의 디렉터리입니다 — `bench.json` + fixture + 결정적 verifier. `node dist/cli.js bench init`으로 뼈대를 만들고, 에이전트가 방금 망친 실제 실패를 `node dist/cli.js bench add <bench> --freeze`로 영구 작업으로 고정하고, `node dist/cli.js bench check`로 오프라인 검증을 거친 뒤, 여러분의 실제 프로덕션 시나리오를 본떠 만드세요: [benches/README.md](benches/README.md). bench를 한 번도 작성해 본 적이 없다면 [docs/bench-authoring.md](docs/bench-authoring.md)부터 시작하세요. 실제 태스크 하나로 일곱 단계를 처음부터 끝까지 따라가고, bench가 확신에 차서 틀린 숫자를 내놓는 경로도 다룹니다.
 
 ## 자체 측정 데이터
 

@@ -40,7 +40,7 @@ skillfit 补上缺失的测量层：配对 A/B 实验 + 确定性 verifier + 统
 一次真实运行：skill 已安装但没人提醒时，agent 到底**想不想得起来用它**——
 
 ```console
-$ npx skillfit eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
+$ node dist/cli.js eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
 
 TASK        FIRE?  FIRED    UNKNOWN  ERRORS  PASS
 review-r1   yes    1/3      0        0       3/3
@@ -61,22 +61,28 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## 快速开始
 
 ```bash
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+npm ci
+npm run build
+node dist/cli.js bench check benches/code-review
+
 # 1. 体检当前配置（只读，安全）
-npx skillfit doctor
+node dist/cli.js doctor
 
 # 2. 装之前先 A/B 测一个 skill（按名字选内置 bench，或传自己的 bench 路径；
 #    也可以用 --agent 驱动本机 agent CLI 而不必配 API key）
-npx skillfit eval ~/.agents/skills/some-skill --bench code-review --trials 3
+node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
 
 # 2b. 或者测 agent 自己会不会触发这个 skill（以及不该触发时会不会乱触发）
-npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
+node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
 
 # 3. 在不调用任何工具的前提下预检 MCP server
-npx skillfit mcp check ./my-server.probe.json --dry-run
-npx skillfit mcp check ./my-server.probe.json
+node dist/cli.js mcp check ./my-server.probe.json --dry-run
+node dist/cli.js mcp check ./my-server.probe.json
 
-# 4. 只装实测有效的最小集（默认 dry-run）
-npx skillfit install
+# 4. 查看安装计划（默认 dry-run）
+node dist/cli.js install
 
 # 可选：让你的 agent 学会驱动它（把 driver skill 拷进 agents 目录）
 cp -r skills/skillfit ~/.agents/skills/
@@ -96,11 +102,13 @@ context7-experiment/
 ```
 
 ```bash
-skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
-skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
+node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
+node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
 ```
 
 先用 `skillfit mcp check` 验证 stdio 握手和工具目录：它只请求 `tools/list`，检查名称、描述、输入 schema 与 annotations，不会调用工具。然后再跑配对实验，测模型是否选对 server，以及任务结果是否真的改善。详见[规则与 MCP 实验](docs/config-experiments.md)。
+
+Codex 仅在受信任的试验工作区加载项目级 MCP 配置；解读 Codex 结果前先核对这个前提。
 
 ## 可选择的 Codex 配置
 
@@ -118,8 +126,8 @@ bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
 导出至少在两个 Codex 会话中用过的用户级 Skills 和当前生效的全局规则。把生成的目录带到新机器后安装即可。范围与选项见[迁移指南](docs/portable-codex.md)。
 
 ```bash
-skillfit bundle export ./personal-codex --dry-run
-skillfit bundle export ./personal-codex --yes
+node dist/cli.js bundle export ./personal-codex --dry-run
+node dist/cli.js bundle export ./personal-codex --yes
 # transfer the personal-codex directory to the new machine
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
@@ -142,7 +150,7 @@ node ./personal-codex/setup.mjs --yes
 
 ## 自带 bench
 
-实验质量取决于任务质量。bench 就是一个目录——`bench.json` + fixtures + 确定性 verifier。用 `npx skillfit bench init` 生成骨架，用 `npx skillfit bench add <bench> --freeze` 把 agent 刚翻车的现场冻成任务，用 `npx skillfit bench check` 离线校验，照着你自己的生产场景造：[benches/README.md](benches/README.md)。没写过 bench 的话，先看 [docs/bench-authoring.md](docs/bench-authoring.md)——它用一个真实任务把七个步骤从头走一遍，也讲了 bench 会在哪些地方给你一份自信的错数据。
+实验质量取决于任务质量。bench 就是一个目录——`bench.json` + fixtures + 确定性 verifier。用 `node dist/cli.js bench init` 生成骨架，用 `node dist/cli.js bench add <bench> --freeze` 把 agent 刚翻车的现场冻成任务，用 `node dist/cli.js bench check` 离线校验，照着你自己的生产场景造：[benches/README.md](benches/README.md)。没写过 bench 的话，先看 [docs/bench-authoring.md](docs/bench-authoring.md)——它用一个真实任务把七个步骤从头走一遍，也讲了 bench 会在哪些地方给你一份自信的错数据。
 
 ## 我们自己的数据
 

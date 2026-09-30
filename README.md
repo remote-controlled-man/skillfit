@@ -40,7 +40,7 @@ skillfit is the missing measurement layer: paired A/B experiments with determini
 A real run, measuring whether an agent even *bothers to load* a skill when it is installed but not mentioned:
 
 ```console
-$ npx skillfit eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
+$ node dist/cli.js eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
 
 TASK        FIRE?  FIRED    UNKNOWN  ERRORS  PASS
 review-r1   yes    1/3      0        0       3/3
@@ -61,22 +61,28 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 ## Quick start
 
 ```bash
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+npm ci
+npm run build
+node dist/cli.js bench check benches/code-review
+
 # 1. Health-check your current setup (read-only, safe)
-npx skillfit doctor
+node dist/cli.js doctor
 
 # 2. A/B-test a skill before installing it (pick a bundled bench by name, or pass your own path;
 #    use --agent to drive a local agent CLI instead of an API key)
-npx skillfit eval ~/.agents/skills/some-skill --bench code-review --trials 3
+node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
 
 # 2b. Or measure whether the agent triggers the skill on its own (and only when it should)
-npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
+node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
 
 # 3. Preflight an MCP server without calling any tools
-npx skillfit mcp check ./my-server.probe.json --dry-run
-npx skillfit mcp check ./my-server.probe.json
+node dist/cli.js mcp check ./my-server.probe.json --dry-run
+node dist/cli.js mcp check ./my-server.probe.json
 
-# 4. Install only the evidence-backed minimal set (dry-run by default)
-npx skillfit install
+# 4. Inspect an installation plan (dry-run by default)
+node dist/cli.js install
 
 # Optional: teach your agent to drive it (copy the driver skill into your agents dir)
 cp -r skills/skillfit ~/.agents/skills/
@@ -96,11 +102,13 @@ context7-experiment/
 ```
 
 ```bash
-skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
-skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
+node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
+node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
 ```
 
 Start with `skillfit mcp check` to verify the stdio handshake and tool catalog. It requests `tools/list` and audits names, descriptions, input schemas, and annotations without calling a tool. Then run the paired experiment to measure whether the model selects the server correctly and whether task outcomes improve. See [Rules and MCP experiments](docs/config-experiments.md).
+
+Codex loads project MCP config only for trusted trial workspaces; check that prerequisite before interpreting a Codex result.
 
 ## Selectable Codex setup
 
@@ -118,8 +126,8 @@ bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
 Export the user-level Skills seen in at least two Codex sessions and your active global guidance. Transfer the resulting directory to a new machine, then install it there. See [the portable setup guide](docs/portable-codex.md) for scope and options.
 
 ```bash
-skillfit bundle export ./personal-codex --dry-run
-skillfit bundle export ./personal-codex --yes
+node dist/cli.js bundle export ./personal-codex --dry-run
+node dist/cli.js bundle export ./personal-codex --yes
 # transfer the personal-codex directory to the new machine
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
@@ -142,7 +150,7 @@ To export the full 65-Skill upstream source catalog, add `--upstream-lock ./prof
 
 ## Bring your own bench
 
-Evals are only as good as their tasks. A bench is just a directory — `bench.json` + fixtures + a deterministic verifier. Scaffold one with `npx skillfit bench init`, freeze a real failure you just watched your agent botch with `npx skillfit bench add <bench> --freeze`, validate offline with `npx skillfit bench check`, and model it on your own production scenarios: [benches/README.md](benches/README.md). If you have never written one, start with [docs/bench-authoring.md](docs/bench-authoring.md) — it walks the seven steps end to end on a single real task, and covers the ways a bench produces confident wrong numbers.
+Evals are only as good as their tasks. A bench is just a directory — `bench.json` + fixtures + a deterministic verifier. Scaffold one with `node dist/cli.js bench init`, freeze a real failure you just watched your agent botch with `node dist/cli.js bench add <bench> --freeze`, validate offline with `node dist/cli.js bench check`, and model it on your own production scenarios: [benches/README.md](benches/README.md). If you have never written one, start with [docs/bench-authoring.md](docs/bench-authoring.md) — it walks the seven steps end to end on a single real task, and covers the ways a bench produces confident wrong numbers.
 
 ## Our own data
 

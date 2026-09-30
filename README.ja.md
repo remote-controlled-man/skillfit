@@ -40,7 +40,7 @@ skillfit は欠けていた測定レイヤーである：決定的ベリファ�
 実際の実行例：スキルがインストールされているものの明示的に言及されていない場合に、エージェントが**わざわざロードするかどうか**を測定したものだ：
 
 ```console
-$ npx skillfit eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
+$ node dist/cli.js eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
 
 TASK        FIRE?  FIRED    UNKNOWN  ERRORS  PASS
 review-r1   yes    1/3      0        0       3/3
@@ -61,22 +61,28 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## クイックスタート
 
 ```bash
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+npm ci
+npm run build
+node dist/cli.js bench check benches/code-review
+
 # 1. 現在のセットアップをヘルスチェック（読み取り専用・安全）
-npx skillfit doctor
+node dist/cli.js doctor
 
 # 2. インストール前にスキルを A/B テスト（同梱ベンチを名前で選ぶか、自分のパスを渡す。
 #    --agent で API キーの代わりにローカルのエージェント CLI を駆動できる）
-npx skillfit eval ~/.agents/skills/some-skill --bench code-review --trials 3
+node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
 
 # 2b. あるいは、エージェントが自発的にスキルをトリガーするか（そしてすべきでないときに発火しないか）を測定
-npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
+node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
 
 # 3. ツールを呼び出さずに MCP server を事前検査
-npx skillfit mcp check ./my-server.probe.json --dry-run
-npx skillfit mcp check ./my-server.probe.json
+node dist/cli.js mcp check ./my-server.probe.json --dry-run
+node dist/cli.js mcp check ./my-server.probe.json
 
-# 4. エビデンスに裏付けられた最小セットだけをインストール（デフォルトは dry-run）
-npx skillfit install
+# 4. インストール計画を確認する（デフォルトは dry-run）
+node dist/cli.js install
 
 # 任意：エージェントに使い方を教える（driver skill を agents ディレクトリにコピー）
 cp -r skills/skillfit ~/.agents/skills/
@@ -96,11 +102,13 @@ context7-experiment/
 ```
 
 ```bash
-skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
-skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
+node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
+node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
 ```
 
 最初に `skillfit mcp check` で stdio ハンドシェイクとツールカタログを確認する。これは `tools/list` だけを要求し、名前、説明、入力 schema、annotations を監査してツールは呼び出さない。その後のペア実験で、モデルが正しい server を選び、タスク結果が改善するかを測定する。詳しくは[ルールと MCP の実験](docs/config-experiments.md)。
+
+Codex は信頼済みの試行ワークスペースでのみプロジェクトの MCP 設定を読み込むため、結果を解釈する前に確認してください。
 
 ## 選択式 Codex セットアップ
 
@@ -118,8 +126,8 @@ bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
 2 つ以上の Codex セッションで使われたユーザー用 Skills と、現在有効なグローバル指示をエクスポートします。生成したディレクトリを新しいマシンへ移し、そこでインストールします。対象範囲とオプションは[移行ガイド](docs/portable-codex.md)を参照してください。
 
 ```bash
-skillfit bundle export ./personal-codex --dry-run
-skillfit bundle export ./personal-codex --yes
+node dist/cli.js bundle export ./personal-codex --dry-run
+node dist/cli.js bundle export ./personal-codex --yes
 # transfer the personal-codex directory to the new machine
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
@@ -142,7 +150,7 @@ node ./personal-codex/setup.mjs --yes
 
 ## ベンチを持ち込む
 
-評価の質はタスクの質を超えられない。ベンチは単なるディレクトリ——`bench.json` + フィクスチャ + 決定的ベリファイアだ。`npx skillfit bench init` でスキャフォールドし、エージェントが失敗した現場を目撃したら `npx skillfit bench add <bench> --freeze` で恒久的なタスクとして凍結し、`npx skillfit bench check` でオフライン検証し、自分の本番シナリオに倣って作る：[benches/README.md](benches/README.md)。ベンチを書いたことがなければ、まず [docs/bench-authoring.md](docs/bench-authoring.md) から。実在するタスク 1 件で 7 ステップを最初から最後まで通しで示し、ベンチが自信たっぷりに間違った数値を出す経路も扱う。
+評価の質はタスクの質を超えられない。ベンチは単なるディレクトリ——`bench.json` + フィクスチャ + 決定的ベリファイアだ。`node dist/cli.js bench init` でスキャフォールドし、エージェントが失敗した現場を目撃したら `node dist/cli.js bench add <bench> --freeze` で恒久的なタスクとして凍結し、`node dist/cli.js bench check` でオフライン検証し、自分の本番シナリオに倣って作る：[benches/README.md](benches/README.md)。ベンチを書いたことがなければ、まず [docs/bench-authoring.md](docs/bench-authoring.md) から。実在するタスク 1 件で 7 ステップを最初から最後まで通しで示し、ベンチが自信たっぷりに間違った数値を出す経路も扱う。
 
 ## 私たち自身のデータ
 

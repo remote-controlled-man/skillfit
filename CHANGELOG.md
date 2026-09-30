@@ -119,6 +119,8 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
 - MCP preflight now rejects malformed JSON-RPC response shapes and unsupported initialization,
   follows paginated `tools/list` results, and stops repeated cursors. Configuration experiments
   reject overlays whose symlinks leave or alias the experiment directory.
+- All five README quick starts now use the source checkout while the package remains unpublished,
+  with an offline bundled bench check as the first reproducible success.
 
 - **`install` now rolls back a failed apply, including its lockfile (2026-09-29).** Staging already
   protected against failures before the first rename, but a later rename failure left earlier target
