@@ -119,6 +119,8 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
 - MCP preflight now rejects malformed JSON-RPC response shapes and unsupported initialization,
   follows paginated `tools/list` results, and stops repeated cursors. Configuration experiments
   reject overlays whose symlinks leave or alias the experiment directory.
+- Codex MCP trials now pass a scoped, per-run project trust override so the disposable workspace
+  actually loads its project configuration without changing the user's Codex config.
 - All five README quick starts now use the source checkout while the package remains unpublished,
   with an offline bundled bench check as the first reproducible success.
 

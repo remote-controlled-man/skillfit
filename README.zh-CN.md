@@ -108,7 +108,7 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 
 先用 `skillfit mcp check` 验证 stdio 握手和工具目录：它只请求 `tools/list`，检查名称、描述、输入 schema 与 annotations，不会调用工具。然后再跑配对实验，测模型是否选对 server，以及任务结果是否真的改善。详见[规则与 MCP 实验](docs/config-experiments.md)。
 
-Codex 仅在受信任的试验工作区加载项目级 MCP 配置；解读 Codex 结果前先核对这个前提。
+在 Codex MCP 试验中，skillfit 会为每次运行传入仅对临时工作区生效的信任覆盖参数，让项目配置正常加载，不修改你的 Codex 用户配置。
 
 ## 可选择的 Codex 配置
 

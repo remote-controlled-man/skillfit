@@ -66,10 +66,12 @@ function resolveBenchDir(bench: string | undefined): string {
   throw new Error(`More than one bundled bench is available; pick one explicitly:\n${names}`);
 }
 
-function resolveExecutor(agent: string | undefined): Executor {
+function resolveExecutor(agent: string | undefined, target: EvaluationTarget): Executor {
   if (agent) {
-    getAgent(agent);
-    return CliExecutor.forAgent(agent);
+    const definition = getAgent(agent);
+    return CliExecutor.forAgent(agent, {
+      trustProjectConfig: target.kind === 'mcp' && definition.headless.projectTrustConfigArg !== undefined,
+    });
   }
   return ApiExecutor.fromEnv();
 }
@@ -318,7 +320,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   let executor: Executor | null = null;
   try {
-    executor = options.executor ?? resolveExecutor(options.agent);
+    executor = options.executor ?? resolveExecutor(options.agent, target);
   } catch (error) {
     if (!options.dryRun) throw error;
     log(`Note: ${(error as Error).message}`);

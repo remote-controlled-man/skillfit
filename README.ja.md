@@ -108,7 +108,7 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 
 最初に `skillfit mcp check` で stdio ハンドシェイクとツールカタログを確認する。これは `tools/list` だけを要求し、名前、説明、入力 schema、annotations を監査してツールは呼び出さない。その後のペア実験で、モデルが正しい server を選び、タスク結果が改善するかを測定する。詳しくは[ルールと MCP の実験](docs/config-experiments.md)。
 
-Codex は信頼済みの試行ワークスペースでのみプロジェクトの MCP 設定を読み込むため、結果を解釈する前に確認してください。
+Codex の MCP 試行では、skillfit が一回限りの信頼設定を CLI に渡し、一時的なプロジェクト設定を読み込みます。ユーザーの Codex 設定は変更しません。
 
 ## 選択式 Codex セットアップ
 

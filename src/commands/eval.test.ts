@@ -388,6 +388,7 @@ test('runEval plans a first-class MCP workspace experiment for the selected agen
   const output = lines.join('\n');
   assert.match(output, /Target\s+: demo-mcp \(mcp,/);
   assert.match(output, /applied as project files; treatment material is never injected/);
+  assert.match(output, /trusts each disposable project for config loading/);
   assert.match(output, /5 task\(s\) × 2 conditions × 2 = 20 runs/);
 });
 
@@ -439,4 +440,3 @@ test('runEval rejects config overlays that could modify the task fixture', async
     /may contain only matrix-defined project config files.*unexpected: src\/solution\.js/,
   );
 });
-

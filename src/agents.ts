@@ -50,6 +50,8 @@ export interface AgentHeadless {
   argv: string[];
   promptVia: 'stdin' | 'file';
   promptFile?: string;
+  /** CLI config override used only for disposable workspace configuration experiments. */
+  projectTrustConfigArg?: string;
   /**
    * The headless transcript carries no usable token counts, so usage has to be read out of band from
    * the agent's own session log after the run. A capability, not an agent name: the harness must not

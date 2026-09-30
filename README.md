@@ -108,7 +108,7 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 
 Start with `skillfit mcp check` to verify the stdio handshake and tool catalog. It requests `tools/list` and audits names, descriptions, input schemas, and annotations without calling a tool. Then run the paired experiment to measure whether the model selects the server correctly and whether task outcomes improve. See [Rules and MCP experiments](docs/config-experiments.md).
 
-Codex loads project MCP config only for trusted trial workspaces; check that prerequisite before interpreting a Codex result.
+For Codex MCP trials, skillfit passes a per-run trust override so the disposable project config loads without changing your Codex user config.
 
 ## Selectable Codex setup
 

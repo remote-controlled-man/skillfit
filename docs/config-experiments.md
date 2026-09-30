@@ -96,9 +96,10 @@ For every task and trial, skillfit copies the same fixture into both arms. It sn
 for the task prompt, then applies the arm's overlay. Configuration contents are therefore absent from
 the prompt snapshot. The local agent CLI discovers rules or MCP through its normal project loader.
 
-Codex loads project `.codex/config.toml` only for trusted projects. Trial workspaces are newly created
-repositories, so confirm that Codex trusts each trial workspace before interpreting a Codex MCP
-comparison; otherwise the treatment file can exist while Codex ignores it. See the
+Codex loads project `.codex/config.toml` only for trusted projects. For Codex MCP trials, skillfit
+passes a per-run CLI trust override for the disposable trial repository. It does not change the user's
+Codex config or persist trust after the run. Review the bench fixture and MCP overlay before running:
+the trusted trial can load their project configuration. See the
 [official Codex configuration guide](https://learn.chatgpt.com/docs/config-file/config-basic).
 
 The resulting schema-v4 manifest records target kind, name, content hash, overlay file list, bench
