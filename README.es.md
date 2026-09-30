@@ -65,28 +65,15 @@ git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
 npm ci
 npm run build
+node dist/cli.js --help
 node dist/cli.js bench check benches/code-review
-
-# 1. Comprueba el estado de tu configuración actual (solo lectura, seguro)
+node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
-
-# 2. Somete un skill a una prueba A/B antes de instalarlo (elige un bench incluido por nombre o pasa tu propia ruta;
-#    usa --agent para controlar la CLI de un agente local en lugar de una API key)
-node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
-
-# 2b. O mide si el agente activa el skill por sí solo (y solo cuando debe)
-node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
-
-# 3. Comprueba un servidor MCP sin invocar ninguna herramienta
-node dist/cli.js mcp check ./my-server.probe.json --dry-run
-node dist/cli.js mcp check ./my-server.probe.json
-
-# 4. Revisa el plan de instalación (dry-run por defecto)
-node dist/cli.js install
-
-# Opcional: enseña a tu agente a usarlo (copia la driver skill en tu carpeta agents)
-cp -r skills/skillfit ~/.agents/skills/
+node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+node dist/cli.js install --dry-run
 ```
+
+Las dos comprobaciones de bench verifican la integridad sin conexión; no miden la calidad del agente. `doctor` es de solo lectura y los comandos eval e install anteriores solo muestran planes. Una evaluación real requiere tu propio Skill y bench, además de un CLI de agente local o credenciales de API. Los comandos de configuración de abajo funcionan en Bash y PowerShell; elegir Skills externos requiere red y solo `--yes` los instala.
 
 Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente para Kimi Code y Codex CLI.
 
@@ -112,13 +99,12 @@ En las pruebas MCP con Codex, skillfit pasa una opción de confianza por ejecuci
 
 ## Configuración seleccionable de Codex
 
-En un entorno nuevo, `--list` muestra el catálogo de origen de 67 Skills instalables; repite `--skill` para elegir solo los pertinentes a tus tareas. También muestra siete Skills locales retirados con el motivo. `--starter` conserva la selección original de 13 para usuarios anteriores, pero no se ha evaluado como conjunto; `--all` selecciona los 67 y no es una configuración inicial recomendada. El catálogo verifica origen e instalación, no eficacia: solo ocho entradas tienen pruebas históricas pareadas limitadas, y ninguna tiene un beneficio demostrado para las versiones fijadas actuales y el modelo Codex actual. El script descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable y el resumen de evidencia](docs/selectable-codex.md).
+En un entorno nuevo, `--list` muestra el catálogo de origen de 67 Skills instalables; repite `--skill` para elegir solo los pertinentes a tus tareas. También muestra siete Skills locales retirados con el motivo. `--starter` conserva la selección original de 13 para usuarios anteriores, pero no se ha evaluado como conjunto; `--all` selecciona los 67 y no es una configuración inicial recomendada. El catálogo verifica origen e instalación, no eficacia: solo ocho entradas tienen pruebas históricas pareadas limitadas, y ninguna tiene un beneficio demostrado para las versiones fijadas actuales y el modelo Codex actual. El comando de configuración descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable y el resumen de evidencia](docs/selectable-codex.md).
 
 ```bash
-git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
-bash scripts/setup-codex.sh --list
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
+node dist/cli.js setup codex --list
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
 ```
 
 ## Configuración de Codex transferible
@@ -179,6 +165,8 @@ Metodología completa y manifiestos en bruto: [evidence/](evidence/). Reprodúce
 Sin afiliación con Anthropic, OpenAI, Moonshot AI ni ningún otro proveedor de agentes. Los resultados de las evaluaciones dependen de la versión del modelo, del harness y de las tareas — trátalos como evidencia fechada, no como una verdad eterna.
 
 ## Roadmap
+
+[Plan de entrega de octubre de 2026](docs/growth-roadmap-2026-10.md)
 
 - [x] Bucle central doctor / eval / install
 - [x] Harness A/B emparejado con evaluación ciega

@@ -18,6 +18,10 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm test
+      - name: First-run plan (offline, no agent CLI)
+        run: |
+          node dist/cli.js --help
+          node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
       - name: Smoke doctor (read-only)
         run: node dist/cli.js doctor
       - name: Bench integrity (offline verifier self-tests)

@@ -65,28 +65,15 @@ git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
 npm ci
 npm run build
+node dist/cli.js --help
 node dist/cli.js bench check benches/code-review
-
-# 1. 현재 설정 상태 점검(읽기 전용, 안전)
+node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
-
-# 2. 설치 전에 skill을 A/B 테스트(이름으로 번들 bench를 선택하거나 직접 경로를 전달;
-#    --agent를 쓰면 API 키 대신 로컬 에이전트 CLI를 구동합니다)
-node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
-
-# 2b. 또는 에이전트가 스스로 skill을 트리거하는지, 그리고 트리거해야 할 때만 트리거하는지 측정
-node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
-
-# 3. 도구 호출 없이 MCP server 사전 점검
-node dist/cli.js mcp check ./my-server.probe.json --dry-run
-node dist/cli.js mcp check ./my-server.probe.json
-
-# 4. 설치 계획 확인(기본값은 dry-run)
-node dist/cli.js install
-
-# 선택: 에이전트가 사용법을 배우도록 하기(driver skill을 agents 디렉터리에 복사)
-cp -r skills/skillfit ~/.agents/skills/
+node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+node dist/cli.js install --dry-run
 ```
+
+두 bench check는 오프라인 무결성 검사이며 에이전트 성능 점수가 아닙니다. `doctor`는 읽기 전용이고 위의 eval과 install은 계획만 출력합니다. 실제 평가는 자신의 Skill과 bench, 로컬 에이전트 CLI 또는 API 자격 증명이 필요합니다. 아래 설정 명령은 Bash와 PowerShell에서 모두 동작합니다. 상위 Skills 선택에는 네트워크가 필요하며 `--yes`를 붙일 때만 설치합니다.
 
 지원 에이전트: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([기능 매트릭스](src/matrix/agents.json) — 기계 판독 가능, 검증 날짜와 문서 링크 포함). trigger 모드 캡처는 현재 Kimi Code와 Codex CLI에서 검증되었습니다.
 
@@ -112,13 +99,12 @@ Codex MCP 시험에서는 skillfit이 실행마다 임시 작업공간에만 적
 
 ## 선택형 Codex 설정
 
-새 환경에서는 `--list`로 설치 가능한 Skill 67개의 출처를 확인하고, 실제 작업에 필요한 것만 `--skill`을 반복해 선택할 수 있습니다. 중단된 로컬 Skill 7개도 이유와 함께 표시합니다. `--starter`는 기존 사용자용 13개 선택을 유지하지만 묶음 효과는 검증되지 않았습니다. `--all`은 67개 전부를 선택하며 권장 기본 설정이 아닙니다. 이 목록은 출처와 설치만 검증하며 효능을 입증하지 않습니다. 제한적인 과거 비교 실험이 있는 것은 8개뿐이고, 현재 고정된 Skill 버전과 현재 Codex 모델에서 효과가 입증된 항목은 없습니다. 스크립트가 선택한 외부 Skill을 작성자의 고정 커밋에서 받아 SHA-256을 검증한 뒤 전역 `AGENTS.md` 관리 블록의 설치 계획을 보여 줍니다. 직접 작성한 Skill 두 개는 이 저장소에 있습니다. [선택 설치 안내와 근거 요약](docs/selectable-codex.md)을 참고하세요.
+새 환경에서는 `--list`로 설치 가능한 Skill 67개의 출처를 확인하고, 실제 작업에 필요한 것만 `--skill`을 반복해 선택할 수 있습니다. 중단된 로컬 Skill 7개도 이유와 함께 표시합니다. `--starter`는 기존 사용자용 13개 선택을 유지하지만 묶음 효과는 검증되지 않았습니다. `--all`은 67개 전부를 선택하며 권장 기본 설정이 아닙니다. 이 목록은 출처와 설치만 검증하며 효능을 입증하지 않습니다. 제한적인 과거 비교 실험이 있는 것은 8개뿐이고, 현재 고정된 Skill 버전과 현재 Codex 모델에서 효과가 입증된 항목은 없습니다. 설정 명령이 선택한 외부 Skill을 작성자의 고정 커밋에서 받아 SHA-256을 검증한 뒤 전역 `AGENTS.md` 관리 블록의 설치 계획을 보여 줍니다. 직접 작성한 Skill 두 개는 이 저장소에 있습니다. [선택 설치 안내와 근거 요약](docs/selectable-codex.md)을 참고하세요.
 
 ```bash
-git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
-bash scripts/setup-codex.sh --list
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
+node dist/cli.js setup codex --list
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
 ```
 
 ## 옮길 수 있는 Codex 설정
@@ -179,6 +165,8 @@ skillfit의 harness로 인기 있는 워크플로 skill 8개를 측정했습니�
 Anthropic, OpenAI, Moonshot AI 및 어떤 에이전트 벤더와도 제휴 관계가 없습니다. 평가 결과는 모델 버전, harness, 작업에 따라 달라집니다 — 영원한 진실이 아니라 날짜가 찍힌 근거로 다뤄 주세요.
 
 ## 로드맵
+
+[2026년 10월 실행 계획](docs/growth-roadmap-2026-10.md)
 
 - [x] doctor / eval / install 핵심 루프
 - [x] 블라인드 심사가 적용된 페어드 A/B harness

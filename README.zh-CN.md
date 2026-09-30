@@ -65,28 +65,15 @@ git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
 npm ci
 npm run build
+node dist/cli.js --help
 node dist/cli.js bench check benches/code-review
-
-# 1. 体检当前配置（只读，安全）
+node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
-
-# 2. 装之前先 A/B 测一个 skill（按名字选内置 bench，或传自己的 bench 路径；
-#    也可以用 --agent 驱动本机 agent CLI 而不必配 API key）
-node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
-
-# 2b. 或者测 agent 自己会不会触发这个 skill（以及不该触发时会不会乱触发）
-node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
-
-# 3. 在不调用任何工具的前提下预检 MCP server
-node dist/cli.js mcp check ./my-server.probe.json --dry-run
-node dist/cli.js mcp check ./my-server.probe.json
-
-# 4. 查看安装计划（默认 dry-run）
-node dist/cli.js install
-
-# 可选：让你的 agent 学会驱动它（把 driver skill 拷进 agents 目录）
-cp -r skills/skillfit ~/.agents/skills/
+node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+node dist/cli.js install --dry-run
 ```
+
+两项 bench check 是离线完整性检查，不是 agent 效果评分。`doctor` 只读；上面的 eval 和 install 只打印计划。真正的实验需要你自己的 Skill 与 bench，以及本机 agent CLI 或 API 凭据。下方配置命令在 Bash 和 PowerShell 中都能运行；选择上游 Skills 需要联网，只有加 `--yes` 才会安装。
 
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
@@ -112,13 +99,12 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 
 ## 可选择的 Codex 配置
 
-新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills 的来源目录，再重复 `--skill` 只选择与自己任务相关的项目；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 保留原来的 13 个供旧用户沿用，整套尚未验证；`--all` 选全部 67 个，不是推荐默认配置。目录验证的是来源和安装，不是效果：其中仅 8 个有有限的历史配对实验，没有任何一个已证明其当前锁定版本对当前 Codex 模型有效。脚本从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南与证据摘要](docs/selectable-codex.md)。
+新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills 的来源目录，再重复 `--skill` 只选择与自己任务相关的项目；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 保留原来的 13 个供旧用户沿用，整套尚未验证；`--all` 选全部 67 个，不是推荐默认配置。目录验证的是来源和安装，不是效果：其中仅 8 个有有限的历史配对实验，没有任何一个已证明其当前锁定版本对当前 Codex 模型有效。配置命令从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南与证据摘要](docs/selectable-codex.md)。
 
 ```bash
-git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
-bash scripts/setup-codex.sh --list
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
+node dist/cli.js setup codex --list
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
 ```
 
 ## 可迁移的 Codex 配置
@@ -179,6 +165,8 @@ node ./personal-codex/setup.mjs --yes
 与 Anthropic、OpenAI、Moonshot AI 或任何 agent 厂商无关联。评测结果依赖模型版本、harness 和任务——把它们当带日期的证据，不是永恒的真理。
 
 ## Roadmap
+
+[2026 年 10 月交付计划](docs/growth-roadmap-2026-10.md)
 
 - [x] doctor / eval / install 核心闭环
 - [x] 配对 A/B harness + 盲评

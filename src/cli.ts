@@ -23,7 +23,7 @@ Usage:
   skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
-  skillfit install [options]                Install evidence-backed configuration
+  skillfit install [options]                Inspect or apply a managed configuration profile
   skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance
   skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile
 
