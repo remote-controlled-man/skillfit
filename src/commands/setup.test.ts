@@ -44,11 +44,13 @@ test('Codex setup lists choices, downloads only selected Skills, and writes sele
 
   await runCodexSetup({ ...base, list: true });
   assert.equal(requested.length, 0);
+  assert.match(logs.join('\n'), /source catalog only.*not evidence of benefit/i);
   assert.match(logs.join('\n'), /remote-one/);
   assert.match(logs.join('\n'), /old-skill.*Removed upstream/);
 
   await runCodexSetup({ ...base, starter: true });
   assert.equal(requested.length, 0);
+  assert.match(logs.join('\n'), /legacy starter.*not a tested recommendation/i);
   assert.match(logs.join('\n'), /local-skill/);
   await runCodexSetup({ ...base, starter: true, yes: true });
   await fs.access(path.join(homeDir, '.agents', 'skills', 'local-skill', 'SKILL.md'));
@@ -72,6 +74,11 @@ test('Codex setup lists choices, downloads only selected Skills, and writes sele
   await assert.rejects(runCodexSetup({ ...base, skills: ['unknown'], yes: true }), /Unknown Skill/);
   await assert.rejects(runCodexSetup({ ...base, skills: ['old-skill'], yes: true }), /Retired Skill old-skill/);
   await assert.rejects(runCodexSetup({ ...base, all: true, skills: ['local-skill'], yes: true }), /Choose --all/);
+  logs.length = 0;
+  requested.length = 0;
+  await runCodexSetup({ ...base, all: true });
+  assert.equal(requested.length, 2);
+  assert.match(logs.join('\n'), /all.*not a tested recommendation/i);
   await fs.writeFile(path.join(profileDir, 'profile.json'), JSON.stringify({
     name: 'codex-curated', version: '1.0.0', agents: ['codex'], scope: 'user',
     skills: [{ name: 'local-skill', source: 'skills/local-skill' }],
@@ -88,9 +95,8 @@ test('public profile can install one local Skill without asking for other uninst
     log: () => {},
   });
   const rules = await fs.readFile(path.join(root, '.codex', 'AGENTS.md'), 'utf8');
-  for (const line of rules.split('\n').filter((line) => /`(?:autonomous-iteration|diagnosing-bugs|tdd|api-and-interface-design|codebase-design)`/.test(line))) {
-    assert.match(line, /^- If installed, /);
-  }
+  assert.match(rules, /Installed Skills are options, not mandatory steps/);
+  assert.doesNotMatch(rules, /`(?:autonomous-iteration|diagnosing-bugs|tdd|api-and-interface-design|codebase-design)`/);
   await fs.access(path.join(root, '.agents', 'skills', 'vibe-coding', 'SKILL.md'));
   await assert.rejects(fs.stat(path.join(root, '.agents', 'skills', 'diagnosing-bugs')), { code: 'ENOENT' });
 });

@@ -7,8 +7,6 @@
 
 ## Skill routing
 
-- Match the task to installed Skills using their descriptions. Read only the relevant SKILL.md files, and use the smallest set that covers the work.
-- If the user names a Skill, use it. For implicit use, respect each Skill's invocation metadata; do not trigger an explicit-only Skill on your own.
-- If installed, use `vibe-coding` to route ordinary coding work. Use `autonomous-iteration` for substantial, multi-step work; it can use `vibe-coding` for each coding slice.
-- If installed, use `diagnosing-bugs` for uncertain failure causes and `tdd` when the user requests test-first work or the test seam needs its detailed workflow.
-- If installed, use `api-and-interface-design` for public contracts and `codebase-design` for internal module boundaries. Avoid loading both for the same question unless both boundaries matter.
+- Use a Skill when the user names it or its description clearly matches the task. Installed Skills are options, not mandatory steps.
+- Read only the relevant SKILL.md files and use the smallest set that covers the work. When descriptions overlap, prefer the more specific Skill; add another only for a distinct need.
+- Respect each Skill's invocation metadata. Trigger an explicit-only Skill only when the user invokes it.

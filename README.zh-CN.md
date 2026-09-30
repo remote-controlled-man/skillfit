@@ -77,7 +77,7 @@ cp -r skills/skillfit ~/.agents/skills/
 
 ## 可选择的 Codex 配置
 
-新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills，再重复 `--skill` 逐项选择；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 选原来的 13 个，`--all` 选全部 67 个，可能挤占 Codex 的 Skill 路由列表。脚本从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南](docs/selectable-codex.md)。
+新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills 的来源目录，再重复 `--skill` 只选择与自己任务相关的项目；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 保留原来的 13 个供旧用户沿用，整套尚未验证；`--all` 选全部 67 个，不是推荐默认配置。目录验证的是来源和安装，不是效果：其中仅 8 个有有限的历史配对实验，没有任何一个已证明其当前锁定版本对当前 Codex 模型有效。脚本从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南与证据摘要](docs/selectable-codex.md)。
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -118,11 +118,11 @@ node ./personal-codex/setup.mjs --yes
 
 ## 我们自己的数据
 
-我们用 skillfit 的 harness 测了 8 个流行的工作流 skill（24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线）。**8 个里只有 1 个表现出可重复的收益**：
+我们用 skillfit 的 harness 测了 8 个流行的工作流 skill（24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线）。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置：
 
 | Skill | 质量差值 | 输入 token | 结论 |
 |---|---:|---:|---|
-| `diagnosing-bugs` | 回归测试资产 +66.7pp（2/3 次） | +11.7% | **条件性有效**——仅困难 bug |
+| `diagnosing-bugs` | 回归测试资产 +66.7pp（2/3 次）；任务质量不变 | +11.7% | 有限的历史流程信号 |
 | `code-review` | +3.3pp（不稳定） | +9.1% | 证据不足 |
 | `tdd` | 0.00pp | +9.2% | 无可测增益 |
 | `doubt-driven-development` | 0.00pp | +20.7% | 无可测增益 |

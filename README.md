@@ -77,7 +77,7 @@ Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capabil
 
 ## Selectable Codex setup
 
-From a fresh clone, choose from 67 installable Skills with `--list` and repeated `--skill` flags. The seven retired local Skills are listed with reasons. `--starter` selects the original 13-Skill set; `--all` selects all 67 and may crowd Codex's Skill routing list. The script fetches selected third-party Skills from pinned author commits, verifies SHA-256 hashes, and plans a managed global `AGENTS.md` block. The two locally authored Skills live in this repository. See the [selectable setup guide](docs/selectable-codex.md).
+From a fresh clone, inspect the source catalog of 67 installable Skills with `--list`, then use repeated `--skill` flags to select only those relevant to your tasks. The seven retired local Skills are listed with reasons. `--starter` preserves the original 13-Skill selection, which has not been evaluated as a set; `--all` selects all 67 and is not a recommended default. The catalog checks sources and installation, not efficacy: only eight entries have limited historical paired tests, and none has proven benefit for the current pinned Skill versions and Codex model. The script fetches selected third-party Skills from pinned author commits, verifies SHA-256 hashes, and plans a managed global `AGENTS.md` block. The two locally authored Skills live in this repository. See the [selectable setup guide and evidence summary](docs/selectable-codex.md).
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -118,11 +118,11 @@ Evals are only as good as their tasks. A bench is just a directory — `bench.js
 
 ## Our own data
 
-We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pairs, Codex CLI, frozen 2026-07 baseline). Only 1 of 8 showed a repeatable benefit:
+We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pairs, Codex CLI, frozen 2026-07 baseline). One showed a limited regression-test artifact signal in 2/3 treated runs; no Skill showed a robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set:
 
 | Skill | Quality Δ | Input tokens | Verdict |
 |---|---:|---:|---|
-| `diagnosing-bugs` | +66.7pp test-asset gain (2/3 runs) | +11.7% | **Conditional** — hard bugs only |
+| `diagnosing-bugs` | +66.7pp test-asset gain (2/3 runs); task quality unchanged | +11.7% | Limited historical process signal |
 | `code-review` | +3.3pp (unstable) | +9.1% | Not enough evidence |
 | `tdd` | 0.00pp | +9.2% | No measurable gain |
 | `doubt-driven-development` | 0.00pp | +20.7% | No measurable gain |

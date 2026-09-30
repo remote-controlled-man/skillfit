@@ -59,7 +59,8 @@ export async function runCodexSetup(opts: CodexSetupOptions): Promise<void> {
     throw new Error('Choose --all, --starter, or repeat --skill; do not combine them');
   }
   if (opts.list || (!opts.all && !opts.starter && (opts.skills?.length ?? 0) === 0)) {
-    log(`Available Codex Skills: ${names.length} installable, ${catalog.retired.length} retired (choose with --skill, --starter, or --all):`);
+    log('Source catalog only: installation integrity is not evidence of benefit. Choose Skills for specific tasks and evaluate their effect.');
+    log(`Available Codex Skills: ${names.length} installable, ${catalog.retired.length} retired (choose task-relevant entries with --skill):`);
     for (const skill of lock.skills) {
       const source = `${skill.repo}@${skill.commit.slice(0, 12)}`;
       const flags = [
@@ -73,10 +74,12 @@ export async function runCodexSetup(opts: CodexSetupOptions): Promise<void> {
     for (const name of local) log(`  ${name.padEnd(31)} skillfit repository${catalog.starter.includes(name) ? ' (starter)' : ''}`);
     log('Retired local Skills (not installable from this catalog):');
     for (const item of catalog.retired) log(`  ${item.name.padEnd(31)} ${item.reason}`);
-    if (!opts.list) log('Nothing was installed. Re-run with --skill <name>, --starter, or --all.');
+    if (!opts.list) log('Nothing was installed. Re-run with --skill <name> for a task-relevant selection.');
     return;
   }
   const selected = opts.all ? [...names] : opts.starter ? [...catalog.starter] : [...opts.skills ?? []];
+  if (opts.starter) log('Legacy starter selection is not a tested recommendation for current Codex models.');
+  if (opts.all) log('All-Skill selection is not a tested recommendation; large catalogs can crowd Codex Skill routing.');
   if (new Set(selected).size !== selected.length) throw new Error('Duplicate --skill selection');
   for (const name of selected) {
     const retired = catalog.retired.find((item) => item.name === name);

@@ -77,7 +77,7 @@ Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matr
 
 ## Configuración seleccionable de Codex
 
-En un entorno nuevo, `--list` muestra 67 Skills instalables y puedes repetir `--skill` para elegir. También muestra siete Skills locales retirados con el motivo. `--starter` selecciona los 13 originales; `--all` selecciona los 67, lo que puede saturar la lista de enrutamiento de Codex. El script descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable](docs/selectable-codex.md).
+En un entorno nuevo, `--list` muestra el catálogo de origen de 67 Skills instalables; repite `--skill` para elegir solo los pertinentes a tus tareas. También muestra siete Skills locales retirados con el motivo. `--starter` conserva la selección original de 13 para usuarios anteriores, pero no se ha evaluado como conjunto; `--all` selecciona los 67 y no es una configuración inicial recomendada. El catálogo verifica origen e instalación, no eficacia: solo ocho entradas tienen pruebas históricas pareadas limitadas, y ninguna tiene un beneficio demostrado para las versiones fijadas actuales y el modelo Codex actual. El script descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable y el resumen de evidencia](docs/selectable-codex.md).
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
@@ -118,11 +118,11 @@ Una evaluación solo es tan buena como sus tareas. Un bench no es más que un di
 
 ## Nuestros propios datos
 
-Ejecutamos el harness de skillfit sobre 8 skills de flujo de trabajo populares (24 pares baseline/treatment, Codex CLI, baseline congelado en 2026-07). Solo 1 de 8 mostró un beneficio repetible:
+Ejecutamos el harness de skillfit sobre 8 skills de flujo de trabajo populares (24 pares baseline/treatment, Codex CLI, baseline congelado en 2026-07). Uno mostró una señal limitada de pruebas de regresión en 2/3 ejecuciones tratadas; ninguno mostró una mejora sólida en la calidad de las tareas. Estos ensayos no validan el catálogo actual de 67 Skills ni el conjunto original de 13:
 
 | Skill | Δ de calidad | Tokens de entrada | Veredicto |
 |---|---:|---:|---|
-| `diagnosing-bugs` | +66.7pp de ganancia en activos de tests (2/3 ejecuciones) | +11.7% | **Condicional** — solo bugs difíciles |
+| `diagnosing-bugs` | +66.7pp en activos de tests (2/3 ejecuciones); calidad de tareas sin cambios | +11.7% | Señal histórica limitada del proceso |
 | `code-review` | +3.3pp (inestable) | +9.1% | Evidencia insuficiente |
 | `tdd` | 0.00pp | +9.2% | Sin ganancia medible |
 | `doubt-driven-development` | 0.00pp | +20.7% | Sin ganancia medible |
