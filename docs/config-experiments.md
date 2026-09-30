@@ -30,9 +30,11 @@ skillfit mcp check ./my-server.probe.json --dry-run
 skillfit mcp check ./my-server.probe.json
 ```
 
-The check starts the server, performs the MCP initialization handshake, requests `tools/list`, and
-audits unique tool names, descriptions, input schemas, and annotations. It never calls a tool. This
-separates protocol or catalog defects from model behavior.
+The check starts the server, performs the MCP initialization handshake, follows every `tools/list`
+page, and audits unique tool names, descriptions, input schemas, and annotations. It rejects a
+different negotiated protocol version, a missing tools capability, malformed responses, and repeated
+pagination cursors. It never calls a tool. This separates protocol or catalog defects from model
+behavior.
 
 The built-in probe currently supports newline-delimited stdio MCP servers compatible with the
 2025-11-25 initialization lifecycle. Streamable HTTP and the 2026 stateless lifecycle remain future
@@ -65,7 +67,7 @@ context7-experiment/
 
 Valid kinds are `mcp` and `rules`. `baseline` is optional; omit it to compare against the untouched
 bench fixture. `treatment` is required and must contain at least one file. Both paths must stay inside
-the experiment directory.
+the experiment directory, including after symlinks are resolved.
 
 The treatment must use the selected agent's project path from
 [`src/matrix/agents.json`](../src/matrix/agents.json):
@@ -93,6 +95,11 @@ skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --
 For every task and trial, skillfit copies the same fixture into both arms. It snapshots the fixture
 for the task prompt, then applies the arm's overlay. Configuration contents are therefore absent from
 the prompt snapshot. The local agent CLI discovers rules or MCP through its normal project loader.
+
+Codex loads project `.codex/config.toml` only for trusted projects. Trial workspaces are newly created
+repositories, so confirm that Codex trusts each trial workspace before interpreting a Codex MCP
+comparison; otherwise the treatment file can exist while Codex ignores it. See the
+[official Codex configuration guide](https://learn.chatgpt.com/docs/config-file/config-basic).
 
 The resulting schema-v4 manifest records target kind, name, content hash, overlay file list, bench
 hash, executor, tokens, per-task outcomes, confidence intervals, and verdict. The same verifier and

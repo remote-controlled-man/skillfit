@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { collectSkillBundle } from './bundle.js';
 import { hashFileSet, listFilesRecursive } from './hash.js';
@@ -54,6 +54,12 @@ function resolveOverlay(root: string, value: string, label: Condition): string {
   }
   if (!existsSync(path) || !statSync(path).isDirectory()) {
     throw new Error(`${EXPERIMENT_FILE} ${label} overlay is not a directory: ${path}`);
+  }
+  const realRoot = realpathSync(root);
+  const realPath = realpathSync(path);
+  const realRel = relative(realRoot, realPath);
+  if (realRel === '' || realRel === '..' || realRel.startsWith(`..${sep}`) || isAbsolute(realRel)) {
+    throw new Error(`${EXPERIMENT_FILE} ${label} escapes or aliases the experiment directory`);
   }
   return path;
 }

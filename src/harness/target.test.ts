@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -59,4 +59,19 @@ test('collectEvaluationTarget rejects traversal and empty treatment overlays', (
     JSON.stringify({ schemaVersion: 1, kind: 'rules', treatment: 'empty' }),
   );
   assert.throws(() => collectEvaluationTarget(dir), /must contain at least one file/);
+});
+
+test('collectEvaluationTarget rejects overlays that leave the experiment through a symlink', (t) => {
+  const dir = tmp(t);
+  const outside = tmp(t);
+  writeFileSync(join(outside, 'AGENTS.md'), '# outside\n');
+  symlinkSync(outside, join(dir, 'treatment'));
+  writeFileSync(join(dir, EXPERIMENT_FILE), JSON.stringify({ schemaVersion: 1, kind: 'rules', treatment: 'treatment' }));
+  assert.throws(() => collectEvaluationTarget(dir), /escapes or aliases the experiment directory/);
+});
+
+test('collectEvaluationTarget rejects an overlay that aliases the experiment root', (t) => {
+  const dir = tmp(t);
+  writeFileSync(join(dir, EXPERIMENT_FILE), JSON.stringify({ schemaVersion: 1, kind: 'rules', treatment: '.' }));
+  assert.throws(() => collectEvaluationTarget(dir), /escapes or aliases the experiment directory/);
 });

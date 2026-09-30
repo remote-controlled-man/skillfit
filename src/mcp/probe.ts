@@ -203,45 +203,54 @@ export async function probeMcpStdio(spec: McpProbeSpec): Promise<McpProbeResult>
     });
 
     let initializeResult: Record<string, unknown> | null = null;
+    const listedTools: unknown[] = [];
+    const seenCursors = new Set<string>();
+    let listPages = 0;
     const handle = (raw: string): void => {
-      let parsed: unknown;
       try {
-        parsed = JSON.parse(raw);
-      } catch {
-        finishError(new Error('MCP server wrote non-JSON data to stdout'));
-        return;
-      }
-      const message = asRecord(parsed, 'MCP message');
-      if (message['method'] === 'ping' && message['id'] !== undefined) {
-        send({ jsonrpc: '2.0', id: message['id'], result: {} });
-        return;
-      }
-      if (message['id'] === 1) {
-        if (message['error'] !== undefined) {
-          finishError(new Error(`MCP initialize failed: ${JSON.stringify(message['error'])}`));
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          throw new Error('MCP server wrote non-JSON data to stdout');
+        }
+        const message = asRecord(parsed, 'MCP message');
+        if (message['method'] === 'ping' && message['id'] !== undefined) {
+          send({ jsonrpc: '2.0', id: message['id'], result: {} });
           return;
         }
-        initializeResult = asRecord(message['result'], 'initialize result');
-        send({ jsonrpc: '2.0', method: 'notifications/initialized' });
-        send({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
-        return;
-      }
-      if (message['id'] !== 2) return;
-      if (!initializeResult) {
-        finishError(new Error('MCP server returned tools/list before initialize completed'));
-        return;
-      }
-      if (message['error'] !== undefined) {
-        finishError(new Error(`MCP tools/list failed: ${JSON.stringify(message['error'])}`));
-        return;
-      }
-      try {
+        if (message['id'] === 1) {
+          if (message['error'] !== undefined) throw new Error(`MCP initialize failed: ${JSON.stringify(message['error'])}`);
+          initializeResult = asRecord(message['result'], 'initialize result');
+          if (initializeResult['protocolVersion'] !== PROTOCOL_VERSION) {
+            throw new Error(`MCP server negotiated unsupported protocol version: ${String(initializeResult['protocolVersion'])}`);
+          }
+          const capabilities = asRecord(initializeResult['capabilities'], 'initialize result.capabilities');
+          if (!Object.hasOwn(capabilities, 'tools')) throw new Error('MCP server did not declare tools capability');
+          send({ jsonrpc: '2.0', method: 'notifications/initialized' });
+          send({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
+          return;
+        }
+        if (message['id'] !== 2) return;
+        if (!initializeResult) throw new Error('MCP server returned tools/list before initialize completed');
+        if (message['error'] !== undefined) throw new Error(`MCP tools/list failed: ${JSON.stringify(message['error'])}`);
         const listResult = asRecord(message['result'], 'tools/list result');
-        const audited = auditTools(listResult['tools']);
+        if (!Array.isArray(listResult['tools'])) throw new Error('tools/list result.tools must be an array');
+        listedTools.push(...listResult['tools']);
+        listPages += 1;
+        const nextCursor = listResult['nextCursor'];
+        if (nextCursor !== undefined) {
+          if (typeof nextCursor !== 'string' || nextCursor === '') throw new Error('tools/list nextCursor must be a non-empty string');
+          if (seenCursors.has(nextCursor) || listPages >= 100) throw new Error('MCP tools/list pagination did not terminate');
+          seenCursors.add(nextCursor);
+          send({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: { cursor: nextCursor } });
+          return;
+        }
+        const audited = auditTools(listedTools);
         const serverInfo = asRecord(initializeResult['serverInfo'], 'initialize result.serverInfo');
         const capabilities = asRecord(initializeResult['capabilities'], 'initialize result.capabilities');
         const protocolVersion = initializeResult['protocolVersion'];
-        if (typeof protocolVersion !== 'string' || protocolVersion === '') throw new Error('initialize result.protocolVersion must be a string');
+        if (typeof protocolVersion !== 'string') throw new Error('initialize result.protocolVersion must be a string');
         if (typeof serverInfo['name'] !== 'string' || typeof serverInfo['version'] !== 'string') {
           throw new Error('initialize result.serverInfo must include string name and version');
         }
