@@ -48,6 +48,17 @@ test('selectable Codex setup commands match across README languages', () => {
   }
 });
 
+test('rules and MCP evaluation tour stays present across README languages', () => {
+  for (const readme of READMES) {
+    const content = read(readme);
+    assert.match(content, /docs\/assets\/skillfit-flow\.svg/, `${readme} must show the evidence loop`);
+    assert.match(content, /skillfit mcp check \.\/my-server\.probe\.json/, `${readme} must show MCP preflight`);
+    assert.match(content, /skillfit eval \.\/context7-experiment --bench \.\/my-context7-bench --agent codex --trials 5/, `${readme} must show config A\/B`);
+    assert.match(content, /\(docs\/config-experiments\.md\)/, `${readme} must link the config experiment guide`);
+    assert.match(content, /\| `mcp check <spec>` \|/, `${readme} must list the MCP command`);
+  }
+});
+
 test('bench-authoring.md carries all seven steps and both gates', () => {
   const guide = read(GUIDE);
   for (const step of [

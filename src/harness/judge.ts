@@ -99,7 +99,7 @@ export async function judgePair(
   const [first, second] = judgeOrder(args.seed);
   // A CLI judge has file tools, so its working directory is part of what it can see. Running it in
   // the task directory would expose both arms' _output.md and their _result.json — which names the
-  // condition and the skill bundle hash — and the AB/BA swap would be blindfolding a judge that can
+  // condition and the evaluation-target hash — and the AB/BA swap would be blindfolding a judge that can
   // just look. It gets a fresh directory holding only the two positionally-anonymized answers.
   const judgeDir = mkdtempSync(join(tmpdir(), 'skillfit-judge-'));
   try {

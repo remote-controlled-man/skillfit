@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
 import { judgePair, type JudgeResult } from './judge.js';
 import { killTree, treeSpawnOptions } from './kill-tree.js';
@@ -15,19 +15,28 @@ import {
   type TaskSummary,
 } from './report.js';
 import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
-import type { Bench, Condition, Executor, ExecutorDescriptor, SkillBundle, TokenUsage } from './types.js';
+import { listFilesRecursive } from './hash.js';
+import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, TokenUsage } from './types.js';
 import { CONDITIONS } from './types.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 
 export interface ExperimentPlan {
   bench: Bench;
-  skill: SkillBundle;
+  target: EvaluationTarget;
   executor: Executor;
   judge?: Executor | null;
   trials: number;
   runsRoot: string;
   runGroup: string;
   log?: (msg: string) => void;
+}
+
+function applyOverlay(overlayDir: string, runDir: string): void {
+  for (const rel of listFilesRecursive(overlayDir)) {
+    const destination = join(runDir, rel);
+    mkdirSync(dirname(destination), { recursive: true });
+    cpSync(join(overlayDir, rel), destination);
+  }
 }
 
 export interface TrialOutcome {
@@ -121,7 +130,7 @@ export async function runTrial(
   condition: Condition,
   trial: number,
 ): Promise<TrialOutcome> {
-  const { bench, skill, executor } = plan;
+  const { bench, target, executor } = plan;
   const task = bench.tasks.find((t) => t.id === taskId);
   if (!task) throw new Error(`Unknown task: ${taskId}`);
   const runDir = join(plan.runsRoot, plan.runGroup, task.id, condition, `trial-${trial}`);
@@ -133,15 +142,23 @@ export async function runTrial(
   if (executor.describe().kind !== 'mock') {
     rmSync(join(runDir, MOCK_MARKER_FILE), { force: true });
   }
+  // Keep the prompt byte-identical across conditions. Workspace configuration is copied only after
+  // taking the fixture snapshot, so a rules or MCP treatment is discovered through the agent's real
+  // project configuration loader instead of being disclosed in treatment-only prompt text.
+  const snapshot = snapshotRepoFiles(runDir);
+  const overlay = target.overlays[condition];
+  if (overlay) applyOverlay(overlay, runDir);
   const gitInitialized = await gitInit(runDir);
 
   const taskPromptText = readFileSync(join(bench.dir, task.prompt), 'utf8');
-  const snapshot = snapshotRepoFiles(runDir);
   const prompt = buildTaskPrompt(
     taskPromptText,
     snapshot,
-    condition === 'treatment' ? skill.payload : null,
-    { workspace: task.verifierKind === 'command' },
+    condition === 'treatment' ? target.payload : null,
+    // Workspace configuration experiments must let the agent use its configured tools and inspect
+    // the project even when the final answer is graded as text. Skill-only output benches retain the
+    // stricter prompt isolation used by the original harness.
+    { workspace: task.verifierKind === 'command' || target.kind !== 'skill' },
   );
   writeFileSync(join(runDir, '_prompt.txt'), prompt, 'utf8');
 
@@ -209,7 +226,12 @@ export async function runTrial(
         schemaVersion: 2,
         ...serializable,
         runGroup: plan.runGroup,
-        skillBundleSha256: condition === 'treatment' ? skill.sha256 : null,
+        target: {
+          kind: target.kind,
+          name: target.name,
+          bundleSha256: target.sha256,
+          applied: condition === 'treatment' || target.overlays.baseline !== undefined,
+        },
         executor: withSampling(executor.describe()),
       },
       null,
@@ -562,14 +584,15 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const scoreDeltaCi = pairedScoreBootstrapCI(scoreTasks);
   const scoreDelta = scoreDeltaCi ? scoreDeltaCi.point : null;
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
-    skill: {
-      name: plan.skill.name,
-      sourceDir: plan.skill.sourceDir,
-      bundleSha256: plan.skill.sha256,
-      files: plan.skill.files,
+    target: {
+      kind: plan.target.kind,
+      name: plan.target.name,
+      sourceDir: plan.target.sourceDir,
+      bundleSha256: plan.target.sha256,
+      files: plan.target.files,
     },
     bench: {
       name: plan.bench.name,

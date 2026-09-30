@@ -283,7 +283,7 @@ function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
   }
   checks.push(skillSummaryCheck(presentDirs, valid));
   if (valid > SKILL_COUNT_WARN_THRESHOLD) {
-    checks.push(check('WARN', `${valid} skills installed (> ${SKILL_COUNT_WARN_THRESHOLD}) — every skill adds routing tokens to each prompt; keep only skills with measured benefit`));
+    checks.push(check('WARN', `${valid} skills installed (> ${SKILL_COUNT_WARN_THRESHOLD}) — large catalogs increase routing competition and may consume the agent's description budget; keep only skills with measured benefit`));
   }
   for (const [name, location] of locations) {
     if (location.shared.length > 0 && location.private.length > 0) {
@@ -364,7 +364,7 @@ function checkMcp(agent: AgentDef, ctx: Ctx): Check[] {
     }
     const names = tomlMcpServerNames(content);
     totalServers += names.length;
-    checks.push(check('PASS', `${spec} — ${names.length} MCP server(s)${listNames(names)} (TOML scanned superficially, not fully parsed)`));
+    checks.push(check('INFO', `${spec} — text declares ${names.length} MCP server(s)${listNames(names)} (TOML text scan only; this does not prove the agent loaded or connected them)`));
   }
   if (totalServers > MCP_SERVER_WARN_THRESHOLD) {
     checks.push(check('WARN', `${totalServers} MCP servers configured (> ${MCP_SERVER_WARN_THRESHOLD}) — tool schemas inflate context and confuse tool choice; keep only servers with measured benefit`));

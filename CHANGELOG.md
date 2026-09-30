@@ -11,6 +11,21 @@ protocol is unchanged.
 
 ### Added
 
+- **First-class rules and MCP A/B experiments:** `skillfit eval` now accepts a directory containing
+  `skillfit-experiment.json` plus baseline/treatment workspace overlays. Both arms receive the same
+  task prompt and fixture snapshot; the overlay is applied afterwards so local agent CLIs discover
+  `AGENTS.md`, `.codex/config.toml`, `.mcp.json`, or matrix-defined equivalents through their normal
+  project loader. Config experiments require a CLI executor and validate the treatment path against
+  `src/matrix/agents.json`. Run manifests upgrade to `schemaVersion: 4` and record a typed evaluation
+  target (`skill`, `rules`, or `mcp`) with its content hash and file list.
+- **Read-only MCP preflight:** `skillfit mcp check <spec.json>` launches a newline-delimited stdio MCP
+  server, negotiates the 2025-11-25 initialization lifecycle, requests `tools/list`, and audits unique
+  tool names, descriptions, object input schemas, and annotations. It never calls a tool. Dry-run
+  output withholds argument values. The paired outcome experiment remains the proof of model lift.
+- **README product tour:** all five README languages now share a maintainable SVG evidence-loop
+  diagram, MCP/rules quick start, the eight-command table, and links to the new configuration
+  experiment guide.
+
 - **Portable Codex setup:** `bundle export` captures frequently used user Skills and active global
   guidance in a transferable profile with a standalone Node installer. Installation writes a managed
   global `AGENTS.md` block, preserves existing content, checks `CODEX_HOME` and active overrides,
@@ -19,7 +34,7 @@ protocol is unchanged.
 - **Pinned upstream Skill sources:** `bundle export --upstream-lock` selects the lock's GitHub Skills
   and local Skills as a portable set. On the new machine, the standalone setup fetches the GitHub
   files from exact author commits, checks their SHA-256 hashes and invocation policy, then runs the
-  existing safe install plan. The reviewed Codex lock records 11 third-party and two local Skills;
+  existing safe install plan. The reviewed Codex lock records 65 upstream and two local Skills;
   the personal bundle stays outside Git.
 - **`docs/bench-authoring.md` — the authoring guide (A11).** The paradigm was complete and well-sourced
   but had no single home: `docs/metrics.md` carried the *why*, `benches/README.md` the *what*,
@@ -58,6 +73,11 @@ protocol is unchanged.
   working oracle.
 
 ### Changed
+
+- **`report` no longer overclaims usage or context cost.** Per-agent fired counts are restricted to
+  currently installed Skills. "Never fired" is now "no observed fire in retained history" and is
+  explicitly a prioritization signal because install dates are unavailable. The description-token
+  figure is labelled as raw catalog size before agent-side limits, truncation, or omission.
 
 - **`docs/metrics.md` L1 status corrected (2026-09-29).** Trigger-mode rates already exist, so the
   old blanket "implementation is the next milestone" sentence was stale. Positive tasks currently

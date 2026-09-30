@@ -173,7 +173,7 @@ winner-only-if-unanimous aggregation** is implemented (`--judge-agent` drives an
 reported per task). Blinding is enforced on the filesystem, not just in the prompt (2026-09-25): a CLI
 judge has file tools, so it runs in a fresh temporary directory containing only `answerA.md` and
 `answerB.md`, never in the run group where both arms' `_output.md` and `_result.json` (which names the
-condition and the skill bundle hash) are reachable. The directory is removed after the pair is judged;
+condition and the evaluation-target hash) are reachable. The directory is removed after the pair is judged;
 `judge-trial-N.json` is written to the task directory afterwards. The judge scores answers with a **binary checklist** (`correct` / `complete` /
 `grounded`, 0–3 per answer) instead of a Likert scale. The k=3 majority-ensemble recommendation was
 **considered and rejected**: a position-biased judge can still win a 2-of-3 majority by order luck,
@@ -194,7 +194,8 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
   ("this bench resolves effects ≳ ±Xpp").
 - Scale labels: below 5 trials × 8 tasks, results are stamped **indicative**, not conclusive
   (SkillsBench norm: 5 trials/task).
-- Manifest `schemaVersion: 3` carries per-trial pass flags and per-trial facet scores per
+- Manifest `schemaVersion: 4` carries a typed evaluation target (`skill`, `rules`, or `mcp`), its
+  content hash and file list, plus per-trial pass flags and per-trial facet scores per
   (task, condition) so all of the above is recomputed from raw outcomes, never from aggregates. Those
   arrays hold **graded trials only** — an errored pair is removed from both arms, so the two arrays stay
   index-aligned and re-pairing from the manifest is correct, but an index is no longer a trial number.
@@ -224,7 +225,19 @@ them, step by step, on one real task.
 - Layout stays [Harbor](https://github.com/harbor-framework/benchmark-template)-compatible so personal
   benches can graduate into shared benchmark tooling.
 
+## Workspace configuration experiments
+
+Rules and MCP targets use the same paired statistics as Skill targets but a different treatment
+mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The
+baseline/treatment project overlays are applied only after that snapshot, so the local CLI must load
+the configuration through its real project path. API executors are inadmissible because they cannot
+observe workspace configuration. See [config-experiments.md](config-experiments.md).
+
+`mcp check` is a protocol and catalog preflight, not an efficacy result. It proves that a compatible
+stdio server initializes and exposes structurally usable tool definitions without calling a tool.
+Only a paired task experiment can support a claim that the MCP setup improves outcomes.
+
 ## Non-goals (v1)
 
 No cross-model leaderboards, no hosted dashboards, no trajectory-level scoring. skillfit answers one
-question per user: *is this skill worth installing for my agent on my tasks?*
+question per user: *is this configuration worth enabling for my agent on my tasks?*

@@ -74,10 +74,10 @@ export interface OverallSummary {
 }
 
 export interface RunManifest {
-  schemaVersion: 3;
+  schemaVersion: 4;
   runGroup: string;
   createdAt: string;
-  skill: { name: string; sourceDir: string; bundleSha256: string; files: string[] };
+  target: { kind: 'skill' | 'rules' | 'mcp'; name: string; sourceDir: string; bundleSha256: string; files: string[] };
   bench: { name: string; dir: string; contentSha256: string; taskCount: number };
   executor: ExecutorDescriptor;
   judge: ExecutorDescriptor | null;
@@ -192,7 +192,7 @@ function pad(text: string, width: number): string {
 
 export function renderSummary(manifest: RunManifest, manifestPath: string): string {
   const lines: string[] = [];
-  lines.push(`Skill    : ${manifest.skill.name} (bundle sha256 ${manifest.skill.bundleSha256.slice(0, 12)}…, ${manifest.skill.files.length} files)`);
+  lines.push(`Target   : ${manifest.target.name} (${manifest.target.kind}, bundle sha256 ${manifest.target.bundleSha256.slice(0, 12)}…, ${manifest.target.files.length} files)`);
   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
   lines.push(`Executor : ${describeExecutor(manifest.executor)}`);
   lines.push(`Judge    : ${manifest.judge ? describeExecutor(manifest.judge) : 'disabled'}`);

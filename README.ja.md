@@ -11,12 +11,17 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
 [![CI](https://github.com/remote-controlled-man/skillfit/actions/workflows/ci.yml/badge.svg)](https://github.com/remote-controlled-man/skillfit/actions/workflows/ci.yml)
 [![Zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-blue)](package.json)
+[![GitHub stars](https://img.shields.io/github/stars/remote-controlled-man/skillfit?style=flat)](https://github.com/remote-controlled-man/skillfit/stargazers)
 
 [English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
 
 [クイックスタート](#クイックスタート) · [ベンチガイド](benches/README.md) · [指標プロトコル](docs/metrics.md) · [エビデンス](evidence/)
 
 </div>
+
+<p align="center">
+  <img src="docs/assets/skillfit-flow.svg" alt="skillfit は同じタスクを設定なしと設定ありで比較し、統計的判定を記録する" width="100%" />
+</p>
 
 ---
 
@@ -66,7 +71,11 @@ npx skillfit eval ~/.agents/skills/some-skill --bench code-review --trials 3
 # 2b. あるいは、エージェントが自発的にスキルをトリガーするか（そしてすべきでないときに発火しないか）を測定
 npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
 
-# 3. エビデンスに裏付けられた最小セットだけをインストール（デフォルトは dry-run）
+# 3. ツールを呼び出さずに MCP server を事前検査
+npx skillfit mcp check ./my-server.probe.json --dry-run
+npx skillfit mcp check ./my-server.probe.json
+
+# 4. エビデンスに裏付けられた最小セットだけをインストール（デフォルトは dry-run）
 npx skillfit install
 
 # 任意：エージェントに使い方を教える（driver skill を agents ディレクトリにコピー）
@@ -74,6 +83,24 @@ cp -r skills/skillfit ~/.agents/skills/
 ```
 
 対応エージェント：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力マトリクス](src/matrix/agents.json) — 機械可読・検証日付付き・ドキュメントへのリンクあり）。トリガーモードのキャプチャは現在 Kimi Code と Codex CLI で検証済み。
+
+## ルールと MCP 設定をテストする
+
+`skillfit-experiment.json` と baseline/treatment のプロジェクトオーバーレイを同じディレクトリに置く。ルール実験は `AGENTS.md`、MCP 実験は `.codex/config.toml`、`.mcp.json`、または対応エージェントの能力マトリクスで定義されたパスを追加できる。skillfit は両条件に同じ fixture を複製し、同一の prompt スナップショットを作成してから各オーバーレイを適用するため、ローカル CLI は通常のプロジェクト設定ローダー経由で設定を検出する。
+
+```text
+context7-experiment/
+├── skillfit-experiment.json
+├── baseline/.codex/config.toml
+└── treatment/.codex/config.toml
+```
+
+```bash
+skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
+skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
+```
+
+最初に `skillfit mcp check` で stdio ハンドシェイクとツールカタログを確認する。これは `tools/list` だけを要求し、名前、説明、入力 schema、annotations を監査してツールは呼び出さない。その後のペア実験で、モデルが正しい server を選び、タスク結果が改善するかを測定する。詳しくは[ルールと MCP の実験](docs/config-experiments.md)。
 
 ## 選択式 Codex セットアップ
 
@@ -100,13 +127,14 @@ node ./personal-codex/setup.mjs --yes
 
 65 個の外部 Skill を含む完全なソースカタログをエクスポートするには、`--upstream-lock ./profiles/codex-upstream-sources.json` を追加します。セットアップは固定コミットから各ファイルを検証し、自作 Skills はバンドルに残します。小さな新環境には上記の選択式セットアップを使えます。[ソース監査](docs/codex-upstream-audit.md)を参照してください。
 
-## 7 つのコマンド
+## 8 つのコマンド
 
 | コマンド | 機能 | 書き込み？ |
 |---|---|---|
-| `doctor` | インストール済みエージェントの検出、ルールの肥大化、スキルの妥当性・競合、MCP 設定のパース可能性、サイレント失敗の罠（例：Claude Code が決して読まない AGENTS.md）をチェック | 一切なし |
-| `report` | ローカルセッション履歴からスキルの実使用を集計：スキルごとの発火回数と未発火リスト（純粋なルーティング/コンテキスト税） | 一切なし |
-| `eval <skill>` | デフォルト（`--mode inject`）：ペア baseline/treatment 実行、決定的ベリファイア + オプションのブラインド LLM 審査、トークンコスト差分、McNemar 正確検定 + ペア bootstrap CI に加え、ベンチが checks を出力する場合は段階的ファセットスコア CI も報告。`--mode trigger`：プロンプト注入の代わりにスキルを実際にインストールし、エージェントのトランスクリプトからトリガー再現率 / 誤発火率を測定 | ローカルの `runs/` のみ |
+| `doctor` | インストール済みエージェントを検出し、ルールの肥大化、スキルの妥当性・競合、MCP 宣言の有無と対応形式の JSON 構文、サイレント失敗の罠（例：Claude Code が決して読まない AGENTS.md）をチェック | 一切なし |
+| `report` | 保存されているローカルセッション履歴から Skill の発火回数、発火が観測されなかった候補、エージェント側制限前の生カタログ規模を集計。未観測は無用の証明ではなく優先順位付けの材料 | 一切なし |
+| `eval <target>` | Skill、ルールオーバーレイ、MCP オーバーレイのペア baseline/treatment。決定的ベリファイア、任意のブラインド判定、トークン差、McNemar 正確検定、ペア bootstrap CI、facet score を記録する。`--mode trigger` は Skill の trigger recall / false-trigger rate を測定 | ローカルの `runs/` のみ |
+| `mcp check <spec>` | stdio MCP server を起動してプロトコルを初期化し、`tools/list` の名前・説明・入力 schema・annotations を監査する。ツールは呼び出さない | 一切なし |
 | `bench` | `init` は動作するサンプルタスク付きのベンチディレクトリをスキャフォールド。`check` はベンチをオフラインで検証（ベリファイアの自己テスト、oracle/NOP ゲート、モックアームのプローブ、フィクスチャの健全性、トリガーラベルのカバレッジ）。`add --freeze` は目撃したばかりの失敗を恒久的なベンチタスクに変換し、`--decompose` はエージェントにベリファイア＋オラクルを起草させ、両ゲートを通過した場合のみ採用する | `init`/`add` は確認後のみ、`check` は一切なし |
 | `install` | 管理ブロックへのルール書き込み（`<!-- SKILLFIT_START/END -->`、冪等）、競合保護付きのスキルコピー、コンテンツハッシュを記録するロックファイル、インストール後の検証。書き込み前にステージし、書き込みや検証に失敗した場合はロックファイルを含む変更済みの対象ファイルを元に戻す。プロセスが突然終了した場合は部分的なインストールが残る可能性があり、再実行して状態を調整できる。元のファイルは `<file>.skillfit-bak` に保持され、最初のバックアップが優先されるので後続の更新で上書きされない。`--dry-run` は競合を報告して 0 で終了し、`--strict` を付けると競合で失敗する（CI ゲート用） | 確認後のみ |
 | `setup codex` | 固定・検証済みの外部 Skill とリポジトリ内の自作 Skill、グローバルな起動ガイドを選択して導入。デフォルトは計画の表示のみ | `--yes` の場合のみ |
@@ -136,7 +164,7 @@ skillfit のハーネスで人気のワークフロースキル 8 個を測定�
 - **フォーマットではなく、標準に乗る。** AGENTS.md（AAIF）、SKILL.md、`.agents/skills/`、`.mcpb`——エージェントがすでに読むものだけを書き込む。
 - **デフォルト拒否。** プロファイルが明示的に宣言したものだけを、コンテンツハッシュで固定してインストールする。
 - **dry-run 優先。** すべての書き込みコマンドは、ファイルに触れる前に計画を表示する。バックアップは常に取得する。
-- **誠実な数字。** すべての主張は、モデルバージョン・スキルハッシュ・日付・分散を含むマニフェストにリンクされる。判定の意味論は [docs/metrics.md](docs/metrics.md) に凍結されている：有意性は不一致ペアに対する McNemar 正確検定から得られ、差分はペア bootstrap 信頼区間を伴い、検出力不足の実行は *indicative* とラベル付けされ、決して「有効」とは書かれない。
+- **誠実な数字。** すべての主張は、モデルバージョン・評価対象ハッシュ・日付・分散を含むマニフェストにリンクされる。判定の意味論は [docs/metrics.md](docs/metrics.md) に凍結されている：有意性は不一致ペアに対する McNemar 正確検定から得られ、差分はペア bootstrap 信頼区間を伴い、検出力不足の実行は *indicative* とラベル付けされ、決して「有効」とは書かれない。
 
 ## 免責事項
 
@@ -146,13 +174,16 @@ Anthropic、OpenAI、Moonshot AI、その他いかなるエージェントベン
 
 - [x] doctor / eval / install のコアループ
 - [x] ブラインド審査付きペア A/B ハーネス
-- [x] 統計的判定（McNemar 正確検定 + ペア bootstrap CI、manifest v2）
+- [x] 統計的判定（McNemar 正確検定 + ペア bootstrap CI、manifest v4）
 - [x] トリガー率の測定（`--mode trigger`：再現率 / 誤発火率、Wilson 信頼区間付き）
 - [x] ベンチのスキャフォールド（`bench init` + `bench check`）、失敗の凍結（`--freeze`）、git 履歴マイニング（`--from-commit`）、難易度キャリブレーション（`--calibrate`）
+- [x] 同一 prompt によるルール / MCP ワークスペース A/B 実験
+- [x] 読み取り専用の stdio MCP ハンドシェイクとツールカタログ監査
 - [ ] Claude Code 向けトリガーキャプチャ（認証不可で保留中）
 - [ ] コミュニティのベンチ＆エビデンス投稿（trust-me な結果ではなく、再現可能な設定の CI 再実行）
 - [ ] Cursor / Gemini CLI / OpenCode アダプター
-- [ ] MCP サーバー設定の評価
+- [ ] Streamable HTTP と 2026 stateless MCP の事前検査
+- [ ] インストール済み Skill 全体でのルーティング競合
 
 ## コントリビュート
 

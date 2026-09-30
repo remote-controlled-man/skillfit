@@ -47,12 +47,12 @@ test('renderReceipts renders the table, counts, and never-fired list', () => {
   assert.match(output, /skillfit report — skill usage receipts/);
   assert.match(output, /kimi-code — 5 session\(s\), 5 transcript\(s\)/);
   assert.match(output, /diagnosing-bugs\s+4\s+3\s+2026-09-19/);
-  assert.match(output, /installed: 4, fired at least once: 2, never fired: 2/);
-  assert.match(output, /never fired: alpha, beta/);
+  assert.match(output, /installed: 4, observed firing: 2, no observed fire: 2/);
+  assert.match(output, /no observed fire in retained history: alpha, beta/);
   assert.match(output, /codex: skipped — no verified skill-invocation signal/);
-  assert.match(output, /Overall: 4 installed skill\(s\), 2 fired at least once, 2 never fired/);
-  assert.match(output, /context tax \(estimate\): ~420 tokens of skill descriptions load into every session; median skill body ~1,600 tokens when fired; heaviest: diagnosing-bugs \(90 tok\)/);
-  assert.match(output, /pure routing\/context tax/);
+  assert.match(output, /Overall: 4 installed skill\(s\), 2 observed firing, 2 with no observed fire in retained history/);
+  assert.match(output, /catalog size \(raw estimate\): ~420 description tokens before agent-side limits, truncation, or omission; median skill body ~1,600 tokens when fired; heaviest: diagnosing-bugs \(90 tok\)/);
+  assert.match(output, /prioritization signal, not proof of uselessness/);
 });
 
 test('renderReceipts counts each skill once across agents in the Overall line', () => {
@@ -75,10 +75,10 @@ test('renderReceipts counts each skill once across agents in the Overall line', 
     tax: { descTokensTotal: 420, bodyTokensMedian: 1600, heaviest: [] },
   });
   const output = renderReceipts(receipts);
-  // Four distinct skills; two fired in at least one agent; two never fired in any. The per-agent
+  // Four distinct skills; two fired in at least one agent; two have no observed fire. The per-agent
   // lines still report per-agent counts — only the Overall line is a single deduped population.
-  assert.match(output, /Overall: 4 installed skill\(s\), 2 fired at least once, 2 never fired/);
-  assert.match(output, /installed: 4, fired at least once: 2, never fired: 2/);
+  assert.match(output, /Overall: 4 installed skill\(s\), 2 observed firing, 2 with no observed fire in retained history/);
+  assert.match(output, /installed: 4, observed firing: 2, no observed fire: 2/);
 });
 
 test('renderReceipts handles agents without history and without sessions config', () => {

@@ -3,20 +3,21 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent } from '../agents.js';
 import { loadBench } from '../harness/bench.js';
-import { collectSkillBundle } from '../harness/bundle.js';
 import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
 import { renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
+import { collectEvaluationTarget } from '../harness/target.js';
 import {
   renderTriggerSummary,
   runTriggerExperiment,
   type TriggerManifest,
 } from '../harness/trigger.js';
-import type { Bench, Executor, SkillBundle } from '../harness/types.js';
+import type { Bench, EvaluationTarget, Executor, SkillBundle } from '../harness/types.js';
 
 export interface EvalOptions {
+  /** A Skill directory or a directory containing skillfit-experiment.json. */
   skillPath: string;
   bench?: string;
   trials: number;
@@ -118,7 +119,7 @@ function defaultRunGroup(now: Date = new Date()): string {
   return `eval-${date}-${time}`;
 }
 
-function estimatePromptTokens(bench: Bench, skill: SkillBundle): { baseline: number; treatment: number } {
+function estimatePromptTokens(bench: Bench, target: EvaluationTarget): { baseline: number; treatment: number } {
   let fixtureBytes = 0;
   let promptBytes = 0;
   for (const task of bench.tasks) {
@@ -131,7 +132,7 @@ function estimatePromptTokens(bench: Bench, skill: SkillBundle): { baseline: num
   }
   const estimate = (bytes: number) => Math.ceil(bytes / 4);
   const baseline = estimate(fixtureBytes + promptBytes);
-  return { baseline, treatment: baseline + estimate(skill.payload.length) };
+  return { baseline, treatment: baseline + estimate(target.payload?.length ?? 0) };
 }
 
 function formatK(value: number): string {
@@ -140,7 +141,7 @@ function formatK(value: number): string {
 
 function renderPlan(
   bench: Bench,
-  skill: SkillBundle,
+  target: EvaluationTarget,
   executor: Executor | null,
   judge: Executor | null,
   trials: number,
@@ -149,10 +150,13 @@ function renderPlan(
 ): string {
   const lines: string[] = [];
   lines.push('Experiment plan (dry run)');
-  lines.push(`Skill    : ${skill.name} (${skill.files.length} files, bundle sha256 ${skill.sha256.slice(0, 12)}…)`);
+  lines.push(`Target   : ${target.name} (${target.kind}, ${target.files.length} files, bundle sha256 ${target.sha256.slice(0, 12)}…)`);
+  if (target.kind !== 'skill') {
+    lines.push('           applied as project files; treatment material is never injected into the prompt');
+  }
   lines.push(`Bench    : ${bench.name} @ ${bench.dir}`);
   lines.push(`           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`);
-  const estimate = estimatePromptTokens(bench, skill);
+  const estimate = estimatePromptTokens(bench, target);
   lines.push(
     `Est. cost: ~${formatK(estimate.baseline)} prompt-tokens/run baseline, ~${formatK(estimate.treatment)} treatment (estimate, before replies)`,
   );
@@ -278,10 +282,38 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
   const benchDir = resolveBenchDir(options.bench);
   const bench = loadBench(benchDir);
-  const skill = collectSkillBundle(options.skillPath);
+  const target = collectEvaluationTarget(options.skillPath);
 
   if ((options.mode ?? 'inject') === 'trigger') {
-    return runEvalTrigger(options, bench, skill, log);
+    if (target.kind !== 'skill') {
+      throw new Error('trigger mode is only available for Skill targets; rules and MCP targets use paired inject-mode workspaces.');
+    }
+    return runEvalTrigger(options, bench, target as SkillBundle, log);
+  }
+
+  if (target.kind !== 'skill' && !options.agent && !options.executor) {
+    throw new Error(`${target.kind} experiments require --agent because API executors do not load project configuration files.`);
+  }
+  if (target.kind !== 'skill' && options.agent) {
+    const agent = getAgent(options.agent);
+    const expected = (target.kind === 'mcp' ? agent.mcp.projectFiles : agent.rules.projectFiles)
+      .map((path) => path.split('\\').join('/'));
+    const treatmentFiles = listFilesRecursive(target.overlays.treatment as string);
+    if (!expected.some((path) => treatmentFiles.includes(path))) {
+      throw new Error(
+        `${target.kind} treatment for ${agent.id} must include one of its matrix-defined project files: ${expected.join(', ')}`,
+      );
+    }
+    for (const condition of ['baseline', 'treatment'] as const) {
+      const overlay = target.overlays[condition];
+      if (!overlay) continue;
+      const unexpected = listFilesRecursive(overlay).filter((path) => !expected.includes(path));
+      if (unexpected.length > 0) {
+        throw new Error(
+          `${target.kind} ${condition} overlay may contain only matrix-defined project config files (${expected.join(', ')}); unexpected: ${unexpected.join(', ')}`,
+        );
+      }
+    }
   }
 
   let executor: Executor | null = null;
@@ -292,6 +324,9 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     log(`Note: ${(error as Error).message}`);
   }
   assertExecutorSupportsBench(executor, bench);
+  if (target.kind !== 'skill' && executor?.describe().kind === 'api') {
+    throw new Error(`${target.kind} experiments require a CLI executor; API executors cannot load project configuration files.`);
+  }
   const judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge(options.judgeAgent);
   if (options.judgeAgent && options.judgeAgent === options.agent) {
     log('Warning: judge and executor are the same agent — self-preference bias risk (docs/metrics.md L4).');
@@ -300,7 +335,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const runGroup = options.runGroup ?? defaultRunGroup();
 
   if (options.dryRun) {
-    log(renderPlan(bench, skill, executor, judge, options.trials, runsRoot, runGroup));
+    log(renderPlan(bench, target, executor, judge, options.trials, runsRoot, runGroup));
     return null;
   }
   if (!executor) {
@@ -309,7 +344,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   const manifest = await runExperiment({
     bench,
-    skill,
+    target,
     executor,
     judge,
     trials: options.trials,

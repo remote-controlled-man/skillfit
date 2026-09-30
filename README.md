@@ -11,12 +11,17 @@ then install only what survives the experiment.
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
 [![CI](https://github.com/remote-controlled-man/skillfit/actions/workflows/ci.yml/badge.svg)](https://github.com/remote-controlled-man/skillfit/actions/workflows/ci.yml)
 [![Zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-blue)](package.json)
+[![GitHub stars](https://img.shields.io/github/stars/remote-controlled-man/skillfit?style=flat)](https://github.com/remote-controlled-man/skillfit/stargazers)
 
 [English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
 
 [Quick start](#quick-start) · [Bench guide](benches/README.md) · [Metrics protocol](docs/metrics.md) · [Evidence](evidence/)
 
 </div>
+
+<p align="center">
+  <img src="docs/assets/skillfit-flow.svg" alt="skillfit compares the same task with configuration off and on, then records a statistical verdict" width="100%" />
+</p>
 
 ---
 
@@ -66,7 +71,11 @@ npx skillfit eval ~/.agents/skills/some-skill --bench code-review --trials 3
 # 2b. Or measure whether the agent triggers the skill on its own (and only when it should)
 npx skillfit eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
 
-# 3. Install only the evidence-backed minimal set (dry-run by default)
+# 3. Preflight an MCP server without calling any tools
+npx skillfit mcp check ./my-server.probe.json --dry-run
+npx skillfit mcp check ./my-server.probe.json
+
+# 4. Install only the evidence-backed minimal set (dry-run by default)
 npx skillfit install
 
 # Optional: teach your agent to drive it (copy the driver skill into your agents dir)
@@ -74,6 +83,24 @@ cp -r skills/skillfit ~/.agents/skills/
 ```
 
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
+
+## Test rules and MCP setups
+
+Put a `skillfit-experiment.json` next to baseline and treatment project overlays. A rules experiment can add `AGENTS.md`; an MCP experiment can add `.codex/config.toml`, `.mcp.json`, or the path defined for another supported agent. skillfit copies the same task fixture into both arms, snapshots it for an identical prompt, then applies each overlay so the local agent discovers configuration through its normal loader.
+
+```text
+context7-experiment/
+├── skillfit-experiment.json
+├── baseline/.codex/config.toml
+└── treatment/.codex/config.toml
+```
+
+```bash
+skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5 --dry-run
+skillfit eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
+```
+
+Start with `skillfit mcp check` to verify the stdio handshake and tool catalog. It requests `tools/list` and audits names, descriptions, input schemas, and annotations without calling a tool. Then run the paired experiment to measure whether the model selects the server correctly and whether task outcomes improve. See [Rules and MCP experiments](docs/config-experiments.md).
 
 ## Selectable Codex setup
 
@@ -100,13 +127,14 @@ node ./personal-codex/setup.mjs --yes
 
 To export the full 65-Skill upstream source catalog, add `--upstream-lock ./profiles/codex-upstream-sources.json`. Setup then downloads those Skills from pinned author commits and verifies each file; locally authored Skills stay in the bundle. For a smaller new environment, use the selectable setup above. See the [source audit](docs/codex-upstream-audit.md).
 
-## The seven commands
+## The eight commands
 
 | Command | What it does | Writes? |
 |---|---|---|
-| `doctor` | Detects installed agents, checks rules bloat, skill validity/conflicts, MCP config parseability, silent-failure traps (e.g. AGENTS.md that Claude Code never reads) | Never |
-| `report` | Skill usage receipts from local session history: fires per skill per agent, and the never-fired list (the pure routing/context tax) | Never |
-| `eval <skill>` | Default (`--mode inject`): paired baseline/treatment runs, deterministic verifier + optional blind LLM judge, token-cost delta, verdicts via McNemar exact test + paired bootstrap CI, plus graded facet-score CIs when the bench emits checks. `--mode trigger`: installs the skill instead of injecting it and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
+| `doctor` | Detects installed agents, checks rules bloat, skill validity/conflicts, MCP declaration presence and JSON syntax where supported, and silent-failure traps (e.g. AGENTS.md that Claude Code never reads) | Never |
+| `report` | Skill usage receipts from retained local session history: fires per skill, candidates with no observed fire, and raw catalog size before agent-side limits. Absence is a prioritization signal, not proof of uselessness | Never |
+| `eval <target>` | Paired baseline/treatment runs for a Skill, rules overlay, or MCP overlay; deterministic verifier + optional blind LLM judge, token-cost delta, McNemar exact test, paired bootstrap CI, and graded facet-score CIs. `--mode trigger` installs a Skill and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
+| `mcp check <spec>` | Starts a stdio MCP server, negotiates the protocol lifecycle, requests `tools/list`, and audits tool names, descriptions, input schemas, and annotations. Never calls a tool | Never |
 | `bench` | `init` scaffolds a bench directory with a working example task; `check` validates a bench offline (verifier self-tests, oracle/NOP gates, mock-arm probes, fixture hygiene, trigger-label coverage); `add --freeze` turns a failure you just watched into a permanent bench task, and `--decompose` has an agent draft the verifier + oracle, admitted only if both gates pass | `init`/`add` after confirmation; `check` never |
 | `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent), skill copy with conflict protection, content-hash lockfile, post-install verification. Writes are staged first; if a write or verification fails, the installer rolls back changed target files, including the lockfile. Abrupt termination can still leave a partial install; re-run to reconcile. Your original is kept at `<file>.skillfit-bak` and the first backup wins, so later updates cannot overwrite it. `--dry-run` reports conflicts and exits 0; add `--strict` to make them fail (CI gates) | Only after confirmation |
 | `setup codex` | Lists or installs a chosen set of pinned, verified upstream Skills and repository-owned Skills with global routing guidance; defaults to a dry run | Only with `--yes` |
@@ -136,7 +164,7 @@ Full methodology and raw manifests: [evidence/](evidence/). Reproduce it yoursel
 - **Standards, not formats.** AGENTS.md (AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — we write what agents already read.
 - **Deny by default.** We install only what a profile explicitly declares, pinned by content hash.
 - **Dry-run first.** Every write command prints its plan before touching a file. Backups always.
-- **Honest numbers.** Every claim links to a manifest with model version, skill hash, date, and variance. Verdict semantics are frozen in [docs/metrics.md](docs/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and underpowered runs are labeled *indicative*, never "effective".
+- **Honest numbers.** Every claim links to a manifest with model version, target hash, date, and variance. Verdict semantics are frozen in [docs/metrics.md](docs/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and underpowered runs are labeled *indicative*, never "effective".
 
 ## Disclaimer
 
@@ -146,13 +174,16 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 - [x] doctor / eval / install core loop
 - [x] Paired A/B harness with blind judging
-- [x] Statistical verdicts (McNemar exact + paired bootstrap CI, manifest v2)
+- [x] Statistical verdicts (McNemar exact + paired bootstrap CI, manifest v4)
 - [x] Trigger-rate measurement (`--mode trigger`: recall / false-trigger rate with Wilson CIs)
 - [x] Bench scaffolding (`bench init` + `bench check`), failure freezing (`--freeze`), git-history mining (`--from-commit`), difficulty calibration (`--calibrate`)
+- [x] Rules and MCP workspace A/B experiments with identical prompts
+- [x] Read-only stdio MCP handshake and tool-catalog audit
 - [ ] Trigger capture for Claude Code (blocked: needs working auth)
 - [ ] Community bench & evidence submissions (reproducible-config CI re-runs, not trust-me results)
 - [ ] Cursor / Gemini CLI / OpenCode adapters
-- [ ] MCP server config evaluation
+- [ ] Streamable HTTP and 2026 stateless MCP preflight
+- [ ] Full installed-Skill-set routing competition
 
 ## Contributing
 

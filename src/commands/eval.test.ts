@@ -26,6 +26,22 @@ function makeSkill(t: import('node:test').TestContext): string {
   return dir;
 }
 
+function makeConfigExperiment(
+  t: import('node:test').TestContext,
+  kind: 'rules' | 'mcp',
+  projectFile: string,
+): string {
+  const dir = tmp(t, 'skillfit-config-');
+  const treatmentFile = join(dir, 'treatment', ...projectFile.split('/'));
+  mkdirSync(join(treatmentFile, '..'), { recursive: true });
+  writeFileSync(treatmentFile, kind === 'mcp' ? '[mcp_servers.demo]\ncommand = "demo"\n' : '# project rules\n');
+  writeFileSync(
+    join(dir, 'skillfit-experiment.json'),
+    JSON.stringify({ schemaVersion: 1, name: `demo-${kind}`, kind, treatment: 'treatment' }),
+  );
+  return dir;
+}
+
 function collector(): { lines: string[]; log: (msg: string) => void } {
   const lines: string[] = [];
   return { lines, log: (msg: string) => lines.push(msg) };
@@ -49,7 +65,7 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.ok(!existsSync(runsRoot));
   const output = lines.join('\n');
   assert.match(output, /Experiment plan \(dry run\)/);
-  assert.match(output, /Skill\s+: .* \(2 files, bundle sha256 [0-9a-f]{12}/);
+  assert.match(output, /Target\s+: .* \(skill, 2 files, bundle sha256 [0-9a-f]{12}/);
   assert.match(output, /Bench\s+: code-review/);
   assert.match(output, /review-r1: fixture fixtures\/review-r1, verifier `node verifiers\/seeded-bugs\.mjs`/);
   assert.match(output, /5 task\(s\) × 2 conditions × 3 = 30 runs/);
@@ -353,5 +369,74 @@ test('runEval allows an API executor against an output-graded bench', async (t) 
     log: () => {},
   });
   assert.equal(result, null, 'a dry run plans without throwing');
+});
+
+test('runEval plans a first-class MCP workspace experiment for the selected agent', async (t) => {
+  const { lines, log } = collector();
+  const result = await runEval({
+    skillPath: makeConfigExperiment(t, 'mcp', '.codex/config.toml'),
+    bench: 'code-review',
+    trials: 2,
+    agent: 'codex',
+    dryRun: true,
+    yes: true,
+    runsRoot: join(tmp(t, 'skillfit-mcp-eval-'), 'runs'),
+    runGroup: 'mcp-dry',
+    log,
+  });
+  assert.equal(result, null);
+  const output = lines.join('\n');
+  assert.match(output, /Target\s+: demo-mcp \(mcp,/);
+  assert.match(output, /applied as project files; treatment material is never injected/);
+  assert.match(output, /5 task\(s\) × 2 conditions × 2 = 20 runs/);
+});
+
+test('runEval rejects mismatched matrix paths and API-only config experiments', async (t) => {
+  await assert.rejects(
+    runEval({
+      skillPath: makeConfigExperiment(t, 'mcp', '.wrong/config.json'),
+      bench: 'code-review',
+      trials: 1,
+      agent: 'codex',
+      dryRun: true,
+      yes: true,
+      runGroup: 'wrong-path',
+      log: () => {},
+    }),
+    /matrix-defined project files: \.codex\/config\.toml/,
+  );
+  await assert.rejects(
+    runEval({
+      skillPath: makeConfigExperiment(t, 'rules', 'AGENTS.md'),
+      bench: 'code-review',
+      trials: 1,
+      dryRun: true,
+      yes: true,
+      executor: apiLikeExecutor(),
+      runsRoot: join(tmp(t, 'skillfit-rules-api-'), 'runs'),
+      runGroup: 'rules-api',
+      log: () => {},
+    }),
+    /rules experiments require a CLI executor/,
+  );
+});
+
+test('runEval rejects config overlays that could modify the task fixture', async (t) => {
+  const experiment = makeConfigExperiment(t, 'mcp', '.codex/config.toml');
+  mkdirSync(join(experiment, 'treatment', 'src'), { recursive: true });
+  writeFileSync(join(experiment, 'treatment', 'src', 'solution.js'), 'export const answer = 42;\n');
+  await assert.rejects(
+    runEval({
+      skillPath: experiment,
+      bench: 'code-review',
+      trials: 1,
+      agent: 'codex',
+      dryRun: true,
+      yes: true,
+      runGroup: 'unsafe-overlay',
+      log: () => {},
+    }),
+    /may contain only matrix-defined project config files.*unexpected: src\/solution\.js/,
+  );
 });
 
