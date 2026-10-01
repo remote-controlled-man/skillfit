@@ -70,10 +70,10 @@ node dist/cli.js bench check benches/code-review
 node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
 node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
-node dist/cli.js install --dry-run
+node dist/cli.js install --agent codex --dry-run
 ```
 
-两项 bench check 是离线完整性检查，不是 agent 效果评分。`doctor` 只读；上面的 eval 和 install 只打印计划。真正的实验需要你自己的 Skill 与 bench，以及本机 agent CLI 或 API 凭据。下方配置命令在 Bash 和 PowerShell 中都能运行；选择上游 Skills 需要联网，只有加 `--yes` 才会安装。
+两项 bench check 是离线完整性检查，不是 agent 效果评分。`doctor` 只读；上面的 eval 和 install 只打印计划。`codex` 只是示例 agent ID，可替换为你使用的 agent。真正的实验需要你自己的 Skill 与 bench，以及本机 agent CLI 或 API 凭据。下方配置命令在 Bash 和 PowerShell 中都能运行；选择上游 Skills 需要联网，只有加 `--yes` 才会安装。
 
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 

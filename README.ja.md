@@ -70,10 +70,10 @@ node dist/cli.js bench check benches/code-review
 node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
 node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
-node dist/cli.js install --dry-run
+node dist/cli.js install --agent codex --dry-run
 ```
 
-2 つの bench check はオフラインの整合性検査であり、エージェントの性能評価ではありません。`doctor` は読み取り専用で、上記の eval と install は計画だけを表示します。実際の評価には自分の Skill と bench、およびローカルのエージェント CLI または API 認証情報が必要です。下のセットアップコマンドは Bash と PowerShell の両方で動作します。上流の Skills を選ぶ場合はネットワークが必要で、`--yes` を付けた場合だけインストールします。
+2 つの bench check はオフラインの整合性検査であり、エージェントの性能評価ではありません。`doctor` は読み取り専用で、上記の eval と install は計画だけを表示します。`codex` は例のエージェント ID なので、自分のものに置き換えられます。実際の評価には自分の Skill と bench、およびローカルのエージェント CLI または API 認証情報が必要です。下のセットアップコマンドは Bash と PowerShell の両方で動作します。上流の Skills を選ぶ場合はネットワークが必要で、`--yes` を付けた場合だけインストールします。
 
 対応エージェント：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力マトリクス](src/matrix/agents.json) — 機械可読・検証日付付き・ドキュメントへのリンクあり）。トリガーモードのキャプチャは現在 Kimi Code と Codex CLI で検証済み。
 

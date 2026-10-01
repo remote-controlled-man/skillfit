@@ -47,7 +47,7 @@ published claim.
 ## Offline CI recipe
 
 [`examples/bench-check.yml`](examples/bench-check.yml) is an opt-in GitHub Actions workflow you can
-copy into your own repository's `.github/workflows/` directory. It checks the bundled benches on
+copy into a skillfit fork's `.github/workflows/` directory. It checks the bundled benches on
 macOS, Linux, and Windows and writes a small workflow summary. Replace the bench paths with your own
 before enabling it. It makes no agent or model call, so passing it validates bench integrity, not
 Skill efficacy. The repository's normal CI already runs these checks on all three operating systems.

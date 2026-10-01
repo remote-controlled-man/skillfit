@@ -51,7 +51,7 @@ test('selectable Codex setup commands match across README languages', () => {
 test('the first-run commands work in Bash and PowerShell and match across README languages', () => {
   const normalized = (file: string) => read(file).replace(/\r\n/g, '\n');
   const english = normalized('README.md');
-  const commandBlock = /```bash\ngit clone https:\/\/github\.com\/remote-controlled-man\/skillfit\.git\ncd skillfit[\s\S]*?node dist\/cli\.js install --dry-run\n```/.exec(english)?.[0];
+  const commandBlock = /```bash\ngit clone https:\/\/github\.com\/remote-controlled-man\/skillfit\.git\ncd skillfit[\s\S]*?node dist\/cli\.js install --agent codex --dry-run\n```/.exec(english)?.[0];
   assert.ok(commandBlock);
   const commands = commandBlock.split('\n').slice(1, -1).join('\n');
   assert.doesNotMatch(commands, /\b(?:bash|cp)\s|~\/|some-skill|my-server\.probe\.json/);

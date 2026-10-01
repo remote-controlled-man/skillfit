@@ -70,10 +70,10 @@ node dist/cli.js bench check benches/code-review
 node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
 node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
-node dist/cli.js install --dry-run
+node dist/cli.js install --agent codex --dry-run
 ```
 
-Las dos comprobaciones de bench verifican la integridad sin conexión; no miden la calidad del agente. `doctor` es de solo lectura y los comandos eval e install anteriores solo muestran planes. Una evaluación real requiere tu propio Skill y bench, además de un CLI de agente local o credenciales de API. Los comandos de configuración de abajo funcionan en Bash y PowerShell; elegir Skills externos requiere red y solo `--yes` los instala.
+Las dos comprobaciones de bench verifican la integridad sin conexión; no miden la calidad del agente. `doctor` es de solo lectura y los comandos eval e install anteriores solo muestran planes. `codex` es un ID de agente de ejemplo; cámbialo por el tuyo. Una evaluación real requiere tu propio Skill y bench, además de un CLI de agente local o credenciales de API. Los comandos de configuración de abajo funcionan en Bash y PowerShell; elegir Skills externos requiere red y solo `--yes` los instala.
 
 Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente para Kimi Code y Codex CLI.
 

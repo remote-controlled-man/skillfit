@@ -1,4 +1,4 @@
-# Copy this file into .github/workflows/ and replace the bench paths before enabling it.
+# Copy this file into a skillfit fork's .github/workflows/ and replace the bench paths before enabling it.
 # This validates bench integrity offline. It does not measure agent quality.
 name: Offline skillfit bench check
 

@@ -70,10 +70,10 @@ node dist/cli.js bench check benches/code-review
 node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
 node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
-node dist/cli.js install --dry-run
+node dist/cli.js install --agent codex --dry-run
 ```
 
-두 bench check는 오프라인 무결성 검사이며 에이전트 성능 점수가 아닙니다. `doctor`는 읽기 전용이고 위의 eval과 install은 계획만 출력합니다. 실제 평가는 자신의 Skill과 bench, 로컬 에이전트 CLI 또는 API 자격 증명이 필요합니다. 아래 설정 명령은 Bash와 PowerShell에서 모두 동작합니다. 상위 Skills 선택에는 네트워크가 필요하며 `--yes`를 붙일 때만 설치합니다.
+두 bench check는 오프라인 무결성 검사이며 에이전트 성능 점수가 아닙니다. `doctor`는 읽기 전용이고 위의 eval과 install은 계획만 출력합니다. `codex`는 예시 에이전트 ID이므로 자신의 에이전트로 바꿀 수 있습니다. 실제 평가는 자신의 Skill과 bench, 로컬 에이전트 CLI 또는 API 자격 증명이 필요합니다. 아래 설정 명령은 Bash와 PowerShell에서 모두 동작합니다. 상위 Skills 선택에는 네트워크가 필요하며 `--yes`를 붙일 때만 설치합니다.
 
 지원 에이전트: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([기능 매트릭스](src/matrix/agents.json) — 기계 판독 가능, 검증 날짜와 문서 링크 포함). trigger 모드 캡처는 현재 Kimi Code와 Codex CLI에서 검증되었습니다.
 
