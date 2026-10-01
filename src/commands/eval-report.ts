@@ -283,6 +283,17 @@ export function parseEvalReport(value: unknown): ReportData {
   if (improved + regressed > overallRow.baseline.trials) {
     throw new Error('overall.stats.discordant exceeds the number of paired trials');
   }
+  if (improved - regressed !== overallRow.treatment.passes - overallRow.baseline.passes) {
+    throw new Error('overall.stats.discordant.improved - regressed disagrees with treatment.passes - baseline.passes');
+  }
+  const sharedSuccess = overallRow.baseline.passes - regressed;
+  if (sharedSuccess < 0) {
+    throw new Error('overall.stats.discordant implies a negative shared success count');
+  }
+  const sharedFailure = overallRow.baseline.trials - improved - regressed - sharedSuccess;
+  if (sharedFailure < 0) {
+    throw new Error('overall.stats.discordant implies a negative shared failure count');
+  }
   const mcnemarP = number(stats['mcnemarP'], 'overall.stats.mcnemarP', 0, 1);
   if (Math.abs(mcnemarP - mcnemarExactP(improved, regressed)) > 1e-9) {
     throw new Error('overall.stats.mcnemarP disagrees with discordant counts');

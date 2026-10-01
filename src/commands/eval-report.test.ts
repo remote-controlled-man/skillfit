@@ -34,6 +34,24 @@ function manifest(): Record<string, unknown> {
   };
 }
 
+function sixPairManifest(): Record<string, unknown> {
+  const value = manifest();
+  const conditions = {
+    baseline: { passes: 3, trials: 6, errors: 0 },
+    treatment: { passes: 6, trials: 6, errors: 0 },
+  };
+  value['trials'] = 6;
+  const task = (value['tasks'] as Record<string, unknown>[])[0]!;
+  Object.assign(task, { conditions, deltaPassRate: 0.5 });
+  const overall = value['overall'] as Record<string, unknown>;
+  Object.assign(overall, { conditions, deltaPassRate: 0.5, verdictReason: 'only 3 discordant pairs' });
+  Object.assign(overall['stats'] as Record<string, unknown>, {
+    discordant: { improved: 3, regressed: 0 },
+    mcnemarP: 0.25,
+  });
+  return value;
+}
+
 test('report eval renders a v4 manifest without executing an agent or writing a file', () => {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-eval-report-'));
   try {
@@ -73,6 +91,53 @@ test('report eval refuses old and incomplete manifests instead of guessing metri
   const impossibleStats = (impossiblePairs['overall'] as Record<string, unknown>)['stats'] as Record<string, unknown>;
   impossibleStats['discordant'] = { improved: 3, regressed: 0 };
   assert.throws(() => parseEvalReport(impossiblePairs), /exceeds the number of paired trials/);
+});
+
+test('report eval rejects discordant counts that contradict the marginal pass difference', () => {
+  const value = sixPairManifest();
+  const overall = value['overall'] as Record<string, unknown>;
+  overall['verdict'] = 'effective';
+  overall['verdictReason'] = '6 improvements, no regressions';
+  Object.assign(overall['stats'] as Record<string, unknown>, {
+    discordant: { improved: 6, regressed: 0 },
+    mcnemarP: 0.03125,
+  });
+  const original = JSON.stringify(value);
+  assert.throws(() => parseEvalReport(value), /discordant\.improved - regressed disagrees with treatment\.passes - baseline\.passes/);
+  assert.equal(JSON.stringify(value), original, 'contradictory counts must not be silently corrected');
+});
+
+for (const { passes, sharedOutcome } of [
+  { passes: 1, sharedOutcome: 'success' },
+  { passes: 5, sharedOutcome: 'failure' },
+]) {
+  test(`report eval rejects negative shared ${sharedOutcome} counts despite a matching pass difference`, () => {
+    const value = sixPairManifest();
+    const task = (value['tasks'] as Record<string, unknown>[])[0]!;
+    const overall = value['overall'] as Record<string, unknown>;
+    const conditions = task['conditions'] as Record<string, Record<string, unknown>>;
+    conditions['baseline']!['passes'] = passes;
+    conditions['treatment']!['passes'] = passes;
+    task['deltaPassRate'] = 0;
+    overall['deltaPassRate'] = 0;
+    Object.assign(overall['stats'] as Record<string, unknown>, {
+      discordant: { improved: 2, regressed: 2 },
+      mcnemarP: 1,
+    });
+    assert.throws(() => parseEvalReport(value), new RegExp(`discordant implies a negative shared ${sharedOutcome} count`));
+  });
+}
+
+test('report eval accepts the valid six-pair counterpart as inconclusive without changing its data', () => {
+  const value = sixPairManifest();
+  const original = JSON.stringify(value);
+  const report = parseEvalReport(value);
+  assert.equal(report.overall.improved, 3);
+  assert.equal(report.overall.regressed, 0);
+  assert.equal(report.overall.mcnemarP, 0.25);
+  assert.equal(report.overall.verdict, 'inconclusive');
+  assert.match(renderEvalMarkdown(report), /McNemar exact p=0\.2500/);
+  assert.equal(JSON.stringify(value), original);
 });
 
 test('report eval renders missing CI and zero graded trials explicitly', () => {
