@@ -77,6 +77,8 @@ node dist/cli.js install --agent codex --dry-run
 
 `eval` のデフォルトは各条件 **5 回**です。8 タスクのペア実験ではエージェントを 80 回実行します。5 回は出発点にすぎず、タスクの代表性と基準条件の識別力も重要です。dry-run の実行回数を確認し、効果を主張する前に[最初の実評価ガイド](docs/first-real-eval.md)を参照してください。
 
+eval とベースライン校正の `--trials` は 1〜20 の整数でなければなりません。小数、形式が不正な値、範囲外の値は、実験や bench チェックの開始前に拒否されます。
+
 対応エージェント：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力マトリクス](src/matrix/agents.json) — 機械可読・検証日付付き・ドキュメントへのリンクあり）。トリガーモードのキャプチャは現在 Kimi Code と Codex CLI で検証済み。
 
 ## 実際の OSS タスクを評価する

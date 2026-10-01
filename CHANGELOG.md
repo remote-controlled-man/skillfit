@@ -6,6 +6,9 @@
   list, including scripts and binary assets, in manifests and trial receipts. Verify every copy before
   execution, reject unpinnable nested links, and mark legacy installed fingerprints as unrecorded.
   Injectable bundle hashes and statistical calculations keep their existing meaning.
+- **D2:** Eval and baseline calibration share early integer/range validation for `--trials` (1–20).
+  Reject fractional and malformed values instead of truncating calibration repetitions; preserve
+  existing defaults, and synchronize CLI help and all five README languages.
 
 ## Unreleased — real OSS task evaluation
 

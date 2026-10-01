@@ -77,6 +77,8 @@ The bench checks are offline integrity checks, not agent-quality scores. `doctor
 
 `eval` now defaults to **5 trials per condition**. With 8 tasks, a paired experiment makes 80 agent executions. Five trials are a starting point; representative tasks and a healthy baseline matter as much as repetition. Inspect the dry-run count and follow [your first real evaluation](docs/first-real-eval.md) before making an efficacy claim.
 
+For eval and baseline calibration, `--trials` must be an integer from 1 to 20. Fractional, malformed, or out-of-range values are rejected before any run or bench check starts.
+
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
 ## Evaluate a real OSS task

@@ -77,6 +77,8 @@ Las dos comprobaciones de bench verifican la integridad sin conexión; no miden 
 
 `eval` usa ahora **5 intentos por condición** de forma predeterminada. Con 8 tareas, una evaluación emparejada ejecuta el agente 80 veces. Cinco intentos son un punto de partida; también importan la representatividad de las tareas y una línea base que pueda distinguir diferencias. Revisa el total en el dry-run y sigue [la guía de la primera evaluación real](docs/first-real-eval.md) antes de afirmar eficacia.
 
+Para eval y la calibración de la línea base, `--trials` debe ser un entero entre 1 y 20. Los valores fraccionarios, mal formados o fuera del intervalo se rechazan antes de iniciar una ejecución o comprobación del bench.
+
 Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente para Kimi Code y Codex CLI.
 
 ## Evalúa una tarea real de OSS

@@ -35,7 +35,8 @@ Options:
   --mode <mode>       Eval mode: inject (default; Skills, rules, MCP) | trigger (Skills only)
   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
-  --trials <n>        Repetitions per condition for eval (default: ${DEFAULT_EVAL_TRIALS})
+  --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})
+                     Also controls baseline calibration repetitions
   --profile <name>    Profile for install (default: "recommended")
   --profile-path <dir>  Install a portable profile from a local directory
   --skill <name>     With bundle export, include a named installed skill (repeatable)
@@ -142,6 +143,10 @@ async function main(): Promise<void> {
       !(command === 'bench' && positionals[1] === 'check' && values.calibrate)) {
     throw new Error('--input applies only to paired eval or bench check --calibrate.');
   }
+  const trials = values.trials === undefined ? undefined : Number(values.trials);
+  if (trials !== undefined && (!Number.isInteger(trials) || trials < 1 || trials > 20)) {
+    throw new Error(`--trials must be an integer between 1 and 20, got ${JSON.stringify(values.trials)}`);
+  }
 
   switch (command) {
     case 'doctor':
@@ -179,7 +184,7 @@ async function main(): Promise<void> {
         mode,
         inputMode,
         judgeAgent: values['judge-agent'],
-        trials: values.trials === undefined ? undefined : Number(values.trials),
+        trials,
       });
       return;
     }
@@ -243,7 +248,7 @@ async function main(): Promise<void> {
                 agent: values.agent,
                 inputMode,
                 dryRun: values['dry-run'] ?? false,
-                trials: values.trials ? Number.parseInt(values.trials, 10) : undefined,
+                trials,
               }
             : false,
         });

@@ -29,6 +29,9 @@ Fix the task list and trial count before viewing results. If an exploratory run 
 a separate confirmatory run with a predeclared size; repeatedly adding trials until p < 0.05 makes
 the final p-value misleading.
 
+`--trials` accepts integers from 1 to 20 in both eval and baseline calibration. Fractional, malformed,
+or out-of-range values fail before a run or bench check starts; they are never rounded or truncated.
+
 ## 2. Check the bench and the environment
 
 ```bash

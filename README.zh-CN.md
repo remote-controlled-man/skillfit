@@ -77,6 +77,8 @@ node dist/cli.js install --agent codex --dry-run
 
 `eval` 现在默认每组运行 **5 次**。8 个任务的配对实验会调用 agent 80 次。5 次只是起点；任务是否有代表性、基线是否能区分效果同样重要。先看 dry-run 的调用总数，再按[第一次真实评估指南](docs/first-real-eval.md)操作，之后才考虑效果结论。
 
+eval 和基线校准的 `--trials` 必须是 1 到 20 的整数。小数、格式错误或越界的值会在任何实验或 bench 检查开始前被拒绝。
+
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
 ## 评估真实开源任务
