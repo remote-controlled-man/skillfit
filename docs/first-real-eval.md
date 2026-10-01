@@ -79,3 +79,9 @@ load the Skill on its own. Trigger mode has one arm and uses 5 trials per task b
 not yet reproduce competition from the user's whole installed Skill set, so its recall is an
 optimistic estimate. Share the paired and trigger manifests separately; `report eval` currently
 renders paired schema-v4 manifests only.
+
+New trigger manifests record both the injectable-text hash and a separate full installed-file hash,
+including scripts and binary resources. Keep the Skill directory unchanged while the experiment runs;
+every installed copy is verified before the agent starts. Nested symbolic links are unsupported: copy
+their resources into the Skill directory first. Older trigger manifests did not record the full
+installed hash; their injectable hash alone cannot identify all resources used by the agent.

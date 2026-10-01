@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { collectSkillBundle } from './bundle.js';
+import { collectInstalledSkillFingerprint, collectSkillBundle } from './bundle.js';
 
 function makeSkillDir(t: import('node:test').TestContext): string {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-bundle-'));
@@ -33,6 +33,24 @@ test('collectSkillBundle hash is deterministic and content-sensitive', (t) => {
   writeFileSync(join(dir, 'SKILL.md'), '# Changed\n');
   const third = collectSkillBundle(dir, 'my-skill');
   assert.notEqual(first.sha256, third.sha256);
+});
+
+test('installed fingerprints cover scripts and binary assets while injectable identity stays stable', (t) => {
+  const dir = makeSkillDir(t);
+  mkdirSync(join(dir, 'scripts'));
+  writeFileSync(join(dir, 'scripts', 'helper.sh'), 'printf first\n');
+  writeFileSync(join(dir, 'asset.bin'), Buffer.from([0, 255, 128]));
+  const bundle = collectSkillBundle(dir);
+  const first = collectInstalledSkillFingerprint(dir);
+  assert.deepEqual(first.files, ['SKILL.md', 'asset.bin', 'data.json', 'ignore.txt', 'refs/rules.yaml', 'run.js', 'scripts/helper.sh']);
+  assert.equal(first.sha256, collectInstalledSkillFingerprint(dir).sha256);
+  writeFileSync(join(dir, 'scripts', 'helper.sh'), 'printf second\n');
+  const second = collectInstalledSkillFingerprint(dir);
+  assert.notEqual(first.sha256, second.sha256);
+  writeFileSync(join(dir, 'asset.bin'), Buffer.from([0, 255, 129]));
+  assert.notEqual(second.sha256, collectInstalledSkillFingerprint(dir).sha256);
+  assert.equal(bundle.sha256, collectSkillBundle(dir).sha256);
+  assert.equal(bundle.payload, collectSkillBundle(dir).payload);
 });
 
 test('collectSkillBundle payload wraps files in a <skill> block', (t) => {

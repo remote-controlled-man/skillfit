@@ -4,8 +4,9 @@ This document defines what skillfit measures and how verdicts are computed. It i
 `src/harness/` implements and that bench authors design against. Changes here are deliberate: edit with a
 reasoned PR, cite sources, and bump the date.
 
-Status reviewed 2026-09-29: L1 wording now distinguishes implemented trigger rates from task-class
-breakdowns and installed-skill competition that remain specification. The v2 verdict protocol is unchanged.
+Status reviewed 2026-10-01: L1 records complete installed-resource fingerprints and distinguishes
+implemented trigger rates from task-class breakdowns and installed-skill competition that remain
+specification. The v2 verdict protocol is unchanged.
 
 This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
 contract — is [bench-authoring.md](bench-authoring.md).
@@ -86,6 +87,17 @@ mode measures the rates below, while positive task classes and real-set competit
   consultation (measured: 0/9 trigger recall with an inline snapshot vs. the skill firing on the same tasks
   from disk — see evidence/2026-09-trigger-snapshot-correction.md). Trigger-mode prompt variants live in
   per-task `promptTrigger` files.
+- **Content identity**: trigger manifests retain `skill.bundleSha256/files` for the injectable
+  Markdown/YAML/JSON bundle and additionally record `skill.installedSha256/installedFiles` for every
+  installed regular file, including scripts, binary assets and hidden files. The full fingerprint hashes
+  sorted relative paths and file bytes before the agent runs; it does not fingerprint permissions or
+  empty directories. Each trial receipt records the observed `skillInstalledSha256/skillInstalledFiles`.
+  Every copy must match the planned installed fingerprint before its executor starts. Keep the source
+  unchanged throughout a run; a mismatch stops the experiment before the affected agent call. The input
+  root is resolved, while nested symbolic links and non-regular resources are rejected before a run
+  directory is created because their content cannot be pinned by this file-byte contract. These are
+  additive fields in trigger schema v1; older manifests lack a full installed fingerprint and must be
+  labelled unrecorded, never reconstructed from their injectable hash.
 - **Environment fidelity caveats**: routing quality depends on the *whole installed skill set* (lexical
   competition). (Status: **spec, not implemented** — the harness installs only the skill under test into an
   otherwise empty sandboxed skills directory, so measured recall is *optimistic*: it faces no competition from

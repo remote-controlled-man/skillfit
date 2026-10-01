@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { loadBench } from './bench.js';
-import { collectSkillBundle } from './bundle.js';
+import { collectInstalledSkillFingerprint, collectSkillBundle } from './bundle.js';
 import { MockExecutor } from './executors/mock.js';
-import { runTriggerExperiment, triggerMetrics, type TriggerManifest } from './trigger.js';
+import { renderTriggerSummary, runTriggerExperiment, triggerMetrics, type TriggerManifest } from './trigger.js';
 import type { Executor, ExecutorResult } from './types.js';
 
 function tmp(t: import('node:test').TestContext, prefix: string): string {
@@ -117,6 +117,57 @@ test('runTriggerExperiment measures recall and false-trigger rate', async (t) =>
   assert.ok(!prompt.includes('Repository snapshot'), 'trigger mode never inlines the repository snapshot');
   assert.ok(prompt.includes('TRIGGER variant'), 'promptTrigger file is used when present');
   assert.ok(existsSync(join(plan.runsRoot, 'trigger-group', 'manifest.json')));
+});
+
+test('trigger manifests and receipts identify all installed scripts and binary resources', async (t) => {
+  const skillDir = makeSkill(t);
+  mkdirSync(join(skillDir, 'scripts'));
+  writeFileSync(join(skillDir, 'scripts', 'helper.sh'), 'printf first\n');
+  writeFileSync(join(skillDir, 'asset.bin'), Buffer.from([0, 255]));
+  const executor = stubExecutor(() => ({ output: 'done', skillTriggered: true }));
+  const plan = makePlan(t, executor, { skill: collectSkillBundle(skillDir), trials: 1 });
+  const first = await runTriggerExperiment(plan);
+  assert.deepEqual(first.skill.installedFiles, ['SKILL.md', 'asset.bin', 'scripts/helper.sh']);
+  const installedDir = join(plan.runsRoot, plan.runGroup, 'pos-task', 'installed', 'trial-1', '.test-skills', 'test-skill');
+  assert.equal(first.skill.installedSha256, collectInstalledSkillFingerprint(installedDir).sha256);
+  const receipt = JSON.parse(readFileSync(join(installedDir, '..', '..', '_result.json'), 'utf8'));
+  assert.equal(receipt.skillInstalledSha256, first.skill.installedSha256);
+  assert.deepEqual(receipt.skillInstalledFiles, first.skill.installedFiles);
+  writeFileSync(join(skillDir, 'scripts', 'helper.sh'), 'printf second\n');
+  const second = await runTriggerExperiment({ ...plan, skill: collectSkillBundle(skillDir), runGroup: 'second' });
+  assert.equal(first.skill.bundleSha256, second.skill.bundleSha256);
+  assert.notEqual(first.skill.installedSha256, second.skill.installedSha256);
+  assert.match(renderTriggerSummary(second, 'manifest.json'), /Installed: sha256 .*3 files \(before execution\)/);
+  const legacy: TriggerManifest = { ...first, skill: { name: first.skill.name, sourceDir: first.skill.sourceDir, bundleSha256: first.skill.bundleSha256, files: first.skill.files } };
+  assert.match(renderTriggerSummary(legacy, 'manifest.json'), /Installed: not recorded \(legacy manifest/);
+});
+
+test('trigger rejects changed resources before running another trial under the same fingerprint', async (t) => {
+  const skillDir = makeSkill(t);
+  writeFileSync(join(skillDir, 'helper.sh'), 'first\n');
+  let calls = 0;
+  const executor = stubExecutor(() => {
+    calls++;
+    writeFileSync(join(skillDir, 'helper.sh'), 'changed\n');
+    return { output: 'done', skillTriggered: true };
+  });
+  const plan = makePlan(t, executor, { skill: collectSkillBundle(skillDir), trials: 2 });
+  await assert.rejects(runTriggerExperiment(plan), /Installed Skill content does not match the planned fingerprint/);
+  assert.equal(calls, 1);
+});
+
+test('trigger rejects nested symbolic links before creating a run or starting an executor', async (t) => {
+  const skillDir = makeSkill(t);
+  const outside = tmp(t, 'skillfit-trigger-link-target-');
+  writeFileSync(join(outside, 'helper.sh'), 'outside resource\n');
+  // Directory junctions require no symlink privilege on Windows CI.
+  symlinkSync(outside, join(skillDir, 'linked'), 'junction');
+  let calls = 0;
+  const executor = stubExecutor(() => { calls++; return { output: 'done' }; });
+  const plan = makePlan(t, executor, { skill: collectSkillBundle(skillDir), trials: 1 });
+  await assert.rejects(runTriggerExperiment(plan), /Symbolic links are not supported/);
+  assert.equal(calls, 0);
+  assert.ok(!existsSync(join(plan.runsRoot, plan.runGroup)));
 });
 
 test('runTriggerExperiment excludes undetectable transcripts from rates', async (t) => {

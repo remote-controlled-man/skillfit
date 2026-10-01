@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — review follow-up (2026-10-01)
+
+- **D1:** Trigger experiments now record a separate complete installed-file fingerprint and file
+  list, including scripts and binary assets, in manifests and trial receipts. Verify every copy before
+  execution, reject unpinnable nested links, and mark legacy installed fingerprints as unrecorded.
+  Injectable bundle hashes and statistical calculations keep their existing meaning.
+
 ## Unreleased — real OSS task evaluation
 
 - Add `--input workspace` to paired CLI evaluations and baseline calibration,

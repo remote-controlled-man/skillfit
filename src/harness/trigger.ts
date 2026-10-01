@@ -1,6 +1,7 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
+import { collectInstalledSkillFingerprint, collectSkillBundle, type InstalledSkillFingerprint } from './bundle.js';
 import { OUTPUT_CONTRACT } from './prompt.js';
 import { gitInit, runVerifier, verifierFailure, verifierLogFor } from './runner.js';
 import { wilson95 } from './stats.js';
@@ -73,7 +74,16 @@ export interface TriggerManifest {
   mode: 'trigger';
   runGroup: string;
   createdAt: string;
-  skill: { name: string; sourceDir: string; bundleSha256: string; files: string[] };
+  skill: {
+    name: string;
+    sourceDir: string;
+    /** Injectable text identity, retained for compatibility with paired experiments. */
+    bundleSha256: string;
+    files: string[];
+    /** All installed file paths and bytes before execution; absent in older v1 manifests. */
+    installedSha256?: string;
+    installedFiles?: string[];
+  };
   bench: { name: string; dir: string; contentSha256: string; taskCount: number };
   executor: ExecutorDescriptor;
   trials: number;
@@ -87,6 +97,7 @@ async function runTriggerTrial(
   plan: TriggerPlan,
   taskId: string,
   trial: number,
+  installedSkill: InstalledSkillFingerprint,
 ): Promise<TriggerTrialRecord> {
   const task = plan.bench.tasks.find((t) => t.id === taskId);
   if (!task) throw new Error(`Unknown task: ${taskId}`);
@@ -108,7 +119,11 @@ async function runTriggerTrial(
 
   const skillDest = join(runDir, plan.skillInstallDir, plan.skill.name);
   mkdirSync(dirname(skillDest), { recursive: true });
-  cpSync(plan.skill.sourceDir, skillDest, { recursive: true });
+  cpSync(realpathSync(plan.skill.sourceDir), skillDest, { recursive: true });
+  const observedSkill = collectInstalledSkillFingerprint(skillDest);
+  if (observedSkill.sha256 !== installedSkill.sha256) {
+    throw new Error(`Installed Skill content does not match the planned fingerprint for ${taskId} / trial ${trial}; keep the Skill input unchanged and remove any conflicting fixture Skill files.`);
+  }
 
   const started = new Date();
   let output = '';
@@ -173,6 +188,8 @@ async function runTriggerTrial(
         ...record,
         runGroup: plan.runGroup,
         skillBundleSha256: plan.skill.sha256,
+        skillInstalledSha256: observedSkill.sha256,
+        skillInstalledFiles: observedSkill.files,
         skillInstalledAt: join(plan.skillInstallDir, plan.skill.name),
         gitInitialized,
         executor: plan.executor.describe(),
@@ -285,6 +302,10 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
   if (existsSync(groupDir)) {
     throw new Error(`Run group directory already exists: ${groupDir}`);
   }
+  const installedSkill = collectInstalledSkillFingerprint(plan.skill.sourceDir);
+  if (collectSkillBundle(plan.skill.sourceDir, plan.skill.name).sha256 !== plan.skill.sha256) {
+    throw new Error('Skill input changed after planning; collect a new Skill bundle before starting the trigger experiment.');
+  }
   mkdirSync(groupDir, { recursive: true });
 
   const eligible = plan.bench.tasks.filter((task) => task.shouldTrigger !== undefined);
@@ -298,7 +319,7 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
     const records: TriggerTrialRecord[] = [];
     for (let trial = 1; trial <= plan.trials; trial++) {
       plan.log?.(`Running ${task.id} / installed / trial ${trial}…`);
-      records.push(await runTriggerTrial(plan, task.id, trial));
+      records.push(await runTriggerTrial(plan, task.id, trial, installedSkill));
     }
     taskSummaries.push(summarizeTriggerTask(task.id, task.shouldTrigger ?? false, records));
   }
@@ -313,6 +334,8 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
       sourceDir: plan.skill.sourceDir,
       bundleSha256: plan.skill.sha256,
       files: plan.skill.files,
+      installedSha256: installedSkill.sha256,
+      installedFiles: installedSkill.files,
     },
     bench: {
       name: plan.bench.name,
@@ -354,7 +377,10 @@ function rateWithCi(
 
 export function renderTriggerSummary(manifest: TriggerManifest, manifestPath: string): string {
   const lines: string[] = [];
-  lines.push(`Skill    : ${manifest.skill.name} (bundle sha256 ${manifest.skill.bundleSha256.slice(0, 12)}…, ${manifest.skill.files.length} files)`);
+  lines.push(`Skill    : ${manifest.skill.name} (injectable bundle sha256 ${manifest.skill.bundleSha256.slice(0, 12)}…, ${manifest.skill.files.length} injectable files)`);
+  lines.push(manifest.skill.installedSha256 && manifest.skill.installedFiles
+    ? `Installed: sha256 ${manifest.skill.installedSha256.slice(0, 12)}…, ${manifest.skill.installedFiles.length} files (before execution)`
+    : 'Installed: not recorded (legacy manifest; injectable hash does not identify all installed resources)');
   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
   lines.push(`Executor : ${manifest.executor.kind} (${manifest.executor.model})${manifest.executor.detail ? ` — ${manifest.executor.detail}` : ''}`);
   lines.push(`Mode     : trigger — skill installed into ${manifest.skillInstallDir}, not injected into the prompt`);
