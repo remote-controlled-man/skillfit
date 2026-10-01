@@ -19,6 +19,8 @@ Two rules:
 | 2026-09 | [Debugging bench: diagnosing-bugs (exploratory)](2026-09-debugging-bench-exploratory.md) | Kimi Code | Quality saturation replicates July on 2/3 tasks; the July test-asset differential does not; prompt beats skill |
 | 2026-09 | [Bench hardening follow-up](2026-09-debugging-hardening.md) | Kimi Code | Even hand-designed race/boundary bugs saturate; discriminative material must come from real failures |
 | 2026-09-22 | [Codex trigger capture + cross-model divergence](2026-09-22-codex-trigger-capture.md) | Codex CLI + Kimi Code | Same skill, same bench: Codex 6/6 trigger recall vs Kimi 1/9 — routing behavior is agent-specific |
+| 2026-10-01 | [Codex `diagnosing-bugs` execution and trigger pilot](2026-10-01-codex-diagnosing-bugs-pilot.md) | Codex CLI | One synthetic task suggested a regression-test gain; one historical OSS bug saturated in both arms; no efficacy verdict |
+| 2026-10-01 | [Historical OSS case selection and calibration](2026-10-01-oss-case-selection.md) | Codex CLI | Three explicit prompts saturated; issue-style mcp-agent replay missed facets in both arms; installed Skill fired in one valid trial, without task success |
 
 ## Reproduce
 
