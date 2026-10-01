@@ -9,6 +9,8 @@
   in read-only evaluation reports; keep the statistical verdict protocol unchanged.
 - Add a licensed, pinned mcp-use UTF-8 replay and pinned Matt evaluation input,
   plus a real-task workflow guide. The replay is a regression/workflow example.
+- Independent review tightened workspace executor preflight, usage/score evidence
+  consistency, completed-pair scale labels and CI half-width interpretation.
 
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/). Dates are when the work landed on `main`.

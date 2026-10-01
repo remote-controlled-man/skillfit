@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "runGroup": "eval-20261001-141513",
+  "executionRevision": "b460ed4",
+  "pathNormalization": "Only the local checkout prefix was removed from portable textual receipts; raw originals remain in runs.",
+  "files": [
+    {
+      "path": "manifest.json",
+      "originalSha256": "02a035855f441aef0d07cbaeb4c5c9ac19fb7b661b3b7b3171e82558b2324afe",
+      "portableSha256": "27b03072c5045eae339ef959881a49b7ea89af4ff742befff151dd1079f7d596"
+    },
+    {
+      "path": "original-console.txt",
+      "originalSha256": "30ff8715f40fff17ec33ca764c67abb32f43f5c4305b5aef813d01aaa9c5ef94",
+      "portableSha256": "45dc941e95298b36878e7226f471679d46efc0548a44cdbf0d9703ef6581022b"
+    },
+    {
+      "path": "baseline/result.json",
+      "originalSha256": "ab54468a7f7632132727f274536c8c065f2113fce1ece6756e04e0fe9d78b79f",
+      "portableSha256": "13adcfad96aa000455c81b5534179a6aa7c397de6e09ae0ed23a02d7606522cc"
+    },
+    {
+      "path": "baseline/output.md",
+      "originalSha256": "51de393417b968cebd9cbf703f1b2da8a7312edfb60f1a31637bbef704587c53",
+      "portableSha256": "51de393417b968cebd9cbf703f1b2da8a7312edfb60f1a31637bbef704587c53"
+    },
+    {
+      "path": "baseline/prompt.txt",
+      "originalSha256": "08cc2638a26d88883a6464fe1ce7a76cb2b4af63a0d507660646c1d37ada4fa1",
+      "portableSha256": "08cc2638a26d88883a6464fe1ce7a76cb2b4af63a0d507660646c1d37ada4fa1"
+    },
+    {
+      "path": "baseline/verifier.txt",
+      "originalSha256": "8b9ac00d40fdae9a6ea6902dc2e56ba82659e7af28c521a11f0f462c9546763b",
+      "portableSha256": "8b9ac00d40fdae9a6ea6902dc2e56ba82659e7af28c521a11f0f462c9546763b"
+    },
+    {
+      "path": "baseline/workspace/LICENSE",
+      "originalSha256": "ecfc3b75bc09481c3ccc7f96134dc99d1e6e5ef8ad46d6864cff5058f71ec5cb",
+      "portableSha256": "ecfc3b75bc09481c3ccc7f96134dc99d1e6e5ef8ad46d6864cff5058f71ec5cb"
+    },
+    {
+      "path": "baseline/workspace/package.json",
+      "originalSha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a",
+      "portableSha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+    },
+    {
+      "path": "baseline/workspace/src/ext-apps-bridge.js",
+      "originalSha256": "0a5acd3c059ae6fba4807476585322fd6ba10b19d6fa646d5cd007e878dea7d7",
+      "portableSha256": "0a5acd3c059ae6fba4807476585322fd6ba10b19d6fa646d5cd007e878dea7d7"
+    },
+    {
+      "path": "baseline/workspace/src/resolve-view-resource.ts",
+      "originalSha256": "b8fe514fa357d0b474e8287d3cd5c7b78def761e7e6c1beb217dadcc70435bee",
+      "portableSha256": "b8fe514fa357d0b474e8287d3cd5c7b78def761e7e6c1beb217dadcc70435bee"
+    },
+    {
+      "path": "baseline/workspace/test/basic.test.mjs",
+      "originalSha256": "7f1a823999ffdb287ba8a8d601a5477c6e3e2f27393cde633f334c981054eb2b",
+      "portableSha256": "7f1a823999ffdb287ba8a8d601a5477c6e3e2f27393cde633f334c981054eb2b"
+    },
+    {
+      "path": "baseline/workspace/test/resolve-view-resource.test.mjs",
+      "originalSha256": "b9a39ba9f293d94631bab9b59228914945af97cad7a1efe83ce672378d83873a",
+      "portableSha256": "b9a39ba9f293d94631bab9b59228914945af97cad7a1efe83ce672378d83873a"
+    },
+    {
+      "path": "treatment/result.json",
+      "originalSha256": "bcbbe5eb8b9e512ae91fc0c1807d32ea55a4f2c0a8bf1e1b4ed46080cefa9822",
+      "portableSha256": "602ef255020cb263905ba25cb3ee031af513278334b750424c69acc1320096f6"
+    },
+    {
+      "path": "treatment/output.md",
+      "originalSha256": "640e254be98bde835378fa262f9aa6b73a722b855038499d36298646120da896",
+      "portableSha256": "640e254be98bde835378fa262f9aa6b73a722b855038499d36298646120da896"
+    },
+    {
+      "path": "treatment/prompt.txt",
+      "originalSha256": "19fa9fc855ff8212705e20916d5749831518c25c7ae3c0cb11970dfaa3d92ca3",
+      "portableSha256": "19fa9fc855ff8212705e20916d5749831518c25c7ae3c0cb11970dfaa3d92ca3"
+    },
+    {
+      "path": "treatment/verifier.txt",
+      "originalSha256": "8b9ac00d40fdae9a6ea6902dc2e56ba82659e7af28c521a11f0f462c9546763b",
+      "portableSha256": "8b9ac00d40fdae9a6ea6902dc2e56ba82659e7af28c521a11f0f462c9546763b"
+    },
+    {
+      "path": "treatment/workspace/LICENSE",
+      "originalSha256": "ecfc3b75bc09481c3ccc7f96134dc99d1e6e5ef8ad46d6864cff5058f71ec5cb",
+      "portableSha256": "ecfc3b75bc09481c3ccc7f96134dc99d1e6e5ef8ad46d6864cff5058f71ec5cb"
+    },
+    {
+      "path": "treatment/workspace/package.json",
+      "originalSha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a",
+      "portableSha256": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a"
+    },
+    {
+      "path": "treatment/workspace/src/ext-apps-bridge.js",
+      "originalSha256": "0a5acd3c059ae6fba4807476585322fd6ba10b19d6fa646d5cd007e878dea7d7",
+      "portableSha256": "0a5acd3c059ae6fba4807476585322fd6ba10b19d6fa646d5cd007e878dea7d7"
+    },
+    {
+      "path": "treatment/workspace/src/resolve-view-resource.ts",
+      "originalSha256": "f0d887fcde2c3f9442d6239520263c16580f9c63c70fc6264a038ac82a99f084",
+      "portableSha256": "f0d887fcde2c3f9442d6239520263c16580f9c63c70fc6264a038ac82a99f084"
+    },
+    {
+      "path": "treatment/workspace/test/basic.test.mjs",
+      "originalSha256": "7f1a823999ffdb287ba8a8d601a5477c6e3e2f27393cde633f334c981054eb2b",
+      "portableSha256": "7f1a823999ffdb287ba8a8d601a5477c6e3e2f27393cde633f334c981054eb2b"
+    },
+    {
+      "path": "treatment/workspace/test/resolve-view-resource.test.mjs",
+      "originalSha256": "2b0f33c07c5eba05effb777e9ab0e67c878894984fbcdd9b2726e717a46b4723",
+      "portableSha256": "2b0f33c07c5eba05effb777e9ab0e67c878894984fbcdd9b2726e717a46b4723"
+    }
+  ]
+}

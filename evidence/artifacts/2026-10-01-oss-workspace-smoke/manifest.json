@@ -1,0 +1,206 @@
+{
+  "schemaVersion": 4,
+  "inputMode": "workspace",
+  "runGroup": "eval-20261001-141513",
+  "createdAt": "2026-10-01T06:20:35.009Z",
+  "target": {
+    "kind": "skill",
+    "name": "diagnosing-bugs",
+    "sourceDir": "evidence/inputs/diagnosing-bugs",
+    "bundleSha256": "f19320ddde7601ce58a82fd4cbe3e2f07038e75e7e590fcf65360d668b66d80d",
+    "files": [
+      "SKILL.md",
+      "agents/openai.yaml"
+    ]
+  },
+  "bench": {
+    "name": "oss-mcp-use-view-utf8",
+    "dir": "benches/contrib/oss-mcp-use-utf8",
+    "contentSha256": "f073235c583885f909ab40aa041017b11a6df20577e8bb17525001695bedc57d",
+    "taskCount": 1
+  },
+  "executor": {
+    "kind": "cli",
+    "model": "cli-configured",
+    "detail": "codex: codex exec --sandbox workspace-write -",
+    "sampling": null
+  },
+  "judge": null,
+  "trials": 1,
+  "tasks": [
+    {
+      "id": "view-utf8",
+      "conditions": {
+        "baseline": {
+          "passes": 1,
+          "trials": 1,
+          "errors": 0,
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": null,
+          "tokenCoverage": {
+            "input": 0,
+            "output": 0
+          }
+        },
+        "treatment": {
+          "passes": 1,
+          "trials": 1,
+          "errors": 0,
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": null,
+          "tokenCoverage": {
+            "input": 0,
+            "output": 0
+          }
+        }
+      },
+      "outcomes": {
+        "baseline": [
+          true
+        ],
+        "treatment": [
+          true
+        ]
+      },
+      "scores": {
+        "baseline": [
+          1
+        ],
+        "treatment": [
+          1
+        ]
+      },
+      "deltaPassRate": 0,
+      "scoreDelta": 0,
+      "facets": [
+        {
+          "name": "Unicode blob round-trip",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 1,
+          "treatmentTrials": 1
+        },
+        {
+          "name": "ASCII blob unchanged",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 1,
+          "treatmentTrials": 1
+        },
+        {
+          "name": "text content takes precedence",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 1,
+          "treatmentTrials": 1
+        },
+        {
+          "name": "content-level metadata merges over listing",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 1,
+          "treatmentTrials": 1
+        },
+        {
+          "name": "permissive CSP stays unenforced",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 1,
+          "treatmentTrials": 1
+        },
+        {
+          "name": "MIME validation and missing-content behavior",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 1,
+          "treatmentTrials": 1
+        },
+        {
+          "name": "final test suite passes",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 1,
+          "treatmentTrials": 1
+        },
+        {
+          "name": "regression test is red on original source",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 1,
+          "treatmentTrials": 1
+        }
+      ],
+      "verifierNotes": [],
+      "tokenDelta": null,
+      "verdict": "inconclusive",
+      "verdictReason": "only 0 discordant pair(s) (Δpass 0pp); significance needs at least 6",
+      "judge": null
+    }
+  ],
+  "overall": {
+    "conditions": {
+      "baseline": {
+        "passes": 1,
+        "trials": 1,
+        "errors": 0,
+        "passRate": 1,
+        "meanScore": 1,
+        "tokens": null,
+        "tokenCoverage": {
+          "input": 0,
+          "output": 0
+        }
+      },
+      "treatment": {
+        "passes": 1,
+        "trials": 1,
+        "errors": 0,
+        "passRate": 1,
+        "meanScore": 1,
+        "tokens": null,
+        "tokenCoverage": {
+          "input": 0,
+          "output": 0
+        }
+      }
+    },
+    "deltaPassRate": 0,
+    "scoreDelta": 0,
+    "tokenDelta": null,
+    "verdict": "inconclusive",
+    "verdictReason": "only 0 discordant pair(s) (Δpass 0pp); significance needs at least 6",
+    "stats": {
+      "discordant": {
+        "improved": 0,
+        "regressed": 0
+      },
+      "mcnemarP": 1,
+      "deltaCi": {
+        "point": 0,
+        "lo": 0,
+        "hi": 0,
+        "resamples": 2000
+      },
+      "scoreDeltaCi": {
+        "point": 0,
+        "lo": 0,
+        "hi": 0,
+        "resamples": 2000
+      }
+    }
+  },
+  "warnings": [
+    "Task \"view-utf8\": baseline pass rate is 100% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power.",
+    "Task \"view-utf8\" facet \"Unicode blob round-trip\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"view-utf8\" facet \"ASCII blob unchanged\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"view-utf8\" facet \"text content takes precedence\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"view-utf8\" facet \"content-level metadata merges over listing\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"view-utf8\" facet \"permissive CSP stays unenforced\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"view-utf8\" facet \"MIME validation and missing-content behavior\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"view-utf8\" facet \"final test suite passes\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"view-utf8\" facet \"regression test is red on original source\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Only 0 discordant pair(s) between conditions — a run this size can only certify very large effects; treat any delta as indicative."
+  ]
+}

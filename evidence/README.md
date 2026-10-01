@@ -11,6 +11,7 @@ Two rules:
 
 | Date | Experiment | Agents | Headline |
 |---|---|---|---|
+| 2026-10-01 | [Real OSS workspace workflow smoke](2026-10-01-oss-workspace-smoke.md) | Codex CLI | Predeclared real-source disk-file pair completed, both 8/8; reproducible inputs and receipts; no Skill installation recommendation |
 | 2026-07 | [Skill baseline: 8 popular workflow skills](2026-07-skill-baseline.md) | Codex CLI | One limited regression-test artifact signal (2/3 treated runs); no robust task-quality gain; all 8 added input tokens |
 | 2026-09 | [OCR delegate vs. code-review skill](2026-09-ocr-vs-code-review.md) | Kimi Code | Tie on small diffs; OCR slightly better on large changesets via false-positive discipline |
 | 2026-09 | [Code-review bench calibration](2026-09-bench-calibration.md) | Kimi Code | Baseline saturates all 3 difficulty tiers; small-PR spec review has no skill headroom for this model |

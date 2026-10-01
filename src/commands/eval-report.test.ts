@@ -112,6 +112,7 @@ test('real reports show facets, bounded decisions and partial token coverage', (
   Object.assign(conditions['baseline']!, { meanScore: 0.5, tokens: { input: 40, output: 2 }, tokenCoverage: { input: 1, output: 1 } });
   Object.assign(conditions['treatment']!, { meanScore: 1, tokens: { input: 80, output: 4 }, tokenCoverage: { input: 2, output: 2 } });
   task['scoreDelta'] = 0.5;
+  (value['overall'] as Record<string, unknown>)['scoreDelta'] = 0.5;
   task['facets'] = [{ name: 'Unicode | regression', baselinePassRate: 0.5, treatmentPassRate: 1, baselineTrials: 2, treatmentTrials: 2 }];
   const stats = (value['overall'] as Record<string, unknown>)['stats'] as Record<string, unknown>;
   stats['scoreDeltaCi'] = { lo: 0.1, hi: 0.9, resamples: 1000 };
@@ -153,4 +154,50 @@ test('legacy real manifests expose missing provenance and token coverage', () =>
   assert.match(markdown, /legacy manifest; not recorded/);
   assert.match(markdown, /coverage unrecorded/);
   assert.match(markdown, /Token coverage is partial or unrecorded/);
+});
+
+test('report cross-checks usage coverage/totals and rejects contradictory usage', () => {
+  for (const mutation of ['coverage-total', 'token-total', 'missing-task', 'null-tokens', 'zero-coverage']) {
+    const value = JSON.parse(JSON.stringify(manifest())) as Record<string, unknown>;
+    const task = (value['tasks'] as Record<string, unknown>[])[0]!;
+    const taskConditions = task['conditions'] as Record<string, Record<string, unknown>>;
+    const overallConditions = (value['overall'] as Record<string, unknown>)['conditions'] as Record<string, Record<string, unknown>>;
+    for (const conditions of [taskConditions, overallConditions]) {
+      for (const c of Object.values(conditions)) Object.assign(c, {
+        tokens: { input: 10, output: 2 }, tokenCoverage: { input: 1, output: 1 },
+      });
+    }
+    const aggregate = overallConditions['baseline']!;
+    if (mutation === 'coverage-total') aggregate['tokenCoverage'] = { input: 2, output: 2 };
+    if (mutation === 'token-total') aggregate['tokens'] = { input: 10000, output: 1000 };
+    if (mutation === 'missing-task') delete taskConditions['baseline']!['tokenCoverage'];
+    if (mutation === 'null-tokens') aggregate['tokens'] = null;
+    if (mutation === 'zero-coverage') aggregate['tokenCoverage'] = { input: 0, output: 0 };
+    assert.throws(() => parseEvalReport(value), /disagrees with task totals|requires recorded coverage|contradicts/);
+  }
+});
+
+test('report refuses a score interval without paired score observations', () => {
+  const value = manifest();
+  const overall = value['overall'] as Record<string, unknown>;
+  (overall['stats'] as Record<string, unknown>)['scoreDeltaCi'] = { lo: 0.5, hi: 1, resamples: 1000 };
+  assert.throws(() => parseEvalReport(value), /scoreDeltaCi requires paired graded score observations/);
+});
+
+test('report uses completed scale after exclusions and warns about collapsed intervals', () => {
+  const value = manifest();
+  value['executor'] = { kind: 'cli', model: 'offline' };
+  value['trials'] = 5;
+  (value['bench'] as Record<string, unknown>)['taskCount'] = 8;
+  const conditions = { baseline: { passes: 0, trials: 4, errors: 1 }, treatment: { passes: 4, trials: 4, errors: 0 } };
+  value['tasks'] = Array.from({ length: 8 }, (_, i) => ({ id: `task-${i}`, conditions, deltaPassRate: 1, verdict: 'inconclusive' }));
+  Object.assign(value['overall'] as Record<string, unknown>, {
+    conditions: { baseline: { passes: 0, trials: 32, errors: 8 }, treatment: { passes: 32, trials: 32, errors: 0 } },
+    verdict: 'effective', stats: { discordant: { improved: 32, regressed: 0 }, mcnemarP: 2 * 0.5 ** 32,
+      deltaCi: { lo: 1, hi: 1, resamples: 1000 } },
+  });
+  const markdown = renderEvalMarkdown(parseEvalReport(value));
+  assert.match(markdown, /Completed scale: 0 task\(s\) have at least 5 graded pairs/);
+  assert.match(markdown, /interval collapsed.*does not establish zero uncertainty/);
+  assert.match(markdown, /The run is indicative/);
 });

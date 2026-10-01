@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 2,
+  "inputMode": "workspace",
+  "taskId": "view-utf8",
+  "condition": "treatment",
+  "trial": 1,
+  "runDir": "runs/eval-20261001-141513/view-utf8/treatment/trial-1",
+  "startedAt": "2026-10-01T06:17:16.793Z",
+  "finishedAt": "2026-10-01T06:20:34.801Z",
+  "durationSeconds": 198.008,
+  "passed": true,
+  "verifierExitCode": 0,
+  "verifierPassed": true,
+  "score": 1,
+  "checks": [
+    {
+      "name": "Unicode blob round-trip",
+      "pass": true
+    },
+    {
+      "name": "ASCII blob unchanged",
+      "pass": true
+    },
+    {
+      "name": "text content takes precedence",
+      "pass": true
+    },
+    {
+      "name": "content-level metadata merges over listing",
+      "pass": true
+    },
+    {
+      "name": "permissive CSP stays unenforced",
+      "pass": true
+    },
+    {
+      "name": "MIME validation and missing-content behavior",
+      "pass": true
+    },
+    {
+      "name": "final test suite passes",
+      "pass": true
+    },
+    {
+      "name": "regression test is red on original source",
+      "pass": true
+    }
+  ],
+  "error": null,
+  "tokens": null,
+  "gitInitialized": true,
+  "runGroup": "eval-20261001-141513",
+  "target": {
+    "kind": "skill",
+    "name": "diagnosing-bugs",
+    "bundleSha256": "f19320ddde7601ce58a82fd4cbe3e2f07038e75e7e590fcf65360d668b66d80d",
+    "applied": true
+  },
+  "executor": {
+    "kind": "cli",
+    "model": "cli-configured",
+    "detail": "codex: codex exec --sandbox workspace-write -",
+    "sampling": null
+  }
+}

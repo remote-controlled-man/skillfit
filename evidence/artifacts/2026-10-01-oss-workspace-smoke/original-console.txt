@@ -1,0 +1,44 @@
+Running view-utf8 / baseline / trial 1…
+(node:87314) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Running view-utf8 / treatment / trial 1…
+Target   : diagnosing-bugs (skill, bundle sha256 f19320ddde76…, 2 files)
+Bench    : oss-mcp-use-view-utf8 (1 task(s), content sha256 f073235c5838…)
+Executor : cli (cli-configured) — codex: codex exec --sandbox workspace-write -
+Judge    : disabled
+Trials   : 1 per condition
+
+TASK       BASELINE     TREATMENT    DELTA    VERDICT
+view-utf8  1/1 (100%)   1/1 (100%)   0pp      inconclusive
+OVERALL    1/1 (100%)   1/1 (100%)   0pp      inconclusive
+
+Significance (overall): 0 improved vs 0 regressed discordant pair(s), McNemar exact p=1.0000
+Δpass 95% CI (paired bootstrap, 2000 resamples): [0.0pp, 0.0pp]
+Run resolution: this bench resolves effects ≳ ±0.0pp (half-width of the Δpass CI); anything smaller is indistinguishable from zero here
+Δscore 95% CI (paired bootstrap, 2000 resamples): [0.00, 0.00]
+Scale: 1 task(s) × 1 trials per condition — below the conclusive bar (8 tasks × 5 trials); results are indicative for broader claims even if the within-bench verdict is statistically significant.
+
+Facet scores (mean checks passed, baseline → treatment):
+- view-utf8: score 1.00 → 1.00 (Δ 0.00)
+  - Unicode blob round-trip: 100% → 100%
+  - ASCII blob unchanged: 100% → 100%
+  - text content takes precedence: 100% → 100%
+  - content-level metadata merges over listing: 100% → 100%
+  - permissive CSP stays unenforced: 100% → 100%
+  - MIME validation and missing-content behavior: 100% → 100%
+  - final test suite passes: 100% → 100%
+  - regression test is red on original source: 100% → 100%
+
+Warnings:
+- Task "view-utf8": baseline pass rate is 100% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power.
+- Task "view-utf8" facet "Unicode blob round-trip": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.
+- Task "view-utf8" facet "ASCII blob unchanged": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.
+- Task "view-utf8" facet "text content takes precedence": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.
+- Task "view-utf8" facet "content-level metadata merges over listing": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.
+- Task "view-utf8" facet "permissive CSP stays unenforced": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.
+- Task "view-utf8" facet "MIME validation and missing-content behavior": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.
+- Task "view-utf8" facet "final test suite passes": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.
+- Task "view-utf8" facet "regression test is red on original source": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.
+- Only 0 discordant pair(s) between conditions — a run this size can only certify very large effects; treat any delta as indicative.
+
+Manifest: runs/eval-20261001-141513/manifest.json

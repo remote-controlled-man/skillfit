@@ -190,9 +190,12 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
 - Verdict `effective` iff p < 0.05 and ΔP > 0; `ineffective` iff p < 0.05 and ΔP < 0; else `inconclusive`.
 - Always report alongside: b/c counts, **paired bootstrap 95% CI** for ΔP (≥1000 resamples over tasks,
   seeded and deterministic, pairs kept together), the **paired bootstrap 95% CI for Δscore** when the
-  bench emits checks, and the CI half-width as the run's resolution
-  ("this bench resolves effects ≳ ±Xpp").
+  bench emits checks, and the observed CI half-width. A bootstrap half-width is not a validated
+  minimum detectable effect. A collapsed interval can arise when the observed tasks/pairs lack
+  variation, and must not be presented as zero uncertainty or arbitrarily fine resolution. This
+  interpretation guard changes no CI or verdict calculation.
 - Scale labels: below 5 trials × 8 tasks, results are stamped **indicative**, not conclusive
+  (completed graded pairs after exclusions, rather than requested repetitions).
   (SkillsBench norm: 5 trials/task). The exact-test verdict and this scale label answer different
   questions: an `effective` or `ineffective` verdict can occur below the scale bar, but then it is a
   within-bench statistical signal, **not** a claim that the configuration generalizes to a user's

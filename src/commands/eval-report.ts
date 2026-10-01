@@ -116,6 +116,14 @@ function counts(value: unknown, label: string): Counts {
   if (tokenCoverage && (tokenCoverage.input > trials || tokenCoverage.output > trials)) {
     throw new Error(`${label}.tokenCoverage cannot exceed graded trials`);
   }
+  if (tokenCoverage) {
+    for (const field of ['input', 'output'] as const) {
+      if ((tokenCoverage[field] > 0 && tokens === null) ||
+          (tokenCoverage[field] === 0 && tokens !== null && tokens[field] !== 0)) {
+        throw new Error(`${label}.tokenCoverage contradicts its recorded tokens`);
+      }
+    }
+  }
   if (meanScore !== null && trials === 0) throw new Error(`${label}.meanScore requires graded trials`);
   return { passes, trials, errors, meanScore, tokens, tokenCoverage };
 }
@@ -177,6 +185,9 @@ function checkDelta(value: ReportRow, label: string): void {
         (value.treatment.meanScore - value.baseline.meanScore)) > 1e-9 && label !== 'overall') {
     throw new Error(`${label}.scoreDelta disagrees with its mean scores`);
   }
+  if (value.scoreDelta !== null && (value.baseline.meanScore === null || value.treatment.meanScore === null)) {
+    throw new Error(`${label}.scoreDelta requires graded scores in both conditions`);
+  }
 }
 
 /** Read only the v4 fields the Markdown report actually uses. Never reinterpret older metrics. */
@@ -231,11 +242,39 @@ export function parseEvalReport(value: unknown): ReportData {
   const overallRow = row(overall, 'overall', 'Overall');
   for (const [index, task] of tasks.entries()) checkDelta(task, `tasks[${index}]`);
   checkDelta(overallRow, 'overall');
+  if (scoreDeltaCi) {
+    if (overallRow.scoreDelta === null || overallRow.baseline.meanScore === null ||
+        overallRow.treatment.meanScore === null || !tasks.some(t =>
+          t.baseline.trials > 0 && t.baseline.meanScore !== null &&
+          t.treatment.meanScore !== null && t.scoreDelta !== null)) {
+      throw new Error('overall.stats.scoreDeltaCi requires paired graded score observations and overall scoreDelta');
+    }
+    if (scoreCi!['point'] !== undefined && Math.abs(number(scoreCi!['point'],
+      'overall.stats.scoreDeltaCi.point', -1, 1) - overallRow.scoreDelta) > 1e-9) {
+      throw new Error('overall.stats.scoreDeltaCi.point disagrees with overall.scoreDelta');
+    }
+  }
   for (const condition of ['baseline', 'treatment'] as const) {
     for (const field of ['passes', 'trials', 'errors'] as const) {
       const total = tasks.reduce((sum, task) => sum + task[condition][field], 0);
       if (total !== overallRow[condition][field]) {
         throw new Error(`overall.conditions.${condition}.${field} disagrees with task totals`);
+      }
+    }
+    const aggregate = overallRow[condition];
+    if (aggregate.tokenCoverage) {
+      if (tasks.some(t => t[condition].tokenCoverage === null)) {
+        throw new Error(`overall.conditions.${condition}.tokenCoverage requires recorded coverage for every task`);
+      }
+      for (const field of ['input', 'output'] as const) {
+        const coverage = tasks.reduce((sum, t) => sum + t[condition].tokenCoverage![field], 0);
+        if (coverage !== aggregate.tokenCoverage[field]) {
+          throw new Error(`overall.conditions.${condition}.tokenCoverage.${field} disagrees with task totals`);
+        }
+        const total = tasks.reduce((sum, t) => sum + (t[condition].tokens?.[field] ?? 0), 0);
+        if (total !== (aggregate.tokens?.[field] ?? 0)) {
+          throw new Error(`overall.conditions.${condition}.tokens.${field} disagrees with task totals`);
+        }
       }
     }
   }
@@ -295,6 +334,10 @@ function score(value: number | null): string {
   return value === null ? 'n/a' : `${(value * 100).toFixed(1)}%`;
 }
 
+function replicatedTaskCount(report: ReportData): number {
+  return report.tasks.filter(t => Math.min(t.baseline.trials, t.treatment.trials) >= CONCLUSIVE_TRIALS).length;
+}
+
 function decisionNotes(report: ReportData): string[] {
   const notes: string[] = [];
   if (report.executor.kind === 'mock') {
@@ -310,7 +353,7 @@ function decisionNotes(report: ReportData): string[] {
       : 'The statistical quality result favors baseline on this bench; review the regressions before enabling this configuration for these tasks.');
   }
   notes.push(`Scope: ${report.bench.taskCount} evaluated task(s), this target hash and executor configuration. A single task does not establish general OSS contribution quality.`);
-  if (report.bench.taskCount < CONCLUSIVE_TASKS || report.trials < CONCLUSIVE_TRIALS) {
+  if (replicatedTaskCount(report) < CONCLUSIVE_TASKS) {
     notes.push('The run is indicative. Freeze a varied task set and trial count before a separate validation run; do not keep adding trials until significance appears.');
   }
   if (report.overall.baseline.errors + report.overall.treatment.errors > 0) {
@@ -366,6 +409,7 @@ export function renderEvalMarkdown(report: ReportData): string {
   if (report.overall.deltaCi) {
     const ci = report.overall.deltaCi;
     lines.push(`- Δpass 95% paired-bootstrap CI (${ci.resamples} resamples): [${formatPp1(ci.lo)}, ${formatPp1(ci.hi)}]`);
+    lines.push(`- Observed Δpass CI half-width: ±${((ci.hi - ci.lo) * 50).toFixed(1)}pp; not a validated minimum detectable effect.`);
   } else {
     lines.push('- Δpass 95% CI: n/a (no graded pairs)');
   }
@@ -373,8 +417,12 @@ export function renderEvalMarkdown(report: ReportData): string {
     const ci = report.overall.scoreDeltaCi;
     lines.push(`- Δscore 95% paired-bootstrap CI (${ci.resamples} resamples): [${formatPp1(ci.lo)}, ${formatPp1(ci.hi)}]`);
   }
-  if (report.bench.taskCount < CONCLUSIVE_TASKS || report.trials < CONCLUSIVE_TRIALS) {
+  if (report.overall.deltaCi && report.overall.deltaCi.lo === report.overall.deltaCi.hi) {
+    lines.push('- The bootstrap interval collapsed on the observed tasks; this does not establish zero uncertainty or validated effect resolution.');
+  }
+  if (replicatedTaskCount(report) < CONCLUSIVE_TASKS) {
     lines.push(`- Scale: ${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'} × ${report.trials} ${report.trials === 1 ? 'trial' : 'trials'} per condition; below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials). Treat broader claims as indicative even if the within-bench verdict is statistically significant.`);
+    lines.push(`- Completed scale: ${replicatedTaskCount(report)} task(s) have at least ${CONCLUSIVE_TRIALS} graded pairs after exclusions.`);
   }
   lines.push('', '## Checks and graded scores', '',
     '| Task | Baseline mean check score | Treatment mean check score | Δscore |',

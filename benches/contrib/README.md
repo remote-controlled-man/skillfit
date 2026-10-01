@@ -22,8 +22,8 @@ missing the point entirely.
    say difficulty is uncalibrated. A saturated task (baseline ≥ 90%) can still be a regression net,
    but cannot measure lift on that agent.
 4. **Keep it self-contained:** fixtures must not need a build step or installed dependencies for the
-   verifier to run, must not contain secrets or customer data, and must stay small (inject mode inlines
-   fixtures into prompts).
+   verifier to run, must not contain secrets or customer data, and must stay small. Default snapshot
+   input inlines fixtures into prompts; `--input workspace` presents them on disk to a CLI instead.
 5. **Record the seed answer** in `ground-truth/` — what a correct outcome looks like and why the verifier
    is right.
 
@@ -39,4 +39,4 @@ missing the point entirely.
 
 | Bench | Domain | Contributor | Notes |
 |---|---|---|---|
-| *(none yet — be the first)* | | | |
+| [oss-mcp-use-utf8](oss-mcp-use-utf8/README.md) | MCP App HTML decoding | skillfit replay of MIT-licensed mcp-use source | Pinned real-source workflow/regression example; earlier baselines saturated; no general Skill efficacy claim |

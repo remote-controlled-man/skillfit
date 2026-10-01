@@ -198,6 +198,7 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   const lines: string[] = [];
   lines.push(`Target   : ${manifest.target.name} (${manifest.target.kind}, bundle sha256 ${manifest.target.bundleSha256.slice(0, 12)}…, ${manifest.target.files.length} files)`);
   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
+  lines.push(`Input    : ${manifest.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`);
   lines.push(`Executor : ${describeExecutor(manifest.executor)}`);
   lines.push(`Judge    : ${manifest.judge ? describeExecutor(manifest.judge) : 'disabled'}`);
   lines.push(`Trials   : ${manifest.trials} per condition`);
@@ -222,13 +223,11 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
       : 'Δpass 95% CI: n/a (no trials)',
   );
   if (stats.deltaCi) {
-    // The half-width is the run's resolution: the smallest effect this bench, at this sample size,
-    // could distinguish from zero. Without it a wide interval reads as "no effect" rather than as
-    // "no measurement". Required by docs/metrics.md's verdict protocol.
     const halfWidthPp = ((stats.deltaCi.hi - stats.deltaCi.lo) / 2) * 100;
-    lines.push(
-      `Run resolution: this bench resolves effects ≳ ±${halfWidthPp.toFixed(1)}pp (half-width of the Δpass CI); anything smaller is indistinguishable from zero here`,
-    );
+    lines.push(`Observed Δpass CI half-width: ±${halfWidthPp.toFixed(1)}pp; this is a bootstrap summary, not a validated minimum detectable effect`);
+    if (stats.deltaCi.lo === stats.deltaCi.hi) {
+      lines.push('The bootstrap interval collapsed on the observed tasks; it does not establish zero uncertainty or validated effect resolution.');
+    }
   }
   const anyScores = manifest.tasks.some((task) => task.scoreDelta !== null);
   if (anyScores) {
@@ -238,10 +237,13 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
         : 'Δscore 95% CI: n/a (no task scored in both arms)',
     );
   }
-  if (manifest.bench.taskCount < CONCLUSIVE_TASKS || manifest.trials < CONCLUSIVE_TRIALS) {
+  const replicatedTasks = manifest.tasks.filter(t =>
+    Math.min(t.conditions.baseline.trials, t.conditions.treatment.trials) >= CONCLUSIVE_TRIALS).length;
+  if (replicatedTasks < CONCLUSIVE_TASKS) {
     lines.push(
       `Scale: ${manifest.bench.taskCount} task(s) × ${manifest.trials} trials per condition — below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials); results are indicative for broader claims even if the within-bench verdict is statistically significant.`,
     );
+    lines.push(`Completed scale: ${replicatedTasks} task(s) have at least ${CONCLUSIVE_TRIALS} graded pairs after exclusions.`);
   }
   const tokenLines = renderTokenDeltas(manifest);
   if (tokenLines.length > 0) {

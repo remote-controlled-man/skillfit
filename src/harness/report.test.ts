@@ -157,12 +157,14 @@ test('renderSummary prints the table, significance block, and indicative scale n
   assert.match(output, /OVERALL/);
   assert.match(output, /Significance \(overall\): 3 improved vs 0 regressed discordant pair\(s\), McNemar exact p=0\.2500/);
   assert.match(output, /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[\+100\.0pp, \+100\.0pp\]/);
-  assert.match(output, /Run resolution: this bench resolves effects ≳ ±0\.0pp/);
+  assert.match(output, /Observed Δpass CI half-width: ±0\.0pp/);
+  assert.match(output, /interval collapsed.*does not establish zero uncertainty/);
+  assert.ok(!output.includes('resolves effects'));
   assert.match(output, /Scale: 1 task\(s\) × 3 trials per condition — below the conclusive bar/);
   assert.match(output, /Manifest: runs\/g\/manifest\.json/);
 });
 
-test('renderSummary reports the run resolution from the CI half-width', () => {
+test('renderSummary labels the observed CI half-width without claiming validated resolution', () => {
   const base = manifestWith([taskSummary('a', 0, 3, 3), taskSummary('b', 1, 3, 3)]);
   base.overall.stats.deltaCi = { point: 0.283, lo: -0.044, hi: 0.61, resamples: 2000 };
   const manifest: RunManifest = { ...base, warnings: buildWarnings(base) };
@@ -170,8 +172,20 @@ test('renderSummary reports the run resolution from the CI half-width', () => {
   // Integer rounding printed [-4pp, +61pp], which hides both that the interval straddles zero and
   // how wide it is — the two things a reader needs in order not to over-read the run.
   assert.match(output, /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[-4\.4pp, \+61\.0pp\]/);
-  assert.match(output, /Run resolution: this bench resolves effects ≳ ±32\.7pp/);
-  assert.match(output, /anything smaller is indistinguishable from zero here/);
+  assert.match(output, /Observed Δpass CI half-width: ±32\.7pp/);
+  assert.match(output, /not a validated minimum detectable effect/);
+  assert.ok(!output.includes('resolves effects'));
+});
+
+test('renderSummary checks completed scale and avoids resolution claims after rounding', () => {
+  const base = manifestWith(Array.from({ length: 8 }, (_, i) => taskSummary(`task-${i}`, 0, 4, 4)));
+  base.trials = 5;
+  base.overall.stats.deltaCi = { point: 0, lo: -0.0001, hi: 0.0001, resamples: 2000 };
+  const output = renderSummary({ ...base, warnings: buildWarnings(base) }, 'runs/g/manifest.json');
+  assert.match(output, /Observed Δpass CI half-width: ±0\.0pp/);
+  assert.match(output, /Completed scale: 0 task\(s\) have at least 5 graded pairs/);
+  assert.match(output, /results are indicative/);
+  assert.ok(!output.includes('resolves effects'));
 });
 
 test('renderSummary shows a significant overall verdict when discordance suffices', () => {

@@ -97,6 +97,25 @@ test('workspace API and explicit trigger input combinations fail before writing'
   assert.ok(!existsSync(runsRoot));
 });
 
+test('workspace without a CLI rejects dry/live plans independently of API credentials', async (t) => {
+  const runsRoot = join(tmp(t, 'skillfit-no-cli-'), 'runs');
+  const base = { skillPath: makeSkill(t), bench: BUNDLED_CODE_REVIEW, yes: true, runsRoot, log: () => {} };
+  const saved = process.env['SKILLFIT_API_KEY'];
+  try {
+    for (const key of [undefined, 'offline-test-key']) {
+      if (key === undefined) delete process.env['SKILLFIT_API_KEY'];
+      else process.env['SKILLFIT_API_KEY'] = key;
+      for (const dryRun of [true, false]) {
+        await assert.rejects(() => runEval({ ...base, dryRun, inputMode: 'workspace' }), /requires --agent.*CLI executor/);
+      }
+    }
+  } finally {
+    if (saved === undefined) delete process.env['SKILLFIT_API_KEY'];
+    else process.env['SKILLFIT_API_KEY'] = saved;
+  }
+  assert.ok(!existsSync(runsRoot));
+});
+
 test('runEval defaults to five trials in paired and trigger plans without running an agent', async (t) => {
   const runsRoot = join(tmp(t, 'skillfit-eval-'), 'runs');
   for (const mode of ['inject', 'trigger'] as const) {

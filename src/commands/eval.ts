@@ -292,6 +292,9 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const log = options.log ?? ((msg: string) => console.log(msg));
   const inputMode = options.inputMode ?? 'snapshot';
   assertInputModeSupported(inputMode, null);
+  if (inputMode === 'workspace' && !options.agent && !options.executor) {
+    throw new Error('workspace input requires --agent <id> for a CLI executor; API keys do not provide filesystem access.');
+  }
   if (options.mode === 'trigger' && options.inputMode !== undefined) {
     throw new Error('--input applies only to paired inject mode; trigger mode already presents files on disk.');
   }
