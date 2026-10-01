@@ -67,7 +67,8 @@ missing or old fields are handled explicitly; CI stays offline and passes on all
   its scope and cost.
 
 Acceptance: a first-time contributor can run the two offline bench gates and submit a complete issue
-or PR without private paths or tokens. Every public efficacy statement points to a dated manifest.
+or PR without private paths or tokens. New efficacy claims link to a dated evidence entry and a
+reviewed, shareable manifest. Older entries whose raw manifests remain local are labeled as such.
 
 ## Later decisions, after adoption evidence
 

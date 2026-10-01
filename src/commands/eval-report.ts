@@ -1,6 +1,6 @@
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { formatP, formatPp1, verdictFor } from '../harness/report.js';
+import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1, verdictFor } from '../harness/report.js';
 import { mcnemarExactP } from '../harness/stats.js';
 
 const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
@@ -156,6 +156,9 @@ export function parseEvalReport(value: unknown): ReportData {
   }
   const improved = integer(discordant['improved'], 'overall.stats.discordant.improved');
   const regressed = integer(discordant['regressed'], 'overall.stats.discordant.regressed');
+  if (improved + regressed > overallRow.baseline.trials) {
+    throw new Error('overall.stats.discordant exceeds the number of paired trials');
+  }
   const mcnemarP = number(stats['mcnemarP'], 'overall.stats.mcnemarP', 0, 1);
   if (Math.abs(mcnemarP - mcnemarExactP(improved, regressed)) > 1e-9) {
     throw new Error('overall.stats.mcnemarP disagrees with discordant counts');
@@ -188,6 +191,8 @@ export function parseEvalReport(value: unknown): ReportData {
 
 function escapeMarkdown(value: string): string {
   return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    .replaceAll('\\', '\\\\').replaceAll('`', '\\`').replaceAll('*', '\\*')
+    .replaceAll('_', '\\_').replaceAll('[', '\\[').replaceAll(']', '\\]')
     .replaceAll('|', '\\|').replaceAll('\n', ' ').replaceAll('\r', ' ');
 }
 
@@ -229,6 +234,9 @@ export function renderEvalMarkdown(report: ReportData): string {
     lines.push(`- Δpass 95% paired-bootstrap CI (${ci.resamples} resamples): [${formatPp1(ci.lo)}, ${formatPp1(ci.hi)}]`);
   } else {
     lines.push('- Δpass 95% CI: n/a (no graded pairs)');
+  }
+  if (report.bench.taskCount < CONCLUSIVE_TASKS || report.trials < CONCLUSIVE_TRIALS) {
+    lines.push(`- Scale: ${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'} × ${report.trials} ${report.trials === 1 ? 'trial' : 'trials'} per condition; below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials). Treat this result as indicative.`);
   }
   lines.push('', '## Warnings', '');
   if (report.warnings.length === 0) lines.push('- None');

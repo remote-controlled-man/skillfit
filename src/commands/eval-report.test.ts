@@ -50,6 +50,7 @@ test('report eval renders a v4 manifest without executing an agent or writing a 
     assert.match(markdown, /\| task-1 \| 0\/2 \(0%\) \| 2\/2 \(100%\) \| 0\/0 \| \+100\.0pp \| inconclusive \|/);
     assert.match(markdown, /McNemar exact p=0\.5000/);
     assert.match(markdown, /\[\+20\.0pp, \+100\.0pp\]/);
+    assert.match(markdown, /below the conclusive bar \(8 tasks × 5 trials\)/);
     assert.match(markdown, /&lt;private&gt;/);
     assert.ok(!markdown.includes(dir), 'the portable report must not include the local manifest directory');
   } finally {
@@ -68,6 +69,10 @@ test('report eval refuses old and incomplete manifests instead of guessing metri
   const wrongVerdict = manifest();
   (wrongVerdict['overall'] as Record<string, unknown>)['verdict'] = 'effective';
   assert.throws(() => parseEvalReport(wrongVerdict), /disagrees with the metrics protocol/);
+  const impossiblePairs = manifest();
+  const impossibleStats = (impossiblePairs['overall'] as Record<string, unknown>)['stats'] as Record<string, unknown>;
+  impossibleStats['discordant'] = { improved: 3, regressed: 0 };
+  assert.throws(() => parseEvalReport(impossiblePairs), /exceeds the number of paired trials/);
 });
 
 test('report eval renders missing CI and zero graded trials explicitly', () => {
@@ -75,6 +80,8 @@ test('report eval renders missing CI and zero graded trials explicitly', () => {
   const overall = value['overall'] as Record<string, unknown>;
   const stats = overall['stats'] as Record<string, unknown>;
   stats['deltaCi'] = null;
+  stats['discordant'] = { improved: 0, regressed: 0 };
+  stats['mcnemarP'] = 1;
   const conditions = {
     baseline: { passes: 0, trials: 0, errors: 2 },
     treatment: { passes: 0, trials: 0, errors: 2 },
@@ -86,4 +93,12 @@ test('report eval renders missing CI and zero graded trials explicitly', () => {
   const markdown = renderEvalMarkdown(parseEvalReport(value));
   assert.match(markdown, /0\/0 \(n\/a\)/);
   assert.match(markdown, /Δpass 95% CI: n\/a \(no graded pairs\)/);
+});
+
+test('report eval escapes Markdown links supplied by manifest fields', () => {
+  const value = manifest();
+  (value['target'] as Record<string, unknown>)['name'] = '[click](https://example.com)';
+  const markdown = renderEvalMarkdown(parseEvalReport(value));
+  assert.match(markdown, /# skillfit evaluation: \\\[click\\\]\(https:\/\/example\.com\)/);
+  assert.ok(!markdown.includes('# skillfit evaluation: [click]('));
 });
