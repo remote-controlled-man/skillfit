@@ -11,6 +11,11 @@ protocol is unchanged.
 
 ### Added
 
+- **Community evidence gate:** CI now discovers contributed benches and runs their offline checks on
+  macOS, Linux, and Windows. The evidence issue template requests pinned target and bench hashes, the
+  full NOP/oracle result, executor identity, manifest, and limitations. Contribution guidance now
+  distinguishes offline integrity from a separate live-agent reproduction; a dated first-check example
+  records what the bundled bench checks do and do not prove.
 - **Shareable evaluation report:** `skillfit report eval <manifest.json>` renders an existing
   schema-v4 paired experiment as read-only Markdown with provenance hashes, per-task pass and error
   counts, verdict, McNemar p-value, paired-bootstrap interval, and warnings. Older or incomplete

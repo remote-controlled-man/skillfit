@@ -7,23 +7,49 @@ body:
     attributes:
       value: |
         We do not accept unverifiable numbers ("skill X gave me +20%"). Submit the reproducible
-        **configuration**; maintainers and CI re-run it.
+        **configuration** and a pinned manifest. CI checks benches offline; a live-agent rerun is
+        separate and depends on available credentials and cost. Remove secrets and private paths.
+  - type: input
+    id: target
+    attributes:
+      label: Target and pinned source
+      description: Skill repository + commit and content hash, or the rules/MCP overlay files + hash.
+      placeholder: owner/repo@commit, SHA-256 ...
+    validations:
+      required: true
+  - type: textarea
+    id: bench
+    attributes:
+      label: Bench and offline gates
+      description: |
+        Link the bench and its content hash. Paste the full `bench check` summary, including NOP and
+        oracle results, warnings, and failures. Say which tasks are negative controls.
+    validations:
+      required: true
   - type: textarea
     id: setup
     attributes:
-      label: Setup
+      label: Executor and exact command
       description: |
-        - Skill under test (source + commit hash if possible)
-        - Bench (path, or the bundled bench name) 
-        - Agent CLI + version, model identity if known
-        - Trials per condition
-        - The exact command you ran
+        Include the agent CLI and version, served model identity (or "unavailable"), trial count,
+        harness commit, and the exact command. Note any sampling controls the CLI did not expose.
     validations:
       required: true
   - type: textarea
     id: result
     attributes:
       label: Result
-      description: Paste the summary table and attach runs/<group>/manifest.json. For reproductions of published evidence, say whether your result agrees or disagrees with the published one.
+      description: |
+        Paste the summary or `report eval` Markdown and attach the redacted `manifest.json`.
+        For a reproduction, link the dated evidence entry and say whether your result agrees.
+    validations:
+      required: true
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Limitations and sharing review
+      description: |
+        Note task saturation, small sample size, errors, model drift, or cost. Confirm that the
+        bench, config, report, and manifest contain no secrets or private data.
     validations:
       required: true

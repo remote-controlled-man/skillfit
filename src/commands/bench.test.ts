@@ -14,6 +14,21 @@ const PACKAGE_ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const BUNDLED_CODE_REVIEW = join(PACKAGE_ROOT, 'benches', 'code-review');
 const BUNDLED_DEBUGGING = join(PACKAGE_ROOT, 'benches', 'debugging');
 
+test('contributed-bench CI gate checks every directory and fails if one check fails', (t) => {
+  const cwd = tmp(t, 'skillfit-contrib-gate-');
+  mkdirSync(join(cwd, 'benches', 'contrib', 'good'), { recursive: true });
+  mkdirSync(join(cwd, 'benches', 'contrib', 'broken'), { recursive: true });
+  mkdirSync(join(cwd, 'dist'), { recursive: true });
+  writeFileSync(join(cwd, 'dist', 'cli.js'),
+    'process.stdout.write(process.argv.at(-1)+"\\n");process.exit(process.argv.at(-1).endsWith("broken")?1:0)');
+  const result = spawnSync(process.execPath, [join(PACKAGE_ROOT, 'scripts', 'check-contrib-benches.mjs')],
+    { cwd, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /Checking contributed bench: /);
+  assert.match(result.stdout, /broken/);
+  assert.match(result.stdout, /good/);
+});
+
 function tmp(t: import('node:test').TestContext, prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   t.after(() => rmSync(dir, { recursive: true, force: true }));

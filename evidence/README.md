@@ -22,9 +22,23 @@ Two rules:
 ## Reproduce
 
 ```bash
-npx skillfit eval <skill-path> --bench benches/code-review --trials 3
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+npm ci
+npm run build
+node dist/cli.js bench check benches/code-review
 ```
+
+This verifies bench integrity offline; the [dated first-check example](../docs/reproducible-offline-example.md)
+records the expected summaries and their limits. To reproduce an efficacy result, use the dated entry's pinned
+Skill source, bench hash, agent/model, and trial count; that run requires a local agent or API key and
+may cost money. For a new paired run, render its manifest with
+`node dist/cli.js report eval <manifest.json>`. Historical and trigger manifests may have different schemas and cannot be silently
+converted by the current renderer.
 
 ## Submit your own
 
-We do not accept unverifiable numbers. Submissions are experiment *configurations* (bench + skill ref + harness version) that CI re-runs. See [CONTRIBUTING.md](../CONTRIBUTING.md).
+We do not accept unverifiable numbers. Submit the pinned experiment configuration, full offline bench
+check, result manifest, and limitations through the
+[evidence issue template](../.github/ISSUE_TEMPLATE/evidence_submission.yml). CI checks benches offline;
+live-agent reproduction is separate. See [CONTRIBUTING.md](../CONTRIBUTING.md).

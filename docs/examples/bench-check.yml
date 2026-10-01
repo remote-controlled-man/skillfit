@@ -23,6 +23,7 @@ jobs:
       - run: npm run build
       - run: node dist/cli.js bench check benches/code-review
       - run: node dist/cli.js bench check benches/debugging
+      - run: node scripts/check-contrib-benches.mjs
       - name: Workflow summary
         if: success()
         shell: bash
