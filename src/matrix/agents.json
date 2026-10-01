@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-10-01",
+  "verifiedAt": "2026-10-01T04:39:00Z",
   "agents": [
     {
       "id": "claude-code",
@@ -102,14 +102,14 @@
         "docs": null
       },
       "headless": {
-        "argv": ["codex", "exec", "-"],
+        "argv": ["codex", "exec", "--sandbox", "workspace-write", "-"],
         "promptVia": "stdin",
         "projectTrustConfigArg": "projects.'{workdir}'.trust_level='trusted'",
         "streamJson": {
           "argv": ["codex", "exec", "--json", "--sandbox", "workspace-write", "-"],
           "wireShape": "codex-items"
         },
-        "docs": "https://developers.openai.com/codex/cli/"
+        "docs": "https://developers.openai.com/codex/cli/reference"
       },
       "docs": {
         "rules": "https://developers.openai.com/codex/guides/agents-md",

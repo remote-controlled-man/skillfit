@@ -43,6 +43,12 @@ a controlled agent profile for the experiment and record its relevant global con
 does not automatically remove the user's configuration. `doctor` and `report` are read-only aids,
 but neither proves that an agent actually ignored a globally installed Skill during an eval.
 
+For Codex CLI, skillfit explicitly starts both paired and trigger trials with
+`--sandbox workspace-write`. The agent can edit its disposable trial directory, which command-graded
+tasks require. Check any extra writable roots in your Codex configuration before a run. Codex still
+takes its model, reasoning level, and other settings from the active CLI configuration. Record those
+settings alongside the manifest when comparing runs, and use the same configuration for both arms.
+
 ## 3. Run, inspect, and share
 
 ```bash
