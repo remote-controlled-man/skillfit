@@ -39,7 +39,7 @@ test('portable Codex setup is linked and its command block matches across README
 test('selectable Codex setup commands match across README languages', () => {
   const normalized = (file: string) => read(file).replace(/\r\n/g, '\n');
   const english = normalized('README.md');
-  const commandBlock = /```bash\ngit clone https:\/\/github\.com\/remote-controlled-man\/skillfit\.git && cd skillfit[\s\S]*?bash scripts\/setup-codex\.sh --skill vibe-coding --skill diagnosing-bugs --yes\n```/.exec(english)?.[0];
+  const commandBlock = /```bash\nnode dist\/cli\.js setup codex --list[\s\S]*?node dist\/cli\.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes\n```/.exec(english)?.[0];
   assert.ok(commandBlock);
   for (const readme of READMES) {
     const content = normalized(readme);
@@ -48,15 +48,41 @@ test('selectable Codex setup commands match across README languages', () => {
   }
 });
 
+test('the first-run commands work in Bash and PowerShell and match across README languages', () => {
+  const normalized = (file: string) => read(file).replace(/\r\n/g, '\n');
+  const english = normalized('README.md');
+  const commandBlock = /```bash\ngit clone https:\/\/github\.com\/remote-controlled-man\/skillfit\.git\ncd skillfit[\s\S]*?node dist\/cli\.js install --agent codex --dry-run\n```/.exec(english)?.[0];
+  assert.ok(commandBlock);
+  const commands = commandBlock.split('\n').slice(1, -1).join('\n');
+  assert.doesNotMatch(commands, /\b(?:bash|cp)\s|~\/|some-skill|my-server\.probe\.json/);
+  for (const readme of READMES) {
+    const content = normalized(readme);
+    assert.ok(content.includes(commandBlock), `${readme} must use the same first-run commands`);
+    assert.match(content, /\(docs\/growth-roadmap-2026-10\.md\)/, `${readme} must link the delivery plan`);
+  }
+});
+
+test('a read-only synthetic report is discoverable in every README language', () => {
+  const normalized = (file: string) => read(file).replace(/\r\n/g, '\n');
+  const commandBlock = '```bash\nnode dist/cli.js report eval docs/examples/eval-manifest.synthetic.json\n```';
+  for (const readme of READMES) {
+    const content = normalized(readme);
+    assert.ok(content.includes(commandBlock), `${readme} must show the same runnable report example`);
+    assert.match(content, /\(docs\/sharing-results\.md\)/, `${readme} must link the sharing guide`);
+  }
+  assert.ok(existsSync(resolve(PACKAGE_ROOT, 'docs/examples/eval-manifest.synthetic.json')));
+  assert.ok(existsSync(resolve(PACKAGE_ROOT, 'docs/examples/bench-check.yml')));
+});
+
 test('rules and MCP evaluation tour stays present across README languages', () => {
   for (const readme of READMES) {
     const content = read(readme).replace(/\r\n/g, '\n');
     assert.match(content, /docs\/assets\/skillfit-flow\.svg/, `${readme} must show the evidence loop`);
-    assert.match(content, /node dist\/cli\.js mcp check \.\/my-server\.probe\.json/, `${readme} must show MCP preflight`);
+    assert.match(content, /skillfit mcp check/, `${readme} must mention MCP preflight`);
     assert.match(content, /node dist\/cli\.js eval \.\/context7-experiment --bench \.\/my-context7-bench --agent codex --trials 5/, `${readme} must show config A\/B`);
     assert.match(content, /\(docs\/config-experiments\.md\)/, `${readme} must link the config experiment guide`);
     assert.match(content, /\| `mcp check <spec>` \|/, `${readme} must list the MCP command`);
-    assert.match(content, /npm ci\nnpm run build\nnode dist\/cli\.js bench check benches\/code-review/, `${readme} must provide an offline first run`);
+    assert.match(content, /npm ci\nnpm run build\nnode dist\/cli\.js --help\nnode dist\/cli\.js bench check benches\/code-review/, `${readme} must provide an offline first run`);
   }
 });
 

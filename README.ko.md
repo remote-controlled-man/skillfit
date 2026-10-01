@@ -65,28 +65,15 @@ git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
 npm ci
 npm run build
+node dist/cli.js --help
 node dist/cli.js bench check benches/code-review
-
-# 1. 현재 설정 상태 점검(읽기 전용, 안전)
+node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
-
-# 2. 설치 전에 skill을 A/B 테스트(이름으로 번들 bench를 선택하거나 직접 경로를 전달;
-#    --agent를 쓰면 API 키 대신 로컬 에이전트 CLI를 구동합니다)
-node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
-
-# 2b. 또는 에이전트가 스스로 skill을 트리거하는지, 그리고 트리거해야 할 때만 트리거하는지 측정
-node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
-
-# 3. 도구 호출 없이 MCP server 사전 점검
-node dist/cli.js mcp check ./my-server.probe.json --dry-run
-node dist/cli.js mcp check ./my-server.probe.json
-
-# 4. 설치 계획 확인(기본값은 dry-run)
-node dist/cli.js install
-
-# 선택: 에이전트가 사용법을 배우도록 하기(driver skill을 agents 디렉터리에 복사)
-cp -r skills/skillfit ~/.agents/skills/
+node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+node dist/cli.js install --agent codex --dry-run
 ```
+
+두 bench check는 오프라인 무결성 검사이며 에이전트 성능 점수가 아닙니다. `doctor`는 읽기 전용이고 위의 eval과 install은 계획만 출력합니다. `codex`는 예시 에이전트 ID이므로 자신의 에이전트로 바꿀 수 있습니다. 실제 평가는 자신의 Skill과 bench, 로컬 에이전트 CLI 또는 API 자격 증명이 필요합니다. 아래 설정 명령은 Bash와 PowerShell에서 모두 동작합니다. 상위 Skills 선택에는 네트워크가 필요하며 `--yes`를 붙일 때만 설치합니다.
 
 지원 에이전트: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([기능 매트릭스](src/matrix/agents.json) — 기계 판독 가능, 검증 날짜와 문서 링크 포함). trigger 모드 캡처는 현재 Kimi Code와 Codex CLI에서 검증되었습니다.
 
@@ -110,15 +97,22 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 
 Codex MCP 시험에서는 skillfit이 실행마다 임시 작업공간에만 적용되는 신뢰 설정을 CLI에 전달합니다. 사용자 Codex 설정은 변경하지 않습니다.
 
-## 선택형 Codex 설정
+## 평가 결과 공유
 
-새 환경에서는 `--list`로 설치 가능한 Skill 67개의 출처를 확인하고, 실제 작업에 필요한 것만 `--skill`을 반복해 선택할 수 있습니다. 중단된 로컬 Skill 7개도 이유와 함께 표시합니다. `--starter`는 기존 사용자용 13개 선택을 유지하지만 묶음 효과는 검증되지 않았습니다. `--all`은 67개 전부를 선택하며 권장 기본 설정이 아닙니다. 이 목록은 출처와 설치만 검증하며 효능을 입증하지 않습니다. 제한적인 과거 비교 실험이 있는 것은 8개뿐이고, 현재 고정된 Skill 버전과 현재 Codex 모델에서 효과가 입증된 항목은 없습니다. 스크립트가 선택한 외부 Skill을 작성자의 고정 커밋에서 받아 SHA-256을 검증한 뒤 전역 `AGENTS.md` 관리 블록의 설치 계획을 보여 줍니다. 직접 작성한 Skill 두 개는 이 저장소에 있습니다. [선택 설치 안내와 근거 요약](docs/selectable-codex.md)을 참고하세요.
+먼저 아래 합성 예시를 실행한 뒤, 자신의 쌍별 `eval` 실험에서 출력된 `Manifest:` 경로로 바꾸세요. 보고서에는 출처, 구간, 오류, 경고가 포함되며 에이전트를 다시 실행하지 않습니다. [결과 공유 안내](docs/sharing-results.md)를 참고하세요.
 
 ```bash
-git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
-bash scripts/setup-codex.sh --list
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
+node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
+```
+
+## 선택형 Codex 설정
+
+새 환경에서는 `--list`로 설치 가능한 Skill 67개의 출처를 확인하고, 실제 작업에 필요한 것만 `--skill`을 반복해 선택할 수 있습니다. 중단된 로컬 Skill 7개도 이유와 함께 표시합니다. `--starter`는 기존 사용자용 13개 선택을 유지하지만 묶음 효과는 검증되지 않았습니다. `--all`은 67개 전부를 선택하며 권장 기본 설정이 아닙니다. 이 목록은 출처와 설치만 검증하며 효능을 입증하지 않습니다. 제한적인 과거 비교 실험이 있는 것은 8개뿐이고, 현재 고정된 Skill 버전과 현재 Codex 모델에서 효과가 입증된 항목은 없습니다. 설정 명령이 선택한 외부 Skill을 작성자의 고정 커밋에서 받아 SHA-256을 검증한 뒤 전역 `AGENTS.md` 관리 블록의 설치 계획을 보여 줍니다. 직접 작성한 Skill 두 개는 이 저장소에 있습니다. [선택 설치 안내와 근거 요약](docs/selectable-codex.md)을 참고하세요.
+
+```bash
+node dist/cli.js setup codex --list
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
 ```
 
 ## 옮길 수 있는 Codex 설정
@@ -140,7 +134,7 @@ node ./personal-codex/setup.mjs --yes
 | 명령어 | 동작 | 파일 쓰기 |
 |---|---|---|
 | `doctor` | 설치된 에이전트 감지, 규칙 비대화, skill 유효성/충돌, MCP 선언 존재 여부와 지원 형식의 JSON 구문, 조용한 실패 함정(예: Claude Code가 절대 읽지 않는 AGENTS.md) 점검 | 절대 안 함 |
-| `report` | 보존된 로컬 세션 기록에서 Skill별 발화 횟수, 발화가 관측되지 않은 후보, 에이전트 제한 전의 원시 카탈로그 크기를 집계합니다. 미관측은 무용함의 증거가 아니라 우선순위 신호입니다 | 절대 안 함 |
+| `report` | 보존된 로컬 세션 기록에서 Skill별 발화 횟수, 발화가 관측되지 않은 후보, 에이전트 제한 전의 원시 카탈로그 크기를 집계합니다. 미관측은 무용함의 증거가 아니라 우선순위 신호입니다. 기존 평가 매니페스트는 `report eval`로 Markdown 보고서로 만들 수도 있습니다. | 절대 안 함 |
 | `eval <target>` | Skill, 규칙 오버레이, MCP 오버레이의 페어드 baseline/treatment 실행. 결정적 verifier, 선택적 블라인드 심사, 토큰 차이, McNemar exact test, paired bootstrap CI, facet 점수를 기록합니다. `--mode trigger`는 Skill의 트리거 재현율과 오탐율을 측정합니다 | 로컬 `runs/`에만 |
 | `mcp check <spec>` | stdio MCP server를 시작해 프로토콜을 초기화하고 `tools/list`의 이름, 설명, 입력 schema, annotations를 검사합니다. 도구는 호출하지 않습니다 | 절대 안 함 |
 | `bench` | `init`은 동작하는 예시 작업이 포함된 bench 디렉터리를 생성하고, `check`는 bench를 오프라인으로 검증하며(verifier 자가 테스트, oracle/NOP 게이트, mock arm 프로브, fixture 위생 상태, 트리거 라벨 커버리지), `add --freeze`는 방금 목격한 실패를 영구적인 bench 작업으로 고정하고, `--decompose`는 에이전트가 verifier + oracle을 초안 작성해 두 게이트를 모두 통과할 때만 채택 | `init`/`add`는 확인 후에만, `check`는 절대 안 함 |
@@ -179,6 +173,8 @@ skillfit의 harness로 인기 있는 워크플로 skill 8개를 측정했습니�
 Anthropic, OpenAI, Moonshot AI 및 어떤 에이전트 벤더와도 제휴 관계가 없습니다. 평가 결과는 모델 버전, harness, 작업에 따라 달라집니다 — 영원한 진실이 아니라 날짜가 찍힌 근거로 다뤄 주세요.
 
 ## 로드맵
+
+[2026년 10월 실행 계획](docs/growth-roadmap-2026-10.md)
 
 - [x] doctor / eval / install 핵심 루프
 - [x] 블라인드 심사가 적용된 페어드 A/B harness

@@ -11,6 +11,21 @@ protocol is unchanged.
 
 ### Added
 
+- **Community evidence gate:** CI now discovers contributed benches and runs their offline checks on
+  macOS, Linux, and Windows. The evidence issue template requests pinned target and bench hashes, the
+  full NOP/oracle result, executor identity, manifest, and limitations. Contribution guidance now
+  distinguishes offline integrity from a separate live-agent reproduction; a dated first-check example
+  records what the bundled bench checks do and do not prove.
+- **Shareable evaluation report:** `skillfit report eval <manifest.json>` renders an existing
+  schema-v4 paired experiment as read-only Markdown with provenance hashes, per-task pass and error
+  counts, verdict, McNemar p-value, paired-bootstrap interval, and warnings. Older schemas and missing
+  or inconsistent report fields fail explicitly. A synthetic sample runs offline in three-OS CI;
+  the sharing guide and an opt-in bench-check workflow show how to review results without calling a model.
+- **Cross-platform first run:** the five README quick starts now use the same Bash/PowerShell-safe
+  commands from a fresh clone through two offline bench checks and read-only plans. CI exercises the
+  first-run eval plan on macOS, Linux, and Windows. The selectable Codex setup guide leads with the
+  native Node CLI and keeps the Bash wrapper optional. An October 2026 delivery plan records the
+  next reporting and community-evidence gates.
 - **First-class rules and MCP A/B experiments:** `skillfit eval` now accepts a directory containing
   `skillfit-experiment.json` plus baseline/treatment workspace overlays. Both arms receive the same
   task prompt and fixture snapshot; the overlay is applied afterwards so local agent CLIs discover

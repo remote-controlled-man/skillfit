@@ -65,28 +65,15 @@ git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
 npm ci
 npm run build
+node dist/cli.js --help
 node dist/cli.js bench check benches/code-review
-
-# 1. Comprueba el estado de tu configuración actual (solo lectura, seguro)
+node dist/cli.js bench check benches/debugging
 node dist/cli.js doctor
-
-# 2. Somete un skill a una prueba A/B antes de instalarlo (elige un bench incluido por nombre o pasa tu propia ruta;
-#    usa --agent para controlar la CLI de un agente local en lugar de una API key)
-node dist/cli.js eval ~/.agents/skills/some-skill --bench code-review --trials 3
-
-# 2b. O mide si el agente activa el skill por sí solo (y solo cuando debe)
-node dist/cli.js eval ~/.agents/skills/some-skill --mode trigger --bench code-review --agent kimi-code
-
-# 3. Comprueba un servidor MCP sin invocar ninguna herramienta
-node dist/cli.js mcp check ./my-server.probe.json --dry-run
-node dist/cli.js mcp check ./my-server.probe.json
-
-# 4. Revisa el plan de instalación (dry-run por defecto)
-node dist/cli.js install
-
-# Opcional: enseña a tu agente a usarlo (copia la driver skill en tu carpeta agents)
-cp -r skills/skillfit ~/.agents/skills/
+node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+node dist/cli.js install --agent codex --dry-run
 ```
+
+Las dos comprobaciones de bench verifican la integridad sin conexión; no miden la calidad del agente. `doctor` es de solo lectura y los comandos eval e install anteriores solo muestran planes. `codex` es un ID de agente de ejemplo; cámbialo por el tuyo. Una evaluación real requiere tu propio Skill y bench, además de un CLI de agente local o credenciales de API. Los comandos de configuración de abajo funcionan en Bash y PowerShell; elegir Skills externos requiere red y solo `--yes` los instala.
 
 Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente para Kimi Code y Codex CLI.
 
@@ -110,15 +97,22 @@ Empieza con `skillfit mcp check` para validar el handshake stdio y el catálogo 
 
 En las pruebas MCP con Codex, skillfit pasa una opción de confianza por ejecución para cargar la configuración del proyecto temporal sin modificar tu configuración de usuario de Codex.
 
-## Configuración seleccionable de Codex
+## Compartir un resultado
 
-En un entorno nuevo, `--list` muestra el catálogo de origen de 67 Skills instalables; repite `--skill` para elegir solo los pertinentes a tus tareas. También muestra siete Skills locales retirados con el motivo. `--starter` conserva la selección original de 13 para usuarios anteriores, pero no se ha evaluado como conjunto; `--all` selecciona los 67 y no es una configuración inicial recomendada. El catálogo verifica origen e instalación, no eficacia: solo ocho entradas tienen pruebas históricas pareadas limitadas, y ninguna tiene un beneficio demostrado para las versiones fijadas actuales y el modelo Codex actual. El script descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable y el resumen de evidencia](docs/selectable-codex.md).
+Prueba el ejemplo sintético de abajo y luego sustituye su ruta por la ruta `Manifest:` de tu propia evaluación pareada con `eval`. El informe incluye procedencia, intervalos, errores y advertencias; no vuelve a ejecutar el agente. Consulta la [guía para compartir resultados](docs/sharing-results.md).
 
 ```bash
-git clone https://github.com/remote-controlled-man/skillfit.git && cd skillfit
-bash scripts/setup-codex.sh --list
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs
-bash scripts/setup-codex.sh --skill vibe-coding --skill diagnosing-bugs --yes
+node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
+```
+
+## Configuración seleccionable de Codex
+
+En un entorno nuevo, `--list` muestra el catálogo de origen de 67 Skills instalables; repite `--skill` para elegir solo los pertinentes a tus tareas. También muestra siete Skills locales retirados con el motivo. `--starter` conserva la selección original de 13 para usuarios anteriores, pero no se ha evaluado como conjunto; `--all` selecciona los 67 y no es una configuración inicial recomendada. El catálogo verifica origen e instalación, no eficacia: solo ocho entradas tienen pruebas históricas pareadas limitadas, y ninguna tiene un beneficio demostrado para las versiones fijadas actuales y el modelo Codex actual. El comando de configuración descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable y el resumen de evidencia](docs/selectable-codex.md).
+
+```bash
+node dist/cli.js setup codex --list
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
 ```
 
 ## Configuración de Codex transferible
@@ -140,7 +134,7 @@ Para exportar el catálogo completo de 65 Skills externos, añade `--upstream-lo
 | Comando | Qué hace | ¿Escribe? |
 |---|---|---|
 | `doctor` | Detecta los agentes instalados y comprueba la hinchazón de reglas, la validez y los conflictos de skills, la presencia de declaraciones MCP y la sintaxis JSON cuando es compatible, además de fallos silenciosos (p. ej., un AGENTS.md que Claude Code nunca lee) | Nunca |
-| `report` | Recibos del historial local conservado: activaciones por skill, candidatas sin activación observada y tamaño bruto del catálogo antes de los límites del agente. La ausencia es una señal de prioridad, no prueba de inutilidad | Nunca |
+| `report` | Recibos del historial local conservado: activaciones por skill, candidatas sin activación observada y tamaño bruto del catálogo antes de los límites del agente. La ausencia es una señal de prioridad, no prueba de inutilidad. También convierte un manifiesto de evaluación existente en Markdown con `report eval`. | Nunca |
 | `eval <target>` | Ejecuciones baseline/treatment emparejadas para un Skill, overlay de reglas u overlay MCP; verificador determinista, juez ciego opcional, delta de tokens, test exacto de McNemar, IC de bootstrap emparejado y facetas. `--mode trigger` mide el recall y las falsas activaciones de Skills | `runs/` en local |
 | `mcp check <spec>` | Inicia un servidor MCP stdio, negocia el protocolo, solicita `tools/list` y audita nombres, descripciones, schemas de entrada y annotations. Nunca invoca una herramienta | Nunca |
 | `bench` | `init` genera el esqueleto de un directorio de bench con una tarea de ejemplo funcional; `check` valida un bench sin conexión (autopruebas del verificador, puertas oracle/NOP, sondeos del brazo mock, higiene de fixtures, cobertura de etiquetas de trigger); `add --freeze` convierte en una tarea de bench permanente un fallo que acabas de presenciar, y `--decompose` hace que un agente redacte el verificador + oracle, admitido solo si supera ambas puertas | `init`/`add` tras confirmación; `check` nunca |
@@ -179,6 +173,8 @@ Metodología completa y manifiestos en bruto: [evidence/](evidence/). Reprodúce
 Sin afiliación con Anthropic, OpenAI, Moonshot AI ni ningún otro proveedor de agentes. Los resultados de las evaluaciones dependen de la versión del modelo, del harness y de las tareas — trátalos como evidencia fechada, no como una verdad eterna.
 
 ## Roadmap
+
+[Plan de entrega de octubre de 2026](docs/growth-roadmap-2026-10.md)
 
 - [x] Bucle central doctor / eval / install
 - [x] Harness A/B emparejado con evaluación ciega

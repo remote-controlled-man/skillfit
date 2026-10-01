@@ -1,6 +1,6 @@
 # Evidence
 
-Skillfit distinguishes recommendations from untested candidates. This directory holds dated experiment reports; raw manifests keep the available model identity, skill content hash, bench version, and per-trial results. The selectable Codex catalog is an inventory, not an evidence-backed recommendation.
+Skillfit distinguishes recommendations from untested candidates. This directory holds dated experiment reports; raw manifests keep the available model identity, skill content hash, bench version, and per-trial results. Some historical manifests remain local to their original runs and are identified by run group in the dated entry; they are not independently downloadable here. New efficacy submissions should include a reviewed, shareable manifest. The selectable Codex catalog is an inventory, not an evidence-backed recommendation.
 
 Two rules:
 
@@ -18,13 +18,28 @@ Two rules:
 | 2026-09 | [Debugging bench: diagnosing-bugs (exploratory)](2026-09-debugging-bench-exploratory.md) | Kimi Code | Quality saturation replicates July on 2/3 tasks; the July test-asset differential does not; prompt beats skill |
 | 2026-09 | [Bench hardening follow-up](2026-09-debugging-hardening.md) | Kimi Code | Even hand-designed race/boundary bugs saturate; discriminative material must come from real failures |
 | 2026-09-22 | [Codex trigger capture + cross-model divergence](2026-09-22-codex-trigger-capture.md) | Codex CLI + Kimi Code | Same skill, same bench: Codex 6/6 trigger recall vs Kimi 1/9 — routing behavior is agent-specific |
+| 2026-10-01 | [Codex `diagnosing-bugs` execution and trigger pilot](2026-10-01-codex-diagnosing-bugs-pilot.md) | Codex CLI | Offline bench passed; writable-sandbox and timeout issues left zero graded efficacy pairs, so no benefit verdict |
 
 ## Reproduce
 
 ```bash
-npx skillfit eval <skill-path> --bench benches/code-review --trials 3
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+npm ci
+npm run build
+node dist/cli.js bench check benches/code-review
 ```
+
+This verifies bench integrity offline; the [dated first-check example](../docs/reproducible-offline-example.md)
+records the expected summaries and their limits. To reproduce an efficacy result, use the dated entry's pinned
+Skill source, bench hash, agent/model, and trial count; that run requires a local agent or API key and
+may cost money. For a new paired run, render its manifest with
+`node dist/cli.js report eval <manifest.json>`. Historical and trigger manifests may have different schemas and cannot be silently
+converted by the current renderer.
 
 ## Submit your own
 
-We do not accept unverifiable numbers. Submissions are experiment *configurations* (bench + skill ref + harness version) that CI re-runs. See [CONTRIBUTING.md](../CONTRIBUTING.md).
+We do not accept unverifiable numbers. Submit the pinned experiment configuration, full offline bench
+check, result manifest, and limitations through the
+[evidence issue template](../.github/ISSUE_TEMPLATE/evidence_submission.yml). CI checks benches offline;
+live-agent reproduction is separate. See [CONTRIBUTING.md](../CONTRIBUTING.md).

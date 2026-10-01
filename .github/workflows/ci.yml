@@ -18,11 +18,18 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm test
+      - name: First-run plan (offline, no agent CLI)
+        run: |
+          node dist/cli.js --help
+          node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+          node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
+          node dist/cli.js install --agent codex --dry-run
       - name: Smoke doctor (read-only)
         run: node dist/cli.js doctor
       - name: Bench integrity (offline verifier self-tests)
         run: |
           node dist/cli.js bench check benches/code-review
           node dist/cli.js bench check benches/debugging
+          node scripts/check-contrib-benches.mjs
       - name: Smoke report (no session history on runners)
         run: node dist/cli.js report --json

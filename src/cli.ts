@@ -4,6 +4,7 @@ import { runBenchAdd, runBenchCheck, runBenchInit } from './commands/bench.js';
 import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
 import { runEval } from './commands/eval.js';
+import { runEvalReport } from './commands/eval-report.js';
 import { runInstall } from './commands/install.js';
 import { runMcpCheck } from './commands/mcp.js';
 import { runReport } from './commands/report.js';
@@ -16,6 +17,7 @@ const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI codi
 Usage:
   skillfit doctor [--agent <id>]            Inspect current agent configuration health
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
+  skillfit report eval <manifest.json>     Render an existing evaluation as Markdown (read-only)
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
   skillfit mcp check <spec.json>            Handshake with a stdio MCP server and audit its tool catalog
   skillfit bench init [dir]                 Scaffold a new bench directory
@@ -23,7 +25,7 @@ Usage:
   skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
-  skillfit install [options]                Install evidence-backed configuration
+  skillfit install [options]                Inspect or apply a managed configuration profile
   skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance
   skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile
 
@@ -135,6 +137,15 @@ async function main(): Promise<void> {
       await runDoctor(common);
       return;
     case 'report':
+      if (positionals[1] === 'eval') {
+        if (!positionals[2]) {
+          console.error('Usage: skillfit report eval <manifest.json>');
+          process.exitCode = 2;
+          return;
+        }
+        runEvalReport(positionals[2]);
+        return;
+      }
       await runReport({ agent: values.agent, json: values.json ?? false });
       return;
     case 'eval': {
