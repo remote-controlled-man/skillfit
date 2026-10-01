@@ -128,6 +128,22 @@ test('real reports show facets, bounded decisions and partial token coverage', (
   assert.ok(!markdown.includes('Mean recorded tokens'));
 });
 
+test('report warns when only the graded-score interval collapses', () => {
+  const value = manifest();
+  const task = (value['tasks'] as Record<string, unknown>[])[0]!;
+  const conditions = task['conditions'] as Record<string, Record<string, unknown>>;
+  conditions['baseline']!['meanScore'] = 0.5;
+  conditions['treatment']!['meanScore'] = 1;
+  task['scoreDelta'] = 0.5;
+  const overall = value['overall'] as Record<string, unknown>;
+  overall['scoreDelta'] = 0.5;
+  (overall['stats'] as Record<string, unknown>)['scoreDeltaCi'] = { point: 0.5, lo: 0.5, hi: 0.5, resamples: 1000 };
+  const markdown = renderEvalMarkdown(parseEvalReport(value));
+  assert.match(markdown, /Δpass 95% paired-bootstrap CI.*\[\+20\.0pp, \+100\.0pp\]/);
+  assert.match(markdown, /Δscore 95% paired-bootstrap CI.*\[\+50\.0pp, \+50\.0pp\]/);
+  assert.match(markdown, /interval collapsed.*does not establish zero uncertainty/);
+});
+
 test('report rejects invalid score, facet denominators, coverage and unpaired counts', () => {
   for (const mutate of [
     (task: Record<string, unknown>) => { task['facets'] = [{ name: 'a', baselinePassRate: 1, treatmentPassRate: 1, baselineTrials: 3, treatmentTrials: 2 }]; },

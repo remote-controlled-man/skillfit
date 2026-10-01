@@ -191,7 +191,7 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
 - Always report alongside: b/c counts, **paired bootstrap 95% CI** for ΔP (≥1000 resamples over tasks,
   seeded and deterministic, pairs kept together), the **paired bootstrap 95% CI for Δscore** when the
   bench emits checks, and the observed CI half-width. A bootstrap half-width is not a validated
-  minimum detectable effect. A collapsed interval can arise when the observed tasks/pairs lack
+  minimum detectable effect. A collapsed Δpass or Δscore interval can arise when the observed tasks/pairs lack
   variation, and must not be presented as zero uncertainty or arbitrarily fine resolution. This
   interpretation guard changes no CI or verdict calculation.
 - Scale labels: below 5 trials × 8 tasks, results are stamped **indicative**, not conclusive

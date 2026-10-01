@@ -417,7 +417,8 @@ export function renderEvalMarkdown(report: ReportData): string {
     const ci = report.overall.scoreDeltaCi;
     lines.push(`- Δscore 95% paired-bootstrap CI (${ci.resamples} resamples): [${formatPp1(ci.lo)}, ${formatPp1(ci.hi)}]`);
   }
-  if (report.overall.deltaCi && report.overall.deltaCi.lo === report.overall.deltaCi.hi) {
+  if ((report.overall.deltaCi && report.overall.deltaCi.lo === report.overall.deltaCi.hi)
+    || (report.overall.scoreDeltaCi && report.overall.scoreDeltaCi.lo === report.overall.scoreDeltaCi.hi)) {
     lines.push('- The bootstrap interval collapsed on the observed tasks; this does not establish zero uncertainty or validated effect resolution.');
   }
   if (replicatedTaskCount(report) < CONCLUSIVE_TASKS) {

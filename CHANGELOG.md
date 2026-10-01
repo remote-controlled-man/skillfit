@@ -11,6 +11,8 @@
   plus a real-task workflow guide. The replay is a regression/workflow example.
 - Independent review tightened workspace executor preflight, usage/score evidence
   consistency, completed-pair scale labels and CI half-width interpretation.
+- Warn when either the pass-rate or graded-score bootstrap interval collapses;
+  statistical calculations and verdicts are unchanged.
 
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/). Dates are when the work landed on `main`.

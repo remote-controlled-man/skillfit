@@ -225,9 +225,6 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   if (stats.deltaCi) {
     const halfWidthPp = ((stats.deltaCi.hi - stats.deltaCi.lo) / 2) * 100;
     lines.push(`Observed Δpass CI half-width: ±${halfWidthPp.toFixed(1)}pp; this is a bootstrap summary, not a validated minimum detectable effect`);
-    if (stats.deltaCi.lo === stats.deltaCi.hi) {
-      lines.push('The bootstrap interval collapsed on the observed tasks; it does not establish zero uncertainty or validated effect resolution.');
-    }
   }
   const anyScores = manifest.tasks.some((task) => task.scoreDelta !== null);
   if (anyScores) {
@@ -236,6 +233,10 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
         ? `Δscore 95% CI (paired bootstrap, ${stats.scoreDeltaCi.resamples} resamples): [${signedScore(stats.scoreDeltaCi.lo)}, ${signedScore(stats.scoreDeltaCi.hi)}]`
         : 'Δscore 95% CI: n/a (no task scored in both arms)',
     );
+  }
+  if ((stats.deltaCi && stats.deltaCi.lo === stats.deltaCi.hi)
+    || (anyScores && stats.scoreDeltaCi && stats.scoreDeltaCi.lo === stats.scoreDeltaCi.hi)) {
+    lines.push('The bootstrap interval collapsed on the observed tasks; it does not establish zero uncertainty or validated effect resolution.');
   }
   const replicatedTasks = manifest.tasks.filter(t =>
     Math.min(t.conditions.baseline.trials, t.conditions.treatment.trials) >= CONCLUSIVE_TRIALS).length;

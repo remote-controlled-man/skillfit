@@ -188,6 +188,25 @@ test('renderSummary checks completed scale and avoids resolution claims after ro
   assert.ok(!output.includes('resolves effects'));
 });
 
+test('renderSummary warns when only the graded-score interval collapses', () => {
+  const tasks = [taskSummary('a', 0, 3, 3), taskSummary('b', 1, 3, 3)];
+  for (const task of tasks) {
+    task.conditions.baseline.meanScore = 0.5;
+    task.conditions.treatment.meanScore = 1;
+    task.scores = { baseline: [0.5, 0.5, 0.5], treatment: [1, 1, 1] };
+    task.scoreDelta = 0.5;
+  }
+  const base = manifestWith(tasks);
+  base.overall.conditions.baseline.meanScore = 0.5;
+  base.overall.conditions.treatment.meanScore = 1;
+  base.overall.scoreDelta = 0.5;
+  base.overall.stats.scoreDeltaCi = { point: 0.5, lo: 0.5, hi: 0.5, resamples: 2000 };
+  assert.notEqual(base.overall.stats.deltaCi?.lo, base.overall.stats.deltaCi?.hi);
+  const output = renderSummary({ ...base, warnings: buildWarnings(base) }, 'runs/g/manifest.json');
+  assert.match(output, /Δscore 95% CI.*\[\+0\.50, \+0\.50\]/);
+  assert.match(output, /interval collapsed.*does not establish zero uncertainty/);
+});
+
 test('renderSummary shows a significant overall verdict when discordance suffices', () => {
   const base = manifestWith([
     taskSummary('a', 0, 3, 3),
