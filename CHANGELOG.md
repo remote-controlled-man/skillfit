@@ -9,6 +9,8 @@
 - **D2:** Eval and baseline calibration share early integer/range validation for `--trials` (1–20).
   Reject fractional and malformed values instead of truncating calibration repetitions; preserve
   existing defaults, and synchronize CLI help and all five README languages.
+- **D3:** Align the bench authoring guide with the current observed CI half-width wording and
+  explain that collapsed pass-rate or score intervals do not establish zero uncertainty.
 
 ## Unreleased — real OSS task evaluation
 

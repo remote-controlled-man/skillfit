@@ -344,7 +344,7 @@ The failure modes worth knowing before you hit them, with the symptom you will a
 | Verbose arms win | Decoys are counted but not penalised | Make a false positive fail a check that exit 0 requires |
 | The agent edits the test suite and passes | The grader runs agent-writable files in place | Compare them against the canonical fixture first (see `feat-slug`) |
 | Two identical runs disagree | A clock, a network call, `Math.random`, or map-iteration order in the grader | Remove it. "Deterministic" is literal |
-| A great result at 3 trials × 5 tasks | Underpowered, not wrong | The report prints the CI half-width as `Run resolution: this bench resolves effects ≳ ±X.Xpp` — read it before believing the delta. `effective` needs at least 6 discordant pairs *and* McNemar exact p < 0.05 in the right direction; below 8 tasks × 5 trials the report labels the whole run indicative |
+| A great result at 3 trials × 5 tasks | Limited evidence for broader claims | Inspect `Observed Δpass CI half-width` alongside the actual interval bounds: it summarizes the bootstrap on these tasks and is not a validated minimum detectable effect. A zero-width Δpass or Δscore interval does not establish zero uncertainty. `effective` needs at least 6 discordant pairs *and* McNemar exact p < 0.05 in the right direction; below 8 tasks × 5 trials (counting completed graded pairs after exclusions) the report labels broader claims indicative |
 | Trigger recall is a perfect 1.00 | Recall in trigger mode is an **upper bound**: only your skill is installed, so nothing competes for the route | Treat it as "did not fail to fire", not as "fires better than the alternative". Marked `(Status: spec)` in `docs/metrics.md` |
 
 ---
