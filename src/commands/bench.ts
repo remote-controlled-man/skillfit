@@ -176,7 +176,7 @@ export async function runBenchInit(
   log(`Bench scaffolded at ${dir} (${created.length} files, self-check passed).`);
   log('Next:');
   log(`  skillfit bench check ${dir}`);
-  log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 3`);
+  log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 5`);
   return { dir, created };
 }
 
@@ -569,7 +569,7 @@ function finish(
   log(`Summary: ${passes} passed, ${warnings} warning(s), ${failures} failure(s)`);
   if (!calibrated) {
     log('Next: calibrate difficulty against a real agent —');
-    log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 3`);
+    log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 5`);
     log('  target: baseline pass rate 30–70%; --calibrate warns outside 10–90% (docs/metrics.md L0).');
   }
   return { dir, checks, failures, warnings };
@@ -910,7 +910,7 @@ export async function runBenchAdd(
   log(`Task "${taskId}" added to ${benchDir} (${prepared.fixtureFiles.length} fixture file(s), verifier: ${prepared.verifierKind}).`);
   log('Next:');
   log(`  skillfit bench check ${benchDir}`);
-  log(`  skillfit eval <skill-path> --bench ${benchDir} --agent <id> --trials 3`);
+  log(`  skillfit eval <skill-path> --bench ${benchDir} --agent <id> --trials 5`);
   return {
     dir: benchDir,
     taskId,

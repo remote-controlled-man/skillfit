@@ -75,6 +75,8 @@ node dist/cli.js install --agent codex --dry-run
 
 两项 bench check 是离线完整性检查，不是 agent 效果评分。`doctor` 只读；上面的 eval 和 install 只打印计划。`codex` 只是示例 agent ID，可替换为你使用的 agent。真正的实验需要你自己的 Skill 与 bench，以及本机 agent CLI 或 API 凭据。下方配置命令在 Bash 和 PowerShell 中都能运行；选择上游 Skills 需要联网，只有加 `--yes` 才会安装。
 
+`eval` 现在默认每组运行 **5 次**。8 个任务的配对实验会调用 agent 80 次。5 次只是起点；任务是否有代表性、基线是否能区分效果同样重要。先看 dry-run 的调用总数，再按[第一次真实评估指南](docs/first-real-eval.md)操作，之后才考虑效果结论。
+
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
 ## 测试规则与 MCP 配置
@@ -159,14 +161,14 @@ node ./personal-codex/setup.mjs --yes
 | `security-and-hardening` | 0.00pp | +27.4% | 无可测增益，成本最高 |
 | 其余 3 个 | 0.00pp | +14.7~17.0% | 无可测增益 |
 
-完整方法论和原始 manifest 见 [evidence/](evidence/)。用 `skillfit eval` 自己复现。
+已发表的报告见 [evidence/](evidence/)。部分历史原始 manifest 仍保留在当时的本地运行环境；证据索引说明了这些限制。可用 `skillfit eval` 在自己固定版本的 Skill、agent 与 bench 上复现。
 
 ## 设计原则
 
 - **站上标准，不造格式。** AGENTS.md（AAIF）、SKILL.md、`.agents/skills/`、`.mcpb`——只写 agent 本来就读的东西。
 - **deny by default。** 只装 profile 显式声明的内容，按内容哈希锁定。
 - **dry-run 优先。** 任何写命令先打印计划再动文件，永远有备份。
-- **诚实的数字。** 每个结论都链到带模型版本、评测目标哈希、日期和方差的 manifest。判定语义冻结在 [docs/metrics.md](docs/metrics.md)：显著性来自不一致对的 McNemar 精确检验，差值带配对 bootstrap 置信区间，样本不足的运行一律标注 *indicative*，绝不写"有效"。
+- **诚实的数字。** 新的效果投稿需要固定版本且可分享的 manifest；部分旧报告没有可下载的原始 manifest。判定语义冻结在 [docs/metrics.md](docs/metrics.md)：显著性来自不一致对的 McNemar 精确检验，差值带配对 bootstrap 置信区间；低于 8 个任务 × 每组 5 次的运行标为 *indicative*，即使它在该 bench 内达到统计显著。
 
 ## 免责声明
 

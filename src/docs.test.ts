@@ -74,6 +74,26 @@ test('a read-only synthetic report is discoverable in every README language', ()
   assert.ok(existsSync(resolve(PACKAGE_ROOT, 'docs/examples/bench-check.yml')));
 });
 
+test('the first real evaluation guide and its five-trial default are visible in every README language', () => {
+  for (const readme of READMES) {
+    const content = read(readme);
+    assert.match(content, /\(docs\/first-real-eval\.md\)/, `${readme} must link the guide`);
+    assert.match(content, /\*\*5\s*(?:trials|次|回|회|intentos)/, `${readme} must explain the default`);
+  }
+  const guide = read('docs/first-real-eval.md');
+  assert.match(guide, /8 distinct tasks × 5 trials per condition/);
+  assert.match(guide, /80 agent executions/);
+  assert.match(guide, /already available globally/);
+});
+
+test('the evidence index links only to files present in a clean checkout', () => {
+  const base = resolve(PACKAGE_ROOT, 'evidence');
+  for (const [, target] of read('evidence/README.md').matchAll(/\]\(([^)#]+?)(?:#[^)]*)?\)/g)) {
+    if (!target || /^https?:/.test(target)) continue;
+    assert.ok(existsSync(resolve(base, target)), `broken evidence index link: ${target}`);
+  }
+});
+
 test('rules and MCP evaluation tour stays present across README languages', () => {
   for (const readme of READMES) {
     const content = read(readme).replace(/\r\n/g, '\n');

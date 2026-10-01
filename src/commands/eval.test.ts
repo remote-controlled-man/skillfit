@@ -69,8 +69,32 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /Bench\s+: code-review/);
   assert.match(output, /review-r1: fixture fixtures\/review-r1, verifier `node verifiers\/seeded-bugs\.mjs`/);
   assert.match(output, /5 task\(s\) × 2 conditions × 3 = 30 runs/);
+  assert.match(output, /Scale\s+: below 8 tasks × 5 trials per condition/);
   assert.match(output, /Est\. cost: ~[\d.k]+ prompt-tokens\/run baseline, ~[\d.k]+ treatment \(estimate, before replies\)/);
   assert.match(output, /Dry run — nothing was written\./);
+});
+
+test('runEval defaults to five trials in paired and trigger plans without running an agent', async (t) => {
+  const runsRoot = join(tmp(t, 'skillfit-eval-'), 'runs');
+  for (const mode of ['inject', 'trigger'] as const) {
+    const { lines, log } = collector();
+    const result = await runEval({
+      skillPath: makeSkill(t),
+      bench: BUNDLED_DEBUGGING,
+      mode,
+      dryRun: true,
+      yes: false,
+      executor: new MockExecutor(),
+      runsRoot,
+      runGroup: `default-${mode}`,
+      log,
+    });
+    assert.equal(result, null);
+    assert.match(lines.join('\n'), mode === 'inject'
+      ? /8 task\(s\) × 2 conditions × 5 = 80 runs/
+      : /Trials\s+: 5 per task \(single arm: skill installed\)/);
+  }
+  assert.ok(!existsSync(runsRoot));
 });
 
 test('runEval runs the experiment and prints the summary table', async (t) => {

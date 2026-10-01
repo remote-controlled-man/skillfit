@@ -236,7 +236,7 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   }
   if (manifest.bench.taskCount < CONCLUSIVE_TASKS || manifest.trials < CONCLUSIVE_TRIALS) {
     lines.push(
-      `Scale: ${manifest.bench.taskCount} task(s) × ${manifest.trials} trials per condition — below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials); results are indicative.`,
+      `Scale: ${manifest.bench.taskCount} task(s) × ${manifest.trials} trials per condition — below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials); results are indicative for broader claims even if the within-bench verdict is statistically significant.`,
     );
   }
   const tokenLines = renderTokenDeltas(manifest);

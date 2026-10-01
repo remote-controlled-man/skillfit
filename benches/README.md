@@ -110,11 +110,11 @@ Each run writes to `runs/<runGroup>/<task-id>/<condition>/trial-<n>/`:
 
 A trial whose executor errored was never graded, so it is excluded from the rates rather than counted as a failure — and excluded *pairwise*, because every statistic here is paired: an error in either arm drops that (task, trial) pair from both. Each condition reports `errors` next to `trials`, and a warning names the exclusion.
 
-Verdicts: `effective` (treatment pass rate higher), `ineffective` (lower), `inconclusive` (equal, or fewer than 3 trials per condition — sample too small). The report warns when a task's baseline pass rate is ≥ 90% (too easy to discriminate anything) or ≤ 10% (too hard or broken), and flags any individual check the baseline already passes ≥ 90% of the time as saturated.
+Verdicts follow the [metrics protocol](../docs/metrics.md): `effective` requires McNemar exact p < 0.05 and a positive pass-rate delta; `ineffective` requires p < 0.05 and a negative delta; otherwise the verdict is `inconclusive`. Fewer than 6 discordant pairs cannot reach significance. The report marks runs below 8 tasks × 5 trials per condition as *indicative* even if their within-bench verdict is significant. The CLI defaults to 5 trials per condition. The report also warns when a task's baseline pass rate is ≥ 90% (too easy to discriminate anything) or ≤ 10% (too hard or broken), and flags any individual check the baseline already passes ≥ 90% of the time as saturated.
 
 ## Optional LLM judge
 
-Verifiers measure pass/fail. For a second, softer dimension, set `SKILLFIT_JUDGE=1` (plus `SKILLFIT_API_KEY` or `SKILLFIT_JUDGE_API_KEY`; tune with `SKILLFIT_JUDGE_MODEL` / `SKILLFIT_JUDGE_BASE_URL`). After each trial pair, the two outputs are shown to the judge in a hash-randomized A/B order (anti position-bias) and scored 1–10; means land in the manifest under `tasks[].judge`. The judge never replaces the deterministic verifier.
+Verifiers measure pass/fail. For a second, softer dimension, set `SKILLFIT_JUDGE=1` (plus `SKILLFIT_API_KEY` or `SKILLFIT_JUDGE_API_KEY`; tune with `SKILLFIT_JUDGE_MODEL` / `SKILLFIT_JUDGE_BASE_URL`), or pass `--judge-agent <id>`. Each pair is judged twice in swapped A/B and B/A positions with a binary checklist; only position-consistent results enter `tasks[].judge`. The judge never replaces the deterministic verifier. A judge adds model calls and is optional for a first experiment.
 
 ## Trigger mode (`--mode trigger`)
 
@@ -169,4 +169,4 @@ Constraints for both importers: the verifier must run against the copied fixture
 3. Write the prompt a teammate would write, in `prompts/<task-id>.md`.
 4. Encode the acceptance criteria you would check by hand into `verifiers/<task-id>.mjs`. Exit code is the whole contract.
 5. Record the seed answer in `ground-truth/` so future bench edits stay honest.
-6. Dry-run: `skillfit eval <skill> --bench my-bench --dry-run`, then a real run with `--trials 3` (or more).
+6. Dry-run: `skillfit eval <skill> --bench my-bench --dry-run`, inspect the planned call count, then a real run with the default 5 trials per condition. More trials do not compensate for too few distinct tasks.

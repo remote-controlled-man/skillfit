@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util';
 import { runBenchAdd, runBenchCheck, runBenchInit } from './commands/bench.js';
 import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
-import { runEval } from './commands/eval.js';
+import { DEFAULT_EVAL_TRIALS, runEval } from './commands/eval.js';
 import { runEvalReport } from './commands/eval-report.js';
 import { runInstall } from './commands/install.js';
 import { runMcpCheck } from './commands/mcp.js';
@@ -34,7 +34,7 @@ Options:
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
   --mode <mode>       Eval mode: inject (default; Skills, rules, MCP) | trigger (Skills only)
   --bench <path>      Bench directory for eval (default: bundled benches)
-  --trials <n>        Repetitions per condition for eval (default: 3)
+  --trials <n>        Repetitions per condition for eval (default: ${DEFAULT_EVAL_TRIALS})
   --profile <name>    Profile for install (default: "recommended")
   --profile-path <dir>  Install a portable profile from a local directory
   --skill <name>     With bundle export, include a named installed skill (repeatable)
@@ -167,7 +167,7 @@ async function main(): Promise<void> {
         bench: values.bench,
         mode,
         judgeAgent: values['judge-agent'],
-        trials: values.trials ? Number.parseInt(values.trials, 10) : 3,
+        trials: values.trials === undefined ? undefined : Number(values.trials),
       });
       return;
     }

@@ -75,6 +75,8 @@ node dist/cli.js install --agent codex --dry-run
 
 The bench checks are offline integrity checks, not agent-quality scores. `doctor` is read-only; the eval and install commands above only print plans. `codex` is an example agent ID; replace it with yours. A real eval needs your own Skill and bench plus a local agent CLI or API credentials. The setup commands below work in Bash and PowerShell; selecting upstream Skills needs network access, and only `--yes` installs them.
 
+`eval` now defaults to **5 trials per condition**. With 8 tasks, a paired experiment makes 80 agent executions. Five trials are a starting point; representative tasks and a healthy baseline matter as much as repetition. Inspect the dry-run count and follow [your first real evaluation](docs/first-real-eval.md) before making an efficacy claim.
+
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
 ## Test rules and MCP setups
@@ -159,14 +161,14 @@ We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pa
 | `security-and-hardening` | 0.00pp | +27.4% | No measurable gain, highest cost |
 | 3 more | 0.00pp | +14.7~17.0% | No measurable gain |
 
-Full methodology and raw manifests: [evidence/](evidence/). Reproduce it yourself with `skillfit eval`.
+Read the dated reports in [evidence/](evidence/). Some historical raw manifests remain local to their original runs; the evidence index identifies those limits. Reproduce a result on your own pinned Skill, agent, and bench with `skillfit eval`.
 
 ## Design principles
 
 - **Standards, not formats.** AGENTS.md (AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — we write what agents already read.
 - **Deny by default.** We install only what a profile explicitly declares, pinned by content hash.
 - **Dry-run first.** Every write command prints its plan before touching a file. Backups always.
-- **Honest numbers.** Every claim links to a manifest with model version, target hash, date, and variance. Verdict semantics are frozen in [docs/metrics.md](docs/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and underpowered runs are labeled *indicative*, never "effective".
+- **Honest numbers.** New efficacy submissions need a pinned, shareable manifest; some older reports lack downloadable raw manifests. Verdict semantics are frozen in [docs/metrics.md](docs/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and runs below 8 tasks × 5 trials are labeled *indicative* even if their within-bench verdict is statistically significant.
 
 ## Disclaimer
 
