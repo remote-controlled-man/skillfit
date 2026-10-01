@@ -97,6 +97,14 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 
 Codex の MCP 試行では、skillfit が一回限りの信頼設定を CLI に渡し、一時的なプロジェクト設定を読み込みます。ユーザーの Codex 設定は変更しません。
 
+## 評価結果を共有
+
+まず以下の合成サンプルを実行し、そのパスを自分の対照 `eval` 実験で表示された `Manifest:` のパスに置き換えてください。レポートには出典、区間、エラー、警告が含まれ、エージェントを再実行しません。[結果共有ガイド](docs/sharing-results.md)も参照してください。
+
+```bash
+node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
+```
+
 ## 選択式 Codex セットアップ
 
 新しい環境では、`--list` でインストール可能な 67 個の Skill の入手元を確認し、タスクに必要なものだけを `--skill` で選べます。廃止されたローカル Skill 7 個も理由付きで表示します。`--starter` は従来の 13 個を既存ユーザー向けに残すもので、セットとしての効果は未検証です。`--all` は全 67 個を選びますが、推奨の初期設定ではありません。この一覧で検証したのは入手元とインストールであり、効果ではありません。限定的な過去の対照実験があるのは 8 個だけで、現在固定されている Skill の版と現在の Codex モデルで有効と証明されたものはありません。セットアップコマンドは選択した外部 Skill を作者の固定コミットから取得して SHA-256 を検証し、グローバル `AGENTS.md` の管理ブロックを計画します。自作の 2 つの Skill はこのリポジトリにあります。[選択式セットアップガイドと証拠の要約](docs/selectable-codex.md)も参照してください。
@@ -126,7 +134,7 @@ node ./personal-codex/setup.mjs --yes
 | コマンド | 機能 | 書き込み？ |
 |---|---|---|
 | `doctor` | インストール済みエージェントを検出し、ルールの肥大化、スキルの妥当性・競合、MCP 宣言の有無と対応形式の JSON 構文、サイレント失敗の罠（例：Claude Code が決して読まない AGENTS.md）をチェック | 一切なし |
-| `report` | 保存されているローカルセッション履歴から Skill の発火回数、発火が観測されなかった候補、エージェント側制限前の生カタログ規模を集計。未観測は無用の証明ではなく優先順位付けの材料 | 一切なし |
+| `report` | 保存されているローカルセッション履歴から Skill の発火回数、発火が観測されなかった候補、エージェント側制限前の生カタログ規模を集計。未観測は無用の証明ではなく優先順位付けの材料。既存の評価マニフェストは `report eval` で Markdown にもできます。 | 一切なし |
 | `eval <target>` | Skill、ルールオーバーレイ、MCP オーバーレイのペア baseline/treatment。決定的ベリファイア、任意のブラインド判定、トークン差、McNemar 正確検定、ペア bootstrap CI、facet score を記録する。`--mode trigger` は Skill の trigger recall / false-trigger rate を測定 | ローカルの `runs/` のみ |
 | `mcp check <spec>` | stdio MCP server を起動してプロトコルを初期化し、`tools/list` の名前・説明・入力 schema・annotations を監査する。ツールは呼び出さない | 一切なし |
 | `bench` | `init` は動作するサンプルタスク付きのベンチディレクトリをスキャフォールド。`check` はベンチをオフラインで検証（ベリファイアの自己テスト、oracle/NOP ゲート、モックアームのプローブ、フィクスチャの健全性、トリガーラベルのカバレッジ）。`add --freeze` は目撃したばかりの失敗を恒久的なベンチタスクに変換し、`--decompose` はエージェントにベリファイア＋オラクルを起草させ、両ゲートを通過した場合のみ採用する | `init`/`add` は確認後のみ、`check` は一切なし |

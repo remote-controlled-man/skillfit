@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 4,
+  "runGroup": "synthetic-example",
+  "createdAt": "2026-10-01T12:30:00.000Z",
+  "target": {
+    "kind": "skill",
+    "name": "example-skill",
+    "sourceDir": "synthetic/skill",
+    "bundleSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "files": ["SKILL.md"]
+  },
+  "bench": {
+    "name": "synthetic-one-task",
+    "dir": "synthetic/bench",
+    "contentSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "taskCount": 1
+  },
+  "executor": { "kind": "mock", "model": "mock", "detail": "synthetic", "sampling": null },
+  "judge": null,
+  "trials": 2,
+  "tasks": [
+    {
+      "id": "sample-task",
+      "conditions": {
+        "baseline": { "passes": 0, "trials": 2, "errors": 0, "passRate": 0, "meanScore": null, "tokens": null },
+        "treatment": { "passes": 2, "trials": 2, "errors": 0, "passRate": 1, "meanScore": null, "tokens": null }
+      },
+      "outcomes": { "baseline": [false, false], "treatment": [true, true] },
+      "scores": { "baseline": [null, null], "treatment": [null, null] },
+      "deltaPassRate": 1,
+      "scoreDelta": null,
+      "facets": [],
+      "verifierNotes": [],
+      "tokenDelta": null,
+      "verdict": "inconclusive",
+      "verdictReason": "only 2 discordant pair(s) (Δpass +100pp); significance needs at least 6",
+      "judge": null
+    }
+  ],
+  "overall": {
+    "conditions": {
+      "baseline": { "passes": 0, "trials": 2, "errors": 0, "passRate": 0, "meanScore": null, "tokens": null },
+      "treatment": { "passes": 2, "trials": 2, "errors": 0, "passRate": 1, "meanScore": null, "tokens": null }
+    },
+    "deltaPassRate": 1,
+    "scoreDelta": null,
+    "tokenDelta": null,
+    "verdict": "inconclusive",
+    "verdictReason": "only 2 discordant pair(s) (Δpass +100pp); significance needs at least 6",
+    "stats": {
+      "discordant": { "improved": 2, "regressed": 0 },
+      "mcnemarP": 0.5,
+      "deltaCi": { "point": 1, "lo": 1, "hi": 1, "resamples": 1000 },
+      "scoreDeltaCi": null
+    }
+  },
+  "warnings": [
+    "Executor is a mock: results are synthetic and only exercise the harness.",
+    "Only 2 discordant pair(s) between conditions — treat any delta as indicative."
+  ]
+}

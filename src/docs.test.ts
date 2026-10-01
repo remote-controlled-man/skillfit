@@ -62,6 +62,18 @@ test('the first-run commands work in Bash and PowerShell and match across README
   }
 });
 
+test('a read-only synthetic report is discoverable in every README language', () => {
+  const normalized = (file: string) => read(file).replace(/\r\n/g, '\n');
+  const commandBlock = '```bash\nnode dist/cli.js report eval docs/examples/eval-manifest.synthetic.json\n```';
+  for (const readme of READMES) {
+    const content = normalized(readme);
+    assert.ok(content.includes(commandBlock), `${readme} must show the same runnable report example`);
+    assert.match(content, /\(docs\/sharing-results\.md\)/, `${readme} must link the sharing guide`);
+  }
+  assert.ok(existsSync(resolve(PACKAGE_ROOT, 'docs/examples/eval-manifest.synthetic.json')));
+  assert.ok(existsSync(resolve(PACKAGE_ROOT, 'docs/examples/bench-check.yml')));
+});
+
 test('rules and MCP evaluation tour stays present across README languages', () => {
   for (const readme of READMES) {
     const content = read(readme).replace(/\r\n/g, '\n');

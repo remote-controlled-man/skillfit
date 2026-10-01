@@ -97,6 +97,14 @@ Empieza con `skillfit mcp check` para validar el handshake stdio y el catálogo 
 
 En las pruebas MCP con Codex, skillfit pasa una opción de confianza por ejecución para cargar la configuración del proyecto temporal sin modificar tu configuración de usuario de Codex.
 
+## Compartir un resultado
+
+Prueba el ejemplo sintético de abajo y luego sustituye su ruta por la ruta `Manifest:` de tu propia evaluación pareada con `eval`. El informe incluye procedencia, intervalos, errores y advertencias; no vuelve a ejecutar el agente. Consulta la [guía para compartir resultados](docs/sharing-results.md).
+
+```bash
+node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
+```
+
 ## Configuración seleccionable de Codex
 
 En un entorno nuevo, `--list` muestra el catálogo de origen de 67 Skills instalables; repite `--skill` para elegir solo los pertinentes a tus tareas. También muestra siete Skills locales retirados con el motivo. `--starter` conserva la selección original de 13 para usuarios anteriores, pero no se ha evaluado como conjunto; `--all` selecciona los 67 y no es una configuración inicial recomendada. El catálogo verifica origen e instalación, no eficacia: solo ocho entradas tienen pruebas históricas pareadas limitadas, y ninguna tiene un beneficio demostrado para las versiones fijadas actuales y el modelo Codex actual. El comando de configuración descarga los Skills externos elegidos de commits fijados de sus autores, verifica SHA-256 y muestra el plan para un bloque gestionado en el `AGENTS.md` global. Los dos Skills propios están en este repositorio. Consulta la [guía de instalación seleccionable y el resumen de evidencia](docs/selectable-codex.md).
@@ -126,7 +134,7 @@ Para exportar el catálogo completo de 65 Skills externos, añade `--upstream-lo
 | Comando | Qué hace | ¿Escribe? |
 |---|---|---|
 | `doctor` | Detecta los agentes instalados y comprueba la hinchazón de reglas, la validez y los conflictos de skills, la presencia de declaraciones MCP y la sintaxis JSON cuando es compatible, además de fallos silenciosos (p. ej., un AGENTS.md que Claude Code nunca lee) | Nunca |
-| `report` | Recibos del historial local conservado: activaciones por skill, candidatas sin activación observada y tamaño bruto del catálogo antes de los límites del agente. La ausencia es una señal de prioridad, no prueba de inutilidad | Nunca |
+| `report` | Recibos del historial local conservado: activaciones por skill, candidatas sin activación observada y tamaño bruto del catálogo antes de los límites del agente. La ausencia es una señal de prioridad, no prueba de inutilidad. También convierte un manifiesto de evaluación existente en Markdown con `report eval`. | Nunca |
 | `eval <target>` | Ejecuciones baseline/treatment emparejadas para un Skill, overlay de reglas u overlay MCP; verificador determinista, juez ciego opcional, delta de tokens, test exacto de McNemar, IC de bootstrap emparejado y facetas. `--mode trigger` mide el recall y las falsas activaciones de Skills | `runs/` en local |
 | `mcp check <spec>` | Inicia un servidor MCP stdio, negocia el protocolo, solicita `tools/list` y audita nombres, descripciones, schemas de entrada y annotations. Nunca invoca una herramienta | Nunca |
 | `bench` | `init` genera el esqueleto de un directorio de bench con una tarea de ejemplo funcional; `check` valida un bench sin conexión (autopruebas del verificador, puertas oracle/NOP, sondeos del brazo mock, higiene de fixtures, cobertura de etiquetas de trigger); `add --freeze` convierte en una tarea de bench permanente un fallo que acabas de presenciar, y `--decompose` hace que un agente redacte el verificador + oracle, admitido solo si supera ambas puertas | `init`/`add` tras confirmación; `check` nunca |

@@ -22,6 +22,7 @@ jobs:
         run: |
           node dist/cli.js --help
           node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+          node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
       - name: Smoke doctor (read-only)
         run: node dist/cli.js doctor
       - name: Bench integrity (offline verifier self-tests)

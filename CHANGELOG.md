@@ -11,6 +11,11 @@ protocol is unchanged.
 
 ### Added
 
+- **Shareable evaluation report:** `skillfit report eval <manifest.json>` renders an existing
+  schema-v4 paired experiment as read-only Markdown with provenance hashes, per-task pass and error
+  counts, verdict, McNemar p-value, paired-bootstrap interval, and warnings. Older or incomplete
+  manifests fail explicitly. A synthetic sample runs offline in three-OS CI; the sharing guide and an
+  opt-in bench-check workflow show how to review results without calling a model.
 - **Cross-platform first run:** the five README quick starts now use the same Bash/PowerShell-safe
   commands from a fresh clone through two offline bench checks and read-only plans. CI exercises the
   first-run eval plan on macOS, Linux, and Windows. The selectable Codex setup guide leads with the
