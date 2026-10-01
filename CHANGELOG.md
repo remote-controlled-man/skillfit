@@ -89,6 +89,13 @@ protocol is unchanged.
 
 ### Changed
 
+- Paired and trigger evaluations now default to five trials; dry-run plans show the full execution
+  count and flag runs below the 8-task × 5-trial scale bar before any agent call. A first-real-eval
+  guide explains the cost, setup-contamination risk, and how to read errors and uncertainty. All five
+  READMEs now distinguish within-bench statistical verdicts from broader efficacy claims and state
+  when historical raw manifests are unavailable. The evidence index no longer links to an unpublished
+  draft.
+
 - **`report` no longer overclaims usage or context cost.** Per-agent fired counts are restricted to
   currently installed Skills. "Never fired" is now "no observed fire in retained history" and is
   explicitly a prioritization signal because install dates are unavailable. The description-token

@@ -6,7 +6,7 @@ import { loadBench } from '../harness/bench.js';
 import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
-import { renderSummary, type RunManifest } from '../harness/report.js';
+import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
 import { collectEvaluationTarget } from '../harness/target.js';
 import {
@@ -20,7 +20,7 @@ export interface EvalOptions {
   /** A Skill directory or a directory containing skillfit-experiment.json. */
   skillPath: string;
   bench?: string;
-  trials: number;
+  trials?: number;
   agent?: string;
   judgeAgent?: string;
   mode?: 'inject' | 'trigger';
@@ -33,6 +33,8 @@ export interface EvalOptions {
   skillInstallDir?: string;
   log?: (msg: string) => void;
 }
+
+export const DEFAULT_EVAL_TRIALS = 5;
 
 function bundledBenchesRoot(): string {
   return fileURLToPath(new URL('../../benches', import.meta.url));
@@ -170,6 +172,9 @@ function renderPlan(
   lines.push(`Judge    : ${judgeDescriptor ? `${judgeDescriptor.kind} (${judgeDescriptor.model})` : 'disabled'}`);
   const totalRuns = bench.tasks.length * 2 * trials;
   lines.push(`Trials   : ${trials} per condition (${bench.tasks.length} task(s) × 2 conditions × ${trials} = ${totalRuns} runs)`);
+  if (bench.tasks.length < CONCLUSIVE_TASKS || trials < CONCLUSIVE_TRIALS) {
+    lines.push(`Scale    : below ${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials per condition; any result will be indicative for broader claims.`);
+  }
   lines.push('Tasks    :');
   for (const task of bench.tasks) {
     lines.push(`- ${task.id}: fixture ${task.fixture}, verifier \`${task.verifier}\`${task.rubric ? `, rubric ${task.rubric}` : ''}`);
@@ -229,6 +234,7 @@ async function runEvalTrigger(
   options: EvalOptions,
   bench: Bench,
   skill: SkillBundle,
+  trials: number,
   log: (msg: string) => void,
 ): Promise<TriggerManifest | null> {
   let executor = options.executor ?? null;
@@ -251,7 +257,7 @@ async function runEvalTrigger(
   const runGroup = options.runGroup ?? defaultRunGroup();
 
   if (options.dryRun) {
-    log(renderTriggerPlan(bench, skill, executor, options.trials, runsRoot, runGroup, installDir));
+    log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir));
     return null;
   }
   if (!executor) {
@@ -267,7 +273,7 @@ async function runEvalTrigger(
     bench,
     skill,
     executor,
-    trials: options.trials,
+    trials,
     runsRoot,
     runGroup,
     skillInstallDir: installDir,
@@ -279,8 +285,9 @@ async function runEvalTrigger(
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
-  if (!Number.isInteger(options.trials) || options.trials < 1 || options.trials > 20) {
-    throw new Error(`--trials must be an integer between 1 and 20, got ${options.trials}`);
+  const trials = options.trials ?? DEFAULT_EVAL_TRIALS;
+  if (!Number.isInteger(trials) || trials < 1 || trials > 20) {
+    throw new Error(`--trials must be an integer between 1 and 20, got ${trials}`);
   }
   const benchDir = resolveBenchDir(options.bench);
   const bench = loadBench(benchDir);
@@ -290,7 +297,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     if (target.kind !== 'skill') {
       throw new Error('trigger mode is only available for Skill targets; rules and MCP targets use paired inject-mode workspaces.');
     }
-    return runEvalTrigger(options, bench, target as SkillBundle, log);
+    return runEvalTrigger(options, bench, target as SkillBundle, trials, log);
   }
 
   if (target.kind !== 'skill' && !options.agent && !options.executor) {
@@ -337,7 +344,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const runGroup = options.runGroup ?? defaultRunGroup();
 
   if (options.dryRun) {
-    log(renderPlan(bench, target, executor, judge, options.trials, runsRoot, runGroup));
+    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup));
     return null;
   }
   if (!executor) {
@@ -349,7 +356,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     target,
     executor,
     judge,
-    trials: options.trials,
+    trials,
     runsRoot,
     runGroup,
     log,

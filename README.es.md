@@ -75,6 +75,8 @@ node dist/cli.js install --agent codex --dry-run
 
 Las dos comprobaciones de bench verifican la integridad sin conexión; no miden la calidad del agente. `doctor` es de solo lectura y los comandos eval e install anteriores solo muestran planes. `codex` es un ID de agente de ejemplo; cámbialo por el tuyo. Una evaluación real requiere tu propio Skill y bench, además de un CLI de agente local o credenciales de API. Los comandos de configuración de abajo funcionan en Bash y PowerShell; elegir Skills externos requiere red y solo `--yes` los instala.
 
+`eval` usa ahora **5 intentos por condición** de forma predeterminada. Con 8 tareas, una evaluación emparejada ejecuta el agente 80 veces. Cinco intentos son un punto de partida; también importan la representatividad de las tareas y una línea base que pueda distinguir diferencias. Revisa el total en el dry-run y sigue [la guía de la primera evaluación real](docs/first-real-eval.md) antes de afirmar eficacia.
+
 Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente para Kimi Code y Codex CLI.
 
 ## Prueba reglas y configuraciones MCP
@@ -159,14 +161,14 @@ Ejecutamos el harness de skillfit sobre 8 skills de flujo de trabajo populares (
 | `security-and-hardening` | 0.00pp | +27.4% | Sin ganancia medible, el coste más alto |
 | 3 más | 0.00pp | +14.7~17.0% | Sin ganancia medible |
 
-Metodología completa y manifiestos en bruto: [evidence/](evidence/). Reprodúcelo con `skillfit eval`.
+Los informes fechados están en [evidence/](evidence/). Algunos manifiestos históricos sin procesar siguen solo en el entorno local de la ejecución original; el índice de evidencias explica esos límites. Puedes reproducir un resultado con `skillfit eval` usando tu Skill, agente y bench fijados.
 
 ## Principios de diseño
 
 - **Estándares, no formatos.** AGENTS.md (AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — escribimos lo que los agentes ya leen.
 - **Deny by default.** Solo instalamos lo que un perfil declara explícitamente, fijado por hash de contenido.
 - **Dry-run primero.** Cada comando de escritura imprime su plan antes de tocar un archivo. Copias de seguridad siempre.
-- **Números honestos.** Cada afirmación enlaza a un manifiesto con la versión del modelo, el hash del objetivo, la fecha y la varianza. La semántica de los veredictos está congelada en [docs/metrics.md](docs/metrics.md): la significancia procede de un test exacto de McNemar sobre pares discordantes, los deltas llevan IC de bootstrap emparejado y las ejecuciones sin potencia suficiente se etiquetan como *indicative*, nunca «effective».
+- **Números honestos.** Los nuevos resultados de eficacia requieren un manifiesto fijado y compartible; algunos informes antiguos no tienen manifiestos descargables. Las reglas de veredicto están en [docs/metrics.md](docs/metrics.md): se muestra la prueba exacta de McNemar sobre pares discordantes y el IC de bootstrap emparejado; las ejecuciones con menos de 8 tareas × 5 intentos por condición se etiquetan como *indicative*, aunque su veredicto dentro del bench sea estadísticamente significativo.
 
 ## Descargo de responsabilidad
 

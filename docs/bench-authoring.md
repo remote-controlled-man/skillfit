@@ -281,7 +281,7 @@ visible offline.
 skillfit bench check my-bench                                  # offline, free
 skillfit bench check my-bench --calibrate --agent <id>         # real runs, one arm per task
 skillfit eval <skill-path> --bench my-bench --dry-run          # plan only, writes nothing
-skillfit eval <skill-path> --bench my-bench --agent <id> --trials 3
+skillfit eval <skill-path> --bench my-bench --agent <id> --trials 5
 ```
 
 `bench check` answers "is this bench well-formed". `--calibrate` answers "is it the right

@@ -236,7 +236,7 @@ export function renderEvalMarkdown(report: ReportData): string {
     lines.push('- Δpass 95% CI: n/a (no graded pairs)');
   }
   if (report.bench.taskCount < CONCLUSIVE_TASKS || report.trials < CONCLUSIVE_TRIALS) {
-    lines.push(`- Scale: ${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'} × ${report.trials} ${report.trials === 1 ? 'trial' : 'trials'} per condition; below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials). Treat this result as indicative.`);
+    lines.push(`- Scale: ${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'} × ${report.trials} ${report.trials === 1 ? 'trial' : 'trials'} per condition; below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials). Treat broader claims as indicative even if the within-bench verdict is statistically significant.`);
   }
   lines.push('', '## Warnings', '');
   if (report.warnings.length === 0) lines.push('- None');

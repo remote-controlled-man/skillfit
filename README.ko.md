@@ -75,6 +75,8 @@ node dist/cli.js install --agent codex --dry-run
 
 두 bench check는 오프라인 무결성 검사이며 에이전트 성능 점수가 아닙니다. `doctor`는 읽기 전용이고 위의 eval과 install은 계획만 출력합니다. `codex`는 예시 에이전트 ID이므로 자신의 에이전트로 바꿀 수 있습니다. 실제 평가는 자신의 Skill과 bench, 로컬 에이전트 CLI 또는 API 자격 증명이 필요합니다. 아래 설정 명령은 Bash와 PowerShell에서 모두 동작합니다. 상위 Skills 선택에는 네트워크가 필요하며 `--yes`를 붙일 때만 설치합니다.
 
+`eval`은 이제 조건당 **5회**가 기본값입니다. 8개 작업의 쌍 실험은 에이전트를 80번 실행합니다. 5회는 출발점이며 작업의 대표성과 기준 조건의 판별력도 중요합니다. dry-run의 실행 횟수를 확인하고 효과를 주장하기 전에 [첫 실제 평가 가이드](docs/first-real-eval.md)를 참고하세요.
+
 지원 에이전트: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([기능 매트릭스](src/matrix/agents.json) — 기계 판독 가능, 검증 날짜와 문서 링크 포함). trigger 모드 캡처는 현재 Kimi Code와 Codex CLI에서 검증되었습니다.
 
 ## 규칙과 MCP 설정 테스트
@@ -159,14 +161,14 @@ skillfit의 harness로 인기 있는 워크플로 skill 8개를 측정했습니�
 | `security-and-hardening` | 0.00pp | +27.4% | 측정 가능한 이득 없음, 비용 최고 |
 | 나머지 3개 | 0.00pp | +14.7~17.0% | 측정 가능한 이득 없음 |
 
-전체 방법론과 원본 manifest는 [evidence/](evidence/)에서 확인할 수 있습니다. `skillfit eval`로 직접 재현해 보세요.
+날짜별 보고서는 [evidence/](evidence/)에서 확인할 수 있습니다. 일부 과거 원본 manifest는 당시 로컬 실행 환경에만 남아 있으며 증거 색인에 그 한계를 설명합니다. 고정한 Skill, 에이전트, bench에서 `skillfit eval`을 실행해 재현할 수 있습니다.
 
 ## 설계 원칙
 
 - **포맷이 아니라 표준.** AGENTS.md(AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — 에이전트가 이미 읽는 것만 작성합니다.
 - **기본 거부(Deny by default).** profile이 명시적으로 선언한 것만 설치하고, 콘텐츠 해시로 고정합니다.
 - **dry-run 우선.** 모든 쓰기 명령은 파일을 건드리기 전에 계획을 먼저 출력합니다. 백업은 항상 수행합니다.
-- **정직한 숫자.** 모든 주장에는 모델 버전, 평가 대상 해시, 날짜, 분산이 기록된 manifest가 링크됩니다. 판정 의미 체계는 [docs/metrics.md](docs/metrics.md)에 고정되어 있습니다: 유의성은 불일치 쌍에 대한 McNemar exact test로 판단하고, 차이값에는 paired bootstrap CI를 함께 제시하며, 검정력이 부족한 실행은 *indicative*로만 표시하고 절대 "효과 있음"이라고 하지 않습니다.
+- **정직한 숫자.** 새로운 효과 제출에는 버전이 고정되고 공유 가능한 manifest가 필요합니다. 일부 과거 보고서는 다운로드할 수 있는 원본 manifest가 없습니다. 판정 규칙은 [docs/metrics.md](docs/metrics.md)에 정의되어 있습니다. 불일치 쌍에 대한 McNemar exact test와 paired bootstrap CI를 제시하며, 8개 작업 × 조건당 5회 미만인 실행은 bench 내부에서 통계적으로 유의하더라도 *indicative*로 표시합니다.
 
 ## 면책 조항
 

@@ -193,7 +193,14 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
   bench emits checks, and the CI half-width as the run's resolution
   ("this bench resolves effects ≳ ±Xpp").
 - Scale labels: below 5 trials × 8 tasks, results are stamped **indicative**, not conclusive
-  (SkillsBench norm: 5 trials/task).
+  (SkillsBench norm: 5 trials/task). The exact-test verdict and this scale label answer different
+  questions: an `effective` or `ineffective` verdict can occur below the scale bar, but then it is a
+  within-bench statistical signal, **not** a claim that the configuration generalizes to a user's
+  broader task mix. The CLI defaults to 5 trials per condition; 5 is a starting point, not a power
+  guarantee. Add representative, discriminative tasks before multiplying repetitions of a narrow
+  fixture. Review the CI width, discordant pairs, baseline ceiling/floor, and errors before any
+  efficacy claim. Predeclare the task set and trial count; adding trials after seeing the p-value
+  until it crosses a threshold invalidates the nominal 0.05 interpretation.
 - Manifest `schemaVersion: 4` carries a typed evaluation target (`skill`, `rules`, or `mcp`), its
   content hash and file list, plus per-trial pass flags and per-trial facet scores per
   (task, condition) so all of the above is recomputed from raw outcomes, never from aggregates. Those
