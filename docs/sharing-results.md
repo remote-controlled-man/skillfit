@@ -38,9 +38,9 @@ with its limitations stated, see the [Kimi debugging experiment](../evidence/202
 Its historical manifest is local to that run; `report eval` renders schema-v4 manifests produced by
 current paired experiments.
 
-The renderer rejects older manifest schemas and incomplete v4 data rather than guessing what a field
-used to mean. It does not compare runs from different model versions or bench hashes. Use the
-[metrics protocol](metrics.md) when interpreting a verdict and the
+The renderer rejects older manifest schemas and missing or inconsistent fields used by the report
+rather than guessing what a field used to mean. It does not compare runs from different model
+versions or bench hashes. Use the [metrics protocol](metrics.md) when interpreting a verdict and the
 [evidence submission template](../.github/ISSUE_TEMPLATE/evidence_submission.yml) when proposing a
 published claim.
 
