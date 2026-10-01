@@ -168,6 +168,65 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   assert.match(verifierLog, /"decoys":\["c-style-loop"\]/);
 });
 
+test('workspace pairs inspect identical disk inputs without inlining text or binary files', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-workspace-');
+  const benchDir = join(runsRoot, 'bench');
+  for (const rel of ['fixtures/task', 'prompts', 'verifiers']) mkdirSync(join(benchDir, rel), { recursive: true });
+  writeFileSync(join(benchDir, 'fixtures/task/source.txt'), 'source sentinel: broken');
+  writeFileSync(join(benchDir, 'fixtures/task/asset.bin'), Buffer.from([0, 255, 128, 17]));
+  writeFileSync(join(benchDir, 'prompts/task.md'), 'Repair source.txt and preserve the asset.');
+  writeFileSync(join(benchDir, 'verifiers/check.mjs'), "import {readFileSync} from 'node:fs'; process.exit(readFileSync(process.argv[2]+'/source.txt','utf8')==='fixed' ? 0 : 1);");
+  writeFileSync(join(benchDir, 'bench.json'), JSON.stringify({ schemaVersion: 1, name: 'disk-task', tasks: [{
+    id: 'task', fixture: 'fixtures/task', prompt: 'prompts/task.md', verifier: 'node verifiers/check.mjs', verifierKind: 'command',
+  }] }));
+  const prompts: string[] = [];
+  const executor: Executor = {
+    describe: () => ({ kind: 'cli', model: 'offline-disk-probe' }),
+    run: (prompt, workdir) => {
+      prompts.push(prompt);
+      assert.equal(readFileSync(join(workdir, 'source.txt'), 'utf8'), 'source sentinel: broken');
+      assert.deepEqual(readFileSync(join(workdir, 'asset.bin')), Buffer.from([0, 255, 128, 17]));
+      assert.ok(!prompt.includes('source sentinel'));
+      assert.ok(!prompt.includes('Repository snapshot:'));
+      assert.ok(!prompt.includes('Your final message is the deliverable'));
+      writeFileSync(join(workdir, 'source.txt'), 'fixed');
+      return Promise.resolve({ output: 'Repaired and checked.' });
+    },
+  };
+  const target = collectSkillBundle(makeSkill(t), 'disk-skill');
+  const manifest = await runExperiment({ bench: loadBench(benchDir), target, executor, inputMode: 'workspace',
+    trials: 1, runsRoot, runGroup: 'disk-pair' });
+  assert.equal(manifest.inputMode, 'workspace');
+  assert.equal(manifest.overall.conditions.baseline.passes, 1);
+  assert.equal(manifest.overall.conditions.treatment.passes, 1);
+  assert.equal(prompts[1], `${prompts[0]!.trimEnd()}\n\n${target.payload}\n`);
+  for (const condition of ['baseline', 'treatment']) {
+    const receipt = JSON.parse(readFileSync(join(runsRoot, 'disk-pair/task', condition, 'trial-1/_result.json'), 'utf8'));
+    assert.equal(receipt.inputMode, 'workspace');
+  }
+});
+
+test('workspace runner rejects API access before creating the run group', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-workspace-api-');
+  const executor: Executor = { describe: () => ({ kind: 'api', model: 'offline' }), run: () => { throw new Error('must not run'); } };
+  await assert.rejects(() => runExperiment(plan({ runsRoot, inputMode: 'workspace', executor })), /requires a CLI executor/);
+  assert.ok(!existsSync(join(runsRoot, 'test-group')));
+});
+
+test('token coverage counts usage fields only on surviving graded pairs', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-token-coverage-');
+  const bench = loadBench(BUNDLED_CODE_REVIEW);
+  bench.tasks = bench.tasks.slice(0, 1);
+  let calls = 0;
+  const executor: Executor = {
+    describe: () => ({ kind: 'mock', model: 'offline-usage' }),
+    run: () => Promise.resolve({ output: 'No findings', tokens: ++calls === 1 ? { input: 10 } : undefined }),
+  };
+  const manifest = await runExperiment(plan({ runsRoot, bench, executor, trials: 1 }));
+  assert.deepEqual(manifest.overall.conditions.baseline.tokenCoverage, { input: 1, output: 0 });
+  assert.deepEqual(manifest.overall.conditions.treatment.tokenCoverage, { input: 0, output: 0 });
+});
+
 test('runExperiment applies workspace config after snapshotting so prompts stay identical', async (t) => {
   const runsRoot = tmp(t, 'skillfit-config-runs-');
   const benchDir = join(runsRoot, 'bench');

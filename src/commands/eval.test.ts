@@ -74,6 +74,29 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /Dry run — nothing was written\./);
 });
 
+test('workspace dry-run reports disk presentation and only estimates the initial prompt', async (t) => {
+  const runsRoot = join(tmp(t, 'skillfit-workspace-plan-'), 'runs');
+  const { lines, log } = collector();
+  await runEval({ skillPath: makeSkill(t), bench: BUNDLED_CODE_REVIEW, inputMode: 'workspace',
+    dryRun: true, yes: true, executor: new MockExecutor(), runsRoot, log });
+  assert.match(lines.join('\n'), /workspace files on disk \(no inline repository snapshot\)/);
+  assert.match(lines.join('\n'), /initial prompt only; agent file reads and replies are not estimated/);
+  assert.ok(!existsSync(runsRoot));
+});
+
+test('workspace API and explicit trigger input combinations fail before writing', async (t) => {
+  const runsRoot = join(tmp(t, 'skillfit-invalid-input-'), 'runs');
+  const base = { skillPath: makeSkill(t), bench: BUNDLED_CODE_REVIEW, yes: true, runsRoot, log: () => {} };
+  const executor: Executor = { describe: () => ({ kind: 'api', model: 'offline' }), run: () => { throw new Error('must not run'); } };
+  for (const dryRun of [true, false]) {
+    await assert.rejects(() => runEval({ ...base, dryRun, inputMode: 'workspace', executor }), /requires a CLI executor/);
+    for (const inputMode of ['workspace', 'snapshot'] as const) {
+      await assert.rejects(() => runEval({ ...base, dryRun, mode: 'trigger', inputMode, executor: new MockExecutor() }), /applies only to paired inject mode/);
+    }
+  }
+  assert.ok(!existsSync(runsRoot));
+});
+
 test('runEval defaults to five trials in paired and trigger plans without running an agent', async (t) => {
   const runsRoot = join(tmp(t, 'skillfit-eval-'), 'runs');
   for (const mode of ['inject', 'trigger'] as const) {

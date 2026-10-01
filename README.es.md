@@ -79,6 +79,22 @@ Las dos comprobaciones de bench verifican la integridad sin conexión; no miden 
 
 Agentes compatibles: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([matriz de capacidades](src/matrix/agents.json): legible por máquina, con fecha de verificación y enlaces a la documentación). La captura del modo trigger está verificada actualmente para Kimi Code y Codex CLI.
 
+## Evalúa una tarea real de OSS
+
+Usa `--input workspace` en comparaciones pareadas con una CLI para inspeccionar y editar archivos
+en disco sin incluir el repositorio en el prompt. Usa la misma presentación al calibrar la línea base.
+El valor predeterminado sigue siendo `snapshot`; workspace no admite ejecutores API y se usa por separado de `--mode trigger`.
+
+```bash
+node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input workspace --trials 5 --dry-run
+node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
+```
+
+Al importar una corrección, `bench add --from-commit <sha> --prompt-file issue.md` conserva la solicitud del issue
+sin revelar la respuesta del mensaje de corrección. Los informes muestran cada comprobación, la cobertura del uso
+y la evidencia que falta para decidir la instalación. Una tarea solo informa sobre esa tarea, no demuestra un beneficio general.
+Consulta el [flujo de OSS real](docs/oss-task-evaluation.md) o reproduce el [ejemplo fijado de mcp-use](benches/contrib/oss-mcp-use-utf8/README.md).
+
 ## Prueba reglas y configuraciones MCP
 
 Coloca `skillfit-experiment.json` junto a overlays de proyecto baseline/treatment. Un experimento de reglas puede añadir `AGENTS.md`; uno de MCP puede añadir `.codex/config.toml`, `.mcp.json` o la ruta declarada para otro agente compatible. skillfit copia el mismo fixture en ambos brazos, crea una instantánea idéntica para el prompt y después aplica cada overlay, de modo que la CLI local descubre la configuración mediante su cargador normal de proyecto.

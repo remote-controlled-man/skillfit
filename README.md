@@ -79,6 +79,24 @@ The bench checks are offline integrity checks, not agent-quality scores. `doctor
 
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
+## Evaluate a real OSS task
+
+Use `--input workspace` for paired CLI runs that inspect and edit files on disk,
+without an inline repository snapshot. Keep the same input mode for baseline
+calibration. `snapshot` remains the default; workspace input is unavailable for
+API executors and is separate from `--mode trigger`.
+
+```bash
+node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input workspace --trials 5 --dry-run
+node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
+```
+
+When importing a fix, `bench add --from-commit <sha> --prompt-file issue.md` keeps
+the issue request instead of revealing the fix message. Reports show per-check
+results, usage coverage and installation evidence gaps. A single task informs
+that task; it does not prove general benefit. Follow the [real OSS workflow](docs/oss-task-evaluation.md)
+or replay the [pinned mcp-use example](benches/contrib/oss-mcp-use-utf8/README.md).
+
 ## Test rules and MCP setups
 
 Put a `skillfit-experiment.json` next to baseline and treatment project overlays. A rules experiment can add `AGENTS.md`; an MCP experiment can add `.codex/config.toml`, `.mcp.json`, or the path defined for another supported agent. skillfit copies the same task fixture into both arms, snapshots it for an identical prompt, then applies each overlay so the local agent discovers configuration through its normal loader.

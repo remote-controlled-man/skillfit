@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — real OSS task evaluation
+
+- Add `--input workspace` to paired CLI evaluations and baseline calibration,
+  with recorded presentation, a calibration dry-run and initial-prompt estimates.
+- Honor issue prompts in commit imports instead of always exposing fix messages.
+- Render checks, graded scores, usage coverage and bounded installation next steps
+  in read-only evaluation reports; keep the statistical verdict protocol unchanged.
+- Add a licensed, pinned mcp-use UTF-8 replay and pinned Matt evaluation input,
+  plus a real-task workflow guide. The replay is a regression/workflow example.
+
 All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/). Dates are when the work landed on `main`.
 

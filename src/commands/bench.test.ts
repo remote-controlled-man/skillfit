@@ -1023,6 +1023,46 @@ test('runBenchAdd --from-commit mines parent fixture + embedded FAIL_TO_PASS ver
   assert.equal(report.failures, 0);
 });
 
+test('commit import honors an issue prompt without revealing the fix message', async (t) => {
+  const { repo, fixCommit } = gitRepoWithFixHistory(t);
+  const issue = 'Addition returns the wrong result. Reproduce and repair it.\n';
+  const promptFile = join(tmp(t, 'skillfit-issue-prompt-'), 'issue.md');
+  writeFileSync(promptFile, issue);
+  for (const promptOptions of [{ prompt: issue }, { promptFile }]) {
+    const benchDir = await freezeBench(t);
+    const result = await runBenchAdd({ benchDir, sourceDir: repo, fromCommit: fixCommit,
+      ...promptOptions, yes: true, log: () => {} });
+    assert.ok(result);
+    assert.equal(readFileSync(join(benchDir, 'prompts', `${result.taskId}.md`), 'utf8'), issue);
+    assert.match(readFileSync(join(benchDir, 'fixtures', result.taskId, 'src/add.js'), 'utf8'), /return a - b/);
+    assert.ok(!existsSync(join(benchDir, 'fixtures', result.taskId, 'test/add-fix.test.js')));
+  }
+  const benchDir = await freezeBench(t);
+  for (const invalid of [{ prompt: '' }, { prompt: 'x', promptFile }]) {
+    await assert.rejects(() => runBenchAdd({ benchDir, sourceDir: repo, fromCommit: fixCommit,
+      ...invalid, yes: true, log: () => {} }), /prompt.*empty|exactly one prompt/);
+  }
+});
+
+test('calibration supports workspace receipts and a dry-run that starts no executor', async (t) => {
+  const dir = makeCalibBench(t);
+  const runsRoot = join(tmp(t, 'skillfit-calib-workspace-'), 'runs');
+  const prompts: string[] = [];
+  const executor: Executor = {
+    describe: () => ({ kind: 'cli', model: 'offline-calibration' }),
+    run: (prompt) => { prompts.push(prompt); return Promise.resolve({ output: 'ok done' }); },
+  };
+  await runBenchCheck({ dir, calibrate: { executor, inputMode: 'workspace', dryRun: true, runsRoot }, log: () => {} });
+  assert.equal(prompts.length, 0);
+  assert.ok(!existsSync(runsRoot));
+  await runBenchCheck({ dir, calibrate: { executor, inputMode: 'workspace', trials: 1,
+    runsRoot, runGroup: 'workspace-calibration' }, log: () => {} });
+  assert.equal(prompts.length, 2);
+  assert.ok(prompts.every(p => !p.includes('Repository snapshot:')));
+  const receipt = JSON.parse(readFileSync(join(runsRoot, 'workspace-calibration/easy-task/baseline/trial-1/_result.json'), 'utf8'));
+  assert.equal(receipt.inputMode, 'workspace');
+});
+
 test('runBenchAdd --from-commit rejects test-only and test-less commits', async (t) => {
   const { repo, buggyCommit, testOnlyCommit, fixCommit } = gitRepoWithFixHistory(t);
   const benchDir = await freezeBench(t);

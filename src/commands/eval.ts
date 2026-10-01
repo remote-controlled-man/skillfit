@@ -6,6 +6,7 @@ import { loadBench } from '../harness/bench.js';
 import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
+import { assertInputModeSupported } from '../harness/prompt.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
 import { collectEvaluationTarget } from '../harness/target.js';
@@ -14,7 +15,7 @@ import {
   runTriggerExperiment,
   type TriggerManifest,
 } from '../harness/trigger.js';
-import type { Bench, EvaluationTarget, Executor, SkillBundle } from '../harness/types.js';
+import type { Bench, EvaluationTarget, Executor, InputMode, SkillBundle } from '../harness/types.js';
 
 export interface EvalOptions {
   /** A Skill directory or a directory containing skillfit-experiment.json. */
@@ -24,6 +25,7 @@ export interface EvalOptions {
   agent?: string;
   judgeAgent?: string;
   mode?: 'inject' | 'trigger';
+  inputMode?: InputMode;
   dryRun: boolean;
   yes: boolean;
   executor?: Executor;
@@ -123,12 +125,12 @@ function defaultRunGroup(now: Date = new Date()): string {
   return `eval-${date}-${time}`;
 }
 
-function estimatePromptTokens(bench: Bench, target: EvaluationTarget): { baseline: number; treatment: number } {
+function estimatePromptTokens(bench: Bench, target: EvaluationTarget, inputMode: InputMode): { baseline: number; treatment: number } {
   let fixtureBytes = 0;
   let promptBytes = 0;
   for (const task of bench.tasks) {
     const fixtureDir = join(bench.dir, task.fixture);
-    for (const rel of listFilesRecursive(fixtureDir)) {
+    for (const rel of inputMode === 'snapshot' ? listFilesRecursive(fixtureDir) : []) {
       if (rel.split(/[\\/]/).some((part) => part === '.git' || part.startsWith('_')) || rel === '.skillfit-mock.json') continue;
       fixtureBytes += statSync(join(fixtureDir, rel)).size;
     }
@@ -151,6 +153,7 @@ function renderPlan(
   trials: number,
   runsRoot: string,
   runGroup: string,
+  inputMode: InputMode,
 ): string {
   const lines: string[] = [];
   lines.push('Experiment plan (dry run)');
@@ -160,10 +163,12 @@ function renderPlan(
   }
   lines.push(`Bench    : ${bench.name} @ ${bench.dir}`);
   lines.push(`           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`);
-  const estimate = estimatePromptTokens(bench, target);
+  lines.push(`Input    : ${inputMode === 'workspace' ? 'workspace files on disk (no inline repository snapshot)' : 'inline repository snapshot'}`);
+  const estimate = estimatePromptTokens(bench, target, inputMode);
   lines.push(
     `Est. cost: ~${formatK(estimate.baseline)} prompt-tokens/run baseline, ~${formatK(estimate.treatment)} treatment (estimate, before replies)`,
   );
+  if (inputMode === 'workspace') lines.push('           initial prompt only; agent file reads and replies are not estimated');
   const descriptor = executor?.describe();
   lines.push(
     `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ''}` : 'unresolved (pass --agent or set SKILLFIT_API_KEY)'}`,
@@ -285,6 +290,11 @@ async function runEvalTrigger(
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
+  const inputMode = options.inputMode ?? 'snapshot';
+  assertInputModeSupported(inputMode, null);
+  if (options.mode === 'trigger' && options.inputMode !== undefined) {
+    throw new Error('--input applies only to paired inject mode; trigger mode already presents files on disk.');
+  }
   const trials = options.trials ?? DEFAULT_EVAL_TRIALS;
   if (!Number.isInteger(trials) || trials < 1 || trials > 20) {
     throw new Error(`--trials must be an integer between 1 and 20, got ${trials}`);
@@ -333,6 +343,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     log(`Note: ${(error as Error).message}`);
   }
   assertExecutorSupportsBench(executor, bench);
+  assertInputModeSupported(inputMode, executor);
   if (target.kind !== 'skill' && executor?.describe().kind === 'api') {
     throw new Error(`${target.kind} experiments require a CLI executor; API executors cannot load project configuration files.`);
   }
@@ -344,7 +355,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const runGroup = options.runGroup ?? defaultRunGroup();
 
   if (options.dryRun) {
-    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup));
+    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode));
     return null;
   }
   if (!executor) {
@@ -354,6 +365,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const manifest = await runExperiment({
     bench,
     target,
+    inputMode,
     executor,
     judge,
     trials,

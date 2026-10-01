@@ -1,6 +1,6 @@
 import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
 import { CONDITIONS } from './types.js';
-import type { Condition, ExecutorDescriptor } from './types.js';
+import type { Condition, ExecutorDescriptor, InputMode } from './types.js';
 
 export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
 
@@ -24,6 +24,8 @@ export interface ConditionStats {
   passRate: number;
   meanScore: number | null;
   tokens: { input: number; output: number } | null;
+  /** Graded runs with each usage field present; absent in earlier manifests. */
+  tokenCoverage?: { input: number; output: number };
 }
 
 export interface JudgeSummary {
@@ -75,6 +77,8 @@ export interface OverallSummary {
 
 export interface RunManifest {
   schemaVersion: 4;
+  /** Absent in earlier v4 manifests; those used inline snapshots. */
+  inputMode?: InputMode;
   runGroup: string;
   createdAt: string;
   target: { kind: 'skill' | 'rules' | 'mcp'; name: string; sourceDir: string; bundleSha256: string; files: string[] };

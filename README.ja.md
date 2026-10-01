@@ -79,6 +79,22 @@ node dist/cli.js install --agent codex --dry-run
 
 対応エージェント：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力マトリクス](src/matrix/agents.json) — 機械可読・検証日付付き・ドキュメントへのリンクあり）。トリガーモードのキャプチャは現在 Kimi Code と Codex CLI で検証済み。
 
+## 実際の OSS タスクを評価する
+
+ペア比較の CLI 実行では `--input workspace` を使い、リポジトリをプロンプトに埋め込まず、
+ディスク上のファイルを確認・編集できます。ベースライン校正にも同じ入力方式を使ってください。
+既定値は `snapshot` のままです。workspace 入力は API 実行器では使えず、`--mode trigger` とは別です。
+
+```bash
+node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input workspace --trials 5 --dry-run
+node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
+```
+
+修正を取り込む際は `bench add --from-commit <sha> --prompt-file issue.md` で修正メッセージの答えを見せず、
+issue の依頼を保持できます。レポートには各チェックの結果、使用量の記録範囲、インストール判断に不足する証拠が表示されます。
+単一タスクの結果はそのタスクに限られ、一般的な効果の証明にはなりません。
+[実際の OSS 評価手順](docs/oss-task-evaluation.md)と[固定版 mcp-use の例](benches/contrib/oss-mcp-use-utf8/README.md)を参照してください。
+
 ## ルールと MCP 設定をテストする
 
 `skillfit-experiment.json` と baseline/treatment のプロジェクトオーバーレイを同じディレクトリに置く。ルール実験は `AGENTS.md`、MCP 実験は `.codex/config.toml`、`.mcp.json`、または対応エージェントの能力マトリクスで定義されたパスを追加できる。skillfit は両条件に同じ fixture を複製し、同一の prompt スナップショットを作成してから各オーバーレイを適用するため、ローカル CLI は通常のプロジェクト設定ローダー経由で設定を検出する。

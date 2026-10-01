@@ -5,12 +5,13 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { loadBench } from '../harness/bench.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
+import { assertInputModeSupported } from '../harness/prompt.js';
 import { runTrial, runVerifier, verifierFailure } from '../harness/runner.js';
 import type { ExperimentPlan } from '../harness/runner.js';
 import { MOCK_MARKER_FILE } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { VerifierCheck } from '../harness/verifier-summary.js';
-import type { Executor, SkillBundle } from '../harness/types.js';
+import type { Executor, InputMode, SkillBundle } from '../harness/types.js';
 import { confirm as confirmPrompt } from './confirm.js';
 import type { Check } from './doctor.js';
 
@@ -25,6 +26,8 @@ export interface BenchInitOptions {
 
 export interface BenchCheckCalibrateOptions {
   agent?: string;
+  inputMode?: InputMode;
+  dryRun?: boolean;
   trials?: number;
   executor?: Executor;
   runsRoot?: string;
@@ -481,6 +484,16 @@ async function calibrateBench(
     return;
   }
   const trials = options.trials ?? CALIBRATE_DEFAULT_TRIALS;
+  const inputMode = options.inputMode ?? 'snapshot';
+  const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '');
+  assertInputModeSupported(inputMode, executor);
+  if (!Number.isInteger(trials) || trials < 1 || trials > 20) {
+    throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
+  }
+  if (options.dryRun) {
+    push('INFO', `calibration plan: ${bench.tasks.length} task(s) × ${trials} baseline run(s), input ${inputMode}; no agent started and no run directory created`);
+    return;
+  }
   const emptySkillDir = mkdtempSync(join(tmpdir(), 'skillfit-calibrate-'));
   try {
     const skill: SkillBundle = {
@@ -492,7 +505,6 @@ async function calibrateBench(
       payload: '',
       overlays: {},
     };
-    const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '');
     const runGroup =
       options.runGroup ??
       `calibrate-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(Date.now() % 100000).padStart(5, '0')}`;
@@ -503,13 +515,14 @@ async function calibrateBench(
     const plan: ExperimentPlan = {
       bench,
       target: skill,
+      inputMode,
       executor,
       trials,
       runsRoot: options.runsRoot ?? resolve('runs'),
       runGroup,
       log,
     };
-    push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty)`);
+    push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty; input ${inputMode})`);
     let discriminative = 0;
     let tasksRun = 0;
     for (const task of bench.tasks) {
@@ -805,6 +818,9 @@ export async function runBenchAdd(
   if (options.freeze && options.fromCommit) {
     throw new Error('Pass exactly one importer: --freeze OR --from-commit, not both.');
   }
+  if (options.prompt !== undefined && options.promptFile !== undefined) {
+    throw new Error('Pass exactly one prompt: --prompt OR --prompt-file, not both.');
+  }
   if (options.decompose && !options.freeze) {
     throw new Error('--decompose works only with --freeze.');
   }
@@ -1055,6 +1071,11 @@ process.exit(result.status ?? 1);
 }
 
 function prepareFromCommit(options: BenchAddOptions, cwd: string): PreparedAdd {
+  const issuePrompt = options.prompt ?? (options.promptFile !== undefined
+    ? readFileSync(resolve(cwd, options.promptFile), 'utf8') : undefined);
+  if (issuePrompt !== undefined && issuePrompt.trim() === '') {
+    throw new Error('The supplied task prompt must not be empty.');
+  }
   const repo = resolve(cwd, options.sourceDir ?? '.');
   if (!existsSync(repo)) {
     throw new Error(`--source-dir does not exist: ${repo}`);
@@ -1130,7 +1151,7 @@ function prepareFromCommit(options: BenchAddOptions, cwd: string): PreparedAdd {
 
   return {
     defaultTaskId: `fix-${shortSha}`,
-    promptText: `# Task: implement the following change request
+    promptText: issuePrompt ?? `# Task: implement the following change request
 
 The repository below is \`${basename(repo)}\` at commit \`${parentShort}\` — the state before the fix that resolved this request was applied.
 
@@ -1152,6 +1173,7 @@ Mined from git history on ${new Date().toISOString().slice(0, 10)}.
 - Repository: \`${repo}\`
 - Fix commit: \`${sha}\` — ${subject}
 - Parent (fixture state): \`${parent}\`
+- Task prompt: ${issuePrompt === undefined ? 'generated from fix commit subject/body; review for solution hints before efficacy evaluation' : 'user-supplied issue request; fix commit subject/body was not injected'}.
 - Verifier: the fix commit's own tests (${tests.map((test) => `\`${test.rel}\``).join(', ')}), run via \`${verifierCmd}\` — they fail on the parent state and pass once the fix is implemented (FAIL_TO_PASS).
 - The fix itself: see \`git show ${sha}\` in the source repository.
 

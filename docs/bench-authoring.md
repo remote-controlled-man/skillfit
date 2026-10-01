@@ -178,6 +178,12 @@ bench defect, never as the agent failing.
 skillfit bench add my-bench --from-commit <sha> [--source-dir <repo>] [--include <dir>...]
 ```
 
+Supply `--prompt-file issue.md` (or `--prompt`) to use the original issue request
+instead of the fix commit's subject/body. This avoids disclosing the solution in
+the task. The fixture and hidden tests remain mined from the same commits. See
+[real OSS task evaluation](oss-task-evaluation.md) for workspace presentation,
+offline environment preparation and the request-to-check contract.
+
 The parent commit becomes the fixture. The fix commit's own test files are embedded into the
 verifier, hidden from the agent: they must fail on the parent state and pass once the fix is
 re-implemented. This is the FAIL_TO_PASS pattern from SWE-bench, and it is the cheapest source of

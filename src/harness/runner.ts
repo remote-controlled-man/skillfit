@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
 import { judgePair, type JudgeResult } from './judge.js';
 import { killTree, treeSpawnOptions } from './kill-tree.js';
-import { buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
+import { assertInputModeSupported, buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
 import {
   buildWarnings,
   verdictFor,
@@ -16,13 +16,14 @@ import {
 } from './report.js';
 import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
 import { listFilesRecursive } from './hash.js';
-import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, TokenUsage } from './types.js';
+import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, TokenUsage } from './types.js';
 import { CONDITIONS } from './types.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 
 export interface ExperimentPlan {
   bench: Bench;
   target: EvaluationTarget;
+  inputMode?: InputMode;
   executor: Executor;
   judge?: Executor | null;
   trials: number;
@@ -131,6 +132,8 @@ export async function runTrial(
   trial: number,
 ): Promise<TrialOutcome> {
   const { bench, target, executor } = plan;
+  const inputMode = plan.inputMode ?? 'snapshot';
+  assertInputModeSupported(inputMode, executor);
   const task = bench.tasks.find((t) => t.id === taskId);
   if (!task) throw new Error(`Unknown task: ${taskId}`);
   const runDir = join(plan.runsRoot, plan.runGroup, task.id, condition, `trial-${trial}`);
@@ -145,7 +148,7 @@ export async function runTrial(
   // Keep the prompt byte-identical across conditions. Workspace configuration is copied only after
   // taking the fixture snapshot, so a rules or MCP treatment is discovered through the agent's real
   // project configuration loader instead of being disclosed in treatment-only prompt text.
-  const snapshot = snapshotRepoFiles(runDir);
+  const snapshot = inputMode === 'snapshot' ? snapshotRepoFiles(runDir) : '';
   const overlay = target.overlays[condition];
   if (overlay) applyOverlay(overlay, runDir);
   const gitInitialized = await gitInit(runDir);
@@ -158,7 +161,7 @@ export async function runTrial(
     // Workspace configuration experiments must let the agent use its configured tools and inspect
     // the project even when the final answer is graded as text. Skill-only output benches retain the
     // stricter prompt isolation used by the original harness.
-    { workspace: task.verifierKind === 'command' || target.kind !== 'skill' },
+    { workspace: task.verifierKind === 'command' || target.kind !== 'skill', inputMode },
   );
   writeFileSync(join(runDir, '_prompt.txt'), prompt, 'utf8');
 
@@ -224,6 +227,7 @@ export async function runTrial(
     `${JSON.stringify(
       {
         schemaVersion: 2,
+        inputMode,
         ...serializable,
         runGroup: plan.runGroup,
         target: {
@@ -343,6 +347,10 @@ function statsFor(records: TrialOutcome[], errors: number): ConditionStats {
     passRate: trials === 0 ? 0 : passes / trials,
     meanScore,
     tokens: sumTokens(records),
+    tokenCoverage: {
+      input: records.filter(r => typeof r.tokens?.input === 'number').length,
+      output: records.filter(r => typeof r.tokens?.output === 'number').length,
+    },
   };
 }
 
@@ -532,6 +540,7 @@ function summarizeTask(
 }
 
 export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
+  assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
   if (!RUN_GROUP_PATTERN.test(plan.runGroup)) {
     throw new Error(
       `Invalid run group "${plan.runGroup}": must match ${RUN_GROUP_PATTERN} (got characters outside [A-Za-z0-9._-] or a leading dot/hyphen)`,
@@ -585,6 +594,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const scoreDelta = scoreDeltaCi ? scoreDeltaCi.point : null;
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
     schemaVersion: 4,
+    inputMode: plan.inputMode ?? 'snapshot',
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
     target: {

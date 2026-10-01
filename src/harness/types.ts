@@ -28,6 +28,7 @@ export interface Executor {
 }
 
 export type Condition = 'baseline' | 'treatment';
+export type InputMode = 'snapshot' | 'workspace';
 
 export const CONDITIONS: readonly Condition[] = ['baseline', 'treatment'];
 

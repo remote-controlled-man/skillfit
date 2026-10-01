@@ -234,6 +234,19 @@ them, step by step, on one real task.
 
 ## Workspace configuration experiments
 
+Paired runs can select `--input workspace` to present task files on disk without
+an inline snapshot. CLI executors only; the compatible default remains
+`snapshot`. Calibration must use the same selection. New v4 manifests and trial
+receipts record `inputMode`; its absence in an older manifest is reported as
+legacy/not recorded. Skill content remains force-injected in the treatment, so
+this changes task presentation, not L1/L2 or the statistical verdict protocol.
+The initial workspace prompt estimate excludes subsequent tool reads and replies.
+
+New condition summaries also record `tokenCoverage.input/output`: the number of
+graded surviving runs that supplied each field. Existing `tokens` totals and
+verdict semantics are unchanged. Missing or partial coverage cannot establish a
+complete overhead claim; legacy totals without coverage are shown as unrecorded.
+
 Rules and MCP targets use the same paired statistics as Skill targets but a different treatment
 mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The
 baseline/treatment project overlays are applied only after that snapshot, so the local CLI must load

@@ -79,6 +79,22 @@ node dist/cli.js install --agent codex --dry-run
 
 지원 에이전트: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([기능 매트릭스](src/matrix/agents.json) — 기계 판독 가능, 검증 날짜와 문서 링크 포함). trigger 모드 캡처는 현재 Kimi Code와 Codex CLI에서 검증되었습니다.
 
+## 실제 OSS 작업 평가
+
+짝 비교 CLI 실행에서 `--input workspace`를 사용하면 저장소를 프롬프트에 넣지 않고 디스크의 파일을
+확인하고 수정할 수 있습니다. 기준선 보정에도 같은 입력 방식을 사용하세요. 기본값은 `snapshot`이며,
+workspace 입력은 API 실행기를 지원하지 않고 `--mode trigger`와 별도로 사용합니다.
+
+```bash
+node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input workspace --trials 5 --dry-run
+node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
+```
+
+수정을 가져올 때 `bench add --from-commit <sha> --prompt-file issue.md`는 수정 메시지의 답을 노출하지 않고
+issue 요청을 보존합니다. 보고서는 체크별 결과, 사용량 기록 범위와 설치 판단에 부족한 증거를 보여 줍니다.
+단일 작업의 결과는 해당 작업에만 적용되며 일반적인 이점을 증명하지 않습니다.
+[실제 OSS 평가 과정](docs/oss-task-evaluation.md)과[고정 버전 mcp-use 예제](benches/contrib/oss-mcp-use-utf8/README.md)를 참고하세요.
+
 ## 규칙과 MCP 설정 테스트
 
 `skillfit-experiment.json`과 baseline/treatment 프로젝트 오버레이를 같은 디렉터리에 둡니다. 규칙 실험은 `AGENTS.md`를, MCP 실험은 `.codex/config.toml`, `.mcp.json` 또는 지원 에이전트의 기능 매트릭스에 정의된 경로를 추가할 수 있습니다. skillfit은 두 조건에 동일한 fixture를 복사하고 같은 prompt 스냅샷을 만든 뒤 각 오버레이를 적용하므로, 로컬 CLI가 정상 프로젝트 설정 로더를 통해 구성을 발견합니다.

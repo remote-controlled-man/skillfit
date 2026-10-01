@@ -102,3 +102,55 @@ test('report eval escapes Markdown links supplied by manifest fields', () => {
   assert.match(markdown, /# skillfit evaluation: \\\[click\\\]\(https:\/\/example\.com\)/);
   assert.ok(!markdown.includes('# skillfit evaluation: [click]('));
 });
+
+test('real reports show facets, bounded decisions and partial token coverage', () => {
+  const value = manifest();
+  value['executor'] = { kind: 'cli', model: 'cli-configured' };
+  value['inputMode'] = 'workspace';
+  const task = (value['tasks'] as Record<string, unknown>[])[0]!;
+  const conditions = task['conditions'] as Record<string, Record<string, unknown>>;
+  Object.assign(conditions['baseline']!, { meanScore: 0.5, tokens: { input: 40, output: 2 }, tokenCoverage: { input: 1, output: 1 } });
+  Object.assign(conditions['treatment']!, { meanScore: 1, tokens: { input: 80, output: 4 }, tokenCoverage: { input: 2, output: 2 } });
+  task['scoreDelta'] = 0.5;
+  task['facets'] = [{ name: 'Unicode | regression', baselinePassRate: 0.5, treatmentPassRate: 1, baselineTrials: 2, treatmentTrials: 2 }];
+  const stats = (value['overall'] as Record<string, unknown>)['stats'] as Record<string, unknown>;
+  stats['scoreDeltaCi'] = { lo: 0.1, hi: 0.9, resamples: 1000 };
+  const markdown = renderEvalMarkdown(parseEvalReport(value));
+  assert.match(markdown, /Input: workspace/);
+  assert.match(markdown, /\| task-1 \| 50\.0% \| 100\.0% \| \+50\.0pp \|/);
+  assert.match(markdown, /Unicode \\\| regression \| 50\.0% \(n=2\) \| 100\.0% \(n=2\)/);
+  assert.match(markdown, /Δscore 95% paired-bootstrap CI/);
+  assert.match(markdown, /Inconclusive means insufficient evidence/);
+  assert.match(markdown, /Activation is unmeasured/);
+  assert.match(markdown, /Token coverage is partial or unrecorded/);
+  assert.match(markdown, /40 \(1\/2 runs\)/);
+  assert.ok(!markdown.includes('Mean recorded tokens'));
+});
+
+test('report rejects invalid score, facet denominators, coverage and unpaired counts', () => {
+  for (const mutate of [
+    (task: Record<string, unknown>) => { task['facets'] = [{ name: 'a', baselinePassRate: 1, treatmentPassRate: 1, baselineTrials: 3, treatmentTrials: 2 }]; },
+    (task: Record<string, unknown>) => { task['facets'] = [{ name: 'a', baselinePassRate: 0.5, treatmentPassRate: 1, baselineTrials: 1, treatmentTrials: 2 }]; },
+    (task: Record<string, unknown>) => { ((task['conditions'] as Record<string, Record<string, unknown>>)['baseline']!)['meanScore'] = 2; },
+    (task: Record<string, unknown>) => { ((task['conditions'] as Record<string, Record<string, unknown>>)['baseline']!)['tokenCoverage'] = { input: 3, output: 0 }; },
+    (task: Record<string, unknown>) => { ((task['conditions'] as Record<string, Record<string, unknown>>)['baseline']!)['trials'] = 1; },
+  ]) {
+    const value = manifest();
+    mutate((value['tasks'] as Record<string, unknown>[])[0]!);
+    assert.throws(() => parseEvalReport(value), /denominator|finite number|coverage cannot|tokenCoverage cannot|equal numbers/);
+  }
+  const value = manifest();
+  value['inputMode'] = 'invented';
+  assert.throws(() => parseEvalReport(value), /inputMode must/);
+});
+
+test('legacy real manifests expose missing provenance and token coverage', () => {
+  const value = manifest();
+  value['executor'] = { kind: 'cli', model: 'cli-configured' };
+  const conditions = (value['overall'] as Record<string, unknown>)['conditions'] as Record<string, Record<string, unknown>>;
+  for (const c of Object.values(conditions)) c['tokens'] = { input: 40, output: 2 };
+  const markdown = renderEvalMarkdown(parseEvalReport(value));
+  assert.match(markdown, /legacy manifest; not recorded/);
+  assert.match(markdown, /coverage unrecorded/);
+  assert.match(markdown, /Token coverage is partial or unrecorded/);
+});

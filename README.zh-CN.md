@@ -79,6 +79,21 @@ node dist/cli.js install --agent codex --dry-run
 
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
+## 评估真实开源任务
+
+配对 CLI 实验可用 `--input workspace` 直接查看和修改磁盘上的文件，不把整个仓库内联到提示中。
+基线校准也应使用相同输入模式。默认仍是 `snapshot`；workspace 输入不支持 API 执行器，
+与 `--mode trigger` 分开使用。
+
+```bash
+node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input workspace --trials 5 --dry-run
+node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
+```
+
+导入修复时，`bench add --from-commit <sha> --prompt-file issue.md` 保留 issue 请求，避免透露修复提交的答案。
+报告展示逐项检查结果、使用量覆盖范围和安装决策所缺的证据。单个任务只能说明该任务，不能证明普遍收益。
+详见[真实开源评估流程](docs/oss-task-evaluation.md)，或复跑[固定版本的 mcp-use 示例](benches/contrib/oss-mcp-use-utf8/README.md)。
+
 ## 测试规则与 MCP 配置
 
 把 `skillfit-experiment.json` 和 baseline/treatment 项目覆盖层放在同一目录。规则实验可以加入 `AGENTS.md`；MCP 实验可以加入 `.codex/config.toml`、`.mcp.json` 或其他受支持 agent 在能力矩阵中声明的路径。skillfit 会为两组复制相同任务 fixture，先生成完全相同的 prompt 快照，再应用各自覆盖层，让本机 agent 通过正常的项目配置加载器发现配置。

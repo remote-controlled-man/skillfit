@@ -33,6 +33,7 @@ Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
   --mode <mode>       Eval mode: inject (default; Skills, rules, MCP) | trigger (Skills only)
+  --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (default: ${DEFAULT_EVAL_TRIALS})
   --profile <name>    Profile for install (default: "recommended")
@@ -68,6 +69,7 @@ bench add --from-commit options:
   --source-dir <dir>     Repository to mine (default: cwd)
   --include <dir>        Restrict the fixture to these paths (repeatable; required for large repos)
   --verifier-cmd <cmd>   Override the test command (default: node --test)
+  --prompt-file <path>  Use the original issue request instead of the fix commit message
 
 Docs: https://github.com/remote-controlled-man/skillfit
 `;
@@ -80,6 +82,7 @@ async function main(): Promise<void> {
       agent: { type: 'string' },
       'judge-agent': { type: 'string' },
       mode: { type: 'string' },
+      input: { type: 'string' },
       bench: { type: 'string' },
       trials: { type: 'string' },
       profile: { type: 'string' },
@@ -131,6 +134,14 @@ async function main(): Promise<void> {
     dryRun: values['dry-run'] ?? false,
     yes: values.yes ?? false,
   };
+  const inputMode = values.input;
+  if (inputMode !== undefined && inputMode !== 'snapshot' && inputMode !== 'workspace') {
+    throw new Error(`Unknown --input: ${inputMode} (expected "snapshot" or "workspace")`);
+  }
+  if (inputMode !== undefined && command !== 'eval' &&
+      !(command === 'bench' && positionals[1] === 'check' && values.calibrate)) {
+    throw new Error('--input applies only to paired eval or bench check --calibrate.');
+  }
 
   switch (command) {
     case 'doctor':
@@ -166,6 +177,7 @@ async function main(): Promise<void> {
         skillPath,
         bench: values.bench,
         mode,
+        inputMode,
         judgeAgent: values['judge-agent'],
         trials: values.trials === undefined ? undefined : Number(values.trials),
       });
@@ -229,6 +241,8 @@ async function main(): Promise<void> {
           calibrate: values.calibrate
             ? {
                 agent: values.agent,
+                inputMode,
+                dryRun: values['dry-run'] ?? false,
                 trials: values.trials ? Number.parseInt(values.trials, 10) : undefined,
               }
             : false,

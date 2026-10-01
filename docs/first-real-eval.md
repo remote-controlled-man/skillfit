@@ -8,6 +8,11 @@ and records what actually happened. This guide applies to macOS, Linux, and Wind
 
 ## 1. Choose a claim and a bench
 
+For a concrete OSS issue, follow [real OSS task evaluation](oss-task-evaluation.md).
+CLI coding runs can add `--input workspace` to work from files on disk without an
+inline repository; use the same option for baseline calibration. Snapshot input
+remains the compatible default.
+
 Choose one Skill, rules file, or MCP setup and one task family where it should help. Prefer tasks
 frozen from failures you actually encountered. For a Skill, use the directory that contains its
 `SKILL.md`; for rules or MCP, use the experiment directory described in

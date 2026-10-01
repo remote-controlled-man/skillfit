@@ -12,6 +12,17 @@ interface Counts {
   passes: number;
   trials: number;
   errors: number;
+  meanScore: number | null;
+  tokens: { input: number; output: number } | null;
+  tokenCoverage: { input: number; output: number } | null;
+}
+
+interface FacetRow {
+  name: string;
+  baselinePassRate: number;
+  treatmentPassRate: number;
+  baselineTrials: number;
+  treatmentTrials: number;
 }
 
 interface ReportRow {
@@ -20,6 +31,8 @@ interface ReportRow {
   treatment: Counts;
   deltaPassRate: number;
   verdict: Verdict;
+  scoreDelta: number | null;
+  facets: FacetRow[];
 }
 
 interface ReportData {
@@ -29,6 +42,7 @@ interface ReportData {
   bench: { name: string; sha256: string; taskCount: number };
   executor: { kind: string; model: string };
   trials: number;
+  inputMode: 'snapshot' | 'workspace' | null;
   tasks: ReportRow[];
   overall: ReportRow & {
     verdictReason: string;
@@ -36,6 +50,7 @@ interface ReportData {
     regressed: number;
     mcnemarP: number;
     deltaCi: { lo: number; hi: number; resamples: number } | null;
+    scoreDeltaCi: { lo: number; hi: number; resamples: number } | null;
   };
   warnings: string[];
 }
@@ -84,7 +99,40 @@ function counts(value: unknown, label: string): Counts {
   const trials = integer(item['trials'], `${label}.trials`);
   const errors = integer(item['errors'], `${label}.errors`);
   if (passes > trials) throw new Error(`${label}.passes cannot exceed trials`);
-  return { passes, trials, errors };
+  const meanScore = item['meanScore'] === undefined || item['meanScore'] === null
+    ? null : number(item['meanScore'], `${label}.meanScore`, 0, 1);
+  const rawTokens = item['tokens'] === undefined || item['tokens'] === null
+    ? null : object(item['tokens'], `${label}.tokens`);
+  const tokens = rawTokens === null ? null : {
+    input: number(rawTokens['input'], `${label}.tokens.input`, 0),
+    output: number(rawTokens['output'], `${label}.tokens.output`, 0),
+  };
+  const rawCoverage = item['tokenCoverage'] === undefined
+    ? null : object(item['tokenCoverage'], `${label}.tokenCoverage`);
+  const tokenCoverage = rawCoverage === null ? null : {
+    input: integer(rawCoverage['input'], `${label}.tokenCoverage.input`),
+    output: integer(rawCoverage['output'], `${label}.tokenCoverage.output`),
+  };
+  if (tokenCoverage && (tokenCoverage.input > trials || tokenCoverage.output > trials)) {
+    throw new Error(`${label}.tokenCoverage cannot exceed graded trials`);
+  }
+  if (meanScore !== null && trials === 0) throw new Error(`${label}.meanScore requires graded trials`);
+  return { passes, trials, errors, meanScore, tokens, tokenCoverage };
+}
+
+function facets(value: unknown, label: string): FacetRow[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) throw new Error(`${label} must be an array`);
+  return value.map((raw, index) => {
+    const item = object(raw, `${label}[${index}]`);
+    return {
+      name: string(item['name'], `${label}[${index}].name`),
+      baselinePassRate: number(item['baselinePassRate'], `${label}[${index}].baselinePassRate`, 0, 1),
+      treatmentPassRate: number(item['treatmentPassRate'], `${label}[${index}].treatmentPassRate`, 0, 1),
+      baselineTrials: integer(item['baselineTrials'], `${label}[${index}].baselineTrials`),
+      treatmentTrials: integer(item['treatmentTrials'], `${label}[${index}].treatmentTrials`),
+    };
+  });
 }
 
 function row(value: unknown, label: string, id: string): ReportRow {
@@ -96,14 +144,38 @@ function row(value: unknown, label: string, id: string): ReportRow {
     treatment: counts(conditions['treatment'], `${label}.conditions.treatment`),
     deltaPassRate: number(item['deltaPassRate'], `${label}.deltaPassRate`, -1, 1),
     verdict: verdict(item['verdict'], `${label}.verdict`),
+    scoreDelta: item['scoreDelta'] === undefined || item['scoreDelta'] === null
+      ? null : number(item['scoreDelta'], `${label}.scoreDelta`, -1, 1),
+    facets: facets(item['facets'], `${label}.facets`),
   };
 }
 
 function checkDelta(value: ReportRow, label: string): void {
+  if (value.baseline.trials !== value.treatment.trials) {
+    throw new Error(`${label} must contain equal numbers of graded paired trials`);
+  }
+  const seen = new Set<string>();
+  for (const facet of value.facets) {
+    if (seen.has(facet.name)) throw new Error(`${label}.facets contains a duplicate check name`);
+    seen.add(facet.name);
+    for (const condition of ['baseline', 'treatment'] as const) {
+      const trials = condition === 'baseline' ? facet.baselineTrials : facet.treatmentTrials;
+      const rate = condition === 'baseline' ? facet.baselinePassRate : facet.treatmentPassRate;
+      if (trials > value[condition].trials || (trials === 0 && rate !== 0) ||
+          Math.abs(rate * trials - Math.round(rate * trials)) > 1e-9) {
+        throw new Error(`${label}.facets has an invalid ${condition} check denominator or rate`);
+      }
+    }
+  }
   const rate = (counts: Counts): number => counts.trials === 0 ? 0 : counts.passes / counts.trials;
   const expected = rate(value.treatment) - rate(value.baseline);
   if (Math.abs(value.deltaPassRate - expected) > 1e-9) {
     throw new Error(`${label}.deltaPassRate disagrees with its pass counts`);
+  }
+  if (value.baseline.meanScore !== null && value.treatment.meanScore !== null &&
+      value.scoreDelta !== null && Math.abs(value.scoreDelta -
+        (value.treatment.meanScore - value.baseline.meanScore)) > 1e-9 && label !== 'overall') {
+    throw new Error(`${label}.scoreDelta disagrees with its mean scores`);
   }
 }
 
@@ -118,6 +190,10 @@ export function parseEvalReport(value: unknown): ReportData {
   if (!['skill', 'rules', 'mcp'].includes(kind)) throw new Error('target.kind must be skill, rules, or mcp');
   const bench = object(manifest['bench'], 'bench');
   const executor = object(manifest['executor'], 'executor');
+  const inputMode = manifest['inputMode'];
+  if (inputMode !== undefined && inputMode !== 'snapshot' && inputMode !== 'workspace') {
+    throw new Error('inputMode must be snapshot or workspace');
+  }
   const rawTasks = manifest['tasks'];
   if (!Array.isArray(rawTasks)) throw new Error('tasks must be an array');
   const tasks = rawTasks.map((task, index) => {
@@ -143,6 +219,15 @@ export function parseEvalReport(value: unknown): ReportData {
     resamples: integer(ci['resamples'], 'overall.stats.deltaCi.resamples', 1),
   };
   if (ciValue && ciValue.lo > ciValue.hi) throw new Error('overall.stats.deltaCi.lo cannot exceed hi');
+  const rawScoreCi = stats['scoreDeltaCi'];
+  const scoreCi = rawScoreCi === undefined || rawScoreCi === null ? null
+    : object(rawScoreCi, 'overall.stats.scoreDeltaCi');
+  const scoreDeltaCi = scoreCi === null ? null : {
+    lo: number(scoreCi['lo'], 'overall.stats.scoreDeltaCi.lo', -1, 1),
+    hi: number(scoreCi['hi'], 'overall.stats.scoreDeltaCi.hi', -1, 1),
+    resamples: integer(scoreCi['resamples'], 'overall.stats.scoreDeltaCi.resamples', 1),
+  };
+  if (scoreDeltaCi && scoreDeltaCi.lo > scoreDeltaCi.hi) throw new Error('overall.stats.scoreDeltaCi.lo cannot exceed hi');
   const overallRow = row(overall, 'overall', 'Overall');
   for (const [index, task] of tasks.entries()) checkDelta(task, `tasks[${index}]`);
   checkDelta(overallRow, 'overall');
@@ -176,6 +261,7 @@ export function parseEvalReport(value: unknown): ReportData {
     },
     executor: { kind: string(executor['kind'], 'executor.kind'), model: string(executor['model'], 'executor.model') },
     trials: integer(manifest['trials'], 'trials', 1),
+    inputMode: inputMode ?? null,
     tasks,
     overall: {
       ...overallRow,
@@ -184,6 +270,7 @@ export function parseEvalReport(value: unknown): ReportData {
       regressed,
       mcnemarP,
       deltaCi: ciValue,
+      scoreDeltaCi,
     },
     warnings: warnings as string[],
   };
@@ -204,6 +291,52 @@ function tableRow(value: ReportRow): string {
   return `| ${escapeMarkdown(value.id)} | ${passRate(value.baseline)} | ${passRate(value.treatment)} | ${value.baseline.errors}/${value.treatment.errors} | ${formatPp1(value.deltaPassRate)} | ${value.verdict} |`;
 }
 
+function score(value: number | null): string {
+  return value === null ? 'n/a' : `${(value * 100).toFixed(1)}%`;
+}
+
+function decisionNotes(report: ReportData): string[] {
+  const notes: string[] = [];
+  if (report.executor.kind === 'mock') {
+    return ['No installation decision: this synthetic run only checks the harness.'];
+  }
+  if (report.overall.baseline.trials === 0) {
+    notes.push('No installation decision: no graded pairs. Repair the execution or verifier environment first.');
+  } else if (report.overall.verdict === 'inconclusive') {
+    notes.push('No installation recommendation from this run. Inconclusive means insufficient evidence to distinguish benefit from variation; it does not mean ineffective.');
+  } else {
+    notes.push(report.overall.verdict === 'effective'
+      ? 'The statistical quality result favors treatment on this bench; it does not by itself establish installation value.'
+      : 'The statistical quality result favors baseline on this bench; review the regressions before enabling this configuration for these tasks.');
+  }
+  notes.push(`Scope: ${report.bench.taskCount} evaluated task(s), this target hash and executor configuration. A single task does not establish general OSS contribution quality.`);
+  if (report.bench.taskCount < CONCLUSIVE_TASKS || report.trials < CONCLUSIVE_TRIALS) {
+    notes.push('The run is indicative. Freeze a varied task set and trial count before a separate validation run; do not keep adding trials until significance appears.');
+  }
+  if (report.overall.baseline.errors + report.overall.treatment.errors > 0) {
+    notes.push('Executor/verifier errors removed pairs. Inspect the raw error receipts before spending more calls.');
+  }
+  const saturated = report.tasks.filter(t => t.baseline.trials > 0 && t.baseline.passes / t.baseline.trials >= 0.9);
+  if (saturated.length > 0) {
+    notes.push(`Observed baseline saturation: ${saturated.map(t => t.id).join(', ')}. Retain these as regression controls; add independent real failures to measure lift.`);
+  }
+  if (report.tasks.some(t => t.baseline.trials > 0 && t.baseline.passes === 0 && t.treatment.passes === 0)) {
+    notes.push('Some tasks failed in both arms. Inspect facet misses, dependencies and the issue-to-check contract before interpreting the pass-rate floor as task difficulty.');
+  }
+  if (report.target.kind === 'skill') {
+    notes.push('Activation is unmeasured by this paired run: Skill content was force-injected. Run separate trigger tests with relevant requests and negative controls before an installation decision.');
+  }
+  if (!report.overall.baseline.tokens || !report.overall.treatment.tokens) {
+    notes.push('Token overhead is unavailable. Elapsed time or prompt-size estimates do not establish token cost.');
+  } else if ([report.overall.baseline, report.overall.treatment].some(c =>
+    !c.tokenCoverage || c.tokenCoverage.input < c.trials || c.tokenCoverage.output < c.trials)) {
+    notes.push('Token coverage is partial or unrecorded. Available usage totals cannot establish complete token overhead.');
+  } else {
+    notes.push('Recorded token usage is shown below; it is not a billing estimate or a statistically established cost effect.');
+  }
+  return notes;
+}
+
 export function renderEvalMarkdown(report: ReportData): string {
   const lines = [
     `# skillfit evaluation: ${escapeMarkdown(report.target.name)}`,
@@ -218,6 +351,7 @@ export function renderEvalMarkdown(report: ReportData): string {
     `- Bench: ${escapeMarkdown(report.bench.name)} (${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'}); SHA-256 \`${report.bench.sha256}\``,
     `- Executor: ${escapeMarkdown(report.executor.kind)} / ${escapeMarkdown(report.executor.model)}`,
     `- Trials: ${report.trials} per condition`,
+    `- Input: ${report.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`,
     '',
     '| Task | Baseline | Treatment | Errors B/T | Δpass | Verdict |',
     '|---|---:|---:|---:|---:|---|',
@@ -235,8 +369,35 @@ export function renderEvalMarkdown(report: ReportData): string {
   } else {
     lines.push('- Δpass 95% CI: n/a (no graded pairs)');
   }
+  if (report.overall.scoreDeltaCi) {
+    const ci = report.overall.scoreDeltaCi;
+    lines.push(`- Δscore 95% paired-bootstrap CI (${ci.resamples} resamples): [${formatPp1(ci.lo)}, ${formatPp1(ci.hi)}]`);
+  }
   if (report.bench.taskCount < CONCLUSIVE_TASKS || report.trials < CONCLUSIVE_TRIALS) {
     lines.push(`- Scale: ${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'} × ${report.trials} ${report.trials === 1 ? 'trial' : 'trials'} per condition; below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials). Treat broader claims as indicative even if the within-bench verdict is statistically significant.`);
+  }
+  lines.push('', '## Checks and graded scores', '',
+    '| Task | Baseline mean check score | Treatment mean check score | Δscore |',
+    '|---|---:|---:|---:|',
+    ...report.tasks.map(t => `| ${escapeMarkdown(t.id)} | ${score(t.baseline.meanScore)} | ${score(t.treatment.meanScore)} | ${t.scoreDelta === null ? 'n/a' : formatPp1(t.scoreDelta)} |`));
+  for (const task of report.tasks) {
+    if (task.facets.length === 0) continue;
+    lines.push('', `### ${escapeMarkdown(task.id)}`, '',
+      '| Check | Baseline pass rate (graded observations) | Treatment pass rate (graded observations) |',
+      '|---|---:|---:|',
+      ...task.facets.map(f => `| ${escapeMarkdown(f.name)} | ${f.baselineTrials === 0 ? 'n/a' : `${score(f.baselinePassRate)} (n=${f.baselineTrials})`} | ${f.treatmentTrials === 0 ? 'n/a' : `${score(f.treatmentPassRate)} (n=${f.treatmentTrials})`} |`));
+  }
+  if (report.tasks.every(t => t.facets.length === 0)) {
+    lines.push('', 'No per-check observations recorded.');
+  }
+  lines.push('', '## Installation decision and next steps', '',
+    ...decisionNotes(report).map(note => `- ${escapeMarkdown(note)}`));
+  if (report.overall.baseline.tokens && report.overall.treatment.tokens) {
+    const cell = (c: Counts, field: 'input' | 'output'): string =>
+      `${c.tokens![field]} (${c.tokenCoverage ? `${c.tokenCoverage[field]}/${c.trials} runs` : 'coverage unrecorded'})`;
+    lines.push('', '| Recorded token totals (field coverage) | Baseline | Treatment |', '|---|---:|---:|',
+      `| Input | ${cell(report.overall.baseline, 'input')} | ${cell(report.overall.treatment, 'input')} |`,
+      `| Output | ${cell(report.overall.baseline, 'output')} | ${cell(report.overall.treatment, 'output')} |`);
   }
   lines.push('', '## Warnings', '');
   if (report.warnings.length === 0) lines.push('- None');
