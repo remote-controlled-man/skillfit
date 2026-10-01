@@ -74,6 +74,20 @@ test('CliExecutor.forAgent uses the headless template from the agent matrix', ()
   }
 });
 
+test('Codex paired and trigger runs both use a writable disposable workspace', () => {
+  const headless = getAgent('codex').headless;
+  const paired = CliExecutor.forAgent('codex').describe().detail;
+  const trigger = CliExecutor.forAgent('codex', { triggerSkillName: 'example' }).describe().detail;
+  for (const argv of [headless.argv, headless.streamJson?.argv]) {
+    assert.ok(argv, 'Codex needs both headless templates');
+    const sandboxIndex = argv.indexOf('--sandbox');
+    assert.ok(sandboxIndex >= 0, 'sandbox mode must be explicit, not inherited from the user config');
+    assert.equal(argv[sandboxIndex + 1], 'workspace-write');
+  }
+  assert.match(paired ?? '', /--sandbox workspace-write/);
+  assert.match(trigger ?? '', /--sandbox workspace-write/);
+});
+
 test('CliExecutor.forAgent kimi-code passes the prompt as a -p file reference', () => {
   const headless = getAgent('kimi-code').headless;
   assert.equal(headless.promptVia, 'file');

@@ -89,6 +89,10 @@ protocol is unchanged.
 
 ### Changed
 
+- Codex CLI paired and trigger evaluations now both request `workspace-write` explicitly. This keeps
+  command-graded trials writable even when the user's default Codex sandbox is read-only; the
+  matrix verification timestamp and official CLI reference were updated together.
+
 - Paired and trigger evaluations now default to five trials; dry-run plans show the full execution
   count and flag runs below the 8-task × 5-trial scale bar before any agent call. A first-real-eval
   guide explains the cost, setup-contamination risk, and how to read errors and uncertainty. All five
