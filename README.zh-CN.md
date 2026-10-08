@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/skillfit-mark.svg" alt="skillfit 图标" width="96" />
+
 # skillfit
 
 **Skills 市场告诉你什么最热门，skillfit 告诉你什么真有用。**
@@ -13,14 +15,14 @@
 [![Zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-blue)](package.json)
 [![GitHub stars](https://img.shields.io/github/stars/remote-controlled-man/skillfit?style=flat)](https://github.com/remote-controlled-man/skillfit/stargazers)
 
-[English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
+[English](README.md) · [简体中文](README.zh-CN.md)
 
 [快速开始](#快速开始) · [Bench 指南](benches/README.md) · [指标协议](docs/metrics.md) · [证据库](evidence/)
 
 </div>
 
 <p align="center">
-  <img src="docs/assets/skillfit-flow.svg" alt="skillfit 用相同任务对比关闭和开启配置的结果，再记录统计判定" width="100%" />
+  <img src="docs/assets/skillfit-flow.zh-CN.svg" alt="同一个任务分别使用基线组和实验组配置运行，再比较结果、Token 消耗与不确定性" width="100%" />
 </p>
 
 ---

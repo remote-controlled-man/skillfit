@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/skillfit-mark.svg" alt="skillfit logo" width="96" />
+
 # skillfit
 
 **Skill registries tell you what's popular. skillfit tells you what actually works.**
@@ -13,14 +15,14 @@ then install only what survives the experiment.
 [![Zero runtime deps](https://img.shields.io/badge/runtime%20deps-0-blue)](package.json)
 [![GitHub stars](https://img.shields.io/github/stars/remote-controlled-man/skillfit?style=flat)](https://github.com/remote-controlled-man/skillfit/stargazers)
 
-[English](README.md) · [中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md)
+[English](README.md) · [简体中文](README.zh-CN.md)
 
 [Quick start](#quick-start) · [Bench guide](benches/README.md) · [Metrics protocol](docs/metrics.md) · [Evidence](evidence/)
 
 </div>
 
 <p align="center">
-  <img src="docs/assets/skillfit-flow.svg" alt="skillfit compares the same task with configuration off and on, then records a statistical verdict" width="100%" />
+  <img src="docs/assets/skillfit-flow.en.svg" alt="The same task runs with baseline and treatment configurations before skillfit compares outcomes, token use, and uncertainty" width="100%" />
 </p>
 
 ---

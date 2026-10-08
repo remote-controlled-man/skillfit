@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc" lang="en">
+  <title id="title">A paired configuration experiment</title>
+  <desc id="desc">The same task enters baseline and treatment runs. skillfit compares task outcome, token use, and uncertainty before an installation decision.</desc>
+  <rect width="1200" height="460" rx="24" fill="#0c1729"/>
+  <rect x="48" y="38" width="54" height="54" rx="13" fill="#172842"/>
+  <path d="M69 52h-5a4 4 0 0 0-4 4v18a4 4 0 0 0 4 4h5m12-26h5a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4h-5" fill="none" stroke="#69d9ce" stroke-width="4" stroke-linecap="round"/>
+  <path d="M75 58 82 65 75 72 68 65Z" fill="#f5f8ff"/>
+  <text x="122" y="63" fill="#f5f8ff" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="700">Decide with a paired test.</text>
+  <text x="122" y="90" fill="#b7c7d9" font-family="Segoe UI,Arial,sans-serif" font-size="18">One task, two configurations, an auditable result.</text>
+
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <rect x="48" y="148" width="270" height="246" rx="16" fill="#14253d" stroke="#35506a" stroke-width="2"/>
+    <rect x="70" y="174" width="45" height="51" rx="5" fill="none" stroke="#8eabc2" stroke-width="3"/>
+    <path d="M80 188h25m-25 10h25m-25 10h16" stroke="#8eabc2" stroke-width="3" stroke-linecap="round"/>
+    <text x="70" y="263" fill="#f5f8ff" font-size="25" font-weight="700">Same task</text>
+    <text x="70" y="303" fill="#cad7e5" font-size="18">Prompt + fixture</text>
+    <text x="70" y="331" fill="#cad7e5" font-size="18">held constant in both runs</text>
+
+    <path d="M318 270h57m0 0v-68m0 68v68m0-136h43m-43 136h43" fill="none" stroke="#8eabc2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m410 195 9 7-9 7m0 122 9 7-9 7" fill="none" stroke="#8eabc2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="430" y="148" width="300" height="108" rx="15" fill="#14253d" stroke="#55d6c8" stroke-width="2"/>
+    <circle cx="460" cy="180" r="7" fill="#55d6c8"/>
+    <text x="479" y="187" fill="#f5f8ff" font-size="23" font-weight="700">Baseline</text>
+    <text x="459" y="226" fill="#cad7e5" font-size="18">Current configuration</text>
+
+    <rect x="430" y="286" width="300" height="108" rx="15" fill="#14253d" stroke="#91a7ff" stroke-width="2"/>
+    <circle cx="460" cy="318" r="7" fill="#91a7ff"/>
+    <text x="479" y="325" fill="#f5f8ff" font-size="23" font-weight="700">Treatment</text>
+    <text x="459" y="364" fill="#cad7e5" font-size="18">One changed setting</text>
+
+    <path d="M730 202h44m-44 138h44m0-138v138m0-69h37" fill="none" stroke="#8eabc2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="m803 264 9 7-9 7" fill="none" stroke="#8eabc2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="824" y="148" width="328" height="246" rx="16" fill="#14253d" stroke="#526b90" stroke-width="2"/>
+    <text x="850" y="190" fill="#f5f8ff" font-size="25" font-weight="700">Compare results</text>
+    <path d="M850 208h276" stroke="#35506a" stroke-width="2"/>
+    <circle cx="859" cy="242" r="5" fill="#55d6c8"/>
+    <text x="876" y="249" fill="#cad7e5" font-size="18">Task outcome</text>
+    <circle cx="859" cy="278" r="5" fill="#55d6c8"/>
+    <text x="876" y="285" fill="#cad7e5" font-size="18">Token use</text>
+    <circle cx="859" cy="314" r="5" fill="#55d6c8"/>
+    <text x="876" y="321" fill="#cad7e5" font-size="18">Confidence interval</text>
+    <rect x="850" y="344" width="276" height="32" rx="8" fill="#55d6c8"/>
+    <text x="988" y="366" text-anchor="middle" fill="#0c1729" font-size="16" font-weight="700">Install with evidence</text>
+  </g>
+</svg>

@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "benches",
+    "docs",
     "evidence",
     "profiles",
     "skills"

@@ -65,7 +65,7 @@ test('collectEvaluationTarget rejects overlays that leave the experiment through
   const dir = tmp(t);
   const outside = tmp(t);
   writeFileSync(join(outside, 'AGENTS.md'), '# outside\n');
-  symlinkSync(outside, join(dir, 'treatment'));
+  symlinkSync(outside, join(dir, 'treatment'), 'junction');
   writeFileSync(join(dir, EXPERIMENT_FILE), JSON.stringify({ schemaVersion: 1, kind: 'rules', treatment: 'treatment' }));
   assert.throws(() => collectEvaluationTarget(dir), /escapes or aliases the experiment directory/);
 });

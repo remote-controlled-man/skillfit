@@ -2,7 +2,7 @@
 
 ## What this is
 
-Evidence-driven configuration CLI for AI coding agents. Seven commands: `doctor` (read-only health check), `report` (skill usage receipts from local session history), `eval` (paired A/B experiment harness + trigger mode), `bench` (scaffold + offline validation + failure freezing), `install` (idempotent, dry-run-first writer), `setup` (selectable Codex Skill sources), `bundle` (portable Codex profile export). Supports Claude Code, Codex CLI, Kimi Code.
+Evidence-driven configuration CLI for AI coding agents. Eight commands: `doctor` (read-only health check), `report` (skill usage receipts from local session history), `eval` (paired A/B experiment harness + trigger mode), `mcp` (read-only server preflight), `bench` (scaffold + offline validation + failure freezing), `install` (idempotent, dry-run-first writer), `setup` (selectable Codex Skill sources), `bundle` (portable Codex profile export). Supports Claude Code, Codex CLI, Kimi Code.
 
 ## Commands
 
@@ -20,7 +20,7 @@ node dist/cli.js doctor    # smoke against the real machine (read-only)
 - Every write operation: dry-run plan first, backup before write, verify after write. No exceptions.
 - Tests are `node:test`, offline, and must never call a real model API or agent CLI — use `MockExecutor` / injected fs roots.
 - Verdict semantics and the statistical protocol are frozen in `docs/metrics.md` — change the doc and the code together.
-- User-facing CLI output is English. README/docs are multilingual: README.md is the English source of truth; README.zh-CN.md, README.ja.md, README.ko.md, README.es.md mirror it section-by-section (badges, code blocks, and the demo console block stay verbatim in every language).
+- User-facing CLI output is English. README.md is the English source of truth; README.zh-CN.md mirrors it section-by-section (badges, code blocks, and the demo console block stay verbatim). Diagrams with text have one localized SVG per README; the text-free logo is shared.
 
 ## Layout
 

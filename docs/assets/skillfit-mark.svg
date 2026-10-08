@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">skillfit</title>
+  <desc id="desc">Two matching experiment brackets surrounding a measured result.</desc>
+  <rect x="2" y="2" width="124" height="124" rx="28" fill="#0c1729"/>
+  <path d="M45 31H36a9 9 0 0 0-9 9v48a9 9 0 0 0 9 9h9" fill="none" stroke="#55d6c8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M83 31h9a9 9 0 0 1 9 9v48a9 9 0 0 1-9 9h-9" fill="none" stroke="#91a7ff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M64 46 82 64 64 82 46 64Z" fill="#f5f8ff"/>
+  <circle cx="64" cy="64" r="5" fill="#0c1729"/>
+</svg>
