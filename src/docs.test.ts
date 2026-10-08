@@ -6,15 +6,14 @@ import { test } from 'node:test';
 
 const PACKAGE_ROOT = fileURLToPath(new URL('..', import.meta.url));
 const GUIDE = 'docs/bench-authoring.md';
-const READMES = ['README.md', 'README.zh-CN.md', 'README.ja.md', 'README.ko.md', 'README.es.md'];
+const READMES = ['README.md', 'README.zh-CN.md'];
 
 function read(rel: string): string {
   return readFileSync(resolve(PACKAGE_ROOT, rel), 'utf8');
 }
 
-// AGENTS.md requires the five READMEs to mirror each other section by section. A link added to the
-// English one and forgotten in four translations is the drift this pins: it already happened once, to
-// the trigger-mode demo block.
+// AGENTS.md requires the English and Simplified Chinese READMEs to mirror each other section by
+// section. A link added to one and forgotten in the other is the drift these checks prevent.
 test('the bench authoring guide is linked from every README and every entry point', () => {
   for (const readme of READMES) {
     assert.match(read(readme), /\(docs\/bench-authoring\.md\)/, `${readme} must link the guide`);
@@ -95,9 +94,17 @@ test('the evidence index links only to files present in a clean checkout', () =>
 });
 
 test('rules and MCP evaluation tour stays present across README languages', () => {
-  for (const readme of READMES) {
+  for (const [readme, figure, language, label] of [
+    ['README.md', 'docs/assets/skillfit-flow.en.svg', 'en', 'Baseline'],
+    ['README.zh-CN.md', 'docs/assets/skillfit-flow.zh-CN.svg', 'zh-CN', '基线组'],
+  ] as const) {
     const content = read(readme).replace(/\r\n/g, '\n');
-    assert.match(content, /docs\/assets\/skillfit-flow\.svg/, `${readme} must show the evidence loop`);
+    assert.ok(content.includes('docs/assets/skillfit-mark.svg'), `${readme} must show the logo`);
+    assert.ok(content.includes(figure), `${readme} must show its localized evidence loop`);
+    const svg = read(figure);
+    assert.ok(svg.includes(`lang="${language}"`), `${figure} must declare its language`);
+    assert.ok(svg.includes(label), `${figure} must contain localized copy`);
+    assert.ok(!/9\/20|16\/20/.test(svg), `${figure} must not imply unpublished evaluation results`);
     assert.match(content, /skillfit mcp check/, `${readme} must mention MCP preflight`);
     assert.match(content, /node dist\/cli\.js eval \.\/context7-experiment --bench \.\/my-context7-bench --agent codex --trials 5/, `${readme} must show config A\/B`);
     assert.match(content, /\(docs\/config-experiments\.md\)/, `${readme} must link the config experiment guide`);

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — README localization and identity (2026-10-09)
+
+- Keep English and Simplified Chinese as the maintained README languages and localize the evidence
+  diagram for each. Remove the three other translations after reviewing maintenance scope.
+- Add a compact SVG mark shared by both READMEs. Replace illustrative outcome counts in the diagram
+  with a process illustration that does not imply an unpublished experiment result.
+- Include linked documentation and SVG assets in the npm package so its rendered README can load them.
+
 ## Unreleased — review follow-up (2026-10-01)
 
 - **D1:** Trigger experiments now record a separate complete installed-file fingerprint and file

@@ -6,7 +6,7 @@ Make it easy for someone who has never seen skillfit to reach a trustworthy, rep
 then make that result useful to a team. Stars are an outcome to observe, not an acceptance test.
 
 The product already has paired evaluations, deterministic bench gates, trigger measurements,
-configuration experiments, an MCP preflight, and five README languages. The main adoption gap is the
+configuration experiments, an MCP preflight, and English and Simplified Chinese READMEs. The main adoption gap is the
 path from a fresh clone to understanding what was measured: the package has not been published, live
 evaluations need a local agent or API key, and the first offline check is easy to mistake for an
 agent-quality result. The README also mixes cross-platform Node commands with Bash-only setup and
@@ -33,7 +33,7 @@ of CI.
 
 ### 1. Make the first ten minutes work on every supported OS
 
-- Make the five README quick starts use commands that work in Bash and PowerShell after cloning.
+- Make both README quick starts use commands that work in Bash and PowerShell after cloning.
 - Separate offline verification, local-agent evaluation, and installation so a new user knows which
   commands need credentials, network access, or file writes.
 - Provide native Node CLI commands for selectable Codex setup; document the Bash convenience script
@@ -41,7 +41,7 @@ of CI.
 - Add a concise repository description, homepage, and focused topics on GitHub.
 
 Acceptance: a fresh clone can run `npm ci`, build, inspect the CLI, and check both bundled benches on
-macOS, Linux, and Windows. The README's first path needs no model API. The five languages preserve
+macOS, Linux, and Windows. The README's first path needs no model API. Both languages preserve
 the same command blocks. No package publication is required.
 
 ### 2. Turn a run into a shareable review artifact
