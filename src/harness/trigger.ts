@@ -132,6 +132,9 @@ async function runTriggerTrial(
   let tokens: TokenUsage | null = null;
   let triggered: boolean | null = null;
   try {
+    if (!gitInitialized && task.verifierKind === 'command') {
+      throw new Error('Benchmark Git initialization or reflog verification failed; trigger task was not executed.');
+    }
     const result = await plan.executor.run(prompt, runDir);
     output = result.output;
     rawOutput = result.rawOutput ?? null;

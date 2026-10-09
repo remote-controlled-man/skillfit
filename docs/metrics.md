@@ -85,6 +85,8 @@ mode measures the rates below, while positive task classes and real-set competit
   `SKILL.md`; normalize shell-escaped path separators before matching); Claude Code —
   `-p --output-format stream-json --verbose` (`--bare` forbidden: it skips skill discovery) — implemented
   against the documented shape but not yet machine-verified.
+- **Environment errors**: unavailable disposable Git initialization/reflog excludes a command trigger trial
+  before its executor starts. The existing error exclusion and trigger-rate formulas remain unchanged.
 - **Presentation fidelity**: trigger-mode tasks present work as files on disk with a natural request; the
   harness never inlines a repository snapshot in trigger mode. A self-contained prompt suppresses skill
   consultation (measured: 0/9 trigger recall with an inline snapshot vs. the skill firing on the same tasks

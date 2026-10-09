@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test, type TestContext } from 'node:test';
@@ -117,4 +117,32 @@ test('unavailable command-task reflog excludes both arms before any executor cal
     assert.match(receipt.error, /Git initialization or reflog verification failed/);
     assert.equal(receipt.verifierExitCode, null);
   }
+});
+
+test('unavailable trigger-task Git setup makes no executor call and is excluded from trigger rates', (t) => {
+  const root = fixture(t, 'receipt-current');
+  const trigger = new URL('./trigger.js', import.meta.url).href;
+  const bundle = new URL('./bundle.js', import.meta.url).href;
+  const benchModule = new URL('./bench.js', import.meta.url).href;
+  mkdirSync(join(root, 'skill'));
+  writeFileSync(join(root, 'skill', 'SKILL.md'), '# offline trigger fixture\n');
+  const script = `import {runTriggerExperiment} from ${JSON.stringify(trigger)};
+    import {collectSkillBundle} from ${JSON.stringify(bundle)};
+    import {loadBench} from ${JSON.stringify(benchModule)};
+    let calls=0;
+    const bench=loadBench(${JSON.stringify(BENCH)});bench.tasks=bench.tasks.filter(t=>t.id==='explicit-hold');
+    const manifest=await runTriggerExperiment({bench,skill:collectSkillBundle(process.argv[1]+'/skill','offline'),
+      executor:{describe:()=>({kind:'stub',model:'offline'}),run:async()=>{calls++;return {output:'done',skillTriggered:true};}},
+      trials:1,runsRoot:process.argv[1],runGroup:'trigger-excluded',skillInstallDir:'project-skills'});
+    console.log(JSON.stringify({calls,manifest}));`;
+  const output = execFileSync(process.execPath, ['--input-type=module', '-e', script, root], { encoding: 'utf8',
+    env: { ...process.env, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'core.logAllRefUpdates', GIT_CONFIG_VALUE_0: 'false' } });
+  const { calls, manifest } = JSON.parse(output);
+  assert.equal(calls, 0);
+  assert.equal(manifest.tasks[0].errors, 1);
+  assert.equal(manifest.metrics.positives.runs, 0);
+  assert.equal(manifest.metrics.negatives.runs, 0);
+  const receipt = JSON.parse(readFileSync(join(root, 'trigger-excluded', 'explicit-hold', 'installed', 'trial-1', '_result.json'), 'utf8'));
+  assert.match(receipt.error, /Git initialization or reflog verification failed/);
+  assert.equal(receipt.triggered, null);
 });
