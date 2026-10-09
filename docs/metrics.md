@@ -109,7 +109,10 @@ mode measures the rates below, while positive task classes and real-set competit
 
 ## L2 — conditional efficacy (the paired A/B core)
 
-Measured with the skill force-injected (today's `eval` behavior), isolating content quality from routing.
+Measured with the Skill force-injected (`eval --mode inject`, the compatible default), isolating content quality from routing.
+`eval --mode installed` uses the same paired statistics but measures native discovery plus complete
+Skill resources, so its delta is realized task efficacy under the recorded environment, not efficacy
+conditional on guaranteed activation. Keep these delivery surfaces distinct when comparing studies.
 
 - **ΔP** = treatment pass rate − baseline pass rate (per task, then pooled).
 - **ρ** = (tokens_treatment − tokens_baseline) / tokens_baseline, input and output separately.
@@ -256,6 +259,18 @@ receipts record `inputMode`; its absence in an older manifest is reported as
 legacy/not recorded. Skill content remains force-injected in the treatment, so
 this changes task presentation, not L1/L2 or the statistical verdict protocol.
 The initial workspace prompt estimate excludes subsequent tool reads and replies.
+
+Paired `--mode installed` is a separate, opt-in delivery surface for Skill/CLI experiments and
+requires workspace input. Prompts remain identical; only treatment receives the complete Skill at
+the matrix-defined project directory. Compatible v4 `skillDelivery` metadata records the selection
+and directory. Here `target.bundleSha256/files` fingerprint all regular resources (sorted relative
+paths and bytes, including scripts and binary assets; excluding permissions and empty directories).
+Per-run receipts retain nullable mechanical activation observations and available raw transcripts.
+Source drift, unsafe paths, symlinks and fixture collisions fail before the affected agent call.
+Inherited agent configuration is not isolated, and installation does not guarantee activation.
+Old v4 manifests and inject mode retain their existing interpretation. Paired tests, scale labels,
+error exclusions, CI calculations and verdict semantics above are unchanged. See
+[installed-skill-evaluation.md](installed-skill-evaluation.md) for usage and limits.
 
 New condition summaries also record `tokenCoverage.input/output`: the number of
 graded surviving runs that supplied each field. Existing `tokens` totals and

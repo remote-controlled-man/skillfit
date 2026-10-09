@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
+import { assertInstalledSkillFixtures, installSkillResources, installedSkillDestination } from './installed-skill.js';
+import { collectInstalledSkillFingerprint } from './bundle.js';
 import { judgePair, type JudgeResult } from './judge.js';
 import { killTree, treeSpawnOptions } from './kill-tree.js';
 import { assertInputModeSupported, buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
@@ -24,6 +26,7 @@ export interface ExperimentPlan {
   bench: Bench;
   target: EvaluationTarget;
   inputMode?: InputMode;
+  skillInstallDir?: string;
   executor: Executor;
   judge?: Executor | null;
   trials: number;
@@ -57,6 +60,7 @@ export interface TrialOutcome {
   output: string;
   tokens: TokenUsage | null;
   gitInitialized: boolean;
+  skillTriggered?: boolean | null;
 }
 
 export interface ProcessResult {
@@ -134,6 +138,14 @@ export async function runTrial(
   const { bench, target, executor } = plan;
   const inputMode = plan.inputMode ?? 'snapshot';
   assertInputModeSupported(inputMode, executor);
+  if (plan.skillInstallDir) {
+    if (target.kind !== 'skill' || inputMode !== 'workspace') {
+      throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
+    }
+    if (collectInstalledSkillFingerprint(target.sourceDir).sha256 !== target.sha256) {
+      throw new Error('Skill resources changed after planning; freeze the input again before running.');
+    }
+  }
   const task = bench.tasks.find((t) => t.id === taskId);
   if (!task) throw new Error(`Unknown task: ${taskId}`);
   const runDir = join(plan.runsRoot, plan.runGroup, task.id, condition, `trial-${trial}`);
@@ -151,13 +163,18 @@ export async function runTrial(
   const snapshot = inputMode === 'snapshot' ? snapshotRepoFiles(runDir) : '';
   const overlay = target.overlays[condition];
   if (overlay) applyOverlay(overlay, runDir);
+  if (plan.skillInstallDir) {
+    const destination = installedSkillDestination(runDir, plan.skillInstallDir, target.name);
+    if (existsSync(destination)) throw new Error('Fixture already contains the evaluated Skill: ' + destination);
+    if (condition === 'treatment') installSkillResources(target, runDir, plan.skillInstallDir);
+  }
   const gitInitialized = await gitInit(runDir);
 
   const taskPromptText = readFileSync(join(bench.dir, task.prompt), 'utf8');
   const prompt = buildTaskPrompt(
     taskPromptText,
     snapshot,
-    condition === 'treatment' ? target.payload : null,
+    condition === 'treatment' && !plan.skillInstallDir ? target.payload : null,
     // Workspace configuration experiments must let the agent use its configured tools and inspect
     // the project even when the final answer is graded as text. Skill-only output benches retain the
     // stricter prompt isolation used by the original harness.
@@ -169,15 +186,20 @@ export async function runTrial(
   let output = '';
   let error: string | null = null;
   let tokens: TokenUsage | null = null;
+  let rawOutput: string | null = null;
+  let skillTriggered: boolean | null = null;
   try {
     const result = await executor.run(prompt, runDir);
     output = result.output;
     tokens = result.tokens ?? null;
+    rawOutput = result.rawOutput ?? null;
+    skillTriggered = result.skillTriggered ?? null;
   } catch (executorError) {
     error = (executorError as Error).message;
   }
   const finished = new Date();
   writeFileSync(join(runDir, '_output.md'), output, 'utf8');
+  if (rawOutput !== null) writeFileSync(join(runDir, '_transcript.jsonl'), rawOutput, 'utf8');
 
   let verifierExitCode: number | null = null;
   let passed = false;
@@ -220,6 +242,7 @@ export async function runTrial(
     output,
     tokens,
     gitInitialized,
+    ...(plan.skillInstallDir ? { skillTriggered } : {}),
   };
   const { output: _output, ...serializable } = record;
   writeFileSync(
@@ -228,6 +251,7 @@ export async function runTrial(
       {
         schemaVersion: 2,
         inputMode,
+        ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed', installDir: plan.skillInstallDir } } : {}),
         ...serializable,
         runGroup: plan.runGroup,
         target: {
@@ -541,6 +565,12 @@ function summarizeTask(
 
 export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
+  if (plan.skillInstallDir) {
+    if (plan.target.kind !== 'skill' || plan.inputMode !== 'workspace') {
+      throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
+    }
+    assertInstalledSkillFixtures(plan.bench, plan.target, plan.skillInstallDir);
+  }
   if (!RUN_GROUP_PATTERN.test(plan.runGroup)) {
     throw new Error(
       `Invalid run group "${plan.runGroup}": must match ${RUN_GROUP_PATTERN} (got characters outside [A-Za-z0-9._-] or a leading dot/hyphen)`,
@@ -595,6 +625,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
     schemaVersion: 4,
     inputMode: plan.inputMode ?? 'snapshot',
+    ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed' as const, installDir: plan.skillInstallDir } } : {}),
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
     target: {

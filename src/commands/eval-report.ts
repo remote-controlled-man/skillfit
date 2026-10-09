@@ -2,6 +2,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1, verdictFor } from '../harness/report.js';
 import { mcnemarExactP } from '../harness/stats.js';
+import { validateSkillInstallDir } from '../harness/installed-skill.js';
 
 const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
 
@@ -43,6 +44,7 @@ interface ReportData {
   executor: { kind: string; model: string };
   trials: number;
   inputMode: 'snapshot' | 'workspace' | null;
+  skillDelivery: { mode: 'installed'; installDir: string } | null;
   tasks: ReportRow[];
   overall: ReportRow & {
     verdictReason: string;
@@ -205,6 +207,20 @@ export function parseEvalReport(value: unknown): ReportData {
   if (inputMode !== undefined && inputMode !== 'snapshot' && inputMode !== 'workspace') {
     throw new Error('inputMode must be snapshot or workspace');
   }
+  let skillDelivery: ReportData['skillDelivery'] = null;
+  if (manifest['skillDelivery'] !== undefined) {
+    const delivery = object(manifest['skillDelivery'], 'skillDelivery');
+    if (delivery['mode'] !== 'installed' || kind !== 'skill' || inputMode !== 'workspace') {
+      throw new Error('skillDelivery requires installed mode, a Skill target and workspace input');
+    }
+    const installDir = string(delivery['installDir'], 'skillDelivery.installDir');
+    validateSkillInstallDir(installDir);
+    if (!Array.isArray(target['files']) || !target['files'].includes('SKILL.md') ||
+        target['files'].some((file) => typeof file !== 'string' || !file)) {
+      throw new Error('Installed Skill target.files must list the complete resources including SKILL.md');
+    }
+    skillDelivery = { mode: 'installed', installDir };
+  }
   const rawTasks = manifest['tasks'];
   if (!Array.isArray(rawTasks)) throw new Error('tasks must be an array');
   const tasks = rawTasks.map((task, index) => {
@@ -312,6 +328,7 @@ export function parseEvalReport(value: unknown): ReportData {
     executor: { kind: string(executor['kind'], 'executor.kind'), model: string(executor['model'], 'executor.model') },
     trials: integer(manifest['trials'], 'trials', 1),
     inputMode: inputMode ?? null,
+    skillDelivery,
     tasks,
     overall: {
       ...overallRow,
@@ -378,7 +395,9 @@ function decisionNotes(report: ReportData): string[] {
     notes.push('Some tasks failed in both arms. Inspect facet misses, dependencies and the issue-to-check contract before interpreting the pass-rate floor as task difficulty.');
   }
   if (report.target.kind === 'skill') {
-    notes.push('Activation is unmeasured by this paired run: Skill content was force-injected. Run separate trigger tests with relevant requests and negative controls before an installation decision.');
+    notes.push(report.skillDelivery
+      ? 'Complete Skill resources were installed only in treatment. Task outcomes include native discovery; inspect per-run activation/transcript receipts and run separate positive/negative trigger tests. Installation does not guarantee activation, and inherited agent configuration still applies.'
+      : 'Activation is unmeasured by this paired run: Skill content was force-injected. Run separate trigger tests with relevant requests and negative controls before an installation decision.');
   }
   if (!report.overall.baseline.tokens || !report.overall.treatment.tokens) {
     notes.push('Token overhead is unavailable. Elapsed time or prompt-size estimates do not establish token cost.');
@@ -406,6 +425,7 @@ export function renderEvalMarkdown(report: ReportData): string {
     `- Executor: ${escapeMarkdown(report.executor.kind)} / ${escapeMarkdown(report.executor.model)}`,
     `- Trials: ${report.trials} per condition`,
     `- Input: ${report.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`,
+    ...(report.skillDelivery ? ['- Delivery: complete Skill installed in treatment at ' + escapeMarkdown(report.skillDelivery.installDir)] : []),
     '',
     '| Task | Baseline | Treatment | Errors B/T | Δpass | Verdict |',
     '|---|---:|---:|---:|---:|---|',

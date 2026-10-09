@@ -4,6 +4,10 @@ This workflow measures a pinned task on your agent. It produces inspectable
 observations and evidence gaps, not a guaranteed yes/no answer from one task.
 Use a broader frozen task set before claiming general benefit for OSS work.
 
+For Skills that include scripts/assets, use [paired installed delivery](installed-skill-evaluation.md)
+with `--mode installed --agent <id>` to compare complete resources and native discovery. The default
+`inject` mode measures supplied text; do not mix the two measurements or assume installation guarantees activation.
+
 ## 1. Preserve the request and starting state
 
 Choose a real failure independently of the Skill you want to test. Save the

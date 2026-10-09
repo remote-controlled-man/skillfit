@@ -6,6 +6,7 @@ import { loadBench } from '../harness/bench.js';
 import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
+import { assertInstalledSkillFixtures, collectInstalledSkillTarget } from '../harness/installed-skill.js';
 import { assertInputModeSupported } from '../harness/prompt.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
@@ -24,7 +25,7 @@ export interface EvalOptions {
   trials?: number;
   agent?: string;
   judgeAgent?: string;
-  mode?: 'inject' | 'trigger';
+  mode?: 'inject' | 'installed' | 'trigger';
   inputMode?: InputMode;
   dryRun: boolean;
   yes: boolean;
@@ -70,11 +71,12 @@ function resolveBenchDir(bench: string | undefined): string {
   throw new Error(`More than one bundled bench is available; pick one explicitly:\n${names}`);
 }
 
-function resolveExecutor(agent: string | undefined, target: EvaluationTarget): Executor {
+function resolveExecutor(agent: string | undefined, target: EvaluationTarget, installed = false): Executor {
   if (agent) {
     const definition = getAgent(agent);
     return CliExecutor.forAgent(agent, {
       trustProjectConfig: target.kind === 'mcp' && definition.headless.projectTrustConfigArg !== undefined,
+      ...(installed && definition.headless.streamJson ? { triggerSkillName: target.name } : {}),
     });
   }
   return ApiExecutor.fromEnv();
@@ -290,13 +292,17 @@ async function runEvalTrigger(
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
-  const inputMode = options.inputMode ?? 'snapshot';
+  const installed = options.mode === 'installed';
+  if (installed && options.inputMode !== undefined && options.inputMode !== 'workspace') {
+    throw new Error('installed mode requires workspace input; omit --input or use --input workspace.');
+  }
+  const inputMode = options.inputMode ?? (installed ? 'workspace' : 'snapshot');
   assertInputModeSupported(inputMode, null);
   if (inputMode === 'workspace' && !options.agent && !options.executor) {
     throw new Error('workspace input requires --agent <id> for a CLI executor; API keys do not provide filesystem access.');
   }
   if (options.mode === 'trigger' && options.inputMode !== undefined) {
-    throw new Error('--input applies only to paired inject mode; trigger mode already presents files on disk.');
+    throw new Error('--input applies only to paired modes; trigger mode already presents files on disk.');
   }
   const trials = options.trials ?? DEFAULT_EVAL_TRIALS;
   if (!Number.isInteger(trials) || trials < 1 || trials > 20) {
@@ -304,7 +310,15 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
   const benchDir = resolveBenchDir(options.bench);
   const bench = loadBench(benchDir);
-  const target = collectEvaluationTarget(options.skillPath);
+  let target = collectEvaluationTarget(options.skillPath);
+  let skillInstallDir: string | undefined;
+  if (installed) {
+    if (target.kind !== 'skill') throw new Error('installed mode is only available for Skill targets.');
+    target = collectInstalledSkillTarget(options.skillPath);
+    skillInstallDir = options.skillInstallDir ?? (options.agent ? getAgent(options.agent).skills.projectDirs[0] : undefined);
+    if (!skillInstallDir) throw new Error('installed mode needs --agent with a matrix-defined project Skill directory.');
+    assertInstalledSkillFixtures(bench, target, skillInstallDir);
+  }
 
   if ((options.mode ?? 'inject') === 'trigger') {
     if (target.kind !== 'skill') {
@@ -340,7 +354,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   let executor: Executor | null = null;
   try {
-    executor = options.executor ?? resolveExecutor(options.agent, target);
+    executor = options.executor ?? resolveExecutor(options.agent, target, installed);
   } catch (error) {
     if (!options.dryRun) throw error;
     log(`Note: ${(error as Error).message}`);
@@ -359,6 +373,10 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   if (options.dryRun) {
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode));
+    if (skillInstallDir) {
+      log('Delivery : complete Skill resources installed only in treatment at ' + skillInstallDir + '/' + target.name);
+      log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
+    }
     return null;
   }
   if (!executor) {
@@ -369,6 +387,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     bench,
     target,
     inputMode,
+    ...(skillInstallDir ? { skillInstallDir } : {}),
     executor,
     judge,
     trials,

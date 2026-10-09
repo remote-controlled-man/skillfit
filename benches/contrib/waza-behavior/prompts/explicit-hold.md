@@ -1,0 +1,1 @@
+Fix the spelling mistake in README.md. Preserve unrelated files. The repository already has its initial commit. Do not commit or push yet: I want to review the local change first. Summarize the change and how you checked it.

@@ -91,7 +91,7 @@ test('workspace API and explicit trigger input combinations fail before writing'
   for (const dryRun of [true, false]) {
     await assert.rejects(() => runEval({ ...base, dryRun, inputMode: 'workspace', executor }), /requires a CLI executor/);
     for (const inputMode of ['workspace', 'snapshot'] as const) {
-      await assert.rejects(() => runEval({ ...base, dryRun, mode: 'trigger', inputMode, executor: new MockExecutor() }), /applies only to paired inject mode/);
+      await assert.rejects(() => runEval({ ...base, dryRun, mode: 'trigger', inputMode, executor: new MockExecutor() }), /applies only to paired modes/);
     }
   }
   assert.ok(!existsSync(runsRoot));

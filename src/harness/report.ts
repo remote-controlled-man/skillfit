@@ -79,6 +79,8 @@ export interface RunManifest {
   schemaVersion: 4;
   /** Absent in earlier v4 manifests; those used inline snapshots. */
   inputMode?: InputMode;
+  /** Complete resources discovered from project files, rather than force-injected text. */
+  skillDelivery?: { mode: 'installed'; installDir: string };
   runGroup: string;
   createdAt: string;
   target: { kind: 'skill' | 'rules' | 'mcp'; name: string; sourceDir: string; bundleSha256: string; files: string[] };
@@ -141,6 +143,9 @@ export function verdictFor(input: {
 
 export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[] {
   const warnings: string[] = [];
+  if (manifest.skillDelivery) {
+    warnings.push('Installed Skill mode measures task outcomes with native discovery and complete resources; activation is not guaranteed. Inherited agent configuration still applies.');
+  }
   if (manifest.executor.kind === 'mock') {
     warnings.push('Executor is a mock: results are synthetic and only exercise the harness.');
   }
@@ -199,6 +204,7 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   lines.push(`Target   : ${manifest.target.name} (${manifest.target.kind}, bundle sha256 ${manifest.target.bundleSha256.slice(0, 12)}…, ${manifest.target.files.length} files)`);
   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
   lines.push(`Input    : ${manifest.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`);
+  if (manifest.skillDelivery) lines.push('Delivery : installed complete Skill at ' + manifest.skillDelivery.installDir + '/' + manifest.target.name);
   lines.push(`Executor : ${describeExecutor(manifest.executor)}`);
   lines.push(`Judge    : ${manifest.judge ? describeExecutor(manifest.judge) : 'disabled'}`);
   lines.push(`Trials   : ${manifest.trials} per condition`);

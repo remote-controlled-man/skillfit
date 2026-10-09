@@ -32,7 +32,7 @@ Usage:
 Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
-  --mode <mode>       Eval mode: inject (default; Skills, rules, MCP) | trigger (Skills only)
+  --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})
@@ -172,8 +172,8 @@ async function main(): Promise<void> {
         return;
       }
       const mode = values.mode ?? 'inject';
-      if (mode !== 'inject' && mode !== 'trigger') {
-        console.error(`Unknown --mode: ${mode} (expected "inject" or "trigger")`);
+      if (mode !== 'inject' && mode !== 'installed' && mode !== 'trigger') {
+        console.error(`Unknown --mode: ${mode} (expected "inject", "installed" or "trigger")`);
         process.exitCode = 2;
         return;
       }
