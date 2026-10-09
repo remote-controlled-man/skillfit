@@ -1,0 +1,47 @@
+import assert from 'node:assert/strict';
+import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { test } from 'node:test';
+import { loadBench } from './bench.js';
+import { sha256File } from './hash.js';
+import { runVerifier } from './runner.js';
+import { verdictFromOutput } from './verifier-summary.js';
+const root = fileURLToPath(new URL('../../benches/contrib/oss-lru-cache/', import.meta.url));
+const bench = loadBench(root);
+
+for (const task of bench.tasks) test(`OSS lru-cache ${task.id}: original failure, full oracle and counterexamples`, async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-lru-gates-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  cpSync(join(root, task.fixture), dir, { recursive: true });
+  const nop = await runVerifier(root, task.verifier, dir);
+  assert.equal(nop.exitCode, 1);
+  const original = verdictFromOutput(nop.output);
+  assert.ok(original && original.score !== null && original.score > 0 && original.score < 1);
+  const specific = task.id === 'fetch-size' ? /out-of-order/ : task.id === 'fetch-abort' ? /deleted pending fetch/ : /onInsert hides/;
+  assert.ok(original.checks!.some(c => specific.test(c.name) && !c.pass), 'the historical behavior failure must be reproduced');
+  assert.equal((await runVerifier(root, task.oracle!, dir)).exitCode, 0);
+  const fixed = await runVerifier(root, task.verifier, dir);
+  assert.equal(fixed.exitCode, 0, fixed.output); assert.equal(verdictFromOutput(fixed.output)?.score, 1);
+  const regression = join(dir, 'regression.test.mjs'); const bytes = readFileSync(regression);
+  writeFileSync(regression, "import { test } from 'node:test'; test('vacuous', () => {});\n");
+  const vacuous = await runVerifier(root, task.verifier, dir);
+  assert.equal(vacuous.exitCode, 1); assert.equal(verdictFromOutput(vacuous.output)?.checks?.at(-1)?.pass, false);
+  writeFileSync(regression, bytes);
+  const smoke = join(dir, 'test.mjs'); writeFileSync(smoke, readFileSync(smoke, 'utf8') + '\n// tampered protected test\n');
+  assert.equal((await runVerifier(root, task.verifier, dir)).exitCode, 1);
+  cpSync(join(root, task.fixture, 'test.mjs'), smoke);
+  const source = join(dir, task.id === 'fetch-lifecycle' ? 'src/index.ts' : 'index.js');
+  writeFileSync(source, 'process.exit(0)\n' + readFileSync(source, 'utf8'));
+  const earlyExit = await runVerifier(root, task.verifier, dir);
+  assert.equal(earlyExit.exitCode, 1); assert.ok(verdictFromOutput(earlyExit.output)?.checks?.some(c => c.name === 'runtime probe completeness' && !c.pass));
+});
+
+test('OSS replay provenance matches every retained upstream source and license byte', () => {
+  const provenance = JSON.parse(readFileSync(join(root, 'provenance.json'), 'utf8')) as { cases: { id: string; sourceSha256: Record<string, string> }[] };
+  for (const item of provenance.cases) for (const [key, hash] of Object.entries(item.sourceSha256)) {
+    const split = key.indexOf(':'); const arm = key.slice(0, split); const rel = key.slice(split + 1);
+    assert.equal(sha256File(join(root, arm === 'pre' ? 'fixtures' : 'ground-truth', item.id, rel)), hash);
+  }
+});
