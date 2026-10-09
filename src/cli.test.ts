@@ -57,3 +57,10 @@ test('CLI rejects malformed call ceilings and unrelated commands without writes'
   assert.equal(unrelated.status, 1); assert.match(unrelated.stderr, /applies only to eval/);
   assert.equal(existsSync(join(cwd, 'runs')), false);
 });
+
+test('baseline calibration plans use the matrix transcript CLI without starting it', t => {
+  const cwd = mkdtempSync(join(tmpdir(), 'skillfit-cli-calibrate-wire-')); t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const result = spawnSync(process.execPath, [CLI, ...COMMANDS[1]!, '--agent', 'codex', '--input', 'workspace', '--trials', '2', '--max-calls', '10', '--dry-run'], { cwd, encoding: 'utf8', timeout: 30_000 });
+  assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /calibration executor: codex: codex exec --json/);
+  assert.equal(existsSync(join(cwd, 'runs')), false);
+});

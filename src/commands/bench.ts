@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
+import { getAgent } from '../agents.js';
 import { loadBench } from '../harness/bench.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { CliExecutor } from '../harness/executors/cli.js';
@@ -493,7 +494,9 @@ async function calibrateBench(
   }
   const trials = options.trials ?? CALIBRATE_DEFAULT_TRIALS;
   const inputMode = options.inputMode ?? 'snapshot';
-  const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '');
+  const capture = options.agent && getAgent(options.agent).headless.streamJson;
+  const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '',
+    capture ? { triggerSkillName: 'calibration-none' } : undefined);
   assertInputModeSupported(inputMode, executor);
   if (!Number.isInteger(trials) || trials < 1 || trials > 20) {
     throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
@@ -501,6 +504,7 @@ async function calibrateBench(
   const plannedCalls = bench.tasks.length * trials;
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
   if (options.dryRun) {
+    push('INFO', `calibration executor: ${executor.describe().detail ?? executor.describe().model}`);
     push('INFO', `calibration plan: ${bench.tasks.length} task(s) × ${trials} baseline run(s), input ${inputMode}; ${plannedCalls} calls, ceiling ${maxCalls}; no agent started and no run directory created`);
     return;
   }
