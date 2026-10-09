@@ -56,7 +56,7 @@
         "fix:LICENSE.md": "8a1af140fdfbf5afd3df27f7e662f989c5b963a300020dfafce42033cae9e004"
       },
       "license": "ISC",
-      "extraction": "Full runtime module(s), no upstream test dependencies. Sources byte-identical; only the local runtime loader maps .js import suffixes to compiled .mjs helpers."
+      "extraction": "Full runtime module(s), no upstream test dependencies. Sources byte-identical; only the local runtime loader maps .js import suffixes to compiled .mjs helpers. The loader uses built-in transform mode to erase the type-only namespace on Node 22.13; source bytes remain unchanged."
     }
   ]
 }

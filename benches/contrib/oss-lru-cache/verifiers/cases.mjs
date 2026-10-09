@@ -37,8 +37,8 @@ export function checksFor(id, Cache) {
       await turn(); const beforeRelease = { ...state }; const signal = signals.get('x');
       jobs.get('x').resolve('late'); await turn();
       assert.equal(signal.aborted, true); assert.equal(beforeRelease.settled, true, 'must settle independently of provider completion');
-      assert.ok(beforeRelease.error instanceof Error); assert.equal(beforeRelease.error.message, reason);
-      assert.equal(state.error.message, reason);
+      assert.ok(beforeRelease.error instanceof Error); assert.equal(beforeRelease.error, signal.reason);
+      assert.equal(state.error, signal.reason);
       if (reason === 'replaced') assert.equal(c.get('x'), 'explicit'); else assert.equal(c.has('x'), false);
     }]), ['stale-on-rejection remains supported', async () => {
       const { cache: c, jobs } = pendingCache(Cache, { allowStaleOnFetchRejection: true }); c.set('x', 'stale');

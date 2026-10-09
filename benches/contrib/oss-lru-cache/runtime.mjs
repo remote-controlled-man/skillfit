@@ -13,7 +13,7 @@ export async function loadCache(root, typescript = false) {
     mkdirSync(join(compiled, 'src'));
     for (const name of ['index', 'perf', 'diagnostics-channel']) {
       const bytes = readFileSync(join(root, 'src', `${name}.ts`), 'utf8');
-      const js = stripTypeScriptTypes(bytes, { mode: 'strip' }).replaceAll("'./diagnostics-channel.js'", "'./diagnostics-channel.mjs'").replaceAll("'./perf.js'", "'./perf.mjs'");
+      const js = stripTypeScriptTypes(bytes, { mode: 'transform' }).replaceAll("'./diagnostics-channel.js'", "'./diagnostics-channel.mjs'").replaceAll("'./perf.js'", "'./perf.mjs'");
       writeFileSync(join(compiled, 'src', `${name}.mjs`), js);
     }
     const { LRUCache: Cache } = await import(pathToFileURL(join(compiled, 'src', 'index.mjs')));

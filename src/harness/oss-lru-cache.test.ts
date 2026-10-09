@@ -24,6 +24,16 @@ for (const task of bench.tasks) test(`OSS lru-cache ${task.id}: original failure
   assert.equal((await runVerifier(root, task.oracle!, dir)).exitCode, 0);
   const fixed = await runVerifier(root, task.verifier, dir);
   assert.equal(fixed.exitCode, 0, fixed.output); assert.equal(verdictFromOutput(fixed.output)?.score, 1);
+  if (task.id === 'fetch-abort') {
+    const source = join(dir, 'index.js'); const bytes = readFileSync(source, 'utf8');
+    writeFileSync(source, bytes.replaceAll("abort(new Error('deleted'))", 'abort()').replaceAll("abort(new Error('evicted'))", 'abort()').replaceAll("abort(new Error('replaced'))", 'abort()'));
+    writeFileSync(join(dir, 'regression.test.mjs'), `import assert from 'node:assert/strict'; import { test } from 'node:test'; import Cache from './index.js';
+      test('reject the actual signal reason before provider completion', async () => { let release,signal; const c=new Cache({max:2,fetchMethod:(k,v,o)=>{signal=o.signal;return new Promise(r=>release=r)}});
+        let error; const p=c.fetch('x').catch(e=>error=e); c.delete('x'); await new Promise(r=>setImmediate(r)); const before=error;
+        release('late'); await p; assert.equal(before,signal.reason); assert.equal(c.has('x'),false); });\n`);
+    const actualReason = await runVerifier(root, task.verifier, dir); assert.equal(actualReason.exitCode, 0, actualReason.output);
+    writeFileSync(source, bytes); await runVerifier(root, task.oracle!, dir);
+  }
   const regression = join(dir, 'regression.test.mjs'); const bytes = readFileSync(regression);
   writeFileSync(regression, "import { test } from 'node:test'; test('vacuous', () => {});\n");
   const vacuous = await runVerifier(root, task.verifier, dir);

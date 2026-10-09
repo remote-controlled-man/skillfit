@@ -1,3 +1,5 @@
 Users report that `calculatedSize` can disagree with the entries held by this lru-cache version after asynchronous `fetch()` results arrive. With a size-bound cache, later writes can evict entries incorrectly and corrupt the cache's linked order.
 
 Reproduce and repair the defect in the supplied implementation. Async fetches may finish in a different order from their requests. Keep size accounting, capacity, and LRU order consistent, while preserving ordinary get/set and fetch deduplication. Add a new executable `*.test.mjs` regression that fails on the original implementation and passes after the fix. Existing tests, runtime adapter, metadata and licenses must remain unchanged. Use only the local sources and Node built-ins; do not fetch a newer implementation.
+
+Use existing public behavior in uniquely named Node test cases. Your whole added suite must pass, and it must contain a historical regression that fails on the original source and passes on the pinned reference fix. Additional valid tests may be stronger than the reference; avoid depending on new marker fields or private implementation details.
