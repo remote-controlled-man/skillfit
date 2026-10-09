@@ -20,7 +20,7 @@ function testRun(root, tests) {
     passed: result.status === 0, tests: /# tests [1-9][0-9]*/.test(result.stdout ?? ''),
     noSkips: /# skipped 0/.test(result.stdout ?? '') && /# todo 0/.test(result.stdout ?? '') };
 }
-function regressionEvidence(run, canonical, source) {
+function regressionEvidence(run, canonical, reference, source) {
   const candidates = files(run).filter(p => /(?:^|\/)[^/]+\.(?:test|spec)\.mjs$/.test(p) && !existsSync(join(canonical, p)));
   return candidates.map(p => {
     const final = testRun(run, [p]); const restored = mkdtempSync(join(tmpdir(), 'skillfit-lru-regression-'));
@@ -28,8 +28,11 @@ function regressionEvidence(run, canonical, source) {
       cpSync(run, restored, { recursive: true, filter: file => !relative(run, file).split(/[\\/]/).some(s => s === '.git' || s.startsWith('_')) && !lstatSync(file).isSymbolicLink() });
       cpSync(join(canonical, source), join(restored, source));
       const original = testRun(restored, [p]);
+      cpSync(join(reference, source), join(restored, source));
+      const upstream = testRun(restored, [p]);
       return { path: p, finalPassed: final.completed && final.passed && final.tests && final.noSkips,
-        originalFailed: original.completed && !original.passed && original.tests && original.noSkips };
+        originalFailed: original.completed && !original.passed && original.tests && original.noSkips,
+        referencePassed: upstream.completed && upstream.passed && upstream.tests && upstream.noSkips };
     } finally { rmSync(restored, { recursive: true, force: true }); }
   });
 }
@@ -57,8 +60,9 @@ export async function grade(id, run) {
     checks.push(...summary.checks);
   } catch (error) { checks.push({ name: 'runtime probe completeness', pass: false, detail: error.message }); }
   let evidence = [];
-  await check('new regression passes fixed code and fails restored original', () => {
-    evidence = regressionEvidence(run, canonical, source); assert.ok(evidence.some(row => row.finalPassed && row.originalFailed));
+  await check('new regression passes submission and upstream fix, and fails restored original', () => {
+    evidence = regressionEvidence(run, canonical, join(bench, 'ground-truth', id), source);
+    assert.ok(evidence.some(row => row.finalPassed && row.originalFailed && row.referencePassed));
   });
   const count = checks.filter(c => c.pass).length; const passed = count === checks.length;
   console.log(JSON.stringify({ score: count / checks.length, passed, checks, evidence }));

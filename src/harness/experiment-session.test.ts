@@ -185,3 +185,10 @@ test('matrix override instructions are watched at default and overridden homes, 
     assert.throws(() => session.check(), /Agent configuration changed/); session.finish();
   }
 });
+
+test('an output parent alias into a fixture is rejected before any input writes', t => {
+  const s = setup(t); const alias = join(s.root, 'output-alias');
+  symlinkSync(join(s.benchDir, 'fixture'), alias);
+  assert.throws(() => new ExperimentSession({ ...s.options, groupDir: join(alias, 'new-group') }), /output must be outside/);
+  assert.equal(existsSync(join(s.benchDir, 'fixture', 'new-group')), false);
+});

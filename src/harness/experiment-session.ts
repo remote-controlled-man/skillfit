@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
@@ -59,6 +59,12 @@ export function validateCallBudget(planned: number, ceiling?: number): number {
 function inside(root: string, path: string): boolean {
   const rel = relative(resolve(root), resolve(path));
   return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !rel.startsWith(sep));
+}
+
+function physicalPath(path: string): string {
+  let parent = resolve(path); const parts: string[] = [];
+  while (!existsSync(parent)) { parts.unshift(basename(parent)); parent = dirname(parent); }
+  return join(realpathSync(parent), ...parts);
 }
 
 function filesUnder(root: string, exclude?: string): string[] {
@@ -163,7 +169,7 @@ export class ExperimentSession {
     this.workspaces = options.workspaces.map(path => resolve(path));
     if (existsSync(this.groupDir)) throw new Error(`Run group directory already exists: ${this.groupDir}`);
     for (const input of [options.target.sourceDir, ...options.bench.tasks.map(task => join(options.bench.dir, task.fixture))]) {
-      if (inside(input, this.groupDir)) throw new Error('Experiment output must be outside the Skill/overlay and fixture inputs; run the CLI from their parent directory.');
+      if (inside(physicalPath(input), physicalPath(this.groupDir))) throw new Error('Experiment output must be outside the Skill/overlay and fixture inputs; run the CLI from their parent directory.');
     }
     const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
     this.inputs = [pin('bench', options.bench.dir, this.groupDir), pin('target', options.target.sourceDir), pin('implementation', join(packageRoot, 'dist'))];
