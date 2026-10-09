@@ -3,6 +3,8 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent } from '../agents.js';
 import { loadBench } from '../harness/bench.js';
+import { RUN_GROUP_PATTERN } from '../harness/constants.js';
+import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
@@ -23,6 +25,8 @@ export interface EvalOptions {
   skillPath: string;
   bench?: string;
   trials?: number;
+  maxCalls?: number;
+  sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
   agent?: string;
   judgeAgent?: string;
   mode?: 'inject' | 'installed' | 'trigger';
@@ -125,6 +129,18 @@ function defaultRunGroup(now: Date = new Date()): string {
   const date = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}`;
   const time = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
   return `eval-${date}-${time}`;
+}
+
+function sessionFor(options: EvalOptions, bench: Bench, target: EvaluationTarget, trials: number,
+  runsRoot: string, runGroup: string, armNames: string[], plannedCalls: number,
+  details: Record<string, unknown>): ExperimentSession {
+  if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+  return new ExperimentSession({ bench, target, groupDir: join(runsRoot, runGroup), plannedCalls,
+    maxCalls: options.maxCalls, agent: options.agent, injected: options.executor !== undefined,
+    ...options.sessionOptions,
+    workspaces: bench.tasks.flatMap(task => armNames.flatMap(arm =>
+      Array.from({ length: trials }, (_, i) => join(runsRoot, runGroup, task.id, arm, `trial-${i + 1}`)))),
+    details });
 }
 
 function estimatePromptTokens(bench: Bench, target: EvaluationTarget, inputMode: InputMode): { baseline: number; treatment: number } {
@@ -263,8 +279,12 @@ async function runEvalTrigger(
   const runsRoot = options.runsRoot ?? resolve('runs');
   const runGroup = options.runGroup ?? defaultRunGroup();
 
+  const plannedCalls = bench.tasks.filter(task => task.shouldTrigger !== undefined).length * trials;
+  const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+
   if (options.dryRun) {
     log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir));
+    log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (agent calls only)`);
     return null;
   }
   if (!executor) {
@@ -276,16 +296,24 @@ async function runEvalTrigger(
     );
   }
 
-  const manifest = await runTriggerExperiment({
-    bench,
-    skill,
-    executor,
-    trials,
-    runsRoot,
-    runGroup,
-    skillInstallDir: installDir,
-    log,
-  });
+  log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+  const session = sessionFor(options, bench, skill, trials, runsRoot, runGroup, ['installed'], plannedCalls,
+    { mode: 'trigger', trials, executor: executor.describe() });
+  let manifest: TriggerManifest;
+  try {
+    manifest = await runTriggerExperiment({
+      bench,
+      skill,
+      executor: session.wrap(executor, 'agent'),
+      session,
+      trials,
+      runsRoot,
+      runGroup,
+      skillInstallDir: installDir,
+      log,
+    });
+  } catch (error) { session.finish(error); throw error; }
+  session.finish(undefined, manifest);
   log(renderTriggerSummary(manifest, join(runsRoot, runGroup, 'manifest.json')));
   return manifest;
 }
@@ -372,9 +400,12 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
   const runsRoot = options.runsRoot ?? resolve('runs');
   const runGroup = options.runGroup ?? defaultRunGroup();
+  const plannedCalls = bench.tasks.length * trials * (judge ? 4 : 2);
+  const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
 
   if (options.dryRun) {
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode));
+    log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
     if (skillInstallDir) {
       log('Delivery : complete Skill resources installed only in treatment at ' + skillInstallDir + '/' + target.name);
       log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
@@ -385,18 +416,26 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     throw new Error('No executor available; pass --agent or set SKILLFIT_API_KEY.');
   }
 
-  const manifest = await runExperiment({
-    bench,
-    target,
-    inputMode,
-    ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
-    executor,
-    judge,
-    trials,
-    runsRoot,
-    runGroup,
-    log,
-  });
+  log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+  const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
+    { mode: installed ? 'installed' : 'inject', inputMode, trials, executor: executor.describe(), judge: judge?.describe() ?? null });
+  let manifest: RunManifest;
+  try {
+    manifest = await runExperiment({
+      bench,
+      target,
+      inputMode,
+      ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
+      executor: session.wrap(executor, 'agent'),
+      judge: judge ? session.wrap(judge, 'judge') : null,
+      session,
+      trials,
+      runsRoot,
+      runGroup,
+      log,
+    });
+  } catch (error) { session.finish(error); throw error; }
+  session.finish(undefined, manifest);
   log(renderSummary(manifest, join(runsRoot, runGroup, 'manifest.json')));
   return manifest;
 }

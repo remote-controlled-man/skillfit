@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-10-01T04:39:00Z",
+  "verifiedAt": "2026-10-09T05:40:00Z",
   "agents": [
     {
       "id": "claude-code",
@@ -102,6 +102,16 @@
         "docs": null
       },
       "headless": {
+        "runtime": {
+          "versionArgv": ["codex", "--version"],
+          "settings": {
+            "file": "~/.codex/config.toml",
+            "homeOverride": { "env": "CODEX_HOME", "relativePath": "config.toml" },
+            "format": "toml",
+            "keys": ["model", "model_reasoning_effort", "service_tier"],
+            "docs": "https://developers.openai.com/codex/config-reference"
+          }
+        },
         "argv": ["codex", "exec", "--sandbox", "workspace-write", "-"],
         "promptVia": "stdin",
         "projectTrustConfigArg": "projects.'{workdir}'.trust_level='trusted'",

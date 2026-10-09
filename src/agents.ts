@@ -47,6 +47,10 @@ export interface AgentHeadlessStreamJson {
 }
 
 export interface AgentHeadless {
+  runtime?: {
+    versionArgv?: string[];
+    settings?: { file: string; format: 'toml' | 'json'; keys: string[]; docs: string; homeOverride?: { env: string; relativePath: string } };
+  };
   argv: string[];
   promptVia: 'stdin' | 'file';
   promptFile?: string;

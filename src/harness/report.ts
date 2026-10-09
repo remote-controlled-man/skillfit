@@ -1,6 +1,7 @@
 import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
 import { CONDITIONS } from './types.js';
 import type { Condition, ExecutorDescriptor, InputMode } from './types.js';
+import type { ExperimentSummary } from './experiment-session.js';
 
 export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
 
@@ -21,6 +22,8 @@ export interface ConditionStats {
   trials: number;
   /** Trials where the executor failed, so nothing was graded. Never counted as failures. */
   errors: number;
+  /** Mechanical read observations on surviving graded pairs; not trigger precision/recall. */
+  skillReads?: { observed: number; unobserved: number; unknown: number };
   passRate: number;
   meanScore: number | null;
   tokens: { input: number; output: number } | null;
@@ -77,6 +80,7 @@ export interface OverallSummary {
 
 export interface RunManifest {
   schemaVersion: 4;
+  experiment?: ExperimentSummary;
   /** Absent in earlier v4 manifests; those used inline snapshots. */
   inputMode?: InputMode;
   /** Complete resources discovered from project files, rather than force-injected text. */
@@ -143,6 +147,9 @@ export function verdictFor(input: {
 
 export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[] {
   const warnings: string[] = [];
+  if (manifest.experiment && manifest.experiment.status !== 'completed') {
+    warnings.push('Experiment did not complete its declared calls; no installation recommendation. Inspect _session.json and _calls.jsonl before planning a fresh run.');
+  }
   if (manifest.skillDelivery) {
     warnings.push('Installed Skill mode measures task outcomes with native discovery and complete resources; activation is not guaranteed. Inherited agent configuration still applies.');
   }
@@ -208,6 +215,7 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   lines.push(`Executor : ${describeExecutor(manifest.executor)}`);
   lines.push(`Judge    : ${manifest.judge ? describeExecutor(manifest.judge) : 'disabled'}`);
   lines.push(`Trials   : ${manifest.trials} per condition`);
+  if (manifest.experiment) lines.push(`Session  : ${manifest.experiment.status}; ${manifest.experiment.callsStarted}/${manifest.experiment.plannedCalls} calls started (ceiling ${manifest.experiment.maxCalls})`);
   lines.push('');
   const idWidth = Math.max(7, ...manifest.tasks.map((t) => t.id.length));
   const header = `${pad('TASK', idWidth)}  BASELINE     TREATMENT    DELTA    VERDICT`;

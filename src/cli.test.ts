@@ -46,3 +46,14 @@ test('CLI keeps valid and default repetition counts in offline eval and calibrat
   }
   assert.ok(!existsSync(join(cwd, 'runs')));
 });
+
+test('CLI rejects malformed call ceilings and unrelated commands without writes', t => {
+  const cwd = mkdtempSync(join(tmpdir(), 'skillfit-cli-budget-')); t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  for (const value of ['0', '-1', '1.5', '2junk', 'NaN', '9007199254740992']) {
+    const result = spawnSync(process.execPath, [CLI, 'eval', `--max-calls=${value}`, '--dry-run'], { cwd, encoding: 'utf8' });
+    assert.equal(result.status, 1); assert.match(result.stderr, /positive safe integer/); assert.equal(result.stdout, '');
+  }
+  const unrelated = spawnSync(process.execPath, [CLI, 'doctor', '--max-calls', '2'], { cwd, encoding: 'utf8' });
+  assert.equal(unrelated.status, 1); assert.match(unrelated.stderr, /applies only to eval/);
+  assert.equal(existsSync(join(cwd, 'runs')), false);
+});

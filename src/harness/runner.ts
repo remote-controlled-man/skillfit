@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import type { ExperimentSession } from './experiment-session.js';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
 import { assertInstalledSkillFixtures, installSkillResources, installedSkillDestination } from './installed-skill.js';
 import { collectInstalledSkillFingerprint } from './bundle.js';
@@ -28,6 +29,7 @@ export interface ExperimentPlan {
   inputMode?: InputMode;
   skillInstallDir?: string;
   skillSearchDirs?: readonly string[];
+  session?: ExperimentSession;
   executor: Executor;
   judge?: Executor | null;
   trials: number;
@@ -200,6 +202,7 @@ export async function runTrial(
     tokens = result.tokens ?? null;
     rawOutput = result.rawOutput ?? null;
     skillTriggered = result.skillTriggered ?? null;
+    error = result.guardError ?? null;
   } catch (executorError) {
     error = (executorError as Error).message;
   }
@@ -362,7 +365,7 @@ function pairedSurvivors(
   return survivors;
 }
 
-function statsFor(records: TrialOutcome[], errors: number): ConditionStats {
+function statsFor(records: TrialOutcome[], errors: number, readObservations = false): ConditionStats {
   const passes = records.filter((r) => r.passed).length;
   const trials = records.length;
   const scored = records.filter((r) => r.score !== null);
@@ -374,6 +377,11 @@ function statsFor(records: TrialOutcome[], errors: number): ConditionStats {
     passes,
     trials,
     errors,
+    ...(readObservations ? { skillReads: {
+      observed: records.filter(r => r.skillTriggered === true).length,
+      unobserved: records.filter(r => r.skillTriggered === false).length,
+      unknown: records.filter(r => r.skillTriggered == null).length,
+    } } : {}),
     passRate: trials === 0 ? 0 : passes / trials,
     meanScore,
     tokens: sumTokens(records),
@@ -537,9 +545,10 @@ function summarizeTask(
   outcomes: Record<Condition, TrialOutcome[]>,
   survivors: Record<Condition, TrialOutcome[]>,
   judgeResults: JudgeResult[],
+  readObservations = false,
 ): TaskSummary {
-  const baseline = statsFor(survivors.baseline, countErrors(outcomes.baseline));
-  const treatment = statsFor(survivors.treatment, countErrors(outcomes.treatment));
+  const baseline = statsFor(survivors.baseline, countErrors(outcomes.baseline), readObservations);
+  const treatment = statsFor(survivors.treatment, countErrors(outcomes.treatment), readObservations);
   const flags = {
     baseline: trialFlags(survivors.baseline),
     treatment: trialFlags(survivors.treatment),
@@ -586,7 +595,8 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     throw new Error(`trials must be an integer between 1 and 20, got ${plan.trials}`);
   }
   const groupDir = join(plan.runsRoot, plan.runGroup);
-  if (existsSync(groupDir)) {
+  if (existsSync(groupDir) && !(plan.session?.groupDir === resolve(groupDir) &&
+      readdirSync(groupDir).join() === '_plan.json')) {
     throw new Error(`Run group directory already exists: ${groupDir}`);
   }
   mkdirSync(groupDir, { recursive: true });
@@ -611,11 +621,11 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     allSurvivors.baseline.push(...survivors.baseline);
     allSurvivors.treatment.push(...survivors.treatment);
     const judgeResults = await judgeTaskTrials(plan, task.id, outcomes);
-    taskSummaries.push(summarizeTask(task.id, outcomes, survivors, judgeResults));
+    taskSummaries.push(summarizeTask(task.id, outcomes, survivors, judgeResults, !!plan.skillInstallDir));
   }
 
-  const overallBaseline = statsFor(allSurvivors.baseline, countErrors(allOutcomes.baseline));
-  const overallTreatment = statsFor(allSurvivors.treatment, countErrors(allOutcomes.treatment));
+  const overallBaseline = statsFor(allSurvivors.baseline, countErrors(allOutcomes.baseline), !!plan.skillInstallDir);
+  const overallTreatment = statsFor(allSurvivors.treatment, countErrors(allOutcomes.treatment), !!plan.skillInstallDir);
   const overallDelta = overallTreatment.passRate - overallBaseline.passRate;
   const taskOutcomes = taskSummaries.map((task) => task.outcomes);
   const discordant = discordantCounts(taskOutcomes);
@@ -628,8 +638,10 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     .filter((task) => task.baseline.length > 0 && task.treatment.length > 0);
   const scoreDeltaCi = pairedScoreBootstrapCI(scoreTasks);
   const scoreDelta = scoreDeltaCi ? scoreDeltaCi.point : null;
+  plan.session?.settle();
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
     schemaVersion: 4,
+    ...(plan.session ? { experiment: plan.session.summary() } : {}),
     inputMode: plan.inputMode ?? 'snapshot',
     ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed' as const, installDir: plan.skillInstallDir } } : {}),
     runGroup: plan.runGroup,

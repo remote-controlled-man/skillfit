@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1, verdictFor } from '../harness/report.js';
 import { mcnemarExactP } from '../harness/stats.js';
 import { validateSkillInstallDir } from '../harness/installed-skill.js';
+import type { ExperimentSummary } from '../harness/experiment-session.js';
 
 const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
 
@@ -16,6 +17,7 @@ interface Counts {
   meanScore: number | null;
   tokens: { input: number; output: number } | null;
   tokenCoverage: { input: number; output: number } | null;
+  skillReads: { observed: number; unobserved: number; unknown: number } | null;
 }
 
 interface FacetRow {
@@ -45,6 +47,7 @@ interface ReportData {
   trials: number;
   inputMode: 'snapshot' | 'workspace' | null;
   skillDelivery: { mode: 'installed'; installDir: string } | null;
+  experiment: ExperimentSummary | null;
   tasks: ReportRow[];
   overall: ReportRow & {
     verdictReason: string;
@@ -95,6 +98,28 @@ function verdict(value: unknown, label: string): Verdict {
   return value;
 }
 
+function experiment(value: unknown): ExperimentSummary | null {
+  if (value === undefined) return null;
+  const item = object(value, 'experiment');
+  if (item['schemaVersion'] !== 1) throw new Error('experiment.schemaVersion must be 1');
+  const status = item['status'];
+  if (status !== 'completed' && status !== 'stopped' && status !== 'incomplete') throw new Error('experiment.status must be completed, stopped, or incomplete');
+  const plannedCalls = integer(item['plannedCalls'], 'experiment.plannedCalls', 1);
+  const maxCalls = integer(item['maxCalls'], 'experiment.maxCalls', 1);
+  const callsStarted = integer(item['callsStarted'], 'experiment.callsStarted');
+  const callsFinished = integer(item['callsFinished'], 'experiment.callsFinished');
+  const stopReason = item['stopReason'] === null ? null : string(item['stopReason'], 'experiment.stopReason');
+  if (![plannedCalls, maxCalls, callsStarted, callsFinished].every(Number.isSafeInteger) ||
+      maxCalls < plannedCalls || callsStarted > plannedCalls || callsFinished > callsStarted ||
+      (status === 'completed' && (stopReason !== null || callsFinished !== plannedCalls)) ||
+      (status === 'stopped' && stopReason === null) ||
+      (status === 'incomplete' && (stopReason !== null || callsFinished === plannedCalls))) {
+    throw new Error('experiment status, call counts, ceiling, and stop reason contradict each other');
+  }
+  return { schemaVersion: 1, status, plannedCalls, maxCalls, callsStarted, callsFinished, stopReason,
+    planSha256: hash(item['planSha256'], 'experiment.planSha256') };
+}
+
 function counts(value: unknown, label: string): Counts {
   const item = object(value, label);
   const passes = integer(item['passes'], `${label}.passes`);
@@ -127,7 +152,16 @@ function counts(value: unknown, label: string): Counts {
     }
   }
   if (meanScore !== null && trials === 0) throw new Error(`${label}.meanScore requires graded trials`);
-  return { passes, trials, errors, meanScore, tokens, tokenCoverage };
+  const rawReads = item['skillReads'] === undefined ? null : object(item['skillReads'], `${label}.skillReads`);
+  const skillReads = rawReads === null ? null : {
+    observed: integer(rawReads['observed'], `${label}.skillReads.observed`),
+    unobserved: integer(rawReads['unobserved'], `${label}.skillReads.unobserved`),
+    unknown: integer(rawReads['unknown'], `${label}.skillReads.unknown`),
+  };
+  if (skillReads && skillReads.observed + skillReads.unobserved + skillReads.unknown !== trials) {
+    throw new Error(`${label}.skillReads must total the surviving graded trials`);
+  }
+  return { passes, trials, errors, meanScore, tokens, tokenCoverage, skillReads };
 }
 
 function facets(value: unknown, label: string): FacetRow[] {
@@ -278,6 +312,14 @@ export function parseEvalReport(value: unknown): ReportData {
       }
     }
     const aggregate = overallRow[condition];
+    if (aggregate.skillReads) {
+      if (!skillDelivery || tasks.some(t => t[condition].skillReads === null)) throw new Error('skillReads requires installed delivery and recorded observations for every task');
+      for (const field of ['observed', 'unobserved', 'unknown'] as const) {
+        if (aggregate.skillReads[field] !== tasks.reduce((sum, t) => sum + t[condition].skillReads![field], 0)) {
+          throw new Error(`overall.conditions.${condition}.skillReads.${field} disagrees with task totals`);
+        }
+      }
+    } else if (tasks.some(t => t[condition].skillReads !== null)) throw new Error('Task skillReads requires corresponding overall observations');
     if (aggregate.tokenCoverage) {
       if (tasks.some(t => t[condition].tokenCoverage === null)) {
         throw new Error(`overall.conditions.${condition}.tokenCoverage requires recorded coverage for every task`);
@@ -316,6 +358,10 @@ export function parseEvalReport(value: unknown): ReportData {
   }
   const expectedVerdict = verdictFor({ improved, regressed, deltaPassRate: overallRow.deltaPassRate }).verdict;
   if (overallRow.verdict !== expectedVerdict) throw new Error('overall.verdict disagrees with the metrics protocol');
+  const managed = experiment(manifest['experiment']);
+  if (managed && managed.plannedCalls !== taskCount * integer(manifest['trials'], 'trials', 1) * (manifest['judge'] == null ? 2 : 4)) {
+    throw new Error('experiment.plannedCalls contradicts the declared tasks, trials, conditions, and judge');
+  }
   return {
     runGroup: string(manifest['runGroup'], 'runGroup'),
     createdAt,
@@ -329,6 +375,7 @@ export function parseEvalReport(value: unknown): ReportData {
     trials: integer(manifest['trials'], 'trials', 1),
     inputMode: inputMode ?? null,
     skillDelivery,
+    experiment: managed,
     tasks,
     overall: {
       ...overallRow,
@@ -368,6 +415,9 @@ function replicatedTaskCount(report: ReportData): number {
 
 function decisionNotes(report: ReportData): string[] {
   const notes: string[] = [];
+  if (report.experiment && report.experiment.status !== 'completed') {
+    return ['No installation decision: the frozen experiment stopped or did not complete its declared calls. Inspect _session.json, _calls.jsonl and the error receipts; repair the inputs/environment, then declare a fresh run. Retain this run without adding replacement samples.'];
+  }
   if (report.executor.kind === 'mock') {
     return ['No installation decision: this synthetic run only checks the harness.'];
   }
@@ -426,6 +476,7 @@ export function renderEvalMarkdown(report: ReportData): string {
     `- Trials: ${report.trials} per condition`,
     `- Input: ${report.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`,
     ...(report.skillDelivery ? ['- Delivery: complete Skill installed in treatment at ' + escapeMarkdown(report.skillDelivery.installDir)] : []),
+    ...(report.experiment ? [`- Session: ${report.experiment.status}; ${report.experiment.callsStarted}/${report.experiment.plannedCalls} calls started, ${report.experiment.callsFinished} finished; ceiling ${report.experiment.maxCalls}`, `- Frozen plan SHA-256: \`${report.experiment.planSha256}\``] : []),
     '',
     '| Task | Baseline | Treatment | Errors B/T | Δpass | Verdict |',
     '|---|---:|---:|---:|---:|---|',
@@ -455,6 +506,15 @@ export function renderEvalMarkdown(report: ReportData): string {
   if (replicatedTaskCount(report) < CONCLUSIVE_TASKS) {
     lines.push(`- Scale: ${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'} × ${report.trials} ${report.trials === 1 ? 'trial' : 'trials'} per condition; below the conclusive bar (${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials). Treat broader claims as indicative even if the within-bench verdict is statistically significant.`);
     lines.push(`- Completed scale: ${replicatedTaskCount(report)} task(s) have at least ${CONCLUSIVE_TRIALS} graded pairs after exclusions.`);
+  }
+  if (report.overall.treatment.skillReads) {
+    lines.push('', '## Native Skill-read observations', '',
+      '| Task / arm | Read observed | Read unobserved | Unknown |', '|---|---:|---:|---:|');
+    for (const item of [...report.tasks, report.overall]) for (const arm of ['baseline', 'treatment'] as const) {
+      const reads = item[arm].skillReads;
+      if (reads) lines.push(`| ${escapeMarkdown(item.id)} / ${arm} | ${reads.observed} | ${reads.unobserved} | ${reads.unknown} |`);
+    }
+    lines.push('', 'Counts cover surviving graded pairs only. Read-unobserved does not prove the Skill was unused; a read does not establish benefit. These are not trigger precision or recall.', '');
   }
   lines.push('', '## Checks and graded scores', '',
     '| Task | Baseline mean check score | Treatment mean check score | Δscore |',

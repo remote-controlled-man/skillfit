@@ -110,6 +110,7 @@ export async function judgePair(
       writeFileSync(join(judgeDir, 'answerB.md'), answerB, 'utf8');
       const prompt = buildJudgePrompt(args.taskPromptText, args.rubricText ?? null, answerA, answerB);
       const result = await judge.run(prompt, judgeDir);
+      if (result.guardError) throw new Error(result.guardError);
       const scores = parseScores(result.output);
       return {
         baseline: firstCondition === 'baseline' ? scores.a : scores.b,

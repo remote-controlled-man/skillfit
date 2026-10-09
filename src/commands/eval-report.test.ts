@@ -282,3 +282,34 @@ test('report uses completed scale after exclusions and warns about collapsed int
   assert.match(markdown, /interval collapsed.*does not establish zero uncertainty/);
   assert.match(markdown, /The run is indicative/);
 });
+
+test('managed reports refuse contradictory call coverage and withhold decisions for partial runs', () => {
+  const value = manifest();
+  value['executor'] = { kind: 'cli', model: 'offline' };
+  value['experiment'] = { schemaVersion: 1, status: 'stopped', plannedCalls: 4, maxCalls: 4,
+    callsStarted: 1, callsFinished: 1, stopReason: 'frozen input changed', planSha256: 'c'.repeat(64) };
+  const markdown = renderEvalMarkdown(parseEvalReport(value));
+  assert.match(markdown, /Session: stopped; 1\/4/);
+  assert.match(markdown, /No installation decision: the frozen experiment/);
+  assert.match(markdown, /Retain this run without adding replacement samples/);
+  const session = value['experiment'] as Record<string, unknown>;
+  for (const change of [{ status: 'completed', stopReason: null }, { callsStarted: 5 }, { callsFinished: 2 },
+    { maxCalls: 3 }, { status: 'incomplete', stopReason: null, callsStarted: 4, callsFinished: 4 }]) {
+    assert.throws(() => parseEvalReport({ ...value, experiment: { ...session, ...change } }), /contradict/);
+  }
+});
+
+test('installed report validates and distinguishes read observations from task quality', () => {
+  const value = manifest();
+  value['inputMode'] = 'workspace'; value['skillDelivery'] = { mode: 'installed', installDir: '.agents/skills' };
+  (value['target'] as Record<string, unknown>)['files'] = ['SKILL.md'];
+  const conditions = (value['overall'] as Record<string, unknown>)['conditions'] as Record<string, Record<string, unknown>>;
+  conditions['baseline']!['skillReads'] = { observed: 0, unobserved: 0, unknown: 2 };
+  conditions['treatment']!['skillReads'] = { observed: 1, unobserved: 1, unknown: 0 };
+  const markdown = renderEvalMarkdown(parseEvalReport(value));
+  assert.match(markdown, /Native Skill-read observations/);
+  assert.match(markdown, /does not prove the Skill was unused/);
+  assert.match(markdown, /not trigger precision or recall/);
+  conditions['treatment']!['skillReads'] = { observed: 2, unobserved: 1, unknown: 0 };
+  assert.throws(() => parseEvalReport(value), /must total the surviving graded trials/);
+});

@@ -8,6 +8,10 @@ Status reviewed 2026-10-01: L1 records complete installed-resource fingerprints 
 implemented trigger rates from task-class breakdowns and installed-skill competition that remain
 specification. The v2 verdict protocol is unchanged.
 
+Additive workflow review 2026-10-09: optional managed-session and native read metadata below
+describe execution coverage and observations. They do not change the v2 statistical formulas,
+verdict thresholds, pairwise exclusions or legal legacy manifest interpretation.
+
 This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
 contract — is [bench-authoring.md](bench-authoring.md).
 
@@ -64,6 +68,19 @@ A bench that cannot discriminate must not produce verdicts.
   in the disposable repository. This does not change the paired exclusion or verdict formulas.
 
 ## L1 — trigger quality (activation)
+
+Paired installed-Skill runs may additionally record `skillReads` counts (`observed`,
+`unobserved`, `unknown`) per arm, task and overall, with the **surviving graded pair**
+denominator. These mechanical transcript observations are not trigger recall/precision and do
+not establish use, causation or benefit. Errored pairs are excluded from these counts as from
+the quality rates. Older v4 manifests without these fields remain valid.
+
+Optional `experiment` metadata records declared/planned calls, the ceiling, actual started and
+finished calls, completion state and frozen plan hash. A stopped/incomplete experiment cannot
+support an installation recommendation, regardless of the unchanged statistical verdict on its
+surviving observations. Enabled judges contribute two declared calls per pair. No replacement
+samples, retries or partial task-set truncation are added to meet a budget; see
+[the bounded workflow](experiment-workflow.md) for the fingerprint/ledger contract and limits.
 
 Whether the agent invokes the skill when it should, and only then. A skill's realized value is gated by this:
 an excellent skill that never fires — or fires everywhere — is worthless. Public benchmarks measure efficacy
