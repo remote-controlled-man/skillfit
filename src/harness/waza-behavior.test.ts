@@ -74,3 +74,47 @@ test('stale receipt rejects stale reuse, a claimed recheck without evidence and 
   assert.equal(tampered.exitCode, 1);
   assert.match(tampered.output, /scripts\/check-links.mjs differs from fixture/);
 });
+
+test('hold initialization overrides disabled global reflog without changing global configuration', async (t) => {
+  const dir = fixture(t, 'explicit-hold');
+  const globalConfig = join(dir, '_global-git-config');
+  writeFileSync(globalConfig, '[core]\nlogAllRefUpdates = false\n');
+  const env = { ...process.env, GIT_CONFIG_GLOBAL: globalConfig };
+  const runner = new URL('./runner.js', import.meta.url).href;
+  const script = `import {gitInit} from ${JSON.stringify(runner)};
+    if(!await gitInit(process.argv[1]))throw new Error('Git initialization failed');`;
+  execFileSync(process.execPath, ['--input-type=module', '-e', script, dir], { env });
+  await solve('explicit-hold', dir);
+  const result = await grade('explicit-hold', dir);
+  assert.equal(result.exitCode, 0, result.output);
+  assert.equal(readFileSync(globalConfig, 'utf8'), '[core]\nlogAllRefUpdates = false\n');
+
+  const oracleDir = fixture(t, 'explicit-hold');
+  execFileSync(process.execPath, [join(BENCH, 'ground-truth/oracle.mjs'), 'explicit-hold', oracleDir], { env });
+  assert.equal((await grade('explicit-hold', oracleDir)).exitCode, 0);
+});
+
+test('unavailable command-task reflog excludes both arms before any executor calls', (t) => {
+  const root = fixture(t, 'receipt-current');
+  const runner = new URL('./runner.js', import.meta.url).href;
+  const benchModule = new URL('./bench.js', import.meta.url).href;
+  const script = `import {runExperiment} from ${JSON.stringify(runner)};
+    import {loadBench} from ${JSON.stringify(benchModule)};
+    let calls=0;
+    const bench=loadBench(${JSON.stringify(BENCH)});bench.tasks=bench.tasks.filter(t=>t.id==='explicit-hold');
+    const manifest=await runExperiment({bench,target:{kind:'skill',name:'offline',sourceDir:process.argv[1],files:[],sha256:'0'.repeat(64),payload:null,overlays:{}},
+      executor:{describe:()=>({kind:'mock',model:'offline'}),run:async()=>{calls++;return {output:'must not run'};}},
+      inputMode:'workspace',trials:1,runsRoot:process.argv[1],runGroup:'excluded'});
+    console.log(JSON.stringify({calls,overall:manifest.overall.conditions}));`;
+  const output = execFileSync(process.execPath, ['--input-type=module', '-e', script, root], { encoding: 'utf8',
+    env: { ...process.env, GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'core.logAllRefUpdates', GIT_CONFIG_VALUE_0: 'false' } });
+  const result = JSON.parse(output);
+  assert.equal(result.calls, 0);
+  for (const condition of ['baseline', 'treatment']) {
+    assert.equal(result.overall[condition].trials, 0);
+    assert.equal(result.overall[condition].errors, 1);
+    const receipt = JSON.parse(readFileSync(join(root, 'excluded', 'explicit-hold', condition, 'trial-1', '_result.json'), 'utf8'));
+    assert.match(receipt.error, /Git initialization or reflog verification failed/);
+    assert.equal(receipt.verifierExitCode, null);
+  }
+});

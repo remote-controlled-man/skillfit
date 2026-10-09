@@ -10,6 +10,7 @@ import { assertInstalledSkillFixtures, collectInstalledSkillTarget, installSkill
 import { runExperiment } from './runner.js';
 import { runEval } from '../commands/eval.js';
 import { parseEvalReport, renderEvalMarkdown } from '../commands/eval-report.js';
+import { getAgent } from '../agents.js';
 import type { Executor } from './types.js';
 
 function setup(t: TestContext) {
@@ -140,6 +141,33 @@ test('fixture contamination blocks all calls at plan time', async (t) => {
   const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline' }), run: async () => { calls++; return { output: '' }; } };
   await assert.rejects(runExperiment({ bench: loadBench(bench), target: collectInstalledSkillTarget(skill),
     executor, inputMode: 'workspace', skillInstallDir: 'project-skills', trials: 1, runsRoot: root, runGroup: 'blocked' }), /baseline contamination/);
+  assert.equal(calls, 0);
+  assert.ok(!existsSync(join(root, 'blocked')));
+});
+
+test('installed mode rejects contamination in every matrix project search path before calls', async (t) => {
+  const { root, skill, bench } = setup(t);
+  const [primary, alternate] = getAgent('kimi-code').skills.projectDirs;
+  assert.ok(primary && alternate && primary !== alternate);
+  mkdirSync(join(bench, 'fixture', alternate, 'resource-demo'), { recursive: true });
+  let calls = 0;
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline' }), run: async () => { calls++; return { output: 'done' }; } };
+  for (const dryRun of [true, false]) {
+    await assert.rejects(runEval({ skillPath: skill, bench, agent: 'kimi-code', mode: 'installed', dryRun,
+      yes: true, executor, runsRoot: join(root, 'runs'), log: () => {} }), /baseline contamination/);
+  }
+  assert.equal(calls, 0);
+  assert.ok(!existsSync(join(root, 'runs')));
+});
+
+test('programmatic installed runner rejects alternate project paths too', async (t) => {
+  const { root, skill, bench } = setup(t);
+  mkdirSync(join(bench, 'fixture', 'alternate-skills', 'resource-demo'), { recursive: true });
+  let calls = 0;
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline' }), run: async () => { calls++; return { output: '' }; } };
+  await assert.rejects(runExperiment({ bench: loadBench(bench), target: collectInstalledSkillTarget(skill),
+    executor, inputMode: 'workspace', skillInstallDir: 'project-skills', skillSearchDirs: ['alternate-skills'],
+    trials: 1, runsRoot: root, runGroup: 'blocked' }), /baseline contamination/);
   assert.equal(calls, 0);
   assert.ok(!existsSync(join(root, 'blocked')));
 });

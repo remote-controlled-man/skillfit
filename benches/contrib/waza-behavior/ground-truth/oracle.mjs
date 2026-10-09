@@ -9,9 +9,13 @@ if (id === 'explicit-hold') {
   // bench check copies fixtures without Git; the actual runner initializes them before model calls.
   if (!existsSync(join(runDir, '.git'))) {
     for (const args of [['init', '-q'], ['config', 'user.name', 'Offline oracle'], ['config', 'user.email', 'oracle@example.invalid'],
+      ['config', 'core.logAllRefUpdates', 'true'],
       ['add', '.'], ['-c', 'commit.gpgsign=false', 'commit', '-qm', 'Initial fixture']]) {
       execFileSync('git', args, { cwd: runDir });
     }
+  }
+  if (!execFileSync('git', ['reflog', 'show', '--format=%H', 'HEAD'], { cwd: runDir, encoding: 'utf8' }).trim()) {
+    throw new Error('Offline oracle requires an initialized Git reflog');
   }
   writeFileSync(join(runDir, 'README.md'), 'Project instructions are documented here.\n');
 } else {

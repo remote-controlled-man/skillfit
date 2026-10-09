@@ -53,13 +53,15 @@ export function collectInstalledSkillTarget(skillDir: string): EvaluationTarget 
     payload: null, overlays: {} };
 }
 
-export function assertInstalledSkillFixtures(bench: Bench, target: EvaluationTarget, installDir: string): void {
-  validateSkillInstallDir(installDir);
+export function assertInstalledSkillFixtures(bench: Bench, target: EvaluationTarget, installDir: string, searchDirs: readonly string[] = []): void {
+  const dirs = [...new Set([installDir, ...searchDirs].map(validateSkillInstallDir))];
   for (const task of bench.tasks) {
-    const destination = installedSkillDestination(join(bench.dir, task.fixture), installDir, target.name);
-    if (existsSync(destination)) {
-      throw new Error('Fixture already contains the evaluated Skill for ' + task.id + ': ' + destination +
-        '. Remove baseline contamination instead of merging Skill copies.');
+    for (const dir of dirs) {
+      const destination = installedSkillDestination(join(bench.dir, task.fixture), dir, target.name);
+      if (existsSync(destination)) {
+        throw new Error('Fixture already contains the evaluated Skill for ' + task.id + ': ' + destination +
+          '. Remove baseline contamination instead of merging Skill copies.');
+      }
     }
   }
 }

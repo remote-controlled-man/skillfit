@@ -59,6 +59,9 @@ A bench that cannot discriminate must not produce verdicts.
   every statistic here is paired, dropping a trial from one arm alone would misalign the (task, trial) pairs
   that McNemar and the paired bootstrap resample, so an error in either arm removes that pair from both, and
   each arm reports its `errors` count next to its graded `trials`.
+  Command tasks whose disposable Git initialization/reflog verification fails are likewise
+  environment errors before their executor starts; inherited disabled reflog is overridden only
+  in the disposable repository. This does not change the paired exclusion or verdict formulas.
 
 ## L1 — trigger quality (activation)
 

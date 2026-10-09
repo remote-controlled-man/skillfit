@@ -30,10 +30,16 @@ Both arms receive identical natural task prompts. All regular resources, includi
 scripts, hidden files and binary assets, are copied only into treatment. The
 fingerprint includes sorted relative paths and bytes, not permissions or empty
 directories. Unsafe install paths, nested source symlinks, destination symlinks,
-existing evaluated-Skill fixture destinations and source drift are rejected.
+existing evaluated-Skill fixture destinations in any matrix project search directory
+(including a custom installation override) and source drift are rejected.
 The copied fingerprint is verified before each affected call. Keep the source
 unchanged until the run finishes. As with existing experiments, a fixture copy is
 the backup; outputs go to fresh run directories that cannot overwrite prior runs.
+
+Command tasks also require Git. Disposable initialization explicitly enables and
+verifies reflog before execution; unavailable Git initialization/reflog is an
+environment error, with its pair excluded from statistics. Global Git settings
+are not changed.
 
 ## Read the evidence
 

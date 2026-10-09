@@ -34,3 +34,9 @@ Document installed mode alongside its inherited-configuration and natural-discov
 - Published 2026-10-01 OSS workspace smoke v4 manifest still renders inconclusive with baseline/treatment 1/1. No published evidence was changed.
 - git diff --check passed. No runtime dependency or matrix changes.
 - Real model calls remain pending an independent review of the new graders and an environment/input freeze. Offline results are not efficacy observations.
+
+## Independent review follow-up plan (before live calls)
+
+Approval session independently reproduced two P2 issues on b009bd8: Kimi's second project Skill directory could contaminate baseline, and inherited core.logAllRefUpdates=false could make a correct hold fail. Backups: pre-review-fixes.tar in the existing backup directory. Check every matrix project Skill directory before either arm (plus explicit installation override). Explicitly enable and verify reflog in disposable Git initialization and the offline hold oracle; Git initialization failure on command tasks becomes an environment error, excluding the pair before any model call. Add offline regressions for alternative paths, a disabled global reflog setting, and unavailable reflog/setup exclusion. Preserve formulas, valid legacy manifests and published evidence. Repeat npm test and bench/report gates; freeze a new pilot plan only after review fixes pass. No live calls have occurred.
+
+Review fixes verified: npm test 376/376, no failures or skips. Four new P2 regressions were run against isolated old b009bd8 runtime modules/oracle: 0 passed / 4 failed, as required; the repaired runtime passes all four. Red log: /private/tmp/skillfit-waza-p2-red-zqpeyz7s/red.log. Both contributed bench gates pass (Waza 14/0/0; existing UTF-8 negative-control warning retained). Published smoke report remains byte-identical. The original frozen pilot inputs are retained as superseded pre-call preparation; no model calls occurred before the review fixes.

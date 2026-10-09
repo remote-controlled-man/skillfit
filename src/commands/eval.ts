@@ -312,12 +312,14 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const bench = loadBench(benchDir);
   let target = collectEvaluationTarget(options.skillPath);
   let skillInstallDir: string | undefined;
+  let skillSearchDirs: string[] = [];
   if (installed) {
     if (target.kind !== 'skill') throw new Error('installed mode is only available for Skill targets.');
     target = collectInstalledSkillTarget(options.skillPath);
-    skillInstallDir = options.skillInstallDir ?? (options.agent ? getAgent(options.agent).skills.projectDirs[0] : undefined);
+    skillSearchDirs = options.agent ? getAgent(options.agent).skills.projectDirs : [];
+    skillInstallDir = options.skillInstallDir ?? skillSearchDirs[0];
     if (!skillInstallDir) throw new Error('installed mode needs --agent with a matrix-defined project Skill directory.');
-    assertInstalledSkillFixtures(bench, target, skillInstallDir);
+    assertInstalledSkillFixtures(bench, target, skillInstallDir, skillSearchDirs);
   }
 
   if ((options.mode ?? 'inject') === 'trigger') {
@@ -387,7 +389,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     bench,
     target,
     inputMode,
-    ...(skillInstallDir ? { skillInstallDir } : {}),
+    ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
     executor,
     judge,
     trials,

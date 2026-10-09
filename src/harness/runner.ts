@@ -27,6 +27,7 @@ export interface ExperimentPlan {
   target: EvaluationTarget;
   inputMode?: InputMode;
   skillInstallDir?: string;
+  skillSearchDirs?: readonly string[];
   executor: Executor;
   judge?: Executor | null;
   trials: number;
@@ -119,6 +120,7 @@ export async function gitInit(dir: string): Promise<boolean> {
     ['init', '--quiet'],
     ['config', 'user.email', 'skillfit@example.invalid'],
     ['config', 'user.name', 'skillfit harness'],
+    ['config', 'core.logAllRefUpdates', 'true'],
     ['add', '-A'],
     ['commit', '--quiet', '-m', 'Initial benchmark fixture'],
   ];
@@ -126,7 +128,8 @@ export async function gitInit(dir: string): Promise<boolean> {
     const result = await runProcess('git', args, dir, 30_000);
     if (result.exitCode !== 0) return false;
   }
-  return true;
+  const reflog = await runProcess('git', ['reflog', 'show', '--format=%H', 'HEAD'], dir, 30_000);
+  return reflog.exitCode === 0 && reflog.output.trim().length > 0;
 }
 
 export async function runTrial(
@@ -189,6 +192,9 @@ export async function runTrial(
   let rawOutput: string | null = null;
   let skillTriggered: boolean | null = null;
   try {
+    if (!gitInitialized && task.verifierKind === 'command') {
+      throw new Error('Benchmark Git initialization or reflog verification failed; command task was not executed.');
+    }
     const result = await executor.run(prompt, runDir);
     output = result.output;
     tokens = result.tokens ?? null;
@@ -569,7 +575,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     if (plan.target.kind !== 'skill' || plan.inputMode !== 'workspace') {
       throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
     }
-    assertInstalledSkillFixtures(plan.bench, plan.target, plan.skillInstallDir);
+    assertInstalledSkillFixtures(plan.bench, plan.target, plan.skillInstallDir, plan.skillSearchDirs);
   }
   if (!RUN_GROUP_PATTERN.test(plan.runGroup)) {
     throw new Error(
