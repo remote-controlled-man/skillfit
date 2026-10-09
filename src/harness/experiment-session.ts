@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, relative, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
@@ -183,6 +183,10 @@ export class ExperimentSession {
         if (override && env[override.env] && spec === agent.rules.userFiles[0]) return join(env[override.env]!, override.relativePath);
         return expand(spec, home);
       }));
+      if (override?.overrideRelativePath && agent.rules.userFiles[0]) {
+        const root = env[override.env] ?? dirname(expand(agent.rules.userFiles[0], home));
+        paths.add(join(root, override.overrideRelativePath));
+      }
       if (settings.path) paths.add(settings.path);
       const match = agent.headless.projectTrustConfigArg?.match(/^([^.]+)\.'\{workdir\}'\.([^=]+)='([^']+)'$/);
       const trust = match ? { table: match[1]!, field: match[2]!, value: match[3]! } : undefined;

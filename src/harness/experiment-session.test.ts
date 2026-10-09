@@ -170,3 +170,18 @@ test('trigger delivery uses the same cap and managed receipts without real CLI c
   assert.ok(result && 'metrics' in result); assert.equal(calls, 1); assert.equal(result.experiment!.status, 'completed');
   assert.equal(existsSync(join(s.root, 'trigger', 'one', '_artifacts.json')), true);
 });
+
+test('matrix override instructions are watched at default and overridden homes, including creation', t => {
+  const s = setup(t);
+  for (const redirected of [false, true]) for (const present of [false, true]) {
+    const home = join(s.root, `home-${redirected}-${present}`);
+    const profile = redirected ? join(s.root, `profile-${present}`) : join(home, '.codex');
+    mkdirSync(profile, { recursive: true });
+    const override = join(profile, 'AGENTS.override.md');
+    if (present) writeFileSync(override, 'original effective instructions\n');
+    const session = new ExperimentSession({ ...s.options, groupDir: join(s.root, `run-${redirected}-${present}`),
+      agent: 'codex', homeDir: home, env: redirected ? { CODEX_HOME: profile } : {} });
+    session.check(); writeFileSync(override, 'changed effective instructions\n');
+    assert.throws(() => session.check(), /Agent configuration changed/); session.finish();
+  }
+});
