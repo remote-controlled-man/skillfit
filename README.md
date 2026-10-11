@@ -60,6 +60,15 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 
 <sub>Captured 2026-09-22 on Kimi Code against the four-task `code-review` bench. The bench has since gained a fifth task; the four metric lines above are re-rendered from that run's recorded per-task counts, so the run is real and the formatting is current.</sub>
 
+## Install
+
+```bash
+npx skillfit@0.8.0 --help
+npx skillfit@0.8.0 doctor
+```
+
+`npx skillfit` installs the published release and needs Node.js 22 or newer. The quick start below uses a source checkout so you can run the benches that ship in this repository. After `npm run build`, `node dist/cli.js` is that checkout's CLI. `skillfit` is the command installed from npm.
+
 ## Quick start
 
 ```bash
@@ -213,14 +222,14 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 - [x] Optional `triggerClass` (`explicit`, `implicit`, `contextual`) on positive tasks. Unlabeled tasks stay in the pooled recall.
 - [x] `--compete-installed` copies other user-level Skills into a trigger trial. System Skills and plugins outside the matrix directories are not copied. `installed` reports a long-body read separately from the task result; that read is not trigger recall.
 - [ ] An installation recommendation. The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the 13-Skill starter set are not evaluated as sets.
-- [ ] npm publication. `npx skillfit` does not exist. Clone, `npm ci`, and `npm run build` remain the path.
+- [x] npm publication (`skillfit@0.8.0`). `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build` remain valid.
 - [ ] Community bench and evidence submissions (reproducible-config CI re-runs, not trust-me results)
 - [ ] Cursor / Gemini CLI / OpenCode adapters
 - [ ] Streamable HTTP and 2026 stateless MCP preflight
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The highest-value contribution is a bench built from your real workflow. Release notes live in [CHANGELOG.md](CHANGELOG.md); security reports go to [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). The highest-value contribution is a bench built from your real workflow. Evidence submissions use the Evidence submission issue template: a pinned bench, a `bench check` summary, the exact command, and a reviewed manifest. Unverifiable percentages are not accepted. Release notes live in [CHANGELOG.md](CHANGELOG.md); security reports go to [SECURITY.md](SECURITY.md).
 
 ## License
 

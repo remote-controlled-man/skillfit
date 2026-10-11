@@ -10,9 +10,8 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 
 ## Prerequisites
 
-Check availability inside a clone: `node dist/cli.js --version`. There is no npm package, so do not
-suggest `npx skillfit`. If the clone command fails, tell the user to install from
-https://github.com/remote-controlled-man/skillfit and stop.
+Check availability with `npx skillfit@0.8.0 --version`, or `node dist/cli.js --version` inside a clone.
+If neither works, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
 
 ## Which command for which question
 

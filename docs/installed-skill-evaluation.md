@@ -1,6 +1,6 @@
 # Paired evaluation of an installed Skill
 
-skillfit is a TypeScript CLI run by Node.js 22 or newer from a source checkout (`npm ci`, then `npm run build`). It is not published to npm, so `npx skillfit` does not work.
+skillfit is a TypeScript CLI run by Node.js 22 or newer. `npx skillfit` installs the published package. A source checkout still uses `npm ci`, then `npm run build`.
 The core uses only Node built-ins. Shell/Python scripts may be optional resources of
 the Skill being evaluated; skillfit neither installs their runtimes nor requires
 them for its own CLI. Package publication is separate from local evaluation.

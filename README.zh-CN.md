@@ -60,6 +60,15 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 
 <sub>2026-09-22 在 Kimi Code 上针对当时的 4 任务 `code-review` bench 抓取。该 bench 之后新增了第 5 个任务；上面四行指标是用那次运行记录的每任务计数重新渲染的——运行是真实的，格式是当前的。</sub>
 
+## 安装
+
+```bash
+npx skillfit@0.8.0 --help
+npx skillfit@0.8.0 doctor
+```
+
+`npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。下面的快速开始用的是源码检出，这样才能跑本仓库自带的 bench。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI。`skillfit` 是从 npm 装上的命令。
+
 ## 快速开始
 
 ```bash
@@ -210,14 +219,14 @@ node ./personal-codex/setup.mjs --yes
 - [x] 正例任务可选 `triggerClass`（`explicit`、`implicit`、`contextual`）。没标类别的任务仍只进汇总召回率。
 - [x] `--compete-installed` 把其他用户级 Skill 复制进 trigger 试验。矩阵目录之外的系统 Skill 和插件不会被复制。`installed` 把「读了长正文」和任务结果分开报告；这次读取不是 trigger 召回率。
 - [ ] 安装建议。2026 年 7 月的 8 个 Skill 实验没有可靠的任务质量增益。67 个 Skill 目录和 13 个入门套装都没有作为一组被评过。
-- [ ] 发布到 npm。`npx skillfit` 不存在。路径仍是克隆、`npm ci`、`npm run build`。
+- [x] 已发布到 npm（`skillfit@0.8.0`）。`npx skillfit` 安装的是这个版本。克隆后 `npm ci` 再 `npm run build` 仍然可用。
 - [ ] 社区 bench 与 evidence 提交（CI 重跑可复现配置，不收无法验证的结果）
 - [ ] Cursor / Gemini CLI / OpenCode 适配器
 - [ ] Streamable HTTP 与 2026 无状态 MCP 预检
 
 ## 贡献
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。最有价值的贡献是用你真实工作流造的 bench。发布说明见 [CHANGELOG.md](CHANGELOG.md)，安全问题报告见 [SECURITY.md](SECURITY.md)。
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。最有价值的贡献是用你真实工作流造的 bench。证据投稿用 Evidence submission issue 模板：固定版本的 bench、`bench check` 摘要、确切命令，以及审过的 manifest。无法复核的百分比不会被接收。发布说明见 [CHANGELOG.md](CHANGELOG.md)，安全问题报告见 [SECURITY.md](SECURITY.md)。
 
 ## License
 

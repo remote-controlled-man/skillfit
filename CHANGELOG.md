@@ -2,7 +2,7 @@
 
 ## [0.8.0] — 2026-10-11
 
-Prepared for the first npm publication. Until that publish succeeds, install from a clone with `npm ci` and `npm run build`.
+Published to npm as `skillfit@0.8.0`. `npx skillfit` installs that release. A clone can still be built with `npm ci` and `npm run build`.
 
 - `--compete-installed` copies other user-level Skills into a trigger trial. Without it, recall is an upper bound. System Skills and plugins outside the matrix directories are not copied.
 - Positive trigger tasks may set `triggerClass` to `explicit`, `implicit`, or `contextual`. Unlabeled tasks stay in the pooled recall.

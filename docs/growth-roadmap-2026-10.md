@@ -86,8 +86,8 @@ These are open. The README roadmap is the public checklist; this list is the sam
 - The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the
   13-Skill starter set are not evaluated as sets. A run labeled indicative is not an installation
   recommendation (README, "Our own data").
-- npm publication is deferred. `npx skillfit` does not exist; the driver Skill must not suggest it
-  (`skills/skillfit/SKILL.md`). Clone, `npm ci`, and `npm run build` remain the path.
+- `skillfit@0.8.0` is published. `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build`
+  remain valid (`skills/skillfit/SKILL.md`).
 - Community bench and evidence submissions, Cursor / Gemini CLI / OpenCode adapters, and Streamable
   HTTP MCP preflight remain open on the README roadmap.
 - More agent adapters and a hosted dashboard need real demand and their own compatibility tests. They
