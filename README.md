@@ -60,6 +60,15 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 
 <sub>Captured 2026-09-22 on Kimi Code against the four-task `code-review` bench. The bench has since gained a fifth task; the four metric lines above are re-rendered from that run's recorded per-task counts, so the run is real and the formatting is current.</sub>
 
+## Install
+
+```bash
+npx skillfit@0.8.0 --help
+npx skillfit@0.8.0 doctor
+```
+
+`npx skillfit` installs the published release and needs Node.js 22 or newer. The quick start below uses a source checkout so you can run the benches that ship in this repository. After `npm run build`, `node dist/cli.js` is that checkout's CLI. `skillfit` is the command installed from npm.
+
 ## Quick start
 
 ```bash
@@ -119,7 +128,7 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
 ```
 
-Start with `skillfit mcp check` to verify the stdio handshake and tool catalog. It requests `tools/list` and audits names, descriptions, input schemas, and annotations without calling a tool. Then run the paired experiment to measure whether the model selects the server correctly and whether task outcomes improve. See [Rules and MCP experiments](docs/config-experiments.md).
+Start with `skillfit mcp check` to verify a stdio server or a Streamable HTTP endpoint and its tool catalog. It requests `tools/list` and audits names, descriptions, input schemas, and annotations without calling a tool. Then run the paired experiment to measure whether the model selects the server correctly and whether task outcomes improve. See [Rules and MCP experiments](docs/config-experiments.md).
 
 For Codex MCP trials, skillfit passes a per-run trust override so the disposable project config loads without changing your Codex user config.
 
@@ -162,7 +171,7 @@ To export the full 65-Skill upstream source catalog, add `--upstream-lock ./prof
 | `doctor` | Detects installed agents, checks rules bloat, skill validity/conflicts, MCP declaration presence and JSON syntax where supported, and silent-failure traps (e.g. AGENTS.md that Claude Code never reads) | Never |
 | `report` | Skill usage receipts from retained local session history: fires per skill, candidates with no observed fire, and raw catalog size before agent-side limits. Absence is a prioritization signal, not proof of uselessness. It also renders an existing evaluation manifest as Markdown with `report eval`. | Never |
 | `eval <target>` | Paired baseline/treatment runs for a Skill, rules overlay, or MCP overlay; deterministic verifier + optional blind LLM judge, token-cost delta, McNemar exact test, paired bootstrap CI, and graded facet-score CIs. `--mode trigger` installs a Skill and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
-| `mcp check <spec>` | Starts a stdio MCP server, negotiates the protocol lifecycle, requests `tools/list`, and audits tool names, descriptions, input schemas, and annotations. Never calls a tool | Never |
+| `mcp check <spec>` | Handshakes with a stdio MCP server or a Streamable HTTP endpoint, requests `tools/list`, and audits tool names, descriptions, input schemas, and annotations. Never calls a tool | Never |
 | `bench` | `init` scaffolds a bench directory with a working example task; `check` validates a bench offline (verifier self-tests, oracle/NOP gates, mock-arm probes, fixture hygiene, trigger-label coverage); `add --freeze` turns a failure you just watched into a permanent bench task, and `--decompose` has an agent draft the verifier + oracle, admitted only if both gates pass | `init`/`add` after confirmation; `check` never |
 | `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent), skill copy with conflict protection, content-hash lockfile, post-install verification. Writes are staged first; if a write or verification fails, the installer rolls back changed target files, including the lockfile. Abrupt termination can still leave a partial install; re-run to reconcile. Your original is kept at `<file>.skillfit-bak` and the first backup wins, so later updates cannot overwrite it. `--dry-run` reports conflicts and exits 0; add `--strict` to make them fail (CI gates) | Only after confirmation |
 | `setup codex` | Lists or installs a chosen set of pinned, verified upstream Skills and repository-owned Skills with global routing guidance; defaults to a dry run | Only with `--yes` |
@@ -174,7 +183,7 @@ Evals are only as good as their tasks. A bench is just a directory — `bench.js
 
 ## Our own data
 
-We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pairs, Codex CLI, frozen 2026-07 baseline). One showed a limited regression-test artifact signal in 2/3 treated runs; no Skill showed a robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set:
+We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pairs, Codex CLI, frozen 2026-07 baseline). One showed a limited regression-test artifact signal in 2/3 treated runs; no Skill showed a robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set, and a run the report labels indicative is not an installation recommendation:
 
 | Skill | Quality Δ | Input tokens | Verdict |
 |---|---:|---:|---|
@@ -205,19 +214,22 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 - [x] doctor / eval / install core loop
 - [x] Paired A/B harness with blind judging
 - [x] Statistical verdicts (McNemar exact + paired bootstrap CI, manifest v4)
-- [x] Trigger-rate measurement (`--mode trigger`: recall / false-trigger rate with Wilson CIs)
-- [x] Bench scaffolding (`bench init` + `bench check`), failure freezing (`--freeze`), git-history mining (`--from-commit`), difficulty calibration (`--calibrate`)
+- [x] Trigger rates for one Skill alone (`--mode trigger` on Kimi Code and Codex CLI: recall, false-trigger rate, Wilson CIs). Recall is an upper bound until that Skill competes with a real installed set. Codex detection is a `SKILL.md` read, not a Skill-invocation event.
+- [x] Bench scaffolding (`bench init` + `bench check`), failure freezing (`--freeze`), git-history mining (`--from-commit`), difficulty calibration (`--calibrate`). `bench check` is an offline integrity check, not an agent-quality score.
 - [x] Rules and MCP workspace A/B experiments with identical prompts
 - [x] Read-only stdio MCP handshake and tool-catalog audit
-- [ ] Trigger capture for Claude Code (blocked: needs working auth)
-- [ ] Community bench & evidence submissions (reproducible-config CI re-runs, not trust-me results)
+- [ ] Claude Code trigger capture, machine-verified (blocked: needs working auth)
+- [x] Optional `triggerClass` (`explicit`, `implicit`, `contextual`) on positive tasks. Unlabeled tasks stay in the pooled recall.
+- [x] `--compete-installed` copies other user-level Skills into a trigger trial. System Skills and plugins outside the matrix directories are not copied. `installed` reports a long-body read separately from the task result; that read is not trigger recall.
+- [ ] An installation recommendation. The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the 13-Skill starter set are not evaluated as sets.
+- [x] npm publication (`skillfit@0.8.0`). `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build` remain valid.
+- [x] Community bench and evidence submissions. Benches go in `benches/contrib`; evidence uses the Evidence submission issue template. CI runs the offline gates and does not call an agent.
 - [ ] Cursor / Gemini CLI / OpenCode adapters
-- [ ] Streamable HTTP and 2026 stateless MCP preflight
-- [ ] Full installed-Skill-set routing competition
+- [x] Streamable HTTP MCP preflight (`mcp check` transport `http`). It does not call a tool.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The highest-value contribution is a bench built from your real workflow. Release notes live in [CHANGELOG.md](CHANGELOG.md); security reports go to [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). The highest-value contribution is a bench built from your real workflow. Evidence submissions use the Evidence submission issue template: a pinned bench, a `bench check` summary, the exact command, and a reviewed manifest. Unverifiable percentages are not accepted. Release notes live in [CHANGELOG.md](CHANGELOG.md); security reports go to [SECURITY.md](SECURITY.md).
 
 ## License
 

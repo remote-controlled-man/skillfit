@@ -254,3 +254,36 @@ test('triggerMetrics carries a Wilson CI for precision and leaves F1 bare', () =
   assert.equal(typeof metrics.f1, 'number');
   assert.ok(!('f1Ci95' in metrics));
 });
+
+test('triggerClass is recorded only on positive tasks and splits recall', async (t) => {
+  const dir = makeTriggerBench(t);
+  const benchJson = JSON.parse(readFileSync(join(dir, 'bench.json'), 'utf8')) as { tasks: Array<Record<string, unknown>> };
+  benchJson.tasks[0]!['triggerClass'] = 'explicit';
+  writeFileSync(join(dir, 'bench.json'), JSON.stringify(benchJson));
+  const executor = stubExecutor(() => ({ output: 'done', skillTriggered: true }));
+  const manifest = await runTriggerExperiment(makePlan(t, executor, { bench: loadBench(dir), trials: 1 }));
+  assert.equal(manifest.metrics.classRecall?.explicit?.fired, 1);
+  assert.equal(manifest.metrics.classRecall?.implicit, undefined);
+  benchJson.tasks[1]!['triggerClass'] = 'explicit';
+  writeFileSync(join(dir, 'bench.json'), JSON.stringify(benchJson));
+  assert.throws(() => loadBench(dir), /shouldTrigger: true/);
+});
+
+test('a competing Skill is copied beside the Skill under test and recall is no longer described as alone', async (t) => {
+  const other = join(tmp(t, 'skillfit-other-skill-'), 'other-skill');
+  mkdirSync(other, { recursive: true });
+  writeFileSync(join(other, 'SKILL.md'), '# other\n');
+  const pin = collectInstalledSkillFingerprint(other);
+  const executor = stubExecutor(() => ({ output: 'done', skillTriggered: false }));
+  const plan = makePlan(t, executor, { trials: 1, detection: 'skill-read' });
+  const manifest = await runTriggerExperiment({
+    ...plan,
+    competitors: [{ name: 'other-skill', sourceDir: other, sha256: pin.sha256 }],
+  });
+  assert.equal(manifest.competition?.mode, 'installed');
+  assert.equal(readFileSync(join(plan.runsRoot, plan.runGroup, 'pos-task', 'installed', 'trial-1', '.test-skills', 'other-skill', 'SKILL.md'), 'utf8'), '# other\n');
+  const summary = renderTriggerSummary(manifest, 'manifest.json');
+  assert.match(summary, /other-skill/);
+  assert.match(summary, /SKILL.md read, not a Skill-invocation event/);
+  assert.ok(!summary.includes('installed alone'));
+});

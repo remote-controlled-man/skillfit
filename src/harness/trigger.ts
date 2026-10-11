@@ -15,6 +15,12 @@ import type {
   TokenUsage,
 } from './types.js';
 
+export interface TriggerCompetitor {
+  name: string;
+  sourceDir: string;
+  sha256: string;
+}
+
 export interface TriggerPlan {
   bench: Bench;
   skill: SkillBundle;
@@ -23,6 +29,10 @@ export interface TriggerPlan {
   runsRoot: string;
   runGroup: string;
   skillInstallDir: string;
+  /** Other user Skills copied beside the Skill under test. Absent means it is installed alone. */
+  competitors?: TriggerCompetitor[];
+  /** How a fire was recognized. Codex has no Skill-invocation event. */
+  detection?: 'skill-tool' | 'skill-read' | 'unrecorded';
   session?: ExperimentSession;
   log?: (msg: string) => void;
 }
@@ -45,6 +55,7 @@ export interface TriggerTrialRecord {
 export interface TriggerTaskSummary {
   id: string;
   shouldTrigger: boolean;
+  triggerClass?: 'explicit' | 'implicit' | 'contextual';
   runs: number;
   fired: number;
   unknown: number;
@@ -68,6 +79,7 @@ export interface TriggerMetrics {
   f1: number | null;
   positives: { fired: number; runs: number };
   negatives: { fired: number; runs: number };
+  classRecall?: Partial<Record<'explicit' | 'implicit' | 'contextual', { fired: number; runs: number; recall: number | null; recallCi95: { lo: number; hi: number } | null }>>;
   tokens: { input: number; output: number } | null;
 }
 
@@ -91,6 +103,8 @@ export interface TriggerManifest {
   executor: ExecutorDescriptor;
   trials: number;
   skillInstallDir: string;
+  competition?: { mode: 'alone' | 'installed'; skills: { name: string; sha256: string }[] };
+  detection?: 'skill-tool' | 'skill-read' | 'unrecorded';
   tasks: TriggerTaskSummary[];
   metrics: TriggerMetrics;
   warnings: string[];
@@ -126,6 +140,15 @@ async function runTriggerTrial(
   const observedSkill = collectInstalledSkillFingerprint(skillDest);
   if (observedSkill.sha256 !== installedSkill.sha256) {
     throw new Error(`Installed Skill content does not match the planned fingerprint for ${taskId} / trial ${trial}; keep the Skill input unchanged and remove any conflicting fixture Skill files.`);
+  }
+  for (const competitor of plan.competitors ?? []) {
+    const dest = join(runDir, plan.skillInstallDir, competitor.name);
+    if (existsSync(dest)) throw new Error(`Competing Skill collides with an existing directory: ${dest}`);
+    mkdirSync(dirname(dest), { recursive: true });
+    cpSync(realpathSync(competitor.sourceDir), dest, { recursive: true });
+    if (collectInstalledSkillFingerprint(dest).sha256 !== competitor.sha256) {
+      throw new Error(`Competing Skill "${competitor.name}" changed after planning; remove it from the run and start again.`);
+    }
   }
 
   const started = new Date();
@@ -215,6 +238,7 @@ async function runTriggerTrial(
 function summarizeTriggerTask(
   taskId: string,
   shouldTrigger: boolean,
+  triggerClass: TriggerTaskSummary['triggerClass'],
   records: TriggerTrialRecord[],
 ): TriggerTaskSummary {
   let input = 0;
@@ -229,6 +253,7 @@ function summarizeTriggerTask(
   return {
     id: taskId,
     shouldTrigger,
+    ...(triggerClass ? { triggerClass } : {}),
     runs: records.filter((r) => r.error === null && r.triggered !== null).length,
     fired: records.filter((r) => r.error === null && r.triggered === true).length,
     unknown: records.filter((r) => r.error === null && r.triggered === null).length,
@@ -272,8 +297,21 @@ export function triggerMetrics(tasks: TriggerTaskSummary[]): TriggerMetrics {
     f1,
     positives: { fired: posFired, runs: posRuns },
     negatives: { fired: negFired, runs: negRuns },
+    classRecall: classRecall(positives),
     tokens: seenTokens ? { input, output } : null,
   };
+}
+
+function classRecall(positives: TriggerTaskSummary[]): TriggerMetrics['classRecall'] {
+  const out: NonNullable<TriggerMetrics['classRecall']> = {};
+  for (const name of ['explicit', 'implicit', 'contextual'] as const) {
+    const rows = positives.filter((task) => task.triggerClass === name);
+    const runs = rows.reduce((sum, task) => sum + task.runs, 0);
+    if (runs === 0) continue;
+    const fired = rows.reduce((sum, task) => sum + task.fired, 0);
+    out[name] = { fired, runs, recall: fired / runs, recallCi95: wilson95(fired, runs) };
+  }
+  return Object.keys(out).length === 0 ? undefined : out;
 }
 
 function buildTriggerWarnings(manifest: Omit<TriggerManifest, 'warnings'>): string[] {
@@ -292,6 +330,21 @@ function buildTriggerWarnings(manifest: Omit<TriggerManifest, 'warnings'>): stri
   const errors = manifest.tasks.reduce((sum, t) => sum + t.errors, 0);
   if (errors > 0) {
     warnings.push(`${errors} run(s) hit an executor, verifier, or engagement error — excluded from rates.`);
+  }
+  const competing = manifest.competition?.mode === 'installed' ? manifest.competition.skills : [];
+  if (competing.length === 0) {
+    warnings.push('Recall is an upper bound: the Skill under test was installed alone, with no other user Skills competing.');
+  } else {
+    warnings.push(`Recall faced ${competing.length} other user Skill(s): ${competing.map((skill) => skill.name).join(', ')}. System Skills and plugins outside the matrix user directories were not copied.`);
+  }
+  if (manifest.detection === 'skill-read') {
+    warnings.push('Trigger detection counted a SKILL.md read, not a Skill-invocation event.');
+  }
+  if (manifest.tasks.some((task) => task.shouldTrigger) && !manifest.tasks.some((task) => task.triggerClass)) {
+    warnings.push('Positive tasks have no triggerClass, so explicit, implicit, and contextual requests stay pooled.');
+  }
+  if (manifest.tasks.some((task) => task.shouldTrigger && !task.triggerClass) && manifest.tasks.some((task) => task.triggerClass)) {
+    warnings.push('Some positive tasks have no triggerClass and stay in the pooled recall only.');
   }
   return warnings;
 }
@@ -332,7 +385,7 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
       plan.log?.(`Running ${task.id} / installed / trial ${trial}…`);
       records.push(await runTriggerTrial(plan, task.id, trial, installedSkill));
     }
-    taskSummaries.push(summarizeTriggerTask(task.id, task.shouldTrigger ?? false, records));
+    taskSummaries.push(summarizeTriggerTask(task.id, task.shouldTrigger ?? false, task.triggerClass, records));
   }
 
   plan.session?.settle();
@@ -359,6 +412,11 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
     executor: plan.executor.describe(),
     trials: plan.trials,
     skillInstallDir: plan.skillInstallDir,
+    competition: {
+      mode: (plan.competitors?.length ?? 0) > 0 ? 'installed' : 'alone',
+      skills: (plan.competitors ?? []).map((skill) => ({ name: skill.name, sha256: skill.sha256 })),
+    },
+    detection: plan.detection ?? 'unrecorded',
     tasks: taskSummaries,
     metrics: triggerMetrics(taskSummaries),
   };
@@ -397,6 +455,11 @@ export function renderTriggerSummary(manifest: TriggerManifest, manifestPath: st
   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
   lines.push(`Executor : ${manifest.executor.kind} (${manifest.executor.model})${manifest.executor.detail ? ` — ${manifest.executor.detail}` : ''}`);
   lines.push(`Mode     : trigger — skill installed into ${manifest.skillInstallDir}, not injected into the prompt`);
+  const competing = manifest.competition?.skills ?? [];
+  lines.push(competing.length === 0
+    ? 'Compete  : alone (recall is an upper bound)'
+    : `Compete  : ${competing.length} other user Skill(s): ${competing.map((skill) => skill.name).join(', ')}`);
+  if (manifest.detection === 'skill-read') lines.push('Detect   : SKILL.md read, not a Skill-invocation event');
   lines.push(`Trials   : ${manifest.trials} per task`);
   lines.push('');
   const idWidth = Math.max(7, ...manifest.tasks.map((t) => t.id.length));
@@ -410,6 +473,10 @@ export function renderTriggerSummary(manifest: TriggerManifest, manifestPath: st
   lines.push('');
   const m = manifest.metrics;
   lines.push(`Trigger recall      : ${rateWithCi(m.positives.fired, m.positives.runs, m.recallCi95)}`);
+  for (const name of ['explicit', 'implicit', 'contextual'] as const) {
+    const row = m.classRecall?.[name];
+    if (row) lines.push(`  ${name.padEnd(18)}: ${rateWithCi(row.fired, row.runs, row.recallCi95)}`);
+  }
   lines.push(
     `False-trigger rate  : ${rateWithCi(m.negatives.fired, m.negatives.runs, m.falseTriggerRateCi95)}`,
   );

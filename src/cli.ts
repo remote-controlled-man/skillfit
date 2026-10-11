@@ -18,7 +18,7 @@ Usage:
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
   skillfit report eval <manifest.json>     Render an existing evaluation as Markdown (read-only)
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
-  skillfit mcp check <spec.json>            Handshake with a stdio MCP server and audit its tool catalog
+  skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
   skillfit bench init [dir]                 Scaffold a new bench directory
   skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
   skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
@@ -32,6 +32,7 @@ Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
   --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
+  --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})
@@ -83,6 +84,7 @@ async function main(): Promise<void> {
       agent: { type: 'string' },
       'judge-agent': { type: 'string' },
       mode: { type: 'string' },
+      'compete-installed': { type: 'boolean', default: false },
       input: { type: 'string' },
       bench: { type: 'string' },
       trials: { type: 'string' },
@@ -190,6 +192,7 @@ async function main(): Promise<void> {
         mode,
         inputMode,
         judgeAgent: values['judge-agent'],
+        competeInstalled: values['compete-installed'],
         maxCalls,
         trials,
       });

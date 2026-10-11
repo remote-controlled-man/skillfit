@@ -72,10 +72,28 @@ reviewed, shareable manifest. Older entries whose raw manifests remain local are
 
 ## Later decisions, after adoption evidence
 
-- npm publication is deferred until the clone-based path and package contents are verified. Do not
-  advertise `npx skillfit` before a package exists.
-- More agent adapters, HTTP MCP transport, and a hosted dashboard need real demand and their own
-  compatibility tests. They should not delay the first-run and reporting work.
+These are open. The README roadmap is the public checklist; this list is the same work with its home.
+
+- `--compete-installed` copies other user-level Skills into a trigger trial. Without it, recall is an
+  upper bound. System Skills and plugins outside the matrix directories are still not copied
+  (`docs/metrics.md`, L1).
+- Positive tasks may set `triggerClass` to `explicit`, `implicit`, or `contextual`. Unlabeled tasks
+  stay in the pooled recall (`docs/metrics.md`, L1).
+- Codex trigger detection counts a `SKILL.md` read. It is not a Skill-invocation event. Claude Code
+  capture is not machine-verified (`docs/metrics.md`, L1).
+- `installed` reports long-body reads separately from the task result. A read is not trigger recall,
+  and a missing read does not prove the description was ignored (`docs/installed-skill-evaluation.md`).
+- The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the
+  13-Skill starter set are not evaluated as sets. A run labeled indicative is not an installation
+  recommendation (README, "Our own data").
+- `skillfit@0.8.0` is published. `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build`
+  remain valid (`skills/skillfit/SKILL.md`).
+- Community benches belong in `benches/contrib`. Evidence uses the Evidence submission issue template.
+  CI runs the offline gates and does not call an agent. Cursor, Gemini CLI, and OpenCode adapters
+  remain open until their official paths are verified. `mcp check` now also preflights a Streamable
+  HTTP endpoint and still does not call a tool.
+- More agent adapters and a hosted dashboard need real demand and their own compatibility tests. They
+  should not delay the first-run and reporting work.
 - Track useful signals: clean-clone success on three operating systems, bench-check completions,
   reproducible evidence contributions, and issue-to-fix time. Do not optimize the product for a star
   count alone.

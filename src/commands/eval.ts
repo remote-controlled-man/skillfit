@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent } from '../agents.js';
@@ -12,6 +13,8 @@ import { assertInstalledSkillFixtures, collectInstalledSkillTarget } from '../ha
 import { assertInputModeSupported } from '../harness/prompt.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
+import { collectInstalledSkillFingerprint } from '../harness/bundle.js';
+import { installedUserSkills } from '../harness/receipts.js';
 import { collectEvaluationTarget } from '../harness/target.js';
 import {
   renderTriggerSummary,
@@ -38,6 +41,8 @@ export interface EvalOptions {
   runsRoot?: string;
   runGroup?: string;
   skillInstallDir?: string;
+  /** With trigger mode, copy the user's other matrix user-level Skills into each trial. */
+  competeInstalled?: boolean;
   log?: (msg: string) => void;
 }
 
@@ -281,9 +286,19 @@ async function runEvalTrigger(
 
   const plannedCalls = bench.tasks.filter(task => task.shouldTrigger !== undefined).length * trials;
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+  const competitors = options.competeInstalled && options.agent
+    ? installedUserSkills(getAgent(options.agent), options.sessionOptions?.homeDir ?? homedir(), options.sessionOptions?.env ?? process.env)
+      .filter((entry) => entry.name !== skill.name)
+      .map((entry) => ({ name: entry.name, sourceDir: entry.dir, sha256: collectInstalledSkillFingerprint(entry.dir).sha256 }))
+    : [];
+  const detection = options.agent === 'codex' ? 'skill-read' as const : options.agent ? 'skill-tool' as const : 'unrecorded' as const;
+  const competeLine = competitors.length === 0
+    ? 'Compete  : alone (recall is an upper bound)'
+    : `Compete  : ${competitors.map((entry) => entry.name).join(', ')}`;
 
   if (options.dryRun) {
     log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir));
+    log(competeLine);
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (agent calls only)`);
     return null;
   }
@@ -295,8 +310,8 @@ async function runEvalTrigger(
       'trigger mode needs a skill install directory: pass --agent (the matrix provides one) or skillInstallDir.',
     );
   }
-
   log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+  log(competeLine);
   const session = sessionFor(options, bench, skill, trials, runsRoot, runGroup, ['installed'], plannedCalls,
     { mode: 'trigger', trials, executor: executor.describe() });
   let manifest: TriggerManifest;
@@ -310,6 +325,8 @@ async function runEvalTrigger(
       runsRoot,
       runGroup,
       skillInstallDir: installDir,
+      competitors,
+      detection,
       log,
     });
   } catch (error) { session.finish(error); throw error; }
@@ -331,6 +348,12 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
   if (options.mode === 'trigger' && options.inputMode !== undefined) {
     throw new Error('--input applies only to paired modes; trigger mode already presents files on disk.');
+  }
+  if (options.competeInstalled && options.mode !== 'trigger') {
+    throw new Error('--compete-installed applies only to --mode trigger.');
+  }
+  if (options.competeInstalled && !options.agent) {
+    throw new Error('--compete-installed needs --agent so other user Skills can be read from the matrix directories.');
   }
   const trials = options.trials ?? DEFAULT_EVAL_TRIALS;
   if (!Number.isInteger(trials) || trials < 1 || trials > 20) {

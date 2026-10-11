@@ -1,6 +1,6 @@
 # benches/contrib — community benches
 
-Drop your bench here as `benches/contrib/<name>/` when you want to submit it. A contrib bench follows the
+Drop your bench here as `benches/contrib/<name>/` when you want to submit it. For a measured result, open an Evidence submission issue instead of pasting an unverifiable percentage. A contrib bench follows the
 same contract as the bundled ones ([benches/README.md](../README.md)), plus a few submission rules.
 
 **Read [docs/bench-authoring.md](../../docs/bench-authoring.md) first.** It is the guide this checklist

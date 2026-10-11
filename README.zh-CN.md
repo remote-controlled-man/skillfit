@@ -60,6 +60,15 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 
 <sub>2026-09-22 在 Kimi Code 上针对当时的 4 任务 `code-review` bench 抓取。该 bench 之后新增了第 5 个任务；上面四行指标是用那次运行记录的每任务计数重新渲染的——运行是真实的，格式是当前的。</sub>
 
+## 安装
+
+```bash
+npx skillfit@0.8.0 --help
+npx skillfit@0.8.0 doctor
+```
+
+`npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。下面的快速开始用的是源码检出，这样才能跑本仓库自带的 bench。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI。`skillfit` 是从 npm 装上的命令。
+
 ## 快速开始
 
 ```bash
@@ -116,7 +125,7 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
 ```
 
-先用 `skillfit mcp check` 验证 stdio 握手和工具目录：它只请求 `tools/list`，检查名称、描述、输入 schema 与 annotations，不会调用工具。然后再跑配对实验，测模型是否选对 server，以及任务结果是否真的改善。详见[规则与 MCP 实验](docs/config-experiments.md)。
+先用 `skillfit mcp check` 验证 stdio server 或 Streamable HTTP 端点及其工具目录：它只请求 `tools/list`，检查名称、描述、输入 schema 与 annotations，不会调用工具。然后再跑配对实验，测模型是否选对 server，以及任务结果是否真的改善。详见[规则与 MCP 实验](docs/config-experiments.md)。
 
 在 Codex MCP 试验中，skillfit 会为每次运行传入仅对临时工作区生效的信任覆盖参数，让项目配置正常加载，不修改你的 Codex 用户配置。
 
@@ -159,7 +168,7 @@ node ./personal-codex/setup.mjs --yes
 | `doctor` | 探测已装 agent，检查规则膨胀、skill 合法性/冲突、MCP 声明是否存在及受支持格式的 JSON 语法，并检查静默失效坑（比如 Claude Code 根本不会读的 AGENTS.md） | 从不 |
 | `report` | 从保留的本地会话历史统计 skill 使用：每个 skill 的触发次数、未观察到触发的候选项，以及 agent 限制前的原始目录规模。未观察到不等于无用，只是排查优先级信号。也可用 `report eval` 把已有实验清单渲染为 Markdown。 | 从不 |
 | `eval <target>` | 对 Skill、规则覆盖层或 MCP 覆盖层做配对 baseline/treatment；包含确定性 verifier、可选盲评、token 成本、McNemar 精确检验、配对 bootstrap CI 和 facet 分数。`--mode trigger` 专门测 Skill 的触发召回率与误触发率 | 仅本地 `runs/` |
-| `mcp check <spec>` | 启动 stdio MCP server，完成协议握手，请求 `tools/list`，检查工具名称、描述、输入 schema 与 annotations；从不调用工具 | 从不 |
+| `mcp check <spec>` | 与 stdio MCP server 或 Streamable HTTP 端点握手，请求 `tools/list`，检查工具名称、描述、输入 schema 与 annotations；从不调用工具 | 从不 |
 | `bench` | `init` 生成带可运行示例任务的骨架；`check` 离线校验（verifier 自测、oracle/NOP 闸门、mock 臂探针、fixture 体积、触发标签覆盖）；`add --freeze` 把你刚目击的翻车冻成永久 bench 任务，`--decompose` 可让 agent 起草 verifier + 参考解，两道闸门都过才接纳 | `init`/`add` 确认后才写；`check` 从不 |
 | `install` | 受管区域规则写入（`<!-- SKILLFIT_START/END -->`，幂等）、skill 复制带冲突保护、内容哈希锁定的 lockfile、安装后校验。写入前先暂存；如果写入或校验失败，会回滚本次改动的目标文件，包括 lockfile。进程突然终止仍可能留下部分安装，可重新运行以协调状态。原文件保留在 `<file>.skillfit-bak`，且首份备份优先，后续更新不会覆盖它。`--dry-run` 会报告冲突并以 0 退出；加上 `--strict` 则让冲突失败（用于 CI 闸门） | 确认后才写 |
 | `setup codex` | 列出或安装所选的固定版本上游 Skills、本仓库自写 Skills 和全局触发指引；默认只展示计划 | 仅 `--yes` 写入 |
@@ -171,7 +180,7 @@ node ./personal-codex/setup.mjs --yes
 
 ## 我们自己的数据
 
-我们用 skillfit 的 harness 测了 8 个流行的工作流 skill（24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线）。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置：
+我们用 skillfit 的 harness 测了 8 个流行的工作流 skill（24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线）。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置。报告标成 indicative 的运行也不是安装建议：
 
 | Skill | 质量差值 | 输入 token | 结论 |
 |---|---:|---:|---|
@@ -202,19 +211,22 @@ node ./personal-codex/setup.mjs --yes
 - [x] doctor / eval / install 核心闭环
 - [x] 配对 A/B harness + 盲评
 - [x] 统计判定（McNemar 精确检验 + 配对 bootstrap CI，manifest v4）
-- [x] 触发率测量（`--mode trigger`：召回率 / 误触发率，带 Wilson 置信区间）
-- [x] bench 脚手架（`bench init` + `bench check`）、翻车冻结（`--freeze`）、git 历史挖矿（`--from-commit`）与难度校准（`--calibrate`）
+- [x] 单个 Skill、旁边没有其他 Skill 时的触发率（Kimi Code 与 Codex CLI 的 `--mode trigger`：召回率、误触发率，带 Wilson 置信区间）。在它和真实已装集合竞争之前，召回率是上限。Codex 的检测是读了 `SKILL.md`，不是一次 Skill 调用事件。
+- [x] bench 脚手架（`bench init` + `bench check`）、翻车冻结（`--freeze`）、git 历史挖矿（`--from-commit`）与难度校准（`--calibrate`）。`bench check` 是离线完整性检查，不是 agent 效果分数。
 - [x] 使用相同 prompt 的规则与 MCP 工作区 A/B 实验
 - [x] 只读 stdio MCP 握手与工具目录审计
-- [ ] Claude Code 的触发捕获（卡在账号不可用）
-- [ ] 社区 bench 与 evidence 提交（CI 重跑可复现配置，不收无法验证的结果）
+- [ ] Claude Code 的触发捕获，并在真机上验证（卡在账号不可用）
+- [x] 正例任务可选 `triggerClass`（`explicit`、`implicit`、`contextual`）。没标类别的任务仍只进汇总召回率。
+- [x] `--compete-installed` 把其他用户级 Skill 复制进 trigger 试验。矩阵目录之外的系统 Skill 和插件不会被复制。`installed` 把「读了长正文」和任务结果分开报告；这次读取不是 trigger 召回率。
+- [ ] 安装建议。2026 年 7 月的 8 个 Skill 实验没有可靠的任务质量增益。67 个 Skill 目录和 13 个入门套装都没有作为一组被评过。
+- [x] 已发布到 npm（`skillfit@0.8.0`）。`npx skillfit` 安装的是这个版本。克隆后 `npm ci` 再 `npm run build` 仍然可用。
+- [x] 社区 bench 与 evidence 提交。bench 放在 `benches/contrib`；证据用 Evidence submission issue 模板。CI 只跑离线检查，不调用 agent。
 - [ ] Cursor / Gemini CLI / OpenCode 适配器
-- [ ] Streamable HTTP 与 2026 无状态 MCP 预检
-- [ ] 完整已安装 Skill 集合下的路由竞争
+- [x] Streamable HTTP MCP 预检（`mcp check` 的 `http` 传输）。不会调用工具。
 
 ## 贡献
 
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。最有价值的贡献是用你真实工作流造的 bench。发布说明见 [CHANGELOG.md](CHANGELOG.md)，安全问题报告见 [SECURITY.md](SECURITY.md)。
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。最有价值的贡献是用你真实工作流造的 bench。证据投稿用 Evidence submission issue 模板：固定版本的 bench、`bench check` 摘要、确切命令，以及审过的 manifest。无法复核的百分比不会被接收。发布说明见 [CHANGELOG.md](CHANGELOG.md)，安全问题报告见 [SECURITY.md](SECURITY.md)。
 
 ## License
 

@@ -65,7 +65,17 @@ function validateTask(benchDir: string, raw: unknown, index: number): BenchTask 
   if (shouldTrigger !== undefined && typeof shouldTrigger !== 'boolean') {
     throw new Error(`bench.json task "${id}" has an invalid "shouldTrigger" field`);
   }
-  const triggerField = shouldTrigger === undefined ? {} : { shouldTrigger };
+  const triggerClass = task['triggerClass'];
+  if (triggerClass !== undefined && triggerClass !== 'explicit' && triggerClass !== 'implicit' && triggerClass !== 'contextual') {
+    throw new Error(`bench.json task "${id}" has an invalid "triggerClass" field (expected "explicit", "implicit", or "contextual")`);
+  }
+  if (triggerClass !== undefined && shouldTrigger !== true) {
+    throw new Error(`bench.json task "${id}" sets triggerClass without shouldTrigger: true`);
+  }
+  const triggerField = {
+    ...(shouldTrigger === undefined ? {} : { shouldTrigger }),
+    ...(triggerClass === undefined ? {} : { triggerClass: triggerClass as 'explicit' | 'implicit' | 'contextual' }),
+  };
   if (promptTrigger !== undefined && (typeof promptTrigger !== 'string' || promptTrigger.trim() === '')) {
     throw new Error(`bench.json task "${id}" has an invalid "promptTrigger" field`);
   }
