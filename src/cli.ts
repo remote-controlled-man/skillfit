@@ -9,8 +9,7 @@ import { runInstall } from './commands/install.js';
 import { runMcpCheck } from './commands/mcp.js';
 import { runReport } from './commands/report.js';
 import { runCodexSetup } from './commands/setup.js';
-
-const VERSION = '0.7.0';
+import { VERSION } from './version.js';
 
 const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
 
@@ -32,10 +31,11 @@ Usage:
 Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
-  --mode <mode>       Eval mode: inject (default; Skills, rules, MCP) | trigger (Skills only)
+  --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})
+  --max-calls <n>     Call ceiling for eval / bench check --calibrate (includes enabled judges)
                      Also controls baseline calibration repetitions
   --profile <name>    Profile for install (default: "recommended")
   --profile-path <dir>  Install a portable profile from a local directory
@@ -86,6 +86,7 @@ async function main(): Promise<void> {
       input: { type: 'string' },
       bench: { type: 'string' },
       trials: { type: 'string' },
+      'max-calls': { type: 'string' },
       profile: { type: 'string' },
       'profile-path': { type: 'string' },
       skill: { type: 'string', multiple: true },
@@ -144,6 +145,11 @@ async function main(): Promise<void> {
     throw new Error('--input applies only to paired eval or bench check --calibrate.');
   }
   const trials = values.trials === undefined ? undefined : Number(values.trials);
+  const maxCalls = values['max-calls'] === undefined ? undefined : Number(values['max-calls']);
+  if (maxCalls !== undefined && (!Number.isSafeInteger(maxCalls) || maxCalls < 1)) throw new Error('--max-calls must be a positive safe integer.');
+  if (maxCalls !== undefined && command !== 'eval' && !(command === 'bench' && positionals[1] === 'check' && values.calibrate)) {
+    throw new Error('--max-calls applies only to eval or bench check --calibrate.');
+  }
   if (trials !== undefined && (!Number.isInteger(trials) || trials < 1 || trials > 20)) {
     throw new Error(`--trials must be an integer between 1 and 20, got ${JSON.stringify(values.trials)}`);
   }
@@ -172,8 +178,8 @@ async function main(): Promise<void> {
         return;
       }
       const mode = values.mode ?? 'inject';
-      if (mode !== 'inject' && mode !== 'trigger') {
-        console.error(`Unknown --mode: ${mode} (expected "inject" or "trigger")`);
+      if (mode !== 'inject' && mode !== 'installed' && mode !== 'trigger') {
+        console.error(`Unknown --mode: ${mode} (expected "inject", "installed" or "trigger")`);
         process.exitCode = 2;
         return;
       }
@@ -184,6 +190,7 @@ async function main(): Promise<void> {
         mode,
         inputMode,
         judgeAgent: values['judge-agent'],
+        maxCalls,
         trials,
       });
       return;
@@ -247,6 +254,7 @@ async function main(): Promise<void> {
             ? {
                 agent: values.agent,
                 inputMode,
+                maxCalls,
                 dryRun: values['dry-run'] ?? false,
                 trials,
               }

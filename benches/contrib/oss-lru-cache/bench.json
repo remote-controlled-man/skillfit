@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "name": "oss-lru-cache",
+  "description": "Three independent historical asynchronous cache defects from pinned upstream source and maintainer fixes. Difficulty is uncalibrated. One repository and one task family, not general OSS evidence.",
+  "tasks": [
+    {
+      "id": "fetch-size",
+      "fixture": "fixtures/fetch-size",
+      "prompt": "prompts/fetch-size.md",
+      "verifier": "node verifiers/fetch-size.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-fetch-size.mjs",
+      "rubric": "ground-truth/fetch-size.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "fetch-abort",
+      "fixture": "fixtures/fetch-abort",
+      "prompt": "prompts/fetch-abort.md",
+      "verifier": "node verifiers/fetch-abort.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-fetch-abort.mjs",
+      "rubric": "ground-truth/fetch-abort.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "fetch-lifecycle",
+      "fixture": "fixtures/fetch-lifecycle",
+      "prompt": "prompts/fetch-lifecycle.md",
+      "verifier": "node verifiers/fetch-lifecycle.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-fetch-lifecycle.mjs",
+      "rubric": "ground-truth/fetch-lifecycle.md",
+      "shouldTrigger": true
+    }
+  ]
+}

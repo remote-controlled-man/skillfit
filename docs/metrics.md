@@ -8,6 +8,10 @@ Status reviewed 2026-10-01: L1 records complete installed-resource fingerprints 
 implemented trigger rates from task-class breakdowns and installed-skill competition that remain
 specification. The v2 verdict protocol is unchanged.
 
+Additive workflow review 2026-10-09: optional managed-session and native read metadata below
+describe execution coverage and observations. They do not change the v2 statistical formulas,
+verdict thresholds, pairwise exclusions or legal legacy manifest interpretation.
+
 This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
 contract — is [bench-authoring.md](bench-authoring.md).
 
@@ -53,14 +57,33 @@ A bench that cannot discriminate must not produce verdicts.
   (implemented).
 - **Floor**: warn when baseline pass rate ≤ 10% (implemented) — the task is too hard or broken, and
   all-zero arms are equally uninformative.
-- **Engagement sanity**: if the agent never touched the fixture (empty output, executor error), or the
-  verifier produced no exit code at all (unspawnable command, or killed by its timeout), the trial is
-  excluded from rates and reported as an error, not a failure (implemented). Exclusion is *pairwise*: since
+- **Engagement sanity**: if the agent never engaged with the fixture, the executor errored, or the
+  verifier produced no exit code at all (unspawnable command, killed by its timeout, or output over
+  the capture limit), the trial is excluded from rates and reported as an error, not a failure
+  (implemented). Non-engagement means the final message is empty or whitespace. For an output task
+  that message is the deliverable. For a command task the deliverable is the file edit, so an empty
+  message still counts when the disposable worktree differs from the fixture commit. Exclusion is *pairwise*: since
   every statistic here is paired, dropping a trial from one arm alone would misalign the (task, trial) pairs
   that McNemar and the paired bootstrap resample, so an error in either arm removes that pair from both, and
   each arm reports its `errors` count next to its graded `trials`.
+  Command tasks whose disposable Git initialization/reflog verification fails are likewise
+  environment errors before their executor starts; inherited disabled reflog is overridden only
+  in the disposable repository. This does not change the paired exclusion or verdict formulas.
 
 ## L1 — trigger quality (activation)
+
+Paired installed-Skill runs may additionally record `skillReads` counts (`observed`,
+`unobserved`, `unknown`) per arm, task and overall, with the **surviving graded pair**
+denominator. These mechanical transcript observations are not trigger recall/precision and do
+not establish use, causation or benefit. Errored pairs are excluded from these counts as from
+the quality rates. Older v4 manifests without these fields remain valid.
+
+Optional `experiment` metadata records declared/planned calls, the ceiling, actual started and
+finished calls, completion state and frozen plan hash. A stopped/incomplete experiment cannot
+support an installation recommendation, regardless of the unchanged statistical verdict on its
+surviving observations. Enabled judges contribute two declared calls per pair. No replacement
+samples, retries or partial task-set truncation are added to meet a budget; see
+[the bounded workflow](experiment-workflow.md) for the fingerprint/ledger contract and limits.
 
 Whether the agent invokes the skill when it should, and only then. A skill's realized value is gated by this:
 an excellent skill that never fires — or fires everywhere — is worthless. Public benchmarks measure efficacy
@@ -82,6 +105,8 @@ mode measures the rates below, while positive task classes and real-set competit
   `SKILL.md`; normalize shell-escaped path separators before matching); Claude Code —
   `-p --output-format stream-json --verbose` (`--bare` forbidden: it skips skill discovery) — implemented
   against the documented shape but not yet machine-verified.
+- **Environment errors**: unavailable disposable Git initialization/reflog excludes a command trigger trial
+  before its executor starts. The existing error exclusion and trigger-rate formulas remain unchanged.
 - **Presentation fidelity**: trigger-mode tasks present work as files on disk with a natural request; the
   harness never inlines a repository snapshot in trigger mode. A self-contained prompt suppresses skill
   consultation (measured: 0/9 trigger recall with an inline snapshot vs. the skill firing on the same tasks
@@ -109,7 +134,10 @@ mode measures the rates below, while positive task classes and real-set competit
 
 ## L2 — conditional efficacy (the paired A/B core)
 
-Measured with the skill force-injected (today's `eval` behavior), isolating content quality from routing.
+Measured with the Skill force-injected (`eval --mode inject`, the compatible default), isolating content quality from routing.
+`eval --mode installed` uses the same paired statistics but measures native discovery plus complete
+Skill resources, so its delta is realized task efficacy under the recorded environment, not efficacy
+conditional on guaranteed activation. Keep these delivery surfaces distinct when comparing studies.
 
 - **ΔP** = treatment pass rate − baseline pass rate (per task, then pooled).
 - **ρ** = (tokens_treatment − tokens_baseline) / tokens_baseline, input and output separately.
@@ -132,8 +160,9 @@ replace, and a long tail lets an arbitrary subset dominate the score.
   (its LLM-judged rubric reward cost 4pp of task pass rate), so the judge is never a check source.
 - **Δscore** = treatment mean score − baseline mean score, reported per task (descriptive) and pooled at
   bench level with a paired bootstrap 95% CI (tasks as the resampling unit, ≥1000 resamples, seeded) —
-  the same protocol as ΔP, one level down in granularity. Trials without checks are excluded; a task
-  enters the CI only when both arms have at least one scored trial.
+  the same protocol as ΔP, one level down in granularity. Trials without checks are excluded pairwise:
+  a trial stays in Δscore only when both arms scored it, so the denominators match. A task enters the
+  CI only when that leaves at least one scored pair.
 - Equal weight per check, per bench version: the check list is frozen by the bench content hash, and the
   report prints the per-facet table so the weighting is transparent rather than hidden.
 - Why bother: at personal sample sizes binary ΔP rarely reaches significance; graded scores carry several
@@ -256,6 +285,18 @@ receipts record `inputMode`; its absence in an older manifest is reported as
 legacy/not recorded. Skill content remains force-injected in the treatment, so
 this changes task presentation, not L1/L2 or the statistical verdict protocol.
 The initial workspace prompt estimate excludes subsequent tool reads and replies.
+
+Paired `--mode installed` is a separate, opt-in delivery surface for Skill/CLI experiments and
+requires workspace input. Prompts remain identical; only treatment receives the complete Skill at
+the matrix-defined project directory. Compatible v4 `skillDelivery` metadata records the selection
+and directory. Here `target.bundleSha256/files` fingerprint all regular resources (sorted relative
+paths and bytes, including scripts and binary assets; excluding permissions and empty directories).
+Per-run receipts retain nullable mechanical activation observations and available raw transcripts.
+Source drift, unsafe paths, symlinks and fixture collisions fail before the affected agent call.
+Inherited agent configuration is not isolated, and installation does not guarantee activation.
+Old v4 manifests and inject mode retain their existing interpretation. Paired tests, scale labels,
+error exclusions, CI calculations and verdict semantics above are unchanged. See
+[installed-skill-evaluation.md](installed-skill-evaluation.md) for usage and limits.
 
 New condition summaries also record `tokenCoverage.input/output`: the number of
 graded surviving runs that supplied each field. Existing `tokens` totals and

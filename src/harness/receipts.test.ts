@@ -91,6 +91,15 @@ test('collectReceipts aggregates skill fires per agent and computes never-fired'
   assert.equal(codex.skills.length, 0);
 });
 
+test('collectReceipts sees Codex skills installed under ~/.codex/skills', async (t) => {
+  const home = mkdtempSync(join(tmpdir(), 'skillfit-receipts-codex-skills-'));
+  t.after(() => rmSync(home, { recursive: true, force: true }));
+  mkdirSync(join(home, '.codex', 'skills', 'from-codex'), { recursive: true });
+  writeFileSync(join(home, '.codex', 'skills', 'from-codex', 'SKILL.md'), '# from-codex\n');
+  const receipts = await collectReceipts({ homeDir: home, agent: 'codex' });
+  assert.deepEqual(receipts[0]?.installed, ['from-codex']);
+});
+
 test('collectReceipts handles a home with no session stores at all', async (t) => {
   const home = mkdtempSync(join(tmpdir(), 'skillfit-receipts-empty-'));
   t.after(() => rmSync(home, { recursive: true, force: true }));

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "tool": "scripts/check-links.mjs",
+  "toolSha256": "f8b53d1aa1ed5bad2ca173acd826ca19bbbabdaa671d568d173eac719b661a7d",
+  "inputs": {
+    "README.md": "9bdda4f8dae8439bc10d30c46d1d8592c12f88d4cf94ec503b6750b52646f1c9",
+    "docs/guide.md": "3480ba8abe18a5b5e373ef13a42cad8800ce81ef3c36e956b28a45b18205ec1e"
+  },
+  "passed": true
+}

@@ -8,6 +8,8 @@ export interface ExecutorResult {
   tokens?: TokenUsage;
   skillTriggered?: boolean;
   rawOutput?: string;
+  /** Returned output retained, but input/configuration drift makes this trial ungradable. */
+  guardError?: string;
 }
 
 export interface ExecutorDescriptor {

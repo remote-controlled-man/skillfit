@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-10-01T04:39:00Z",
+  "verifiedAt": "2026-10-11T06:45:00Z",
   "agents": [
     {
       "id": "claude-code",
@@ -16,7 +16,11 @@
         "projectFiles": ["CLAUDE.md"],
         "userFiles": ["~/.claude/CLAUDE.md"],
         "readsAgentsMd": false,
-        "agentsMdBridge": "Add `@AGENTS.md` import line to CLAUDE.md",
+        "agentsMdBridge": {
+          "note": "Add `@AGENTS.md` import line to CLAUDE.md",
+          "fileName": "AGENTS.md",
+          "importLine": "@AGENTS.md"
+        },
         "notes": "Officially reads CLAUDE.md only; AGENTS.md requires an @import bridge."
       },
       "skills": {
@@ -78,7 +82,8 @@
       "skills": {
         "projectDirs": [".agents/skills"],
         "userDirs": ["~/.agents/skills"],
-        "sharedDirs": [".agents/skills", "~/.agents/skills"]
+        "sharedDirs": [".agents/skills", "~/.agents/skills"],
+        "userHomeOverride": { "env": "CODEX_HOME", "relativePath": "skills", "fallback": "~/.codex/skills" }
       },
       "mcp": {
         "projectFiles": [".codex/config.toml"],
@@ -102,6 +107,16 @@
         "docs": null
       },
       "headless": {
+        "runtime": {
+          "versionArgv": ["codex", "--version"],
+          "settings": {
+            "file": "~/.codex/config.toml",
+            "homeOverride": { "env": "CODEX_HOME", "relativePath": "config.toml" },
+            "format": "toml",
+            "keys": ["model", "model_reasoning_effort", "service_tier"],
+            "docs": "https://developers.openai.com/codex/config-reference"
+          }
+        },
         "argv": ["codex", "exec", "--sandbox", "workspace-write", "-"],
         "promptVia": "stdin",
         "projectTrustConfigArg": "projects.'{workdir}'.trust_level='trusted'",
@@ -155,6 +170,7 @@
       },
       "sessions": {
         "dir": "~/.kimi-code/sessions",
+        "homeOverride": { "env": "KIMI_CODE_HOME", "relativePath": "sessions" },
         "transcriptGlob": "*/*/agents/*/wire.jsonl",
         "wireShape": "flat-tool-call",
         "skillToolName": "Skill",

@@ -1,2 +1,3 @@
+* text=auto eol=lf
 scripts/*.sh text eol=lf
 profiles/codex-curated/skills/** text eol=lf

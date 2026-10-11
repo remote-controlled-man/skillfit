@@ -1,7 +1,10 @@
 import { spawn } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import type { ExperimentSession } from './experiment-session.js';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
+import { assertInstalledSkillFixtures, installSkillResources, installedSkillDestination } from './installed-skill.js';
+import { collectInstalledSkillFingerprint } from './bundle.js';
 import { judgePair, type JudgeResult } from './judge.js';
 import { killTree, treeSpawnOptions } from './kill-tree.js';
 import { assertInputModeSupported, buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
@@ -24,6 +27,9 @@ export interface ExperimentPlan {
   bench: Bench;
   target: EvaluationTarget;
   inputMode?: InputMode;
+  skillInstallDir?: string;
+  skillSearchDirs?: readonly string[];
+  session?: ExperimentSession;
   executor: Executor;
   judge?: Executor | null;
   trials: number;
@@ -57,6 +63,7 @@ export interface TrialOutcome {
   output: string;
   tokens: TokenUsage | null;
   gitInitialized: boolean;
+  skillTriggered?: boolean | null;
 }
 
 export interface ProcessResult {
@@ -66,6 +73,7 @@ export interface ProcessResult {
 }
 
 const VERIFIER_TIMEOUT_MS = 2 * 60 * 1000;
+const MAX_PROCESS_OUTPUT_BYTES = 8 * 1024 * 1024;
 
 function runProcess(
   command: string,
@@ -84,27 +92,39 @@ function runProcess(
       return;
     }
     let output = '';
+    let bytes = 0;
     let timedOut = false;
+    let overflow = false;
     const timer = setTimeout(() => {
       timedOut = true;
       killTree(child);
     }, timeoutMs);
-    child.stdout.on('data', (chunk: Buffer) => {
+    const take = (chunk: Buffer): void => {
+      bytes += chunk.length;
+      if (bytes > MAX_PROCESS_OUTPUT_BYTES) {
+        overflow = true;
+        killTree(child);
+        return;
+      }
       output += chunk.toString('utf8');
-    });
-    child.stderr.on('data', (chunk: Buffer) => {
-      output += chunk.toString('utf8');
-    });
+    };
+    child.stdout.on('data', take);
+    child.stderr.on('data', take);
+    // Verifiers and git do not read a prompt. Leave the pipe open and a command that reads stdin
+    // waits until the timeout instead of seeing EOF.
+    child.stdin?.on('error', () => {});
+    child.stdin?.end();
     child.on('error', (error) => {
       clearTimeout(timer);
       resolvePromise({ exitCode: null, output, error: error.message });
     });
     child.on('close', (code) => {
       clearTimeout(timer);
+      const limited = overflow ? `output exceeded ${MAX_PROCESS_OUTPUT_BYTES} bytes` : null;
       resolvePromise({
-        exitCode: code,
+        exitCode: timedOut || overflow ? null : code,
         output: timedOut ? `${output}\n[timed out after ${timeoutMs}ms]` : output,
-        error: timedOut ? `timed out after ${timeoutMs}ms` : null,
+        error: limited ?? (timedOut ? `timed out after ${timeoutMs}ms` : null),
       });
     });
   });
@@ -115,6 +135,7 @@ export async function gitInit(dir: string): Promise<boolean> {
     ['init', '--quiet'],
     ['config', 'user.email', 'skillfit@example.invalid'],
     ['config', 'user.name', 'skillfit harness'],
+    ['config', 'core.logAllRefUpdates', 'true'],
     ['add', '-A'],
     ['commit', '--quiet', '-m', 'Initial benchmark fixture'],
   ];
@@ -122,7 +143,37 @@ export async function gitInit(dir: string): Promise<boolean> {
     const result = await runProcess('git', args, dir, 30_000);
     if (result.exitCode !== 0) return false;
   }
-  return true;
+  const reflog = await runProcess('git', ['reflog', 'show', '--format=%H', 'HEAD'], dir, 30_000);
+  return reflog.exitCode === 0 && reflog.output.trim().length > 0;
+}
+
+const ENGAGEMENT_ERROR =
+  'Agent produced no output and left the fixture unchanged; excluded as an engagement error, not a graded failure.';
+
+async function worktreeChanged(dir: string): Promise<boolean> {
+  const status = await runProcess('git', ['status', '--porcelain'], dir, 30_000);
+  if (status.exitCode !== 0) return true;
+  // The harness writes _prompt.txt after the fixture commit. That file is not an agent edit.
+  return status.output.split('\n').some((line) => {
+    const path = line.slice(3).replaceAll('"', '').trim();
+    return path.length > 0 && path !== '_prompt.txt';
+  });
+}
+
+/**
+ * Empty final text is not a graded miss. Output tasks deliver that text, so silence is
+ * non-engagement. Command tasks deliver file edits, so silence still counts when the disposable
+ * worktree differs from the fixture commit. docs/metrics.md L0.
+ */
+export async function engagementError(
+  output: string,
+  verifierKind: 'output' | 'command' | undefined,
+  runDir: string,
+  gitInitialized: boolean,
+): Promise<string | null> {
+  if (output.trim() !== '') return null;
+  if ((verifierKind ?? 'output') === 'command' && gitInitialized && (await worktreeChanged(runDir))) return null;
+  return ENGAGEMENT_ERROR;
 }
 
 export async function runTrial(
@@ -134,6 +185,14 @@ export async function runTrial(
   const { bench, target, executor } = plan;
   const inputMode = plan.inputMode ?? 'snapshot';
   assertInputModeSupported(inputMode, executor);
+  if (plan.skillInstallDir) {
+    if (target.kind !== 'skill' || inputMode !== 'workspace') {
+      throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
+    }
+    if (collectInstalledSkillFingerprint(target.sourceDir).sha256 !== target.sha256) {
+      throw new Error('Skill resources changed after planning; freeze the input again before running.');
+    }
+  }
   const task = bench.tasks.find((t) => t.id === taskId);
   if (!task) throw new Error(`Unknown task: ${taskId}`);
   const runDir = join(plan.runsRoot, plan.runGroup, task.id, condition, `trial-${trial}`);
@@ -151,13 +210,18 @@ export async function runTrial(
   const snapshot = inputMode === 'snapshot' ? snapshotRepoFiles(runDir) : '';
   const overlay = target.overlays[condition];
   if (overlay) applyOverlay(overlay, runDir);
+  if (plan.skillInstallDir) {
+    const destination = installedSkillDestination(runDir, plan.skillInstallDir, target.name);
+    if (existsSync(destination)) throw new Error('Fixture already contains the evaluated Skill: ' + destination);
+    if (condition === 'treatment') installSkillResources(target, runDir, plan.skillInstallDir);
+  }
   const gitInitialized = await gitInit(runDir);
 
   const taskPromptText = readFileSync(join(bench.dir, task.prompt), 'utf8');
   const prompt = buildTaskPrompt(
     taskPromptText,
     snapshot,
-    condition === 'treatment' ? target.payload : null,
+    condition === 'treatment' && !plan.skillInstallDir ? target.payload : null,
     // Workspace configuration experiments must let the agent use its configured tools and inspect
     // the project even when the final answer is graded as text. Skill-only output benches retain the
     // stricter prompt isolation used by the original harness.
@@ -169,15 +233,27 @@ export async function runTrial(
   let output = '';
   let error: string | null = null;
   let tokens: TokenUsage | null = null;
+  let rawOutput: string | null = null;
+  let skillTriggered: boolean | null = null;
   try {
+    if (!gitInitialized && task.verifierKind === 'command') {
+      throw new Error('Benchmark Git initialization or reflog verification failed; command task was not executed.');
+    }
     const result = await executor.run(prompt, runDir);
     output = result.output;
     tokens = result.tokens ?? null;
+    rawOutput = result.rawOutput ?? null;
+    skillTriggered = result.skillTriggered ?? null;
+    error = result.guardError ?? null;
   } catch (executorError) {
     error = (executorError as Error).message;
   }
+  if (error === null) {
+    error = await engagementError(output, task.verifierKind, runDir, gitInitialized);
+  }
   const finished = new Date();
   writeFileSync(join(runDir, '_output.md'), output, 'utf8');
+  if (rawOutput !== null) writeFileSync(join(runDir, '_transcript.jsonl'), rawOutput, 'utf8');
 
   let verifierExitCode: number | null = null;
   let passed = false;
@@ -220,6 +296,7 @@ export async function runTrial(
     output,
     tokens,
     gitInitialized,
+    ...(plan.skillInstallDir ? { skillTriggered } : {}),
   };
   const { output: _output, ...serializable } = record;
   writeFileSync(
@@ -228,6 +305,7 @@ export async function runTrial(
       {
         schemaVersion: 2,
         inputMode,
+        ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed', installDir: plan.skillInstallDir } } : {}),
         ...serializable,
         runGroup: plan.runGroup,
         target: {
@@ -332,7 +410,7 @@ function pairedSurvivors(
   return survivors;
 }
 
-function statsFor(records: TrialOutcome[], errors: number): ConditionStats {
+function statsFor(records: TrialOutcome[], errors: number, readObservations = false): ConditionStats {
   const passes = records.filter((r) => r.passed).length;
   const trials = records.length;
   const scored = records.filter((r) => r.score !== null);
@@ -344,6 +422,11 @@ function statsFor(records: TrialOutcome[], errors: number): ConditionStats {
     passes,
     trials,
     errors,
+    ...(readObservations ? { skillReads: {
+      observed: records.filter(r => r.skillTriggered === true).length,
+      unobserved: records.filter(r => r.skillTriggered === false).length,
+      unknown: records.filter(r => r.skillTriggered == null).length,
+    } } : {}),
     passRate: trials === 0 ? 0 : passes / trials,
     meanScore,
     tokens: sumTokens(records),
@@ -427,6 +510,28 @@ function trialScores(records: TrialOutcome[]): (number | null)[] {
   return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.score);
 }
 
+/** Drop a trial from both arms unless both produced a score, so Δscore keeps the paired denominators. */
+function pairedScores(
+  baseline: readonly (number | null)[],
+  treatment: readonly (number | null)[],
+): { baseline: number[]; treatment: number[] } | null {
+  const left: number[] = [];
+  const right: number[] = [];
+  const count = Math.min(baseline.length, treatment.length);
+  for (let index = 0; index < count; index++) {
+    const baselineScore = baseline[index];
+    const treatmentScore = treatment[index];
+    if (typeof baselineScore !== 'number' || typeof treatmentScore !== 'number') continue;
+    left.push(baselineScore);
+    right.push(treatmentScore);
+  }
+  return left.length === 0 ? null : { baseline: left, treatment: right };
+}
+
+function mean(values: readonly number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
 function facetStats(outcomes: Record<Condition, TrialOutcome[]>): FacetSummary[] {
   const names: string[] = [];
   for (const condition of CONDITIONS) {
@@ -507,27 +612,27 @@ function summarizeTask(
   outcomes: Record<Condition, TrialOutcome[]>,
   survivors: Record<Condition, TrialOutcome[]>,
   judgeResults: JudgeResult[],
+  readObservations = false,
 ): TaskSummary {
-  const baseline = statsFor(survivors.baseline, countErrors(outcomes.baseline));
-  const treatment = statsFor(survivors.treatment, countErrors(outcomes.treatment));
+  const baseline = statsFor(survivors.baseline, countErrors(outcomes.baseline), readObservations);
+  const treatment = statsFor(survivors.treatment, countErrors(outcomes.treatment), readObservations);
   const flags = {
     baseline: trialFlags(survivors.baseline),
     treatment: trialFlags(survivors.treatment),
   };
   const deltaPassRate = treatment.passRate - baseline.passRate;
-  const scoreDelta =
-    baseline.meanScore !== null && treatment.meanScore !== null
-      ? treatment.meanScore - baseline.meanScore
-      : null;
+  const scoreRows = {
+    baseline: trialScores(survivors.baseline),
+    treatment: trialScores(survivors.treatment),
+  };
+  const paired = pairedScores(scoreRows.baseline, scoreRows.treatment);
+  const scoreDelta = paired ? mean(paired.treatment) - mean(paired.baseline) : null;
   const { verdict, reason } = verdictFor({ ...discordantCounts([flags]), deltaPassRate });
   return {
     id: taskId,
     conditions: { baseline, treatment },
     outcomes: flags,
-    scores: {
-      baseline: trialScores(survivors.baseline),
-      treatment: trialScores(survivors.treatment),
-    },
+    scores: scoreRows,
     deltaPassRate,
     scoreDelta,
     facets: facetStats(survivors),
@@ -541,6 +646,12 @@ function summarizeTask(
 
 export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
+  if (plan.skillInstallDir) {
+    if (plan.target.kind !== 'skill' || plan.inputMode !== 'workspace') {
+      throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
+    }
+    assertInstalledSkillFixtures(plan.bench, plan.target, plan.skillInstallDir, plan.skillSearchDirs);
+  }
   if (!RUN_GROUP_PATTERN.test(plan.runGroup)) {
     throw new Error(
       `Invalid run group "${plan.runGroup}": must match ${RUN_GROUP_PATTERN} (got characters outside [A-Za-z0-9._-] or a leading dot/hyphen)`,
@@ -550,7 +661,8 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     throw new Error(`trials must be an integer between 1 and 20, got ${plan.trials}`);
   }
   const groupDir = join(plan.runsRoot, plan.runGroup);
-  if (existsSync(groupDir)) {
+  if (existsSync(groupDir) && !(plan.session?.groupDir === resolve(groupDir) &&
+      readdirSync(groupDir).join() === '_plan.json')) {
     throw new Error(`Run group directory already exists: ${groupDir}`);
   }
   mkdirSync(groupDir, { recursive: true });
@@ -575,26 +687,27 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     allSurvivors.baseline.push(...survivors.baseline);
     allSurvivors.treatment.push(...survivors.treatment);
     const judgeResults = await judgeTaskTrials(plan, task.id, outcomes);
-    taskSummaries.push(summarizeTask(task.id, outcomes, survivors, judgeResults));
+    taskSummaries.push(summarizeTask(task.id, outcomes, survivors, judgeResults, !!plan.skillInstallDir));
   }
 
-  const overallBaseline = statsFor(allSurvivors.baseline, countErrors(allOutcomes.baseline));
-  const overallTreatment = statsFor(allSurvivors.treatment, countErrors(allOutcomes.treatment));
+  const overallBaseline = statsFor(allSurvivors.baseline, countErrors(allOutcomes.baseline), !!plan.skillInstallDir);
+  const overallTreatment = statsFor(allSurvivors.treatment, countErrors(allOutcomes.treatment), !!plan.skillInstallDir);
   const overallDelta = overallTreatment.passRate - overallBaseline.passRate;
   const taskOutcomes = taskSummaries.map((task) => task.outcomes);
   const discordant = discordantCounts(taskOutcomes);
   const overallVerdict = verdictFor({ ...discordant, deltaPassRate: overallDelta });
-  const scoreTasks = taskSummaries
-    .map((task) => ({
-      baseline: task.scores.baseline.filter((s): s is number => s !== null),
-      treatment: task.scores.treatment.filter((s): s is number => s !== null),
-    }))
-    .filter((task) => task.baseline.length > 0 && task.treatment.length > 0);
+  const scoreTasks = taskSummaries.flatMap((task) => {
+    const paired = pairedScores(task.scores.baseline, task.scores.treatment);
+    return paired ? [paired] : [];
+  });
   const scoreDeltaCi = pairedScoreBootstrapCI(scoreTasks);
   const scoreDelta = scoreDeltaCi ? scoreDeltaCi.point : null;
+  plan.session?.settle();
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
     schemaVersion: 4,
+    ...(plan.session ? { experiment: plan.session.summary() } : {}),
     inputMode: plan.inputMode ?? 'snapshot',
+    ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed' as const, installDir: plan.skillInstallDir } } : {}),
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
     target: {

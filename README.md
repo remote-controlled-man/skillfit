@@ -81,6 +81,8 @@ The bench checks are offline integrity checks, not agent-quality scores. `doctor
 
 For eval and baseline calibration, `--trials` must be an integer from 1 to 20. Fractional, malformed, or out-of-range values are rejected before any run or bench check starts.
 
+Use `--max-calls <n>` for eval or baseline calibration to reject plans above a call ceiling (including enabled judges). New runs retain a frozen plan, call ledger, session state and artifact hashes; input/config drift or executor failures stop further calls. Partial runs cannot support an installation recommendation. Follow the [bounded experiment workflow](docs/experiment-workflow.md), including its environment limits.
+
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
 ## Evaluate a real OSS task

@@ -13,7 +13,6 @@ export const MARKER_END = '<!-- SKILLFIT_END -->';
 export const BACKUP_SUFFIX = '.skillfit-bak';
 export const LOCKFILE_NAME = 'skillfit.lock.json';
 
-const BRIDGE_LINE = '@AGENTS.md';
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
 export interface InstallOptions {
@@ -364,7 +363,7 @@ function resolveScoped(rel: string, scope: Scope, homeDir: string, projectDir: s
   return path.resolve(projectDir, rel);
 }
 
-function rulesTarget(agent: AgentDef, scope: Scope, homeDir: string, projectDir: string, env: NodeJS.ProcessEnv): { rulesFile: string; bridgeFile: string | null } {
+function rulesTarget(agent: AgentDef, scope: Scope, homeDir: string, projectDir: string, env: NodeJS.ProcessEnv): { rulesFile: string; bridgeFile: string | null; importLine: string | null } {
   const rel = scope === 'user' ? agent.rules.userFiles[0] : agent.rules.projectFiles[0];
   if (!rel) throw new Error(`${agent.displayName} has no ${scope}-level rules file in the matrix`);
   const override = scope === 'user' ? agent.rules.userHomeOverride : undefined;
@@ -372,16 +371,18 @@ function rulesTarget(agent: AgentDef, scope: Scope, homeDir: string, projectDir:
   const nativeFile = override !== undefined && envHome
     ? path.resolve(envHome, override.relativePath)
     : resolveScoped(rel, scope, homeDir, projectDir);
-  if (agent.rules.readsAgentsMd) return { rulesFile: nativeFile, bridgeFile: null };
+  const bridge = agent.rules.agentsMdBridge;
+  if (agent.rules.readsAgentsMd || bridge === null) return { rulesFile: nativeFile, bridgeFile: null, importLine: null };
   return {
-    rulesFile: path.join(path.dirname(nativeFile), 'AGENTS.md'),
-    bridgeFile: agent.rules.agentsMdBridge === null ? null : nativeFile,
+    rulesFile: path.join(path.dirname(nativeFile), bridge.fileName),
+    bridgeFile: nativeFile,
+    importLine: bridge.importLine,
   };
 }
 
 function skillsTargetDir(agent: AgentDef, scope: Scope, homeDir: string, projectDir: string): string {
-  const shared = scope === 'user' ? '~/.agents/skills' : '.agents/skills';
-  if (agent.skills.sharedDirs.includes(shared)) return resolveScoped(shared, scope, homeDir, projectDir);
+  const shared = agent.skills.sharedDirs.find((dir) => (scope === 'user' ? dir.startsWith('~/') : !dir.startsWith('~')));
+  if (shared) return resolveScoped(shared, scope, homeDir, projectDir);
   const rel = scope === 'user' ? agent.skills.userDirs[0] : agent.skills.projectDirs[0];
   if (!rel) throw new Error(`${agent.displayName} has no ${scope}-level skills directory in the matrix`);
   return resolveScoped(rel, scope, homeDir, projectDir);
@@ -423,7 +424,7 @@ async function readLockfile(lockPath: string): Promise<Lockfile> {
 async function planRulesItems(agent: AgentDef, manifest: ProfileManifest, profileDir: string, scope: Scope, homeDir: string, projectDir: string, env: NodeJS.ProcessEnv): Promise<PlanItem[]> {
   if (!manifest.rules) return [];
   const template = await readProfileFile(profileDir, manifest.rules.template);
-  const { rulesFile, bridgeFile } = rulesTarget(agent, scope, homeDir, projectDir, env);
+  const { rulesFile, bridgeFile, importLine } = rulesTarget(agent, scope, homeDir, projectDir, env);
   const block = renderManagedBlock(template, manifest.name, manifest.version);
   const overrideName = scope === 'user' ? agent.rules.userHomeOverride?.overrideRelativePath : undefined;
   if (overrideName) {
@@ -439,11 +440,11 @@ async function planRulesItems(agent: AgentDef, manifest: ProfileManifest, profil
     }
   }
   const items = [await planBlockItem(agent.id, 'rules', 'rules', rulesFile, block)];
-  if (bridgeFile !== null) {
-    const bridgeBlock = renderManagedBlock(BRIDGE_LINE, manifest.name, manifest.version);
+  if (bridgeFile !== null && importLine !== null) {
+    const bridgeBlock = renderManagedBlock(importLine, manifest.name, manifest.version);
     const existing = await readIfExists(bridgeFile);
-    if (existing !== null && extractBlock(existing, bridgeFile) === null && hasBridgeLine(existing)) {
-      items.push(skipItem(agent.id, 'bridge', 'CLAUDE.md bridge', bridgeFile, sha256Hex(bridgeBlock), `${BRIDGE_LINE} import already present (unmanaged)`));
+    if (existing !== null && extractBlock(existing, bridgeFile) === null && hasBridgeLine(existing, importLine)) {
+      items.push(skipItem(agent.id, 'bridge', 'CLAUDE.md bridge', bridgeFile, sha256Hex(bridgeBlock), `${importLine} import already present (unmanaged)`));
     } else {
       items.push(await planBlockItem(agent.id, 'bridge', 'CLAUDE.md bridge', bridgeFile, bridgeBlock, existing));
     }
@@ -451,11 +452,22 @@ async function planRulesItems(agent: AgentDef, manifest: ProfileManifest, profil
   return items;
 }
 
-function hasBridgeLine(content: string): boolean {
-  return content.split(/\r?\n/).some((line) => line.trim() === BRIDGE_LINE);
+function hasBridgeLine(content: string, importLine: string): boolean {
+  return content.split(/\r?\n/).some((line) => line.trim() === importLine);
+}
+
+async function assertNotSymlink(targetPath: string): Promise<void> {
+  try {
+    if ((await fs.lstat(targetPath)).isSymbolicLink()) {
+      throw new Error(`Refusing to write through a symlink: ${targetPath}`);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
 }
 
 async function planBlockItem(agentId: string, kind: ItemKind, label: string, targetPath: string, block: string, existingArg?: string | null): Promise<PlanItem> {
+  await assertNotSymlink(targetPath);
   const existing = existingArg !== undefined ? existingArg : await readIfExists(targetPath);
   const { action, detail } = classifyBlock(existing, block, targetPath);
   const files = action === 'skip'

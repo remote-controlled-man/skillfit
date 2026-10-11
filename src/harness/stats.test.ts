@@ -79,6 +79,19 @@ test('pairedDeltaBootstrapCI returns null when there are no trials', () => {
   assert.equal(pairedDeltaBootstrapCI([task([], [])]), null);
 });
 
+test('pairedDeltaBootstrapCI stays finite when some tasks have no graded survivors', () => {
+  const graded = task([false, true], [true, true]);
+  const empty = task([], []);
+  for (let seed = 1; seed <= 40; seed++) {
+    const mixed = pairedDeltaBootstrapCI([empty, graded], { seed, resamples: 300 });
+    const only = pairedDeltaBootstrapCI([graded], { seed, resamples: 300 });
+    assert.ok(mixed);
+    assert.ok(only);
+    assert.equal(Number.isFinite(mixed.lo) && Number.isFinite(mixed.hi), true);
+    assert.equal(mixed.point, only.point);
+  }
+});
+
 test('wilson95 handles empty and saturated arms', () => {
   assert.deepEqual(wilson95(0, 0), { lo: 0, hi: 1 });
   const zero = wilson95(0, 3);

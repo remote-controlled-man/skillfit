@@ -1,18 +1,21 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { getAgent } from '../agents.js';
 import { loadBench } from '../harness/bench.js';
+import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
 import { assertInputModeSupported } from '../harness/prompt.js';
 import { runTrial, runVerifier, verifierFailure } from '../harness/runner.js';
 import type { ExperimentPlan } from '../harness/runner.js';
-import { MOCK_MARKER_FILE } from '../harness/constants.js';
+import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { VerifierCheck } from '../harness/verifier-summary.js';
 import type { Executor, InputMode, SkillBundle } from '../harness/types.js';
 import { confirm as confirmPrompt } from './confirm.js';
+import { BACKUP_SUFFIX } from './install.js';
 import type { Check } from './doctor.js';
 
 export interface BenchInitOptions {
@@ -25,6 +28,8 @@ export interface BenchInitOptions {
 }
 
 export interface BenchCheckCalibrateOptions {
+  maxCalls?: number;
+  sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
   agent?: string;
   inputMode?: InputMode;
   dryRun?: boolean;
@@ -331,6 +336,11 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     return finish(dir, checks, log);
   }
   push('PASS', `bench.json valid (${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…)`);
+  if (options.calibrate) {
+    const trials = options.calibrate.trials ?? CALIBRATE_DEFAULT_TRIALS;
+    if (!Number.isInteger(trials) || trials < 1 || trials > 20) throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
+    validateCallBudget(bench.tasks.length * trials, options.calibrate.maxCalls);
+  }
 
   let labeledTasks = 0;
   let negativeTasks = 0;
@@ -485,16 +495,23 @@ async function calibrateBench(
   }
   const trials = options.trials ?? CALIBRATE_DEFAULT_TRIALS;
   const inputMode = options.inputMode ?? 'snapshot';
-  const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '');
+  const capture = options.agent && getAgent(options.agent).headless.streamJson;
+  const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '',
+    capture ? { triggerSkillName: 'calibration-none' } : undefined);
   assertInputModeSupported(inputMode, executor);
   if (!Number.isInteger(trials) || trials < 1 || trials > 20) {
     throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
   }
+  const plannedCalls = bench.tasks.length * trials;
+  const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
   if (options.dryRun) {
-    push('INFO', `calibration plan: ${bench.tasks.length} task(s) × ${trials} baseline run(s), input ${inputMode}; no agent started and no run directory created`);
+    push('INFO', `calibration executor: ${executor.describe().detail ?? executor.describe().model}`);
+    push('INFO', `calibration plan: ${bench.tasks.length} task(s) × ${trials} baseline run(s), input ${inputMode}; ${plannedCalls} calls, ceiling ${maxCalls}; no agent started and no run directory created`);
     return;
   }
   const emptySkillDir = mkdtempSync(join(tmpdir(), 'skillfit-calibrate-'));
+  let session: ExperimentSession | undefined;
+  let failure: unknown;
   try {
     const skill: SkillBundle = {
       kind: 'skill',
@@ -508,6 +525,14 @@ async function calibrateBench(
     const runGroup =
       options.runGroup ??
       `calibrate-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(Date.now() % 100000).padStart(5, '0')}`;
+    if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+    const runsRoot = options.runsRoot ?? resolve('runs');
+    push('INFO', `calibration plan: ${plannedCalls} baseline calls, ceiling ${maxCalls}; fresh output ${join(runsRoot, runGroup)}`);
+    session = new ExperimentSession({ bench, target: skill, groupDir: join(runsRoot, runGroup), plannedCalls,
+      maxCalls, agent: options.agent, injected: options.executor !== undefined, ...options.sessionOptions,
+      workspaces: bench.tasks.flatMap(task => Array.from({ length: trials }, (_, i) =>
+        join(runsRoot, runGroup, task.id, 'baseline', `trial-${i + 1}`))),
+      details: { mode: 'calibration', inputMode, trials, executor: executor.describe() } });
     // Calibration measures inject-mode baseline difficulty, so it drives the inject path with an
     // empty skill payload (prompt.ts drops a falsy payload, so no skill block is injected) and runs
     // one arm per task. This used to route through trigger mode, whose `shouldTrigger` filter
@@ -516,15 +541,16 @@ async function calibrateBench(
       bench,
       target: skill,
       inputMode,
-      executor,
+      executor: session.wrap(executor, 'agent'),
       trials,
-      runsRoot: options.runsRoot ?? resolve('runs'),
+      runsRoot,
       runGroup,
       log,
     };
     push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty; input ${inputMode})`);
     let discriminative = 0;
     let tasksRun = 0;
+    const taskResults: { id: string; passes: number; completed: number; errors: number }[] = [];
     for (const task of bench.tasks) {
       let passes = 0;
       let completed = 0;
@@ -538,6 +564,7 @@ async function calibrateBench(
         completed++;
         if (outcome.passed) passes++;
       }
+      taskResults.push({ id: task.id, passes, completed, errors });
       if (completed === 0) {
         push(
           'WARN',
@@ -556,6 +583,11 @@ async function calibrateBench(
         push('PASS', `${task.id}: baseline ${passes}/${completed} — discriminative band`);
       }
     }
+    session.settle();
+    const result = { schemaVersion: 1, runGroup, inputMode, trials, tasks: taskResults, experiment: session.summary() };
+    writeFileSync(join(session.groupDir, '_calibration.json'), JSON.stringify(result, null, 2) + '\n', { flag: 'wx' });
+    session.finish(undefined, result, '_calibration.json');
+    if (session.summary().status !== 'completed') push('FAIL', 'Calibration stopped or incomplete; inspect _session.json and _calls.jsonl before a fresh plan.');
     if (tasksRun === 0) {
       push('FAIL', `calibration ran 0 task(s): difficulty unmeasured (runs under ${runGroup})`);
       return;
@@ -564,7 +596,9 @@ async function calibrateBench(
       discriminative === tasksRun ? 'PASS' : 'INFO',
       `calibration: ${discriminative}/${tasksRun} task(s) in the discriminative band (runs under ${runGroup}; use --trials 3+ for steadier reads)`,
     );
-  } finally {
+  } catch (error) { failure = error; throw error; }
+  finally {
+    session?.finish(failure);
     rmSync(emptySkillDir, { recursive: true, force: true });
   }
 }
@@ -808,6 +842,43 @@ async function draftVerifierWithOracle(
   }
 }
 
+function assertInsideBench(benchDir: string, target: string): void {
+  const rel = relative(benchDir, target);
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+    throw new Error(`Refusing to write outside the bench directory: ${target}`);
+  }
+}
+
+function applyBenchWrites(benchDir: string, writes: Array<{ target: string; content: Buffer | string }>): void {
+  const applied: Array<{ target: string; previous: Buffer | null }> = [];
+  try {
+    for (const write of writes) {
+      assertInsideBench(benchDir, write.target);
+      mkdirSync(dirname(write.target), { recursive: true });
+      let previous: Buffer | null = null;
+      try {
+        const stat = lstatSync(write.target);
+        if (stat.isSymbolicLink()) throw new Error(`Refusing to overwrite a symlink: ${write.target}`);
+        if (!stat.isFile()) throw new Error(`Refusing to overwrite a non-file: ${write.target}`);
+        previous = readFileSync(write.target);
+        const backup = write.target + BACKUP_SUFFIX;
+        if (!existsSync(backup)) writeFileSync(backup, previous);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+      applied.push({ target: write.target, previous });
+      writeFileSync(write.target, write.content);
+    }
+    loadBench(benchDir);
+  } catch (error) {
+    for (const entry of [...applied].reverse()) {
+      if (entry.previous === null) rmSync(entry.target, { force: true });
+      else writeFileSync(entry.target, entry.previous);
+    }
+    throw error;
+  }
+}
+
 export async function runBenchAdd(
   options: BenchAddOptions,
 ): Promise<{ dir: string; taskId: string; files: string[] } | null> {
@@ -909,19 +980,19 @@ export async function runBenchAdd(
     }
   }
 
+  const writes: Array<{ target: string; content: Buffer | string }> = [];
   for (const file of prepared.fixtureFiles) {
-    const target = join(benchDir, 'fixtures', taskId, file.rel);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, file.content);
+    if (file.rel.split(/[\\/]/).includes('..') || isAbsolute(file.rel)) {
+      throw new Error(`Fixture path escapes the task directory: ${file.rel}`);
+    }
+    writes.push({ target: join(benchDir, 'fixtures', taskId, file.rel), content: file.content });
   }
   for (const [rel, content] of Object.entries(generated)) {
-    const target = join(benchDir, rel);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, content, 'utf8');
+    writes.push({ target: join(benchDir, rel), content });
   }
   benchJson.tasks = [...tasks, taskEntry];
-  writeFileSync(benchJsonPath, `${JSON.stringify(benchJson, null, 2)}\n`, 'utf8');
-  loadBench(benchDir);
+  writes.push({ target: benchJsonPath, content: `${JSON.stringify(benchJson, null, 2)}\n` });
+  applyBenchWrites(benchDir, writes);
 
   log(`Task "${taskId}" added to ${benchDir} (${prepared.fixtureFiles.length} fixture file(s), verifier: ${prepared.verifierKind}).`);
   log('Next:');

@@ -81,6 +81,8 @@ node dist/cli.js install --agent codex --dry-run
 
 eval 和基线校准的 `--trials` 必须是 1 到 20 的整数。小数、格式错误或越界的值会在任何实验或 bench 检查开始前被拒绝。
 
+eval 和基线校准可用 `--max-calls <n>` 拒绝超出调用上限的计划（包括启用的裁判调用）。新运行会保留固定计划、调用记录、session 状态和文件哈希；输入或配置变化、执行器失败后停止后续调用。未完成的运行不能支持安装建议。详见[有限且可核查的实验流程](docs/experiment-workflow.md)，其中也说明环境控制的边界。
+
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
 ## 评估真实开源任务

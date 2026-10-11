@@ -1,6 +1,7 @@
 import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
 import { CONDITIONS } from './types.js';
 import type { Condition, ExecutorDescriptor, InputMode } from './types.js';
+import type { ExperimentSummary } from './experiment-session.js';
 
 export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
 
@@ -21,6 +22,8 @@ export interface ConditionStats {
   trials: number;
   /** Trials where the executor failed, so nothing was graded. Never counted as failures. */
   errors: number;
+  /** Mechanical read observations on surviving graded pairs; not trigger precision/recall. */
+  skillReads?: { observed: number; unobserved: number; unknown: number };
   passRate: number;
   meanScore: number | null;
   tokens: { input: number; output: number } | null;
@@ -77,8 +80,11 @@ export interface OverallSummary {
 
 export interface RunManifest {
   schemaVersion: 4;
+  experiment?: ExperimentSummary;
   /** Absent in earlier v4 manifests; those used inline snapshots. */
   inputMode?: InputMode;
+  /** Complete resources discovered from project files, rather than force-injected text. */
+  skillDelivery?: { mode: 'installed'; installDir: string };
   runGroup: string;
   createdAt: string;
   target: { kind: 'skill' | 'rules' | 'mcp'; name: string; sourceDir: string; bundleSha256: string; files: string[] };
@@ -92,6 +98,7 @@ export interface RunManifest {
 }
 
 export function formatPassRate(passes: number, trials: number): string {
+  if (trials === 0) return `${passes}/${trials} (n/a)`;
   return `${passes}/${trials} (${Math.round((passes / trials) * 100)}%)`;
 }
 
@@ -141,6 +148,12 @@ export function verdictFor(input: {
 
 export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[] {
   const warnings: string[] = [];
+  if (manifest.experiment && manifest.experiment.status !== 'completed') {
+    warnings.push('Experiment did not complete its declared calls; no installation recommendation. Inspect _session.json and _calls.jsonl before planning a fresh run.');
+  }
+  if (manifest.skillDelivery) {
+    warnings.push('Installed Skill mode measures task outcomes with native discovery and complete resources; activation is not guaranteed. Inherited agent configuration still applies.');
+  }
   if (manifest.executor.kind === 'mock') {
     warnings.push('Executor is a mock: results are synthetic and only exercise the harness.');
   }
@@ -150,7 +163,7 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
       if (stats.errors > 0) {
         const other = condition === 'baseline' ? 'treatment' : 'baseline';
         warnings.push(
-          `Task "${task.id}" (${condition}): ${stats.errors} trial(s) hit an executor or verifier error and were excluded from the rates, together with their paired ${other} trial(s) — an ungraded run is not a failure.`,
+          `Task "${task.id}" (${condition}): ${stats.errors} trial(s) hit an executor, verifier, or engagement error and were excluded from the rates, together with their paired ${other} trial(s) — an ungraded run is not a failure.`,
         );
       }
     }
@@ -199,9 +212,11 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   lines.push(`Target   : ${manifest.target.name} (${manifest.target.kind}, bundle sha256 ${manifest.target.bundleSha256.slice(0, 12)}…, ${manifest.target.files.length} files)`);
   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
   lines.push(`Input    : ${manifest.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`);
+  if (manifest.skillDelivery) lines.push('Delivery : installed complete Skill at ' + manifest.skillDelivery.installDir + '/' + manifest.target.name);
   lines.push(`Executor : ${describeExecutor(manifest.executor)}`);
   lines.push(`Judge    : ${manifest.judge ? describeExecutor(manifest.judge) : 'disabled'}`);
   lines.push(`Trials   : ${manifest.trials} per condition`);
+  if (manifest.experiment) lines.push(`Session  : ${manifest.experiment.status}; ${manifest.experiment.callsStarted}/${manifest.experiment.plannedCalls} calls started (ceiling ${manifest.experiment.maxCalls})`);
   lines.push('');
   const idWidth = Math.max(7, ...manifest.tasks.map((t) => t.id.length));
   const header = `${pad('TASK', idWidth)}  BASELINE     TREATMENT    DELTA    VERDICT`;
@@ -296,11 +311,18 @@ function renderTokenDeltas(manifest: RunManifest): string[] {
     condition.tokens ? condition.tokens.input + condition.tokens.output : null;
   const costBaseline = totalTokens(baseline);
   const costTreatment = totalTokens(treatment);
+  const covered = (condition: ConditionStats): boolean =>
+    condition.trials > 0 &&
+    condition.tokenCoverage !== undefined &&
+    condition.tokenCoverage.input === condition.trials &&
+    condition.tokenCoverage.output === condition.trials;
   if (
     costBaseline !== null &&
     costTreatment !== null &&
     baseline.passRate > 0 &&
-    treatment.passRate > 0
+    treatment.passRate > 0 &&
+    covered(baseline) &&
+    covered(treatment)
   ) {
     const ratio =
       costTreatment / treatment.trials / treatment.passRate / (costBaseline / baseline.trials / baseline.passRate);

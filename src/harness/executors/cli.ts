@@ -21,6 +21,7 @@ export interface CliExecutorOptions {
 }
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+const MAX_AGENT_OUTPUT_BYTES = 32 * 1024 * 1024;
 const DEFAULT_PROMPT_FILE = '_prompt.txt';
 const PROMPT_FILE_PLACEHOLDER = '{promptFile}';
 const DEFAULT_TRIGGER_TOOL_NAME = 'Skill';
@@ -176,23 +177,35 @@ export class CliExecutor implements Executor {
       });
       let stdout = '';
       let stderr = '';
+      let bytes = 0;
       let timedOut = false;
+      let overflow = false;
       const timer = setTimeout(() => {
         timedOut = true;
         killTree(child);
       }, this.timeoutMs);
-      child.stdout.on('data', (chunk: Buffer) => {
-        stdout += chunk.toString('utf8');
-      });
-      child.stderr.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString('utf8');
-      });
+      const take = (chunk: Buffer, sink: 'stdout' | 'stderr'): void => {
+        bytes += chunk.length;
+        if (bytes > MAX_AGENT_OUTPUT_BYTES) {
+          overflow = true;
+          killTree(child);
+          return;
+        }
+        if (sink === 'stdout') stdout += chunk.toString('utf8');
+        else stderr += chunk.toString('utf8');
+      };
+      child.stdout.on('data', (chunk: Buffer) => take(chunk, 'stdout'));
+      child.stderr.on('data', (chunk: Buffer) => take(chunk, 'stderr'));
       child.on('error', (error) => {
         clearTimeout(timer);
         rejectPromise(new Error(`Failed to start "${command}": ${error.message}`));
       });
       child.on('close', (code) => {
         clearTimeout(timer);
+        if (overflow) {
+          rejectPromise(new Error(`"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`));
+          return;
+        }
         if (timedOut) {
           rejectPromise(new Error(`"${command}" timed out after ${this.timeoutMs}ms`));
           return;
@@ -214,10 +227,13 @@ export class CliExecutor implements Executor {
         // in its transcript, so they are read from its session log afterwards. probeKimiSessionUsage
         // is currently the only implementation, which is why the flag is set on exactly one agent.
         if (this.usageFromSessionLog && result.tokens === undefined) {
-          const usage = probeKimiSessionUsage(workdir, startedAtMs);
-          if (usage) {
-            result.tokens = { input: usage.input, output: usage.output };
-          }
+          void probeKimiSessionUsage(workdir, startedAtMs, undefined, { ...process.env, ...this.env })
+            .then((usage) => {
+              if (usage) result.tokens = { input: usage.input, output: usage.output };
+              resolvePromise(result);
+            })
+            .catch(() => resolvePromise(result));
+          return;
         }
         resolvePromise(result);
       });

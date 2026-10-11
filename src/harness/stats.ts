@@ -33,17 +33,22 @@ export interface PairedScores {
   treatment: number[];
 }
 
+function gradedTasks(tasks: readonly PairedScores[]): PairedScores[] {
+  return tasks.filter((task) => task.baseline.length > 0 && task.treatment.length > 0);
+}
+
 function pooledDelta(tasks: readonly PairedScores[]): number {
   let baselineSum = 0;
   let baselineTrials = 0;
   let treatmentSum = 0;
   let treatmentTrials = 0;
-  for (const task of tasks) {
+  for (const task of gradedTasks(tasks)) {
     baselineTrials += task.baseline.length;
     treatmentTrials += task.treatment.length;
     for (const value of task.baseline) baselineSum += value;
     for (const value of task.treatment) treatmentSum += value;
   }
+  if (baselineTrials === 0 || treatmentTrials === 0) return Number.NaN;
   return treatmentSum / treatmentTrials - baselineSum / baselineTrials;
 }
 
@@ -54,18 +59,18 @@ function pairedBootstrapCI(
   const resamples = options.resamples ?? 2000;
   const alpha = options.alpha ?? 0.05;
   const seed = options.seed ?? 20260919;
-  const totalTrials = tasks.reduce(
-    (sum, task) => sum + task.baseline.length + task.treatment.length,
-    0,
-  );
-  if (totalTrials === 0) return null;
-  const point = pooledDelta(tasks);
+  // A task whose surviving pairs were all excluded has no graded trials. Leaving it in the
+  // resample pool makes a draw of only those tasks divide by zero. It does not change the point
+  // estimate, so drop it before resampling.
+  const graded = gradedTasks(tasks);
+  if (graded.length === 0) return null;
+  const point = pooledDelta(graded);
   const rand = mulberry32(seed);
   const deltas: number[] = [];
   for (let r = 0; r < resamples; r++) {
     const sample: PairedScores[] = [];
-    for (let i = 0; i < tasks.length; i++) {
-      const picked = tasks[Math.floor(rand() * tasks.length)];
+    for (let i = 0; i < graded.length; i++) {
+      const picked = graded[Math.floor(rand() * graded.length)];
       if (picked !== undefined) sample.push(picked);
     }
     deltas.push(pooledDelta(sample));

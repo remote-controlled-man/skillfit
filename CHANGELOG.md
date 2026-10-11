@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased — measurement and write-path fixes (2026-10-11)
+
+- Exclude an empty final message from graded rates as an engagement error. A command task still
+  counts when the disposable worktree changed. Bootstrap confidence intervals drop tasks that have
+  no graded survivors, so a small bench cannot report `NaN`. Δscore keeps a trial only when both
+  arms produced a score. Cost-of-pass is printed only when both arms recorded every token field.
+- `bench add` backs up a file it overwrites and restores the bench if the write or the post-write
+  check fails. Rules and bridge files are not written through a symlink.
+- Codex skills installed at `$CODEX_HOME/skills` (default `~/.codex/skills`) are visible to doctor,
+  report, and bundle export. Kimi session usage follows the matrix `KIMI_CODE_HOME` override and
+  ignores that variable when a test injects a home directory. The Claude `AGENTS.md` bridge path
+  and import line come from the matrix.
+- Agent and verifier output captures are bounded. Verifier and git processes see EOF on stdin.
+  API token counts are accepted only when they are finite numbers. The CLI version is read from
+  `package.json`.
+- On Windows, a run directory on another drive is not treated as nested inside an input, bench
+  text stays LF, and the historical-test reporter is loaded by file URL.
+
+## Unreleased — installed delivery, bounded runs, and OSS benches (2026-10-09)
+
+- Compare a complete installed Skill in paired workspaces (`--mode installed`), and record the
+  installed-file fingerprint separately from the injectable bundle hash.
+- Freeze a bounded experiment plan, call ledger, and receipts. `--max-calls` rejects a plan above
+  the ceiling; input drift or an executor failure stops further calls.
+- Exclude command trials whose disposable Git setup fails, and normalize an inherited disabled reflog
+  inside that repository only.
+- Add the pinned `oss-lru-cache` historical-failure bench. Regressions must pass the upstream
+  reference, cancellation reasons are graded as recorded, and calibration can retain the native
+  transcript.
+
 ## Unreleased — README localization and identity (2026-10-09)
 
 - Keep English and Simplified Chinese as the maintained README languages and localize the evidence

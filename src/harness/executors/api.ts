@@ -10,7 +10,22 @@ export interface ApiExecutorOptions {
 
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: unknown } }>;
-  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  usage?: { prompt_tokens?: unknown; completion_tokens?: unknown };
+}
+
+function tokenCount(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+}
+
+function tokenUsage(usage: ChatCompletionResponse['usage']): TokenUsage | undefined {
+  if (!usage || typeof usage !== 'object') return undefined;
+  const input = tokenCount(usage.prompt_tokens);
+  const output = tokenCount(usage.completion_tokens);
+  if (input === undefined && output === undefined) return undefined;
+  return {
+    ...(input !== undefined ? { input } : {}),
+    ...(output !== undefined ? { output } : {}),
+  };
 }
 
 const DEFAULT_TIMEOUT_MS = 2 * 60 * 1000;
@@ -69,10 +84,7 @@ export class ApiExecutor implements Executor {
     if (typeof content !== 'string') {
       throw new Error('API response did not contain choices[0].message.content');
     }
-    const usage = data.usage;
-    const tokens: TokenUsage | undefined = usage
-      ? { input: usage.prompt_tokens, output: usage.completion_tokens }
-      : undefined;
+    const tokens = tokenUsage(data.usage);
     return tokens ? { output: content, tokens } : { output: content };
   }
 }

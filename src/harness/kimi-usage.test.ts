@@ -23,7 +23,7 @@ test('workDirKeyHash matches the documented first-12-of-sha256 scheme', () => {
   assert.equal(workDirKeyHash('E:\\code\\agents\\skillfit'), '0ab26300da72');
 });
 
-test('probeKimiSessionUsage sums usage.record input parts and output', (t) => {
+test('probeKimiSessionUsage sums usage.record input parts and output', async (t) => {
   const home = mkdtempSync(join(tmpdir(), 'skillfit-kimi-usage-'));
   t.after(() => rmSync(home, { recursive: true, force: true }));
   const workdir = join(home, 'run');
@@ -33,11 +33,28 @@ test('probeKimiSessionUsage sums usage.record input parts and output', (t) => {
     '{"type":"usage.record","agentId":"agent-3","usage":{"inputOther":7,"output":3}}',
     'garbage',
   ]);
-  const usage = probeKimiSessionUsage(workdir, Date.now() - 60_000, home);
+  const usage = await probeKimiSessionUsage(workdir, Date.now() - 60_000, home);
   assert.deepEqual(usage, { input: 152, output: 13 });
 });
 
-test('probeKimiSessionUsage ignores stale sessions and unknown workdirs', (t) => {
+test('probeKimiSessionUsage ignores KIMI_CODE_HOME when a fixture home is injected', async (t) => {
+  const home = mkdtempSync(join(tmpdir(), 'skillfit-kimi-usage-'));
+  t.after(() => rmSync(home, { recursive: true, force: true }));
+  const workdir = join(home, 'run');
+  fakeSession(t, home, workdir, [
+    '{"type":"usage.record","usage":{"inputOther":4,"output":2}}',
+  ]);
+  const previous = process.env['KIMI_CODE_HOME'];
+  process.env['KIMI_CODE_HOME'] = join(home, 'missing-kimi-home');
+  try {
+    assert.deepEqual(await probeKimiSessionUsage(workdir, Date.now() - 60_000, home), { input: 4, output: 2 });
+  } finally {
+    if (previous === undefined) delete process.env['KIMI_CODE_HOME'];
+    else process.env['KIMI_CODE_HOME'] = previous;
+  }
+});
+
+test('probeKimiSessionUsage ignores stale sessions and unknown workdirs', async (t) => {
   const home = mkdtempSync(join(tmpdir(), 'skillfit-kimi-usage-'));
   t.after(() => rmSync(home, { recursive: true, force: true }));
   const workdir = join(home, 'run');
@@ -45,8 +62,8 @@ test('probeKimiSessionUsage ignores stale sessions and unknown workdirs', (t) =>
     '{"type":"usage.record","usage":{"inputOther":1,"output":1}}',
   ]);
   const stale = Date.now() + 60_000;
-  assert.equal(probeKimiSessionUsage(workdir, stale, home), undefined);
-  assert.equal(probeKimiSessionUsage(join(home, 'elsewhere'), Date.now() - 60_000, home), undefined);
+  assert.equal(await probeKimiSessionUsage(workdir, stale, home), undefined);
+  assert.equal(await probeKimiSessionUsage(join(home, 'elsewhere'), Date.now() - 60_000, home), undefined);
   rmSync(wire);
-  assert.equal(probeKimiSessionUsage(workdir, Date.now() - 60_000, home), undefined);
+  assert.equal(await probeKimiSessionUsage(workdir, Date.now() - 60_000, home), undefined);
 });
