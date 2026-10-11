@@ -88,8 +88,10 @@ These are open. The README roadmap is the public checklist; this list is the sam
   recommendation (README, "Our own data").
 - `skillfit@0.8.0` is published. `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build`
   remain valid (`skills/skillfit/SKILL.md`).
-- Community bench and evidence submissions, Cursor / Gemini CLI / OpenCode adapters, and Streamable
-  HTTP MCP preflight remain open on the README roadmap.
+- Community benches belong in `benches/contrib`. Evidence uses the Evidence submission issue template.
+  CI runs the offline gates and does not call an agent. Cursor, Gemini CLI, and OpenCode adapters
+  remain open until their official paths are verified. `mcp check` now also preflights a Streamable
+  HTTP endpoint and still does not call a tool.
 - More agent adapters and a hosted dashboard need real demand and their own compatibility tests. They
   should not delay the first-run and reporting work.
 - Track useful signals: clean-clone success on three operating systems, bench-check completions,

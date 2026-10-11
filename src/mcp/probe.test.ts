@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { loadMcpProbeSpec, probeMcpStdio, renderMcpProbe } from './probe.js';
+import { loadMcpProbeSpec, probeMcpHttp, probeMcpStdio, renderMcpProbe } from './probe.js';
 
 function fixture(
   t: import('node:test').TestContext,
@@ -117,4 +119,56 @@ test('probeMcpStdio refuses a server without declared tools capability', async (
     probeMcpStdio(loadMcpProbeSpec(fixture(t, [], false, { rawResponse: response }))),
     /did not declare tools capability/,
   );
+});
+
+test('probeMcpHttp audits a Streamable HTTP tools list and does not call a tool', async (t) => {
+  const calls: string[] = [];
+  const server = createServer((request, response) => {
+    const chunks: Buffer[] = [];
+    request.on('data', (chunk: Buffer) => chunks.push(chunk));
+    request.on('end', () => {
+      const message = JSON.parse(Buffer.concat(chunks).toString('utf8')) as { method?: string };
+      calls.push(message.method ?? '');
+      response.setHeader('content-type', 'application/json');
+      response.setHeader('mcp-session-id', 'sess-1');
+      if (message.method === 'notifications/initialized') {
+        response.writeHead(202);
+        response.end();
+        return;
+      }
+      if (message.method === 'initialize') {
+        response.end(JSON.stringify({ jsonrpc: '2.0', id: 1, result: {
+          protocolVersion: '2025-11-25', capabilities: { tools: {} }, serverInfo: { name: 'http-fixture', version: '1.2.0' },
+        } }));
+        return;
+      }
+      response.end(JSON.stringify({ jsonrpc: '2.0', id: 2, result: { tools: [{
+        name: 'search', description: 'Search records', inputSchema: { type: 'object' }, annotations: { readOnlyHint: true },
+      }] } }));
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+  t.after(() => server.close());
+  const address = server.address() as AddressInfo;
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-mcp-http-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const specPath = join(dir, 'probe.json');
+  writeFileSync(specPath, JSON.stringify({
+    schemaVersion: 1, name: 'http-server', transport: 'http', url: `http://127.0.0.1:${address.port}/mcp?token=secret`, timeoutMs: 5000,
+  }));
+  const spec = loadMcpProbeSpec(specPath);
+  assert.equal(spec.transport, 'http');
+  if (spec.transport !== 'http') return;
+  const result = await probeMcpHttp(spec);
+  assert.deepEqual(calls, ['initialize', 'notifications/initialized', 'tools/list']);
+  assert.equal(result.serverInfo.name, 'http-fixture');
+  assert.deepEqual(result.tools, [{ name: 'search', description: true, inputSchema: true, annotations: true }]);
+});
+
+test('loadMcpProbeSpec rejects a non-http URL', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-mcp-http-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const specPath = join(dir, 'probe.json');
+  writeFileSync(specPath, JSON.stringify({ schemaVersion: 1, name: 'bad', transport: 'http', url: 'file:///tmp/mcp' }));
+  assert.throws(() => loadMcpProbeSpec(specPath), /http or https/);
 });

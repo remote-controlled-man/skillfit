@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — Streamable HTTP MCP preflight
+
+- `mcp check` accepts transport `http` for a Streamable HTTP endpoint. It still does not call a tool.
+  Cursor, Gemini CLI, and OpenCode adapters remain open until their official paths are verified.
+  Claude Code trigger capture is still not machine-verified.
+
 ## [0.8.0] — 2026-10-11
 
 Published to npm as `skillfit@0.8.0`. `npx skillfit` installs that release. A clone can still be built with `npm ci` and `npm run build`.
@@ -7,7 +13,7 @@ Published to npm as `skillfit@0.8.0`. `npx skillfit` installs that release. A cl
 - `--compete-installed` copies other user-level Skills into a trigger trial. Without it, recall is an upper bound. System Skills and plugins outside the matrix directories are not copied.
 - Positive trigger tasks may set `triggerClass` to `explicit`, `implicit`, or `contextual`. Unlabeled tasks stay in the pooled recall.
 - Codex trigger runs say that detection counted a `SKILL.md` read. Installed-mode reports separate a long-body read from the task result. A run below 8 tasks × 5 graded pairs is not an installation recommendation.
-- Claude Code trigger capture, Cursor / Gemini CLI / OpenCode adapters, and Streamable HTTP MCP preflight remain open.
+- Claude Code trigger capture, Cursor / Gemini CLI / OpenCode adapters, and a hosted dashboard remain open.
 
 ## Unreleased — record what trigger and publication do not yet cover (2026-10-11)
 

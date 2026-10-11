@@ -18,7 +18,7 @@ Usage:
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
   skillfit report eval <manifest.json>     Render an existing evaluation as Markdown (read-only)
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
-  skillfit mcp check <spec.json>            Handshake with a stdio MCP server and audit its tool catalog
+  skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
   skillfit bench init [dir]                 Scaffold a new bench directory
   skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
   skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)

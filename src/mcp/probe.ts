@@ -8,16 +8,27 @@ const PROTOCOL_VERSION = '2025-11-25';
 const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_BUFFER_BYTES = 4 * 1024 * 1024;
 
-export interface McpProbeSpec {
+interface McpProbeBase {
   schemaVersion: 1;
   name: string;
+  timeoutMs?: number;
+}
+
+export interface McpStdioProbeSpec extends McpProbeBase {
   transport: 'stdio';
   command: string;
   args: string[];
   env?: Record<string, string>;
   cwd?: string;
-  timeoutMs?: number;
 }
+
+export interface McpHttpProbeSpec extends McpProbeBase {
+  transport: 'http';
+  url: string;
+  headers?: Record<string, string>;
+}
+
+export type McpProbeSpec = McpStdioProbeSpec | McpHttpProbeSpec;
 
 export interface McpToolAudit {
   name: string;
@@ -68,13 +79,36 @@ export function loadMcpProbeSpec(path: string): McpProbeSpec {
   if (typeof record['name'] !== 'string' || record['name'].trim() === '') {
     throw new Error('MCP probe spec name must be a non-empty string');
   }
-  if (record['transport'] !== 'stdio') throw new Error('MCP probe currently supports transport "stdio"');
-  if (typeof record['command'] !== 'string' || record['command'].trim() === '') {
-    throw new Error('MCP probe spec command must be a non-empty string');
-  }
   const timeoutMs = record['timeoutMs'] === undefined ? DEFAULT_TIMEOUT_MS : record['timeoutMs'];
   if (typeof timeoutMs !== 'number' || !Number.isInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 60_000) {
     throw new Error('MCP probe spec timeoutMs must be an integer between 1000 and 60000');
+  }
+  const name = record['name'].trim();
+  if (record['transport'] === 'http') {
+    if (typeof record['url'] !== 'string' || record['url'].trim() === '') {
+      throw new Error('MCP HTTP probe spec url must be a non-empty string');
+    }
+    let url: URL;
+    try {
+      url = new URL(record['url']);
+    } catch {
+      throw new Error('MCP HTTP probe spec url must be an absolute http(s) URL');
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      throw new Error('MCP HTTP probe spec url must use http or https');
+    }
+    return {
+      schemaVersion: 1,
+      name,
+      transport: 'http',
+      url: url.toString(),
+      headers: stringRecord(record['headers'], 'MCP probe spec headers'),
+      timeoutMs,
+    };
+  }
+  if (record['transport'] !== 'stdio') throw new Error('MCP probe transport must be "stdio" or "http"');
+  if (typeof record['command'] !== 'string' || record['command'].trim() === '') {
+    throw new Error('MCP probe spec command must be a non-empty string');
   }
   const cwdValue = record['cwd'];
   if (cwdValue !== undefined && typeof cwdValue !== 'string') throw new Error('MCP probe spec cwd must be a string');
@@ -82,7 +116,7 @@ export function loadMcpProbeSpec(path: string): McpProbeSpec {
   const cwd = cwdValue === undefined ? base : isAbsolute(cwdValue) ? cwdValue : resolve(base, cwdValue);
   return {
     schemaVersion: 1,
-    name: record['name'].trim(),
+    name,
     transport: 'stdio',
     command: record['command'],
     args: stringArray(record['args'] ?? [], 'MCP probe spec args'),
@@ -146,7 +180,135 @@ function auditTools(value: unknown): { tools: McpToolAudit[]; warnings: string[]
   return { tools, warnings };
 }
 
+function assembleProbeResult(name: string, initializeResult: Record<string, unknown>, listedTools: unknown[], stderr: string): McpProbeResult {
+  const audited = auditTools(listedTools);
+  const serverInfo = asRecord(initializeResult['serverInfo'], 'initialize result.serverInfo');
+  const capabilities = asRecord(initializeResult['capabilities'], 'initialize result.capabilities');
+  const protocolVersion = initializeResult['protocolVersion'];
+  if (typeof protocolVersion !== 'string') throw new Error('initialize result.protocolVersion must be a string');
+  if (typeof serverInfo['name'] !== 'string' || typeof serverInfo['version'] !== 'string') {
+    throw new Error('initialize result.serverInfo must include string name and version');
+  }
+  return {
+    name,
+    protocolVersion,
+    serverInfo: { name: serverInfo['name'], version: serverInfo['version'] },
+    capabilities: Object.keys(capabilities).sort(),
+    tools: audited.tools,
+    warnings: audited.warnings,
+    stderr,
+  };
+}
+
+function messagesFromHttpBody(contentType: string, body: string): unknown[] {
+  if (body.trim() === '') return [];
+  if (contentType.includes('text/event-stream')) {
+    const messages: unknown[] = [];
+    for (const block of body.split(/\r?\n\r?\n/)) {
+      const data = block.split(/\r?\n/).filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('\n');
+      if (data === '' || data === '[DONE]') continue;
+      messages.push(JSON.parse(data));
+    }
+    return messages;
+  }
+  return [JSON.parse(body)];
+}
+
+async function postMcp(spec: McpHttpProbeSpec, body: unknown, sessionId: string | undefined): Promise<{ status: number; contentType: string; body: string; sessionId?: string }> {
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    accept: 'application/json, text/event-stream',
+    'mcp-protocol-version': PROTOCOL_VERSION,
+    ...spec.headers,
+  };
+  if (sessionId) headers['mcp-session-id'] = sessionId;
+  const response = await fetch(spec.url, {
+    method: 'POST',
+    redirect: 'error',
+    headers,
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(spec.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+  });
+  const text = await response.text();
+  if (Buffer.byteLength(text, 'utf8') > MAX_BUFFER_BYTES) {
+    throw new Error(`MCP HTTP response exceeded ${MAX_BUFFER_BYTES} bytes`);
+  }
+  return {
+    status: response.status,
+    contentType: response.headers.get('content-type') ?? '',
+    body: text,
+    sessionId: response.headers.get('mcp-session-id') ?? sessionId,
+  };
+}
+
+function jsonRpcResult(messages: unknown[], id: number): Record<string, unknown> {
+  for (const raw of messages) {
+    const message = asRecord(raw, 'MCP HTTP message');
+    if (message['id'] !== id) continue;
+    if (message['error'] !== undefined) throw new Error(`MCP request ${id} failed: ${JSON.stringify(message['error'])}`);
+    return asRecord(message['result'], `MCP request ${id} result`);
+  }
+  throw new Error(`MCP HTTP response did not include a result for request ${id}`);
+}
+
+export async function probeMcpHttp(spec: McpHttpProbeSpec): Promise<McpProbeResult> {
+  const timeoutMs = spec.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const started = Date.now();
+  const remaining = (): number => {
+    const left = timeoutMs - (Date.now() - started);
+    if (left <= 0) throw new Error(`MCP probe timed out after ${timeoutMs}ms`);
+    return left;
+  };
+  const initialize = await postMcp({ ...spec, timeoutMs: remaining() }, {
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'initialize',
+    params: { protocolVersion: PROTOCOL_VERSION, capabilities: {}, clientInfo: { name: 'skillfit', version: VERSION } },
+  }, undefined);
+  if (initialize.status < 200 || initialize.status >= 300) {
+    throw new Error(`MCP HTTP initialize failed with status ${initialize.status}`);
+  }
+  const initializeResult = jsonRpcResult(messagesFromHttpBody(initialize.contentType, initialize.body), 1);
+  if (initializeResult['protocolVersion'] !== PROTOCOL_VERSION) {
+    throw new Error(`MCP server negotiated unsupported protocol version: ${String(initializeResult['protocolVersion'])}`);
+  }
+  const capabilities = asRecord(initializeResult['capabilities'], 'initialize result.capabilities');
+  if (!Object.hasOwn(capabilities, 'tools')) throw new Error('MCP server did not declare tools capability');
+  const noted = await postMcp({ ...spec, timeoutMs: remaining() }, { jsonrpc: '2.0', method: 'notifications/initialized' }, initialize.sessionId);
+  if (noted.status !== 202 && (noted.status < 200 || noted.status >= 300)) {
+    throw new Error(`MCP HTTP initialized notification failed with status ${noted.status}`);
+  }
+  const listedTools: unknown[] = [];
+  const seenCursors = new Set<string>();
+  let cursor: string | undefined;
+  for (let page = 0; page < 100; page += 1) {
+    const listed = await postMcp({ ...spec, timeoutMs: remaining() }, {
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/list',
+      params: cursor === undefined ? {} : { cursor },
+    }, noted.sessionId);
+    if (listed.status < 200 || listed.status >= 300) throw new Error(`MCP HTTP tools/list failed with status ${listed.status}`);
+    const listResult = jsonRpcResult(messagesFromHttpBody(listed.contentType, listed.body), 2);
+    if (!Array.isArray(listResult['tools'])) throw new Error('tools/list result.tools must be an array');
+    listedTools.push(...listResult['tools']);
+    const nextCursor = listResult['nextCursor'];
+    if (nextCursor === undefined) return assembleProbeResult(spec.name, initializeResult, listedTools, '');
+    if (typeof nextCursor !== 'string' || nextCursor === '' || seenCursors.has(nextCursor)) {
+      throw new Error('MCP tools/list pagination did not terminate');
+    }
+    seenCursors.add(nextCursor);
+    cursor = nextCursor;
+  }
+  throw new Error('MCP tools/list pagination did not terminate');
+}
+
+export async function probeMcp(spec: McpProbeSpec): Promise<McpProbeResult> {
+  return spec.transport === 'http' ? probeMcpHttp(spec) : probeMcpStdio(spec);
+}
+
 export async function probeMcpStdio(spec: McpProbeSpec): Promise<McpProbeResult> {
+  if (spec.transport !== 'stdio') throw new Error('probeMcpStdio requires transport "stdio"');
   return new Promise((resolvePromise, rejectPromise) => {
     let invocation;
     try {
@@ -247,25 +409,9 @@ export async function probeMcpStdio(spec: McpProbeSpec): Promise<McpProbeResult>
           send({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: { cursor: nextCursor } });
           return;
         }
-        const audited = auditTools(listedTools);
-        const serverInfo = asRecord(initializeResult['serverInfo'], 'initialize result.serverInfo');
-        const capabilities = asRecord(initializeResult['capabilities'], 'initialize result.capabilities');
-        const protocolVersion = initializeResult['protocolVersion'];
-        if (typeof protocolVersion !== 'string') throw new Error('initialize result.protocolVersion must be a string');
-        if (typeof serverInfo['name'] !== 'string' || typeof serverInfo['version'] !== 'string') {
-          throw new Error('initialize result.serverInfo must include string name and version');
-        }
+        const result = assembleProbeResult(spec.name, initializeResult, listedTools, stderr.trim());
         settled = true;
         clearTimeout(timer);
-        const result: McpProbeResult = {
-          name: spec.name,
-          protocolVersion,
-          serverInfo: { name: serverInfo['name'], version: serverInfo['version'] },
-          capabilities: Object.keys(capabilities).sort(),
-          tools: audited.tools,
-          warnings: audited.warnings,
-          stderr: stderr.trim(),
-        };
         // Servers should stop when the client closes stdio, but a keepalive or background handle can
         // otherwise leave the CLI waiting forever after a successful tools/list response.
         cleanup();
