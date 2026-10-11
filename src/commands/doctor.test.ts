@@ -193,6 +193,23 @@ test('more than 10 skills triggers an overload warning', () => {
   assert.ok(hasCheck(checks, 'WARN', /11 skills installed \(> 10\)/));
 });
 
+test('codex skills under ~/.codex/skills and CODEX_HOME are visible', () => {
+  const home = tempDir();
+  writeSkill(home, '.codex/skills', 'from-codex', VALID_SKILL_MD);
+  const local = healthChecks(collectDoctorReport(makeOptions(home, tempDir(), { agent: 'codex', env: {} })), 'codex', 'Skills');
+  assert.ok(hasCheck(local, 'PASS', /1 valid skill/));
+  assert.ok(!local.some((check) => check.message.includes('~/.codex/skills — not present')));
+
+  const relocated = tempDir();
+  writeSkill(relocated, 'skills', 'moved', VALID_SKILL_MD);
+  const checks = healthChecks(
+    collectDoctorReport(makeOptions(tempDir(), tempDir(), { agent: 'codex', env: { CODEX_HOME: relocated } })),
+    'codex',
+    'Skills',
+  );
+  assert.ok(hasCheck(checks, 'PASS', /1 valid skill/));
+});
+
 test('no skills directories is informational', () => {
   const checks = healthChecks(collectDoctorReport(makeOptions(tempDir(), tempDir(), { agent: 'claude-code' })), 'claude-code', 'Skills');
   assert.ok(hasCheck(checks, 'INFO', /no skills directories present/));

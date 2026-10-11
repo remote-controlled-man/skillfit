@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
@@ -8,12 +9,18 @@ export interface AgentDetect {
   userFiles: string[];
 }
 
+export interface AgentsMdBridge {
+  note: string;
+  fileName: string;
+  importLine: string;
+}
+
 export interface AgentRules {
   projectFiles: string[];
   userFiles: string[];
   userHomeOverride?: { env: string; relativePath: string; overrideRelativePath?: string };
   readsAgentsMd: boolean;
-  agentsMdBridge: string | null;
+  agentsMdBridge: AgentsMdBridge | null;
   notes: string;
 }
 
@@ -21,6 +28,8 @@ export interface AgentSkills {
   projectDirs: string[];
   userDirs: string[];
   sharedDirs: string[];
+  /** Extra user skills root. `fallback` applies when `env` is unset. */
+  userHomeOverride?: { env: string; relativePath: string; fallback: string };
 }
 
 export interface AgentMcp {
@@ -112,4 +121,13 @@ export function getAgent(id: string): AgentDef {
 
 export function agentIds(): string[] {
   return loadMatrix().agents.map((a) => a.id);
+}
+
+export function skillUserDirSpecs(agent: AgentDef, env: NodeJS.ProcessEnv): string[] {
+  const specs = [...agent.skills.userDirs];
+  const override = agent.skills.userHomeOverride;
+  if (!override) return specs;
+  const root = env[override.env];
+  specs.push(root ? join(root, override.relativePath) : override.fallback);
+  return specs;
 }

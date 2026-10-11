@@ -917,6 +917,32 @@ test('runBenchAdd --freeze dry-run writes nothing', async (t) => {
   assert.match(lines.join('\n'), /re-executed with a shell/);
 });
 
+test('runBenchAdd backs up an existing file and rolls back a failed write', async (t) => {
+  const source = gitRepoWithBug(t);
+  const benchDir = await freezeBench(t);
+  const leftover = join(benchDir, 'verifiers', 'add-bug.mjs');
+  writeFileSync(leftover, 'original verifier\n');
+  const before = readFileSync(join(benchDir, 'bench.json'), 'utf8');
+  mkdirSync(join(benchDir, 'prompts', 'blocked.md'));
+  await assert.rejects(
+    runBenchAdd({
+      benchDir, task: 'blocked', prompt: 'Fix add.', freeze: true, sourceDir: source,
+      verifierCmd: 'node --test', yes: true, log: () => {},
+    }),
+    /non-file/,
+  );
+  assert.equal(readFileSync(join(benchDir, 'bench.json'), 'utf8'), before);
+  assert.equal(existsSync(join(benchDir, 'fixtures', 'blocked', 'add.js')), false);
+  rmSync(join(benchDir, 'prompts', 'blocked.md'), { recursive: true, force: true });
+
+  await runBenchAdd({
+    benchDir, task: 'add-bug', prompt: 'Fix add.', freeze: true, sourceDir: source,
+    verifierCmd: 'node --test', yes: true, log: () => {},
+  });
+  assert.equal(readFileSync(leftover + '.skillfit-bak', 'utf8'), 'original verifier\n');
+  assert.notEqual(readFileSync(leftover, 'utf8'), 'original verifier\n');
+});
+
 test('runBenchAdd works in a non-git source directory (filtered copy)', async (t) => {
   const source = tmp(t, 'skillfit-freeze-plain-');
   writeFileSync(join(source, 'main.js'), 'console.log(1);\n');

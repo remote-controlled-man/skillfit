@@ -98,6 +98,7 @@ export interface RunManifest {
 }
 
 export function formatPassRate(passes: number, trials: number): string {
+  if (trials === 0) return `${passes}/${trials} (n/a)`;
   return `${passes}/${trials} (${Math.round((passes / trials) * 100)}%)`;
 }
 
@@ -162,7 +163,7 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
       if (stats.errors > 0) {
         const other = condition === 'baseline' ? 'treatment' : 'baseline';
         warnings.push(
-          `Task "${task.id}" (${condition}): ${stats.errors} trial(s) hit an executor or verifier error and were excluded from the rates, together with their paired ${other} trial(s) — an ungraded run is not a failure.`,
+          `Task "${task.id}" (${condition}): ${stats.errors} trial(s) hit an executor, verifier, or engagement error and were excluded from the rates, together with their paired ${other} trial(s) — an ungraded run is not a failure.`,
         );
       }
     }
@@ -310,11 +311,18 @@ function renderTokenDeltas(manifest: RunManifest): string[] {
     condition.tokens ? condition.tokens.input + condition.tokens.output : null;
   const costBaseline = totalTokens(baseline);
   const costTreatment = totalTokens(treatment);
+  const covered = (condition: ConditionStats): boolean =>
+    condition.trials > 0 &&
+    condition.tokenCoverage !== undefined &&
+    condition.tokenCoverage.input === condition.trials &&
+    condition.tokenCoverage.output === condition.trials;
   if (
     costBaseline !== null &&
     costTreatment !== null &&
     baseline.passRate > 0 &&
-    treatment.passRate > 0
+    treatment.passRate > 0 &&
+    covered(baseline) &&
+    covered(treatment)
   ) {
     const ratio =
       costTreatment / treatment.trials / treatment.passRate / (costBaseline / baseline.trials / baseline.passRate);

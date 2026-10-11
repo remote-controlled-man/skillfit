@@ -151,6 +151,22 @@ test('installs a profile supplied by directory and preserves binary skill assets
   );
 });
 
+test('refuses to replace a symlinked rules file', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const target = path.join(home, '.codex', 'AGENTS.md');
+  const real = path.join(project, 'real-agents.md');
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(real, '# original\n');
+  try {
+    await fs.symlink(real, target);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EPERM') return t.skip('symlinks unavailable');
+    throw error;
+  }
+  await assert.rejects(runInstall(makeOpts(home, project, { agent: 'codex' })), /symlink/i);
+  assert.equal(await fs.readFile(real, 'utf8'), '# original\n');
+});
+
 test('rejects a portable profile whose skill path is a symlink outside the profile', async (t) => {
   const { home, project } = await tempDirs(t);
   const profile = path.join(project, 'portable');

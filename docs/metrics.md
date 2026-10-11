@@ -57,9 +57,12 @@ A bench that cannot discriminate must not produce verdicts.
   (implemented).
 - **Floor**: warn when baseline pass rate ≤ 10% (implemented) — the task is too hard or broken, and
   all-zero arms are equally uninformative.
-- **Engagement sanity**: if the agent never touched the fixture (empty output, executor error), or the
-  verifier produced no exit code at all (unspawnable command, or killed by its timeout), the trial is
-  excluded from rates and reported as an error, not a failure (implemented). Exclusion is *pairwise*: since
+- **Engagement sanity**: if the agent never engaged with the fixture, the executor errored, or the
+  verifier produced no exit code at all (unspawnable command, killed by its timeout, or output over
+  the capture limit), the trial is excluded from rates and reported as an error, not a failure
+  (implemented). Non-engagement means the final message is empty or whitespace. For an output task
+  that message is the deliverable. For a command task the deliverable is the file edit, so an empty
+  message still counts when the disposable worktree differs from the fixture commit. Exclusion is *pairwise*: since
   every statistic here is paired, dropping a trial from one arm alone would misalign the (task, trial) pairs
   that McNemar and the paired bootstrap resample, so an error in either arm removes that pair from both, and
   each arm reports its `errors` count next to its graded `trials`.
@@ -157,8 +160,9 @@ replace, and a long tail lets an arbitrary subset dominate the score.
   (its LLM-judged rubric reward cost 4pp of task pass rate), so the judge is never a check source.
 - **Δscore** = treatment mean score − baseline mean score, reported per task (descriptive) and pooled at
   bench level with a paired bootstrap 95% CI (tasks as the resampling unit, ≥1000 resamples, seeded) —
-  the same protocol as ΔP, one level down in granularity. Trials without checks are excluded; a task
-  enters the CI only when both arms have at least one scored trial.
+  the same protocol as ΔP, one level down in granularity. Trials without checks are excluded pairwise:
+  a trial stays in Δscore only when both arms scored it, so the denominators match. A task enters the
+  CI only when that leaves at least one scored pair.
 - Equal weight per check, per bench version: the check list is frozen by the bench content hash, and the
   report prints the per-facet table so the weighting is transparent rather than hidden.
 - Why bother: at personal sample sizes binary ΔP rarely reaches significance; graded scores carry several

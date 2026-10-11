@@ -9,8 +9,7 @@ import { runInstall } from './commands/install.js';
 import { runMcpCheck } from './commands/mcp.js';
 import { runReport } from './commands/report.js';
 import { runCodexSetup } from './commands/setup.js';
-
-const VERSION = '0.7.0';
+import { VERSION } from './version.js';
 
 const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
 

@@ -73,6 +73,7 @@ export interface ProcessResult {
 }
 
 const VERIFIER_TIMEOUT_MS = 2 * 60 * 1000;
+const MAX_PROCESS_OUTPUT_BYTES = 8 * 1024 * 1024;
 
 function runProcess(
   command: string,
@@ -91,27 +92,39 @@ function runProcess(
       return;
     }
     let output = '';
+    let bytes = 0;
     let timedOut = false;
+    let overflow = false;
     const timer = setTimeout(() => {
       timedOut = true;
       killTree(child);
     }, timeoutMs);
-    child.stdout.on('data', (chunk: Buffer) => {
+    const take = (chunk: Buffer): void => {
+      bytes += chunk.length;
+      if (bytes > MAX_PROCESS_OUTPUT_BYTES) {
+        overflow = true;
+        killTree(child);
+        return;
+      }
       output += chunk.toString('utf8');
-    });
-    child.stderr.on('data', (chunk: Buffer) => {
-      output += chunk.toString('utf8');
-    });
+    };
+    child.stdout.on('data', take);
+    child.stderr.on('data', take);
+    // Verifiers and git do not read a prompt. Leave the pipe open and a command that reads stdin
+    // waits until the timeout instead of seeing EOF.
+    child.stdin?.on('error', () => {});
+    child.stdin?.end();
     child.on('error', (error) => {
       clearTimeout(timer);
       resolvePromise({ exitCode: null, output, error: error.message });
     });
     child.on('close', (code) => {
       clearTimeout(timer);
+      const limited = overflow ? `output exceeded ${MAX_PROCESS_OUTPUT_BYTES} bytes` : null;
       resolvePromise({
-        exitCode: code,
+        exitCode: timedOut || overflow ? null : code,
         output: timedOut ? `${output}\n[timed out after ${timeoutMs}ms]` : output,
-        error: timedOut ? `timed out after ${timeoutMs}ms` : null,
+        error: limited ?? (timedOut ? `timed out after ${timeoutMs}ms` : null),
       });
     });
   });
@@ -132,6 +145,35 @@ export async function gitInit(dir: string): Promise<boolean> {
   }
   const reflog = await runProcess('git', ['reflog', 'show', '--format=%H', 'HEAD'], dir, 30_000);
   return reflog.exitCode === 0 && reflog.output.trim().length > 0;
+}
+
+const ENGAGEMENT_ERROR =
+  'Agent produced no output and left the fixture unchanged; excluded as an engagement error, not a graded failure.';
+
+async function worktreeChanged(dir: string): Promise<boolean> {
+  const status = await runProcess('git', ['status', '--porcelain'], dir, 30_000);
+  if (status.exitCode !== 0) return true;
+  // The harness writes _prompt.txt after the fixture commit. That file is not an agent edit.
+  return status.output.split('\n').some((line) => {
+    const path = line.slice(3).replaceAll('"', '').trim();
+    return path.length > 0 && path !== '_prompt.txt';
+  });
+}
+
+/**
+ * Empty final text is not a graded miss. Output tasks deliver that text, so silence is
+ * non-engagement. Command tasks deliver file edits, so silence still counts when the disposable
+ * worktree differs from the fixture commit. docs/metrics.md L0.
+ */
+export async function engagementError(
+  output: string,
+  verifierKind: 'output' | 'command' | undefined,
+  runDir: string,
+  gitInitialized: boolean,
+): Promise<string | null> {
+  if (output.trim() !== '') return null;
+  if ((verifierKind ?? 'output') === 'command' && gitInitialized && (await worktreeChanged(runDir))) return null;
+  return ENGAGEMENT_ERROR;
 }
 
 export async function runTrial(
@@ -205,6 +247,9 @@ export async function runTrial(
     error = result.guardError ?? null;
   } catch (executorError) {
     error = (executorError as Error).message;
+  }
+  if (error === null) {
+    error = await engagementError(output, task.verifierKind, runDir, gitInitialized);
   }
   const finished = new Date();
   writeFileSync(join(runDir, '_output.md'), output, 'utf8');
@@ -465,6 +510,28 @@ function trialScores(records: TrialOutcome[]): (number | null)[] {
   return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.score);
 }
 
+/** Drop a trial from both arms unless both produced a score, so Δscore keeps the paired denominators. */
+function pairedScores(
+  baseline: readonly (number | null)[],
+  treatment: readonly (number | null)[],
+): { baseline: number[]; treatment: number[] } | null {
+  const left: number[] = [];
+  const right: number[] = [];
+  const count = Math.min(baseline.length, treatment.length);
+  for (let index = 0; index < count; index++) {
+    const baselineScore = baseline[index];
+    const treatmentScore = treatment[index];
+    if (typeof baselineScore !== 'number' || typeof treatmentScore !== 'number') continue;
+    left.push(baselineScore);
+    right.push(treatmentScore);
+  }
+  return left.length === 0 ? null : { baseline: left, treatment: right };
+}
+
+function mean(values: readonly number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
 function facetStats(outcomes: Record<Condition, TrialOutcome[]>): FacetSummary[] {
   const names: string[] = [];
   for (const condition of CONDITIONS) {
@@ -554,19 +621,18 @@ function summarizeTask(
     treatment: trialFlags(survivors.treatment),
   };
   const deltaPassRate = treatment.passRate - baseline.passRate;
-  const scoreDelta =
-    baseline.meanScore !== null && treatment.meanScore !== null
-      ? treatment.meanScore - baseline.meanScore
-      : null;
+  const scoreRows = {
+    baseline: trialScores(survivors.baseline),
+    treatment: trialScores(survivors.treatment),
+  };
+  const paired = pairedScores(scoreRows.baseline, scoreRows.treatment);
+  const scoreDelta = paired ? mean(paired.treatment) - mean(paired.baseline) : null;
   const { verdict, reason } = verdictFor({ ...discordantCounts([flags]), deltaPassRate });
   return {
     id: taskId,
     conditions: { baseline, treatment },
     outcomes: flags,
-    scores: {
-      baseline: trialScores(survivors.baseline),
-      treatment: trialScores(survivors.treatment),
-    },
+    scores: scoreRows,
     deltaPassRate,
     scoreDelta,
     facets: facetStats(survivors),
@@ -630,12 +696,10 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const taskOutcomes = taskSummaries.map((task) => task.outcomes);
   const discordant = discordantCounts(taskOutcomes);
   const overallVerdict = verdictFor({ ...discordant, deltaPassRate: overallDelta });
-  const scoreTasks = taskSummaries
-    .map((task) => ({
-      baseline: task.scores.baseline.filter((s): s is number => s !== null),
-      treatment: task.scores.treatment.filter((s): s is number => s !== null),
-    }))
-    .filter((task) => task.baseline.length > 0 && task.treatment.length > 0);
+  const scoreTasks = taskSummaries.flatMap((task) => {
+    const paired = pairedScores(task.scores.baseline, task.scores.treatment);
+    return paired ? [paired] : [];
+  });
   const scoreDeltaCi = pairedScoreBootstrapCI(scoreTasks);
   const scoreDelta = scoreDeltaCi ? scoreDeltaCi.point : null;
   plan.session?.settle();

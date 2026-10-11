@@ -2,6 +2,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { killTree, treeSpawnOptions } from '../harness/kill-tree.js';
+import { VERSION } from '../version.js';
 
 const PROTOCOL_VERSION = '2025-11-25';
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -297,7 +298,7 @@ export async function probeMcpStdio(spec: McpProbeSpec): Promise<McpProbeResult>
       params: {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: {},
-        clientInfo: { name: 'skillfit', version: '0.7.0' },
+        clientInfo: { name: 'skillfit', version: VERSION },
       },
     });
   });

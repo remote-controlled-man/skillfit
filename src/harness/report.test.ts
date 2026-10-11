@@ -207,6 +207,30 @@ test('renderSummary warns when only the graded-score interval collapses', () => 
   assert.match(output, /interval collapsed.*does not establish zero uncertainty/);
 });
 
+test('cost-of-pass requires complete token coverage on both arms', () => {
+  const task = taskSummary('a', 1, 1, 2);
+  task.tokenDelta = { input: 10, output: 2 };
+  for (const condition of ['baseline', 'treatment'] as const) {
+    task.conditions[condition].tokens = { input: 20, output: 4 };
+    task.conditions[condition].tokenCoverage = { input: 1, output: 2 };
+  }
+  const base = manifestWith([task]);
+  base.overall.tokenDelta = { input: 10, output: 2 };
+  base.overall.conditions.baseline.tokens = { input: 20, output: 4 };
+  base.overall.conditions.treatment.tokens = { input: 30, output: 6 };
+  base.overall.conditions.baseline.passRate = 0.5;
+  base.overall.conditions.treatment.passRate = 0.5;
+  base.overall.conditions.baseline.trials = 2;
+  base.overall.conditions.treatment.trials = 2;
+  base.overall.conditions.baseline.tokenCoverage = { input: 1, output: 2 };
+  base.overall.conditions.treatment.tokenCoverage = { input: 2, output: 2 };
+  const partial = renderSummary({ ...base, warnings: [] }, 'm.json');
+  assert.equal(partial.includes('cost-of-pass'), false);
+  base.overall.conditions.baseline.tokenCoverage = { input: 2, output: 2 };
+  const full = renderSummary({ ...base, warnings: [] }, 'm.json');
+  assert.match(full, /cost-of-pass ratio \(treatment \/ baseline\): 1\.50/);
+});
+
 test('renderSummary shows a significant overall verdict when discordance suffices', () => {
   const base = manifestWith([
     taskSummary('a', 0, 3, 3),
@@ -222,6 +246,7 @@ test('renderSummary shows a significant overall verdict when discordance suffice
 
 test('format helpers', () => {
   assert.equal(formatPassRate(1, 3), '1/3 (33%)');
+  assert.equal(formatPassRate(0, 0), '0/0 (n/a)');
   assert.equal(formatDeltaPp(2 / 3), '+67pp');
   assert.equal(formatDeltaPp(-1 / 3), '-33pp');
   assert.equal(formatDeltaPp(0), '0pp');
@@ -330,7 +355,7 @@ test('buildWarnings surfaces excluded executor errors per arm', () => {
   const warnings = buildWarnings(manifest);
   assert.ok(
     warnings.some(
-      (w) => w.includes('"flaky" (baseline)') && w.includes('1 trial(s) hit an executor or verifier error'),
+      (w) => w.includes('"flaky" (baseline)') && w.includes('1 trial(s) hit an executor, verifier, or engagement error'),
     ),
   );
   assert.ok(warnings.some((w) => w.includes('together with their paired treatment trial(s)')));

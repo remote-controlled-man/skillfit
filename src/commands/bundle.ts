@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAgent } from '../agents.js';
+import { getAgent, skillUserDirSpecs } from '../agents.js';
 import { collectReceipts } from '../harness/receipts.js';
 import { parseFrontmatter } from '../frontmatter.js';
 import { isImplicitInvocationDisabled } from '../invocation.js';
@@ -43,10 +43,10 @@ function codexRulesFile(homeDir: string, env: NodeJS.ProcessEnv): string {
   return expandHome(spec, homeDir);
 }
 
-function codexSkillsDir(homeDir: string): string {
-  const spec = getAgent('codex').skills.userDirs[0];
-  if (!spec) throw new Error('Codex has no user-level skills path in the matrix');
-  return expandHome(spec, homeDir);
+function codexSkillDirs(homeDir: string, env: NodeJS.ProcessEnv): string[] {
+  const specs = skillUserDirSpecs(getAgent('codex'), env);
+  if (specs.length === 0) throw new Error('Codex has no user-level skills path in the matrix');
+  return specs.map((spec) => expandHome(spec, homeDir));
 }
 
 async function readOptional(file: string): Promise<string | null> {
@@ -116,13 +116,28 @@ async function sha256(file: string): Promise<string> {
   return createHash('sha256').update(await fs.readFile(file)).digest('hex');
 }
 
+async function locateSkill(dirs: string[], name: string): Promise<string | null> {
+  for (const dir of dirs) {
+    const src = path.join(dir, name);
+    try {
+      if ((await fs.lstat(src)).isSymbolicLink()) {
+        throw new Error(`Symlinked skill cannot be exported safely: ${src}`);
+      }
+      return src;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
+  return null;
+}
+
 async function verifyUpstreamExport(
   dir: string,
   manifest: object,
   lock: object,
   rules: string,
   sourceFiles: Map<string, string[]>,
-  skillsDir: string,
+  skillSources: Map<string, string>,
 ): Promise<void> {
   const actualManifest = JSON.parse(await fs.readFile(path.join(dir, 'profile.json'), 'utf8')) as object;
   const actualLock = await readUpstreamLock(path.join(dir, 'upstream.lock.json'));
@@ -137,7 +152,8 @@ async function verifyUpstreamExport(
   }
   for (const [name, files] of sourceFiles) {
     for (const rel of files) {
-      if (await sha256(path.join(dir, 'skills', name, rel)) !== await sha256(path.join(skillsDir, name, rel))) {
+      const source = skillSources.get(name);
+      if (!source || await sha256(path.join(dir, 'skills', name, rel)) !== await sha256(path.join(source, rel))) {
         throw new Error(`Portable export verification failed for ${name}/${rel}`);
       }
     }
@@ -162,7 +178,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
   if (!NAME_PATTERN.test(profileName)) {
     throw new Error('Bundle directory name must use lowercase letters, digits and dashes');
   }
-  const skillsDir = codexSkillsDir(homeDir);
+  const skillDirs = codexSkillDirs(homeDir, env);
   const upstreamLock = opts.upstreamLockPath ? await readUpstreamLock(path.resolve(opts.upstreamLockPath)) : null;
   const usage = opts.skillNames === undefined && !upstreamLock
     ? await (opts.loadUsage ?? (() => defaultUsage(homeDir, env)))()
@@ -176,6 +192,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
   const explicitOnly: string[] = [];
   const skipped: string[] = [];
   const sourceFiles = new Map<string, string[]>();
+  const skillSources = new Map<string, string>();
   const upstreamByName = new Map((upstreamLock?.skills ?? []).map((skill) => [skill.name, skill]));
   const selectedUpstream: UpstreamSkill[] = [];
   for (const name of candidates) {
@@ -187,27 +204,22 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
       if (remote.explicitOnly) explicitOnly.push(name);
       continue;
     }
-    const src = path.join(skillsDir, name);
-    let files: string[];
-    try {
-      if ((await fs.lstat(src)).isSymbolicLink()) {
-        throw new Error(`Symlinked skill cannot be exported safely: ${src}`);
-      }
-      files = (await walkFiles(src)).filter((file) => !isInstallerArtifact(file));
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    const src = await locateSkill(skillDirs, name);
+    if (src === null) {
       if (opts.skillNames === undefined && !upstreamLock) {
         skipped.push(name);
         continue;
       }
-      throw new Error(`Skill "${name}" is not installed at ${src}`);
+      throw new Error(`Skill "${name}" is not installed in ${skillDirs.join(', ')}`);
     }
+    const files = (await walkFiles(src)).filter((file) => !isInstallerArtifact(file));
     const manifest = await readOptional(path.join(src, 'SKILL.md'));
     const frontmatter = manifest === null ? null : parseFrontmatter(manifest);
     if (frontmatter?.name !== name || !frontmatter.description) {
       throw new Error(`Skill "${name}" has an invalid SKILL.md`);
     }
     names.push(name);
+    skillSources.set(name, src);
     const codexMetadata = await readOptional(path.join(src, 'agents', 'openai.yaml'));
     if (isImplicitInvocationDisabled(codexMetadata)) explicitOnly.push(name);
     sourceFiles.set(name, files);
@@ -306,14 +318,16 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     }
     for (const [name, files] of sourceFiles) {
       for (const rel of files) {
-        const src = path.join(skillsDir, name, rel);
+        const root = skillSources.get(name);
+        if (!root) throw new Error(`Export is missing the source directory for ${name}`);
+        const src = path.join(root, rel);
         const dst = path.join(stage, 'skills', name, rel);
         await fs.mkdir(path.dirname(dst), { recursive: true });
         await fs.copyFile(src, dst);
         if (await sha256(src) !== await sha256(dst)) throw new Error(`Export verification failed for ${name}/${rel}`);
       }
     }
-    if (upstreamLock) await verifyUpstreamExport(stage, manifest, exportedLock, rules, sourceFiles, skillsDir);
+    if (upstreamLock) await verifyUpstreamExport(stage, manifest, exportedLock, rules, sourceFiles, skillSources);
     else await loadProfile(stageRoot, profileName);
     await fs.rename(stage, outputDir);
   } catch (error) {
@@ -321,7 +335,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     throw error;
   }
   await fs.rmdir(stageRoot);
-  if (upstreamLock) await verifyUpstreamExport(outputDir, manifest, exportedLock, rules, sourceFiles, skillsDir);
+  if (upstreamLock) await verifyUpstreamExport(outputDir, manifest, exportedLock, rules, sourceFiles, skillSources);
   else await loadProfile(path.dirname(outputDir), profileName);
   log(upstreamLock
     ? `Export written: ${outputDir} (GitHub files are verified when setup runs)`

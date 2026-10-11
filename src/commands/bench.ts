@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
 import { loadBench } from '../harness/bench.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
@@ -15,6 +15,7 @@ import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { VerifierCheck } from '../harness/verifier-summary.js';
 import type { Executor, InputMode, SkillBundle } from '../harness/types.js';
 import { confirm as confirmPrompt } from './confirm.js';
+import { BACKUP_SUFFIX } from './install.js';
 import type { Check } from './doctor.js';
 
 export interface BenchInitOptions {
@@ -841,6 +842,43 @@ async function draftVerifierWithOracle(
   }
 }
 
+function assertInsideBench(benchDir: string, target: string): void {
+  const rel = relative(benchDir, target);
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+    throw new Error(`Refusing to write outside the bench directory: ${target}`);
+  }
+}
+
+function applyBenchWrites(benchDir: string, writes: Array<{ target: string; content: Buffer | string }>): void {
+  const applied: Array<{ target: string; previous: Buffer | null }> = [];
+  try {
+    for (const write of writes) {
+      assertInsideBench(benchDir, write.target);
+      mkdirSync(dirname(write.target), { recursive: true });
+      let previous: Buffer | null = null;
+      try {
+        const stat = lstatSync(write.target);
+        if (stat.isSymbolicLink()) throw new Error(`Refusing to overwrite a symlink: ${write.target}`);
+        if (!stat.isFile()) throw new Error(`Refusing to overwrite a non-file: ${write.target}`);
+        previous = readFileSync(write.target);
+        const backup = write.target + BACKUP_SUFFIX;
+        if (!existsSync(backup)) writeFileSync(backup, previous);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+      applied.push({ target: write.target, previous });
+      writeFileSync(write.target, write.content);
+    }
+    loadBench(benchDir);
+  } catch (error) {
+    for (const entry of [...applied].reverse()) {
+      if (entry.previous === null) rmSync(entry.target, { force: true });
+      else writeFileSync(entry.target, entry.previous);
+    }
+    throw error;
+  }
+}
+
 export async function runBenchAdd(
   options: BenchAddOptions,
 ): Promise<{ dir: string; taskId: string; files: string[] } | null> {
@@ -942,19 +980,19 @@ export async function runBenchAdd(
     }
   }
 
+  const writes: Array<{ target: string; content: Buffer | string }> = [];
   for (const file of prepared.fixtureFiles) {
-    const target = join(benchDir, 'fixtures', taskId, file.rel);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, file.content);
+    if (file.rel.split(/[\\/]/).includes('..') || isAbsolute(file.rel)) {
+      throw new Error(`Fixture path escapes the task directory: ${file.rel}`);
+    }
+    writes.push({ target: join(benchDir, 'fixtures', taskId, file.rel), content: file.content });
   }
   for (const [rel, content] of Object.entries(generated)) {
-    const target = join(benchDir, rel);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, content, 'utf8');
+    writes.push({ target: join(benchDir, rel), content });
   }
   benchJson.tasks = [...tasks, taskEntry];
-  writeFileSync(benchJsonPath, `${JSON.stringify(benchJson, null, 2)}\n`, 'utf8');
-  loadBench(benchDir);
+  writes.push({ target: benchJsonPath, content: `${JSON.stringify(benchJson, null, 2)}\n` });
+  applyBenchWrites(benchDir, writes);
 
   log(`Task "${taskId}" added to ${benchDir} (${prepared.fixtureFiles.length} fixture file(s), verifier: ${prepared.verifierKind}).`);
   log('Next:');

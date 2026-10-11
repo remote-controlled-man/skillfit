@@ -509,7 +509,7 @@ test('runExperiment drops an errored trial from both arms instead of scoring it 
   );
   assert.ok(
     manifest.warnings.some(
-      (w) => w.includes('"review-r1" (baseline)') && w.includes('executor or verifier error'),
+      (w) => w.includes('"review-r1" (baseline)') && w.includes('executor, verifier, or engagement error'),
     ),
     'the exclusion is surfaced, not silent',
   );
@@ -547,7 +547,7 @@ test('runExperiment excludes a trial whose verifier could not be spawned', async
   assert.equal(task.conditions.baseline.trials, 0, 'an unrunnable verifier grades nothing');
   assert.equal(task.conditions.treatment.trials, 0, 'and its paired arm is dropped with it');
   assert.ok(
-    manifest.warnings.some((w) => w.includes(`"${broken.id}" (baseline)`) && w.includes('executor or verifier error')),
+    manifest.warnings.some((w) => w.includes(`"${broken.id}" (baseline)`) && w.includes('executor, verifier, or engagement error')),
     'the exclusion is surfaced, not silent',
   );
 
@@ -590,4 +590,85 @@ test('runExperiment interleaves conditions within each trial and records samplin
     null,
     'the matrix CLIs expose no seed or temperature knob, and the manifest says so rather than implying one',
   );
+});
+
+function outputBench(root: string, kind: 'output' | 'command'): void {
+  for (const rel of ['fixtures/task', 'prompts', 'verifiers']) mkdirSync(join(root, rel), { recursive: true });
+  writeFileSync(join(root, 'fixtures/task/source.txt'), 'broken');
+  writeFileSync(join(root, 'prompts/task.md'), 'Fix it.');
+  const verifier = kind === 'output'
+    ? "import {readFileSync} from 'node:fs'; const out = readFileSync(process.argv[2]+'/_output.md','utf8'); const scored = out.includes('score'); const high = out.includes('high'); if (!scored) { console.log('unscored'); process.exit(out.includes('ok') ? 0 : 1); } console.log(JSON.stringify({passed: high, checks:[{name:'a',pass:high},{name:'b',pass:high}]})); process.exit(high ? 0 : 1);"
+    : "import {readFileSync} from 'node:fs'; process.exit(readFileSync(process.argv[2]+'/source.txt','utf8')==='fixed' ? 0 : 1);";
+  writeFileSync(join(root, 'verifiers/check.mjs'), verifier);
+  writeFileSync(join(root, 'bench.json'), JSON.stringify({
+    schemaVersion: 1, name: 'engagement', tasks: [{
+      id: 'task', fixture: 'fixtures/task', prompt: 'prompts/task.md', verifier: 'node verifiers/check.mjs', verifierKind: kind,
+    }],
+  }));
+}
+
+test('empty output is an engagement error for an output task', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-engage-');
+  const benchDir = join(runsRoot, 'bench');
+  outputBench(benchDir, 'output');
+  const executor: Executor = { describe: () => ({ kind: 'cli', model: 'silent' }), run: () => Promise.resolve({ output: '   \n' }) };
+  const manifest = await runExperiment({
+    bench: loadBench(benchDir), target: collectSkillBundle(makeSkill(t), 's'), executor, trials: 1, runsRoot, runGroup: 'silent',
+  });
+  assert.equal(manifest.overall.conditions.baseline.trials, 0);
+  assert.equal(manifest.overall.conditions.baseline.errors, 1);
+  assert.equal(manifest.overall.conditions.baseline.passes, 0);
+  const receipt = JSON.parse(readFileSync(join(runsRoot, 'silent/task/baseline/trial-1/_result.json'), 'utf8')) as { error: string };
+  assert.match(receipt.error, /engagement error/);
+  assert.equal(existsSync(join(runsRoot, 'silent/task/baseline/trial-1/_verifier.txt')), false);
+});
+
+test('a command task with an empty message still counts when the fixture changed', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-engage-edit-');
+  const benchDir = join(runsRoot, 'bench');
+  outputBench(benchDir, 'command');
+  const executor: Executor = {
+    describe: () => ({ kind: 'cli', model: 'editor' }),
+    run: (_prompt, workdir) => {
+      writeFileSync(join(workdir, 'source.txt'), 'fixed');
+      return Promise.resolve({ output: '' });
+    },
+  };
+  const manifest = await runExperiment({
+    bench: loadBench(benchDir), target: collectSkillBundle(makeSkill(t), 's'), executor, trials: 1, runsRoot, runGroup: 'edited',
+  });
+  assert.equal(manifest.overall.conditions.baseline.passes, 1);
+  assert.equal(manifest.overall.conditions.baseline.errors, 0);
+});
+
+test('a command task that changes nothing is an engagement error', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-engage-idle-');
+  const benchDir = join(runsRoot, 'bench');
+  outputBench(benchDir, 'command');
+  const executor: Executor = { describe: () => ({ kind: 'cli', model: 'idle' }), run: () => Promise.resolve({ output: '' }) };
+  const manifest = await runExperiment({
+    bench: loadBench(benchDir), target: collectSkillBundle(makeSkill(t), 's'), executor, trials: 1, runsRoot, runGroup: 'idle',
+  });
+  assert.equal(manifest.overall.conditions.baseline.trials, 0);
+  assert.equal(manifest.overall.conditions.baseline.errors, 1);
+});
+
+test('Δscore drops a trial unless both arms produced a score', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-score-pair-');
+  const benchDir = join(runsRoot, 'bench');
+  outputBench(benchDir, 'output');
+  let call = 0;
+  const executor: Executor = {
+    describe: () => ({ kind: 'cli', model: 'scorer' }),
+    run: () => {
+      call += 1;
+      const output = call === 1 ? 'score low' : call === 4 ? 'score high' : 'plain';
+      return Promise.resolve({ output });
+    },
+  };
+  const manifest = await runExperiment({
+    bench: loadBench(benchDir), target: collectSkillBundle(makeSkill(t), 's'), executor, trials: 2, runsRoot, runGroup: 'scores',
+  });
+  assert.equal(manifest.tasks[0]?.scoreDelta, null);
+  assert.equal(manifest.overall.scoreDelta, null);
 });

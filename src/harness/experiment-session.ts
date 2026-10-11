@@ -3,7 +3,7 @@ import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlin
 import { homedir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAgent, type AgentDef } from '../agents.js';
+import { getAgent, skillUserDirSpecs, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
 import { hashFileSet, sha256File, sha256Text } from './hash.js';
 import type { Bench, EvaluationTarget, Executor } from './types.js';
@@ -121,7 +121,15 @@ function configState(path: string, trust: ConfigFingerprint['trust'], workspaces
 
 function probeVersion(argv: string[]): string | null {
   try {
-    const output = execFileSync(argv[0]!, argv.slice(1), { encoding: 'utf8', timeout: 5000, maxBuffer: 65536, stdio: ['ignore', 'pipe', 'ignore'] });
+    const output = execFileSync(argv[0]!, argv.slice(1), {
+      encoding: 'utf8',
+      timeout: 5000,
+      maxBuffer: 65536,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      // npm CLI shims are .cmd on Windows and cannot be execFile'd directly.
+      shell: process.platform === 'win32',
+      windowsHide: true,
+    });
     return output.split(/\r?\n/).find(line => /\d+\.\d+/.test(line))?.slice(0, 256) ?? null;
   } catch { return null; }
 }
@@ -197,7 +205,7 @@ export class ExperimentSession {
       const match = agent.headless.projectTrustConfigArg?.match(/^([^.]+)\.'\{workdir\}'\.([^=]+)='([^']+)'$/);
       const trust = match ? { table: match[1]!, field: match[2]!, value: match[3]! } : undefined;
       for (const path of paths) this.configs.push(configState(path, path === settings.path ? trust : undefined, this.workspaces));
-      for (const spec of new Set([...agent.skills.userDirs, ...agent.skills.sharedDirs.filter(path => path.startsWith('~/'))])) {
+      for (const spec of new Set([...skillUserDirSpecs(agent, env), ...agent.skills.sharedDirs.filter(path => path.startsWith('~/'))])) {
         const root = expand(spec, home);
         this.inventories.push(skillInventory(root));
         if (!existsSync(root)) continue;

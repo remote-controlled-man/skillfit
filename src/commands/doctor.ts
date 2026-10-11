@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync, type Dirent, type Stats } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
-import { agentIds, getAgent, loadMatrix, type AgentDef } from '../agents.js';
+import { agentIds, getAgent, loadMatrix, skillUserDirSpecs, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
 
 const CLAUDE_MD_MAX_LINES = 200;
@@ -11,8 +11,6 @@ const SKILL_COUNT_WARN_THRESHOLD = 10;
 const MCP_SERVER_WARN_THRESHOLD = 10;
 const WHICH_TIMEOUT_MS = 5000;
 const SKILL_FILE = 'SKILL.md';
-const AGENTS_MD = 'AGENTS.md';
-const AGENTS_MD_IMPORT = '@AGENTS.md';
 
 export type CheckStatus = 'PASS' | 'WARN' | 'FAIL' | 'INFO';
 
@@ -171,15 +169,16 @@ function isAgentsMdName(name: string): boolean {
 }
 
 function bridgeChecks(agent: AgentDef, ctx: Ctx): Check[] {
-  if (agent.rules.readsAgentsMd || agent.rules.agentsMdBridge === null) return [];
-  if (!isFile(path.join(ctx.cwd, AGENTS_MD))) return [];
+  const bridge = agent.rules.agentsMdBridge;
+  if (agent.rules.readsAgentsMd || bridge === null) return [];
+  if (!isFile(path.join(ctx.cwd, bridge.fileName))) return [];
   for (const spec of agent.rules.projectFiles) {
     const content = readText(resolveSpecPath(spec, ctx));
-    if (content?.includes(AGENTS_MD_IMPORT)) {
-      return [check('PASS', `project ${AGENTS_MD} is bridged into ${spec} via "${AGENTS_MD_IMPORT}"`)];
+    if (content?.split(/\r?\n/).some((line) => line.trim() === bridge.importLine)) {
+      return [check('PASS', `project ${bridge.fileName} is bridged into ${spec} via "${bridge.importLine}"`)];
     }
   }
-  return [check('WARN', `project root has ${AGENTS_MD} but ${agent.displayName} does not read it — ${agent.rules.agentsMdBridge}`)];
+  return [check('WARN', `project root has ${bridge.fileName} but ${agent.displayName} does not read it — ${bridge.note}`)];
 }
 
 function checkRules(agent: AgentDef, ctx: Ctx): Check[] {
@@ -240,7 +239,7 @@ function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
   const sharedDirs = new Set(agent.skills.sharedDirs.map((spec) => resolveSpecPath(spec, ctx)));
   const seen = new Set<string>();
   const dirs: { spec: string; resolved: string }[] = [];
-  for (const spec of [...agent.skills.userDirs, ...agent.skills.projectDirs]) {
+  for (const spec of [...skillUserDirSpecs(agent, ctx.env), ...agent.skills.projectDirs]) {
     const resolved = resolveSpecPath(spec, ctx);
     if (seen.has(resolved)) continue;
     seen.add(resolved);

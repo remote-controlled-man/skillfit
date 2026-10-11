@@ -2,7 +2,7 @@ import { createReadStream, existsSync, readdirSync, readFileSync, statSync } fro
 import { homedir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
-import { agentIds, getAgent, type AgentDef, type AgentSessions } from '../agents.js';
+import { agentIds, getAgent, skillUserDirSpecs, type AgentDef, type AgentSessions } from '../agents.js';
 
 export interface SkillReceipt {
   name: string;
@@ -188,9 +188,10 @@ async function scanTranscript(
 export function installedUserSkills(
   agent: AgentDef,
   homeDir: string,
+  env: NodeJS.ProcessEnv = {},
 ): Array<{ name: string; dir: string }> {
   const skills = new Map<string, string>();
-  for (const dirPattern of agent.skills.userDirs) {
+  for (const dirPattern of skillUserDirSpecs(agent, env)) {
     const dir = resolveHome(dirPattern, homeDir);
     if (!existsSync(dir)) continue;
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -258,7 +259,7 @@ export async function collectAgentReceipt(
   const sessionsDir = overrideRoot
     ? resolve(overrideRoot, homeOverride!.relativePath)
     : resolveHome(cfg.dir, homeDir);
-  const installed = installedUserSkills(agent, homeDir);
+  const installed = installedUserSkills(agent, homeDir, env);
   const taxes = installed.map((skill) => ({ name: skill.name, ...measureSkillTax(skill.dir) }));
   const tax = {
     descTokensTotal: taxes.reduce((sum, entry) => sum + entry.descTokens, 0),

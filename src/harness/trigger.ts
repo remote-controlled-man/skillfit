@@ -4,7 +4,7 @@ import type { ExperimentSession, ExperimentSummary } from './experiment-session.
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
 import { collectInstalledSkillFingerprint, collectSkillBundle, type InstalledSkillFingerprint } from './bundle.js';
 import { OUTPUT_CONTRACT } from './prompt.js';
-import { gitInit, runVerifier, verifierFailure, verifierLogFor } from './runner.js';
+import { engagementError, gitInit, runVerifier, verifierFailure, verifierLogFor } from './runner.js';
 import { wilson95 } from './stats.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import type {
@@ -147,6 +147,9 @@ async function runTriggerTrial(
   } catch (executorError) {
     error = (executorError as Error).message;
   }
+  if (error === null) {
+    error = await engagementError(output, task.verifierKind, runDir, gitInitialized);
+  }
   const finished = new Date();
   writeFileSync(join(runDir, '_output.md'), output, 'utf8');
   if (rawOutput !== null) {
@@ -288,7 +291,7 @@ function buildTriggerWarnings(manifest: Omit<TriggerManifest, 'warnings'>): stri
   }
   const errors = manifest.tasks.reduce((sum, t) => sum + t.errors, 0);
   if (errors > 0) {
-    warnings.push(`${errors} run(s) hit an executor or verifier error — excluded from rates.`);
+    warnings.push(`${errors} run(s) hit an executor, verifier, or engagement error — excluded from rates.`);
   }
   return warnings;
 }

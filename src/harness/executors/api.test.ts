@@ -38,6 +38,26 @@ test('ApiExecutor throws on non-2xx responses', async () => {
   await assert.rejects(() => executor.run('hi', '/tmp'), /status 500/);
 });
 
+test('ApiExecutor ignores usage objects that do not contain finite token counts', async () => {
+  const fetchImpl: typeof fetch = (async () => jsonResponse({
+    choices: [{ message: { content: 'answer' } }],
+    usage: { prompt_tokens: '10', completion_tokens: null },
+  })) as typeof fetch;
+  const executor = new ApiExecutor({ apiKey: 'k', fetchImpl });
+  const result = await executor.run('hi', '/tmp');
+  assert.equal(result.output, 'answer');
+  assert.equal(result.tokens, undefined);
+});
+
+test('ApiExecutor keeps a token field that is present and drops one that is not', async () => {
+  const fetchImpl: typeof fetch = (async () => jsonResponse({
+    choices: [{ message: { content: 'answer' } }],
+    usage: { prompt_tokens: 12 },
+  })) as typeof fetch;
+  const executor = new ApiExecutor({ apiKey: 'k', fetchImpl });
+  assert.deepEqual((await executor.run('hi', '/tmp')).tokens, { input: 12 });
+});
+
 test('ApiExecutor throws when the payload has no message content', async () => {
   const fetchImpl: typeof fetch = (async () => jsonResponse({ choices: [] })) as typeof fetch;
   const executor = new ApiExecutor({ apiKey: 'k', fetchImpl });
