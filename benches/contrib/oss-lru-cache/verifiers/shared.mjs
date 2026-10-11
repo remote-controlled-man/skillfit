@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { cpSync, existsSync, lstatSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { checksFor } from './cases.mjs';
 
@@ -15,7 +15,8 @@ function files(root, rel = '') { return readdirSync(join(root, rel), { withFileT
 }); }
 export function testRun(root, tests, pattern) {
   const env = { ...process.env }; delete env.NODE_TEST_CONTEXT;
-  const result = spawnSync(process.execPath, ['--test', `--test-reporter=${join(bench, 'verifiers/test-reporter.mjs')}`,
+  const reporter = pathToFileURL(join(bench, 'verifiers/test-reporter.mjs')).href;
+  const result = spawnSync(process.execPath, ['--test', `--test-reporter=${reporter}`,
     ...(pattern ? [`--test-name-pattern=${pattern}`] : []), ...tests], { cwd: root, encoding: 'utf8', timeout: 5000, env });
   let evidence;
   try { evidence = JSON.parse(result.stdout.trim()); } catch { evidence = null; }

@@ -15,6 +15,8 @@
 - Agent and verifier output captures are bounded. Verifier and git processes see EOF on stdin.
   API token counts are accepted only when they are finite numbers. The CLI version is read from
   `package.json`.
+- On Windows, a run directory on another drive is not treated as nested inside an input, bench
+  text stays LF, and the historical-test reporter is loaded by file URL.
 
 ## Unreleased — installed delivery, bounded runs, and OSS benches (2026-10-09)
 

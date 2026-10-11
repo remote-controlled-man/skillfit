@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent, skillUserDirSpecs, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
@@ -58,7 +58,10 @@ export function validateCallBudget(planned: number, ceiling?: number): number {
 
 function inside(root: string, path: string): boolean {
   const rel = relative(resolve(root), resolve(path));
-  return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !rel.startsWith(sep));
+  if (rel === '') return true;
+  // path.relative returns an absolute path when two Windows paths are on different drives.
+  if (isAbsolute(rel)) return false;
+  return !rel.startsWith(`..${sep}`) && rel !== '..' && !rel.startsWith(sep);
 }
 
 function physicalPath(path: string): string {

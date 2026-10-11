@@ -60,7 +60,8 @@ test('call ledger and index retain completed calls; a larger ceiling never adds 
   await guarded.run('a', s.root); await guarded.run('b', s.root);
   await assert.rejects(() => guarded.run('replacement', s.root), /ceiling reached/);
   assert.equal(calls, 2);
-  symlinkSync('/missing-unfollowed-target', join(s.groupDir, 'agent-link'));
+  const linkTarget = process.platform === 'win32' ? 'missing-unfollowed-target' : '/missing-unfollowed-target';
+  symlinkSync(linkTarget, join(s.groupDir, 'agent-link'));
   session.finish();
   assert.equal(session.summary().status, 'stopped');
   const ledger = readFileSync(join(s.groupDir, '_calls.jsonl'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
@@ -68,7 +69,7 @@ test('call ledger and index retain completed calls; a larger ceiling never adds 
   const index = JSON.parse(readFileSync(join(s.groupDir, '_artifacts.json'), 'utf8'));
   assert.equal(index.files['_plan.json'], sha256File(join(s.groupDir, '_plan.json')));
   assert.equal(index.files['_session.json'], sha256File(join(s.groupDir, '_session.json')));
-  assert.equal(index.links['agent-link'], '/missing-unfollowed-target');
+  assert.equal(index.links['agent-link'], linkTarget);
 });
 
 test('a changed frozen input retains returned output but blocks subsequent calls', async t => {
