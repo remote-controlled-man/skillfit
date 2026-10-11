@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.8.0] — 2026-10-11
+
+First publication to npm. Clone, `npm ci`, and `npm run build` remain valid; `npx skillfit` works after this release.
+
+- `--compete-installed` copies other user-level Skills into a trigger trial. Without it, recall is an upper bound. System Skills and plugins outside the matrix directories are not copied.
+- Positive trigger tasks may set `triggerClass` to `explicit`, `implicit`, or `contextual`. Unlabeled tasks stay in the pooled recall.
+- Codex trigger runs say that detection counted a `SKILL.md` read. Installed-mode reports separate a long-body read from the task result. A run below 8 tasks × 5 graded pairs is not an installation recommendation.
+- Claude Code trigger capture, Cursor / Gemini CLI / OpenCode adapters, and Streamable HTTP MCP preflight remain open.
+
+## Unreleased — record what trigger and publication do not yet cover (2026-10-11)
+
+- State in the README roadmap, metrics protocol, and installed-Skill guide that trigger recall is an
+  upper bound, Codex counts a `SKILL.md` read, and `installed` mode does not separate description
+  discovery from reading the long body.
+- Record that the eight-skill study, the 67-Skill catalog, and the 13-Skill starter set are not an
+  installation recommendation. Stop the driver Skill from suggesting `npx skillfit`.
+
 ## Unreleased — measurement and write-path fixes (2026-10-11)
 
 - Exclude an empty final message from graded rates as an engagement error. A command task still

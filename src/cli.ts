@@ -32,6 +32,7 @@ Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
   --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
+  --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
   --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})
@@ -83,6 +84,7 @@ async function main(): Promise<void> {
       agent: { type: 'string' },
       'judge-agent': { type: 'string' },
       mode: { type: 'string' },
+      'compete-installed': { type: 'boolean', default: false },
       input: { type: 'string' },
       bench: { type: 'string' },
       trials: { type: 'string' },
@@ -190,6 +192,7 @@ async function main(): Promise<void> {
         mode,
         inputMode,
         judgeAgent: values['judge-agent'],
+        competeInstalled: values['compete-installed'],
         maxCalls,
         trials,
       });

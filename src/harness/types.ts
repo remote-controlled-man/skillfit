@@ -44,6 +44,8 @@ export interface BenchTask {
   oracle?: string;
   rubric?: string;
   shouldTrigger?: boolean;
+  /** How a positive trigger task is phrased. Absent tasks stay in the pooled recall. */
+  triggerClass?: 'explicit' | 'implicit' | 'contextual';
 }
 
 export interface Bench {

@@ -10,8 +10,9 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 
 ## Prerequisites
 
-Check availability first: `npx skillfit --version` (or `node dist/cli.js --version` inside a clone). If it
-fails, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
+Check availability inside a clone: `node dist/cli.js --version`. There is no npm package, so do not
+suggest `npx skillfit`. If the clone command fails, tell the user to install from
+https://github.com/remote-controlled-man/skillfit and stop.
 
 ## Which command for which question
 
@@ -20,7 +21,7 @@ fails, tell the user to install from https://github.com/remote-controlled-man/sk
 | "我的 skill 有没有被用到 / are my skills used at all" | `skillfit report` — read-only, free, instant; start here |
 | "这个配置健不健康" | `skillfit doctor` — read-only |
 | "这个 skill 值不值得装 / does this skill help" | `skillfit eval <skill-path> --bench <bench> --agent <id> --trials 3` |
-| "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger` |
+| "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger`. Add `--compete-installed` to copy other user Skills; otherwise recall is an upper bound. Codex counts a `SKILL.md` read |
 | "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
 | "这个 MCP / AGENTS.md 真的有帮助吗" | `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/config-experiments.md) |
 | "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]` |

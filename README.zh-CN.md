@@ -171,7 +171,7 @@ node ./personal-codex/setup.mjs --yes
 
 ## 我们自己的数据
 
-我们用 skillfit 的 harness 测了 8 个流行的工作流 skill（24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线）。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置：
+我们用 skillfit 的 harness 测了 8 个流行的工作流 skill（24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线）。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置。报告标成 indicative 的运行也不是安装建议：
 
 | Skill | 质量差值 | 输入 token | 结论 |
 |---|---:|---:|---|
@@ -202,15 +202,18 @@ node ./personal-codex/setup.mjs --yes
 - [x] doctor / eval / install 核心闭环
 - [x] 配对 A/B harness + 盲评
 - [x] 统计判定（McNemar 精确检验 + 配对 bootstrap CI，manifest v4）
-- [x] 触发率测量（`--mode trigger`：召回率 / 误触发率，带 Wilson 置信区间）
-- [x] bench 脚手架（`bench init` + `bench check`）、翻车冻结（`--freeze`）、git 历史挖矿（`--from-commit`）与难度校准（`--calibrate`）
+- [x] 单个 Skill、旁边没有其他 Skill 时的触发率（Kimi Code 与 Codex CLI 的 `--mode trigger`：召回率、误触发率，带 Wilson 置信区间）。在它和真实已装集合竞争之前，召回率是上限。Codex 的检测是读了 `SKILL.md`，不是一次 Skill 调用事件。
+- [x] bench 脚手架（`bench init` + `bench check`）、翻车冻结（`--freeze`）、git 历史挖矿（`--from-commit`）与难度校准（`--calibrate`）。`bench check` 是离线完整性检查，不是 agent 效果分数。
 - [x] 使用相同 prompt 的规则与 MCP 工作区 A/B 实验
 - [x] 只读 stdio MCP 握手与工具目录审计
-- [ ] Claude Code 的触发捕获（卡在账号不可用）
+- [ ] Claude Code 的触发捕获，并在真机上验证（卡在账号不可用）
+- [x] 正例任务可选 `triggerClass`（`explicit`、`implicit`、`contextual`）。没标类别的任务仍只进汇总召回率。
+- [x] `--compete-installed` 把其他用户级 Skill 复制进 trigger 试验。矩阵目录之外的系统 Skill 和插件不会被复制。`installed` 把「读了长正文」和任务结果分开报告；这次读取不是 trigger 召回率。
+- [ ] 安装建议。2026 年 7 月的 8 个 Skill 实验没有可靠的任务质量增益。67 个 Skill 目录和 13 个入门套装都没有作为一组被评过。
+- [ ] 发布到 npm。`npx skillfit` 不存在。路径仍是克隆、`npm ci`、`npm run build`。
 - [ ] 社区 bench 与 evidence 提交（CI 重跑可复现配置，不收无法验证的结果）
 - [ ] Cursor / Gemini CLI / OpenCode 适配器
 - [ ] Streamable HTTP 与 2026 无状态 MCP 预检
-- [ ] 完整已安装 Skill 集合下的路由竞争
 
 ## 贡献
 

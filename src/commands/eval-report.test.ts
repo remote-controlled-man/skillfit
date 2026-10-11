@@ -280,7 +280,7 @@ test('report uses completed scale after exclusions and warns about collapsed int
   const markdown = renderEvalMarkdown(parseEvalReport(value));
   assert.match(markdown, /Completed scale: 0 task\(s\) have at least 5 graded pairs/);
   assert.match(markdown, /interval collapsed.*does not establish zero uncertainty/);
-  assert.match(markdown, /The run is indicative/);
+  assert.match(markdown, /No installation recommendation: this run is below 8 tasks/);
 });
 
 test('managed reports refuse contradictory call coverage and withhold decisions for partial runs', () => {
@@ -308,7 +308,7 @@ test('installed report validates and distinguishes read observations from task q
   conditions['treatment']!['skillReads'] = { observed: 1, unobserved: 1, unknown: 0 };
   const markdown = renderEvalMarkdown(parseEvalReport(value));
   assert.match(markdown, /Native Skill-read observations/);
-  assert.match(markdown, /does not prove the Skill was unused/);
+  assert.match(markdown, /no body read was detected/);
   assert.match(markdown, /not trigger precision or recall/);
   conditions['treatment']!['skillReads'] = { observed: 2, unobserved: 1, unknown: 0 };
   assert.throws(() => parseEvalReport(value), /must total the surviving graded trials/);

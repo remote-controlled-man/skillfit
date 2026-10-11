@@ -87,8 +87,7 @@ samples, retries or partial task-set truncation are added to meet a budget; see
 
 Whether the agent invokes the skill when it should, and only then. A skill's realized value is gated by this:
 an excellent skill that never fires — or fires everywhere — is worthless. Public benchmarks measure efficacy
-conditional on injection; trigger quality is skillfit's differentiating layer. (Status: **partial** — trigger
-mode measures the rates below, while positive task classes and real-set competition remain specification.)
+conditional on injection; trigger quality is skillfit's differentiating layer. (Status: **partial** — without `--compete-installed`, trigger mode installs one Skill alone and recall is an upper bound. That flag copies other user-level Skills from the matrix directories; system Skills and plugins outside those directories are not copied. Optional `triggerClass` values are `explicit`, `implicit`, and `contextual`; unlabeled positive tasks stay in the pooled recall. Claude Code capture is implemented against the documented shape and is not machine-verified. Codex detection counts a `SKILL.md` read.)
 
 - **Task classes** (adopted from OpenAI's eval-skills taxonomy): `explicit` (skill named in prompt),
   `implicit` (in-domain task, skill not named), `contextual` (noisy realistic task), `negative`

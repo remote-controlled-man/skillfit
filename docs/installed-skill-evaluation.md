@@ -1,6 +1,6 @@
 # Paired evaluation of an installed Skill
 
-skillfit is a TypeScript CLI distributed through npm and run by Node.js 22 or newer.
+skillfit is a TypeScript CLI run by Node.js 22 or newer from a source checkout (`npm ci`, then `npm run build`). It is not published to npm, so `npx skillfit` does not work.
 The core uses only Node built-ins. Shell/Python scripts may be optional resources of
 the Skill being evaluated; skillfit neither installs their runtimes nor requires
 them for its own CLI. Package publication is separate from local evaluation.
@@ -10,8 +10,8 @@ them for its own CLI. Package publication is separate from local evaluation.
 | Mode | Treatment | Question |
 | --- | --- | --- |
 | `inject` (default) | Markdown/YAML/JSON content appended to the task prompt | Does the supplied content help when presented? |
-| `installed` | Complete Skill directory copied into the disposable treatment project | Does native discovery plus the complete Skill help this task? |
-| `trigger` | Complete Skill available in single-arm workspaces | Is it read/invoked on relevant and irrelevant requests? |
+| `installed` | Complete Skill directory copied into the disposable treatment project | Does native discovery plus the complete Skill help this task? This does not separate a description-catalog hit from a later read of the long body. |
+| `trigger` | The Skill under test alone, in single-arm workspaces | Is that one Skill read on relevant and irrelevant requests? Recall is an upper bound. Codex counts a `SKILL.md` read, not a Skill-invocation event. |
 
 ```sh
 skillfit bench check ./my-bench

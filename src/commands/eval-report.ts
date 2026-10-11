@@ -432,7 +432,7 @@ function decisionNotes(report: ReportData): string[] {
   }
   notes.push(`Scope: ${report.bench.taskCount} evaluated task(s), this target hash and executor configuration. A single task does not establish general OSS contribution quality.`);
   if (replicatedTaskCount(report) < CONCLUSIVE_TASKS) {
-    notes.push('The run is indicative. Freeze a varied task set and trial count before a separate validation run; do not keep adding trials until significance appears.');
+    notes.push('No installation recommendation: this run is below 8 tasks × 5 graded pairs and is indicative. Freeze a varied task set and trial count before a separate validation run; do not keep adding trials until significance appears.');
   }
   if (report.overall.baseline.errors + report.overall.treatment.errors > 0) {
     notes.push('Executor/verifier errors removed pairs. Inspect the raw error receipts before spending more calls.');
@@ -514,7 +514,7 @@ export function renderEvalMarkdown(report: ReportData): string {
       const reads = item[arm].skillReads;
       if (reads) lines.push(`| ${escapeMarkdown(item.id)} / ${arm} | ${reads.observed} | ${reads.unobserved} | ${reads.unknown} |`);
     }
-    lines.push('', 'Counts cover surviving graded pairs only. Read-unobserved does not prove the Skill was unused; a read does not establish benefit. These are not trigger precision or recall.', '');
+    lines.push('', 'Observed means a long-body read was detected. Unobserved means no body read was detected; the description may still have been in the catalog. Counts cover surviving graded pairs only. A read does not establish benefit. These are not trigger precision or recall.', '');
   }
   lines.push('', '## Checks and graded scores', '',
     '| Task | Baseline mean check score | Treatment mean check score | Δscore |',

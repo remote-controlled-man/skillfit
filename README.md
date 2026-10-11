@@ -174,7 +174,7 @@ Evals are only as good as their tasks. A bench is just a directory — `bench.js
 
 ## Our own data
 
-We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pairs, Codex CLI, frozen 2026-07 baseline). One showed a limited regression-test artifact signal in 2/3 treated runs; no Skill showed a robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set:
+We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pairs, Codex CLI, frozen 2026-07 baseline). One showed a limited regression-test artifact signal in 2/3 treated runs; no Skill showed a robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set, and a run the report labels indicative is not an installation recommendation:
 
 | Skill | Quality Δ | Input tokens | Verdict |
 |---|---:|---:|---|
@@ -205,15 +205,18 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 - [x] doctor / eval / install core loop
 - [x] Paired A/B harness with blind judging
 - [x] Statistical verdicts (McNemar exact + paired bootstrap CI, manifest v4)
-- [x] Trigger-rate measurement (`--mode trigger`: recall / false-trigger rate with Wilson CIs)
-- [x] Bench scaffolding (`bench init` + `bench check`), failure freezing (`--freeze`), git-history mining (`--from-commit`), difficulty calibration (`--calibrate`)
+- [x] Trigger rates for one Skill alone (`--mode trigger` on Kimi Code and Codex CLI: recall, false-trigger rate, Wilson CIs). Recall is an upper bound until that Skill competes with a real installed set. Codex detection is a `SKILL.md` read, not a Skill-invocation event.
+- [x] Bench scaffolding (`bench init` + `bench check`), failure freezing (`--freeze`), git-history mining (`--from-commit`), difficulty calibration (`--calibrate`). `bench check` is an offline integrity check, not an agent-quality score.
 - [x] Rules and MCP workspace A/B experiments with identical prompts
 - [x] Read-only stdio MCP handshake and tool-catalog audit
-- [ ] Trigger capture for Claude Code (blocked: needs working auth)
-- [ ] Community bench & evidence submissions (reproducible-config CI re-runs, not trust-me results)
+- [ ] Claude Code trigger capture, machine-verified (blocked: needs working auth)
+- [x] Optional `triggerClass` (`explicit`, `implicit`, `contextual`) on positive tasks. Unlabeled tasks stay in the pooled recall.
+- [x] `--compete-installed` copies other user-level Skills into a trigger trial. System Skills and plugins outside the matrix directories are not copied. `installed` reports a long-body read separately from the task result; that read is not trigger recall.
+- [ ] An installation recommendation. The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the 13-Skill starter set are not evaluated as sets.
+- [ ] npm publication. `npx skillfit` does not exist. Clone, `npm ci`, and `npm run build` remain the path.
+- [ ] Community bench and evidence submissions (reproducible-config CI re-runs, not trust-me results)
 - [ ] Cursor / Gemini CLI / OpenCode adapters
 - [ ] Streamable HTTP and 2026 stateless MCP preflight
-- [ ] Full installed-Skill-set routing competition
 
 ## Contributing
 
