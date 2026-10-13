@@ -34,6 +34,7 @@ relative to that file, regardless of the caller's working directory:
   "agent": "codex",
   "purpose": "validation",
   "pairOrder": "balanced",
+  "executorTimeoutSeconds": 600,
   "trials": 5,
   "maxCalls": 80,
   "runsRoot": "./runs",
@@ -53,7 +54,8 @@ relative to that file, regardless of the caller's working directory:
 ```
 
 The [request schema](schemas/eval-request.schema.json) and
-[policy schema](schemas/eval-policy.schema.json) document version 1. The runtime
+[policy schema](schemas/eval-policy.schema.json) document request version 1 and
+the versioned quality/efficiency policies. The runtime
 parser rejects unknown fields and invalid ranges. `policy` is optional and defaults
 to the conservative values above. The two complete Skills must have the same
 frontmatter name and different fingerprints. The caller must supply a fresh run
@@ -68,6 +70,15 @@ plan freeze this choice, the manifest records it, and offline assessment verifie
 the actual invocation ledger against the declared order. Older records without
 order metadata retain their original interpretation. Balancing order does not
 isolate provider cache state, pin sampling or guarantee a latency effect.
+
+Requests may declare `executorTimeoutSeconds` (integer 1–3600, default 600) for
+the real agent deadline in **both** arms. The preview and native plan bind it;
+offline audit checks each real invocation's recorded deadline. Older plans without
+the field report it as unrecorded. A changed deadline requires a new preview and
+fresh batch, and must not replace timed-out observations in an earlier batch.
+Timeouts retain their measured duration and available partial usage. A larger
+deadline increases the maximum elapsed budget without changing the call ceiling;
+it neither guarantees completion nor repairs provider availability.
 
 ```bash
 node dist/cli.js eval --request ./request.json --dry-run

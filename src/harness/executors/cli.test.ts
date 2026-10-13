@@ -118,6 +118,11 @@ test('CliExecutor.forAgent kimi-code passes the prompt as a -p file reference', 
   assert.ok(headless.argv.some((arg) => arg.includes('{promptFile}')));
 });
 
+test('CliExecutor.forAgent forwards deadlines to both ordinary and stream execution without invoking an agent', () => {
+  assert.throws(() => CliExecutor.forAgent('codex', { timeoutMs: 0 }), /timeoutMs/);
+  assert.throws(() => CliExecutor.forAgent('codex', { triggerSkillName: 'offline-deadline-check', timeoutMs: 0 }), /timeoutMs/);
+});
+
 test('CliExecutor.forAgent rejects unknown agents', () => {
   assert.throws(() => CliExecutor.forAgent('not-an-agent'), /Unknown agent/);
 });

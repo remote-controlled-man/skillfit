@@ -337,6 +337,23 @@ test('a version-2 request binds its objective to native receipts and reproduces 
   assert.deepEqual(replay.acceptance, result.acceptance);
 });
 
+test('declared deadlines are bounded, frozen before execution and reported from the native plan', async t => {
+  const f = setup(t);
+  assert.equal(parseEvalRequest(f.body, f.root).executorTimeoutSeconds, 600);
+  for (const executorTimeoutSeconds of [0, 3601, 1.5, Infinity]) {
+    assert.throws(() => parseEvalRequest({ ...f.body, executorTimeoutSeconds }, f.root), /executorTimeoutSeconds/);
+  }
+  writeFileSync(f.requestPath, JSON.stringify({ ...f.body, executorTimeoutSeconds: 1200 }));
+  const preview = await runEvalComponent(f.requestPath, { ...f.options, dryRun: true }); assert.ok('plan' in preview);
+  assert.equal(preview.plan.request.executorTimeoutSeconds, 1200); assert.equal(preview.plan.evaluation.executorTimeoutSeconds, 1200);
+  writeFileSync(f.requestPath, JSON.stringify({ ...f.body, executorTimeoutSeconds: 600 }));
+  await assert.rejects(runEvalComponent(f.requestPath, { ...f.options, dryRun: false, expectedPlanSha256: preview.plan.sha256 }), /matching the current dry-run plan/);
+  assert.equal(f.calls(), 0); assert.equal(existsSync(f.runDir), false);
+  const current = await runEvalComponent(f.requestPath, { ...f.options, dryRun: true }); assert.ok('plan' in current);
+  const result = await runEvalComponent(f.requestPath, { ...f.options, dryRun: false, expectedPlanSha256: current.plan.sha256 });
+  assert.ok('quality' in result); assert.equal(result.evidence.verified, true); assert.equal(result.environment?.executorTimeoutSeconds, 600);
+});
+
 test('adoption policy accepts only positive complete predeclared validation, never performs an upgrade', () => {
   const value = strongManifest(), result = assessEvaluation(value, verified);
   assert.equal(result.acceptance.decision, 'accept'); assert.equal(result.acceptance.eligibleForUpgrade, true);

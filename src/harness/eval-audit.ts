@@ -128,6 +128,11 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
           const r = receipt(readComponentJson(member(root, rel)).value);
           assert.equal(r.condition, arm); assert.equal(r.taskId, task.id); assert.equal(r.trial, trial);
           audit.receipts++; if (r.executorInvoked) invoked++;
+          if (details.executorTimeoutSeconds !== undefined && r.executorInvoked && plan.injectedExecutor === false) {
+            assert.ok(typeof details.executorTimeoutSeconds === 'number' && Number.isSafeInteger(details.executorTimeoutSeconds) && details.executorTimeoutSeconds >= 1 && details.executorTimeoutSeconds <= 3600);
+            const actualTiming = record(record(r.timing, 'CLI timing').execution, 'CLI execution timing');
+            assert.equal(actualTiming.timeoutMs, details.executorTimeoutSeconds * 1000, 'CLI deadline differs from the native plan.');
+          }
           if (raw.component !== undefined && record(raw.component, 'component').synthetic === false && r.error === null) {
             const timing = record(r.timing, 'CLI timing');
             assert.equal(timing.clock, 'performance.now');

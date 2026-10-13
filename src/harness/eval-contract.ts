@@ -2,6 +2,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
 import { RUN_GROUP_PATTERN } from './constants.js';
+import { DEFAULT_CLI_TIMEOUT_MS } from './executors/cli.js';
 import { sha256Text } from './hash.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS } from './report.js';
 import type { PairOrder } from './types.js';
@@ -35,6 +36,7 @@ export interface EvalRequest {
   agent: string;
   purpose: 'development' | 'validation';
   pairOrder: PairOrder;
+  executorTimeoutSeconds: number;
   trials: number;
   maxCalls: number;
   runsRoot: string;
@@ -118,7 +120,7 @@ export function parseAcceptancePolicy(value: unknown = {}): AcceptancePolicy {
 
 export function parseEvalRequest(value: unknown, baseDir: string): EvalRequest {
   const r = record(value, 'request');
-  keys(r, ['schemaVersion', 'baselineSkill', 'candidateSkill', 'bench', 'agent', 'purpose', 'pairOrder', 'trials', 'maxCalls', 'runsRoot', 'runGroup', 'policy'], 'request');
+  keys(r, ['schemaVersion', 'baselineSkill', 'candidateSkill', 'bench', 'agent', 'purpose', 'pairOrder', 'executorTimeoutSeconds', 'trials', 'maxCalls', 'runsRoot', 'runGroup', 'policy'], 'request');
   if (r.schemaVersion !== 1) throw new Error('request.schemaVersion must be 1.');
   const agent = text(r.agent, 'request.agent');
   getAgent(agent);
@@ -131,6 +133,7 @@ export function parseEvalRequest(value: unknown, baseDir: string): EvalRequest {
     candidateSkill: resolve(baseDir, text(r.candidateSkill, 'request.candidateSkill')),
     bench: resolve(baseDir, text(r.bench, 'request.bench')),
     agent, purpose: r.purpose, pairOrder: r.pairOrder ?? 'baseline-first',
+    executorTimeoutSeconds: numeric(r.executorTimeoutSeconds ?? DEFAULT_CLI_TIMEOUT_MS / 1000, 'request.executorTimeoutSeconds', 1, 3600, true),
     trials: numeric(r.trials, 'request.trials', 1, 20, true),
     maxCalls: numeric(r.maxCalls, 'request.maxCalls', 1, Number.MAX_SAFE_INTEGER, true),
     runsRoot: resolve(baseDir, text(r.runsRoot, 'request.runsRoot')), runGroup,

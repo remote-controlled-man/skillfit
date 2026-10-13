@@ -128,6 +128,8 @@ For new cost comparisons, set `pairOrder: "balanced"` in the request to alternat
 
 The default policy requires a demonstrated quality gain. An explicit version-2 `efficiency` policy can accept stable uncached-input savings with no observed correctness regression; a quality tie keeps its `inconclusive` verdict. Both objectives require independent validation, complete evidence and spending coverage. See the [predeclared cost example](docs/examples/eval-request.diagnosing-v2-efficiency.json).
 
+Requests can also pin `executorTimeoutSeconds` (default 600) for both versions. A changed deadline requires a new plan and batch; previous timeouts and their available spending remain in the evidence.
+
 ```bash
 node dist/cli.js eval --request ./request.json --dry-run
 node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>

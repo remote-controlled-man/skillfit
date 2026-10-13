@@ -24,7 +24,7 @@ export interface CliExecutorOptions {
   clock?: ExecutionClock;
 }
 
-const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+export const DEFAULT_CLI_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_AGENT_OUTPUT_BYTES = 32 * 1024 * 1024;
 const DEFAULT_PROMPT_FILE = '_prompt.txt';
 const PROMPT_FILE_PLACEHOLDER = '{promptFile}';
@@ -88,7 +88,7 @@ export class CliExecutor implements Executor {
     }
     this.argv = options.argv;
     this.label = options.label ?? options.argv[0] ?? 'cli';
-    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.timeoutMs = options.timeoutMs ?? DEFAULT_CLI_TIMEOUT_MS;
     this.shell = options.shell ?? true;
     this.env = options.env;
     this.promptVia = options.promptVia ?? 'stdin';
@@ -101,7 +101,7 @@ export class CliExecutor implements Executor {
     new ExecutionDeadline(this.timeoutMs, this.clock);
   }
 
-  static forAgent(agentId: string, opts?: { triggerSkillName?: string; trustProjectConfig?: boolean }): CliExecutor {
+  static forAgent(agentId: string, opts?: { triggerSkillName?: string; trustProjectConfig?: boolean; timeoutMs?: number }): CliExecutor {
     const agent = getAgent(agentId);
     const headless = agent.headless;
     const projectTrustConfigArg = opts?.trustProjectConfig ? headless.projectTrustConfigArg : undefined;
@@ -118,6 +118,7 @@ export class CliExecutor implements Executor {
       return new CliExecutor({
         argv: streamJson.argv,
         label: agent.id,
+        timeoutMs: opts.timeoutMs,
         promptVia: headless.promptVia,
         promptFile: headless.promptFile,
         usageFromSessionLog: headless.usageFromSessionLog ?? false,
@@ -132,6 +133,7 @@ export class CliExecutor implements Executor {
     return new CliExecutor({
       argv: headless.argv,
       label: agent.id,
+      timeoutMs: opts?.timeoutMs,
       promptVia: headless.promptVia,
       promptFile: headless.promptFile,
       usageFromSessionLog: headless.usageFromSessionLog ?? false,

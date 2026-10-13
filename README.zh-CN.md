@@ -125,6 +125,8 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 默认策略要求证实质量提升。显式声明版本 2 的 `efficiency` 策略后，未观察到正确性退步且未缓存输入成本稳定下降，也可通过验收；质量持平仍保留 `inconclusive` 判定。两种目标都要求独立验证、完整证据和成本覆盖。参见[预先声明的成本示例](docs/examples/eval-request.diagnosing-v2-efficiency.json)。
 
+请求还可通过 `executorTimeoutSeconds` 固定两版的单次时限（默认 600 秒）。改变时限必须声明新计划和新批次；之前的超时及已知花费仍保留在证据中。
+
 ```bash
 node dist/cli.js eval --request ./request.json --dry-run
 node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>

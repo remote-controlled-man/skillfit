@@ -7,7 +7,7 @@ import { loadBench } from '../harness/bench.js';
 import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { ApiExecutor } from '../harness/executors/api.js';
-import { CliExecutor } from '../harness/executors/cli.js';
+import { CliExecutor, DEFAULT_CLI_TIMEOUT_MS } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
 import { assertInstalledSkillFixtures, assertSkillRevisionTargets, collectInstalledSkillTarget } from '../harness/installed-skill.js';
 import { assertInputModeSupported } from '../harness/prompt.js';
@@ -37,6 +37,7 @@ export interface EvalPreview {
   maxCalls: number;
   outputDir: string;
   pairOrder?: PairOrder;
+  executorTimeoutSeconds?: number;
 }
 
 export interface EvalOptions {
@@ -47,6 +48,7 @@ export interface EvalOptions {
   bench?: string;
   trials?: number;
   pairOrder?: PairOrder;
+  executorTimeoutSeconds?: number;
   maxCalls?: number;
   sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
   agent?: string;
@@ -102,10 +104,11 @@ function resolveBenchDir(bench: string | undefined): string {
   throw new Error(`More than one bundled bench is available; pick one explicitly:\n${names}`);
 }
 
-function resolveExecutor(agent: string | undefined, target: EvaluationTarget, installed = false): Executor {
+function resolveExecutor(agent: string | undefined, target: EvaluationTarget, installed = false, executorTimeoutSeconds?: number): Executor {
   if (agent) {
     const definition = getAgent(agent);
     return CliExecutor.forAgent(agent, {
+      ...(executorTimeoutSeconds !== undefined ? { timeoutMs: executorTimeoutSeconds * 1000 } : {}),
       trustProjectConfig: target.kind === 'mcp' && definition.headless.projectTrustConfigArg !== undefined,
       ...(installed && definition.headless.streamJson ? { triggerSkillName: target.name } : {}),
     });
@@ -365,6 +368,11 @@ async function runEvalTrigger(
 }
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
+  const executorTimeoutSeconds = options.executorTimeoutSeconds ?? DEFAULT_CLI_TIMEOUT_MS / 1000;
+  if (!Number.isSafeInteger(executorTimeoutSeconds) || executorTimeoutSeconds < 1 || executorTimeoutSeconds > 3600) {
+    throw new Error('executorTimeoutSeconds must be an integer between 1 and 3600.');
+  }
+  if (options.executorTimeoutSeconds !== undefined && !options.agent && !options.executor) throw new Error('executorTimeoutSeconds requires a CLI agent.');
   const log = options.log ?? ((msg: string) => console.log(msg));
   const installed = options.mode === 'installed';
   if (options.baselineSkillPath !== undefined && !installed) {
@@ -411,6 +419,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
 
   if ((options.mode ?? 'inject') === 'trigger') {
+    if (options.executorTimeoutSeconds !== undefined) throw new Error('executorTimeoutSeconds is only available for paired experiments.');
     if (options.pairOrder !== undefined) throw new Error('pairOrder is only available for paired experiments.');
     if (target.kind !== 'skill') {
       throw new Error('trigger mode is only available for Skill targets; rules and MCP targets use paired inject-mode workspaces.');
@@ -445,7 +454,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   let executor: Executor | null = null;
   try {
-    executor = options.executor ?? resolveExecutor(options.agent, target, installed);
+    executor = options.executor ?? resolveExecutor(options.agent, target, installed, options.executorTimeoutSeconds);
   } catch (error) {
     if (!options.dryRun) throw error;
     log(`Note: ${(error as Error).message}`);
@@ -472,13 +481,15 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     baseline: baselineTarget ? { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, sha256: baselineTarget.sha256, files: baselineTarget.files } : null,
     bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },
     executor: executor?.describe() ?? null, judge: judge?.describe() ?? null, inputMode,
-    installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, pairOrder, outputDir: join(runsRoot, runGroup),
+    installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, pairOrder,
+    ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), outputDir: join(runsRoot, runGroup),
   });
 
   if (options.dryRun) {
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
     log(`Pair order: ${pairOrder}; arms remain adjacent`);
+    if (options.agent || options.executorTimeoutSeconds !== undefined) log(`Agent deadline: ${executorTimeoutSeconds}s per invocation in both arms`);
     if (skillInstallDir) {
       log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);
       log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
@@ -491,7 +502,8 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
   const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
-    { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder, executor: executor.describe(), judge: judge?.describe() ?? null,
+    { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder,
+      ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), executor: executor.describe(), judge: judge?.describe() ?? null,
       ...(options.component ? { component: options.component } : {}),
       ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
   let manifest: RunManifest;

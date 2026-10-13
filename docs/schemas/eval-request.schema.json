@@ -12,6 +12,7 @@
     "agent": { "enum": ["codex", "claude-code", "kimi-code"] },
     "purpose": { "enum": ["development", "validation"] },
     "pairOrder": { "enum": ["baseline-first", "balanced"], "default": "baseline-first" },
+    "executorTimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 3600, "default": 600 },
     "trials": { "type": "integer", "minimum": 1, "maximum": 20 },
     "maxCalls": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
     "runsRoot": { "$ref": "#/$defs/path" },
