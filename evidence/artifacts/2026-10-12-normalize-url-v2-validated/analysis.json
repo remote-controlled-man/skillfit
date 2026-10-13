@@ -1,0 +1,735 @@
+{
+  "schemaVersion": 1,
+  "method": "Cohorts remain separate; readiness spending is separate and never graded. Descriptive costs only, no significance/non-inferiority/billing inference. Model reruns reproduce procedure, not identical samples.",
+  "actualInvocations": 5,
+  "declaredInvocations": 5,
+  "availability": {
+    "schemaVersion": 1,
+    "purpose": "Availability only; not a benchmark, judge or graded success.",
+    "executorInvoked": true,
+    "ready": true,
+    "error": null,
+    "startedAt": "2026-10-12T15:25:50.250Z",
+    "finishedAt": "2026-10-12T15:26:14.868Z",
+    "durationSeconds": 24.618,
+    "wallDurationSeconds": 24.618,
+    "tokens": {
+      "input": 16687,
+      "output": 5,
+      "cachedInput": 13184
+    },
+    "usageStatus": "final",
+    "executionTiming": {
+      "clock": "performance.now",
+      "timeoutMs": 90000,
+      "heartbeatMs": 1000,
+      "anomalyThresholdMs": 5000,
+      "elapsedMs": 24594.525,
+      "wallElapsedMs": 24594,
+      "maxObservationGapMs": 1003,
+      "maxClockSkewMs": 0.626,
+      "timeoutFiredAfterMs": null,
+      "terminationDelayMs": null,
+      "anomaly": null
+    },
+    "output": "READY"
+  },
+  "cohorts": [
+    {
+      "name": "transfer-validated",
+      "runGroup": "normalize-url-v2-validated-20261012",
+      "experiment": {
+        "schemaVersion": 1,
+        "status": "completed",
+        "plannedCalls": 4,
+        "maxCalls": 4,
+        "callsStarted": 4,
+        "callsFinished": 4,
+        "stopReason": null,
+        "planSha256": "9c9cf3c84b138ec81d7f8bc052550de596f89b01d9ea1adc1f11eba798b57dac"
+      },
+      "quality": {
+        "baseline": {
+          "passes": 2,
+          "trials": 2,
+          "errors": 0,
+          "skillReads": {
+            "observed": 2,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 714164,
+            "output": 18302
+          },
+          "tokenCoverage": {
+            "input": 2,
+            "output": 2
+          }
+        },
+        "treatment": {
+          "passes": 2,
+          "trials": 2,
+          "errors": 0,
+          "skillReads": {
+            "observed": 2,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 507671,
+            "output": 16180
+          },
+          "tokenCoverage": {
+            "input": 2,
+            "output": 2
+          }
+        },
+        "delta": 0,
+        "scoreDelta": 0,
+        "verdict": "inconclusive",
+        "stats": {
+          "discordant": {
+            "improved": 0,
+            "regressed": 0
+          },
+          "mcnemarP": 1,
+          "deltaCi": {
+            "point": 0,
+            "lo": 0,
+            "hi": 0,
+            "resamples": 2000
+          },
+          "scoreDeltaCi": {
+            "point": 0,
+            "lo": 0,
+            "hi": 0,
+            "resamples": 2000
+          }
+        }
+      },
+      "runs": {
+        "paired": {
+          "baseline": {
+            "runs": 2,
+            "passes": 2,
+            "metrics": {
+              "input": {
+                "knownTotal": 714164,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 644352,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 69812,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 18302,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 640.441,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          },
+          "treatment": {
+            "runs": 2,
+            "passes": 2,
+            "metrics": {
+              "input": {
+                "knownTotal": 507671,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 417408,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 90263,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 16180,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 617.471,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          }
+        },
+        "attempts": {
+          "baseline": {
+            "runs": 2,
+            "passes": 2,
+            "metrics": {
+              "input": {
+                "knownTotal": 714164,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 644352,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 69812,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 18302,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 640.441,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          },
+          "treatment": {
+            "runs": 2,
+            "passes": 2,
+            "metrics": {
+              "input": {
+                "knownTotal": 507671,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 417408,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 90263,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 16180,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 617.471,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          }
+        },
+        "notInvoked": {
+          "baseline": 0,
+          "treatment": 0
+        }
+      },
+      "metrics": {
+        "paired": {
+          "input": {
+            "baseline": {
+              "knownTotal": 714164,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 507671,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": -0.2891394693655799,
+            "perSuccess": {
+              "baseline": 357082,
+              "treatment": 253835.5,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": -0.2891394693655799
+          },
+          "cachedInput": {
+            "baseline": {
+              "knownTotal": 644352,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 417408,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": -0.35220500595947557,
+            "perSuccess": {
+              "baseline": 322176,
+              "treatment": 208704,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": -0.35220500595947557
+          },
+          "uncachedInput": {
+            "baseline": {
+              "knownTotal": 69812,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 90263,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": 0.29294390649172053,
+            "perSuccess": {
+              "baseline": 34906,
+              "treatment": 45131.5,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": 0.29294390649172053
+          },
+          "output": {
+            "baseline": {
+              "knownTotal": 18302,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 16180,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": -0.11594361271992137,
+            "perSuccess": {
+              "baseline": 9151,
+              "treatment": 8090,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": -0.11594361271992137
+          },
+          "durationSeconds": {
+            "baseline": {
+              "knownTotal": 640.441,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 617.471,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": -0.035865911145601226,
+            "perSuccess": {
+              "baseline": 320.2205,
+              "treatment": 308.7355,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": -0.035865911145601226
+          }
+        },
+        "attempts": {
+          "input": {
+            "baseline": {
+              "knownTotal": 714164,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 507671,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": -0.2891394693655799,
+            "perSuccess": {
+              "baseline": 357082,
+              "treatment": 253835.5,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": -0.2891394693655799
+          },
+          "cachedInput": {
+            "baseline": {
+              "knownTotal": 644352,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 417408,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": -0.35220500595947557,
+            "perSuccess": {
+              "baseline": 322176,
+              "treatment": 208704,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": -0.35220500595947557
+          },
+          "uncachedInput": {
+            "baseline": {
+              "knownTotal": 69812,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 90263,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": 0.29294390649172053,
+            "perSuccess": {
+              "baseline": 34906,
+              "treatment": 45131.5,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": 0.29294390649172053
+          },
+          "output": {
+            "baseline": {
+              "knownTotal": 18302,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 16180,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": -0.11594361271992137,
+            "perSuccess": {
+              "baseline": 9151,
+              "treatment": 8090,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": -0.11594361271992137
+          },
+          "durationSeconds": {
+            "baseline": {
+              "knownTotal": 640.441,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 617.471,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": -0.035865911145601226,
+            "perSuccess": {
+              "baseline": 320.2205,
+              "treatment": 308.7355,
+              "knownLowerBound": false
+            },
+            "perSuccessChange": -0.035865911145601226
+          }
+        }
+      },
+      "pairs": [
+        {
+          "task": "query-shape",
+          "trial": 1,
+          "graded": true,
+          "baseline": {
+            "passed": true,
+            "score": 1,
+            "error": null,
+            "readObserved": true,
+            "misses": []
+          },
+          "treatment": {
+            "passed": true,
+            "score": 1,
+            "error": null,
+            "readObserved": true,
+            "misses": []
+          },
+          "timing": {
+            "baseline": {
+              "clock": "performance.now",
+              "wallDurationSeconds": 248.603,
+              "execution": {
+                "clock": "performance.now",
+                "timeoutMs": 600000,
+                "heartbeatMs": 1000,
+                "anomalyThresholdMs": 5000,
+                "elapsedMs": 248589.007,
+                "wallElapsedMs": 248590,
+                "maxObservationGapMs": 1003,
+                "maxClockSkewMs": 1.682,
+                "timeoutFiredAfterMs": null,
+                "terminationDelayMs": null,
+                "anomaly": null
+              }
+            },
+            "treatment": {
+              "clock": "performance.now",
+              "wallDurationSeconds": 339.384,
+              "execution": {
+                "clock": "performance.now",
+                "timeoutMs": 600000,
+                "heartbeatMs": 1000,
+                "anomalyThresholdMs": 5000,
+                "elapsedMs": 339388.619,
+                "wallElapsedMs": 339370,
+                "maxObservationGapMs": 1003,
+                "maxClockSkewMs": 18.698,
+                "timeoutFiredAfterMs": null,
+                "terminationDelayMs": null,
+                "anomaly": null
+              }
+            }
+          },
+          "changedChecks": [],
+          "costChanges": {
+            "input": {
+              "baseline": 290811,
+              "treatment": 214661,
+              "change": -0.26185391886826836
+            },
+            "cachedInput": {
+              "baseline": 262016,
+              "treatment": 177664,
+              "change": -0.32193453834880315
+            },
+            "output": {
+              "baseline": 7724,
+              "treatment": 8951,
+              "change": 0.15885551527705855
+            },
+            "uncachedInput": {
+              "baseline": 28795,
+              "treatment": 36997,
+              "change": 0.28484111824969616
+            },
+            "durationSeconds": {
+              "baseline": 248.602,
+              "treatment": 339.403,
+              "change": 0.3652464581942221
+            }
+          }
+        },
+        {
+          "task": "query-shape",
+          "trial": 2,
+          "graded": true,
+          "baseline": {
+            "passed": true,
+            "score": 1,
+            "error": null,
+            "readObserved": true,
+            "misses": []
+          },
+          "treatment": {
+            "passed": true,
+            "score": 1,
+            "error": null,
+            "readObserved": true,
+            "misses": []
+          },
+          "timing": {
+            "baseline": {
+              "clock": "performance.now",
+              "wallDurationSeconds": 391.837,
+              "execution": {
+                "clock": "performance.now",
+                "timeoutMs": 600000,
+                "heartbeatMs": 1000,
+                "anomalyThresholdMs": 5000,
+                "elapsedMs": 391825.206,
+                "wallElapsedMs": 391824,
+                "maxObservationGapMs": 1005.01,
+                "maxClockSkewMs": 1.71,
+                "timeoutFiredAfterMs": null,
+                "terminationDelayMs": null,
+                "anomaly": null
+              }
+            },
+            "treatment": {
+              "clock": "performance.now",
+              "wallDurationSeconds": 278.069,
+              "execution": {
+                "clock": "performance.now",
+                "timeoutMs": 600000,
+                "heartbeatMs": 1000,
+                "anomalyThresholdMs": 5000,
+                "elapsedMs": 278058.029,
+                "wallElapsedMs": 278058,
+                "maxObservationGapMs": 1003,
+                "maxClockSkewMs": 0.974,
+                "timeoutFiredAfterMs": null,
+                "terminationDelayMs": null,
+                "anomaly": null
+              }
+            }
+          },
+          "changedChecks": [],
+          "costChanges": {
+            "input": {
+              "baseline": 423353,
+              "treatment": 293010,
+              "change": -0.30788254718875263
+            },
+            "cachedInput": {
+              "baseline": 382336,
+              "treatment": 239744,
+              "change": -0.3729494476062939
+            },
+            "output": {
+              "baseline": 10578,
+              "treatment": 7229,
+              "change": -0.3166004915863112
+            },
+            "uncachedInput": {
+              "baseline": 41017,
+              "treatment": 53266,
+              "change": 0.29863227442280027
+            },
+            "durationSeconds": {
+              "baseline": 391.839,
+              "treatment": 278.068,
+              "change": -0.2903513943226683
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

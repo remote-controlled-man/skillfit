@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "mode": "calibration",
+  "benchSha256": "b276606b5d00bdd98a65d8fa8944ba38b73efc7429e73b5dc56d83b8937950b2",
+  "matched": 6,
+  "excluded": 0,
+  "rows": [
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    }
+  ]
+}

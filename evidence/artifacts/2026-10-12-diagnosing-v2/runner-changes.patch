@@ -1,0 +1,1205 @@
+diff --git a/README.md b/README.md
+index 6f241c1..ad581c1 100644
+--- a/README.md
++++ b/README.md
+@@ -112,6 +112,14 @@ results, usage coverage and installation evidence gaps. A single task informs
+ that task; it does not prove general benefit. Follow the [real OSS workflow](docs/oss-task-evaluation.md)
+ or replay the [pinned mcp-use example](benches/contrib/oss-mcp-use-utf8/README.md).
+ 
++## Compare Skill revisions
++
++Use `--baseline-skill` with `--mode installed` to compare a previous complete Skill against a revised version. Both must have the same `SKILL.md` frontmatter name and different content fingerprints. Baseline receives the previous version; treatment receives the target version, with identical natural task prompts and independent outcome verifiers. Plans, manifests and trial receipts pin both versions, including scripts and binary resources. A change to either source stops further calls. The comparison measures revision effects; installation benefit still needs a separate no-Skill baseline. See [the revision workflow](docs/skill-revisions.md).
++
++```bash
++node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
++```
++
+ ## Test rules and MCP setups
+ 
+ Put a `skillfit-experiment.json` next to baseline and treatment project overlays. A rules experiment can add `AGENTS.md`; an MCP experiment can add `.codex/config.toml`, `.mcp.json`, or the path defined for another supported agent. skillfit copies the same task fixture into both arms, snapshots it for an identical prompt, then applies each overlay so the local agent discovers configuration through its normal loader.
+@@ -140,6 +148,8 @@ Try the synthetic example below, then replace its path with the `Manifest:` path
+ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
+ ```
+ 
++New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
++
+ ## Selectable Codex setup
+ 
+ From a fresh clone, inspect the source catalog of 67 installable Skills with `--list`, then use repeated `--skill` flags to select only those relevant to your tasks. The seven retired local Skills are listed with reasons. `--starter` preserves the original 13-Skill selection, which has not been evaluated as a set; `--all` selects all 67 and is not a recommended default. The catalog checks sources and installation, not efficacy: only eight entries have limited historical paired tests, and none has proven benefit for the current pinned Skill versions and Codex model. The setup command fetches selected third-party Skills from pinned author commits, verifies SHA-256 hashes, and plans a managed global `AGENTS.md` block. The two locally authored Skills live in this repository. See the [selectable setup guide and evidence summary](docs/selectable-codex.md).
+diff --git a/README.zh-CN.md b/README.zh-CN.md
+index 6732384..04c3a94 100644
+--- a/README.zh-CN.md
++++ b/README.zh-CN.md
+@@ -109,6 +109,14 @@ node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input works
+ 报告展示逐项检查结果、使用量覆盖范围和安装决策所缺的证据。单个任务只能说明该任务，不能证明普遍收益。
+ 详见[真实开源评估流程](docs/oss-task-evaluation.md)，或复跑[固定版本的 mcp-use 示例](benches/contrib/oss-mcp-use-utf8/README.md)。
+ 
++## 比较 Skill 修订版本
++
++在 `--mode installed` 下用 `--baseline-skill` 比较旧版完整 Skill 和修订版。两版的 `SKILL.md` frontmatter 名称必须一致，内容指纹必须不同。baseline 获得旧版，treatment 获得目标新版，两组使用相同的自然任务提示和独立的结果验证器。计划、manifest 与逐次运行记录固定两版身份，覆盖脚本和二进制资源；任一来源变化都会停止后续调用。这项比较测量修订效果；安装收益仍需另做无 Skill 基线实验。详见[版本修订流程](docs/skill-revisions.md)。
++
++```bash
++node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
++```
++
+ ## 测试规则与 MCP 配置
+ 
+ 把 `skillfit-experiment.json` 和 baseline/treatment 项目覆盖层放在同一目录。规则实验可以加入 `AGENTS.md`；MCP 实验可以加入 `.codex/config.toml`、`.mcp.json` 或其他受支持 agent 在能力矩阵中声明的路径。skillfit 会为两组复制相同任务 fixture，先生成完全相同的 prompt 快照，再应用各自覆盖层，让本机 agent 通过正常的项目配置加载器发现配置。
+@@ -137,6 +145,8 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent
+ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
+ ```
+ 
++新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
++
+ ## 可选择的 Codex 配置
+ 
+ 新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills 的来源目录，再重复 `--skill` 只选择与自己任务相关的项目；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 保留原来的 13 个供旧用户沿用，整套尚未验证；`--all` 选全部 67 个，不是推荐默认配置。目录验证的是来源和安装，不是效果：其中仅 8 个有有限的历史配对实验，没有任何一个已证明其当前锁定版本对当前 Codex 模型有效。配置命令从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南与证据摘要](docs/selectable-codex.md)。
+diff --git a/docs/installed-skill-evaluation.md b/docs/installed-skill-evaluation.md
+index fc3168c..470ddf7 100644
+--- a/docs/installed-skill-evaluation.md
++++ b/docs/installed-skill-evaluation.md
+@@ -26,8 +26,17 @@ input automatically; explicit snapshot input and API executors are rejected.
+ The destination comes from the agent capability matrix's first project Skill
+ directory. No global configuration or global Skill directory is written.
+ 
++With `--baseline-skill <previous-dir>`, baseline instead receives the previous
++complete version and treatment receives the target version. Both frontmatter names
++must match and their complete-resource hashes must differ. This option requires
++`--mode installed`; inject and single-arm trigger runs reject it. The source guards,
++fixture-contamination checks, paired error exclusions and call budgets remain in
++force. See [comparing Skill revisions](skill-revisions.md) for the independent
++development/validation workflow and interpretation.
++
+ Both arms receive identical natural task prompts. All regular resources, including
+-scripts, hidden files and binary assets, are copied only into treatment. The
++scripts, hidden files and binary assets, are copied only into treatment by default,
++or from the respective version into both arms with `--baseline-skill`. The
+ fingerprint includes sorted relative paths and bytes, not permissions or empty
+ directories. Unsafe install paths, nested source symlinks, destination symlinks,
+ existing evaluated-Skill fixture destinations in any matrix project search directory
+@@ -49,6 +58,11 @@ this mode, rather than the injection-only text bundle. Old manifests without
+ delivery metadata retain their prior interpretation. Statistics and verdicts are
+ unchanged; small studies remain indicative.
+ 
++Revision comparisons add `baselineTarget` with the previous Skill's name, source,
++complete-resource file list and SHA-256 hash. `target` continues to identify the
++treatment. Each `_result.json` identifies the version actually installed in that
++arm. Manifests without `baselineTarget` retain the existing baseline interpretation.
++
+ Per-trial `_result.json` records delivery and nullable `skillTriggered`. When the
+ executor returns a raw stream, `_transcript.jsonl` preserves it. Built-in installed
+ execution uses the matrix's JSON stream when available. Read detection is a
+diff --git a/docs/metrics.md b/docs/metrics.md
+index 35b448b..a664e4b 100644
+--- a/docs/metrics.md
++++ b/docs/metrics.md
+@@ -12,6 +12,14 @@ Additive workflow review 2026-10-09: optional managed-session and native read me
+ describe execution coverage and observations. They do not change the v2 statistical formulas,
+ verdict thresholds, pairwise exclusions or legal legacy manifest interpretation.
+ 
++Additive revision review 2026-10-12: `--baseline-skill` in installed mode compares two
++complete versions of the same Skill. Optional v4 `baselineTarget` records the previous
++version; `target` records treatment. Both inputs are frozen, and trial receipts identify
++the installed arm's version. All v2 formulas, verdict thresholds and pairwise exclusions
++remain unchanged. A revision delta is relative to the previous Skill, not to no Skill;
++it establishes neither installation benefit nor general non-regression. See
++[the revision workflow](skill-revisions.md).
++
+ This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
+ contract — is [bench-authoring.md](bench-authoring.md).
+ 
+@@ -302,6 +310,20 @@ graded surviving runs that supplied each field. Existing `tokens` totals and
+ verdict semantics are unchanged. Missing or partial coverage cannot establish a
+ complete overhead claim; legacy totals without coverage are shown as unrecorded.
+ 
++Optional `tasks[].costs` and `overall.costs` (cost schema 1) add descriptive
++accounting for surviving graded pairs and all invoked agent runs separately.
++They partition input into recorded cache-read and uncached tokens, retain
++failed/excluded invocations' spending, and report each measure per successful
++task (total spending / successes, including graded failures). Each measure's
++`final/partial/unknown` coverage sums to its population's run count. Incomplete
++usage is a known lower bound and suppresses percentage comparisons; missing
++cache counts are unknown, never zero. Timeouts retain measured elapsed time and
++available public-transcript usage as partial receipts. Pre-call guard/setup
++refusals are counted separately and do not enter spending totals. Judge and
++other cohorts' spending are excluded. These observations introduce no cost
++significance, monetary estimate or change to the quality protocol. See
++[evaluation cost accounting](eval-costs.md) for field and denominator rules.
++
+ Rules and MCP targets use the same paired statistics as Skill targets but a different treatment
+ mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The
+ baseline/treatment project overlays are applied only after that snapshot, so the local CLI must load
+diff --git a/src/cli.test.ts b/src/cli.test.ts
+index 9fb23f7..f300d05 100644
+--- a/src/cli.test.ts
++++ b/src/cli.test.ts
+@@ -1,6 +1,6 @@
+ import assert from 'node:assert/strict';
+ import { spawnSync } from 'node:child_process';
+-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
++import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+ import { tmpdir } from 'node:os';
+ import { join } from 'node:path';
+ import { test } from 'node:test';
+@@ -74,3 +74,26 @@ test('baseline calibration plans use the matrix transcript CLI without starting
+   assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /calibration executor: codex: codex exec --json/);
+   assert.equal(existsSync(join(cwd, 'runs')), false);
+ });
++
++test('CLI wires the previous Skill into an installed dry-run and rejects single-arm comparison', t => {
++  const cwd = mkdtempSync(join(tmpdir(), 'skillfit-cli-revision-'));
++  t.after(() => rmSync(cwd, { recursive: true, force: true }));
++  const current = join(cwd, 'new');
++  const previous = join(cwd, 'old');
++  for (const dir of [current, previous]) cpSync(join(PACKAGE_ROOT, 'skills', 'skillfit'), dir, { recursive: true });
++  writeFileSync(join(previous, 'SKILL.md'), readFileSync(join(previous, 'SKILL.md'), 'utf8') + '\nPrevious-version fixture.\n');
++  const args = ['eval', current, '--baseline-skill', previous, '--bench', join(PACKAGE_ROOT, 'benches', 'code-review'), '--agent', 'codex', '--trials', '1', '--dry-run'];
++  const result = spawnSync(process.execPath, [CLI, ...args, '--mode', 'installed'], { cwd, encoding: 'utf8', timeout: 30_000 });
++  assert.equal(result.status, 0, result.stderr);
++  assert.match(result.stdout, /Baseline\s+: skillfit/);
++  assert.match(result.stdout, /previous Skill in baseline vs target Skill in treatment/);
++  assert.match(result.stdout, /installed in both conditions/);
++  const invalid = spawnSync(process.execPath, [CLI, ...args, '--mode', 'trigger'], { cwd, encoding: 'utf8', timeout: 30_000 });
++  assert.equal(invalid.status, 1);
++  assert.match(invalid.stderr, /requires --mode installed/);
++  const unrelated = spawnSync(process.execPath, [CLI, 'doctor', '--baseline-skill', previous], { cwd, encoding: 'utf8' });
++  assert.equal(unrelated.status, 1);
++  assert.match(unrelated.stderr, /applies only to eval/);
++  assert.equal(unrelated.stdout, '');
++  assert.equal(existsSync(join(cwd, 'runs')), false);
++});
+diff --git a/src/cli.ts b/src/cli.ts
+index ce2122c..7c956e7 100644
+--- a/src/cli.ts
++++ b/src/cli.ts
+@@ -32,6 +32,7 @@ Options:
+   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
+   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
+   --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
++  --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target
+   --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
+   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
+   --bench <path>      Bench directory for eval (default: bundled benches)
+@@ -84,6 +85,7 @@ async function main(): Promise<void> {
+       agent: { type: 'string' },
+       'judge-agent': { type: 'string' },
+       mode: { type: 'string' },
++      'baseline-skill': { type: 'string' },
+       'compete-installed': { type: 'boolean', default: false },
+       input: { type: 'string' },
+       bench: { type: 'string' },
+@@ -132,6 +134,9 @@ async function main(): Promise<void> {
+     console.log(USAGE);
+     return;
+   }
++  if (values['baseline-skill'] !== undefined && command !== 'eval') {
++    throw new Error('--baseline-skill applies only to eval --mode installed.');
++  }
+ 
+   const common = {
+     agent: values.agent,
+@@ -188,6 +193,7 @@ async function main(): Promise<void> {
+       await runEval({
+         ...common,
+         skillPath,
++        baselineSkillPath: values['baseline-skill'],
+         bench: values.bench,
+         mode,
+         inputMode,
+diff --git a/src/commands/eval-report.test.ts b/src/commands/eval-report.test.ts
+index 4394563..2f78697 100644
+--- a/src/commands/eval-report.test.ts
++++ b/src/commands/eval-report.test.ts
+@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
+ import { join } from 'node:path';
+ import { test } from 'node:test';
+ import { parseEvalReport, renderEvalMarkdown, runEvalReport } from './eval-report.js';
++import { summarizeCosts, type CostObservation, type RunCosts } from '../harness/costs.js';
+ 
+ function manifest(): Record<string, unknown> {
+   const conditions = {
+@@ -52,6 +53,55 @@ function sixPairManifest(): Record<string, unknown> {
+   return value;
+ }
+ 
++function costManifest(): Record<string, unknown> {
++  const value = manifest();
++  value['trials'] = 3;
++  const run = (input: number, passed: boolean): CostObservation => ({ executorInvoked: true, passed, error: null,
++    durationSeconds: 5, tokens: { input, cachedInput: input / 2, output: 2 }, usageStatus: 'final' });
++  const baseline = [run(10, true), run(10, true), run(10, true)];
++  const treatment = [run(8, true), run(8, false), { ...run(3, false), durationSeconds: 600, error: 'timeout', usageStatus: 'partial' as const }];
++  const costs = summarizeCosts({ baseline, treatment }, { baseline: baseline.slice(0, 2), treatment: treatment.slice(0, 2) });
++  const conditions = { baseline: { passes: 2, trials: 2, errors: 0 }, treatment: { passes: 1, trials: 2, errors: 1 } };
++  const task = (value['tasks'] as Record<string, unknown>[])[0]!;
++  Object.assign(task, { costs: structuredClone(costs), conditions, deltaPassRate: -0.5 });
++  const overall = value['overall'] as Record<string, unknown>;
++  Object.assign(overall, { costs: structuredClone(costs), conditions, deltaPassRate: -0.5 });
++  Object.assign(overall['stats'] as Record<string, unknown>, { discordant: { improved: 0, regressed: 1 }, mcnemarP: 1 });
++  return value;
++}
++
++test('report eval renders cache partitions, per-success regressions and timeout lower bounds', () => {
++  const output = renderEvalMarkdown(parseEvalReport(costManifest()));
++  assert.match(output, /Input tokens \| 20 \| 16 \| -20.0% \| 10.000 \/ 16.000 \| \+60.0%/);
++  assert.match(output, /Input tokens \| 30 \| >= 19 \| n\/a \| 10.000 \/ >= 19.000 \| n\/a/);
++  assert.match(output, /Cached input tokens/);
++  assert.match(output, /Uncached input tokens/);
++  assert.match(output, /Elapsed seconds/);
++  assert.match(output, /3\/0\/0 \/ 2\/1\/0/);
++  assert.match(output, /Overall verdict: \*\*inconclusive\*\*/);
++});
++
++test('report eval rejects contradictory cost counts, coverage, partitions and pooled totals', () => {
++  const scenarios = [
++    (costs: RunCosts) => { costs.paired.baseline.passes = 0; },
++    (costs: RunCosts) => { costs.attempts.treatment.metrics.input.coverage.unknown = 3; },
++    (costs: RunCosts) => { costs.attempts.treatment.metrics.cachedInput.knownTotal = 100; },
++    (costs: RunCosts) => { costs.attempts.baseline.metrics.output.knownTotal = 99; },
++    (costs: RunCosts) => { costs.notInvoked.baseline = 1; },
++  ];
++  for (const change of scenarios) {
++    const value = costManifest();
++    change((value['overall'] as Record<string, unknown>)['costs'] as RunCosts);
++    assert.throws(() => parseEvalReport(value), /costs|cache partition/);
++  }
++});
++
++test('report eval keeps legacy manifests readable and does not infer missing cache usage', () => {
++  const output = renderEvalMarkdown(parseEvalReport(manifest()));
++  assert.match(output, /all-invocation costs were not recorded in this legacy manifest/);
++  assert.ok(!output.includes('| Cached input tokens | 0'));
++});
++
+ test('report eval renders a v4 manifest without executing an agent or writing a file', () => {
+   const dir = mkdtempSync(join(tmpdir(), 'skillfit-eval-report-'));
+   try {
+@@ -313,3 +363,19 @@ test('installed report validates and distinguishes read observations from task q
+   conditions['treatment']!['skillReads'] = { observed: 2, unobserved: 1, unknown: 0 };
+   assert.throws(() => parseEvalReport(value), /must total the surviving graded trials/);
+ });
++
++test('revision report rejects incompatible baseline identities and preserves legacy interpretation', () => {
++  const value = manifest();
++  assert.ok(!renderEvalMarkdown(parseEvalReport(value)).includes('Baseline Skill:'));
++  value['inputMode'] = 'workspace';
++  value['skillDelivery'] = { mode: 'installed', installDir: '.agents/skills' };
++  (value['target'] as Record<string, unknown>)['files'] = ['SKILL.md'];
++  const baseline = { kind: 'skill', name: 'test | Skill', bundleSha256: 'b'.repeat(64), sourceDir: '/previous', files: ['SKILL.md'] };
++  value['baselineTarget'] = baseline;
++  assert.match(renderEvalMarkdown(parseEvalReport(value)), /Baseline Skill: test \\?\| Skill/);
++  for (const change of [{ kind: 'rules' }, { name: 'different' }, { bundleSha256: 'a'.repeat(64) },
++    { bundleSha256: 'bad' }, { files: ['script.js'] }, { sourceDir: '' }]) {
++    assert.throws(() => parseEvalReport({ ...value, baselineTarget: { ...baseline, ...change } }), /baselineTarget|fingerprint/);
++  }
++  assert.throws(() => parseEvalReport({ ...value, skillDelivery: undefined }), /requires two installed Skill/);
++});
+diff --git a/src/commands/eval-report.ts b/src/commands/eval-report.ts
+index 942c313..da0e12a 100644
+--- a/src/commands/eval-report.ts
++++ b/src/commands/eval-report.ts
+@@ -4,6 +4,7 @@ import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1, verdictFor } f
+ import { mcnemarExactP } from '../harness/stats.js';
+ import { validateSkillInstallDir } from '../harness/installed-skill.js';
+ import type { ExperimentSummary } from '../harness/experiment-session.js';
++import { assertCostTotals, COST_METRICS, renderCostLines, type CostMetric, type CostMeasure, type CostPopulation, type RunCosts } from '../harness/costs.js';
+ 
+ const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
+ 
+@@ -29,6 +30,7 @@ interface FacetRow {
+ }
+ 
+ interface ReportRow {
++  costs: RunCosts | null;
+   id: string;
+   baseline: Counts;
+   treatment: Counts;
+@@ -42,6 +44,7 @@ interface ReportData {
+   runGroup: string;
+   createdAt: string;
+   target: { kind: string; name: string; sha256: string };
++  baselineTarget: { name: string; sha256: string } | null;
+   bench: { name: string; sha256: string; taskCount: number };
+   executor: { kind: string; model: string };
+   trials: number;
+@@ -183,6 +186,7 @@ function row(value: unknown, label: string, id: string): ReportRow {
+   const item = object(value, label);
+   const conditions = object(item['conditions'], `${label}.conditions`);
+   return {
++    costs: item['costs'] === undefined ? null : parseCosts(item['costs'], `${label}.costs`),
+     id,
+     baseline: counts(conditions['baseline'], `${label}.conditions.baseline`),
+     treatment: counts(conditions['treatment'], `${label}.conditions.treatment`),
+@@ -194,6 +198,73 @@ function row(value: unknown, label: string, id: string): ReportRow {
+   };
+ }
+ 
++function parseCosts(value: unknown, label: string): RunCosts {
++  const item = object(value, label);
++  if (item['schemaVersion'] !== 1) throw new Error(`${label}.schemaVersion must be 1`);
++  const scope = (name: 'paired' | 'attempts'): RunCosts[typeof name] => {
++    const arms = object(item[name], `${label}.${name}`);
++    const population = (arm: 'baseline' | 'treatment'): CostPopulation => {
++      const path = `${label}.${name}.${arm}`;
++      const raw = object(arms[arm], path);
++      const runs = integer(raw['runs'], `${path}.runs`);
++      const passes = integer(raw['passes'], `${path}.passes`);
++      if (passes > runs) throw new Error(`${path}.passes cannot exceed runs`);
++      const rawMetrics = object(raw['metrics'], `${path}.metrics`);
++      const metrics = Object.fromEntries(COST_METRICS.map(metric => {
++        const measure = object(rawMetrics[metric], `${path}.metrics.${metric}`);
++        const coverage = object(measure['coverage'], `${path}.metrics.${metric}.coverage`);
++        const parsed: CostMeasure = {
++          knownTotal: number(measure['knownTotal'], `${path}.metrics.${metric}.knownTotal`, 0),
++          coverage: {
++            final: integer(coverage['final'], `${path}.metrics.${metric}.coverage.final`),
++            partial: integer(coverage['partial'], `${path}.metrics.${metric}.coverage.partial`),
++            unknown: integer(coverage['unknown'], `${path}.metrics.${metric}.coverage.unknown`),
++          },
++        };
++        const c = parsed.coverage;
++        if (c.final + c.partial + c.unknown !== runs ||
++            (c.final + c.partial === 0 && parsed.knownTotal !== 0)) throw new Error(`${path}.metrics.${metric} contradicts coverage`);
++        if (metric === 'durationSeconds' && (c.partial !== 0 || c.unknown !== 0)) throw new Error(`${path} elapsed time must cover every invocation`);
++        return [metric, parsed];
++      })) as Record<CostMetric, CostMeasure>;
++      const cache = metrics.cachedInput;
++      const uncached = metrics.uncachedInput;
++      if (JSON.stringify(cache.coverage) !== JSON.stringify(uncached.coverage)) throw new Error(`${path} cache partition coverage must match`);
++      if (cache.coverage.final + cache.coverage.partial > metrics.input.coverage.final + metrics.input.coverage.partial ||
++          cache.coverage.final > metrics.input.coverage.final ||
++          cache.knownTotal + uncached.knownTotal > metrics.input.knownTotal + 1e-6) throw new Error(`${path} cache partition contradicts input`);
++      if (cache.coverage.final + cache.coverage.partial === metrics.input.coverage.final + metrics.input.coverage.partial &&
++          Math.abs(cache.knownTotal + uncached.knownTotal - metrics.input.knownTotal) > 1e-6) throw new Error(`${path} cache partition disagrees with input`);
++      return { runs, passes, metrics };
++    };
++    return { baseline: population('baseline'), treatment: population('treatment') };
++  };
++  const notInvoked = object(item['notInvoked'], `${label}.notInvoked`);
++  return { schemaVersion: 1, paired: scope('paired'), attempts: scope('attempts'), notInvoked: {
++    baseline: integer(notInvoked['baseline'], `${label}.notInvoked.baseline`),
++    treatment: integer(notInvoked['treatment'], `${label}.notInvoked.treatment`),
++  } };
++}
++
++function checkCostCounts(row: ReportRow, declaredRuns: number, label: string): void {
++  const costs = row.costs;
++  if (!costs) return;
++  for (const arm of ['baseline', 'treatment'] as const) {
++    const paired = costs.paired[arm];
++    const attempts = costs.attempts[arm];
++    if (paired.runs !== row[arm].trials || paired.passes !== row[arm].passes ||
++        attempts.runs + costs.notInvoked[arm] !== declaredRuns ||
++        paired.runs > attempts.runs || paired.passes > attempts.passes ||
++        attempts.passes - paired.passes > attempts.runs - paired.runs) throw new Error(`${label}.costs disagree with declared/graded counts`);
++    for (const metric of COST_METRICS) {
++      if (paired.metrics[metric].knownTotal > attempts.metrics[metric].knownTotal + 1e-6) throw new Error(`${label}.costs paired spending exceeds all invocations`);
++      for (const status of ['final', 'partial', 'unknown'] as const) {
++        if (paired.metrics[metric].coverage[status] > attempts.metrics[metric].coverage[status]) throw new Error(`${label}.costs paired coverage exceeds all invocations`);
++      }
++    }
++  }
++}
++
+ function checkDelta(value: ReportRow, label: string): void {
+   if (value.baseline.trials !== value.treatment.trials) {
+     throw new Error(`${label} must contain equal numbers of graded paired trials`);
+@@ -255,6 +326,25 @@ export function parseEvalReport(value: unknown): ReportData {
+     }
+     skillDelivery = { mode: 'installed', installDir };
+   }
++  let baselineTarget: ReportData['baselineTarget'] = null;
++  if (manifest['baselineTarget'] !== undefined) {
++    const previous = object(manifest['baselineTarget'], 'baselineTarget');
++    if (!skillDelivery || previous['kind'] !== 'skill') {
++      throw new Error('baselineTarget requires two installed Skill versions.');
++    }
++    const name = string(previous['name'], 'baselineTarget.name');
++    if (name !== target['name']) throw new Error('baselineTarget.name must match the target Skill name.');
++    const sha256 = hash(previous['bundleSha256'], 'baselineTarget.bundleSha256');
++    if (sha256.toLowerCase() === hash(target['bundleSha256'], 'target.bundleSha256').toLowerCase()) {
++      throw new Error('baselineTarget and target must have different complete-resource fingerprints.');
++    }
++    string(previous['sourceDir'], 'baselineTarget.sourceDir');
++    if (!Array.isArray(previous['files']) || !previous['files'].includes('SKILL.md') ||
++        previous['files'].some(file => typeof file !== 'string' || !file)) {
++      throw new Error('baselineTarget.files must list the complete resources including SKILL.md.');
++    }
++    baselineTarget = { name, sha256 };
++  }
+   const rawTasks = manifest['tasks'];
+   if (!Array.isArray(rawTasks)) throw new Error('tasks must be an array');
+   const tasks = rawTasks.map((task, index) => {
+@@ -290,6 +380,13 @@ export function parseEvalReport(value: unknown): ReportData {
+   };
+   if (scoreDeltaCi && scoreDeltaCi.lo > scoreDeltaCi.hi) throw new Error('overall.stats.scoreDeltaCi.lo cannot exceed hi');
+   const overallRow = row(overall, 'overall', 'Overall');
++  const declaredTrials = integer(manifest['trials'], 'trials', 1);
++  for (const [index, task] of tasks.entries()) checkCostCounts(task, declaredTrials, `tasks[${index}]`);
++  checkCostCounts(overallRow, declaredTrials * tasks.length, 'overall');
++  if (overallRow.costs) {
++    if (tasks.some(t => !t.costs)) throw new Error('overall.costs requires costs for every task');
++    assertCostTotals(overallRow.costs, tasks.map(t => t.costs!));
++  } else if (tasks.some(t => t.costs)) throw new Error('Task costs require corresponding overall costs');
+   for (const [index, task] of tasks.entries()) checkDelta(task, `tasks[${index}]`);
+   checkDelta(overallRow, 'overall');
+   if (scoreDeltaCi) {
+@@ -366,6 +463,7 @@ export function parseEvalReport(value: unknown): ReportData {
+     runGroup: string(manifest['runGroup'], 'runGroup'),
+     createdAt,
+     target: { kind, name: string(target['name'], 'target.name'), sha256: hash(target['bundleSha256'], 'target.bundleSha256') },
++    baselineTarget,
+     bench: {
+       name: string(bench['name'], 'bench.name'),
+       sha256: hash(bench['contentSha256'], 'bench.contentSha256'),
+@@ -445,10 +543,18 @@ function decisionNotes(report: ReportData): string[] {
+     notes.push('Some tasks failed in both arms. Inspect facet misses, dependencies and the issue-to-check contract before interpreting the pass-rate floor as task difficulty.');
+   }
+   if (report.target.kind === 'skill') {
+-    notes.push(report.skillDelivery
++    notes.push(report.baselineTarget
++      ? 'Skill revision comparison: baseline contains the previous complete Skill and treatment contains the target version. Results describe revision effects, not installation benefit over no Skill. A positive delta does not guarantee non-regression on unseen tasks. Inspect per-run read observations and separate positive/negative trigger tests.'
++      : report.skillDelivery
+       ? 'Complete Skill resources were installed only in treatment. Task outcomes include native discovery; inspect per-run activation/transcript receipts and run separate positive/negative trigger tests. Installation does not guarantee activation, and inherited agent configuration still applies.'
+       : 'Activation is unmeasured by this paired run: Skill content was force-injected. Run separate trigger tests with relevant requests and negative controls before an installation decision.');
+   }
++  if (report.baselineTarget) {
++    const regressions = report.tasks.filter(task => task.deltaPassRate < 0 || (task.scoreDelta !== null && task.scoreDelta < 0));
++    if (regressions.length > 0) {
++      notes.push(`Observed task regressions: ${regressions.map(task => task.id).join(', ')}. Inspect their outcomes and checks before accepting the revision, even if the pooled verdict favors treatment.`);
++    }
++  }
+   if (!report.overall.baseline.tokens || !report.overall.treatment.tokens) {
+     notes.push('Token overhead is unavailable. Elapsed time or prompt-size estimates do not establish token cost.');
+   } else if ([report.overall.baseline, report.overall.treatment].some(c =>
+@@ -471,11 +577,12 @@ export function renderEvalMarkdown(report: ReportData): string {
+   lines.push(
+     `- Run: ${escapeMarkdown(report.runGroup)} (${escapeMarkdown(report.createdAt)})`,
+     `- Target: ${escapeMarkdown(report.target.kind)}; SHA-256 \`${report.target.sha256}\``,
++    ...(report.baselineTarget ? [`- Baseline Skill: ${escapeMarkdown(report.baselineTarget.name)} (previous version); SHA-256 \`${report.baselineTarget.sha256}\``] : []),
+     `- Bench: ${escapeMarkdown(report.bench.name)} (${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'}); SHA-256 \`${report.bench.sha256}\``,
+     `- Executor: ${escapeMarkdown(report.executor.kind)} / ${escapeMarkdown(report.executor.model)}`,
+     `- Trials: ${report.trials} per condition`,
+     `- Input: ${report.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`,
+-    ...(report.skillDelivery ? ['- Delivery: complete Skill installed in treatment at ' + escapeMarkdown(report.skillDelivery.installDir)] : []),
++    ...(report.skillDelivery ? ['- Delivery: complete Skill installed ' + (report.baselineTarget ? 'in both conditions' : 'in treatment') + ' at ' + escapeMarkdown(report.skillDelivery.installDir)] : []),
+     ...(report.experiment ? [`- Session: ${report.experiment.status}; ${report.experiment.callsStarted}/${report.experiment.plannedCalls} calls started, ${report.experiment.callsFinished} finished; ceiling ${report.experiment.maxCalls}`, `- Frozen plan SHA-256: \`${report.experiment.planSha256}\``] : []),
+     '',
+     '| Task | Baseline | Treatment | Errors B/T | Δpass | Verdict |',
+@@ -539,6 +646,9 @@ export function renderEvalMarkdown(report: ReportData): string {
+       `| Input | ${cell(report.overall.baseline, 'input')} | ${cell(report.overall.treatment, 'input')} |`,
+       `| Output | ${cell(report.overall.baseline, 'output')} | ${cell(report.overall.treatment, 'output')} |`);
+   }
++  lines.push('', '## Cost accounting', '');
++  if (report.overall.costs) lines.push(...renderCostLines(report.overall.costs));
++  else lines.push('Cache partitions and all-invocation costs were not recorded in this legacy manifest. Missing usage is unknown; the report does not infer it from prompt size or treat it as zero.');
+   lines.push('', '## Warnings', '');
+   if (report.warnings.length === 0) lines.push('- None');
+   else lines.push(...report.warnings.map((warning) => `- ${escapeMarkdown(warning)}`));
+diff --git a/src/commands/eval.ts b/src/commands/eval.ts
+index fda30e5..39406dc 100644
+--- a/src/commands/eval.ts
++++ b/src/commands/eval.ts
+@@ -9,7 +9,7 @@ import { ExperimentSession, validateCallBudget, type SessionOptions } from '../h
+ import { ApiExecutor } from '../harness/executors/api.js';
+ import { CliExecutor } from '../harness/executors/cli.js';
+ import { listFilesRecursive } from '../harness/hash.js';
+-import { assertInstalledSkillFixtures, collectInstalledSkillTarget } from '../harness/installed-skill.js';
++import { assertInstalledSkillFixtures, assertSkillRevisionTargets, collectInstalledSkillTarget } from '../harness/installed-skill.js';
+ import { assertInputModeSupported } from '../harness/prompt.js';
+ import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
+ import { runExperiment } from '../harness/runner.js';
+@@ -26,6 +26,8 @@ import type { Bench, EvaluationTarget, Executor, InputMode, SkillBundle } from '
+ export interface EvalOptions {
+   /** A Skill directory or a directory containing skillfit-experiment.json. */
+   skillPath: string;
++  /** Previous complete Skill version; available only in installed mode. */
++  baselineSkillPath?: string;
+   bench?: string;
+   trials?: number;
+   maxCalls?: number;
+@@ -138,9 +140,9 @@ function defaultRunGroup(now: Date = new Date()): string {
+ 
+ function sessionFor(options: EvalOptions, bench: Bench, target: EvaluationTarget, trials: number,
+   runsRoot: string, runGroup: string, armNames: string[], plannedCalls: number,
+-  details: Record<string, unknown>): ExperimentSession {
++  details: Record<string, unknown>, baselineTarget?: EvaluationTarget): ExperimentSession {
+   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+-  return new ExperimentSession({ bench, target, groupDir: join(runsRoot, runGroup), plannedCalls,
++  return new ExperimentSession({ bench, target, baselineTarget, groupDir: join(runsRoot, runGroup), plannedCalls,
+     maxCalls: options.maxCalls, agent: options.agent, injected: options.executor !== undefined,
+     ...options.sessionOptions,
+     workspaces: bench.tasks.flatMap(task => armNames.flatMap(arm =>
+@@ -177,10 +179,15 @@ function renderPlan(
+   runsRoot: string,
+   runGroup: string,
+   inputMode: InputMode,
++  baselineTarget?: EvaluationTarget,
+ ): string {
+   const lines: string[] = [];
+   lines.push('Experiment plan (dry run)');
+   lines.push(`Target   : ${target.name} (${target.kind}, ${target.files.length} files, bundle sha256 ${target.sha256.slice(0, 12)}…)`);
++  if (baselineTarget) {
++    lines.push(`Baseline : ${baselineTarget.name} (${baselineTarget.files.length} files, bundle sha256 ${baselineTarget.sha256.slice(0, 12)}…)`);
++    lines.push('Compare  : previous Skill in baseline vs target Skill in treatment; measures revision effects, not benefit over no Skill');
++  }
+   if (target.kind !== 'skill') {
+     lines.push('           applied as project files; treatment material is never injected into the prompt');
+   }
+@@ -338,6 +345,9 @@ async function runEvalTrigger(
+ export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
+   const log = options.log ?? ((msg: string) => console.log(msg));
+   const installed = options.mode === 'installed';
++  if (options.baselineSkillPath !== undefined && !installed) {
++    throw new Error('--baseline-skill requires --mode installed.');
++  }
+   if (installed && options.inputMode !== undefined && options.inputMode !== 'workspace') {
+     throw new Error('installed mode requires workspace input; omit --input or use --input workspace.');
+   }
+@@ -362,11 +372,16 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
+   const benchDir = resolveBenchDir(options.bench);
+   const bench = loadBench(benchDir);
+   let target = collectEvaluationTarget(options.skillPath);
++  let baselineTarget: EvaluationTarget | undefined;
+   let skillInstallDir: string | undefined;
+   let skillSearchDirs: string[] = [];
+   if (installed) {
+     if (target.kind !== 'skill') throw new Error('installed mode is only available for Skill targets.');
+     target = collectInstalledSkillTarget(options.skillPath);
++    if (options.baselineSkillPath !== undefined) {
++      baselineTarget = collectInstalledSkillTarget(options.baselineSkillPath);
++      assertSkillRevisionTargets(target, baselineTarget);
++    }
+     skillSearchDirs = options.agent ? getAgent(options.agent).skills.projectDirs : [];
+     skillInstallDir = options.skillInstallDir ?? skillSearchDirs[0];
+     if (!skillInstallDir) throw new Error('installed mode needs --agent with a matrix-defined project Skill directory.');
+@@ -427,10 +442,10 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
+   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+ 
+   if (options.dryRun) {
+-    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode));
++    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
+     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
+     if (skillInstallDir) {
+-      log('Delivery : complete Skill resources installed only in treatment at ' + skillInstallDir + '/' + target.name);
++      log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);
+       log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
+     }
+     return null;
+@@ -439,14 +454,16 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
+     throw new Error('No executor available; pass --agent or set SKILLFIT_API_KEY.');
+   }
+ 
+-  log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
++  log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+   const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
+-    { mode: installed ? 'installed' : 'inject', inputMode, trials, executor: executor.describe(), judge: judge?.describe() ?? null });
++    { mode: installed ? 'installed' : 'inject', inputMode, trials, executor: executor.describe(), judge: judge?.describe() ?? null,
++      ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
+   let manifest: RunManifest;
+   try {
+     manifest = await runExperiment({
+       bench,
+       target,
++      baselineTarget,
+       inputMode,
+       ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
+       executor: session.wrap(executor, 'agent'),
+diff --git a/src/harness/executors/cli.test.ts b/src/harness/executors/cli.test.ts
+index 5b899db..ab3b7e2 100644
+--- a/src/harness/executors/cli.test.ts
++++ b/src/harness/executors/cli.test.ts
+@@ -6,6 +6,7 @@ import { test } from 'node:test';
+ import { fileURLToPath } from 'node:url';
+ import { agentIds, getAgent } from '../../agents.js';
+ import { CliExecutor, quoteShellArg } from './cli.js';
++import { ExecutorFailure } from '../types.js';
+ 
+ const ECHO_SCRIPT =
+   'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write("len:"+d.length))';
+@@ -333,7 +334,7 @@ test('CliExecutor parses codex items: text, skill file-read trigger, and token u
+   const result = await executor.run(ndjson, process.cwd());
+   assert.equal(result.output, 'Stage 5, yellow with brown flecks.');
+   assert.equal(result.skillTriggered, true);
+-  assert.deepEqual(result.tokens, { input: 42170, output: 272 });
++  assert.deepEqual(result.tokens, { input: 42170, cachedInput: 32896, output: 272 });
+ });
+ 
+ test('CliExecutor codex shape: no skill-path command means no trigger', async () => {
+@@ -418,7 +419,7 @@ test('CliExecutor accumulates token usage across multiple turns', async () => {
+     { type: 'turn.completed', usage: { input_tokens: 1000, output_tokens: 100 } },
+     { type: 'item.completed', item: { id: 'i2', type: 'agent_message', text: 'second' } },
+     { type: 'turn.completed', usage: { input_tokens: 20, output_tokens: 5 } },
+-    // A turn carrying no usage must not reset the running total.
++    // Available increments remain a lower bound when another completed turn omitted usage.
+     { type: 'turn.completed' },
+   ];
+   const executor = new CliExecutor({
+@@ -428,9 +429,38 @@ test('CliExecutor accumulates token usage across multiple turns', async () => {
+   });
+   const result = await executor.run(toNdjson(events), process.cwd());
+   assert.deepEqual(result.tokens, { input: 1020, output: 105 }, 'usage records are per-turn increments');
++  assert.equal(result.usageStatus, 'partial', 'missing usage cannot certify a complete total');
+   assert.equal(result.output, 'first\nsecond');
+ });
+ 
++test('CliExecutor cache coverage stays unknown if one turn omits cache usage', async () => {
++  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT], shell: false, triggerSkillName: 'demo' });
++  const result = await executor.run(toNdjson([
++    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 8, output_tokens: 2 } },
++    { type: 'turn.completed', usage: { input_tokens: 5, output_tokens: 1 } },
++  ]), process.cwd());
++  assert.deepEqual(result.tokens, { input: 15, output: 3 });
++  assert.equal(result.usageStatus, 'final');
++  const invalid = await executor.run(toNdjson([
++    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 11, output_tokens: -1 } },
++  ]), process.cwd());
++  assert.deepEqual(invalid.tokens, { input: 10 });
++  assert.equal(invalid.usageStatus, 'partial');
++});
++
++test('CliExecutor preserves public transcript usage as a lower bound on timeout', async () => {
++  const script = 'process.stdout.write(JSON.stringify({type:"turn.completed",usage:{input_tokens:10,cached_input_tokens:8,output_tokens:2}})+"\\n");setInterval(()=>{},10000)';
++  const executor = new CliExecutor({ argv: [process.execPath, '-e', script], shell: false, triggerSkillName: 'demo', timeoutMs: 2000 });
++  await assert.rejects(executor.run('prompt', process.cwd()), (error: unknown) => {
++    assert.ok(error instanceof ExecutorFailure);
++    assert.match(error.message, /timed out/);
++    assert.deepEqual(error.result.tokens, { input: 10, cachedInput: 8, output: 2 });
++    assert.equal(error.result.usageStatus, 'partial');
++    assert.match(error.result.rawOutput!, /turn.completed/);
++    return true;
++  });
++});
++
+ test('out-of-band token usage is a matrix capability, not an agent id in the harness', () => {
+   // kimi-code's headless transcript carries no usable token counts, so they are read from its
+   // session log after the run. That used to be `if (this.label === 'kimi-code')` in the executor,
+diff --git a/src/harness/executors/cli.ts b/src/harness/executors/cli.ts
+index 16de3ed..3fa8212 100644
+--- a/src/harness/executors/cli.ts
++++ b/src/harness/executors/cli.ts
+@@ -4,6 +4,7 @@ import { join } from 'node:path';
+ import { getAgent } from '../../agents.js';
+ import { killTree, treeSpawnOptions } from '../kill-tree.js';
+ import { probeKimiSessionUsage } from '../kimi-usage.js';
++import { ExecutorFailure, type TokenUsage } from '../types.js';
+ import type { Executor, ExecutorDescriptor, ExecutorResult } from '../types.js';
+ 
+ export interface CliExecutorOptions {
+@@ -202,27 +203,28 @@ export class CliExecutor implements Executor {
+       });
+       child.on('close', (code) => {
+         clearTimeout(timer);
++        const parseResult = (): ExecutorResult => this.triggerSkillName !== undefined
++          ? parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName)
++          : { output: stdout };
++        const failure = (message: string): ExecutorFailure => new ExecutorFailure(message, {
++          ...parseResult(), usageStatus: 'partial',
++        });
+         if (overflow) {
+-          rejectPromise(new Error(`"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`));
++          rejectPromise(failure(`"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`));
+           return;
+         }
+         if (timedOut) {
+-          rejectPromise(new Error(`"${command}" timed out after ${this.timeoutMs}ms`));
++          rejectPromise(failure(`"${command}" timed out after ${this.timeoutMs}ms`));
+           return;
+         }
+         if (code !== 0) {
+           const detail = stderr.trim().slice(0, 500);
+           rejectPromise(
+-            new Error(`"${command}" exited with code ${code ?? 'null'}${detail ? `: ${detail}` : ''}`),
++            failure(`"${command}" exited with code ${code ?? 'null'}${detail ? `: ${detail}` : ''}`),
+           );
+           return;
+         }
+-        let result: ExecutorResult;
+-        if (this.triggerSkillName !== undefined) {
+-          result = parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName);
+-        } else {
+-          result = { output: stdout };
+-        }
++        const result = parseResult();
+         // Capability from the matrix, not an agent name: this surface reports no usable token counts
+         // in its transcript, so they are read from its session log afterwards. probeKimiSessionUsage
+         // is currently the only implementation, which is why the flag is set on exactly one agent.
+@@ -260,7 +262,8 @@ interface StreamJsonTranscript {
+   output: string;
+   skillTriggered?: boolean;
+   rawOutput?: string;
+-  tokens?: { input?: number; output?: number };
++  tokens?: TokenUsage;
++  usageStatus?: 'final' | 'partial';
+ }
+ 
+ function parseStreamJsonTranscript(
+@@ -271,7 +274,10 @@ function parseStreamJsonTranscript(
+   const textParts: string[] = [];
+   let parsedAny = false;
+   let triggered = false;
+-  let tokens: { input?: number; output?: number } | undefined;
++  let tokens: TokenUsage | undefined;
++  let usageTurns = 0;
++  const totals = { input: 0, output: 0, cachedInput: 0 };
++  const coverage = { input: 0, output: 0, cachedInput: 0 };
+   for (const rawLine of stdout.split('\n')) {
+     const line = rawLine.trim();
+     if (line === '') {
+@@ -343,23 +349,23 @@ function parseStreamJsonTranscript(
+       }
+     }
+     if (record.type === 'turn.completed') {
++      usageTurns++;
+       const usage = record.usage;
+       if (typeof usage === 'object' && usage !== null) {
+         const usageRecord = usage as Record<string, unknown>;
+-        const input = typeof usageRecord.input_tokens === 'number' ? usageRecord.input_tokens : undefined;
+-        const output =
+-          typeof usageRecord.output_tokens === 'number' ? usageRecord.output_tokens : undefined;
+-        if (input !== undefined || output !== undefined) {
+-          // Accumulate, matching kimi-usage.ts, which sums the same kind of per-entry usage records
+-          // from the session wire log. Overwriting kept only the last turn, so a multi-turn session
+-          // undercounted and corrupted both the token delta and cost-of-pass — the two claims
+-          // docs/metrics.md L3 says are actually provable at personal sample sizes. If a surface ever
+-          // reports *cumulative* usage instead, this is the line to revisit: the two readings are
+-          // mutually exclusive and guessing wrong double-counts.
+-          tokens = {
+-            input: (tokens?.input ?? 0) + (input ?? 0),
+-            output: (tokens?.output ?? 0) + (output ?? 0),
+-          };
++        const count = (value: unknown): number | undefined =>
++          typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
++        const input = count(usageRecord.input_tokens);
++        const cachedInput = count(usageRecord.cached_input_tokens);
++        const values = { input, output: count(usageRecord.output_tokens), cachedInput:
++          input !== undefined && cachedInput !== undefined && cachedInput <= input ? cachedInput : undefined };
++        // Codex records per-turn increments. Missing fields on any completed turn prevent
++        // treating the aggregate as complete; in particular missing cache counts are not zero.
++        for (const field of ['input', 'output', 'cachedInput'] as const) {
++          if (values[field] !== undefined) {
++            totals[field] += values[field];
++            coverage[field]++;
++          }
+         }
+       }
+     }
+@@ -387,5 +393,14 @@ function parseStreamJsonTranscript(
+   if (!parsedAny) {
+     return { output: stdout };
+   }
+-  return { output: textParts.join('\n'), skillTriggered: triggered, rawOutput: stdout, tokens };
++  let usageStatus: 'final' | 'partial' | undefined;
++  if (usageTurns > 0) {
++    tokens = {};
++    for (const field of ['input', 'output', 'cachedInput'] as const) {
++      if (coverage[field] > 0 && (field !== 'cachedInput' || coverage[field] === usageTurns)) tokens[field] = totals[field];
++    }
++    if (Object.keys(tokens).length === 0) tokens = undefined;
++    usageStatus = coverage.input === usageTurns && coverage.output === usageTurns ? 'final' : 'partial';
++  }
++  return { output: textParts.join('\n'), skillTriggered: triggered, rawOutput: stdout, tokens, usageStatus };
+ }
+diff --git a/src/harness/experiment-session.ts b/src/harness/experiment-session.ts
+index d47ca66..14818d5 100644
+--- a/src/harness/experiment-session.ts
++++ b/src/harness/experiment-session.ts
+@@ -7,6 +7,7 @@ import { getAgent, skillUserDirSpecs, type AgentDef } from '../agents.js';
+ import { parseFrontmatter } from '../frontmatter.js';
+ import { hashFileSet, sha256File, sha256Text } from './hash.js';
+ import type { Bench, EvaluationTarget, Executor } from './types.js';
++import { ExecutorFailure } from './types.js';
+ 
+ export interface ExperimentSummary {
+   schemaVersion: 1;
+@@ -22,6 +23,7 @@ export interface ExperimentSummary {
+ export interface SessionOptions {
+   bench: Bench;
+   target: EvaluationTarget;
++  baselineTarget?: EvaluationTarget;
+   groupDir: string;
+   workspaces: string[];
+   plannedCalls: number;
+@@ -179,11 +181,12 @@ export class ExperimentSession {
+     this.groupDir = resolve(options.groupDir);
+     this.workspaces = options.workspaces.map(path => resolve(path));
+     if (existsSync(this.groupDir)) throw new Error(`Run group directory already exists: ${this.groupDir}`);
+-    for (const input of [options.target.sourceDir, ...options.bench.tasks.map(task => join(options.bench.dir, task.fixture))]) {
++    for (const input of [options.target.sourceDir, ...(options.baselineTarget ? [options.baselineTarget.sourceDir] : []), ...options.bench.tasks.map(task => join(options.bench.dir, task.fixture))]) {
+       if (inside(physicalPath(input), physicalPath(this.groupDir))) throw new Error('Experiment output must be outside the Skill/overlay and fixture inputs; run the CLI from their parent directory.');
+     }
+     const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
+     this.inputs = [pin('bench', options.bench.dir, this.groupDir), pin('target', options.target.sourceDir), pin('implementation', join(packageRoot, 'dist'))];
++    if (options.baselineTarget) this.inputs.push(pin('baseline Skill', options.baselineTarget.sourceDir));
+     this.configs = [];
+     const env = options.env ?? process.env;
+     let configured: Record<string, string> = {};
+@@ -257,8 +260,12 @@ export class ExperimentSession {
+ 
+   wrap(executor: Executor, role: 'agent' | 'judge'): Executor {
+     return { describe: () => executor.describe(), run: async (prompt, workdir) => {
+-      this.check();
+-      if (this.callsStarted >= Math.min(this.plannedCalls, this.maxCalls)) { this.stopReason = 'Declared call ceiling reached; no further calls.'; throw new Error(this.stopReason); }
++      try {
++        this.check();
++        if (this.callsStarted >= Math.min(this.plannedCalls, this.maxCalls)) { this.stopReason = 'Declared call ceiling reached; no further calls.'; throw new Error(this.stopReason); }
++      } catch (error) {
++        throw new ExecutorFailure((error as Error).message, { output: '' }, false);
++      }
+       const call = ++this.callsStarted;
+       const ledger = join(this.groupDir, '_calls.jsonl');
+       appendFileSync(ledger, JSON.stringify({ event: 'started', call, role, workdir, at: new Date().toISOString(), promptSha256: sha256Text(prompt) }) + '\n');
+diff --git a/src/harness/installed-skill.ts b/src/harness/installed-skill.ts
+index 06febfa..80e235c 100644
+--- a/src/harness/installed-skill.ts
++++ b/src/harness/installed-skill.ts
+@@ -53,6 +53,18 @@ export function collectInstalledSkillTarget(skillDir: string): EvaluationTarget
+     payload: null, overlays: {} };
+ }
+ 
++export function assertSkillRevisionTargets(target: EvaluationTarget, baseline: EvaluationTarget): void {
++  if ([target, baseline].some(skill => skill.kind !== 'skill' || skill.payload !== null || !skill.files.includes('SKILL.md'))) {
++    throw new Error('Skill revision comparison requires two complete installed Skill targets.');
++  }
++  if (target.name !== baseline.name) {
++    throw new Error('Skill revisions must have the same SKILL.md frontmatter name; compare versions of one Skill.');
++  }
++  if (target.sha256 === baseline.sha256) {
++    throw new Error('Skill revisions have identical complete-resource fingerprints; there is no version change to evaluate.');
++  }
++}
++
+ export function assertInstalledSkillFixtures(bench: Bench, target: EvaluationTarget, installDir: string, searchDirs: readonly string[] = []): void {
+   const dirs = [...new Set([installDir, ...searchDirs].map(validateSkillInstallDir))];
+   for (const task of bench.tasks) {
+diff --git a/src/harness/report.ts b/src/harness/report.ts
+index 5f9342d..41b493d 100644
+--- a/src/harness/report.ts
++++ b/src/harness/report.ts
+@@ -2,6 +2,7 @@ import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
+ import { CONDITIONS } from './types.js';
+ import type { Condition, ExecutorDescriptor, InputMode } from './types.js';
+ import type { ExperimentSummary } from './experiment-session.js';
++import { renderCostLines, type RunCosts } from './costs.js';
+ 
+ export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
+ 
+@@ -47,6 +48,7 @@ export interface FacetSummary {
+ }
+ 
+ export interface TaskSummary {
++  costs?: RunCosts;
+   id: string;
+   conditions: Record<Condition, ConditionStats>;
+   outcomes: { baseline: boolean[]; treatment: boolean[] };
+@@ -69,6 +71,7 @@ export interface SignificanceStats {
+ }
+ 
+ export interface OverallSummary {
++  costs?: RunCosts;
+   conditions: Record<Condition, ConditionStats>;
+   deltaPassRate: number;
+   scoreDelta: number | null;
+@@ -88,6 +91,8 @@ export interface RunManifest {
+   runGroup: string;
+   createdAt: string;
+   target: { kind: 'skill' | 'rules' | 'mcp'; name: string; sourceDir: string; bundleSha256: string; files: string[] };
++  /** Previous installed Skill version; absent preserves the target's existing baseline. */
++  baselineTarget?: { kind: 'skill'; name: string; sourceDir: string; bundleSha256: string; files: string[] };
+   bench: { name: string; dir: string; contentSha256: string; taskCount: number };
+   executor: ExecutorDescriptor;
+   judge: ExecutorDescriptor | null;
+@@ -154,6 +159,9 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
+   if (manifest.skillDelivery) {
+     warnings.push('Installed Skill mode measures task outcomes with native discovery and complete resources; activation is not guaranteed. Inherited agent configuration still applies.');
+   }
++  if (manifest.baselineTarget) {
++    warnings.push('Skill revision comparison measures the target against the previous version, not against no Skill. A positive delta does not establish installation benefit or guarantee non-regression on unseen tasks.');
++  }
+   if (manifest.executor.kind === 'mock') {
+     warnings.push('Executor is a mock: results are synthetic and only exercise the harness.');
+   }
+@@ -210,9 +218,10 @@ function pad(text: string, width: number): string {
+ export function renderSummary(manifest: RunManifest, manifestPath: string): string {
+   const lines: string[] = [];
+   lines.push(`Target   : ${manifest.target.name} (${manifest.target.kind}, bundle sha256 ${manifest.target.bundleSha256.slice(0, 12)}…, ${manifest.target.files.length} files)`);
++  if (manifest.baselineTarget) lines.push(`Baseline : ${manifest.baselineTarget.name} (previous Skill, bundle sha256 ${manifest.baselineTarget.bundleSha256.slice(0, 12)}…, ${manifest.baselineTarget.files.length} files)`);
+   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
+   lines.push(`Input    : ${manifest.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`);
+-  if (manifest.skillDelivery) lines.push('Delivery : installed complete Skill at ' + manifest.skillDelivery.installDir + '/' + manifest.target.name);
++  if (manifest.skillDelivery) lines.push('Delivery : installed complete Skill ' + (manifest.baselineTarget ? 'in both conditions ' : '') + 'at ' + manifest.skillDelivery.installDir + '/' + manifest.target.name);
+   lines.push(`Executor : ${describeExecutor(manifest.executor)}`);
+   lines.push(`Judge    : ${manifest.judge ? describeExecutor(manifest.judge) : 'disabled'}`);
+   lines.push(`Trials   : ${manifest.trials} per condition`);
+@@ -266,6 +275,7 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
+     lines.push('');
+     lines.push(...tokenLines);
+   }
++  if (manifest.overall.costs) lines.push('', 'Cost accounting:', ...renderCostLines(manifest.overall.costs));
+   const facetLines = renderFacetScores(manifest);
+   if (facetLines.length > 0) {
+     lines.push('');
+diff --git a/src/harness/runner.test.ts b/src/harness/runner.test.ts
+index d6b875e..0946716 100644
+--- a/src/harness/runner.test.ts
++++ b/src/harness/runner.test.ts
+@@ -9,6 +9,8 @@ import { collectSkillBundle } from './bundle.js';
+ import { MockExecutor } from './executors/mock.js';
+ import { gitInit, runExperiment, type ExperimentPlan } from './runner.js';
+ import type { EvaluationTarget, Executor, ExecutorResult } from './types.js';
++import { ExecutorFailure } from './types.js';
++import { parseEvalReport, renderEvalMarkdown } from '../commands/eval-report.js';
+ 
+ const PACKAGE_ROOT = fileURLToPath(new URL('../..', import.meta.url));
+ const BUNDLED_CODE_REVIEW = join(PACKAGE_ROOT, 'benches', 'code-review');
+@@ -227,6 +229,38 @@ test('token coverage counts usage fields only on surviving graded pairs', async
+   assert.deepEqual(manifest.overall.conditions.treatment.tokenCoverage, { input: 0, output: 0 });
+ });
+ 
++test('runExperiment preserves failure costs and distinguishes invocations from guard refusals', async (t) => {
++  const runsRoot = tmp(t, 'skillfit-failure-costs-');
++  const benchDir = join(runsRoot, 'bench');
++  for (const dir of ['fixtures/t1', 'prompts', 'verifiers']) mkdirSync(join(benchDir, dir), { recursive: true });
++  writeFileSync(join(benchDir, 'fixtures/t1/input.txt'), 'input');
++  writeFileSync(join(benchDir, 'prompts/t1.md'), 'Solve the task.');
++  writeFileSync(join(benchDir, 'verifiers/t1.mjs'), 'import { readFileSync } from "node:fs"; process.exit(readFileSync(process.argv[2]+"/_output.md","utf8")==="pass"?0:1);');
++  writeFileSync(join(benchDir, 'bench.json'), JSON.stringify({ schemaVersion: 1, tasks: [{ id: 't1', fixture: 'fixtures/t1', prompt: 'prompts/t1.md', verifier: 'node verifiers/t1.mjs', verifierKind: 'output' }] }));
++  let calls = 0;
++  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'cost-fixture' }), run: async () => {
++    calls++;
++    if (calls === 4) throw new ExecutorFailure('timeout', { output: 'unfinished', rawOutput: 'public partial transcript', tokens: { input: 3, cachedInput: 2, output: 1 }, usageStatus: 'partial' });
++    if (calls >= 5) throw new ExecutorFailure('stopped before call', { output: '' }, false);
++    return { output: calls === 2 ? 'fail' : 'pass', tokens: { input: 10, cachedInput: 8, output: 2 } };
++  } };
++  const manifest = await runExperiment(plan({ runsRoot, bench: loadBench(benchDir), executor, trials: 3 }));
++  const costs = manifest.overall.costs!;
++  assert.equal(manifest.overall.conditions.baseline.trials, 1);
++  assert.equal(manifest.overall.conditions.treatment.passes, 0);
++  assert.equal(costs.attempts.baseline.passes, 2);
++  assert.equal(costs.attempts.treatment.runs, 2);
++  assert.equal(costs.attempts.treatment.metrics.input.knownTotal, 13);
++  assert.deepEqual(costs.attempts.treatment.metrics.input.coverage, { final: 1, partial: 1, unknown: 0 });
++  assert.deepEqual(costs.notInvoked, { baseline: 1, treatment: 1 });
++  const receipt = JSON.parse(readFileSync(join(runsRoot, 'test-group/t1/treatment/trial-2/_result.json'), 'utf8'));
++  assert.equal(receipt.executorInvoked, true);
++  assert.equal(receipt.usageStatus, 'partial');
++  assert.deepEqual(receipt.tokens, { input: 3, cachedInput: 2, output: 1 });
++  assert.equal(readFileSync(join(runsRoot, 'test-group/t1/treatment/trial-2/_transcript.jsonl'), 'utf8'), 'public partial transcript');
++  assert.match(renderEvalMarkdown(parseEvalReport(manifest)), /All agent executor invocations/);
++});
++
+ test('runExperiment applies workspace config after snapshotting so prompts stay identical', async (t) => {
+   const runsRoot = tmp(t, 'skillfit-config-runs-');
+   const benchDir = join(runsRoot, 'bench');
+diff --git a/src/harness/runner.ts b/src/harness/runner.ts
+index edaec4f..b3bbe35 100644
+--- a/src/harness/runner.ts
++++ b/src/harness/runner.ts
+@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
+ import { dirname, join, resolve } from 'node:path';
+ import type { ExperimentSession } from './experiment-session.js';
+ import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
+-import { assertInstalledSkillFixtures, installSkillResources, installedSkillDestination } from './installed-skill.js';
++import { assertInstalledSkillFixtures, assertSkillRevisionTargets, installSkillResources, installedSkillDestination } from './installed-skill.js';
+ import { collectInstalledSkillFingerprint } from './bundle.js';
+ import { judgePair, type JudgeResult } from './judge.js';
+ import { killTree, treeSpawnOptions } from './kill-tree.js';
+@@ -21,11 +21,14 @@ import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from '.
+ import { listFilesRecursive } from './hash.js';
+ import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, TokenUsage } from './types.js';
+ import { CONDITIONS } from './types.js';
++import { ExecutorFailure } from './types.js';
++import { summarizeCosts } from './costs.js';
+ import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
+ 
+ export interface ExperimentPlan {
+   bench: Bench;
+   target: EvaluationTarget;
++  baselineTarget?: EvaluationTarget;
+   inputMode?: InputMode;
+   skillInstallDir?: string;
+   skillSearchDirs?: readonly string[];
+@@ -62,6 +65,8 @@ export interface TrialOutcome {
+   error: string | null;
+   output: string;
+   tokens: TokenUsage | null;
++  executorInvoked: boolean;
++  usageStatus: 'final' | 'partial' | 'unknown';
+   gitInitialized: boolean;
+   skillTriggered?: boolean | null;
+ }
+@@ -182,15 +187,22 @@ export async function runTrial(
+   condition: Condition,
+   trial: number,
+ ): Promise<TrialOutcome> {
+-  const { bench, target, executor } = plan;
++  const { bench, executor } = plan;
++  const target = condition === 'baseline' && plan.baselineTarget ? plan.baselineTarget : plan.target;
++  if (plan.baselineTarget) {
++    if (!plan.skillInstallDir) throw new Error('Skill revision comparison requires installed delivery.');
++    assertSkillRevisionTargets(plan.target, plan.baselineTarget);
++  }
+   const inputMode = plan.inputMode ?? 'snapshot';
+   assertInputModeSupported(inputMode, executor);
+   if (plan.skillInstallDir) {
+     if (target.kind !== 'skill' || inputMode !== 'workspace') {
+       throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
+     }
+-    if (collectInstalledSkillFingerprint(target.sourceDir).sha256 !== target.sha256) {
+-      throw new Error('Skill resources changed after planning; freeze the input again before running.');
++    for (const skill of [plan.target, ...(plan.baselineTarget ? [plan.baselineTarget] : [])]) {
++      if (collectInstalledSkillFingerprint(skill.sourceDir).sha256 !== skill.sha256) {
++        throw new Error('Skill resources changed after planning; freeze the input again before running.');
++      }
+     }
+   }
+   const task = bench.tasks.find((t) => t.id === taskId);
+@@ -213,7 +225,7 @@ export async function runTrial(
+   if (plan.skillInstallDir) {
+     const destination = installedSkillDestination(runDir, plan.skillInstallDir, target.name);
+     if (existsSync(destination)) throw new Error('Fixture already contains the evaluated Skill: ' + destination);
+-    if (condition === 'treatment') installSkillResources(target, runDir, plan.skillInstallDir);
++    if (condition === 'treatment' || plan.baselineTarget) installSkillResources(target, runDir, plan.skillInstallDir);
+   }
+   const gitInitialized = await gitInit(runDir);
+ 
+@@ -235,18 +247,30 @@ export async function runTrial(
+   let tokens: TokenUsage | null = null;
+   let rawOutput: string | null = null;
+   let skillTriggered: boolean | null = null;
++  let executorInvoked = false;
++  let usageStatus: TrialOutcome['usageStatus'] = 'unknown';
+   try {
+     if (!gitInitialized && task.verifierKind === 'command') {
+       throw new Error('Benchmark Git initialization or reflog verification failed; command task was not executed.');
+     }
++    executorInvoked = true;
+     const result = await executor.run(prompt, runDir);
+     output = result.output;
+     tokens = result.tokens ?? null;
+     rawOutput = result.rawOutput ?? null;
+     skillTriggered = result.skillTriggered ?? null;
++    usageStatus = result.usageStatus ?? 'final';
+     error = result.guardError ?? null;
+   } catch (executorError) {
+     error = (executorError as Error).message;
++    if (executorError instanceof ExecutorFailure) {
++      executorInvoked = executorError.executorInvoked;
++      output = executorError.result.output;
++      tokens = executorError.result.tokens ?? null;
++      rawOutput = executorError.result.rawOutput ?? null;
++      skillTriggered = executorError.result.skillTriggered ?? null;
++      usageStatus = executorError.result.usageStatus ?? (tokens ? 'partial' : 'unknown');
++    }
+   }
+   if (error === null) {
+     error = await engagementError(output, task.verifierKind, runDir, gitInitialized);
+@@ -295,6 +319,8 @@ export async function runTrial(
+     error,
+     output,
+     tokens,
++    executorInvoked,
++    usageStatus,
+     gitInitialized,
+     ...(plan.skillInstallDir ? { skillTriggered } : {}),
+   };
+@@ -312,7 +338,7 @@ export async function runTrial(
+           kind: target.kind,
+           name: target.name,
+           bundleSha256: target.sha256,
+-          applied: condition === 'treatment' || target.overlays.baseline !== undefined,
++          applied: condition === 'treatment' || plan.baselineTarget !== undefined || target.overlays.baseline !== undefined,
+         },
+         executor: withSampling(executor.describe()),
+       },
+@@ -357,7 +383,7 @@ function sumTokens(records: TrialOutcome[]): { input: number; output: number } |
+   let output = 0;
+   let seen = false;
+   for (const record of records) {
+-    if (!record.tokens) continue;
++    if (!record.tokens || record.usageStatus !== 'final') continue;
+     seen = true;
+     input += record.tokens.input ?? 0;
+     output += record.tokens.output ?? 0;
+@@ -431,8 +457,8 @@ function statsFor(records: TrialOutcome[], errors: number, readObservations = fa
+     meanScore,
+     tokens: sumTokens(records),
+     tokenCoverage: {
+-      input: records.filter(r => typeof r.tokens?.input === 'number').length,
+-      output: records.filter(r => typeof r.tokens?.output === 'number').length,
++      input: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.input === 'number').length,
++      output: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.output === 'number').length,
+     },
+   };
+ }
+@@ -638,6 +664,7 @@ function summarizeTask(
+     facets: facetStats(survivors),
+     verifierNotes: verifierConsistencyNotes(taskId, outcomes),
+     tokenDelta: tokenDelta(baseline.tokens, treatment.tokens),
++    costs: summarizeCosts(outcomes, survivors),
+     verdict,
+     verdictReason: reason,
+     judge: summarizeJudge(judgeResults),
+@@ -646,6 +673,10 @@ function summarizeTask(
+ 
+ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
+   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
++  if (plan.baselineTarget) {
++    if (!plan.skillInstallDir) throw new Error('Skill revision comparison requires installed delivery.');
++    assertSkillRevisionTargets(plan.target, plan.baselineTarget);
++  }
+   if (plan.skillInstallDir) {
+     if (plan.target.kind !== 'skill' || plan.inputMode !== 'workspace') {
+       throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
+@@ -717,6 +748,13 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest>
+       bundleSha256: plan.target.sha256,
+       files: plan.target.files,
+     },
++    ...(plan.baselineTarget ? { baselineTarget: {
++      kind: 'skill' as const,
++      name: plan.baselineTarget.name,
++      sourceDir: plan.baselineTarget.sourceDir,
++      bundleSha256: plan.baselineTarget.sha256,
++      files: plan.baselineTarget.files,
++    } } : {}),
+     bench: {
+       name: plan.bench.name,
+       dir: plan.bench.dir,
+@@ -735,6 +773,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest>
+       deltaPassRate: overallDelta,
+       scoreDelta,
+       tokenDelta: tokenDelta(overallBaseline.tokens, overallTreatment.tokens),
++      costs: summarizeCosts(allOutcomes, allSurvivors),
+       verdict: overallVerdict.verdict,
+       verdictReason: overallVerdict.reason,
+       stats: {
+diff --git a/src/harness/types.ts b/src/harness/types.ts
+index 9401c47..d6444a8 100644
+--- a/src/harness/types.ts
++++ b/src/harness/types.ts
+@@ -1,6 +1,8 @@
+ export interface TokenUsage {
+   input?: number;
+   output?: number;
++  /** Cache-read input, already included in input; absent means unrecorded. */
++  cachedInput?: number;
+ }
+ 
+ export interface ExecutorResult {
+@@ -10,6 +12,16 @@ export interface ExecutorResult {
+   rawOutput?: string;
+   /** Returned output retained, but input/configuration drift makes this trial ungradable. */
+   guardError?: string;
++  /** Partial usage is a known lower bound, never a complete final receipt. */
++  usageStatus?: 'final' | 'partial';
++}
++
++/** Retain public output/usage from a failed invocation; guards can refuse before invoking. */
++export class ExecutorFailure extends Error {
++  constructor(message: string, readonly result: ExecutorResult = { output: '' }, readonly executorInvoked = true) {
++    super(message);
++    this.name = 'ExecutorFailure';
++  }
+ }
+ 
+ export interface ExecutorDescriptor {

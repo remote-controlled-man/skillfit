@@ -1,0 +1,26 @@
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -2245,7 +2245,9 @@
+       }
+ 
+       if (this.#hasOnInsert && !this.#isBackgroundFetch(v)) {
+-        this.onInsert?.(v as V, k, v === oldVal ? 'update' : 'replace')
++        const previousValue = this.#isBackgroundFetch(oldVal) ? oldVal.__staleWhileFetching : oldVal
++        const reason = previousValue === undefined ? 'add' : v === previousValue ? 'update' : 'replace'
++        this.onInsert?.(v as V, k, reason)
+       }
+     }
+     if (ttl !== 0 && !this.#ttls) {
+--- a/fetch-lifecycle.test.mjs
++++ b/fetch-lifecycle.test.mjs
+@@ -46,8 +46,8 @@
+   assert.equal(calls, 1);
+   provider.resolve(value);
+   assert.deepEqual(await Promise.all([first, second]), [value, value]);
+-  // The result replaces the pending entry already occupying this key.
+-  assert.deepEqual(inserts, [[value, 'key', 'replace']]);
++  // A pending wrapper is not an existing application value.
++  assert.deepEqual(inserts, [[value, 'key', 'add']]);
+   assert.equal(c.get('key'), value);
+   assert.equal(await c.fetch('key'), value);
+   assert.equal(calls, 1);

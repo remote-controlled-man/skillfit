@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "name": "code-review",
+  "description": "Review small pull requests against a spec and find the seeded defects; mixes in one non-review explanation task (explain-x1) as a negative trigger control.",
+  "tasks": [
+    {
+      "id": "review-r1",
+      "fixture": "fixtures/review-r1",
+      "prompt": "prompts/review-r1.md",
+      "promptTrigger": "prompts/review-r1.trigger.md",
+      "verifier": "node verifiers/seeded-bugs.mjs",
+      "oracle": "node ground-truth/oracle-r1.mjs",
+      "rubric": "ground-truth/r1.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "review-r2",
+      "fixture": "fixtures/review-r2",
+      "prompt": "prompts/review-r2.md",
+      "promptTrigger": "prompts/review-r2.trigger.md",
+      "verifier": "node verifiers/review-r2.mjs",
+      "oracle": "node ground-truth/oracle-r2.mjs",
+      "rubric": "ground-truth/r2.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "review-r3",
+      "fixture": "fixtures/review-r3",
+      "prompt": "prompts/review-r3.md",
+      "promptTrigger": "prompts/review-r3.trigger.md",
+      "verifier": "node verifiers/review-r3.mjs",
+      "oracle": "node ground-truth/oracle-r3.mjs",
+      "rubric": "ground-truth/r3.md",
+      "shouldTrigger": true
+    },
+    {
+      "id": "explain-x1",
+      "fixture": "fixtures/explain-x1",
+      "prompt": "prompts/explain-x1.md",
+      "promptTrigger": "prompts/explain-x1.trigger.md",
+      "verifier": "node verifiers/explain-x1.mjs",
+      "oracle": "node ground-truth/oracle-x1.mjs",
+      "rubric": "ground-truth/x1.md",
+      "shouldTrigger": false
+    },
+    {
+      "id": "summarize-s1",
+      "fixture": "fixtures/summarize-s1",
+      "prompt": "prompts/summarize-s1.md",
+      "promptTrigger": "prompts/summarize-s1.trigger.md",
+      "verifier": "node verifiers/summarize-s1.mjs",
+      "oracle": "node ground-truth/oracle-summarize-s1.mjs",
+      "rubric": "ground-truth/summarize-s1.md",
+      "shouldTrigger": false
+    }
+  ]
+}

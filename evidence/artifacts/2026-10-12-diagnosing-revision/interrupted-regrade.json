@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "mode": "installed",
+  "benchSha256": "b276606b5d00bdd98a65d8fa8944ba38b73efc7429e73b5dc56d83b8937950b2",
+  "matched": 2,
+  "excluded": 28,
+  "rows": [
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 3,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 3,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 4,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 4,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 5,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 5,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 3,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 3,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 4,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 4,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 5,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 5,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 3,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 3,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 4,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 4,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 5,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 5,
+      "excluded": true,
+      "error": "Agent configuration changed: <user-home>/.codex/AGENTS.md; no further calls."
+    }
+  ]
+}

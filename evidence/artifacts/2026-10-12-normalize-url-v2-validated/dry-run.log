@@ -1,0 +1,34 @@
+WARNING: proceeding, even though we could not create PATH aliases: Operation not permitted (os error 1)
+[PASS] bench.json valid (1 task(s), content sha256 73ebfa8b2e00…)
+[PASS] query-shape: command verifier fails on the untouched fixture (the failure reproduces)
+[PASS] query-shape: 8 facet check(s), within the 2–8 contract
+[PASS] query-shape: oracle solution passes the verifier with full checks
+[INFO] query-shape: command verifier — mock-arm probes not applicable (a mock writes _output.md text, not file edits); offline coverage comes from the oracle and NOP gates above
+[PASS] query-shape: fixture size 50 KB
+[WARN] no shouldTrigger:false (negative-control) tasks — trigger mode cannot measure false-trigger rate (see docs/metrics.md)
+
+Summary: 5 passed, 1 warning(s), 0 failure(s)
+Next: calibrate difficulty against a real agent —
+  skillfit eval <skill-path> --bench <skillfit-checkout>/benches/contrib/oss-normalize-url --agent <id> --trials 5
+  target: baseline pass rate 30–70%; --calibrate warns outside 10–90% (docs/metrics.md L0).
+Availability: one 90s readiness invocation before 4 paired calls; 5 maximum total.
+Experiment plan (dry run)
+Target   : diagnosing-bugs (skill, 4 files, bundle sha256 2df457fa462c…)
+Baseline : diagnosing-bugs (4 files, bundle sha256 3cf6b2fea38a…)
+Compare  : previous Skill in baseline vs target Skill in treatment; measures revision effects, not benefit over no Skill
+Bench    : oss-normalize-url-query-shape @ <skillfit-checkout>/benches/contrib/oss-normalize-url
+           1 task(s), content sha256 73ebfa8b2e00…
+Input    : workspace files on disk (no inline repository snapshot)
+Est. cost: ~337 prompt-tokens/run baseline, ~337 treatment (estimate, before replies)
+           initial prompt only; agent file reads and replies are not estimated
+Executor : cli (cli-configured) — codex: codex exec --json --sandbox workspace-write -
+Judge    : disabled
+Trials   : 2 per condition (1 task(s) × 2 conditions × 2 = 4 runs)
+Scale    : below 8 tasks × 5 trials per condition; any result will be indicative for broader claims.
+Tasks    :
+- query-shape: fixture fixtures/query-shape, verifier `node verifiers/query-shape.mjs`
+Output   : <system-tmp>/skillfit-normalize-url-v2-validated-20261012/normalize-url-v2-validated-20261012 (not created)
+Dry run — nothing was written.
+Calls    : 4 planned; ceiling 4 (includes both judge orders when enabled)
+Delivery : complete Skill resources installed in both conditions at .agents/skills/diagnosing-bugs
+           identical prompts; native discovery is not guaranteed; inherited configuration still applies

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "cohort": "transfer-recovery",
+  "runGroup": "normalize-url-v2-recovery-20261012",
+  "benchSha256": "73ebfa8b2e00513e991df75f9bafdccdaf333dd7517e23ae74604685cca157af",
+  "matched": 0,
+  "excluded": 4,
+  "invocationCount": 1,
+  "costsMatch": true,
+  "rows": [
+    {
+      "task": "query-shape",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": true,
+      "invoked": true,
+      "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls."
+    },
+    {
+      "task": "query-shape",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": true,
+      "invoked": false,
+      "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls."
+    },
+    {
+      "task": "query-shape",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": true,
+      "invoked": false,
+      "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls."
+    },
+    {
+      "task": "query-shape",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": true,
+      "invoked": false,
+      "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls."
+    }
+  ]
+}

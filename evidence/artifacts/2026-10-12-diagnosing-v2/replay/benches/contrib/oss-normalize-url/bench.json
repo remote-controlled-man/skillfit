@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "name": "oss-normalize-url-query-shape",
+  "description": "Pinned normalize-url issue #193 and maintainer fix. Independent repository transfer control; difficulty uncalibrated and one historical task cannot establish general efficacy.",
+  "tasks": [{
+    "id": "query-shape",
+    "fixture": "fixtures/query-shape",
+    "prompt": "prompts/query-shape.md",
+    "verifier": "node verifiers/query-shape.mjs",
+    "verifierKind": "command",
+    "oracle": "node ground-truth/oracle-query-shape.mjs",
+    "shouldTrigger": true
+  }]
+}

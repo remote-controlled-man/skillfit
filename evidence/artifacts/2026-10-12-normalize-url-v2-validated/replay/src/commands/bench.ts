@@ -1,0 +1,1255 @@
+import { spawnSync } from 'node:child_process';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { getAgent } from '../agents.js';
+import { loadBench } from '../harness/bench.js';
+import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
+import { CliExecutor } from '../harness/executors/cli.js';
+import { listFilesRecursive } from '../harness/hash.js';
+import { assertInputModeSupported } from '../harness/prompt.js';
+import { runTrial, runVerifier, verifierFailure } from '../harness/runner.js';
+import type { ExperimentPlan } from '../harness/runner.js';
+import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from '../harness/constants.js';
+import { verdictFromOutput } from '../harness/verifier-summary.js';
+import type { VerifierCheck } from '../harness/verifier-summary.js';
+import type { Executor, InputMode, SkillBundle } from '../harness/types.js';
+import { confirm as confirmPrompt } from './confirm.js';
+import { BACKUP_SUFFIX } from './install.js';
+import type { Check } from './doctor.js';
+
+export interface BenchInitOptions {
+  dir?: string;
+  cwd?: string;
+  dryRun?: boolean;
+  yes?: boolean;
+  confirm?: (question: string) => Promise<boolean>;
+  log?: (msg: string) => void;
+}
+
+export interface BenchCheckCalibrateOptions {
+  maxCalls?: number;
+  sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
+  agent?: string;
+  inputMode?: InputMode;
+  dryRun?: boolean;
+  trials?: number;
+  executor?: Executor;
+  runsRoot?: string;
+  runGroup?: string;
+}
+
+export interface BenchCheckOptions {
+  dir?: string;
+  log?: (msg: string) => void;
+  calibrate?: BenchCheckCalibrateOptions | false;
+}
+
+export interface BenchCheckReport {
+  dir: string;
+  checks: Check[];
+  failures: number;
+  warnings: number;
+}
+
+const FIXTURE_SIZE_WARN_BYTES = 64 * 1024;
+
+// benches/README.md: a verifier decomposes its acceptance criteria into 2–8 named checks.
+const MIN_FACET_CHECKS = 2;
+const MAX_FACET_CHECKS = 8;
+
+// docs/metrics.md: >=30% of trigger-labelled tasks should be negative controls.
+const NEGATIVE_CONTROL_TARGET = 0.3;
+const NEGATIVE_CONTROL_PERCENT = 30;
+
+function templateFiles(benchName: string): Record<string, string> {
+  return {
+    'bench.json': `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        name: benchName,
+        description: 'Describe what real-work tasks this bench measures.',
+        tasks: [
+          {
+            id: 'example-task',
+            fixture: 'fixtures/example-task',
+            prompt: 'prompts/example-task.md',
+            verifier: 'node verifiers/example-task.mjs',
+            oracle: 'node ground-truth/oracle-example-task.mjs',
+            rubric: 'ground-truth/example-task.md',
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    'prompts/example-task.md': `# Example task
+
+The repository snapshot below contains \`answer.txt\`. Reply with its exact contents and nothing else.
+`,
+    'prompts/example-task.trigger.md': `# Example task
+
+The repository in your current working directory contains \`answer.txt\`. Reply with its exact contents and nothing else.
+`,
+    'fixtures/example-task/answer.txt': 'skillfit-ok\n',
+    [`fixtures/example-task/${MOCK_MARKER_FILE}`]: `${JSON.stringify(
+      { baseline: { output: 'skillfit-ok' }, treatment: { output: 'skillfit-ok' } },
+      null,
+      2,
+    )}\n`,
+    'verifiers/example-task.mjs': `import fs from 'node:fs';
+import path from 'node:path';
+
+const runDir = process.argv[2];
+if (!runDir) {
+  console.error('usage: node example-task.mjs <run-dir>');
+  process.exit(2);
+}
+
+let output;
+try {
+  output = fs.readFileSync(path.join(runDir, '_output.md'), 'utf8').trim();
+} catch {
+  console.log(JSON.stringify({ passed: false, checks: [{ name: 'exact-answer', pass: false }], error: 'missing _output.md' }));
+  process.exit(1);
+}
+const passed = output === 'skillfit-ok';
+console.log(JSON.stringify({ passed, checks: [{ name: 'exact-answer', pass: passed }] }));
+process.exit(passed ? 0 : 1);
+`,
+    'ground-truth/oracle-example-task.mjs': `import fs from 'node:fs';
+import path from 'node:path';
+
+const runDir = process.argv[2];
+if (!runDir) {
+  console.error('usage: node oracle-example-task.mjs <run-dir>');
+  process.exit(2);
+}
+
+// The oracle applies the reference solution: the exact contents of answer.txt.
+const answer = fs.readFileSync(path.join(runDir, 'answer.txt'), 'utf8').trim();
+fs.writeFileSync(path.join(runDir, '_output.md'), answer + '\\n', 'utf8');
+`,
+    'ground-truth/example-task.md': `# Ground truth — example-task
+
+The expected answer is \`skillfit-ok\` (the exact contents of \`answer.txt\`).
+
+This task is a placeholder so the scaffold passes \`skillfit bench check\` out of the box. Replace it with
+a real task from your own work:
+
+1. Drop the real (pre-change) repository state into \`fixtures/<task-id>/\` — the best tasks come from
+   failures you have actually seen: a bug that escaped review, a migration that went wrong.
+2. Write the prompt a teammate would get (\`prompts/<task-id>.md\`, plus a \`.trigger.md\` variant that
+   references the on-disk repo instead of the inline snapshot).
+3. Encode what you would check by hand into \`verifiers/<task-id>.mjs\` — exit code 0 = pass, nothing else
+   matters. Keep it deterministic: no network, no clocks, no randomness.
+4. Record the expected answer here in \`ground-truth/\` so future edits stay honest.
+5. Run \`skillfit bench check\`, then calibrate difficulty with a real agent
+   (target: baseline pass rate 30–70% — see docs/metrics.md in the skillfit repo).
+`,
+  };
+}
+
+export async function runBenchInit(
+  options: BenchInitOptions,
+): Promise<{ dir: string; created: string[] } | null> {
+  const log = options.log ?? ((msg: string) => console.log(msg));
+  const dir = resolve(options.cwd ?? process.cwd(), options.dir ?? 'skillfit-bench');
+  const files = templateFiles(basename(dir));
+  const created = Object.keys(files);
+
+  if (options.dryRun) {
+    log(`Bench scaffold plan (dry run) — ${dir}:`);
+    for (const rel of created) log(`  + ${rel}`);
+    log('Dry run — nothing was written. Re-run with --yes to apply.');
+    return null;
+  }
+  if (existsSync(dir) && readdirSync(dir).length > 0) {
+    throw new Error(`Target directory is not empty: ${dir}`);
+  }
+  if (!options.yes) {
+    const confirm = options.confirm ?? confirmPrompt;
+    const ok = await confirm(`Create ${created.length} file(s) in ${dir}? [y/N] `);
+    if (!ok) {
+      log('Aborted — nothing was written.');
+      return null;
+    }
+  }
+  for (const [rel, content] of Object.entries(files)) {
+    const target = join(dir, rel);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, content, 'utf8');
+  }
+  loadBench(dir);
+  log(`Bench scaffolded at ${dir} (${created.length} files, self-check passed).`);
+  log('Next:');
+  log(`  skillfit bench check ${dir}`);
+  log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 5`);
+  return { dir, created };
+}
+
+interface MockMarkerOutputs {
+  baseline?: { output?: string };
+  treatment?: { output?: string };
+}
+
+async function probeVerifier(
+  benchDir: string,
+  verifier: string,
+  output: string | null,
+): Promise<{ exitCode: number | null; error: string | null; checks: readonly VerifierCheck[] | null }> {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
+  try {
+    if (output !== null) {
+      writeFileSync(join(dir, '_output.md'), output, 'utf8');
+    }
+    const result = await runVerifier(benchDir, verifier, dir);
+    return {
+      exitCode: result.exitCode,
+      error: result.error,
+      checks: verdictFromOutput(result.output)?.checks ?? null,
+    };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+function facetCountCheck(taskId: string, checks: readonly VerifierCheck[] | null): Check | null {
+  // `checks` is optional in the verifier contract; with no checks there is no graded signal to gate.
+  if (checks === null) return null;
+  if (checks.length >= MIN_FACET_CHECKS && checks.length <= MAX_FACET_CHECKS) {
+    return {
+      status: 'PASS',
+      message: `${taskId}: ${checks.length} facet check(s), within the ${MIN_FACET_CHECKS}–${MAX_FACET_CHECKS} contract`,
+    };
+  }
+  const why =
+    checks.length < MIN_FACET_CHECKS
+      ? 'a single check is binary pass/fail in facet costume — it carries none of the graded signal facet scores exist to provide'
+      : 'the trial score is dominated by whatever these checks happen to measure, and the per-facet table stops being readable';
+  return {
+    status: 'WARN',
+    message: `${taskId}: ${checks.length} facet check(s) — outside the ${MIN_FACET_CHECKS}–${MAX_FACET_CHECKS} range in benches/README.md (${why})`,
+  };
+}
+
+function copyFixture(fixtureDir: string, dest: string): void {
+  for (const rel of listFilesRecursive(fixtureDir)) {
+    const target = join(dest, rel);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, readFileSync(join(fixtureDir, rel)));
+  }
+}
+
+type OracleGateOutcome =
+  | { kind: 'oracle-failed'; exitCode: number | null; reason: string | null }
+  | { kind: 'verifier-failed'; reason: string | null }
+  | { kind: 'low-score'; score: number }
+  | { kind: 'pass'; score: number | null };
+
+async function runOracleGate(
+  benchDir: string,
+  fixtureDir: string,
+  oracle: string,
+  verifier: string,
+): Promise<OracleGateOutcome> {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
+  try {
+    copyFixture(fixtureDir, dir);
+    const oracleRun = await runVerifier(benchDir, oracle, dir);
+    if (oracleRun.exitCode !== 0) {
+      return {
+        kind: 'oracle-failed',
+        exitCode: oracleRun.exitCode,
+        reason: oracleRun.exitCode === null ? verifierFailure('oracle', oracle, oracleRun.error) : null,
+      };
+    }
+    const graded = await runVerifier(benchDir, verifier, dir);
+    if (graded.exitCode !== 0) {
+      return {
+        kind: 'verifier-failed',
+        reason: graded.exitCode === null ? verifierFailure('verifier', verifier, graded.error) : null,
+      };
+    }
+    const score = verdictFromOutput(graded.output)?.score ?? null;
+    if (score !== null && score < 1) {
+      return { kind: 'low-score', score };
+    }
+    return { kind: 'pass', score };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+async function probeOracle(
+  benchDir: string,
+  fixture: string,
+  oracle: string,
+  verifier: string,
+): Promise<{ status: Check['status']; message: string }> {
+  const gate = await runOracleGate(benchDir, join(benchDir, fixture), oracle, verifier);
+  switch (gate.kind) {
+    case 'oracle-failed':
+      return {
+        status: 'FAIL',
+        message:
+          gate.reason ??
+          `oracle command itself failed (exit ${gate.exitCode}) — the reference solution cannot run`,
+      };
+    case 'verifier-failed':
+      return {
+        status: 'FAIL',
+        message:
+          gate.reason ?? 'oracle solution does not pass the verifier — the task is unwinnable or the oracle is stale',
+      };
+    case 'low-score':
+      return {
+        status: 'FAIL',
+        message: `oracle passes the verifier but scores ${gate.score.toFixed(2)} on its checks — the checks are stricter than the exit code`,
+      };
+    case 'pass':
+      return {
+        status: 'PASS',
+        message: `oracle solution passes the verifier${gate.score !== null ? ' with full checks' : ''}`,
+      };
+  }
+}
+
+function renderCheck({ status, message }: Check): string {
+  return `[${status}] ${message}`;
+}
+
+export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCheckReport> {
+  const log = options.log ?? ((msg: string) => console.log(msg));
+  const dir = resolve(options.dir ?? '.');
+  const checks: Check[] = [];
+  const push = (status: Check['status'], message: string): void => {
+    checks.push({ status, message });
+    log(renderCheck({ status, message }));
+  };
+
+  let bench;
+  try {
+    bench = loadBench(dir);
+  } catch (error) {
+    push('FAIL', `bench does not load: ${(error as Error).message}`);
+    return finish(dir, checks, log);
+  }
+  push('PASS', `bench.json valid (${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…)`);
+  if (options.calibrate) {
+    const trials = options.calibrate.trials ?? CALIBRATE_DEFAULT_TRIALS;
+    if (!Number.isInteger(trials) || trials < 1 || trials > 20) throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
+    validateCallBudget(bench.tasks.length * trials, options.calibrate.maxCalls);
+  }
+
+  let labeledTasks = 0;
+  let negativeTasks = 0;
+  for (const task of bench.tasks) {
+    let facetChecks: readonly VerifierCheck[] | null = null;
+    if ((task.verifierKind ?? 'output') === 'command') {
+      const fixtureCopy = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
+      try {
+        copyFixture(join(bench.dir, task.fixture), fixtureCopy);
+        const pristine = await runVerifier(bench.dir, task.verifier, fixtureCopy);
+        facetChecks = verdictFromOutput(pristine.output)?.checks ?? null;
+        if (pristine.exitCode === null) {
+          // Without this branch a verifier that cannot even be spawned reads as a clean NOP gate:
+          // "fails on the untouched fixture" is exactly what `exitCode !== 0` looks like.
+          push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, pristine.error)}`);
+        } else if (pristine.exitCode === 0) {
+          push(
+            'FAIL',
+            `${task.id}: command verifier already passes on the untouched fixture — the task is solved or the verifier is broken`,
+          );
+        } else {
+          push(
+            'PASS',
+            `${task.id}: command verifier fails on the untouched fixture (the failure reproduces)`,
+          );
+        }
+      } finally {
+        rmSync(fixtureCopy, { recursive: true, force: true });
+      }
+    } else {
+      const missing = await probeVerifier(bench.dir, task.verifier, null);
+      if (missing.exitCode === null) {
+        push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, missing.error)}`);
+      } else if (missing.exitCode === 0) {
+        push('FAIL', `${task.id}: verifier does not reject a missing _output.md`);
+      } else {
+        push('PASS', `${task.id}: verifier rejects missing output`);
+      }
+      const empty = await probeVerifier(bench.dir, task.verifier, '');
+      facetChecks = empty.checks;
+      if (empty.exitCode === null) {
+        push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, empty.error)}`);
+      } else if (empty.exitCode === 0) {
+        push('FAIL', `${task.id}: verifier passes an empty output — it cannot tell success from silence`);
+      } else {
+        push('PASS', `${task.id}: verifier rejects empty output`);
+      }
+    }
+
+    const facetGate = facetCountCheck(task.id, facetChecks);
+    if (facetGate) push(facetGate.status, facetGate.message);
+
+    if (task.oracle) {
+      const oracleResult = await probeOracle(bench.dir, task.fixture, task.oracle, task.verifier);
+      push(oracleResult.status, `${task.id}: ${oracleResult.message}`);
+    } else {
+      push(
+        'WARN',
+        `${task.id}: no oracle — task winnability is unverified (nothing proves a correct solution passes this verifier; register one with --oracle or write ground-truth/oracle-${task.id}.mjs)`,
+      );
+    }
+
+    const markerPath = join(bench.dir, task.fixture, MOCK_MARKER_FILE);
+    if ((task.verifierKind ?? 'output') === 'command') {
+      push(
+        'INFO',
+        `${task.id}: command verifier — mock-arm probes not applicable (a mock writes _output.md text, not file edits)${
+          task.oracle
+            ? '; offline coverage comes from the oracle and NOP gates above'
+            : '; with no oracle registered, nothing offline shows this task is solvable'
+        }`,
+      );
+    } else if (existsSync(markerPath)) {
+      try {
+        const marker = JSON.parse(readFileSync(markerPath, 'utf8')) as MockMarkerOutputs;
+        for (const arm of ['baseline', 'treatment'] as const) {
+          const behavior = marker[arm];
+          if (behavior?.output === undefined) continue;
+          const probe = await probeVerifier(bench.dir, task.verifier, behavior.output);
+          push(
+            'INFO',
+            `${task.id}: mock ${arm} output → verifier ${probe.exitCode === 0 ? 'pass' : 'fail'}`,
+          );
+        }
+      } catch (error) {
+        push('FAIL', `${task.id}: ${MOCK_MARKER_FILE} is unreadable (${(error as Error).message})`);
+      }
+    } else {
+      push('INFO', `${task.id}: no ${MOCK_MARKER_FILE} (offline mock runs will produce empty outputs)`);
+    }
+
+    const fixtureDir = join(bench.dir, task.fixture);
+    const fixtureBytes = listFilesRecursive(fixtureDir)
+      .map((rel) => statSync(join(fixtureDir, rel)).size)
+      .reduce((sum, size) => sum + size, 0);
+    if (fixtureBytes > FIXTURE_SIZE_WARN_BYTES) {
+      push(
+        'WARN',
+        `${task.id}: fixture is ${Math.round(fixtureBytes / 1024)} KB — inject mode inlines it into every prompt; keep it lean`,
+      );
+    } else {
+      push('PASS', `${task.id}: fixture size ${Math.round(fixtureBytes / 1024)} KB`);
+    }
+
+    if (task.shouldTrigger === undefined) {
+      push('INFO', `${task.id}: no shouldTrigger label (trigger mode will skip this task)`);
+    } else {
+      labeledTasks++;
+      if (task.shouldTrigger === false) negativeTasks++;
+    }
+  }
+
+  if (labeledTasks > 0) {
+    const fraction = negativeTasks / labeledTasks;
+    const percent = Math.round(fraction * 100);
+    if (negativeTasks === 0) {
+      push(
+        'WARN',
+        'no shouldTrigger:false (negative-control) tasks — trigger mode cannot measure false-trigger rate (see docs/metrics.md)',
+      );
+    } else if (fraction < NEGATIVE_CONTROL_TARGET) {
+      push(
+        'WARN',
+        `${negativeTasks}/${labeledTasks} labeled task(s) are negative controls (${percent}%) — below the ${NEGATIVE_CONTROL_PERCENT}% target in docs/metrics.md, so false-trigger rate rests on a thin sample`,
+      );
+    } else {
+      push(
+        'PASS',
+        `${negativeTasks}/${labeledTasks} labeled task(s) are negative controls (${percent}%) — at or above the ${NEGATIVE_CONTROL_PERCENT}% target`,
+      );
+    }
+  }
+
+  if (options.calibrate) {
+    await calibrateBench(bench, options.calibrate, push, log);
+  }
+
+  return finish(dir, checks, log, options.calibrate !== false && options.calibrate !== undefined);
+}
+
+const CALIBRATE_DEFAULT_TRIALS = 2;
+
+async function calibrateBench(
+  bench: ReturnType<typeof loadBench>,
+  options: BenchCheckCalibrateOptions,
+  push: (status: Check['status'], message: string) => void,
+  log: (msg: string) => void,
+): Promise<void> {
+  if (!options.agent && !options.executor) {
+    push('FAIL', '--calibrate needs --agent (a CLI executor for real runs)');
+    return;
+  }
+  const trials = options.trials ?? CALIBRATE_DEFAULT_TRIALS;
+  const inputMode = options.inputMode ?? 'snapshot';
+  const capture = options.agent && getAgent(options.agent).headless.streamJson;
+  const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '',
+    capture ? { triggerSkillName: 'calibration-none' } : undefined);
+  assertInputModeSupported(inputMode, executor);
+  if (!Number.isInteger(trials) || trials < 1 || trials > 20) {
+    throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
+  }
+  const plannedCalls = bench.tasks.length * trials;
+  const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+  if (options.dryRun) {
+    push('INFO', `calibration executor: ${executor.describe().detail ?? executor.describe().model}`);
+    push('INFO', `calibration plan: ${bench.tasks.length} task(s) × ${trials} baseline run(s), input ${inputMode}; ${plannedCalls} calls, ceiling ${maxCalls}; no agent started and no run directory created`);
+    return;
+  }
+  const emptySkillDir = mkdtempSync(join(tmpdir(), 'skillfit-calibrate-'));
+  let session: ExperimentSession | undefined;
+  let failure: unknown;
+  try {
+    const skill: SkillBundle = {
+      kind: 'skill',
+      name: 'calibration-none',
+      sourceDir: emptySkillDir,
+      files: [],
+      sha256: '0'.repeat(64),
+      payload: '',
+      overlays: {},
+    };
+    const runGroup =
+      options.runGroup ??
+      `calibrate-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(Date.now() % 100000).padStart(5, '0')}`;
+    if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+    const runsRoot = options.runsRoot ?? resolve('runs');
+    push('INFO', `calibration plan: ${plannedCalls} baseline calls, ceiling ${maxCalls}; fresh output ${join(runsRoot, runGroup)}`);
+    session = new ExperimentSession({ bench, target: skill, groupDir: join(runsRoot, runGroup), plannedCalls,
+      maxCalls, agent: options.agent, injected: options.executor !== undefined, ...options.sessionOptions,
+      workspaces: bench.tasks.flatMap(task => Array.from({ length: trials }, (_, i) =>
+        join(runsRoot, runGroup, task.id, 'baseline', `trial-${i + 1}`))),
+      details: { mode: 'calibration', inputMode, trials, executor: executor.describe() } });
+    // Calibration measures inject-mode baseline difficulty, so it drives the inject path with an
+    // empty skill payload (prompt.ts drops a falsy payload, so no skill block is injected) and runs
+    // one arm per task. This used to route through trigger mode, whose `shouldTrigger` filter
+    // silently calibrated zero tasks on an unlabelled bench and then reported PASS 0/0.
+    const plan: ExperimentPlan = {
+      bench,
+      target: skill,
+      inputMode,
+      executor: session.wrap(executor, 'agent'),
+      trials,
+      runsRoot,
+      runGroup,
+      log,
+    };
+    push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty; input ${inputMode})`);
+    let discriminative = 0;
+    let tasksRun = 0;
+    const taskResults: { id: string; passes: number; completed: number; errors: number }[] = [];
+    for (const task of bench.tasks) {
+      let passes = 0;
+      let completed = 0;
+      let errors = 0;
+      for (let trial = 1; trial <= trials; trial++) {
+        const outcome = await runTrial(plan, task.id, 'baseline', trial);
+        if (outcome.error !== null) {
+          errors++;
+          continue;
+        }
+        completed++;
+        if (outcome.passed) passes++;
+      }
+      taskResults.push({ id: task.id, passes, completed, errors });
+      if (completed === 0) {
+        push(
+          'WARN',
+          `${task.id}: no completed runs${errors > 0 ? ` (${errors} ungraded run(s))` : ''} — cannot assess difficulty`,
+        );
+        continue;
+      }
+      tasksRun++;
+      const rate = passes / completed;
+      if (rate >= 0.9) {
+        push('WARN', `${task.id}: baseline ${passes}/${completed} — too easy (saturated; cannot discriminate skill effects)`);
+      } else if (rate <= 0.1) {
+        push('WARN', `${task.id}: baseline ${passes}/${completed} — too hard or broken (floor)`);
+      } else {
+        discriminative++;
+        push('PASS', `${task.id}: baseline ${passes}/${completed} — discriminative band`);
+      }
+    }
+    session.settle();
+    const result = { schemaVersion: 1, runGroup, inputMode, trials, tasks: taskResults, experiment: session.summary() };
+    writeFileSync(join(session.groupDir, '_calibration.json'), JSON.stringify(result, null, 2) + '\n', { flag: 'wx' });
+    session.finish(undefined, result, '_calibration.json');
+    if (session.summary().status !== 'completed') push('FAIL', 'Calibration stopped or incomplete; inspect _session.json and _calls.jsonl before a fresh plan.');
+    if (tasksRun === 0) {
+      push('FAIL', `calibration ran 0 task(s): difficulty unmeasured (runs under ${runGroup})`);
+      return;
+    }
+    push(
+      discriminative === tasksRun ? 'PASS' : 'INFO',
+      `calibration: ${discriminative}/${tasksRun} task(s) in the discriminative band (runs under ${runGroup}; use --trials 3+ for steadier reads)`,
+    );
+  } catch (error) { failure = error; throw error; }
+  finally {
+    session?.finish(failure);
+    rmSync(emptySkillDir, { recursive: true, force: true });
+  }
+}
+
+function finish(
+  dir: string,
+  checks: Check[],
+  log: (msg: string) => void,
+  calibrated = false,
+): BenchCheckReport {
+  const failures = checks.filter((c) => c.status === 'FAIL').length;
+  const warnings = checks.filter((c) => c.status === 'WARN').length;
+  const passes = checks.filter((c) => c.status === 'PASS').length;
+  log('');
+  log(`Summary: ${passes} passed, ${warnings} warning(s), ${failures} failure(s)`);
+  if (!calibrated) {
+    log('Next: calibrate difficulty against a real agent —');
+    log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 5`);
+    log('  target: baseline pass rate 30–70%; --calibrate warns outside 10–90% (docs/metrics.md L0).');
+  }
+  return { dir, checks, failures, warnings };
+}
+
+const TASK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+export interface BenchAddOptions {
+  benchDir?: string;
+  cwd?: string;
+  task?: string;
+  prompt?: string;
+  promptFile?: string;
+  freeze?: boolean;
+  fromCommit?: string;
+  include?: string[];
+  sourceDir?: string;
+  verifierCmd?: string;
+  expect?: string;
+  oracle?: string;
+  decompose?: boolean;
+  verifierKind?: 'output' | 'command';
+  agent?: string;
+  executor?: Executor;
+  shouldTrigger?: boolean;
+  dryRun?: boolean;
+  yes?: boolean;
+  confirm?: (question: string) => Promise<boolean>;
+  log?: (msg: string) => void;
+}
+
+export function captureSourceFiles(sourceDir: string): string[] {
+  const git = spawnSync('git', ['ls-files', '-z'], { cwd: sourceDir, encoding: 'utf8' });
+  if (git.status === 0 && git.stdout.trim() !== '') {
+    return git.stdout.split('\0').filter(Boolean);
+  }
+  return listFilesRecursive(sourceDir).filter(
+    (rel) => !rel.split(/[\\/]/).some((part) => part === '.git' || part === 'node_modules'),
+  );
+}
+
+function verifierForCmd(cmd: string): string {
+  return `import { spawnSync } from 'node:child_process';
+
+const runDir = process.argv[2];
+if (!runDir) {
+  console.error('usage: node <verifier> <run-dir>');
+  process.exit(2);
+}
+function scrubbedEnv() {
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  return env;
+}
+
+const result = spawnSync(${JSON.stringify(cmd)}, { cwd: runDir, shell: true, encoding: 'utf8', env: scrubbedEnv() });
+if (result.stdout) process.stdout.write(result.stdout);
+if (result.stderr) process.stderr.write(result.stderr);
+if (result.error) {
+  console.error(String(result.error));
+  process.exit(1);
+}
+process.exit(result.status ?? 1);
+`;
+}
+
+function verifierForExpect(needle: string): string {
+  return `import fs from 'node:fs';
+import path from 'node:path';
+
+const runDir = process.argv[2];
+if (!runDir) {
+  console.error('usage: node <verifier> <run-dir>');
+  process.exit(2);
+}
+
+let output;
+try {
+  output = fs.readFileSync(path.join(runDir, '_output.md'), 'utf8');
+} catch {
+  console.log(JSON.stringify({ passed: false, error: 'missing _output.md' }));
+  process.exit(1);
+}
+const passed = output.includes(${JSON.stringify(needle)});
+console.log(JSON.stringify({ passed }));
+process.exit(passed ? 0 : 1);
+`;
+}
+
+interface PreparedAdd {
+  defaultTaskId: string;
+  promptText: string;
+  verifierSource: string;
+  verifierKind: 'output' | 'command';
+  oracleSource?: string;
+  fixtureFiles: Array<{ rel: string; content: Buffer }>;
+  groundTruth: string;
+  planFixtureLine: string;
+}
+
+function buildDecomposePrompt(
+  taskPrompt: string,
+  fixtureFiles: string[],
+  verifierKind: 'output' | 'command',
+): string {
+  const listing = fixtureFiles.map((rel) => `- fixture/${rel}`).join('\n');
+  const grading =
+    verifierKind === 'command'
+      ? 'The verifier runs a real command inside the run directory and grades the final file state (the agent edits files).'
+      : "The verifier grades the agent's final message at <run-dir>/_output.md.";
+  const solving =
+    verifierKind === 'command'
+      ? 'applies the reference fix to the files inside <run-dir>'
+      : 'writes the reference answer to <run-dir>/_output.md';
+  return `You are drafting a skillfit bench task verifier and its oracle (reference solution).
+
+# The task the bench measures
+
+${taskPrompt}
+
+# The fixture
+
+A pristine copy of the task fixture lives at ./fixture/ (${fixtureFiles.length} file(s)):
+
+${listing}
+
+Read whatever fixture files you need. Do NOT modify anything under fixture/ — it is the
+untouched starting state and must stay that way.
+
+# What you must write
+
+Two files in the current directory (NOT under fixture/):
+
+1. verifier.mjs — run as \`node verifier.mjs <run-dir>\`. ${grading}
+   - Deterministic: same run directory in, same verdict out. No network, no clocks, no randomness.
+   - Exit code 0 = pass, anything else = fail. That is the only pass/fail signal.
+   - The LAST stdout line must be one JSON object: {"passed": boolean, "checks": [{"name": string, "pass": boolean}]}.
+     Decompose the task's acceptance criteria into named checks (2–8 of them); "passed" is true
+     exactly when every check passes. Grade the outcome, not the path taken.
+   - It MUST exit non-zero on the untouched fixture (the task starts unsolved).
+
+2. oracle.mjs — run as \`node oracle.mjs <run-dir>\`; it ${solving}.
+   After the oracle runs, \`node verifier.mjs <run-dir>\` must exit 0 with every check passing.
+
+Both scripts run with the bench root as cwd and receive the run directory as argv[2]. Use only
+Node built-ins. Your draft is validated automatically: the verifier must fail the untouched
+fixture and pass the oracle-solved one, so test both directions before you finish.
+`;
+}
+
+async function draftVerifierWithOracle(
+  options: BenchAddOptions,
+  prepared: PreparedAdd,
+  log: (msg: string) => void,
+): Promise<{ verifierSource: string; oracleSource: string }> {
+  const executor =
+    options.executor ?? (options.agent ? CliExecutor.forAgent(options.agent) : undefined);
+  if (!executor) {
+    throw new Error('bench add --decompose needs an agent to draft with: --agent <id>.');
+  }
+  const staging = mkdtempSync(join(tmpdir(), 'skillfit-decompose-'));
+  try {
+    const fixtureDir = join(staging, 'fixture');
+    for (const file of prepared.fixtureFiles) {
+      const target = join(fixtureDir, file.rel);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, file.content);
+    }
+    log(`Drafting verifier + oracle with ${executor.describe().kind} (${executor.describe().model})…`);
+    await executor.run(
+      buildDecomposePrompt(prepared.promptText, prepared.fixtureFiles.map((f) => f.rel), prepared.verifierKind),
+      staging,
+    );
+    const verifierPath = join(staging, 'verifier.mjs');
+    const oraclePath = join(staging, 'oracle.mjs');
+    if (!existsSync(verifierPath) || !existsSync(oraclePath)) {
+      throw new Error(
+        'the drafting agent did not write verifier.mjs and oracle.mjs into its working directory — nothing was added',
+      );
+    }
+
+    const nopDir = mkdtempSync(join(tmpdir(), 'skillfit-decompose-nop-'));
+    try {
+      copyFixture(fixtureDir, nopDir);
+      const nop = await runVerifier(staging, 'node verifier.mjs', nopDir);
+      if (nop.exitCode === null) {
+        throw new Error(`draft rejected: ${verifierFailure('verifier', 'node verifier.mjs', nop.error)}`);
+      }
+      if (nop.exitCode === 0) {
+        throw new Error(
+          'draft rejected: the verifier passes the untouched fixture — the task would start solved (NOP gate)',
+        );
+      }
+    } finally {
+      rmSync(nopDir, { recursive: true, force: true });
+    }
+
+    const solvedGate = await runOracleGate(staging, fixtureDir, 'node oracle.mjs', 'node verifier.mjs');
+    if (solvedGate.kind === 'oracle-failed') {
+      throw new Error(
+        `draft rejected: ${solvedGate.reason ?? 'the oracle command failed on a fresh fixture copy'}`,
+      );
+    }
+    if (solvedGate.kind === 'verifier-failed') {
+      throw new Error(
+        `draft rejected: ${
+          solvedGate.reason ?? 'the verifier fails even after the oracle solved the task (oracle gate)'
+        }`,
+      );
+    }
+    if (solvedGate.kind === 'low-score') {
+      throw new Error(
+        `draft rejected: the oracle scores ${solvedGate.score.toFixed(2)} on the drafted checks — checks are stricter than the oracle`,
+      );
+    }
+
+    return {
+      verifierSource: readFileSync(verifierPath, 'utf8'),
+      oracleSource: readFileSync(oraclePath, 'utf8'),
+    };
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
+  }
+}
+
+function assertInsideBench(benchDir: string, target: string): void {
+  const rel = relative(benchDir, target);
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+    throw new Error(`Refusing to write outside the bench directory: ${target}`);
+  }
+}
+
+function applyBenchWrites(benchDir: string, writes: Array<{ target: string; content: Buffer | string }>): void {
+  const applied: Array<{ target: string; previous: Buffer | null }> = [];
+  try {
+    for (const write of writes) {
+      assertInsideBench(benchDir, write.target);
+      mkdirSync(dirname(write.target), { recursive: true });
+      let previous: Buffer | null = null;
+      try {
+        const stat = lstatSync(write.target);
+        if (stat.isSymbolicLink()) throw new Error(`Refusing to overwrite a symlink: ${write.target}`);
+        if (!stat.isFile()) throw new Error(`Refusing to overwrite a non-file: ${write.target}`);
+        previous = readFileSync(write.target);
+        const backup = write.target + BACKUP_SUFFIX;
+        if (!existsSync(backup)) writeFileSync(backup, previous);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+      applied.push({ target: write.target, previous });
+      writeFileSync(write.target, write.content);
+    }
+    loadBench(benchDir);
+  } catch (error) {
+    for (const entry of [...applied].reverse()) {
+      if (entry.previous === null) rmSync(entry.target, { force: true });
+      else writeFileSync(entry.target, entry.previous);
+    }
+    throw error;
+  }
+}
+
+export async function runBenchAdd(
+  options: BenchAddOptions,
+): Promise<{ dir: string; taskId: string; files: string[] } | null> {
+  const log = options.log ?? ((msg: string) => console.log(msg));
+  if (!options.freeze && !options.fromCommit) {
+    throw new Error('bench add needs an importer: --freeze (current directory) or --from-commit <sha> (git history).');
+  }
+  if (options.freeze && options.fromCommit) {
+    throw new Error('Pass exactly one importer: --freeze OR --from-commit, not both.');
+  }
+  if (options.prompt !== undefined && options.promptFile !== undefined) {
+    throw new Error('Pass exactly one prompt: --prompt OR --prompt-file, not both.');
+  }
+  if (options.decompose && !options.freeze) {
+    throw new Error('--decompose works only with --freeze.');
+  }
+  if (options.decompose && options.oracle) {
+    throw new Error('--decompose writes its own oracle — do not pass --oracle as well.');
+  }
+  const cwd = options.cwd ?? process.cwd();
+  const benchDir = resolve(cwd, options.benchDir ?? '.');
+  const benchJsonPath = join(benchDir, 'bench.json');
+  if (!existsSync(benchJsonPath)) {
+    throw new Error(`Not a bench directory (missing bench.json): ${benchDir} — run \`skillfit bench init\` first.`);
+  }
+  const benchJson = JSON.parse(readFileSync(benchJsonPath, 'utf8')) as {
+    tasks?: Array<{ id?: unknown }>;
+  } & Record<string, unknown>;
+  const tasks = Array.isArray(benchJson.tasks) ? benchJson.tasks : [];
+
+  const prepared = options.fromCommit
+    ? prepareFromCommit(options, cwd)
+    : prepareFreeze(options, cwd);
+  const taskId = options.task ?? prepared.defaultTaskId;
+  if (!TASK_ID_PATTERN.test(taskId)) {
+    throw new Error(`Invalid --task id "${taskId}" (must match ${TASK_ID_PATTERN}).`);
+  }
+  if (tasks.some((task) => task?.id === taskId)) {
+    throw new Error(`Task "${taskId}" already exists in ${benchJsonPath}.`);
+  }
+
+  if (options.decompose && !options.dryRun) {
+    const drafted = await draftVerifierWithOracle(options, prepared, log);
+    prepared.verifierSource = drafted.verifierSource;
+    prepared.oracleSource = drafted.oracleSource;
+  }
+
+  const generated: Record<string, string> = {
+    [`prompts/${taskId}.md`]: `${prepared.promptText.trimEnd()}\n`,
+    [`prompts/${taskId}.trigger.md`]: `${prepared.promptText.trimEnd()}\n\nThe repository is in your current working directory.\n`,
+    [`verifiers/${taskId}.mjs`]: prepared.verifierSource,
+    [`ground-truth/${taskId}.md`]: prepared.groundTruth,
+  };
+  if (prepared.oracleSource) {
+    generated[`ground-truth/oracle-${taskId}.mjs`] = prepared.oracleSource;
+  }
+  const taskEntry = {
+    id: taskId,
+    fixture: `fixtures/${taskId}`,
+    prompt: `prompts/${taskId}.md`,
+    promptTrigger: `prompts/${taskId}.trigger.md`,
+    verifier: `node verifiers/${taskId}.mjs`,
+    verifierKind: prepared.verifierKind,
+    rubric: `ground-truth/${taskId}.md`,
+    ...(prepared.oracleSource ? { oracle: `node ground-truth/oracle-${taskId}.mjs` } : {}),
+    ...(options.oracle ? { oracle: options.oracle } : {}),
+    ...(options.shouldTrigger !== undefined ? { shouldTrigger: options.shouldTrigger } : {}),
+  };
+
+  if (options.verifierCmd) {
+    // The string is not used once and discarded: it is written into a generated .mjs and re-executed
+    // with a shell on every later `bench check` and `eval`. Disclose it before writing, in both the
+    // dry-run and the real path, because the scripted `--yes` case is the one where nobody is
+    // reading a prompt.
+    log(
+      `Note: --verifier-cmd ${JSON.stringify(options.verifierCmd)} is written into verifiers/${taskId}.mjs and re-executed with a shell on every later \`bench check\` and \`eval\` — it outlives this command.`,
+    );
+  }
+
+  if (options.dryRun) {
+    log(`bench add plan (dry run) — task "${taskId}" into ${benchDir}:`);
+    log(`  + fixtures/${taskId}/ (${prepared.planFixtureLine})`);
+    for (const rel of Object.keys(generated)) log(`  + ${rel}`);
+    if (options.decompose) {
+      log('  ~ draft verifier.mjs + oracle.mjs with an agent, validated by the NOP + oracle gates (skipped in dry run)');
+    }
+    log('  ~ bench.json (register task)');
+    log('Dry run — nothing was written. Re-run with --yes to apply.');
+    return null;
+  }
+  if (!options.yes) {
+    const confirm = options.confirm ?? confirmPrompt;
+    const ok = await confirm(
+      `Add ${prepared.fixtureFiles.length} fixture file(s) + ${Object.keys(generated).length} generated file(s) into ${benchDir}? [y/N] `,
+    );
+    if (!ok) {
+      log('Aborted — nothing was written.');
+      return null;
+    }
+  }
+
+  const writes: Array<{ target: string; content: Buffer | string }> = [];
+  for (const file of prepared.fixtureFiles) {
+    if (file.rel.split(/[\\/]/).includes('..') || isAbsolute(file.rel)) {
+      throw new Error(`Fixture path escapes the task directory: ${file.rel}`);
+    }
+    writes.push({ target: join(benchDir, 'fixtures', taskId, file.rel), content: file.content });
+  }
+  for (const [rel, content] of Object.entries(generated)) {
+    writes.push({ target: join(benchDir, rel), content });
+  }
+  benchJson.tasks = [...tasks, taskEntry];
+  writes.push({ target: benchJsonPath, content: `${JSON.stringify(benchJson, null, 2)}\n` });
+  applyBenchWrites(benchDir, writes);
+
+  log(`Task "${taskId}" added to ${benchDir} (${prepared.fixtureFiles.length} fixture file(s), verifier: ${prepared.verifierKind}).`);
+  log('Next:');
+  log(`  skillfit bench check ${benchDir}`);
+  log(`  skillfit eval <skill-path> --bench ${benchDir} --agent <id> --trials 5`);
+  return {
+    dir: benchDir,
+    taskId,
+    files: [
+      ...prepared.fixtureFiles.map((file) => `fixtures/${taskId}/${file.rel}`),
+      ...Object.keys(generated),
+      'bench.json',
+    ],
+  };
+}
+
+function prepareFreeze(options: BenchAddOptions, cwd: string): PreparedAdd {
+  const promptText =
+    options.prompt ??
+    (options.promptFile ? readFileSync(resolve(cwd, options.promptFile), 'utf8') : undefined);
+  if (!promptText || promptText.trim() === '') {
+    throw new Error('bench add --freeze needs a task prompt: --prompt <text> or --prompt-file <path>.');
+  }
+  if (options.decompose) {
+    if (options.verifierCmd || options.expect !== undefined) {
+      throw new Error('--decompose drafts the verifier for you — do not pass --verifier-cmd or --expect.');
+    }
+  } else {
+    if (options.verifierCmd && options.expect !== undefined) {
+      throw new Error('Pass exactly one verifier: --verifier-cmd OR --expect, not both.');
+    }
+    if (!options.verifierCmd && options.expect === undefined) {
+      throw new Error('bench add --freeze needs a verifier: --verifier-cmd <cmd> or --expect <string>.');
+    }
+  }
+
+  const sourceDir = resolve(cwd, options.sourceDir ?? '.');
+  if (!existsSync(sourceDir)) {
+    throw new Error(`--source-dir does not exist: ${sourceDir}`);
+  }
+  const captured = captureSourceFiles(sourceDir);
+  if (captured.length === 0) {
+    throw new Error(`No capturable files in ${sourceDir} (empty git index or directory).`);
+  }
+
+  return {
+    defaultTaskId: 'frozen-task',
+    promptText: promptText.trimEnd(),
+    verifierSource: options.decompose
+      ? ''
+      : options.verifierCmd
+        ? verifierForCmd(options.verifierCmd)
+        : verifierForExpect(options.expect ?? ''),
+    verifierKind: options.decompose
+      ? (options.verifierKind ?? 'output')
+      : options.verifierCmd
+        ? 'command'
+        : 'output',
+    fixtureFiles: captured.map((rel) => ({ rel, content: readFileSync(join(sourceDir, rel)) })),
+    groundTruth: `# Ground truth — frozen task
+
+Frozen from a real failure on ${new Date().toISOString().slice(0, 10)}.
+
+- Source directory: \`${sourceDir}\`
+- Verifier: ${options.decompose ? 'drafted by an agent (--decompose), gated by the NOP + oracle checks' : options.verifierCmd ? `\`${options.verifierCmd}\` (command, run in the task run directory)` : `agent output contains ${JSON.stringify(options.expect)}`}
+
+TODO: describe what a correct outcome looks like, so future bench edits stay honest.
+`,
+    planFixtureLine: `${captured.length} file(s) from ${sourceDir}`,
+  };
+}
+
+const MINED_TEST_PATH = /(^|\/)(tests?|__tests__|spec)(\/|$)|\.(test|spec)\.[cm]?[jt]sx?$/i;
+const MINED_MAX_FILES = 200;
+const MINED_MAX_BYTES = 1024 * 1024;
+
+function gitRun(
+  repo: string,
+  args: string[],
+): { status: number | null; stdout: string; stderr: string } {
+  // `core.quotePath=false` is what stops git from quoting paths. Without it a non-ASCII path
+  // comes back octal-escaped and wrapped in quotes — `"caf\303\251-notes.txt"` — and the later
+  // `git show` then fails on a path that does not exist. `-z` on ls-tree alone does not help.
+  const result = spawnSync('git', ['-c', 'core.quotePath=false', ...args], {
+    cwd: repo,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  return { status: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
+}
+
+function gitMust(repo: string, args: string[]): string {
+  const result = gitRun(repo, args);
+  if (result.status !== 0) {
+    throw new Error(`git ${args.join(' ')} failed in ${repo}: ${result.stderr.trim() || `exit ${result.status}`}`);
+  }
+  return result.stdout;
+}
+
+function gitShow(repo: string, ref: string, path: string): Buffer {
+  const result = spawnSync('git', ['show', `${ref}:${path}`], {
+    cwd: repo,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (result.status !== 0 || result.stdout === undefined) {
+    throw new Error(`git show ${ref}:${path} failed in ${repo}`);
+  }
+  return result.stdout as Buffer;
+}
+
+function verifierForMinedTests(tests: Array<{ rel: string; content: Buffer }>, cmd: string): string {
+  const embedded: Record<string, string> = {};
+  for (const test of tests) {
+    embedded[test.rel] = test.content.toString('utf8');
+  }
+  return `import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const runDir = process.argv[2];
+if (!runDir) {
+  console.error('usage: node <verifier> <run-dir>');
+  process.exit(2);
+}
+function scrubbedEnv() {
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  return env;
+}
+
+const TEST_FILES = ${JSON.stringify(embedded, null, 2)};
+for (const [rel, content] of Object.entries(TEST_FILES)) {
+  const target = path.join(runDir, ...rel.split('/'));
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, content);
+}
+
+const result = spawnSync(${JSON.stringify(cmd)}, { cwd: runDir, shell: true, encoding: 'utf8', env: scrubbedEnv() });
+if (result.stdout) process.stdout.write(result.stdout);
+if (result.stderr) process.stderr.write(result.stderr);
+if (result.error) {
+  console.error(String(result.error));
+  process.exit(1);
+}
+process.exit(result.status ?? 1);
+`;
+}
+
+function prepareFromCommit(options: BenchAddOptions, cwd: string): PreparedAdd {
+  const issuePrompt = options.prompt ?? (options.promptFile !== undefined
+    ? readFileSync(resolve(cwd, options.promptFile), 'utf8') : undefined);
+  if (issuePrompt !== undefined && issuePrompt.trim() === '') {
+    throw new Error('The supplied task prompt must not be empty.');
+  }
+  const repo = resolve(cwd, options.sourceDir ?? '.');
+  if (!existsSync(repo)) {
+    throw new Error(`--source-dir does not exist: ${repo}`);
+  }
+  const sha = gitMust(repo, ['rev-parse', '--verify', `${options.fromCommit}^{commit}`]).trim();
+  const shortSha = sha.slice(0, 7);
+  const subject = gitMust(repo, ['show', '-s', '--format=%s', sha]).trim();
+  const body = gitMust(repo, ['show', '-s', '--format=%b', sha]).trim();
+
+  const changed = gitMust(repo, ['diff-tree', '--no-commit-id', '--name-status', '-r', sha])
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [status, ...rest] = line.split('\t');
+      return { status: status ?? '', path: rest.join('\t') };
+    });
+  const minedTests = changed.filter((entry) => MINED_TEST_PATH.test(entry.path) && entry.status !== 'D');
+  const nonTests = changed.filter((entry) => !MINED_TEST_PATH.test(entry.path));
+  if (minedTests.length === 0) {
+    throw new Error(
+      `Commit ${shortSha} changes no test files — --from-commit needs a fix that ships a test (the test becomes the verifier).`,
+    );
+  }
+  if (nonTests.length === 0) {
+    throw new Error(`Commit ${shortSha} changes only test files — there is no fix for the agent to write.`);
+  }
+
+  const parentLookup = gitRun(repo, ['rev-parse', '--verify', `${sha}^`]);
+  if (parentLookup.status !== 0) {
+    throw new Error(
+      `Commit ${shortSha} has no parent — --from-commit needs a fix commit with a parent state to use as the fixture.`,
+    );
+  }
+  const parent = parentLookup.stdout.trim();
+  const parentShort = parent.slice(0, 8);
+
+  // `-z` gives NUL-separated records, so a path containing a newline or a tab still parses.
+  let tree = gitMust(repo, ['ls-tree', '-r', '-z', '--format=%(objectsize) %(path)', parent])
+    .split('\0')
+    .filter(Boolean)
+    .map((record) => {
+      const separator = record.indexOf(' ');
+      const rawSize = separator === -1 ? '' : record.slice(0, separator);
+      const path = separator === -1 ? record : record.slice(separator + 1);
+      const size = /^\d+$/.test(rawSize) ? Number(rawSize) : Number.NaN;
+      if (!Number.isFinite(size)) {
+        // ls-tree reports `-` for a gitlink. A non-numeric size used to poison the running total
+        // with NaN, and `NaN > MINED_MAX_BYTES` is false — so the size guard silently stopped
+        // guarding and a repository of any size would have been accepted.
+        throw new Error(
+          `Repo state at ${parentShort} has a gitlink (submodule) at "${path}" — --from-commit cannot mine submodules, because the fixture would need the submodule's own checkout. Vendor the files in, or narrow with --include.`,
+        );
+      }
+      return { size, path };
+    });
+  if (options.include && options.include.length > 0) {
+    const prefixes = options.include.map((prefix) => prefix.replace(/\/?$/, '/'));
+    tree = tree.filter((entry) => prefixes.some((prefix) => entry.path.startsWith(prefix)));
+    if (tree.length === 0) {
+      throw new Error(`--include pathspec(s) ${options.include.join(', ')} match nothing at ${parentShort}.`);
+    }
+  }
+  const totalBytes = tree.reduce((sum, entry) => sum + entry.size, 0);
+  if (tree.length > MINED_MAX_FILES || totalBytes > MINED_MAX_BYTES) {
+    throw new Error(
+      `Repo state at ${parentShort} is ${tree.length} files / ${Math.round(totalBytes / 1024)} KB — too large for a bench fixture. Narrow it with --include <dir> (repeatable).`,
+    );
+  }
+
+  const fixtureFiles = tree.map((entry) => ({ rel: entry.path, content: gitShow(repo, parent, entry.path) }));
+  const tests = minedTests.map((entry) => ({ rel: entry.path, content: gitShow(repo, sha, entry.path) }));
+  const verifierCmd = options.verifierCmd ?? 'node --test';
+
+  return {
+    defaultTaskId: `fix-${shortSha}`,
+    promptText: issuePrompt ?? `# Task: implement the following change request
+
+The repository below is \`${basename(repo)}\` at commit \`${parentShort}\` — the state before the fix that resolved this request was applied.
+
+## Change request
+
+${subject}${body !== '' ? `\n\n${body}` : ''}
+
+## Rules
+
+- Do not change public export names.
+- Hidden grading runs the project's tests afterward — make the behavior correct, not merely plausible.`,
+    verifierSource: verifierForMinedTests(tests, verifierCmd),
+    verifierKind: 'command',
+    fixtureFiles,
+    groundTruth: `# Ground truth — fix-${shortSha}
+
+Mined from git history on ${new Date().toISOString().slice(0, 10)}.
+
+- Repository: \`${repo}\`
+- Fix commit: \`${sha}\` — ${subject}
+- Parent (fixture state): \`${parent}\`
+- Task prompt: ${issuePrompt === undefined ? 'generated from fix commit subject/body; review for solution hints before efficacy evaluation' : 'user-supplied issue request; fix commit subject/body was not injected'}.
+- Verifier: the fix commit's own tests (${tests.map((test) => `\`${test.rel}\``).join(', ')}), run via \`${verifierCmd}\` — they fail on the parent state and pass once the fix is implemented (FAIL_TO_PASS).
+- The fix itself: see \`git show ${sha}\` in the source repository.
+
+TODO: summarize the correct fix here so future bench edits stay honest.
+`,
+    planFixtureLine: `${fixtureFiles.length} file(s) at parent ${parentShort} from ${repo} (+${tests.length} hidden test file(s) embedded in the verifier)`,
+  };
+}

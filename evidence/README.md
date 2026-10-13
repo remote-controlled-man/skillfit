@@ -11,6 +11,11 @@ Two rules:
 
 | Date | Experiment | Agents | Headline |
 |---|---|---|---|
+| 2026-10-13 | [Timing repair and completed normalize-url revision comparison](2026-10-13-normalize-url-v2-validation.md) | Codex CLI | Two fresh pairs, all four deliveries 8/8; v2 uncached input +29.3%, input -28.9%, output -11.6%, elapsed -3.6%; stopped-stage costs retained |
+| 2026-10-12 | [Timing repair and trust-alias guard stop](2026-10-12-normalize-url-v2-recovery.md) | Codex CLI | One normal 400.535s invocation; zero graded pairs; pure canonical trust registration exactly restores frozen config hash |
+| 2026-10-12 | [Canonical guard repaired, provider connection timeout](2026-10-12-normalize-url-v2-comparison.md) | Codex CLI | One invocation, zero graded pairs; deadline fires at 600.002s, trial 600.019s; 503/TLS reconnect errors and unknown usage |
+| 2026-10-12 | [Compact v2 event semantics and independent repository pilot](2026-10-12-diagnosing-v2.md) | Codex CLI | Both v2 onInsert controls 9/9; normalize-url one pair 8/8 before timeout stop; 7 actual invocations, 6 replayable deliveries; regression uncached/output cost increased |
+| 2026-10-12 | [Real Skill revision on historical cache failures](2026-10-12-diagnosing-revision.md) | Codex CLI | 30 attempts, 14 graded pairs; candidate 12/14 vs previous 14/14, two callback regressions and one timeout; input −26%, per-success uncached/output/time increased |
 | 2026-10-01 | [Real OSS workspace workflow smoke](2026-10-01-oss-workspace-smoke.md) | Codex CLI | Predeclared real-source disk-file pair completed, both 8/8; reproducible inputs and receipts; no Skill installation recommendation |
 | 2026-07 | [Skill baseline: 8 popular workflow skills](2026-07-skill-baseline.md) | Codex CLI | One limited regression-test artifact signal (2/3 treated runs); no robust task-quality gain; all 8 added input tokens |
 | 2026-09 | [OCR delegate vs. code-review skill](2026-09-ocr-vs-code-review.md) | Kimi Code | Tie on small diffs; OCR slightly better on large changesets via false-positive discipline |

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "runGroup": "validation-20261012-rtk",
+  "task": "fetch-lifecycle",
+  "condition": "treatment",
+  "trial": 5,
+  "source": "Last cumulative token_usage_record in the matching Codex session; only usage fields retained.",
+  "observedAt": "2026-10-12T07:16:56.230Z",
+  "final": false,
+  "interpretation": "Lower bound through this observation; the timed-out executor returned no final usage. In-flight or unrecorded later use is unknown. Excluded from paired cost statistics.",
+  "usage": {
+    "input_tokens": 169118,
+    "cached_input_tokens": 147584,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 6740,
+    "reasoning_output_tokens": 1905,
+    "total_tokens": 175858
+  },
+  "uncachedInput": 21534
+}

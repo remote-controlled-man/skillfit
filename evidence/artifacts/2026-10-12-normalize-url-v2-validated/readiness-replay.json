@@ -1,0 +1,12 @@
+{
+  "actualInvocations": 1,
+  "ready": true,
+  "rawUsageMatches": true,
+  "rawMessageMatches": true,
+  "tokens": {
+    "input": 16687,
+    "output": 5,
+    "cachedInput": 13184
+  },
+  "durationSeconds": 24.618
+}

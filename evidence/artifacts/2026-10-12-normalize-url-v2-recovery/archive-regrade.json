@@ -1,0 +1,8 @@
+{
+  "matched": 0,
+  "excluded": 4,
+  "invocationCount": 1,
+  "costsMatch": true,
+  "freshExtractionHashesMatch": true,
+  "analysisMatches": true
+}

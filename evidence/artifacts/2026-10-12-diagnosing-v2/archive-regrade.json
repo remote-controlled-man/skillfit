@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "freshArchiveExtraction": true,
+  "exportHashesMatch": true,
+  "cohorts": [
+    {
+      "name": "regression",
+      "matched": 4,
+      "excluded": 0,
+      "invocations": 4,
+      "costsMatch": true
+    },
+    {
+      "name": "transfer",
+      "matched": 2,
+      "excluded": 2,
+      "invocations": 3,
+      "costsMatch": true
+    }
+  ],
+  "analysisExactMatch": true,
+  "manualControl": {
+    "schemaVersion": 1,
+    "modelCalls": 0,
+    "before": 0.8888888888888888,
+    "after": 1,
+    "regressionRed": 1,
+    "regressionGreen": 0,
+    "method": "Manual development repair control, with v1-authored assertion corrected to the public API contract; no frozen grader or canonical fixture edits."
+  }
+}

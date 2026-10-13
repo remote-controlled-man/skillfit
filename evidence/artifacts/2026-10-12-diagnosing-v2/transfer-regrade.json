@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "cohort": "transfer",
+  "runGroup": "transfer-v2-20261012",
+  "benchSha256": "73ebfa8b2e00513e991df75f9bafdccdaf333dd7517e23ae74604685cca157af",
+  "matched": 2,
+  "excluded": 2,
+  "invocationCount": 3,
+  "costsMatch": true,
+  "rows": [
+    {
+      "task": "query-shape",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "query-shape",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "query-shape",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": true,
+      "invoked": true,
+      "error": "\"codex\" timed out after 600000ms"
+    },
+    {
+      "task": "query-shape",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": true,
+      "invoked": false,
+      "error": "agent executor failed; inspect the per-trial error receipt. No further calls."
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "path": "_calls.jsonl",
+    "originalSha256": "f45d617d8b97d42616520cce001d24875636fe129969fa6b58fb03f1e42b701d",
+    "exportSha256": "f45d617d8b97d42616520cce001d24875636fe129969fa6b58fb03f1e42b701d",
+    "normalized": false
+  },
+  {
+    "path": "_power.json",
+    "originalSha256": "2eedd31524c35893e0f360db03d262eff5d010753d559b171588614e2b5fac9d",
+    "exportSha256": "2eedd31524c35893e0f360db03d262eff5d010753d559b171588614e2b5fac9d",
+    "normalized": false
+  },
+  {
+    "path": "_prompt.txt",
+    "originalSha256": "c737a8005e166f5f3e5b6c0a57f7e348bbf2b7b82087edcd1932dc411588d7bc",
+    "exportSha256": "c737a8005e166f5f3e5b6c0a57f7e348bbf2b7b82087edcd1932dc411588d7bc",
+    "normalized": false
+  },
+  {
+    "path": "receipt.json",
+    "originalSha256": "a308ba6a65dd52ed62f009e1b0be60867bf904249023b7fe8584544f35676ffe",
+    "exportSha256": "a308ba6a65dd52ed62f009e1b0be60867bf904249023b7fe8584544f35676ffe",
+    "normalized": false
+  }
+]

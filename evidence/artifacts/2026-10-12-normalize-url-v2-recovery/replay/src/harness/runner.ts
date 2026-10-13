@@ -1,0 +1,805 @@
+import { spawn } from 'node:child_process';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import type { ExperimentSession } from './experiment-session.js';
+import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
+import { assertInstalledSkillFixtures, assertSkillRevisionTargets, installSkillResources, installedSkillDestination } from './installed-skill.js';
+import { collectInstalledSkillFingerprint } from './bundle.js';
+import { judgePair, type JudgeResult } from './judge.js';
+import { killTree, treeSpawnOptions } from './kill-tree.js';
+import { assertInputModeSupported, buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
+import {
+  buildWarnings,
+  verdictFor,
+  type ConditionStats,
+  type FacetSummary,
+  type JudgeSummary,
+  type RunManifest,
+  type TaskSummary,
+} from './report.js';
+import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
+import { listFilesRecursive } from './hash.js';
+import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, TokenUsage } from './types.js';
+import { CONDITIONS } from './types.js';
+import { ExecutorFailure } from './types.js';
+import { summarizeCosts } from './costs.js';
+import { executionClock, type ExecutionClock, type ExecutionTiming } from './execution-timing.js';
+import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
+
+export interface ExperimentPlan {
+  bench: Bench;
+  target: EvaluationTarget;
+  baselineTarget?: EvaluationTarget;
+  inputMode?: InputMode;
+  skillInstallDir?: string;
+  skillSearchDirs?: readonly string[];
+  session?: ExperimentSession;
+  executor: Executor;
+  judge?: Executor | null;
+  trials: number;
+  runsRoot: string;
+  runGroup: string;
+  log?: (msg: string) => void;
+  /** Injectable clocks for offline duration checks. */
+  clock?: ExecutionClock;
+}
+
+function applyOverlay(overlayDir: string, runDir: string): void {
+  for (const rel of listFilesRecursive(overlayDir)) {
+    const destination = join(runDir, rel);
+    mkdirSync(dirname(destination), { recursive: true });
+    cpSync(join(overlayDir, rel), destination);
+  }
+}
+
+export interface TrialOutcome {
+  taskId: string;
+  condition: Condition;
+  trial: number;
+  runDir: string;
+  startedAt: string;
+  finishedAt: string;
+  durationSeconds: number;
+  /** Wall timestamps stay available; elapsed cost uses the monotonic clock. */
+  timing?: { clock: 'performance.now'; wallDurationSeconds: number; execution: ExecutionTiming | null };
+  passed: boolean;
+  verifierExitCode: number | null;
+  verifierPassed: boolean | null;
+  score: number | null;
+  checks: VerifierCheck[] | null;
+  error: string | null;
+  output: string;
+  tokens: TokenUsage | null;
+  executorInvoked: boolean;
+  usageStatus: 'final' | 'partial' | 'unknown';
+  gitInitialized: boolean;
+  skillTriggered?: boolean | null;
+}
+
+export interface ProcessResult {
+  exitCode: number | null;
+  output: string;
+  error: string | null;
+}
+
+const VERIFIER_TIMEOUT_MS = 2 * 60 * 1000;
+const MAX_PROCESS_OUTPUT_BYTES = 8 * 1024 * 1024;
+
+function runProcess(
+  command: string,
+  args: string[],
+  cwd: string,
+  timeoutMs: number,
+): Promise<ProcessResult> {
+  return new Promise((resolvePromise) => {
+    let child;
+    try {
+      const env = { ...process.env };
+      delete env['NODE_TEST_CONTEXT'];
+      child = spawn(command, args, { cwd, shell: false, env, ...treeSpawnOptions() });
+    } catch (error) {
+      resolvePromise({ exitCode: null, output: '', error: (error as Error).message });
+      return;
+    }
+    let output = '';
+    let bytes = 0;
+    let timedOut = false;
+    let overflow = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      killTree(child);
+    }, timeoutMs);
+    const take = (chunk: Buffer): void => {
+      bytes += chunk.length;
+      if (bytes > MAX_PROCESS_OUTPUT_BYTES) {
+        overflow = true;
+        killTree(child);
+        return;
+      }
+      output += chunk.toString('utf8');
+    };
+    child.stdout.on('data', take);
+    child.stderr.on('data', take);
+    // Verifiers and git do not read a prompt. Leave the pipe open and a command that reads stdin
+    // waits until the timeout instead of seeing EOF.
+    child.stdin?.on('error', () => {});
+    child.stdin?.end();
+    child.on('error', (error) => {
+      clearTimeout(timer);
+      resolvePromise({ exitCode: null, output, error: error.message });
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      const limited = overflow ? `output exceeded ${MAX_PROCESS_OUTPUT_BYTES} bytes` : null;
+      resolvePromise({
+        exitCode: timedOut || overflow ? null : code,
+        output: timedOut ? `${output}\n[timed out after ${timeoutMs}ms]` : output,
+        error: limited ?? (timedOut ? `timed out after ${timeoutMs}ms` : null),
+      });
+    });
+  });
+}
+
+export async function gitInit(dir: string): Promise<boolean> {
+  const steps: string[][] = [
+    ['init', '--quiet'],
+    ['config', 'user.email', 'skillfit@example.invalid'],
+    ['config', 'user.name', 'skillfit harness'],
+    ['config', 'core.logAllRefUpdates', 'true'],
+    ['add', '-A'],
+    ['commit', '--quiet', '-m', 'Initial benchmark fixture'],
+  ];
+  for (const args of steps) {
+    const result = await runProcess('git', args, dir, 30_000);
+    if (result.exitCode !== 0) return false;
+  }
+  const reflog = await runProcess('git', ['reflog', 'show', '--format=%H', 'HEAD'], dir, 30_000);
+  return reflog.exitCode === 0 && reflog.output.trim().length > 0;
+}
+
+const ENGAGEMENT_ERROR =
+  'Agent produced no output and left the fixture unchanged; excluded as an engagement error, not a graded failure.';
+
+async function worktreeChanged(dir: string): Promise<boolean> {
+  const status = await runProcess('git', ['status', '--porcelain'], dir, 30_000);
+  if (status.exitCode !== 0) return true;
+  // The harness writes _prompt.txt after the fixture commit. That file is not an agent edit.
+  return status.output.split('\n').some((line) => {
+    const path = line.slice(3).replaceAll('"', '').trim();
+    return path.length > 0 && path !== '_prompt.txt';
+  });
+}
+
+/**
+ * Empty final text is not a graded miss. Output tasks deliver that text, so silence is
+ * non-engagement. Command tasks deliver file edits, so silence still counts when the disposable
+ * worktree differs from the fixture commit. docs/metrics.md L0.
+ */
+export async function engagementError(
+  output: string,
+  verifierKind: 'output' | 'command' | undefined,
+  runDir: string,
+  gitInitialized: boolean,
+): Promise<string | null> {
+  if (output.trim() !== '') return null;
+  if ((verifierKind ?? 'output') === 'command' && gitInitialized && (await worktreeChanged(runDir))) return null;
+  return ENGAGEMENT_ERROR;
+}
+
+export async function runTrial(
+  plan: ExperimentPlan,
+  taskId: string,
+  condition: Condition,
+  trial: number,
+): Promise<TrialOutcome> {
+  const { bench, executor } = plan;
+  const target = condition === 'baseline' && plan.baselineTarget ? plan.baselineTarget : plan.target;
+  if (plan.baselineTarget) {
+    if (!plan.skillInstallDir) throw new Error('Skill revision comparison requires installed delivery.');
+    assertSkillRevisionTargets(plan.target, plan.baselineTarget);
+  }
+  const inputMode = plan.inputMode ?? 'snapshot';
+  assertInputModeSupported(inputMode, executor);
+  if (plan.skillInstallDir) {
+    if (target.kind !== 'skill' || inputMode !== 'workspace') {
+      throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
+    }
+    for (const skill of [plan.target, ...(plan.baselineTarget ? [plan.baselineTarget] : [])]) {
+      if (collectInstalledSkillFingerprint(skill.sourceDir).sha256 !== skill.sha256) {
+        throw new Error('Skill resources changed after planning; freeze the input again before running.');
+      }
+    }
+  }
+  const task = bench.tasks.find((t) => t.id === taskId);
+  if (!task) throw new Error(`Unknown task: ${taskId}`);
+  const runDir = join(plan.runsRoot, plan.runGroup, task.id, condition, `trial-${trial}`);
+  if (existsSync(runDir)) {
+    throw new Error(`Run directory already exists: ${runDir}`);
+  }
+  mkdirSync(runDir, { recursive: true });
+  cpSync(join(bench.dir, task.fixture), runDir, { recursive: true });
+  if (executor.describe().kind !== 'mock') {
+    rmSync(join(runDir, MOCK_MARKER_FILE), { force: true });
+  }
+  // Keep the prompt byte-identical across conditions. Workspace configuration is copied only after
+  // taking the fixture snapshot, so a rules or MCP treatment is discovered through the agent's real
+  // project configuration loader instead of being disclosed in treatment-only prompt text.
+  const snapshot = inputMode === 'snapshot' ? snapshotRepoFiles(runDir) : '';
+  const overlay = target.overlays[condition];
+  if (overlay) applyOverlay(overlay, runDir);
+  if (plan.skillInstallDir) {
+    const destination = installedSkillDestination(runDir, plan.skillInstallDir, target.name);
+    if (existsSync(destination)) throw new Error('Fixture already contains the evaluated Skill: ' + destination);
+    if (condition === 'treatment' || plan.baselineTarget) installSkillResources(target, runDir, plan.skillInstallDir);
+  }
+  const gitInitialized = await gitInit(runDir);
+
+  const taskPromptText = readFileSync(join(bench.dir, task.prompt), 'utf8');
+  const prompt = buildTaskPrompt(
+    taskPromptText,
+    snapshot,
+    condition === 'treatment' && !plan.skillInstallDir ? target.payload : null,
+    // Workspace configuration experiments must let the agent use its configured tools and inspect
+    // the project even when the final answer is graded as text. Skill-only output benches retain the
+    // stricter prompt isolation used by the original harness.
+    { workspace: task.verifierKind === 'command' || target.kind !== 'skill', inputMode },
+  );
+  writeFileSync(join(runDir, '_prompt.txt'), prompt, 'utf8');
+
+  const clock = plan.clock ?? executionClock;
+  const started = new Date(clock.wallNow());
+  const startedMonotonic = clock.monotonicNow();
+  let executionTiming: ExecutionTiming | null = null;
+  let output = '';
+  let error: string | null = null;
+  let tokens: TokenUsage | null = null;
+  let rawOutput: string | null = null;
+  let skillTriggered: boolean | null = null;
+  let executorInvoked = false;
+  let usageStatus: TrialOutcome['usageStatus'] = 'unknown';
+  try {
+    if (!gitInitialized && task.verifierKind === 'command') {
+      throw new Error('Benchmark Git initialization or reflog verification failed; command task was not executed.');
+    }
+    executorInvoked = true;
+    const result = await executor.run(prompt, runDir);
+    output = result.output;
+    tokens = result.tokens ?? null;
+    rawOutput = result.rawOutput ?? null;
+    skillTriggered = result.skillTriggered ?? null;
+    usageStatus = result.usageStatus ?? 'final';
+    executionTiming = result.executionTiming ?? null;
+    error = result.guardError ?? null;
+  } catch (executorError) {
+    error = (executorError as Error).message;
+    if (executorError instanceof ExecutorFailure) {
+      executorInvoked = executorError.executorInvoked;
+      output = executorError.result.output;
+      tokens = executorError.result.tokens ?? null;
+      rawOutput = executorError.result.rawOutput ?? null;
+      skillTriggered = executorError.result.skillTriggered ?? null;
+      usageStatus = executorError.result.usageStatus ?? (tokens ? 'partial' : 'unknown');
+      executionTiming = executorError.result.executionTiming ?? null;
+    }
+  }
+  if (error === null) {
+    error = await engagementError(output, task.verifierKind, runDir, gitInitialized);
+  }
+  const finished = new Date(clock.wallNow());
+  const durationSeconds = Math.round(clock.monotonicNow() - startedMonotonic) / 1000;
+  writeFileSync(join(runDir, '_output.md'), output, 'utf8');
+  if (rawOutput !== null) writeFileSync(join(runDir, '_transcript.jsonl'), rawOutput, 'utf8');
+
+  let verifierExitCode: number | null = null;
+  let passed = false;
+  let verifierPassed: boolean | null = null;
+  let score: number | null = null;
+  let checks: VerifierCheck[] | null = null;
+  if (error === null) {
+    const verifier = await runVerifier(bench.dir, task.verifier, runDir);
+    verifierExitCode = verifier.exitCode;
+    writeFileSync(join(runDir, '_verifier.txt'), verifierLogFor(verifier), 'utf8');
+    if (verifier.exitCode === null) {
+      error = verifierFailure('verifier', task.verifier, verifier.error);
+    } else {
+      passed = verifier.exitCode === 0;
+      const verdict = verdictFromOutput(verifier.output);
+      if (verdict) {
+        verifierPassed = verdict.passed;
+        checks = verdict.checks;
+        score = verdict.score;
+      }
+    }
+  } else {
+    writeFileSync(join(runDir, '_executor-error.txt'), error, 'utf8');
+  }
+
+  const record: TrialOutcome = {
+    taskId,
+    condition,
+    trial,
+    runDir,
+    startedAt: started.toISOString(),
+    finishedAt: finished.toISOString(),
+    durationSeconds,
+    timing: { clock: 'performance.now', wallDurationSeconds: (finished.getTime() - started.getTime()) / 1000, execution: executionTiming },
+    passed,
+    verifierExitCode,
+    verifierPassed,
+    score,
+    checks,
+    error,
+    output,
+    tokens,
+    executorInvoked,
+    usageStatus,
+    gitInitialized,
+    ...(plan.skillInstallDir ? { skillTriggered } : {}),
+  };
+  const { output: _output, ...serializable } = record;
+  writeFileSync(
+    join(runDir, '_result.json'),
+    `${JSON.stringify(
+      {
+        schemaVersion: 2,
+        inputMode,
+        ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed', installDir: plan.skillInstallDir } } : {}),
+        ...serializable,
+        runGroup: plan.runGroup,
+        target: {
+          kind: target.kind,
+          name: target.name,
+          bundleSha256: target.sha256,
+          applied: condition === 'treatment' || plan.baselineTarget !== undefined || target.overlays.baseline !== undefined,
+        },
+        executor: withSampling(executor.describe()),
+      },
+      null,
+      2,
+    )}\n`,
+    'utf8',
+  );
+  return record;
+}
+
+export async function runVerifier(benchDir: string, command: string, runDir: string): Promise<ProcessResult> {
+  const tokens = command.split(/\s+/).filter(Boolean);
+  const executable = tokens[0];
+  if (!executable) {
+    return { exitCode: null, output: '', error: 'empty verifier command' };
+  }
+  return runProcess(executable, [...tokens.slice(1), runDir], benchDir, VERIFIER_TIMEOUT_MS);
+}
+
+export function verifierLogFor(result: ProcessResult): string {
+  return result.error ? `${result.output}\n[${result.error}]` : result.output;
+}
+
+const SPAWN_FAILURE = /ENOENT|EINVAL|EACCES|EPERM/i;
+
+/**
+ * A verifier that produced no exit code gave no verdict, so the trial says nothing about the agent.
+ * Reporting it as a failure would blame the model for a broken bench — and against a command-kind
+ * NOP gate it would look like the failure the gate exists to require.
+ */
+export function verifierFailure(label: string, command: string, reason: string | null): string {
+  const why = reason ?? 'no exit code';
+  if (SPAWN_FAILURE.test(why)) {
+    return `${label} could not be started (${why}): ${command} — it is spawned without a shell, so the first token must be an executable the OS can start directly ("node verifiers/x.mjs"); to grade with a shell command, wrap it via "bench add --freeze --verifier-cmd"`;
+  }
+  return `${label} produced no exit code (${why}): ${command}`;
+}
+
+function sumTokens(records: TrialOutcome[]): { input: number; output: number } | null {
+  let input = 0;
+  let output = 0;
+  let seen = false;
+  for (const record of records) {
+    if (!record.tokens || record.usageStatus !== 'final') continue;
+    seen = true;
+    input += record.tokens.input ?? 0;
+    output += record.tokens.output ?? 0;
+  }
+  return seen ? { input, output } : null;
+}
+
+/**
+ * Record sampling controls explicitly. An executor whose surface exposes no seed or temperature
+ * knob reports `sampling: null`, which is a statement about the surface — not an omission that a
+ * reader would have to guess at.
+ */
+function withSampling(descriptor: ExecutorDescriptor): ExecutorDescriptor {
+  return { ...descriptor, sampling: descriptor.sampling ?? null };
+}
+
+function countErrors(records: TrialOutcome[]): number {
+  return records.filter((r) => r.error !== null).length;
+}
+
+/**
+ * Trials that were graded in BOTH arms, aligned by trial number.
+ *
+ * A trial whose executor errored was never graded, so counting it as a failure would manufacture a
+ * discordant pair out of an API timeout (docs/metrics.md L0, engagement sanity). Dropping it from one
+ * arm only would misalign the pairing that McNemar and the paired bootstrap depend on, so the whole
+ * (task, trial) pair goes. Filtering per arm independently is the bug this replaces.
+ */
+function pairedSurvivors(
+  outcomes: Record<Condition, TrialOutcome[]>,
+): Record<Condition, TrialOutcome[]> {
+  const byTrial = new Map<number, Partial<Record<Condition, TrialOutcome>>>();
+  for (const condition of CONDITIONS) {
+    for (const record of outcomes[condition]) {
+      const entry = byTrial.get(record.trial) ?? {};
+      entry[condition] = record;
+      byTrial.set(record.trial, entry);
+    }
+  }
+  const survivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
+  for (const trial of [...byTrial.keys()].sort((a, b) => a - b)) {
+    const pair = byTrial.get(trial);
+    const baseline = pair?.baseline;
+    const treatment = pair?.treatment;
+    if (!baseline || !treatment) continue;
+    if (baseline.error !== null || treatment.error !== null) continue;
+    survivors.baseline.push(baseline);
+    survivors.treatment.push(treatment);
+  }
+  return survivors;
+}
+
+function statsFor(records: TrialOutcome[], errors: number, readObservations = false): ConditionStats {
+  const passes = records.filter((r) => r.passed).length;
+  const trials = records.length;
+  const scored = records.filter((r) => r.score !== null);
+  const meanScore =
+    scored.length === 0
+      ? null
+      : scored.reduce((sum, r) => sum + (r.score as number), 0) / scored.length;
+  return {
+    passes,
+    trials,
+    errors,
+    ...(readObservations ? { skillReads: {
+      observed: records.filter(r => r.skillTriggered === true).length,
+      unobserved: records.filter(r => r.skillTriggered === false).length,
+      unknown: records.filter(r => r.skillTriggered == null).length,
+    } } : {}),
+    passRate: trials === 0 ? 0 : passes / trials,
+    meanScore,
+    tokens: sumTokens(records),
+    tokenCoverage: {
+      input: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.input === 'number').length,
+      output: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.output === 'number').length,
+    },
+  };
+}
+
+function tokenDelta(
+  baseline: { input: number; output: number } | null,
+  treatment: { input: number; output: number } | null,
+): { input: number; output: number } | null {
+  if (!baseline || !treatment) return null;
+  return { input: treatment.input - baseline.input, output: treatment.output - baseline.output };
+}
+
+function summarizeJudge(judgeResults: JudgeResult[]): JudgeSummary | null {
+  if (judgeResults.length === 0) return null;
+  const consistent = judgeResults.filter((r) => r.consistent);
+  const mean = (values: number[]): number | null => {
+    if (consistent.length === 0) return null;
+    const raw = values.reduce((sum, value) => sum + value, 0) / consistent.length;
+    return Math.round(raw * 100) / 100;
+  };
+  return {
+    judgedTrials: judgeResults.length,
+    consistentTrials: consistent.length,
+    baselineMean: mean(consistent.map((r) => r.baselineScore)),
+    treatmentMean: mean(consistent.map((r) => r.treatmentScore)),
+  };
+}
+
+async function judgeTaskTrials(
+  plan: ExperimentPlan,
+  taskId: string,
+  outcomes: Record<Condition, TrialOutcome[]>,
+): Promise<JudgeResult[]> {
+  const judge = plan.judge;
+  if (!judge) return [];
+  const task = plan.bench.tasks.find((t) => t.id === taskId);
+  if (!task) return [];
+  const taskPromptText = readFileSync(join(plan.bench.dir, task.prompt), 'utf8');
+  const rubricText = task.rubric ? readFileSync(join(plan.bench.dir, task.rubric), 'utf8') : null;
+  const results: JudgeResult[] = [];
+  for (let trial = 1; trial <= plan.trials; trial++) {
+    const baseline = outcomes.baseline.find((r) => r.trial === trial);
+    const treatment = outcomes.treatment.find((r) => r.trial === trial);
+    if (!baseline || !treatment || baseline.error !== null || treatment.error !== null) continue;
+    // Output location only — the judge never runs here (see judgePair, which sandboxes its own cwd
+    // so it cannot read either arm's _result.json and infer which answer is which).
+    const taskDir = join(plan.runsRoot, plan.runGroup, task.id);
+    const seed = `${plan.runGroup}:${task.id}:${trial}`;
+    try {
+      const result = await judgePair(judge, {
+        taskPromptText,
+        rubricText,
+        baselineOutput: baseline.output,
+        treatmentOutput: treatment.output,
+        seed,
+      });
+      results.push(result);
+      writeFileSync(
+        join(taskDir, `judge-trial-${trial}.json`),
+        `${JSON.stringify({ trial, seed, ...result }, null, 2)}\n`,
+        'utf8',
+      );
+    } catch (error) {
+      plan.log?.(`Judge failed for ${task.id} trial ${trial}: ${(error as Error).message}`);
+    }
+  }
+  return results;
+}
+
+function trialFlags(records: TrialOutcome[]): boolean[] {
+  return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.passed);
+}
+
+function trialScores(records: TrialOutcome[]): (number | null)[] {
+  return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.score);
+}
+
+/** Drop a trial from both arms unless both produced a score, so Δscore keeps the paired denominators. */
+function pairedScores(
+  baseline: readonly (number | null)[],
+  treatment: readonly (number | null)[],
+): { baseline: number[]; treatment: number[] } | null {
+  const left: number[] = [];
+  const right: number[] = [];
+  const count = Math.min(baseline.length, treatment.length);
+  for (let index = 0; index < count; index++) {
+    const baselineScore = baseline[index];
+    const treatmentScore = treatment[index];
+    if (typeof baselineScore !== 'number' || typeof treatmentScore !== 'number') continue;
+    left.push(baselineScore);
+    right.push(treatmentScore);
+  }
+  return left.length === 0 ? null : { baseline: left, treatment: right };
+}
+
+function mean(values: readonly number[]): number {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function facetStats(outcomes: Record<Condition, TrialOutcome[]>): FacetSummary[] {
+  const names: string[] = [];
+  for (const condition of CONDITIONS) {
+    for (const record of outcomes[condition]) {
+      for (const check of record.checks ?? []) {
+        if (!names.includes(check.name)) names.push(check.name);
+      }
+    }
+  }
+  return names.map((name) => {
+    const rateFor = (records: TrialOutcome[]): { trials: number; passRate: number } => {
+      const relevant = records.filter((r) => r.checks?.some((c) => c.name === name));
+      const passes = relevant.filter(
+        (r) => r.checks?.find((c) => c.name === name)?.pass === true,
+      ).length;
+      return { trials: relevant.length, passRate: relevant.length === 0 ? 0 : passes / relevant.length };
+    };
+    const baseline = rateFor(outcomes.baseline);
+    const treatment = rateFor(outcomes.treatment);
+    return {
+      name,
+      baselinePassRate: baseline.passRate,
+      treatmentPassRate: treatment.passRate,
+      baselineTrials: baseline.trials,
+      treatmentTrials: treatment.trials,
+    };
+  });
+}
+
+function verifierConsistencyNotes(
+  taskId: string,
+  outcomes: Record<Condition, TrialOutcome[]>,
+): string[] {
+  const notes = new Set<string>();
+  for (const condition of CONDITIONS) {
+    for (const record of outcomes[condition]) {
+      if (record.verifierPassed !== null && record.verifierPassed !== record.passed) {
+        notes.add(
+          `Task "${taskId}": the verifier's JSON "passed" flag disagrees with its exit code — the exit code is authoritative, fix the summary line.`,
+        );
+      }
+      if (record.checks !== null && record.verifierExitCode !== null) {
+        const allPass = record.checks.every((c) => c.pass);
+        if (record.passed && !allPass) {
+          notes.add(
+            `Task "${taskId}": the verifier exits 0 while some checks fail — exit code and checks disagree.`,
+          );
+        }
+        if (!record.passed && allPass) {
+          notes.add(
+            `Task "${taskId}": all checks pass but the verifier exits non-zero — exit code and checks disagree.`,
+          );
+        }
+      }
+    }
+  }
+  return [...notes];
+}
+
+function discordantCounts(
+  outcomeSets: Array<{ baseline: boolean[]; treatment: boolean[] }>,
+): { improved: number; regressed: number } {
+  let improved = 0;
+  let regressed = 0;
+  for (const outcomes of outcomeSets) {
+    for (let i = 0; i < outcomes.baseline.length && i < outcomes.treatment.length; i++) {
+      const baselinePassed = outcomes.baseline[i] === true;
+      const treatmentPassed = outcomes.treatment[i] === true;
+      if (treatmentPassed && !baselinePassed) improved++;
+      else if (baselinePassed && !treatmentPassed) regressed++;
+    }
+  }
+  return { improved, regressed };
+}
+
+function summarizeTask(
+  taskId: string,
+  outcomes: Record<Condition, TrialOutcome[]>,
+  survivors: Record<Condition, TrialOutcome[]>,
+  judgeResults: JudgeResult[],
+  readObservations = false,
+): TaskSummary {
+  const baseline = statsFor(survivors.baseline, countErrors(outcomes.baseline), readObservations);
+  const treatment = statsFor(survivors.treatment, countErrors(outcomes.treatment), readObservations);
+  const flags = {
+    baseline: trialFlags(survivors.baseline),
+    treatment: trialFlags(survivors.treatment),
+  };
+  const deltaPassRate = treatment.passRate - baseline.passRate;
+  const scoreRows = {
+    baseline: trialScores(survivors.baseline),
+    treatment: trialScores(survivors.treatment),
+  };
+  const paired = pairedScores(scoreRows.baseline, scoreRows.treatment);
+  const scoreDelta = paired ? mean(paired.treatment) - mean(paired.baseline) : null;
+  const { verdict, reason } = verdictFor({ ...discordantCounts([flags]), deltaPassRate });
+  return {
+    id: taskId,
+    conditions: { baseline, treatment },
+    outcomes: flags,
+    scores: scoreRows,
+    deltaPassRate,
+    scoreDelta,
+    facets: facetStats(survivors),
+    verifierNotes: verifierConsistencyNotes(taskId, outcomes),
+    tokenDelta: tokenDelta(baseline.tokens, treatment.tokens),
+    costs: summarizeCosts(outcomes, survivors),
+    verdict,
+    verdictReason: reason,
+    judge: summarizeJudge(judgeResults),
+  };
+}
+
+export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
+  assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
+  if (plan.baselineTarget) {
+    if (!plan.skillInstallDir) throw new Error('Skill revision comparison requires installed delivery.');
+    assertSkillRevisionTargets(plan.target, plan.baselineTarget);
+  }
+  if (plan.skillInstallDir) {
+    if (plan.target.kind !== 'skill' || plan.inputMode !== 'workspace') {
+      throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
+    }
+    assertInstalledSkillFixtures(plan.bench, plan.target, plan.skillInstallDir, plan.skillSearchDirs);
+  }
+  if (!RUN_GROUP_PATTERN.test(plan.runGroup)) {
+    throw new Error(
+      `Invalid run group "${plan.runGroup}": must match ${RUN_GROUP_PATTERN} (got characters outside [A-Za-z0-9._-] or a leading dot/hyphen)`,
+    );
+  }
+  if (!Number.isInteger(plan.trials) || plan.trials < 1 || plan.trials > 20) {
+    throw new Error(`trials must be an integer between 1 and 20, got ${plan.trials}`);
+  }
+  const groupDir = join(plan.runsRoot, plan.runGroup);
+  if (existsSync(groupDir) && !(plan.session?.groupDir === resolve(groupDir) &&
+      readdirSync(groupDir).join() === '_plan.json')) {
+    throw new Error(`Run group directory already exists: ${groupDir}`);
+  }
+  mkdirSync(groupDir, { recursive: true });
+
+  const taskSummaries: TaskSummary[] = [];
+  const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
+  const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
+  for (const task of plan.bench.tasks) {
+    const outcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
+    // Interleaved: the trial loop is outermost so the two arms of a pair run adjacently. Running
+    // every baseline trial before every treatment trial confounds condition with elapsed time —
+    // provider drift or rate-limit degradation would land entirely on one arm.
+    for (let trial = 1; trial <= plan.trials; trial++) {
+      for (const condition of CONDITIONS) {
+        plan.log?.(`Running ${task.id} / ${condition} / trial ${trial}…`);
+        const outcome = await runTrial(plan, task.id, condition, trial);
+        outcomes[condition].push(outcome);
+        allOutcomes[condition].push(outcome);
+      }
+    }
+    const survivors = pairedSurvivors(outcomes);
+    allSurvivors.baseline.push(...survivors.baseline);
+    allSurvivors.treatment.push(...survivors.treatment);
+    const judgeResults = await judgeTaskTrials(plan, task.id, outcomes);
+    taskSummaries.push(summarizeTask(task.id, outcomes, survivors, judgeResults, !!plan.skillInstallDir));
+  }
+
+  const overallBaseline = statsFor(allSurvivors.baseline, countErrors(allOutcomes.baseline), !!plan.skillInstallDir);
+  const overallTreatment = statsFor(allSurvivors.treatment, countErrors(allOutcomes.treatment), !!plan.skillInstallDir);
+  const overallDelta = overallTreatment.passRate - overallBaseline.passRate;
+  const taskOutcomes = taskSummaries.map((task) => task.outcomes);
+  const discordant = discordantCounts(taskOutcomes);
+  const overallVerdict = verdictFor({ ...discordant, deltaPassRate: overallDelta });
+  const scoreTasks = taskSummaries.flatMap((task) => {
+    const paired = pairedScores(task.scores.baseline, task.scores.treatment);
+    return paired ? [paired] : [];
+  });
+  const scoreDeltaCi = pairedScoreBootstrapCI(scoreTasks);
+  const scoreDelta = scoreDeltaCi ? scoreDeltaCi.point : null;
+  plan.session?.settle();
+  const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
+    schemaVersion: 4,
+    ...(plan.session ? { experiment: plan.session.summary() } : {}),
+    inputMode: plan.inputMode ?? 'snapshot',
+    ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed' as const, installDir: plan.skillInstallDir } } : {}),
+    runGroup: plan.runGroup,
+    createdAt: new Date().toISOString(),
+    target: {
+      kind: plan.target.kind,
+      name: plan.target.name,
+      sourceDir: plan.target.sourceDir,
+      bundleSha256: plan.target.sha256,
+      files: plan.target.files,
+    },
+    ...(plan.baselineTarget ? { baselineTarget: {
+      kind: 'skill' as const,
+      name: plan.baselineTarget.name,
+      sourceDir: plan.baselineTarget.sourceDir,
+      bundleSha256: plan.baselineTarget.sha256,
+      files: plan.baselineTarget.files,
+    } } : {}),
+    bench: {
+      name: plan.bench.name,
+      dir: plan.bench.dir,
+      contentSha256: plan.bench.contentSha256,
+      taskCount: plan.bench.tasks.length,
+    },
+    executor: withSampling(plan.executor.describe()),
+    judge: plan.judge ? withSampling(plan.judge.describe()) : null,
+    trials: plan.trials,
+    tasks: taskSummaries,
+    overall: {
+      conditions: {
+        baseline: overallBaseline,
+        treatment: overallTreatment,
+      },
+      deltaPassRate: overallDelta,
+      scoreDelta,
+      tokenDelta: tokenDelta(overallBaseline.tokens, overallTreatment.tokens),
+      costs: summarizeCosts(allOutcomes, allSurvivors),
+      verdict: overallVerdict.verdict,
+      verdictReason: overallVerdict.reason,
+      stats: {
+        discordant,
+        mcnemarP: mcnemarExactP(discordant.improved, discordant.regressed),
+        deltaCi: pairedDeltaBootstrapCI(taskOutcomes),
+        scoreDeltaCi,
+      },
+    },
+  };
+  const manifest: RunManifest = {
+    ...manifestWithoutWarnings,
+    warnings: buildWarnings(manifestWithoutWarnings),
+  };
+  writeFileSync(join(groupDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  return manifest;
+}

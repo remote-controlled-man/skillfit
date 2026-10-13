@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "method": "Setup/calibration and interrupted calls are study overhead. All actually started calls retained; excluded calls are not pooled into revision efficacy. Output already includes reported reasoning subset. No monetary or billing claim.",
+  "actualCalls": 9,
+  "totals": {
+    "input": 2668904,
+    "output": 85155,
+    "cachedInput": 2299392,
+    "uncachedInput": 369512,
+    "seconds": 3321.642
+  },
+  "phases": [
+    {
+      "runGroup": "calibration-20261012",
+      "calls": 6,
+      "totals": {
+        "input": 1586263,
+        "output": 57693,
+        "cachedInput": 1366272,
+        "uncachedInput": 219991,
+        "seconds": 2350.196
+      },
+      "observations": [
+        {
+          "run": "fetch-size/baseline/trial-1",
+          "graded": true,
+          "input": 216111,
+          "output": 7114,
+          "cachedInput": 185984,
+          "uncachedInput": 30127,
+          "seconds": 310.936
+        },
+        {
+          "run": "fetch-size/baseline/trial-2",
+          "graded": true,
+          "input": 256658,
+          "output": 9095,
+          "cachedInput": 229760,
+          "uncachedInput": 26898,
+          "seconds": 351.121
+        },
+        {
+          "run": "fetch-abort/baseline/trial-1",
+          "graded": true,
+          "input": 276129,
+          "output": 11400,
+          "cachedInput": 244480,
+          "uncachedInput": 31649,
+          "seconds": 441.779
+        },
+        {
+          "run": "fetch-abort/baseline/trial-2",
+          "graded": true,
+          "input": 266488,
+          "output": 11743,
+          "cachedInput": 231680,
+          "uncachedInput": 34808,
+          "seconds": 454.612
+        },
+        {
+          "run": "fetch-lifecycle/baseline/trial-1",
+          "graded": true,
+          "input": 256451,
+          "output": 10402,
+          "cachedInput": 218880,
+          "uncachedInput": 37571,
+          "seconds": 381.4
+        },
+        {
+          "run": "fetch-lifecycle/baseline/trial-2",
+          "graded": true,
+          "input": 314426,
+          "output": 7939,
+          "cachedInput": 255488,
+          "uncachedInput": 58938,
+          "seconds": 410.348
+        }
+      ]
+    },
+    {
+      "runGroup": "validation-20261012",
+      "calls": 3,
+      "totals": {
+        "input": 1082641,
+        "output": 27462,
+        "cachedInput": 933120,
+        "uncachedInput": 149521,
+        "seconds": 971.446
+      },
+      "observations": [
+        {
+          "run": "fetch-size/baseline/trial-1",
+          "graded": true,
+          "input": 395118,
+          "output": 9759,
+          "cachedInput": 336000,
+          "uncachedInput": 59118,
+          "seconds": 340.12
+        },
+        {
+          "run": "fetch-size/treatment/trial-1",
+          "graded": true,
+          "input": 187143,
+          "output": 5859,
+          "cachedInput": 155008,
+          "uncachedInput": 32135,
+          "seconds": 210.209
+        },
+        {
+          "run": "fetch-size/baseline/trial-2",
+          "graded": false,
+          "input": 500380,
+          "output": 11844,
+          "cachedInput": 442112,
+          "uncachedInput": 58268,
+          "seconds": 421.117
+        }
+      ]
+    }
+  ]
+}

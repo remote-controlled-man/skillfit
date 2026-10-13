@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "cohort": "transfer-comparison",
+  "runGroup": "normalize-url-v2-comparison-20261012",
+  "benchSha256": "73ebfa8b2e00513e991df75f9bafdccdaf333dd7517e23ae74604685cca157af",
+  "matched": 0,
+  "excluded": 4,
+  "invocationCount": 1,
+  "costsMatch": true,
+  "rows": [
+    {
+      "task": "query-shape",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": true,
+      "invoked": true,
+      "error": "\"codex\" timed out after 600000ms"
+    },
+    {
+      "task": "query-shape",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": true,
+      "invoked": false,
+      "error": "agent executor failed; inspect the per-trial error receipt. No further calls."
+    },
+    {
+      "task": "query-shape",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": true,
+      "invoked": false,
+      "error": "agent executor failed; inspect the per-trial error receipt. No further calls."
+    },
+    {
+      "task": "query-shape",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": true,
+      "invoked": false,
+      "error": "agent executor failed; inspect the per-trial error receipt. No further calls."
+    }
+  ]
+}
