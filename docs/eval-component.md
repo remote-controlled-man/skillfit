@@ -26,6 +26,12 @@ original/v4 both pass 40/40, with uncached input down 16.82%, but the conservati
 keeps that policy and symmetric 1200-second deadlines; it does not create fresh
 independent evidence for a candidate selected from these public outcomes.
 
+The [fresh followup bench](../benches/contrib/oss-skill-followup/README.md) supplies
+eight different defects from three new repositories. Its [bounded protocol](plans/2026-10-14-skill-followup.md)
+and [request example](examples/eval-request.diagnosing-v4-followup-efficiency.json)
+retain the candidate and policy rather than relaxing a completed cohort's gate.
+Task integrity, native eligibility and generalization remain separate claims.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:

@@ -1,0 +1,3 @@
+A rejected call to pDebounce.promise() can resolve successfully when the rejection reason is undefined, null, false, zero, an empty string or NaN. Preserve the rejection reason for shared callers, including when an after:true queued call still needs to execute. Keep successful falsy return values and subsequent calls working.
+
+This is pinned historical upstream source with no runtime package dependencies. npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata, clock helper and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

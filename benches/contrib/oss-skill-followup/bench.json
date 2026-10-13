@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "name": "oss-skill-followup",
+  "description": "Eight fresh historical p-debounce, debounce and humanize-duration defects. Prospective follow-up tasks for an unchanged candidate; separate from the completed first study. Public deterministic outcomes and executable regression witnesses; no model judge.",
+  "tasks": [
+    {
+      "id": "promise-falsy-rejection",
+      "fixture": "fixtures/promise-falsy-rejection",
+      "prompt": "prompts/promise-falsy-rejection.md",
+      "verifier": "node verifiers/promise-falsy-rejection.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-promise-falsy-rejection.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "promise-overlap-results",
+      "fixture": "fixtures/promise-overlap-results",
+      "prompt": "prompts/promise-overlap-results.md",
+      "verifier": "node verifiers/promise-overlap-results.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-promise-overlap-results.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "promise-method-context",
+      "fixture": "fixtures/promise-method-context",
+      "prompt": "prompts/promise-method-context.md",
+      "verifier": "node verifiers/promise-method-context.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-promise-method-context.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "duration-plural-count",
+      "fixture": "fixtures/duration-plural-count",
+      "prompt": "prompts/duration-plural-count.md",
+      "verifier": "node verifiers/duration-plural-count.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-duration-plural-count.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "duration-large-digits",
+      "fixture": "fixtures/duration-large-digits",
+      "prompt": "prompts/duration-large-digits.md",
+      "verifier": "node verifiers/duration-large-digits.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-duration-large-digits.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "debounce-context-classes",
+      "fixture": "fixtures/debounce-context-classes",
+      "prompt": "prompts/debounce-context-classes.md",
+      "verifier": "node verifiers/debounce-context-classes.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-debounce-context-classes.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "debounce-recursive-args",
+      "fixture": "fixtures/debounce-recursive-args",
+      "prompt": "prompts/debounce-recursive-args.md",
+      "verifier": "node verifiers/debounce-recursive-args.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-debounce-recursive-args.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "debounce-timer-boundary",
+      "fixture": "fixtures/debounce-timer-boundary",
+      "prompt": "prompts/debounce-timer-boundary.md",
+      "verifier": "node verifiers/debounce-timer-boundary.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-debounce-timer-boundary.mjs",
+      "shouldTrigger": true
+    }
+  ]
+}

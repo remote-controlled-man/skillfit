@@ -1,0 +1,3 @@
+Wrapping an object or class method with p-debounce loses its receiver. Trailing calls should use the last call's receiver and arguments; leading calls should preserve their first cached result; pDebounce.promise() should preserve the receiver of the shared pending execution. Keep the existing API and coalescing semantics.
+
+This is pinned historical upstream source with no runtime package dependencies. npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata, clock helper and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

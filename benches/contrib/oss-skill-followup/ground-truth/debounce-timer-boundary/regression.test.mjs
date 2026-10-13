@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import api from './index.js';import {withClock,observe,flush,gate} from './test-clock.mjs';
+test('renewal at timer timestamp keeps quiet interval',async()=>withClock(async clock=>{const calls=[],d=api(()=>calls.push(clock.now),100);for(const at of [100,150,200,250])setTimeout(d,at);await clock.advance(350);assert.deepEqual(calls,[1350]);}));

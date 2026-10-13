@@ -1,0 +1,3 @@
+Sharing one debounce wrapper across methods of different classes is rejected by the context guard. Different prototypes, including a subclass or an object with a null prototype, should be usable in one pending burst, with the last receiver winning. Keep the guard against different instances with the same prototype and preserve later ordinary bursts.
+
+This is pinned historical upstream source with no runtime package dependencies. npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata, clock helper and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

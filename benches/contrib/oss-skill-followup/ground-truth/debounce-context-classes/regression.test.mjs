@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import api from './index.js';import {withClock,observe,flush,gate} from './test-clock.mjs';
+test('different classes share pending wrapper',async()=>withClock(async clock=>{class A{}class B{}const calls=[];const d=api(function(){calls.push(this);},10);const a=new A(),b=new B();d.call(a);d.call(b);await clock.advance(10);assert.deepEqual(calls,[b]);}));

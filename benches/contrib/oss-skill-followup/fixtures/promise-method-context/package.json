@@ -1,0 +1,9 @@
+{
+  "name": "promise-method-context-historical-fixture",
+  "private": true,
+  "type": "module",
+  "fixtureKind": "promise",
+  "scripts": {
+    "test": "node --test test.mjs *.test.mjs"
+  }
+}

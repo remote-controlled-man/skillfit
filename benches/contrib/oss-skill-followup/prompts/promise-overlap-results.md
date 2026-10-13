@@ -1,0 +1,3 @@
+New p-debounce calls made while an earlier async function is still executing can receive that earlier cycle's result or error, or leave promises unsettled. Each debounce cycle must settle its own waiting callers with its own latest argument and outcome. Preserve same-cycle coalescing and independent wrappers.
+
+This is pinned historical upstream source with no runtime package dependencies. npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata, clock helper and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

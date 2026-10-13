@@ -1,0 +1,9 @@
+{
+  "name": "duration-plural-count-historical-fixture",
+  "private": true,
+  "type": "commonjs",
+  "fixtureKind": "duration",
+  "scripts": {
+    "test": "node --test test.mjs *.test.mjs"
+  }
+}
