@@ -1,0 +1,11 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const Module = require('node:module');
+const filename = path.join(__dirname, 'index.js');
+const loaded = new Module(filename, module);
+loaded.filename = filename;
+loaded.paths = Module._nodeModulePaths(__dirname);
+const normalRequire = loaded.require.bind(loaded);
+loaded.require = spec => spec === 'yallist' ? require('./vendor/yallist/yallist.js') : normalRequire(spec);
+loaded._compile(fs.readFileSync(filename, 'utf8'), filename);
+module.exports = loaded.exports;

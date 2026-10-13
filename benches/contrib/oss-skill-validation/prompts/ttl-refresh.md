@@ -1,0 +1,3 @@
+Setting an existing quick-lru key with maxAge should renew its expiration from that update, and the new value must still expire after the renewed lifetime. Diagnose and repair expiration and eviction callbacks while preserving unrelated cache entries.
+
+This is pinned historical upstream source. It has no runtime package dependencies; npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

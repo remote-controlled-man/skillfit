@@ -1,0 +1,8 @@
+{
+  "name": "minipass-end-listeners-historical-fixture",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test test.mjs *.test.mjs"
+  }
+}

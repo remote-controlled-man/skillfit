@@ -1,0 +1,77 @@
+commit 82b8cdc26d9910c1a9abe6813ddad5f3a55f88b2
+Author:     Dmitri <dmitri666@gmail.com>
+AuthorDate: Mon Nov 10 21:54:22 2025 +0200
+Commit:     GitHub <noreply@github.com>
+CommitDate: Tue Nov 11 02:54:22 2025 +0700
+
+    Fix concurrency control in `pMapIterable` (#77)
+
+diff --git a/index.js b/index.js
+index 1055800..79188a3 100644
+--- a/index.js
++++ b/index.js
+@@ -203,31 +203,31 @@ export function pMapIterable(
+ 			const iterator = iterable[Symbol.asyncIterator] === undefined ? iterable[Symbol.iterator]() : iterable[Symbol.asyncIterator]();
+ 
+ 			const promises = [];
+-			let runningMappersCount = 0;
++			let pendingPromisesCount = 0;
+ 			let isDone = false;
+ 			let index = 0;
+ 
+ 			function trySpawn() {
+-				if (isDone || !(runningMappersCount < concurrency && promises.length < backpressure)) {
++				if (isDone || !(pendingPromisesCount < concurrency && promises.length < backpressure)) {
+ 					return;
+ 				}
+ 
+ 				const promise = (async () => {
++					pendingPromisesCount++;
+ 					const {done, value} = await iterator.next();
+ 
+ 					if (done) {
++						pendingPromisesCount--;
+ 						return {done: true};
+ 					}
+ 
+-					runningMappersCount++;
+-
+ 					// Spawn if still below concurrency and backpressure limit
+ 					trySpawn();
+ 
+ 					try {
+ 						const returnValue = await mapper(await value, index++);
+ 
+-						runningMappersCount--;
++						pendingPromisesCount--;
+ 
+ 						if (returnValue === pMapSkip) {
+ 							const index = promises.indexOf(promise);
+diff --git a/test.js b/test.js
+index 9db3013..484bfeb 100644
+--- a/test.js
++++ b/test.js
+@@ -637,6 +637,23 @@ test('pMapIterable - backpressure', async t => {
+ 	t.is(currentValue, 40);
+ });
+ 
++test('pMapIterable - async input, backpressure > concurrency', async t => {
++	async function * source() {
++		yield 1;
++		yield 2;
++		yield 3;
++	}
++
++	const log = [];
++	await collectAsyncIterable(pMapIterable(source(), async n => {
++		log.push(n);
++		await delay(100);
++		log.push(n);
++	}, {concurrency: 1, backpressure: 2}));
++
++	t.deepEqual(log, [1, 1, 2, 2, 3, 3]);
++});
++
+ test('pMapIterable - pMapSkip', async t => {
+ 	t.deepEqual(await collectAsyncIterable(pMapIterable([
+ 		1,

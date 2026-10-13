@@ -1,0 +1,79 @@
+commit 6472384be41273ae223280342fb9dcd632608a9e
+Author:     isaacs <i@izs.me>
+AuthorDate: Tue Jun 7 22:49:06 2022 -0700
+Commit:     isaacs <i@izs.me>
+CommitDate: Tue Jun 7 22:49:06 2022 -0700
+
+    readable event emitted right away when listened for
+    
+    Fix: https://github.com/isaacs/minipass/issues/36
+
+diff --git a/index.js b/index.js
+index fa2c694..76a7d5e 100644
+--- a/index.js
++++ b/index.js
+@@ -372,6 +372,8 @@ module.exports = class Minipass extends Stream {
+     const ret = super.on(ev, fn)
+     if (ev === 'data' && !this.pipes.length && !this.flowing)
+       this[RESUME]()
++    else if (ev === 'readable' && this[BUFFERLENGTH] !== 0)
++      super.emit('readable')
+     else if (isEndish(ev) && this[EMITTED_END]) {
+       super.emit(ev)
+       this.removeAllListeners(ev)
+diff --git a/test/readable-emits-immediately.js b/test/readable-emits-immediately.js
+new file mode 100644
+index 0000000..821631e
+--- /dev/null
++++ b/test/readable-emits-immediately.js
+@@ -0,0 +1,14 @@
++// https://github.com/isaacs/minipass/issues/36
++const Minipass = require('../')
++const t = require('tap')
++
++const m = new Minipass({ encoding: 'utf8' })
++m.write('hello')
++t.equal(m.flowing, false)
++let readableEmitted = false
++m.on('readable', () => {
++  readableEmitted = true
++  m.on('data', c => t.equal(c, 'hello'))
++})
++t.equal(m.flowing, true)
++t.equal(readableEmitted, true)
+diff --git a/test/write-returns-true-when-readable-triggers-flow.js b/test/write-returns-true-when-readable-triggers-flow.js
+index ef87f66..566da60 100644
+--- a/test/write-returns-true-when-readable-triggers-flow.js
++++ b/test/write-returns-true-when-readable-triggers-flow.js
+@@ -11,7 +11,14 @@ t.test('empty write', async t => {
+   const p = dest.concat().then(d => t.equal(d, 'a', 'got data'))
+   t.equal(s.write('a'), false, 'first write returns false')
+   t.equal(s.write(''), false, 'empty write returns false')
+-  s.on('readable', () => s.pipe(dest))
++  // since readable emits immediately, the NEXT one needs to trigger
++  let firstReadable = false
++  s.on('readable', () => {
++    if (!firstReadable)
++      firstReadable = true
++    else
++      s.pipe(dest)
++  })
+   t.equal(s.flowing, false, 'src is not flowing yet')
+   t.equal(s.write(''), true, 'return true, now flowing')
+   s.end()
+@@ -24,7 +31,14 @@ t.test('non-empty write', async t => {
+   const p = dest.concat().then(d => t.equal(d, 'ab', 'got data'))
+   t.equal(s.write('a'), false, 'first write returns false')
+   t.equal(s.write(''), false, 'empty write returns false')
+-  s.on('readable', () => s.pipe(dest))
++  // since readable emits immediately, the NEXT one needs to trigger
++  let firstReadable = false
++  s.on('readable', () => {
++    if (!firstReadable)
++      firstReadable = true
++    else
++      s.pipe(dest)
++  })
+   t.equal(s.flowing, false, 'src is not flowing yet')
+   t.equal(s.write('b'), true, 'return true, now flowing')
+   s.end()

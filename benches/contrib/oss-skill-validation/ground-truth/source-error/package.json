@@ -1,0 +1,8 @@
+{
+  "name": "p-map-source-error-historical-fixture",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test test.mjs *.test.mjs"
+  }
+}

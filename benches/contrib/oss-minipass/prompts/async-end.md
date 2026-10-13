@@ -1,0 +1,3 @@
+An async Minipass piped into another stream calls the destination end method more than once when end is called repeatedly in the same turn. Diagnose and repair this without losing data or changing the end:false pipe option.
+
+This is pinned historical minipass source, with its original dependency source vendored for offline execution. Load Minipass through runtime.cjs; npm test uses only Node built-ins and the bundled source. Modify index.js and add executable node:test regression coverage in a new *.test.mjs file. Keep supplied tests, runtime, metadata, documentation and vendor assets unchanged. Explain the actual cause and checks you ran. Do not fetch upstream fixes or use the network.

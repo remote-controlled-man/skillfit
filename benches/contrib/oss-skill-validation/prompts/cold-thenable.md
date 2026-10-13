@@ -1,0 +1,3 @@
+An asynchronous source next() returns a thenable whose then() performs a fresh pull on every subscription. Mapping drops source items compared with native for-await. Diagnose and repair this across the supported mapping APIs, retaining order, exhaustion and source-error behavior.
+
+This is pinned historical upstream source. It has no runtime package dependencies; npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

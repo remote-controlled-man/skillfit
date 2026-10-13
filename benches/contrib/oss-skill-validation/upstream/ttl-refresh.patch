@@ -1,0 +1,41 @@
+commit 6033bb74f4262e6784232ddf9c117a02d376e02f
+Author:     Javier Blanco <javicuba11@gmail.com>
+AuthorDate: Mon Aug 9 19:04:27 2021 +0200
+Commit:     GitHub <noreply@github.com>
+CommitDate: Mon Aug 9 19:04:27 2021 +0200
+
+    Fix expiration time not being set when setting the value the second time (#33)
+
+diff --git a/index.js b/index.js
+index a80b0ab..677f18b 100644
+--- a/index.js
++++ b/index.js
+@@ -114,7 +114,7 @@ export default class QuickLRU {
+ 		if (this.cache.has(key)) {
+ 			this.cache.set(key, {
+ 				value,
+-				maxAge
++				expiry: maxAge
+ 			});
+ 		} else {
+ 			this._set(key, {value, expiry: maxAge});
+diff --git a/test.js b/test.js
+index 2c3eeef..e0a21fc 100644
+--- a/test.js
++++ b/test.js
+@@ -254,6 +254,15 @@ test('set(expiry) - local expires prevails over the global maxAge', async t => {
+ 	t.true(lru.has('2'));
+ });
+ 
++test('set(expiry) - set the same item should update the expiration time', async t => {
++	const lru = new QuickLRU({maxSize: 10, maxAge: 150});
++	lru.set('1', 'test');
++	await delay(100);
++	lru.set('1', 'test');
++	await delay(100);
++	t.true(lru.has('1'));
++});
++
+ test('max age - should remove the item if has expired on call `get()` method upon the same key', async t => {
+ 	const lru = new QuickLRU({maxSize: 10, maxAge: 90});
+ 	lru.set('1', 'test');

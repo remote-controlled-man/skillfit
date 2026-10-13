@@ -41,3 +41,5 @@ missing the point entirely.
 |---|---|---|---|
 | [oss-mcp-use-utf8](oss-mcp-use-utf8/README.md) | MCP App HTML decoding | skillfit replay of MIT-licensed mcp-use source | Pinned real-source workflow/regression example; earlier baselines saturated; no general Skill efficacy claim |
 | [oss-normalize-url](oss-normalize-url/README.md) | URL query normalization | skillfit replay of MIT-licensed normalize-url source | Pinned issue #193 and maintainer fix; Node-only evidence gates; difficulty uncalibrated before the v2 transfer pilot |
+| [oss-minipass](oss-minipass/README.md) | Stream completion and backpressure | skillfit replay of ISC-licensed minipass source | Four pinned historical defects; development/calibration set with public behavior and regression replay gates |
+| [oss-skill-validation](oss-skill-validation/README.md) | Asynchronous mapping and cache lifetime | skillfit replay of MIT-licensed p-map and quick-lru source | Eight independently sourced defects in two repositories; separate from minipass development; no efficacy result implied by offline gates |

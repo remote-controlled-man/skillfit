@@ -1,0 +1,3 @@
+quick-lru set(key,value,{maxAge}) should interpret maxAge as a duration in milliseconds from the write, consistent with constructor maxAge. Per-item durations currently expire incorrectly. Diagnose and repair insert and replacement paths while preserving global/default and non-expiring entries.
+
+This is pinned historical upstream source. It has no runtime package dependencies; npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.
