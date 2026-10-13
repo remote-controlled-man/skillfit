@@ -83,3 +83,27 @@ Update English and mirrored Chinese documentation, publish dated evidence with
 honest conclusions and reproduction commands, and merge the verified change to
 the main branch. The goal remains incomplete while independent efficacy evidence,
 usable component delivery, documentation or main-branch integration is missing.
+
+## Fresh validation declaration after diagnosed sleep
+
+The original fixed validation batch stops on its first original-arm invocation:
+macOS clamshell sleep on battery causes a 924,882 ms observation gap. There are
+zero graded validation outcomes and zero candidate calls; partial usage remains
+a spending lower bound. Preserve its native records and all 79 not-invoked
+entries. Do not grade the unfinished delivery or use it to revise the candidate.
+See the [separate dated record](../../evidence/2026-10-13-debugging-controls-and-sleep-stop.md).
+
+After the user confirms continuous AC power and an open lid, a new fixed 80-call
+validation cohort is declared before execution. Only its run group changes;
+original/v4 resources, eight tasks, outcome graders, balanced order, policy and
+1200-second deadlines stay frozen. Require AC power and verified temporary
+idle/system assertions before any model call, retain the timing anomaly guard,
+and release assertions in finally. Keep the stopped batch separate: there are
+no within-batch retries, replacements, extra trials or pooled quality outcomes.
+
+This amendment uses one of the unused development-call slots for the retained
+environment failure. Actual spending before the new batch is 45 CLI invocations
+(26 development, 16 known controls, two readiness, one interrupted validation).
+The new fixed batch brings the planned total to 125, below the original 128-call
+ceiling; no additional readiness call is planned. Known normalize-url uncached
+input/output cost increases remain a rejection and a limit on any future claim.

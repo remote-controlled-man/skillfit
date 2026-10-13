@@ -167,6 +167,8 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 最新的[调试开发记录](evidence/2026-10-13-debugging-completed-development.md)保留了被拒绝的候选、一个具体修复和增加的总成本；[中止批次](evidence/2026-10-13-debugging-development-stops.md)保留了错误和部分消耗。两者都没有证明稳定提升，也不能授权升级。
 
+[已知退步对照与首次验证中止记录](evidence/2026-10-13-debugging-controls-and-sleep-stop.md)保留了 LRU 的成本下降点估计、normalize-url 的成本退步和已查明的睡眠间隔。16 次完整交付均可离线重放；中止调用保留部分成本、不予评分。新的固定验证批次独立保留。
+
 ## 可选择的 Codex 配置
 
 新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills 的来源目录，再重复 `--skill` 只选择与自己任务相关的项目；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 保留原来的 13 个供旧用户沿用，整套尚未验证；`--all` 选全部 67 个，不是推荐默认配置。目录验证的是来源和安装，不是效果：其中仅 8 个有有限的历史配对实验，没有任何一个已证明其当前锁定版本对当前 Codex 模型有效。配置命令从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南与证据摘要](docs/selectable-codex.md)。

@@ -13,6 +13,11 @@ The [completed development comparisons](../evidence/2026-10-13-debugging-complet
 also retain a rejected candidate and a concrete v4 repair with its extra costs;
 they remain separate from the frozen independent validation request.
 
+The [known controls and sleep interruption](../evidence/2026-10-13-debugging-controls-and-sleep-stop.md)
+retain a normalize-url cost rejection alongside LRU point savings. An interrupted
+invocation has partial usage and no grade; a fresh cohort never discards its cost
+or changes the candidate, grader or acceptance thresholds to obtain a gain.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:
