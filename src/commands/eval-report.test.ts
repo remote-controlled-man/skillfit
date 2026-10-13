@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { parseEvalReport, renderEvalMarkdown, runEvalReport } from './eval-report.js';
+import { summarizeCosts, type CostObservation, type RunCosts } from '../harness/costs.js';
 
 function manifest(): Record<string, unknown> {
   const conditions = {
@@ -51,6 +52,55 @@ function sixPairManifest(): Record<string, unknown> {
   });
   return value;
 }
+
+function costManifest(): Record<string, unknown> {
+  const value = manifest();
+  value['trials'] = 3;
+  const run = (input: number, passed: boolean): CostObservation => ({ executorInvoked: true, passed, error: null,
+    durationSeconds: 5, tokens: { input, cachedInput: input / 2, output: 2 }, usageStatus: 'final' });
+  const baseline = [run(10, true), run(10, true), run(10, true)];
+  const treatment = [run(8, true), run(8, false), { ...run(3, false), durationSeconds: 600, error: 'timeout', usageStatus: 'partial' as const }];
+  const costs = summarizeCosts({ baseline, treatment }, { baseline: baseline.slice(0, 2), treatment: treatment.slice(0, 2) });
+  const conditions = { baseline: { passes: 2, trials: 2, errors: 0 }, treatment: { passes: 1, trials: 2, errors: 1 } };
+  const task = (value['tasks'] as Record<string, unknown>[])[0]!;
+  Object.assign(task, { costs: structuredClone(costs), conditions, deltaPassRate: -0.5 });
+  const overall = value['overall'] as Record<string, unknown>;
+  Object.assign(overall, { costs: structuredClone(costs), conditions, deltaPassRate: -0.5 });
+  Object.assign(overall['stats'] as Record<string, unknown>, { discordant: { improved: 0, regressed: 1 }, mcnemarP: 1 });
+  return value;
+}
+
+test('report eval renders cache partitions, per-success regressions and timeout lower bounds', () => {
+  const output = renderEvalMarkdown(parseEvalReport(costManifest()));
+  assert.match(output, /Input tokens \| 20 \| 16 \| -20.0% \| 10.000 \/ 16.000 \| \+60.0%/);
+  assert.match(output, /Input tokens \| 30 \| >= 19 \| n\/a \| 10.000 \/ >= 19.000 \| n\/a/);
+  assert.match(output, /Cached input tokens/);
+  assert.match(output, /Uncached input tokens/);
+  assert.match(output, /Elapsed seconds/);
+  assert.match(output, /3\/0\/0 \/ 2\/1\/0/);
+  assert.match(output, /Overall verdict: \*\*inconclusive\*\*/);
+});
+
+test('report eval rejects contradictory cost counts, coverage, partitions and pooled totals', () => {
+  const scenarios = [
+    (costs: RunCosts) => { costs.paired.baseline.passes = 0; },
+    (costs: RunCosts) => { costs.attempts.treatment.metrics.input.coverage.unknown = 3; },
+    (costs: RunCosts) => { costs.attempts.treatment.metrics.cachedInput.knownTotal = 100; },
+    (costs: RunCosts) => { costs.attempts.baseline.metrics.output.knownTotal = 99; },
+    (costs: RunCosts) => { costs.notInvoked.baseline = 1; },
+  ];
+  for (const change of scenarios) {
+    const value = costManifest();
+    change((value['overall'] as Record<string, unknown>)['costs'] as RunCosts);
+    assert.throws(() => parseEvalReport(value), /costs|cache partition/);
+  }
+});
+
+test('report eval keeps legacy manifests readable and does not infer missing cache usage', () => {
+  const output = renderEvalMarkdown(parseEvalReport(manifest()));
+  assert.match(output, /all-invocation costs were not recorded in this legacy manifest/);
+  assert.ok(!output.includes('| Cached input tokens | 0'));
+});
 
 test('report eval renders a v4 manifest without executing an agent or writing a file', () => {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-eval-report-'));
@@ -312,4 +362,20 @@ test('installed report validates and distinguishes read observations from task q
   assert.match(markdown, /not trigger precision or recall/);
   conditions['treatment']!['skillReads'] = { observed: 2, unobserved: 1, unknown: 0 };
   assert.throws(() => parseEvalReport(value), /must total the surviving graded trials/);
+});
+
+test('revision report rejects incompatible baseline identities and preserves legacy interpretation', () => {
+  const value = manifest();
+  assert.ok(!renderEvalMarkdown(parseEvalReport(value)).includes('Baseline Skill:'));
+  value['inputMode'] = 'workspace';
+  value['skillDelivery'] = { mode: 'installed', installDir: '.agents/skills' };
+  (value['target'] as Record<string, unknown>)['files'] = ['SKILL.md'];
+  const baseline = { kind: 'skill', name: 'test | Skill', bundleSha256: 'b'.repeat(64), sourceDir: '/previous', files: ['SKILL.md'] };
+  value['baselineTarget'] = baseline;
+  assert.match(renderEvalMarkdown(parseEvalReport(value)), /Baseline Skill: test \\?\| Skill/);
+  for (const change of [{ kind: 'rules' }, { name: 'different' }, { bundleSha256: 'a'.repeat(64) },
+    { bundleSha256: 'bad' }, { files: ['script.js'] }, { sourceDir: '' }]) {
+    assert.throws(() => parseEvalReport({ ...value, baselineTarget: { ...baseline, ...change } }), /baselineTarget|fingerprint/);
+  }
+  assert.throws(() => parseEvalReport({ ...value, skillDelivery: undefined }), /requires two installed Skill/);
 });

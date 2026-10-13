@@ -32,6 +32,7 @@ Options:
   --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
   --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
+  --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target
   --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
@@ -84,6 +85,7 @@ async function main(): Promise<void> {
       agent: { type: 'string' },
       'judge-agent': { type: 'string' },
       mode: { type: 'string' },
+      'baseline-skill': { type: 'string' },
       'compete-installed': { type: 'boolean', default: false },
       input: { type: 'string' },
       bench: { type: 'string' },
@@ -131,6 +133,9 @@ async function main(): Promise<void> {
   if (values.help || !command) {
     console.log(USAGE);
     return;
+  }
+  if (values['baseline-skill'] !== undefined && command !== 'eval') {
+    throw new Error('--baseline-skill applies only to eval --mode installed.');
   }
 
   const common = {
@@ -188,6 +193,7 @@ async function main(): Promise<void> {
       await runEval({
         ...common,
         skillPath,
+        baselineSkillPath: values['baseline-skill'],
         bench: values.bench,
         mode,
         inputMode,

@@ -2,6 +2,7 @@ import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
 import { CONDITIONS } from './types.js';
 import type { Condition, ExecutorDescriptor, InputMode } from './types.js';
 import type { ExperimentSummary } from './experiment-session.js';
+import { renderCostLines, type RunCosts } from './costs.js';
 
 export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
 
@@ -47,6 +48,7 @@ export interface FacetSummary {
 }
 
 export interface TaskSummary {
+  costs?: RunCosts;
   id: string;
   conditions: Record<Condition, ConditionStats>;
   outcomes: { baseline: boolean[]; treatment: boolean[] };
@@ -69,6 +71,7 @@ export interface SignificanceStats {
 }
 
 export interface OverallSummary {
+  costs?: RunCosts;
   conditions: Record<Condition, ConditionStats>;
   deltaPassRate: number;
   scoreDelta: number | null;
@@ -88,6 +91,8 @@ export interface RunManifest {
   runGroup: string;
   createdAt: string;
   target: { kind: 'skill' | 'rules' | 'mcp'; name: string; sourceDir: string; bundleSha256: string; files: string[] };
+  /** Previous installed Skill version; absent preserves the target's existing baseline. */
+  baselineTarget?: { kind: 'skill'; name: string; sourceDir: string; bundleSha256: string; files: string[] };
   bench: { name: string; dir: string; contentSha256: string; taskCount: number };
   executor: ExecutorDescriptor;
   judge: ExecutorDescriptor | null;
@@ -154,6 +159,9 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
   if (manifest.skillDelivery) {
     warnings.push('Installed Skill mode measures task outcomes with native discovery and complete resources; activation is not guaranteed. Inherited agent configuration still applies.');
   }
+  if (manifest.baselineTarget) {
+    warnings.push('Skill revision comparison measures the target against the previous version, not against no Skill. A positive delta does not establish installation benefit or guarantee non-regression on unseen tasks.');
+  }
   if (manifest.executor.kind === 'mock') {
     warnings.push('Executor is a mock: results are synthetic and only exercise the harness.');
   }
@@ -210,9 +218,10 @@ function pad(text: string, width: number): string {
 export function renderSummary(manifest: RunManifest, manifestPath: string): string {
   const lines: string[] = [];
   lines.push(`Target   : ${manifest.target.name} (${manifest.target.kind}, bundle sha256 ${manifest.target.bundleSha256.slice(0, 12)}…, ${manifest.target.files.length} files)`);
+  if (manifest.baselineTarget) lines.push(`Baseline : ${manifest.baselineTarget.name} (previous Skill, bundle sha256 ${manifest.baselineTarget.bundleSha256.slice(0, 12)}…, ${manifest.baselineTarget.files.length} files)`);
   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
   lines.push(`Input    : ${manifest.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`);
-  if (manifest.skillDelivery) lines.push('Delivery : installed complete Skill at ' + manifest.skillDelivery.installDir + '/' + manifest.target.name);
+  if (manifest.skillDelivery) lines.push('Delivery : installed complete Skill ' + (manifest.baselineTarget ? 'in both conditions ' : '') + 'at ' + manifest.skillDelivery.installDir + '/' + manifest.target.name);
   lines.push(`Executor : ${describeExecutor(manifest.executor)}`);
   lines.push(`Judge    : ${manifest.judge ? describeExecutor(manifest.judge) : 'disabled'}`);
   lines.push(`Trials   : ${manifest.trials} per condition`);
@@ -266,6 +275,7 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
     lines.push('');
     lines.push(...tokenLines);
   }
+  if (manifest.overall.costs) lines.push('', 'Cost accounting:', ...renderCostLines(manifest.overall.costs));
   const facetLines = renderFacetScores(manifest);
   if (facetLines.length > 0) {
     lines.push('');

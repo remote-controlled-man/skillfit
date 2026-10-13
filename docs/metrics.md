@@ -12,6 +12,24 @@ Additive workflow review 2026-10-09: optional managed-session and native read me
 describe execution coverage and observations. They do not change the v2 statistical formulas,
 verdict thresholds, pairwise exclusions or legal legacy manifest interpretation.
 
+Additive revision review 2026-10-12: `--baseline-skill` in installed mode compares two
+complete versions of the same Skill. Optional v4 `baselineTarget` records the previous
+version; `target` records treatment. Both inputs are frozen, and trial receipts identify
+the installed arm's version. All v2 formulas, verdict thresholds and pairwise exclusions
+remain unchanged. A revision delta is relative to the previous Skill, not to no Skill;
+it establishes neither installation benefit nor general non-regression. See
+[the revision workflow](skill-revisions.md).
+
+Additive timing correction 2026-10-12: new trial receipts use a monotonic
+`performance.now()` interval for elapsed cost and retain wall duration plus
+optional CLI deadline/observation diagnostics. A detected clock discontinuity or
+observation gap is an executor environment error, with the existing pairwise
+exclusion and spending retention. No v2 formula or threshold changes. Legacy
+wall-duration receipts keep their recorded interpretation; see [execution timing](eval-timing.md).
+Plans also pin logical/physical workspace aliases so matrix-defined pure trust
+registrations for either frozen name count as the same bookkeeping. Retargeting
+an alias or changing any other configuration still stops further calls.
+
 This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
 contract — is [bench-authoring.md](bench-authoring.md).
 
@@ -301,6 +319,20 @@ New condition summaries also record `tokenCoverage.input/output`: the number of
 graded surviving runs that supplied each field. Existing `tokens` totals and
 verdict semantics are unchanged. Missing or partial coverage cannot establish a
 complete overhead claim; legacy totals without coverage are shown as unrecorded.
+
+Optional `tasks[].costs` and `overall.costs` (cost schema 1) add descriptive
+accounting for surviving graded pairs and all invoked agent runs separately.
+They partition input into recorded cache-read and uncached tokens, retain
+failed/excluded invocations' spending, and report each measure per successful
+task (total spending / successes, including graded failures). Each measure's
+`final/partial/unknown` coverage sums to its population's run count. Incomplete
+usage is a known lower bound and suppresses percentage comparisons; missing
+cache counts are unknown, never zero. Timeouts retain measured elapsed time and
+available public-transcript usage as partial receipts. Pre-call guard/setup
+refusals are counted separately and do not enter spending totals. Judge and
+other cohorts' spending are excluded. These observations introduce no cost
+significance, monetary estimate or change to the quality protocol. See
+[evaluation cost accounting](eval-costs.md) for field and denominator rules.
 
 Rules and MCP targets use the same paired statistics as Skill targets but a different treatment
 mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The

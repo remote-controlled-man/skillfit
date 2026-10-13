@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test, type TestContext } from 'node:test';
@@ -117,6 +117,38 @@ test('temporary profile config is pinned, planned trust additions are allowed, m
   session.check();
   writeFileSync(config, readFileSync(config, 'utf8').replace('"offline"', '"changed"'));
   assert.throws(() => session.check(), /Agent configuration changed/); session.finish();
+});
+
+test('canonical trust names for frozen workspace aliases are allowed, unrelated names and overrides are not', t => {
+  const s = setup(t); const profile = join(s.root, 'profile'); mkdirSync(profile);
+  const real = join(s.root, 'physical'); mkdirSync(real);
+  const alias = join(s.root, 'alias'); symlinkSync(real, alias, 'junction');
+  const logical = join(alias, 'new', 'task', 'trial-1');
+  const physical = join(realpathSync(real), 'new', 'task', 'trial-1');
+  const config = join(profile, 'config.toml'); writeFileSync(config, 'model = "offline"\n');
+  const options = { ...s.options, agent: 'codex', homeDir: join(s.root, 'home'), env: { CODEX_HOME: profile },
+    versionProbe: () => 'offline 1.0', workspaces: [logical] };
+  const session = new ExperimentSession(options);
+  writeFileSync(config, `model = "offline"\n[projects.${JSON.stringify(physical)}]\ntrust_level = "trusted"\n`);
+  mkdirSync(logical, { recursive: true }); session.check();
+  const plan = JSON.parse(readFileSync(join(s.groupDir, '_plan.json'), 'utf8'));
+  assert.deepEqual(plan.workspaceAliases, [{ logical, physical }]);
+  writeFileSync(config, readFileSync(config, 'utf8') + 'model = "overridden"\n');
+  assert.throws(() => session.check(), /Agent configuration changed/);
+  session.finish();
+  writeFileSync(config, 'model = "offline"\n');
+  const other = new ExperimentSession({ ...options, groupDir: join(s.root, 'other-run') });
+  writeFileSync(config, `model = "offline"\n[projects.${JSON.stringify(join(real, 'other'))}]\ntrust_level = "trusted"\n`);
+  assert.throws(() => other.check(), /Agent configuration changed/); other.finish();
+});
+
+test('retargeting a declared workspace alias cannot expand its frozen trust allowlist', t => {
+  const s = setup(t); const real = join(s.root, 'physical'); const other = join(s.root, 'other');
+  mkdirSync(real); mkdirSync(other);
+  const alias = join(s.root, 'alias'); symlinkSync(real, alias, 'junction');
+  const session = new ExperimentSession({ ...s.options, workspaces: [join(alias, 'trial')] });
+  session.check(); rmSync(alias); symlinkSync(other, alias, 'junction');
+  assert.throws(() => session.check(), /workspace alias changed/); session.finish();
 });
 
 test('global Skill directory aliases are pinned and candidate aliases reject contamination', t => {

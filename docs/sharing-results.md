@@ -44,6 +44,13 @@ versions or bench hashes. Use the [metrics protocol](metrics.md) when interpreti
 [evidence submission template](../.github/ISSUE_TEMPLATE/evidence_submission.yml) when proposing a
 published claim.
 
+New manifests also include [cost accounting](eval-costs.md): separate input,
+cache-read input, uncached input, output and elapsed time, each with coverage and
+spending per successful task. All invoked agent runs retain failures and partners
+excluded from quality pairs. Unknown or partial timeout usage suppresses cost
+changes; available totals are labeled as lower bounds. Older manifests explicitly
+mark these additions unrecorded. No report estimates a bill or changes a verdict.
+
 ## Offline CI recipe
 
 [`examples/bench-check.yml`](examples/bench-check.yml) is an opt-in GitHub Actions workflow you can

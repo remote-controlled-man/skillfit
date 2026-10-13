@@ -7,6 +7,7 @@ import { getAgent, skillUserDirSpecs, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
 import { hashFileSet, sha256File, sha256Text } from './hash.js';
 import type { Bench, EvaluationTarget, Executor } from './types.js';
+import { ExecutorFailure } from './types.js';
 
 export interface ExperimentSummary {
   schemaVersion: 1;
@@ -22,6 +23,7 @@ export interface ExperimentSummary {
 export interface SessionOptions {
   bench: Bench;
   target: EvaluationTarget;
+  baselineTarget?: EvaluationTarget;
   groupDir: string;
   workspaces: string[];
   plannedCalls: number;
@@ -167,6 +169,8 @@ export class ExperimentSession {
   private readonly inputs: InputFingerprint[];
   private readonly configs: ConfigFingerprint[];
   private readonly workspaces: string[];
+  private readonly workspaceAliases: { logical: string; physical: string }[];
+  private readonly trustWorkspaces: string[];
   private readonly inventories: SkillInventory[] = [];
   private callsStarted = 0;
   private callsFinished = 0;
@@ -178,12 +182,17 @@ export class ExperimentSession {
     this.maxCalls = validateCallBudget(options.plannedCalls, options.maxCalls);
     this.groupDir = resolve(options.groupDir);
     this.workspaces = options.workspaces.map(path => resolve(path));
+    // CLI trust registration can use a canonical path while tmpdir() uses a system alias.
+    // Freeze both names now; never broaden the allowlist by resolving changed links later.
+    this.workspaceAliases = this.workspaces.map(logical => ({ logical, physical: physicalPath(logical) }));
+    this.trustWorkspaces = [...new Set([...this.workspaces, ...this.workspaceAliases.map(alias => alias.physical)])];
     if (existsSync(this.groupDir)) throw new Error(`Run group directory already exists: ${this.groupDir}`);
-    for (const input of [options.target.sourceDir, ...options.bench.tasks.map(task => join(options.bench.dir, task.fixture))]) {
+    for (const input of [options.target.sourceDir, ...(options.baselineTarget ? [options.baselineTarget.sourceDir] : []), ...options.bench.tasks.map(task => join(options.bench.dir, task.fixture))]) {
       if (inside(physicalPath(input), physicalPath(this.groupDir))) throw new Error('Experiment output must be outside the Skill/overlay and fixture inputs; run the CLI from their parent directory.');
     }
     const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
     this.inputs = [pin('bench', options.bench.dir, this.groupDir), pin('target', options.target.sourceDir), pin('implementation', join(packageRoot, 'dist'))];
+    if (options.baselineTarget) this.inputs.push(pin('baseline Skill', options.baselineTarget.sourceDir));
     this.configs = [];
     const env = options.env ?? process.env;
     let configured: Record<string, string> = {};
@@ -207,7 +216,7 @@ export class ExperimentSession {
       if (settings.path) paths.add(settings.path);
       const match = agent.headless.projectTrustConfigArg?.match(/^([^.]+)\.'\{workdir\}'\.([^=]+)='([^']+)'$/);
       const trust = match ? { table: match[1]!, field: match[2]!, value: match[3]! } : undefined;
-      for (const path of paths) this.configs.push(configState(path, path === settings.path ? trust : undefined, this.workspaces));
+      for (const path of paths) this.configs.push(configState(path, path === settings.path ? trust : undefined, this.trustWorkspaces));
       for (const spec of new Set([...skillUserDirSpecs(agent, env), ...agent.skills.sharedDirs.filter(path => path.startsWith('~/'))])) {
         const root = expand(spec, home);
         this.inventories.push(skillInventory(root));
@@ -232,7 +241,7 @@ export class ExperimentSession {
     const plan = { schemaVersion: 1, createdAt: new Date().toISOString(), nodeVersion: process.version,
       packageVersion: (JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as { version: string }).version,
       agent: options.agent ?? null, cliVersion, configuredSettings: configured, servedModel: 'unrecorded',
-      plannedCalls: this.plannedCalls, maxCalls: this.maxCalls, workspaces: this.workspaces,
+      plannedCalls: this.plannedCalls, maxCalls: this.maxCalls, workspaces: this.workspaces, workspaceAliases: this.workspaceAliases,
       inputs: this.inputs, configurations: this.configs, skillInventories: this.inventories, warnings, details: options.details };
     const bytes = JSON.stringify(plan, null, 2) + '\n';
     this.planSha256 = sha256Text(bytes);
@@ -244,9 +253,12 @@ export class ExperimentSession {
   check(): void {
     if (this.stopReason) throw new Error(this.stopReason);
     try {
+      for (const alias of this.workspaceAliases) if (physicalPath(alias.logical) !== alias.physical) {
+        throw new Error(`Declared workspace alias changed: ${alias.logical}; no further calls.`);
+      }
       for (const input of this.inputs) if (pin(input.label, input.root, input.exclude).sha256 !== input.sha256) throw new Error(`Frozen ${input.label} input changed; no further calls.`);
       for (const config of this.configs) {
-        const current = configState(config.path, config.trust, this.workspaces);
+        const current = configState(config.path, config.trust, this.trustWorkspaces);
         if (current.state !== config.state || current.sha256 !== config.sha256) throw new Error(`Agent configuration changed: ${config.path}; no further calls.`);
       }
       for (const inventory of this.inventories) if (JSON.stringify(skillInventory(inventory.root)) !== JSON.stringify(inventory)) {
@@ -257,8 +269,12 @@ export class ExperimentSession {
 
   wrap(executor: Executor, role: 'agent' | 'judge'): Executor {
     return { describe: () => executor.describe(), run: async (prompt, workdir) => {
-      this.check();
-      if (this.callsStarted >= Math.min(this.plannedCalls, this.maxCalls)) { this.stopReason = 'Declared call ceiling reached; no further calls.'; throw new Error(this.stopReason); }
+      try {
+        this.check();
+        if (this.callsStarted >= Math.min(this.plannedCalls, this.maxCalls)) { this.stopReason = 'Declared call ceiling reached; no further calls.'; throw new Error(this.stopReason); }
+      } catch (error) {
+        throw new ExecutorFailure((error as Error).message, { output: '' }, false);
+      }
       const call = ++this.callsStarted;
       const ledger = join(this.groupDir, '_calls.jsonl');
       appendFileSync(ledger, JSON.stringify({ event: 'started', call, role, workdir, at: new Date().toISOString(), promptSha256: sha256Text(prompt) }) + '\n');

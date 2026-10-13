@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import { getAgent } from '../../agents.js';
 import { killTree, treeSpawnOptions } from '../kill-tree.js';
 import { probeKimiSessionUsage } from '../kimi-usage.js';
+import { ExecutorFailure, type TokenUsage } from '../types.js';
+import { ExecutionDeadline, type ExecutionClock } from '../execution-timing.js';
 import type { Executor, ExecutorDescriptor, ExecutorResult } from '../types.js';
 
 export interface CliExecutorOptions {
@@ -18,6 +20,8 @@ export interface CliExecutorOptions {
   triggerSkillName?: string;
   triggerToolName?: string;
   projectTrustConfigArg?: string;
+  /** Injectable clocks for offline timing regression tests. */
+  clock?: ExecutionClock;
 }
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
@@ -73,6 +77,7 @@ export class CliExecutor implements Executor {
   private readonly triggerSkillName?: string;
   private readonly triggerToolName: string;
   private readonly projectTrustConfigArg?: string;
+  private readonly clock?: ExecutionClock;
 
   constructor(options: CliExecutorOptions) {
     if (options.argv.length === 0) {
@@ -92,6 +97,8 @@ export class CliExecutor implements Executor {
     this.triggerSkillName = options.triggerSkillName;
     this.triggerToolName = options.triggerToolName ?? DEFAULT_TRIGGER_TOOL_NAME;
     this.projectTrustConfigArg = options.projectTrustConfigArg;
+    this.clock = options.clock;
+    new ExecutionDeadline(this.timeoutMs, this.clock);
   }
 
   static forAgent(agentId: string, opts?: { triggerSkillName?: string; trustProjectConfig?: boolean }): CliExecutor {
@@ -169,6 +176,7 @@ export class CliExecutor implements Executor {
     const spawnCommand = spawnArgv[0] ?? command;
     const spawnArgs = spawnArgv.slice(1);
     return new Promise((resolvePromise, rejectPromise) => {
+      const deadline = new ExecutionDeadline(this.timeoutMs, this.clock);
       const child = spawn(spawnCommand, spawnArgs, {
         cwd: workdir,
         shell: this.shell,
@@ -180,15 +188,49 @@ export class CliExecutor implements Executor {
       let bytes = 0;
       let timedOut = false;
       let overflow = false;
-      const timer = setTimeout(() => {
-        timedOut = true;
+      let stopping = false;
+      let drainTimer: NodeJS.Timeout | undefined;
+      const parseResult = (): ExecutorResult => ({
+        ...(this.triggerSkillName !== undefined
+          ? parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName)
+          : { output: stdout }), executionTiming: deadline.snapshot(),
+      });
+      const failure = (message: string): ExecutorFailure => new ExecutorFailure(message, { ...parseResult(), usageStatus: 'partial' });
+      const stopMessage = (): string => overflow
+        ? `"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`
+        : deadline.timingError ? `"${command}" execution timing anomaly: ${deadline.timingError}`
+          : `"${command}" timed out after ${this.timeoutMs}ms`;
+      const stopChild = (): void => {
+        if (stopping) return;
+        stopping = true;
+        deadline.markTermination(timedOut);
         killTree(child);
+        // A descendant that escaped the process group can retain a pipe after its parent dies.
+        // Bound pipe draining too; the normal close handler still collects output first.
+        drainTimer = setTimeout(() => {
+          deadline.observe();
+          clearTimers();
+          child.stdin.destroy(); child.stdout.destroy(); child.stderr.destroy(); child.unref();
+          rejectPromise(failure(stopMessage()));
+        }, 2000);
+      };
+      const checkDeadline = (terminate = true): void => {
+        deadline.observe();
+        if (!timedOut && !deadline.timingError && !deadline.exceeded) return;
+        timedOut ||= deadline.exceeded && deadline.timingError === null;
+        if (terminate) stopChild();
+      };
+      const timer = setTimeout(() => {
+        checkDeadline();
       }, this.timeoutMs);
+      const heartbeat = setInterval(() => checkDeadline(), deadline.heartbeatMs);
+      const clearTimers = (): void => { clearTimeout(timer); clearInterval(heartbeat); clearTimeout(drainTimer); };
       const take = (chunk: Buffer, sink: 'stdout' | 'stderr'): void => {
+        checkDeadline();
         bytes += chunk.length;
         if (bytes > MAX_AGENT_OUTPUT_BYTES) {
           overflow = true;
-          killTree(child);
+          stopChild();
           return;
         }
         if (sink === 'stdout') stdout += chunk.toString('utf8');
@@ -197,32 +239,33 @@ export class CliExecutor implements Executor {
       child.stdout.on('data', (chunk: Buffer) => take(chunk, 'stdout'));
       child.stderr.on('data', (chunk: Buffer) => take(chunk, 'stderr'));
       child.on('error', (error) => {
-        clearTimeout(timer);
-        rejectPromise(new Error(`Failed to start "${command}": ${error.message}`));
+        clearTimers();
+        deadline.observe();
+        rejectPromise(new ExecutorFailure(`Failed to start "${command}": ${error.message}`, { output: '', executionTiming: deadline.snapshot() }));
       });
       child.on('close', (code) => {
-        clearTimeout(timer);
+        checkDeadline(false);
+        clearTimers();
         if (overflow) {
-          rejectPromise(new Error(`"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`));
+          rejectPromise(failure(`"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`));
+          return;
+        }
+        if (deadline.timingError) {
+          rejectPromise(failure(`"${command}" execution timing anomaly: ${deadline.timingError}`));
           return;
         }
         if (timedOut) {
-          rejectPromise(new Error(`"${command}" timed out after ${this.timeoutMs}ms`));
+          rejectPromise(failure(`"${command}" timed out after ${this.timeoutMs}ms`));
           return;
         }
         if (code !== 0) {
           const detail = stderr.trim().slice(0, 500);
           rejectPromise(
-            new Error(`"${command}" exited with code ${code ?? 'null'}${detail ? `: ${detail}` : ''}`),
+            failure(`"${command}" exited with code ${code ?? 'null'}${detail ? `: ${detail}` : ''}`),
           );
           return;
         }
-        let result: ExecutorResult;
-        if (this.triggerSkillName !== undefined) {
-          result = parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName);
-        } else {
-          result = { output: stdout };
-        }
+        const result = parseResult();
         // Capability from the matrix, not an agent name: this surface reports no usable token counts
         // in its transcript, so they are read from its session log afterwards. probeKimiSessionUsage
         // is currently the only implementation, which is why the flag is set on exactly one agent.
@@ -243,10 +286,11 @@ export class CliExecutor implements Executor {
         // so the caller's catch never runs and the process dies mid-trial leaving a half-populated
         // run group behind. Reject instead, and kill the child so it cannot outlive the failure.
         child.stdin.on('error', (error: Error) => {
-          clearTimeout(timer);
+          clearTimers();
+          deadline.observe();
           killTree(child);
           rejectPromise(
-            new Error(`Failed to write the prompt to "${command}" on stdin: ${error.message}`),
+            new ExecutorFailure(`Failed to write the prompt to "${command}" on stdin: ${error.message}`, { output: stdout, executionTiming: deadline.snapshot(), usageStatus: 'partial' }),
           );
         });
         child.stdin.write(prompt, 'utf8');
@@ -260,7 +304,8 @@ interface StreamJsonTranscript {
   output: string;
   skillTriggered?: boolean;
   rawOutput?: string;
-  tokens?: { input?: number; output?: number };
+  tokens?: TokenUsage;
+  usageStatus?: 'final' | 'partial';
 }
 
 function parseStreamJsonTranscript(
@@ -271,7 +316,10 @@ function parseStreamJsonTranscript(
   const textParts: string[] = [];
   let parsedAny = false;
   let triggered = false;
-  let tokens: { input?: number; output?: number } | undefined;
+  let tokens: TokenUsage | undefined;
+  let usageTurns = 0;
+  const totals = { input: 0, output: 0, cachedInput: 0 };
+  const coverage = { input: 0, output: 0, cachedInput: 0 };
   for (const rawLine of stdout.split('\n')) {
     const line = rawLine.trim();
     if (line === '') {
@@ -343,23 +391,23 @@ function parseStreamJsonTranscript(
       }
     }
     if (record.type === 'turn.completed') {
+      usageTurns++;
       const usage = record.usage;
       if (typeof usage === 'object' && usage !== null) {
         const usageRecord = usage as Record<string, unknown>;
-        const input = typeof usageRecord.input_tokens === 'number' ? usageRecord.input_tokens : undefined;
-        const output =
-          typeof usageRecord.output_tokens === 'number' ? usageRecord.output_tokens : undefined;
-        if (input !== undefined || output !== undefined) {
-          // Accumulate, matching kimi-usage.ts, which sums the same kind of per-entry usage records
-          // from the session wire log. Overwriting kept only the last turn, so a multi-turn session
-          // undercounted and corrupted both the token delta and cost-of-pass — the two claims
-          // docs/metrics.md L3 says are actually provable at personal sample sizes. If a surface ever
-          // reports *cumulative* usage instead, this is the line to revisit: the two readings are
-          // mutually exclusive and guessing wrong double-counts.
-          tokens = {
-            input: (tokens?.input ?? 0) + (input ?? 0),
-            output: (tokens?.output ?? 0) + (output ?? 0),
-          };
+        const count = (value: unknown): number | undefined =>
+          typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+        const input = count(usageRecord.input_tokens);
+        const cachedInput = count(usageRecord.cached_input_tokens);
+        const values = { input, output: count(usageRecord.output_tokens), cachedInput:
+          input !== undefined && cachedInput !== undefined && cachedInput <= input ? cachedInput : undefined };
+        // Codex records per-turn increments. Missing fields on any completed turn prevent
+        // treating the aggregate as complete; in particular missing cache counts are not zero.
+        for (const field of ['input', 'output', 'cachedInput'] as const) {
+          if (values[field] !== undefined) {
+            totals[field] += values[field];
+            coverage[field]++;
+          }
         }
       }
     }
@@ -387,5 +435,14 @@ function parseStreamJsonTranscript(
   if (!parsedAny) {
     return { output: stdout };
   }
-  return { output: textParts.join('\n'), skillTriggered: triggered, rawOutput: stdout, tokens };
+  let usageStatus: 'final' | 'partial' | undefined;
+  if (usageTurns > 0) {
+    tokens = {};
+    for (const field of ['input', 'output', 'cachedInput'] as const) {
+      if (coverage[field] > 0 && (field !== 'cachedInput' || coverage[field] === usageTurns)) tokens[field] = totals[field];
+    }
+    if (Object.keys(tokens).length === 0) tokens = undefined;
+    usageStatus = coverage.input === usageTurns && coverage.output === usageTurns ? 'final' : 'partial';
+  }
+  return { output: textParts.join('\n'), skillTriggered: triggered, rawOutput: stdout, tokens, usageStatus };
 }

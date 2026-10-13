@@ -1,6 +1,10 @@
+import type { ExecutionTiming } from './execution-timing.js';
+
 export interface TokenUsage {
   input?: number;
   output?: number;
+  /** Cache-read input, already included in input; absent means unrecorded. */
+  cachedInput?: number;
 }
 
 export interface ExecutorResult {
@@ -10,6 +14,18 @@ export interface ExecutorResult {
   rawOutput?: string;
   /** Returned output retained, but input/configuration drift makes this trial ungradable. */
   guardError?: string;
+  /** Partial usage is a known lower bound, never a complete final receipt. */
+  usageStatus?: 'final' | 'partial';
+  /** Public timing diagnostics; neither clock measures billed/active model computation. */
+  executionTiming?: ExecutionTiming;
+}
+
+/** Retain public output/usage from a failed invocation; guards can refuse before invoking. */
+export class ExecutorFailure extends Error {
+  constructor(message: string, readonly result: ExecutorResult = { output: '' }, readonly executorInvoked = true) {
+    super(message);
+    this.name = 'ExecutorFailure';
+  }
 }
 
 export interface ExecutorDescriptor {

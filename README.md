@@ -112,6 +112,14 @@ results, usage coverage and installation evidence gaps. A single task informs
 that task; it does not prove general benefit. Follow the [real OSS workflow](docs/oss-task-evaluation.md)
 or replay the [pinned mcp-use example](benches/contrib/oss-mcp-use-utf8/README.md).
 
+## Compare Skill revisions
+
+Use `--baseline-skill` with `--mode installed` to compare a previous complete Skill against a revised version. Both must have the same `SKILL.md` frontmatter name and different content fingerprints. Baseline receives the previous version; treatment receives the target version, with identical natural task prompts and independent outcome verifiers. Plans, manifests and trial receipts pin both versions, including scripts and binary resources. A change to either source stops further calls. The comparison measures revision effects; installation benefit still needs a separate no-Skill baseline. See [the revision workflow](docs/skill-revisions.md).
+
+```bash
+node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
+```
+
 ## Test rules and MCP setups
 
 Put a `skillfit-experiment.json` next to baseline and treatment project overlays. A rules experiment can add `AGENTS.md`; an MCP experiment can add `.codex/config.toml`, `.mcp.json`, or the path defined for another supported agent. skillfit copies the same task fixture into both arms, snapshots it for an identical prompt, then applies each overlay so the local agent discovers configuration through its normal loader.
@@ -139,6 +147,8 @@ Try the synthetic example below, then replace its path with the `Manifest:` path
 ```bash
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
+
+New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
 
 ## Selectable Codex setup
 

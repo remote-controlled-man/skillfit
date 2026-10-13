@@ -9,7 +9,7 @@ import { ExperimentSession, validateCallBudget, type SessionOptions } from '../h
 import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
-import { assertInstalledSkillFixtures, collectInstalledSkillTarget } from '../harness/installed-skill.js';
+import { assertInstalledSkillFixtures, assertSkillRevisionTargets, collectInstalledSkillTarget } from '../harness/installed-skill.js';
 import { assertInputModeSupported } from '../harness/prompt.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
@@ -26,6 +26,8 @@ import type { Bench, EvaluationTarget, Executor, InputMode, SkillBundle } from '
 export interface EvalOptions {
   /** A Skill directory or a directory containing skillfit-experiment.json. */
   skillPath: string;
+  /** Previous complete Skill version; available only in installed mode. */
+  baselineSkillPath?: string;
   bench?: string;
   trials?: number;
   maxCalls?: number;
@@ -138,9 +140,9 @@ function defaultRunGroup(now: Date = new Date()): string {
 
 function sessionFor(options: EvalOptions, bench: Bench, target: EvaluationTarget, trials: number,
   runsRoot: string, runGroup: string, armNames: string[], plannedCalls: number,
-  details: Record<string, unknown>): ExperimentSession {
+  details: Record<string, unknown>, baselineTarget?: EvaluationTarget): ExperimentSession {
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
-  return new ExperimentSession({ bench, target, groupDir: join(runsRoot, runGroup), plannedCalls,
+  return new ExperimentSession({ bench, target, baselineTarget, groupDir: join(runsRoot, runGroup), plannedCalls,
     maxCalls: options.maxCalls, agent: options.agent, injected: options.executor !== undefined,
     ...options.sessionOptions,
     workspaces: bench.tasks.flatMap(task => armNames.flatMap(arm =>
@@ -177,10 +179,15 @@ function renderPlan(
   runsRoot: string,
   runGroup: string,
   inputMode: InputMode,
+  baselineTarget?: EvaluationTarget,
 ): string {
   const lines: string[] = [];
   lines.push('Experiment plan (dry run)');
   lines.push(`Target   : ${target.name} (${target.kind}, ${target.files.length} files, bundle sha256 ${target.sha256.slice(0, 12)}…)`);
+  if (baselineTarget) {
+    lines.push(`Baseline : ${baselineTarget.name} (${baselineTarget.files.length} files, bundle sha256 ${baselineTarget.sha256.slice(0, 12)}…)`);
+    lines.push('Compare  : previous Skill in baseline vs target Skill in treatment; measures revision effects, not benefit over no Skill');
+  }
   if (target.kind !== 'skill') {
     lines.push('           applied as project files; treatment material is never injected into the prompt');
   }
@@ -338,6 +345,9 @@ async function runEvalTrigger(
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
   const installed = options.mode === 'installed';
+  if (options.baselineSkillPath !== undefined && !installed) {
+    throw new Error('--baseline-skill requires --mode installed.');
+  }
   if (installed && options.inputMode !== undefined && options.inputMode !== 'workspace') {
     throw new Error('installed mode requires workspace input; omit --input or use --input workspace.');
   }
@@ -362,11 +372,16 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const benchDir = resolveBenchDir(options.bench);
   const bench = loadBench(benchDir);
   let target = collectEvaluationTarget(options.skillPath);
+  let baselineTarget: EvaluationTarget | undefined;
   let skillInstallDir: string | undefined;
   let skillSearchDirs: string[] = [];
   if (installed) {
     if (target.kind !== 'skill') throw new Error('installed mode is only available for Skill targets.');
     target = collectInstalledSkillTarget(options.skillPath);
+    if (options.baselineSkillPath !== undefined) {
+      baselineTarget = collectInstalledSkillTarget(options.baselineSkillPath);
+      assertSkillRevisionTargets(target, baselineTarget);
+    }
     skillSearchDirs = options.agent ? getAgent(options.agent).skills.projectDirs : [];
     skillInstallDir = options.skillInstallDir ?? skillSearchDirs[0];
     if (!skillInstallDir) throw new Error('installed mode needs --agent with a matrix-defined project Skill directory.');
@@ -427,10 +442,10 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
 
   if (options.dryRun) {
-    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode));
+    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
     if (skillInstallDir) {
-      log('Delivery : complete Skill resources installed only in treatment at ' + skillInstallDir + '/' + target.name);
+      log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);
       log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
     }
     return null;
@@ -439,14 +454,16 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     throw new Error('No executor available; pass --agent or set SKILLFIT_API_KEY.');
   }
 
-  log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+  log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
   const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
-    { mode: installed ? 'installed' : 'inject', inputMode, trials, executor: executor.describe(), judge: judge?.describe() ?? null });
+    { mode: installed ? 'installed' : 'inject', inputMode, trials, executor: executor.describe(), judge: judge?.describe() ?? null,
+      ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
   let manifest: RunManifest;
   try {
     manifest = await runExperiment({
       bench,
       target,
+      baselineTarget,
       inputMode,
       ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
       executor: session.wrap(executor, 'agent'),

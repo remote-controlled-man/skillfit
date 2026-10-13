@@ -4,6 +4,7 @@ import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1, verdictFor } f
 import { mcnemarExactP } from '../harness/stats.js';
 import { validateSkillInstallDir } from '../harness/installed-skill.js';
 import type { ExperimentSummary } from '../harness/experiment-session.js';
+import { assertCostTotals, COST_METRICS, renderCostLines, type CostMetric, type CostMeasure, type CostPopulation, type RunCosts } from '../harness/costs.js';
 
 const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
 
@@ -29,6 +30,7 @@ interface FacetRow {
 }
 
 interface ReportRow {
+  costs: RunCosts | null;
   id: string;
   baseline: Counts;
   treatment: Counts;
@@ -42,6 +44,7 @@ interface ReportData {
   runGroup: string;
   createdAt: string;
   target: { kind: string; name: string; sha256: string };
+  baselineTarget: { name: string; sha256: string } | null;
   bench: { name: string; sha256: string; taskCount: number };
   executor: { kind: string; model: string };
   trials: number;
@@ -183,6 +186,7 @@ function row(value: unknown, label: string, id: string): ReportRow {
   const item = object(value, label);
   const conditions = object(item['conditions'], `${label}.conditions`);
   return {
+    costs: item['costs'] === undefined ? null : parseCosts(item['costs'], `${label}.costs`),
     id,
     baseline: counts(conditions['baseline'], `${label}.conditions.baseline`),
     treatment: counts(conditions['treatment'], `${label}.conditions.treatment`),
@@ -192,6 +196,73 @@ function row(value: unknown, label: string, id: string): ReportRow {
       ? null : number(item['scoreDelta'], `${label}.scoreDelta`, -1, 1),
     facets: facets(item['facets'], `${label}.facets`),
   };
+}
+
+function parseCosts(value: unknown, label: string): RunCosts {
+  const item = object(value, label);
+  if (item['schemaVersion'] !== 1) throw new Error(`${label}.schemaVersion must be 1`);
+  const scope = (name: 'paired' | 'attempts'): RunCosts[typeof name] => {
+    const arms = object(item[name], `${label}.${name}`);
+    const population = (arm: 'baseline' | 'treatment'): CostPopulation => {
+      const path = `${label}.${name}.${arm}`;
+      const raw = object(arms[arm], path);
+      const runs = integer(raw['runs'], `${path}.runs`);
+      const passes = integer(raw['passes'], `${path}.passes`);
+      if (passes > runs) throw new Error(`${path}.passes cannot exceed runs`);
+      const rawMetrics = object(raw['metrics'], `${path}.metrics`);
+      const metrics = Object.fromEntries(COST_METRICS.map(metric => {
+        const measure = object(rawMetrics[metric], `${path}.metrics.${metric}`);
+        const coverage = object(measure['coverage'], `${path}.metrics.${metric}.coverage`);
+        const parsed: CostMeasure = {
+          knownTotal: number(measure['knownTotal'], `${path}.metrics.${metric}.knownTotal`, 0),
+          coverage: {
+            final: integer(coverage['final'], `${path}.metrics.${metric}.coverage.final`),
+            partial: integer(coverage['partial'], `${path}.metrics.${metric}.coverage.partial`),
+            unknown: integer(coverage['unknown'], `${path}.metrics.${metric}.coverage.unknown`),
+          },
+        };
+        const c = parsed.coverage;
+        if (c.final + c.partial + c.unknown !== runs ||
+            (c.final + c.partial === 0 && parsed.knownTotal !== 0)) throw new Error(`${path}.metrics.${metric} contradicts coverage`);
+        if (metric === 'durationSeconds' && (c.partial !== 0 || c.unknown !== 0)) throw new Error(`${path} elapsed time must cover every invocation`);
+        return [metric, parsed];
+      })) as Record<CostMetric, CostMeasure>;
+      const cache = metrics.cachedInput;
+      const uncached = metrics.uncachedInput;
+      if (JSON.stringify(cache.coverage) !== JSON.stringify(uncached.coverage)) throw new Error(`${path} cache partition coverage must match`);
+      if (cache.coverage.final + cache.coverage.partial > metrics.input.coverage.final + metrics.input.coverage.partial ||
+          cache.coverage.final > metrics.input.coverage.final ||
+          cache.knownTotal + uncached.knownTotal > metrics.input.knownTotal + 1e-6) throw new Error(`${path} cache partition contradicts input`);
+      if (cache.coverage.final + cache.coverage.partial === metrics.input.coverage.final + metrics.input.coverage.partial &&
+          Math.abs(cache.knownTotal + uncached.knownTotal - metrics.input.knownTotal) > 1e-6) throw new Error(`${path} cache partition disagrees with input`);
+      return { runs, passes, metrics };
+    };
+    return { baseline: population('baseline'), treatment: population('treatment') };
+  };
+  const notInvoked = object(item['notInvoked'], `${label}.notInvoked`);
+  return { schemaVersion: 1, paired: scope('paired'), attempts: scope('attempts'), notInvoked: {
+    baseline: integer(notInvoked['baseline'], `${label}.notInvoked.baseline`),
+    treatment: integer(notInvoked['treatment'], `${label}.notInvoked.treatment`),
+  } };
+}
+
+function checkCostCounts(row: ReportRow, declaredRuns: number, label: string): void {
+  const costs = row.costs;
+  if (!costs) return;
+  for (const arm of ['baseline', 'treatment'] as const) {
+    const paired = costs.paired[arm];
+    const attempts = costs.attempts[arm];
+    if (paired.runs !== row[arm].trials || paired.passes !== row[arm].passes ||
+        attempts.runs + costs.notInvoked[arm] !== declaredRuns ||
+        paired.runs > attempts.runs || paired.passes > attempts.passes ||
+        attempts.passes - paired.passes > attempts.runs - paired.runs) throw new Error(`${label}.costs disagree with declared/graded counts`);
+    for (const metric of COST_METRICS) {
+      if (paired.metrics[metric].knownTotal > attempts.metrics[metric].knownTotal + 1e-6) throw new Error(`${label}.costs paired spending exceeds all invocations`);
+      for (const status of ['final', 'partial', 'unknown'] as const) {
+        if (paired.metrics[metric].coverage[status] > attempts.metrics[metric].coverage[status]) throw new Error(`${label}.costs paired coverage exceeds all invocations`);
+      }
+    }
+  }
 }
 
 function checkDelta(value: ReportRow, label: string): void {
@@ -255,6 +326,25 @@ export function parseEvalReport(value: unknown): ReportData {
     }
     skillDelivery = { mode: 'installed', installDir };
   }
+  let baselineTarget: ReportData['baselineTarget'] = null;
+  if (manifest['baselineTarget'] !== undefined) {
+    const previous = object(manifest['baselineTarget'], 'baselineTarget');
+    if (!skillDelivery || previous['kind'] !== 'skill') {
+      throw new Error('baselineTarget requires two installed Skill versions.');
+    }
+    const name = string(previous['name'], 'baselineTarget.name');
+    if (name !== target['name']) throw new Error('baselineTarget.name must match the target Skill name.');
+    const sha256 = hash(previous['bundleSha256'], 'baselineTarget.bundleSha256');
+    if (sha256.toLowerCase() === hash(target['bundleSha256'], 'target.bundleSha256').toLowerCase()) {
+      throw new Error('baselineTarget and target must have different complete-resource fingerprints.');
+    }
+    string(previous['sourceDir'], 'baselineTarget.sourceDir');
+    if (!Array.isArray(previous['files']) || !previous['files'].includes('SKILL.md') ||
+        previous['files'].some(file => typeof file !== 'string' || !file)) {
+      throw new Error('baselineTarget.files must list the complete resources including SKILL.md.');
+    }
+    baselineTarget = { name, sha256 };
+  }
   const rawTasks = manifest['tasks'];
   if (!Array.isArray(rawTasks)) throw new Error('tasks must be an array');
   const tasks = rawTasks.map((task, index) => {
@@ -290,6 +380,13 @@ export function parseEvalReport(value: unknown): ReportData {
   };
   if (scoreDeltaCi && scoreDeltaCi.lo > scoreDeltaCi.hi) throw new Error('overall.stats.scoreDeltaCi.lo cannot exceed hi');
   const overallRow = row(overall, 'overall', 'Overall');
+  const declaredTrials = integer(manifest['trials'], 'trials', 1);
+  for (const [index, task] of tasks.entries()) checkCostCounts(task, declaredTrials, `tasks[${index}]`);
+  checkCostCounts(overallRow, declaredTrials * tasks.length, 'overall');
+  if (overallRow.costs) {
+    if (tasks.some(t => !t.costs)) throw new Error('overall.costs requires costs for every task');
+    assertCostTotals(overallRow.costs, tasks.map(t => t.costs!));
+  } else if (tasks.some(t => t.costs)) throw new Error('Task costs require corresponding overall costs');
   for (const [index, task] of tasks.entries()) checkDelta(task, `tasks[${index}]`);
   checkDelta(overallRow, 'overall');
   if (scoreDeltaCi) {
@@ -366,6 +463,7 @@ export function parseEvalReport(value: unknown): ReportData {
     runGroup: string(manifest['runGroup'], 'runGroup'),
     createdAt,
     target: { kind, name: string(target['name'], 'target.name'), sha256: hash(target['bundleSha256'], 'target.bundleSha256') },
+    baselineTarget,
     bench: {
       name: string(bench['name'], 'bench.name'),
       sha256: hash(bench['contentSha256'], 'bench.contentSha256'),
@@ -445,9 +543,17 @@ function decisionNotes(report: ReportData): string[] {
     notes.push('Some tasks failed in both arms. Inspect facet misses, dependencies and the issue-to-check contract before interpreting the pass-rate floor as task difficulty.');
   }
   if (report.target.kind === 'skill') {
-    notes.push(report.skillDelivery
+    notes.push(report.baselineTarget
+      ? 'Skill revision comparison: baseline contains the previous complete Skill and treatment contains the target version. Results describe revision effects, not installation benefit over no Skill. A positive delta does not guarantee non-regression on unseen tasks. Inspect per-run read observations and separate positive/negative trigger tests.'
+      : report.skillDelivery
       ? 'Complete Skill resources were installed only in treatment. Task outcomes include native discovery; inspect per-run activation/transcript receipts and run separate positive/negative trigger tests. Installation does not guarantee activation, and inherited agent configuration still applies.'
       : 'Activation is unmeasured by this paired run: Skill content was force-injected. Run separate trigger tests with relevant requests and negative controls before an installation decision.');
+  }
+  if (report.baselineTarget) {
+    const regressions = report.tasks.filter(task => task.deltaPassRate < 0 || (task.scoreDelta !== null && task.scoreDelta < 0));
+    if (regressions.length > 0) {
+      notes.push(`Observed task regressions: ${regressions.map(task => task.id).join(', ')}. Inspect their outcomes and checks before accepting the revision, even if the pooled verdict favors treatment.`);
+    }
   }
   if (!report.overall.baseline.tokens || !report.overall.treatment.tokens) {
     notes.push('Token overhead is unavailable. Elapsed time or prompt-size estimates do not establish token cost.');
@@ -471,11 +577,12 @@ export function renderEvalMarkdown(report: ReportData): string {
   lines.push(
     `- Run: ${escapeMarkdown(report.runGroup)} (${escapeMarkdown(report.createdAt)})`,
     `- Target: ${escapeMarkdown(report.target.kind)}; SHA-256 \`${report.target.sha256}\``,
+    ...(report.baselineTarget ? [`- Baseline Skill: ${escapeMarkdown(report.baselineTarget.name)} (previous version); SHA-256 \`${report.baselineTarget.sha256}\``] : []),
     `- Bench: ${escapeMarkdown(report.bench.name)} (${report.bench.taskCount} ${report.bench.taskCount === 1 ? 'task' : 'tasks'}); SHA-256 \`${report.bench.sha256}\``,
     `- Executor: ${escapeMarkdown(report.executor.kind)} / ${escapeMarkdown(report.executor.model)}`,
     `- Trials: ${report.trials} per condition`,
     `- Input: ${report.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`,
-    ...(report.skillDelivery ? ['- Delivery: complete Skill installed in treatment at ' + escapeMarkdown(report.skillDelivery.installDir)] : []),
+    ...(report.skillDelivery ? ['- Delivery: complete Skill installed ' + (report.baselineTarget ? 'in both conditions' : 'in treatment') + ' at ' + escapeMarkdown(report.skillDelivery.installDir)] : []),
     ...(report.experiment ? [`- Session: ${report.experiment.status}; ${report.experiment.callsStarted}/${report.experiment.plannedCalls} calls started, ${report.experiment.callsFinished} finished; ceiling ${report.experiment.maxCalls}`, `- Frozen plan SHA-256: \`${report.experiment.planSha256}\``] : []),
     '',
     '| Task | Baseline | Treatment | Errors B/T | Δpass | Verdict |',
@@ -539,6 +646,9 @@ export function renderEvalMarkdown(report: ReportData): string {
       `| Input | ${cell(report.overall.baseline, 'input')} | ${cell(report.overall.treatment, 'input')} |`,
       `| Output | ${cell(report.overall.baseline, 'output')} | ${cell(report.overall.treatment, 'output')} |`);
   }
+  lines.push('', '## Cost accounting', '');
+  if (report.overall.costs) lines.push(...renderCostLines(report.overall.costs));
+  else lines.push('Cache partitions and all-invocation costs were not recorded in this legacy manifest. Missing usage is unknown; the report does not infer it from prompt size or treat it as zero.');
   lines.push('', '## Warnings', '');
   if (report.warnings.length === 0) lines.push('- None');
   else lines.push(...report.warnings.map((warning) => `- ${escapeMarkdown(warning)}`));

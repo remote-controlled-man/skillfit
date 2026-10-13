@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased — Skill revision evaluation and reproducible evidence
+
+- `eval --mode installed --baseline-skill <previous>` compares two complete versions of
+  the same Skill with identical task prompts. Plans, manifests and receipts pin both
+  versions; source drift stops execution. Reports identify observed task regressions.
+- Record cached and uncached input, output, elapsed time and usage coverage for both
+  graded pairs and all invocations. Preserve partial usage from failed calls and keep
+  missing usage unknown. These measurements do not establish a dollar bill.
+- Use monotonic trial timing, retain wall timing and detect CLI observation gaps or
+  clock discontinuities. Check deadlines on heartbeat, output and process close;
+  terminate the process tree and bound pipe draining. Pin logical and canonical
+  workspace aliases without exempting unrelated configuration changes.
+- Add the pinned `oss-normalize-url` historical failure bench and retain the original,
+  compact v1 and v2 comparison evidence, including failed recovery stages. Track the
+  frozen compiled replay files so a clean checkout can reproduce saved outcomes.
+  See the [experiment handoff](docs/plans/2026-10-13-skill-experiment-cleanup.md) and
+  [script navigation](scripts/README.md). This work does not implement automatic
+  Skill evolution or an adoption gate; statistical verdict semantics are unchanged.
+
 ## Unreleased — Streamable HTTP MCP preflight
 
 - `mcp check` accepts transport `http` for a Streamable HTTP endpoint. It still does not call a tool.

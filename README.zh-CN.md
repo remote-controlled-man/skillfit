@@ -109,6 +109,14 @@ node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input works
 报告展示逐项检查结果、使用量覆盖范围和安装决策所缺的证据。单个任务只能说明该任务，不能证明普遍收益。
 详见[真实开源评估流程](docs/oss-task-evaluation.md)，或复跑[固定版本的 mcp-use 示例](benches/contrib/oss-mcp-use-utf8/README.md)。
 
+## 比较 Skill 修订版本
+
+在 `--mode installed` 下用 `--baseline-skill` 比较旧版完整 Skill 和修订版。两版的 `SKILL.md` frontmatter 名称必须一致，内容指纹必须不同。baseline 获得旧版，treatment 获得目标新版，两组使用相同的自然任务提示和独立的结果验证器。计划、manifest 与逐次运行记录固定两版身份，覆盖脚本和二进制资源；任一来源变化都会停止后续调用。这项比较测量修订效果；安装收益仍需另做无 Skill 基线实验。详见[版本修订流程](docs/skill-revisions.md)。
+
+```bash
+node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
+```
+
 ## 测试规则与 MCP 配置
 
 把 `skillfit-experiment.json` 和 baseline/treatment 项目覆盖层放在同一目录。规则实验可以加入 `AGENTS.md`；MCP 实验可以加入 `.codex/config.toml`、`.mcp.json` 或其他受支持 agent 在能力矩阵中声明的路径。skillfit 会为两组复制相同任务 fixture，先生成完全相同的 prompt 快照，再应用各自覆盖层，让本机 agent 通过正常的项目配置加载器发现配置。
@@ -136,6 +144,8 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 ```bash
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
+
+新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
 
 ## 可选择的 Codex 配置
 

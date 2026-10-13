@@ -6,6 +6,8 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { agentIds, getAgent } from '../../agents.js';
 import { CliExecutor, quoteShellArg } from './cli.js';
+import { ExecutorFailure } from '../types.js';
+import { performance } from 'node:perf_hooks';
 
 const ECHO_SCRIPT =
   'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write("len:"+d.length))';
@@ -333,7 +335,7 @@ test('CliExecutor parses codex items: text, skill file-read trigger, and token u
   const result = await executor.run(ndjson, process.cwd());
   assert.equal(result.output, 'Stage 5, yellow with brown flecks.');
   assert.equal(result.skillTriggered, true);
-  assert.deepEqual(result.tokens, { input: 42170, output: 272 });
+  assert.deepEqual(result.tokens, { input: 42170, cachedInput: 32896, output: 272 });
 });
 
 test('CliExecutor codex shape: no skill-path command means no trigger', async () => {
@@ -418,7 +420,7 @@ test('CliExecutor accumulates token usage across multiple turns', async () => {
     { type: 'turn.completed', usage: { input_tokens: 1000, output_tokens: 100 } },
     { type: 'item.completed', item: { id: 'i2', type: 'agent_message', text: 'second' } },
     { type: 'turn.completed', usage: { input_tokens: 20, output_tokens: 5 } },
-    // A turn carrying no usage must not reset the running total.
+    // Available increments remain a lower bound when another completed turn omitted usage.
     { type: 'turn.completed' },
   ];
   const executor = new CliExecutor({
@@ -428,7 +430,89 @@ test('CliExecutor accumulates token usage across multiple turns', async () => {
   });
   const result = await executor.run(toNdjson(events), process.cwd());
   assert.deepEqual(result.tokens, { input: 1020, output: 105 }, 'usage records are per-turn increments');
+  assert.equal(result.usageStatus, 'partial', 'missing usage cannot certify a complete total');
   assert.equal(result.output, 'first\nsecond');
+});
+
+test('CliExecutor cache coverage stays unknown if one turn omits cache usage', async () => {
+  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT], shell: false, triggerSkillName: 'demo' });
+  const result = await executor.run(toNdjson([
+    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 8, output_tokens: 2 } },
+    { type: 'turn.completed', usage: { input_tokens: 5, output_tokens: 1 } },
+  ]), process.cwd());
+  assert.deepEqual(result.tokens, { input: 15, output: 3 });
+  assert.equal(result.usageStatus, 'final');
+  const invalid = await executor.run(toNdjson([
+    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 11, output_tokens: -1 } },
+  ]), process.cwd());
+  assert.deepEqual(invalid.tokens, { input: 10 });
+  assert.equal(invalid.usageStatus, 'partial');
+});
+
+test('CliExecutor preserves public transcript usage as a lower bound on timeout', async () => {
+  const script = 'process.stdout.write(JSON.stringify({type:"turn.completed",usage:{input_tokens:10,cached_input_tokens:8,output_tokens:2}})+"\\n");setInterval(()=>{},10000)';
+  const executor = new CliExecutor({ argv: [process.execPath, '-e', script], shell: false, triggerSkillName: 'demo', timeoutMs: 2000 });
+  await assert.rejects(executor.run('prompt', process.cwd()), (error: unknown) => {
+    assert.ok(error instanceof ExecutorFailure);
+    assert.match(error.message, /timed out/);
+    assert.deepEqual(error.result.tokens, { input: 10, cachedInput: 8, output: 2 });
+    assert.equal(error.result.usageStatus, 'partial');
+    assert.match(error.result.rawOutput!, /turn.completed/);
+    assert.equal(error.result.executionTiming?.anomaly, null);
+    assert.ok(error.result.executionTiming!.timeoutFiredAfterMs! >= 2000);
+    assert.ok(error.result.executionTiming!.terminationDelayMs! < 5000);
+    return true;
+  });
+});
+
+test('CliExecutor kills and preserves partial output on a wall-clock discontinuity', async () => {
+  const start = performance.now();
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', 'process.stdout.write(JSON.stringify({type:"turn.completed",usage:{input_tokens:10,output_tokens:2}})+"\\n");setInterval(()=>{},10000)'],
+    shell: false, triggerSkillName: 'demo', timeoutMs: 15_000,
+    clock: { monotonicNow: () => performance.now(), wallNow: () => Date.now() + (performance.now() - start > 1500 ? 2_000_000 : 0) },
+  });
+  await assert.rejects(executor.run('prompt', process.cwd()), (error: unknown) => {
+    assert.ok(error instanceof ExecutorFailure);
+    assert.match(error.message, /execution timing anomaly/);
+    assert.deepEqual(error.result.tokens, { input: 10, output: 2 });
+    assert.equal(error.result.usageStatus, 'partial');
+    assert.ok(error.result.executionTiming!.maxClockSkewMs > 1_000_000);
+    return true;
+  });
+});
+
+test('CLI output arriving after the deadline cannot pass before the timeout callback runs', async () => {
+  let advance = 0;
+  const start = performance.now();
+  const executor = new CliExecutor({
+    argv: [process.execPath, '-e', 'process.stdout.write("done");'], shell: false, timeoutMs: 500,
+    clock: { monotonicNow: () => { advance += 1000; return performance.now() - start + advance; }, wallNow: () => Date.now() + advance },
+  });
+  await assert.rejects(executor.run('prompt', process.cwd()), /timed out/);
+});
+
+test('CLI timeout also bounds draining when an escaped descendant retains stdout', { skip: process.platform === 'win32' }, async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-drain-'));
+  const marker = join(dir, 'escaped.pid');
+  const escaped = join(dir, 'escaped.cjs');
+  const parent = join(dir, 'parent.cjs');
+  writeFileSync(escaped, `require('node:fs').writeFileSync(${JSON.stringify(marker)}, String(process.pid));process.stdout.write('partial');setInterval(()=>{},10000);`);
+  writeFileSync(parent, `require('node:child_process').spawn(process.execPath, [${JSON.stringify(escaped)}], {detached:true,stdio:['ignore',1,2]}).unref();setInterval(()=>{},10000);`);
+  t.after(() => {
+    try { process.kill(-Number(readFileSync(marker, 'utf8')), 'SIGKILL'); } catch { /* gone */ }
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const start = performance.now();
+  const executor = new CliExecutor({ argv: [process.execPath, parent], shell: false, timeoutMs: 1000 });
+  await assert.rejects(executor.run('prompt', dir), (error: unknown) => {
+    assert.ok(error instanceof ExecutorFailure);
+    assert.match(error.message, /timed out/);
+    assert.match(error.result.output, /partial/);
+    assert.ok(error.result.executionTiming!.terminationDelayMs! >= 1900);
+    return true;
+  });
+  assert.ok(performance.now() - start < 6000, 'retained pipe cannot delay rejection until the escaped process exits');
 });
 
 test('out-of-band token usage is a matrix capability, not an agent id in the harness', () => {
