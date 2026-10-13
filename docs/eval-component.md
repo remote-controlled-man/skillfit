@@ -18,6 +18,14 @@ retain a normalize-url cost rejection alongside LRU point savings. An interrupte
 invocation has partial usage and no grade; a fresh cohort never discards its cost
 or changes the candidate, grader or acceptance thresholds to obtain a gain.
 
+The [completed independent validation](../evidence/2026-10-14-debugging-independent-validation.md)
+shows the component withholding eligibility despite favorable point estimates:
+original/v4 both pass 40/40, with uncached input down 16.82%, but the conservative
+95% bound supports only 7.69% savings against a frozen 10% requirement. Its
+80 deliveries and exact cost interval replay offline. The [v4 reproduction example](examples/eval-request.diagnosing-v4-efficiency.json)
+keeps that policy and symmetric 1200-second deadlines; it does not create fresh
+independent evidence for a candidate selected from these public outcomes.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:

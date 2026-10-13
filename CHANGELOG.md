@@ -131,6 +131,8 @@ All notable changes to this project are documented here. Format loosely follows
 
 ## [Unreleased]
 
+- Retain the completed 80-call independent original/v4 comparison and a dependency-free replay archive: 40/40 passes per arm and aggregate savings still receive an ineligible `inconclusive` decision because the frozen 10% conservative reduction bound is unmet. Preserve individual cost increases, all 125 study calls, unknown authoring/billing costs and an exact v4 procedural reproduction request.
+
 Graded facet scoring and verifier/oracle acceptance gates, informed by a Skill2Env review
 (see `docs/metrics.md` v2). The exit code remains the sole pass/fail authority; the McNemar verdict
 protocol is unchanged.

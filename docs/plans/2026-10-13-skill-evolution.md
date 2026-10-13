@@ -107,3 +107,22 @@ environment failure. Actual spending before the new batch is 45 CLI invocations
 The new fixed batch brings the planned total to 125, below the original 128-call
 ceiling; no additional readiness call is planned. Known normalize-url uncached
 input/output cost increases remain a rejection and a limit on any future claim.
+
+## Completed independent validation
+
+The fresh fixed batch completes all 80 invocations without an executor,
+configuration or timing error. Original/v4 each pass 40/40 with no observed
+paired pass, score or check regression. Uncached input per success falls 16.82%,
+and seven of eight tasks improve that measure, but its frozen task-bootstrap
+interval is [−26.2564%, −7.6886%]. The upper bound does not meet −10%, so adoption
+remains `inconclusive`, ineligible and never automatic. The quality verdict
+also remains `inconclusive`; all-pass saturation is not equivalence.
+
+The initial study finishes at 125 actual CLI invocations and four missing final
+usages, within the declared 128 ceiling. No additional trials are appended.
+The [dated validation record](../../evidence/2026-10-14-debugging-independent-validation.md)
+retains all cost dimensions, individual task increases and the complete offline
+replay. All prior published evidence remains unchanged. V4 is not promoted
+under this declaration. Any follow-up uses a new bounded declaration and fresh
+independent tasks; any candidate optimization treats these public outcomes as
+development. The original delivery goal remains active.
