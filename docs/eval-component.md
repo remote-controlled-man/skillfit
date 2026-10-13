@@ -6,6 +6,10 @@ changes, observed regressions, spending coverage and a separate adoption decisio
 It never installs, publishes or upgrades a Skill. These interfaces are unreleased;
 build the current checkout rather than assuming npm 0.8.0 includes them.
 
+The [retained development stops](../evidence/2026-10-13-debugging-development-stops.md)
+show reproducible failures, timing diagnostics and partial-cost coverage. They
+are development evidence and make no stable improvement or adoption claim.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:
