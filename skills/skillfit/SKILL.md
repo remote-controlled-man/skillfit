@@ -20,6 +20,7 @@ If neither works, tell the user to install from https://github.com/remote-contro
 | "我的 skill 有没有被用到 / are my skills used at all" | `skillfit report` — read-only, free, instant; start here |
 | "这个配置健不健康" | `skillfit doctor` — read-only |
 | "这个 skill 值不值得装 / does this skill help" | `skillfit eval <skill-path> --bench <bench> --agent <id> --trials 3` |
+| "新版 Skill 是否值得采用 / evaluate a candidate for a Skill evolution workflow" | In a current checkout, use `eval --request <request.json> --dry-run`; read `docs/eval-component.md` in that checkout for inputs and acceptance policy |
 | "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger`. Add `--compete-installed` to copy other user Skills; otherwise recall is an upper bound. Codex counts a `SKILL.md` read |
 | "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
 | "这个 MCP / AGENTS.md 真的有帮助吗" | `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/config-experiments.md) |
@@ -39,6 +40,15 @@ Real eval runs cost tokens and time. Before any non-dry-run eval:
 2. Tell the user the expected cost and ask before running for real.
 
 ## Interpretation discipline (do not skip)
+
+For request-based eval, review the JSON plan and its call ceiling, then execute with
+its exact `--plan-sha` within existing spending authorization. Read
+`acceptance.decision` and `eligibleForUpgrade`; a zero exit status only means a
+report was produced. `reject` and `inconclusive` cannot authorize an upgrade.
+`accept` is scoped advisory eligibility, not permission to install or publish.
+`automaticUpgrade` is always false. Reproduce saved outcomes and accounting with
+`report eval <run-dir> --json --replay`, using trusted verifier code; it calls no model.
+This interface is not included in npm 0.8.0.
 
 - Read the verdict line, the discordant-pair counts, and the CI — not just the delta. `inconclusive` means
   the run cannot tell, not that the skill is useless.

@@ -22,6 +22,21 @@ import {
   type TriggerManifest,
 } from '../harness/trigger.js';
 import type { Bench, EvaluationTarget, Executor, InputMode, SkillBundle } from '../harness/types.js';
+import type { ComponentMetadata } from '../harness/eval-contract.js';
+
+export interface EvalPreview {
+  target: { name: string; sourceDir: string; sha256: string; files: string[] };
+  baseline: { name: string; sourceDir: string; sha256: string; files: string[] } | null;
+  bench: { name: string; dir: string; sha256: string; taskIds: string[] };
+  executor: ReturnType<Executor['describe']> | null;
+  judge: ReturnType<Executor['describe']> | null;
+  inputMode: InputMode;
+  installDir: string | null;
+  trials: number;
+  plannedCalls: number;
+  maxCalls: number;
+  outputDir: string;
+}
 
 export interface EvalOptions {
   /** A Skill directory or a directory containing skillfit-experiment.json. */
@@ -46,6 +61,9 @@ export interface EvalOptions {
   /** With trigger mode, copy the user's other matrix user-level Skills into each trial. */
   competeInstalled?: boolean;
   log?: (msg: string) => void;
+  onPlan?: (plan: EvalPreview) => void;
+  component?: ComponentMetadata;
+  guardFiles?: SessionOptions['guardFiles'];
 }
 
 export const DEFAULT_EVAL_TRIALS = 5;
@@ -144,7 +162,7 @@ function sessionFor(options: EvalOptions, bench: Bench, target: EvaluationTarget
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   return new ExperimentSession({ bench, target, baselineTarget, groupDir: join(runsRoot, runGroup), plannedCalls,
     maxCalls: options.maxCalls, agent: options.agent, injected: options.executor !== undefined,
-    ...options.sessionOptions,
+    ...options.sessionOptions, guardFiles: options.guardFiles,
     workspaces: bench.tasks.flatMap(task => armNames.flatMap(arm =>
       Array.from({ length: trials }, (_, i) => join(runsRoot, runGroup, task.id, arm, `trial-${i + 1}`)))),
     details });
@@ -293,6 +311,8 @@ async function runEvalTrigger(
 
   const plannedCalls = bench.tasks.filter(task => task.shouldTrigger !== undefined).length * trials;
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+
+  if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   const competitors = options.competeInstalled && options.agent
     ? installedUserSkills(getAgent(options.agent), options.sessionOptions?.homeDir ?? homedir(), options.sessionOptions?.env ?? process.env)
       .filter((entry) => entry.name !== skill.name)
@@ -441,6 +461,15 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const plannedCalls = bench.tasks.length * trials * (judge ? 4 : 2);
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
 
+  if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+  options.onPlan?.({
+    target: { name: target.name, sourceDir: target.sourceDir, sha256: target.sha256, files: target.files },
+    baseline: baselineTarget ? { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, sha256: baselineTarget.sha256, files: baselineTarget.files } : null,
+    bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },
+    executor: executor?.describe() ?? null, judge: judge?.describe() ?? null, inputMode,
+    installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, outputDir: join(runsRoot, runGroup),
+  });
+
   if (options.dryRun) {
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
@@ -457,6 +486,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
   const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
     { mode: installed ? 'installed' : 'inject', inputMode, trials, executor: executor.describe(), judge: judge?.describe() ?? null,
+      ...(options.component ? { component: options.component } : {}),
       ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
   let manifest: RunManifest;
   try {
@@ -464,6 +494,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
       bench,
       target,
       baselineTarget,
+      component: options.component,
       inputMode,
       ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
       executor: session.wrap(executor, 'agent'),

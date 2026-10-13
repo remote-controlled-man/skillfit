@@ -1,5 +1,9 @@
 # Compare two Skill versions
 
+For an Agent caller, use the [versioned evaluation component](eval-component.md):
+JSON request, dry-run plan hash, structured results and a separately frozen adoption
+policy. The existing positional commands below remain supported.
+
 Use a paired installed experiment to check a proposed Skill revision against its
 previous version. This is a comparison workflow, not an automatic acceptance gate.
 The existing statistical verdict measures the aggregate task effect; an observed

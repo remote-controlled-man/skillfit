@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit Agent evaluation response version 1",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "status", "acceptance"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "enum": ["skillfit.eval-result", "skillfit.eval-error"] },
+    "status": { "enum": ["planned", "completed", "stopped", "incomplete", "reported", "error"] },
+    "plan": { "type": "object", "required": ["sha256", "request", "evaluation"] },
+    "manifest": { "type": ["object", "null"] },
+    "identity": { "type": "object" },
+    "quality": { "type": "object", "required": ["statisticalVerdict", "improvedPairs", "regressedPairs", "tasks"] },
+    "costs": { "type": "object", "required": ["populations", "scope"] },
+    "evidence": { "type": "object", "required": ["verified"] },
+    "acceptance": {
+      "type": "object", "required": ["decision", "eligibleForUpgrade", "automaticUpgrade"],
+      "properties": {
+        "decision": { "enum": ["accept", "reject", "inconclusive"] },
+        "eligibleForUpgrade": { "type": "boolean" },
+        "automaticUpgrade": { "const": false }
+      },
+      "allOf": [
+        { "if": { "properties": { "decision": { "const": "accept" } } }, "then": { "properties": { "eligibleForUpgrade": { "const": true } } }, "else": { "properties": { "eligibleForUpgrade": { "const": false } } } }
+      ]
+    },
+    "error": { "type": "object", "required": ["code", "message"] }
+  },
+  "allOf": [
+    { "if": { "properties": { "status": { "const": "planned" } } }, "then": { "required": ["plan"] } },
+    { "if": { "properties": { "status": { "enum": ["completed", "reported"] } } }, "then": { "required": ["manifest", "identity", "quality", "costs", "evidence"] } },
+    { "if": { "properties": { "kind": { "const": "skillfit.eval-error" } } }, "then": { "required": ["error"], "properties": { "status": { "const": "error" } } } }
+  ]
+}

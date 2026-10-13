@@ -1,5 +1,13 @@
 # skillfit metrics (v2, frozen 2026-09-23)
 
+Additive component review 2026-10-13: the [Agent evaluation interface](eval-component.md)
+adds versioned requests, pinned previews, native receipt audits and an independent
+adoption policy. `accept`/`reject`/`inconclusive` adoption decisions do not replace
+or reinterpret the frozen `effective`/`ineffective`/`inconclusive` statistical verdict.
+Insufficient, stopped, synthetic or unverified evidence cannot authorize adoption;
+the component never upgrades a Skill. Complete cost coverage is separate from
+quality significance. All formulas and legacy manifest interpretations below remain unchanged.
+
 This document defines what skillfit measures and how verdicts are computed. It is the contract that
 `src/harness/` implements and that bench authors design against. Changes here are deliberate: edit with a
 reasoned PR, cite sources, and bump the date.

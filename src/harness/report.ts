@@ -3,6 +3,7 @@ import { CONDITIONS } from './types.js';
 import type { Condition, ExecutorDescriptor, InputMode } from './types.js';
 import type { ExperimentSummary } from './experiment-session.js';
 import { renderCostLines, type RunCosts } from './costs.js';
+import type { ComponentMetadata } from './eval-contract.js';
 
 export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
 
@@ -83,6 +84,7 @@ export interface OverallSummary {
 
 export interface RunManifest {
   schemaVersion: 4;
+  component?: ComponentMetadata;
   experiment?: ExperimentSummary;
   /** Absent in earlier v4 manifests; those used inline snapshots. */
   inputMode?: InputMode;

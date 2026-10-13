@@ -117,6 +117,16 @@ node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input works
 node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
 ```
 
+## Agent 评估组件
+
+用版本 1 JSON 请求，让 Agent 调用现有 Skill 修订评估引擎。只读预览固定输入和策略，执行时必须提供预览的计划指纹。JSON 结果保留提升、退步、全部调用成本和证据覆盖情况。独立策略返回 `accept`、`reject` 或 `inconclusive`；证据不足不能授权采用，组件也不会升级 Skill。这项接口尚未发布，需要构建仓库版本。详见[输入输出与验收策略契约](docs/eval-component.md)。
+
+```bash
+node dist/cli.js eval --request ./request.json --dry-run
+node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>
+node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
+```
+
 ## 测试规则与 MCP 配置
 
 把 `skillfit-experiment.json` 和 baseline/treatment 项目覆盖层放在同一目录。规则实验可以加入 `AGENTS.md`；MCP 实验可以加入 `.codex/config.toml`、`.mcp.json` 或其他受支持 agent 在能力矩阵中声明的路径。skillfit 会为两组复制相同任务 fixture，先生成完全相同的 prompt 快照，再应用各自覆盖层，让本机 agent 通过正常的项目配置加载器发现配置。

@@ -120,6 +120,16 @@ Use `--baseline-skill` with `--mode installed` to compare a previous complete Sk
 node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
 ```
 
+## Agent evaluation component
+
+Use a version 1 JSON request to call the existing Skill revision engine from an Agent. A read-only preview pins inputs and the policy; execution requires its plan hash. JSON results retain improvements, regressions, all-invocation costs and evidence coverage. A separate policy returns `accept`, `reject` or `inconclusive`; insufficient evidence cannot authorize adoption, and the component never upgrades a Skill. This interface is unreleased; build the checkout. See [the input/output and policy contract](docs/eval-component.md).
+
+```bash
+node dist/cli.js eval --request ./request.json --dry-run
+node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>
+node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
+```
+
 ## Test rules and MCP setups
 
 Put a `skillfit-experiment.json` next to baseline and treatment project overlays. A rules experiment can add `AGENTS.md`; an MCP experiment can add `.codex/config.toml`, `.mcp.json`, or the path defined for another supported agent. skillfit copies the same task fixture into both arms, snapshots it for an identical prompt, then applies each overlay so the local agent discovers configuration through its normal loader.

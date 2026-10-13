@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — Agent evaluation component
+
+- Accept a strict version 1 request with `eval --request`, return a JSON preview,
+  and require `--plan-sha` before real calls. Freeze the request and inline policy
+  with the native session while reusing installed old/new Skill evaluation.
+- Return JSON quality changes, observed task/check regressions, complete agent
+  invocation accounting and a separate adoption policy. Incomplete, stopped,
+  synthetic or unverified evidence cannot authorize adoption; no upgrade is executed.
+- `report eval --json` audits native inventory, hashes, paired receipts and costs;
+  `--replay` verifies cloned deliveries offline. Retain stopped-run partial spending
+  and unknown usage when no final manifest exists. Statistical verdicts are unchanged.
+
 ## Unreleased — Skill revision evaluation and reproducible evidence
 
 - `eval --mode installed --baseline-skill <previous>` compares two complete versions of

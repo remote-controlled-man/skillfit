@@ -5,6 +5,7 @@ import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
 import { DEFAULT_EVAL_TRIALS, runEval } from './commands/eval.js';
 import { runEvalReport } from './commands/eval-report.js';
+import { componentError, reportEvalComponent, runEvalComponent } from './commands/eval-component.js';
 import { runInstall } from './commands/install.js';
 import { runMcpCheck } from './commands/mcp.js';
 import { runReport } from './commands/report.js';
@@ -17,6 +18,9 @@ Usage:
   skillfit doctor [--agent <id>]            Inspect current agent configuration health
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
   skillfit report eval <manifest.json>     Render an existing evaluation as Markdown (read-only)
+  skillfit report eval <manifest-or-run-dir> --json [--replay]  Assess saved evidence for an Agent
+  skillfit eval --request <request.json> --dry-run  Return a pinned JSON plan without calls
+  skillfit eval --request <request.json> --plan-sha <sha256>  Run that plan and return JSON evidence
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
   skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
   skillfit bench init [dir]                 Scaffold a new bench directory
@@ -33,6 +37,12 @@ Options:
   --judge-agent <id>  Drive the blind judge with a local agent CLI (inject mode; prefer a different family than --agent)
   --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
   --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target
+  --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
+  --plan-sha <hash>   Confirm the current --request dry-run plan before real calls
+  --json             Machine output for report, report eval, and request-based eval
+  --policy <path>    With report eval --json, assess against a policy (post-hoc changes cannot authorize adoption)
+  --records <dir>    With report eval --json, use native evidence from this run directory
+  --replay           With report eval --json, regrade cloned deliveries using the frozen bench
   --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
@@ -86,6 +96,11 @@ async function main(): Promise<void> {
       'judge-agent': { type: 'string' },
       mode: { type: 'string' },
       'baseline-skill': { type: 'string' },
+      request: { type: 'string' },
+      'plan-sha': { type: 'string' },
+      policy: { type: 'string' },
+      records: { type: 'string' },
+      replay: { type: 'boolean', default: false },
       'compete-installed': { type: 'boolean', default: false },
       input: { type: 'string' },
       bench: { type: 'string' },
@@ -137,6 +152,11 @@ async function main(): Promise<void> {
   if (values['baseline-skill'] !== undefined && command !== 'eval') {
     throw new Error('--baseline-skill applies only to eval --mode installed.');
   }
+  if (values.request !== undefined && command !== 'eval') throw new Error('--request applies only to eval.');
+  if (values['plan-sha'] !== undefined && (command !== 'eval' || values.request === undefined || values['dry-run'])) throw new Error('--plan-sha requires a non-dry-run eval --request.');
+  if ((values.policy !== undefined || values.records !== undefined || values.replay) && !(command === 'report' && positionals[1] === 'eval' && values.json)) {
+    throw new Error('--policy, --records and --replay require report eval --json.');
+  }
 
   const common = {
     agent: values.agent,
@@ -168,16 +188,30 @@ async function main(): Promise<void> {
     case 'report':
       if (positionals[1] === 'eval') {
         if (!positionals[2]) {
+          if (values.json) throw new Error('report eval --json requires a manifest or native run directory.');
           console.error('Usage: skillfit report eval <manifest.json>');
           process.exitCode = 2;
           return;
         }
-        runEvalReport(positionals[2]);
+        if (values.json) console.log(JSON.stringify(await reportEvalComponent(positionals[2], {
+          policyPath: values.policy, recordsPath: values.records, replay: values.replay, benchDir: values.bench,
+        }), null, 2));
+        else runEvalReport(positionals[2]);
         return;
       }
       await runReport({ agent: values.agent, json: values.json ?? false });
       return;
     case 'eval': {
+      if (values.request !== undefined) {
+        if (positionals.length !== 1 || ['agent', 'mode', 'baseline-skill', 'bench', 'trials', 'max-calls', 'input', 'judge-agent'].some(key => values[key as keyof typeof values] !== undefined) || values['compete-installed']) {
+          throw new Error('--request cannot be combined with a target or positional eval settings; put settings in the request.');
+        }
+        const result = await runEvalComponent(values.request, { dryRun: values['dry-run'], expectedPlanSha256: values['plan-sha'], log: line => console.error(line) });
+        console.log(JSON.stringify(result, null, 2));
+        if (result.status === 'stopped') process.exitCode = 2;
+        return;
+      }
+      if (values.json) throw new Error('eval --json requires --request.');
       const skillPath = positionals[1];
       if (!skillPath) {
         console.error('Usage: skillfit eval <target-path> [--bench <path>] [--trials <n>] [--agent <id>] [--mode <mode>]');
@@ -316,6 +350,12 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
+  if (process.argv.some(arg => arg === '--request' || arg.startsWith('--request=')) ||
+      (process.argv.includes('--json') && process.argv.includes('report') && process.argv.includes('eval'))) {
+    console.log(JSON.stringify(componentError(err), null, 2));
+    process.exitCode = 2;
+    return;
+  }
   console.error(err instanceof Error ? err.message : String(err));
   process.exitCode = 1;
 });

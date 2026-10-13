@@ -24,9 +24,11 @@ import { CONDITIONS } from './types.js';
 import { ExecutorFailure } from './types.js';
 import { summarizeCosts } from './costs.js';
 import { executionClock, type ExecutionClock, type ExecutionTiming } from './execution-timing.js';
+import type { ComponentMetadata } from './eval-contract.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 
 export interface ExperimentPlan {
+  component?: ComponentMetadata;
   bench: Bench;
   target: EvaluationTarget;
   baselineTarget?: EvaluationTarget;
@@ -748,6 +750,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   plan.session?.settle();
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
     schemaVersion: 4,
+    ...(plan.component ? { component: plan.component } : {}),
     ...(plan.session ? { experiment: plan.session.summary() } : {}),
     inputMode: plan.inputMode ?? 'snapshot',
     ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed' as const, installDir: plan.skillInstallDir } } : {}),
