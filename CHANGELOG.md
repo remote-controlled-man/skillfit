@@ -2,6 +2,7 @@
 
 ## Unreleased — Agent evaluation component
 
+- Publish compressed, dependency-free replay packages for stopped and completed debugging development cohorts. Preserve v3 rejection, v4's concrete repair, all increased costs, partial-failure supplements and unchanged earlier evidence; no stable improvement or automatic upgrade is claimed.
 - Recover best-effort partial usage for failed Codex JSON calls using a matrix capability, exact thread/workspace/time binding and cumulative numeric counters. Preserve counter provenance without private bodies; errors remain excluded and partial coverage cannot authorize adoption. Existing failure receipts stay unchanged.
 - JSON requests can declare a symmetric `executorTimeoutSeconds` (default 600, maximum 3600). Preview/native plans pin the deadline and receipt audit checks it; changing it requires a fresh batch without replacing earlier timeouts.
 - Add explicit policy version 2 (`objective: "efficiency"`): whole-task, fixed-seed cost bootstrap, broad per-task savings and all usage-partition caps, retaining every correctness/evidence gate. Version-1 normalization/hashes and positive-quality requirements stay compatible; a quality tie is never relabeled as a quality improvement, and no upgrade is automatic.

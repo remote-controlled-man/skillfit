@@ -165,6 +165,8 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
 
+最新的[调试开发记录](evidence/2026-10-13-debugging-completed-development.md)保留了被拒绝的候选、一个具体修复和增加的总成本；[中止批次](evidence/2026-10-13-debugging-development-stops.md)保留了错误和部分消耗。两者都没有证明稳定提升，也不能授权升级。
+
 ## 可选择的 Codex 配置
 
 新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills 的来源目录，再重复 `--skill` 只选择与自己任务相关的项目；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 保留原来的 13 个供旧用户沿用，整套尚未验证；`--all` 选全部 67 个，不是推荐默认配置。目录验证的是来源和安装，不是效果：其中仅 8 个有有限的历史配对实验，没有任何一个已证明其当前锁定版本对当前 Codex 模型有效。配置命令从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南与证据摘要](docs/selectable-codex.md)。

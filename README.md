@@ -168,6 +168,8 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
 
+The latest [debugging development record](evidence/2026-10-13-debugging-completed-development.md) retains a rejected candidate, one concrete repair and increased total costs; [stopped cohorts](evidence/2026-10-13-debugging-development-stops.md) preserve errors and partial spending. Neither establishes stable improvement or authorizes an upgrade.
+
 ## Selectable Codex setup
 
 From a fresh clone, inspect the source catalog of 67 installable Skills with `--list`, then use repeated `--skill` flags to select only those relevant to your tasks. The seven retired local Skills are listed with reasons. `--starter` preserves the original 13-Skill selection, which has not been evaluated as a set; `--all` selects all 67 and is not a recommended default. The catalog checks sources and installation, not efficacy: only eight entries have limited historical paired tests, and none has proven benefit for the current pinned Skill versions and Codex model. The setup command fetches selected third-party Skills from pinned author commits, verifies SHA-256 hashes, and plans a managed global `AGENTS.md` block. The two locally authored Skills live in this repository. See the [selectable setup guide and evidence summary](docs/selectable-codex.md).
