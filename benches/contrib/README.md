@@ -40,3 +40,4 @@ missing the point entirely.
 | Bench | Domain | Contributor | Notes |
 |---|---|---|---|
 | [oss-mcp-use-utf8](oss-mcp-use-utf8/README.md) | MCP App HTML decoding | skillfit replay of MIT-licensed mcp-use source | Pinned real-source workflow/regression example; earlier baselines saturated; no general Skill efficacy claim |
+| [oss-normalize-url](oss-normalize-url/README.md) | URL query normalization | skillfit replay of MIT-licensed normalize-url source | Pinned issue #193 and maintainer fix; Node-only evidence gates; difficulty uncalibrated before the v2 transfer pilot |
