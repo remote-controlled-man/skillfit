@@ -144,6 +144,7 @@
         "promptFile": { "type": "string" },
         "projectTrustConfigArg": { "type": "string" },
         "usageFromSessionLog": { "type": "boolean" },
+        "partialUsageFromSessionLog": { "type": "boolean" },
         "streamJson": { "type": "object" },
         "docs": { "type": "string" }
       }

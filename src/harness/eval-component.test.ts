@@ -214,6 +214,23 @@ test('executor failures preserve partial usage and missing cache counts remain u
   assert.equal(result.costs.populations?.attempts.baseline.metrics.uncachedInput.coverage.unknown, 1);
 });
 
+test('partial numeric usage provenance is sealed in receipts without making a stopped experiment eligible', async t => {
+  const f = setup(t), tokens = { input: 12, cachedInput: 8, output: 2 };
+  const evidence = { source: 'local-session-token-count' as const, threadId: '11111111-1111-4111-8111-111111111111',
+    counterAt: '2026-10-13T00:00:00Z', recordSha256: 'a'.repeat(64), tokens, scope: 'Partial counter only.' };
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'partial-metadata' }), run: async () => {
+    throw new ExecutorFailure('simulated timeout', { output: '', tokens, usageStatus: 'partial', usageEvidence: evidence });
+  } };
+  const options = { ...f.options, executor }, preview = await runEvalComponent(f.requestPath, { ...options, dryRun: true }); assert.ok('plan' in preview);
+  const result = await runEvalComponent(f.requestPath, { ...options, dryRun: false, expectedPlanSha256: preview.plan.sha256 }); assert.ok('quality' in result);
+  const receipt = JSON.parse(readFileSync(join(f.runDir, 'fix/baseline/trial-1/_result.json'), 'utf8'));
+  assert.deepEqual(receipt.usageEvidence, evidence); assert.equal(result.evidence.verified, true);
+  assert.equal(result.costs.populations?.attempts.baseline.metrics.input.coverage.partial, 1);
+  assert.equal(result.costs.populations?.attempts.baseline.metrics.uncachedInput.knownTotal, 4);
+  assert.equal(result.acceptance.eligibleForUpgrade, false);
+  assert.ok(result.acceptance.reasons.some(r => r.code === 'INCOMPLETE_COSTS'));
+});
+
 function strongManifest() {
   const p = parseAcceptancePolicy();
   const observations = (arm: 'baseline' | 'treatment'): CostObservation[] => Array.from({ length: 5 }, (_, n) => ({

@@ -132,6 +132,12 @@ receipts counted as unknown usage rather than zero. They never imply a paired
 quality result. Legacy manifests retain their recorded scope: missing cost fields
 stay null; the component does not infer cache partitions from prompt size.
 
+When a failed JSON CLI has a matching local numeric counter, the receipt may
+retain partial tokens plus `usageEvidence` (identity, timestamp, source record
+hash and numeric snapshot). [The partial-usage contract](eval-costs.md#partial-usage-after-a-failed-json-cli-call)
+keeps private bodies out of exports and never promotes partial coverage to final.
+Errors, missing final usage and stopped batches remain ineligible under both policies.
+
 Invalid inputs or execution setup failures return `kind: "skillfit.eval-error"`,
 `status: "error"`, an error code/message and ineligible acceptance. Exit status 2
 signals invalid/failed request execution or a stopped request run. Exit status 0

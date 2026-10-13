@@ -19,7 +19,7 @@ import {
 } from './report.js';
 import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
 import { listFilesRecursive } from './hash.js';
-import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, PairOrder, TokenUsage } from './types.js';
+import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, PairOrder, TokenUsage, UsageEvidence } from './types.js';
 import { pairConditions } from './types.js';
 import { CONDITIONS } from './types.js';
 import { ExecutorFailure } from './types.js';
@@ -254,6 +254,7 @@ export async function runTrial(
   const started = new Date(clock.wallNow());
   const startedMonotonic = clock.monotonicNow();
   let executionTiming: ExecutionTiming | null = null;
+  let usageEvidence: UsageEvidence | undefined;
   let output = '';
   let error: string | null = null;
   let tokens: TokenUsage | null = null;
@@ -273,6 +274,7 @@ export async function runTrial(
     skillTriggered = result.skillTriggered ?? null;
     usageStatus = result.usageStatus ?? 'final';
     executionTiming = result.executionTiming ?? null;
+    usageEvidence = result.usageEvidence;
     error = result.guardError ?? null;
   } catch (executorError) {
     error = (executorError as Error).message;
@@ -284,6 +286,7 @@ export async function runTrial(
       skillTriggered = executorError.result.skillTriggered ?? null;
       usageStatus = executorError.result.usageStatus ?? (tokens ? 'partial' : 'unknown');
       executionTiming = executorError.result.executionTiming ?? null;
+      usageEvidence = executorError.result.usageEvidence;
     }
   }
   if (error === null) {
@@ -337,6 +340,7 @@ export async function runTrial(
     tokens,
     executorInvoked,
     usageStatus,
+    ...(usageEvidence ? { usageEvidence } : {}),
     gitInitialized,
     ...(plan.skillInstallDir ? { skillTriggered } : {}),
   };

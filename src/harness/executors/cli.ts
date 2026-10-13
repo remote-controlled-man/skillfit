@@ -2,8 +2,10 @@ import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { getAgent } from '../../agents.js';
+import type { AgentSessions } from '../../agents.js';
 import { killTree, treeSpawnOptions } from '../kill-tree.js';
 import { probeKimiSessionUsage } from '../kimi-usage.js';
+import { probeCodexPartialUsage } from '../codex-usage.js';
 import { ExecutorFailure, type TokenUsage } from '../types.js';
 import { ExecutionDeadline, type ExecutionClock } from '../execution-timing.js';
 import type { Executor, ExecutorDescriptor, ExecutorResult } from '../types.js';
@@ -17,6 +19,10 @@ export interface CliExecutorOptions {
   promptVia?: 'stdin' | 'file';
   promptFile?: string;
   usageFromSessionLog?: boolean;
+  partialUsageFromSessionLog?: boolean;
+  sessions?: AgentSessions;
+  /** Test fixture root; never lets process environment redirect offline tests. */
+  homeDir?: string;
   triggerSkillName?: string;
   triggerToolName?: string;
   projectTrustConfigArg?: string;
@@ -74,6 +80,9 @@ export class CliExecutor implements Executor {
   private readonly promptVia: 'stdin' | 'file';
   private readonly promptFile: string;
   private readonly usageFromSessionLog: boolean;
+  private readonly partialUsageFromSessionLog: boolean;
+  private readonly sessions?: AgentSessions;
+  private readonly homeDir?: string;
   private readonly triggerSkillName?: string;
   private readonly triggerToolName: string;
   private readonly projectTrustConfigArg?: string;
@@ -94,6 +103,9 @@ export class CliExecutor implements Executor {
     this.promptVia = options.promptVia ?? 'stdin';
     this.promptFile = options.promptFile ?? DEFAULT_PROMPT_FILE;
     this.usageFromSessionLog = options.usageFromSessionLog ?? false;
+    this.partialUsageFromSessionLog = options.partialUsageFromSessionLog ?? false;
+    this.sessions = options.sessions;
+    this.homeDir = options.homeDir;
     this.triggerSkillName = options.triggerSkillName;
     this.triggerToolName = options.triggerToolName ?? DEFAULT_TRIGGER_TOOL_NAME;
     this.projectTrustConfigArg = options.projectTrustConfigArg;
@@ -122,6 +134,8 @@ export class CliExecutor implements Executor {
         promptVia: headless.promptVia,
         promptFile: headless.promptFile,
         usageFromSessionLog: headless.usageFromSessionLog ?? false,
+        partialUsageFromSessionLog: headless.partialUsageFromSessionLog ?? false,
+        sessions: agent.sessions,
         triggerSkillName: opts.triggerSkillName,
         triggerToolName: streamJson.triggerToolName,
         projectTrustConfigArg,
@@ -137,6 +151,8 @@ export class CliExecutor implements Executor {
       promptVia: headless.promptVia,
       promptFile: headless.promptFile,
       usageFromSessionLog: headless.usageFromSessionLog ?? false,
+      partialUsageFromSessionLog: headless.partialUsageFromSessionLog ?? false,
+      sessions: agent.sessions,
       projectTrustConfigArg,
     });
   }
@@ -197,7 +213,18 @@ export class CliExecutor implements Executor {
           ? parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName)
           : { output: stdout }), executionTiming: deadline.snapshot(),
       });
-      const failure = (message: string): ExecutorFailure => new ExecutorFailure(message, { ...parseResult(), usageStatus: 'partial' });
+      const failure = (message: string): ExecutorFailure => {
+        const result = parseResult();
+        if (this.partialUsageFromSessionLog && this.sessions) {
+          const snapshot = probeCodexPartialUsage({ sessions: this.sessions, stdout, workdir, startedAtMs,
+            finishedAtMs: Date.now(), homeDir: this.homeDir, env: { ...process.env, ...this.env } });
+          // Never replace a more complete public counter with a smaller local snapshot.
+          if (snapshot && (['input', 'cachedInput', 'output'] as const).every(key => (snapshot.tokens[key] ?? 0) >= (result.tokens?.[key] ?? 0))) {
+            result.tokens = snapshot.tokens; result.usageEvidence = snapshot.evidence;
+          }
+        }
+        return new ExecutorFailure(message, { ...result, usageStatus: 'partial' });
+      };
       const stopMessage = (): string => overflow
         ? `"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`
         : deadline.timingError ? `"${command}" execution timing anomaly: ${deadline.timingError}`

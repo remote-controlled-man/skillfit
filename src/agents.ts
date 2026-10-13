@@ -71,6 +71,8 @@ export interface AgentHeadless {
    * know which vendor needs it (AGENTS.md — agent-specific behavior comes from the matrix).
    */
   usageFromSessionLog?: boolean;
+  /** Recover numeric lower bounds after a failed JSON invocation; never a final receipt. */
+  partialUsageFromSessionLog?: boolean;
   streamJson?: AgentHeadlessStreamJson;
   docs: string;
 }

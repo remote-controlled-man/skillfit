@@ -351,6 +351,13 @@ other cohorts' spending are excluded. These observations introduce no cost
 significance, monetary estimate or change to the quality protocol. See
 [evaluation cost accounting](eval-costs.md) for field and denominator rules.
 
+Failed JSON CLI invocations may add an identity/time-bound local numeric usage
+snapshot when the matrix capability permits it. This is partial cumulative usage,
+never final coverage or an accepted outcome; receipt `usageEvidence` preserves
+the counter provenance without private transcript bodies. Unknown/ambiguous
+metadata remains unknown, and original frozen failures are not rewritten.
+Quality exclusions, verdicts and every completeness/adoption gate stay unchanged.
+
 Rules and MCP targets use the same paired statistics as Skill targets but a different treatment
 mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The
 baseline/treatment project overlays are applied only after that snapshot, so the local CLI must load

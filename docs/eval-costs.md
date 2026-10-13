@@ -91,3 +91,27 @@ task-block interval for uncached input per success in `costs.efficiency`. Its
 and coverage gates do not change manifest accounting or the quality verdict.
 It can support scoped savings with no observed correctness regression, not
 equivalence, dollar savings or a general latency effect.
+
+## Partial usage after a failed JSON CLI call
+
+The matrix's `headless.partialUsageFromSessionLog` capability enables best-effort
+recovery for failed Codex JSON invocations. Normal successes retain the public
+`turn.completed.usage` authority documented in [non-interactive mode](https://developers.openai.com/codex/noninteractive/).
+For a failure, the reader matches the public thread ID, canonical workspace and
+invocation time window to one local session file at the matrix-defined location,
+respecting the configured [CODEX_HOME state root](https://developers.openai.com/codex/config-advanced/).
+It reads only cumulative numeric `token_count` values into the result; private
+messages, reasoning text, auth/configuration bodies and unrelated sessions are
+never emitted or copied. The internal rollout format is experimental: absent,
+ambiguous, stale, malformed or decreasing counters stay unknown. It never guesses
+an identity from file modification time or replaces a larger public counter.
+
+`usageEvidence` in `_result.json` retains the thread ID, last counter timestamp,
+original counter-record SHA-256, selected numeric tokens and partial scope. The
+counter is cumulative, so successive snapshots are not summed. Reasoning output
+is already included in output and is not added again. Recovery stays `partial`;
+unrecorded pending work/retries and final billing remain unknown. Every execution
+error remains excluded from quality and prevents adoption. Previously frozen
+receipts are never rewritten; later metadata corrections belong in a separately
+dated supplement. The implementation was calibrated against eight completed
+0.162.0-alpha.17.2 calls and recovered lower bounds for three failed calls.

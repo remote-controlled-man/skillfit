@@ -26,6 +26,16 @@ export interface ExecutorResult {
   usageStatus?: 'final' | 'partial';
   /** Public timing diagnostics; neither clock measures billed/active model computation. */
   executionTiming?: ExecutionTiming;
+  usageEvidence?: UsageEvidence;
+}
+
+export interface UsageEvidence {
+  source: 'local-session-token-count';
+  threadId: string;
+  counterAt: string;
+  recordSha256: string;
+  tokens: TokenUsage;
+  scope: string;
 }
 
 /** Retain public output/usage from a failed invocation; guards can refuse before invoking. */
