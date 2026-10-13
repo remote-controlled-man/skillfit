@@ -11,6 +11,7 @@ import { collectInstalledSkillTarget } from './installed-skill.js';
 import { runVerifier } from './runner.js';
 import { verdictFromOutput } from './verifier-summary.js';
 import { parseEvalReport } from '../commands/eval-report.js';
+import { pairConditions, type PairOrder } from './types.js';
 
 function inside(root: string, path: string): boolean {
   const rel = relative(root, path);
@@ -85,6 +86,12 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     assert.deepEqual(readComponentJson(join(root, '_session.json')).value, report.experiment);
     const plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
     const details = record(plan.details, 'native plan details');
+    let pairOrder: PairOrder | null = null;
+    if (raw.pairOrder !== undefined || details.pairOrder !== undefined) {
+      assert.ok(raw.pairOrder === 'baseline-first' || raw.pairOrder === 'balanced', 'Invalid recorded pair order.');
+      assert.equal(raw.pairOrder, details.pairOrder, 'Pair order differs from the predeclared native plan.');
+      pairOrder = raw.pairOrder;
+    }
     if (raw.component !== undefined) {
       assert.deepEqual(details.component, raw.component, 'Policy metadata differs from the predeclared native plan.');
       const c = record(raw.component, 'component');
@@ -108,8 +115,9 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     const bench = options.replay ? loadBench(options.benchDir ?? String(record(raw.bench, 'bench').dir)) : null;
     if (bench) assert.equal(bench.contentSha256, report.bench.sha256, 'Replay bench differs from the frozen task set.');
     let invoked = 0;
+    const expectedAgentOrder: string[] = [];
     const rawTasks = raw.tasks as Record<string, unknown>[];
-    for (const task of report.tasks) {
+    for (const [taskIndex, task] of report.tasks.entries()) {
       assert.ok(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(task.id), 'Unsafe task id.');
       const taskAll = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] }, taskPaired = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] };
       for (let trial = 1; trial <= report.trials; trial++) {
@@ -151,6 +159,9 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
           paired[arm].push(pair[arm]!); taskPaired[arm].push(pair[arm]!);
         }
         const b = pair.baseline! as CostObservation & Record<string, unknown>, t = pair.treatment! as CostObservation & Record<string, unknown>;
+        if (pairOrder) for (const arm of pairConditions(pairOrder, taskIndex, trial)) {
+          if (pair[arm]!.executorInvoked) expectedAgentOrder.push(`${task.id}/${arm}/trial-${trial}`);
+        }
         const graded = b.error === null && t.error === null;
         const changes: { name: string; change: 'improved' | 'regressed' }[] = [];
         if (graded && Array.isArray(b.checks) && Array.isArray(t.checks)) {
@@ -175,6 +186,9 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     const ledger = readFileSync(join(root, '_calls.jsonl'), 'utf8').trim().split('\n').filter(Boolean).map(line => record(JSON.parse(line), 'ledger'));
     assert.equal(ledger.filter(e => e.event === 'started' && e.role === 'agent').length, invoked);
     assert.equal(ledger.filter(e => e.event === 'started').length, report.experiment.callsStarted);
+    if (pairOrder) assert.deepEqual(ledger.filter(e => e.event === 'started' && e.role === 'agent')
+      .map(e => String(e.workdir).split(/[\\/]/).slice(-3).join('/')), expectedAgentOrder,
+    'Recorded execution order differs from the frozen pair order.');
     // This component does not run a judge whose separate usage would be absent from agent costs.
     assert.ok(raw.judge == null, 'Judge usage is not covered by component accounting.');
     audit.verified = true;

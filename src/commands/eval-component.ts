@@ -33,6 +33,7 @@ export async function reportEvalComponent(path: string, options: { policyPath?: 
   const nativePlan = audit.verified ? record(readComponentJson(join(runDir, '_plan.json')).value, 'native plan') : null;
   return { ...result, manifest: { path: manifestPath, sha256: data.sha256, schemaVersion: 4 },
     environment: nativePlan ? { nodeVersion: nativePlan.nodeVersion, agent: nativePlan.agent,
+      pairOrder: record(nativePlan.details, 'native plan details').pairOrder ?? null,
       cliVersion: nativePlan.cliVersion, configuredSettings: nativePlan.configuredSettings,
       servedModel: nativePlan.servedModel, injectedExecutor: nativePlan.injectedExecutor, warnings: nativePlan.warnings } : null,
     evidence: { ...result.evidence, runDir, planPath: join(runDir, '_plan.json'),
@@ -59,7 +60,7 @@ export async function runEvalComponent(requestPath: string, options: ComponentRu
   const implementationSha256 = hashFileSet(implementationDir, implementationFiles);
   const base: EvalOptions = { skillPath: request.candidateSkill, baselineSkillPath: request.baselineSkill,
     bench: request.bench, agent: request.agent, mode: 'installed', inputMode: 'workspace', trials: request.trials,
-    maxCalls: request.maxCalls, runsRoot: request.runsRoot, runGroup: request.runGroup, yes: true, dryRun: true,
+    maxCalls: request.maxCalls, pairOrder: request.pairOrder, runsRoot: request.runsRoot, runGroup: request.runGroup, yes: true, dryRun: true,
     judgeExecutor: null, executor: options.executor, sessionOptions: options.sessionOptions,
     skillInstallDir: options.skillInstallDir, log: options.log ?? (() => {}) };
   let prepared: EvalPreview | undefined;

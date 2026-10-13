@@ -2,7 +2,9 @@
 
 For an Agent caller, use the [versioned evaluation component](eval-component.md):
 JSON request, dry-run plan hash, structured results and a separately frozen adoption
-policy. The existing positional commands below remain supported.
+policy. New requests can use `pairOrder: "balanced"` to alternate the first arm
+across tasks and trials while keeping each pair adjacent. The existing positional
+commands below remain supported with their baseline-first order.
 
 Use a paired installed experiment to check a proposed Skill revision against its
 previous version. This is a comparison workflow, not an automatic acceptance gate.
@@ -70,8 +72,10 @@ regressions for real executor results. Read detection does not establish that an
 instruction was followed or caused a result. Separate labeled trigger studies are
 still needed for positive and negative routing cases.
 
-No acceptance threshold or non-inferiority claim is introduced. An inconclusive
-result does not prove equivalence or absence of harm. A positive revision delta
+The positional commands introduce no adoption threshold or non-inferiority claim.
+The request component adds a separately predeclared quality or efficiency policy;
+cost-based acceptance preserves an inconclusive tied quality verdict. An inconclusive
+quality result does not prove equivalence or absence of harm. A positive revision delta
 does not establish installation benefit over no Skill, and historical success
 does not guarantee behavior on unseen tasks. For installation benefit, declare a
 separate installed experiment without `--baseline-skill`. See the frozen

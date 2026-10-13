@@ -1,6 +1,7 @@
 import { parseEvalReport } from '../commands/eval-report.js';
 import { completeCost, COST_METRICS, type CostMetric, type CostObservation, type RunCosts } from './costs.js';
 import { parseAcceptancePolicy, policyHash, record, type AcceptancePolicy, type ComponentMetadata } from './eval-contract.js';
+import { efficiencyEvidence } from './eval-efficiency.js';
 
 export interface AcceptanceReason { code: string; message: string }
 export interface EvidenceAudit {
@@ -73,7 +74,7 @@ export function assessEvaluation(value: unknown, audit: EvidenceAudit, override?
     reject('OBSERVED_PAIR_REGRESSION', `Task ${pair.taskId} trial ${pair.trial} has a named-check or score regression despite any aggregate gain.`);
   }
   if (report.overall.verdict === 'ineffective') reject('NEGATIVE_EFFECT', 'The unchanged statistical verdict is ineffective.');
-  else if (report.overall.verdict !== 'effective' || report.overall.deltaPassRate <= 0 || report.overall.deltaPassRate < policy.minDeltaPassRate) {
+  else if (policy.schemaVersion === 1 && (report.overall.verdict !== 'effective' || report.overall.deltaPassRate <= 0 || report.overall.deltaPassRate < policy.minDeltaPassRate)) {
     need('QUALITY_GAIN_UNPROVEN', 'A positive effective verdict meeting the declared minimum gain is required.');
   }
   if (!report.baselineTarget || !report.skillDelivery) need('REVISION_COMPARISON_REQUIRED', 'Adoption requires two complete installed versions of the same Skill.');
@@ -92,10 +93,24 @@ export function assessEvaluation(value: unknown, audit: EvidenceAudit, override?
   if (!costs || COST_METRICS.some(m => !completeCost(costs.attempts.baseline, m) || !completeCost(costs.attempts.treatment, m))) {
     need('INCOMPLETE_COSTS', 'Final input, cache partition, output and elapsed coverage is required for every invocation.');
   }
-  if (costs) for (const metric of Object.keys(policy.maxCostIncreaseFraction) as (keyof AcceptancePolicy['maxCostIncreaseFraction'])[]) {
+  const efficiency = policy.schemaVersion === 2 ? efficiencyEvidence(tasks) : null;
+  if (policy.schemaVersion === 2 && efficiency) {
+    if (raw.pairOrder !== 'balanced') need('BALANCED_ORDER_REQUIRED', 'Efficiency validation requires predeclared balanced adjacent pairs.');
+    if (efficiency.ci === null) need('TASK_COSTS_UNDEFINED', efficiency.unavailableReason!);
+    else {
+      if (efficiency.ci.hi > -policy.minUncachedInputReductionFraction + 1e-12) {
+        need('EFFICIENCY_REDUCTION_UNPROVEN', 'The upper task-bootstrap bound does not meet the declared uncached-input reduction per success.');
+      }
+      if (efficiency.improvedTaskFraction! < policy.minImprovedTaskFraction) {
+        need('EFFICIENCY_NOT_BROAD', 'Too few tasks reduced all-invocation uncached input per success.');
+      }
+    }
+  }
+  if (costs) for (const [name, limit] of Object.entries(policy.maxCostIncreaseFraction)) {
+    const metric = name as CostMetric;
     const b = costs.attempts.baseline, t = costs.attempts.treatment;
     if (completeCost(b, metric as CostMetric) && completeCost(t, metric as CostMetric) && b.passes > 0 && t.passes > 0 &&
-        t.metrics[metric].knownTotal / t.passes > b.metrics[metric].knownTotal / b.passes * (1 + policy.maxCostIncreaseFraction[metric]) + 1e-9) {
+        t.metrics[metric].knownTotal / t.passes > b.metrics[metric].knownTotal / b.passes * (1 + limit) + 1e-9) {
       reject('COST_LIMIT_EXCEEDED', `${metric} spending per successful task exceeds the declared increase limit.`);
     }
   }
@@ -108,7 +123,7 @@ export function assessEvaluation(value: unknown, audit: EvidenceAudit, override?
       deltaPassRate: report.overall.deltaPassRate, scoreDelta: report.overall.scoreDelta,
       improvedPairs: report.overall.improved, regressedPairs: report.overall.regressed, mcnemarP: report.overall.mcnemarP,
       deltaCi: report.overall.deltaCi, scoreDeltaCi: report.overall.scoreDeltaCi, replicatedTasks, tasks },
-    costs: { populations: costs, changes: costChanges(costs), scope: 'Agent executor invocations, including errors and excluded partners; no dollar bill, candidate-generation, judge or orchestration cost.' },
+    costs: { populations: costs, changes: costChanges(costs), ...(efficiency ? { efficiency } : {}), scope: 'Agent executor invocations, including errors and excluded partners; no dollar bill, candidate-generation, judge or orchestration cost.' },
     evidence: audit,
     acceptance: { decision, eligibleForUpgrade: decision === 'accept', automaticUpgrade: false as const,
       policy, policySha256: policyHash(policy), reasons: [...rejected, ...insufficient],

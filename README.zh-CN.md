@@ -121,6 +121,10 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 用版本 1 JSON 请求，让 Agent 调用现有 Skill 修订评估引擎。只读预览固定输入和策略，执行时必须提供预览的计划指纹。JSON 结果保留提升、退步、全部调用成本和证据覆盖情况。独立策略返回 `accept`、`reject` 或 `inconclusive`；证据不足不能授权采用，组件也不会升级 Skill。这项接口尚未发布，需要构建仓库版本。详见[输入输出与验收策略契约](docs/eval-component.md)。
 
+新的成本对比可在请求中设置 `pairOrder: "balanced"`，交替安排两版先运行。计划固定顺序，离线评估核对实际调用记录；配对统计公式保持不变。
+
+默认策略要求证实质量提升。显式声明版本 2 的 `efficiency` 策略后，未观察到正确性退步且未缓存输入成本稳定下降，也可通过验收；质量持平仍保留 `inconclusive` 判定。两种目标都要求独立验证、完整证据和成本覆盖。参见[预先声明的成本示例](docs/examples/eval-request.diagnosing-v2-efficiency.json)。
+
 ```bash
 node dist/cli.js eval --request ./request.json --dry-run
 node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>

@@ -124,6 +124,10 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 Use a version 1 JSON request to call the existing Skill revision engine from an Agent. A read-only preview pins inputs and the policy; execution requires its plan hash. JSON results retain improvements, regressions, all-invocation costs and evidence coverage. A separate policy returns `accept`, `reject` or `inconclusive`; insufficient evidence cannot authorize adoption, and the component never upgrades a Skill. This interface is unreleased; build the checkout. See [the input/output and policy contract](docs/eval-component.md).
 
+For new cost comparisons, set `pairOrder: "balanced"` in the request to alternate which version runs first. The plan freezes the order and offline assessment verifies the invocation ledger; paired statistical formulas remain unchanged.
+
+The default policy requires a demonstrated quality gain. An explicit version-2 `efficiency` policy can accept stable uncached-input savings with no observed correctness regression; a quality tie keeps its `inconclusive` verdict. Both objectives require independent validation, complete evidence and spending coverage. See the [predeclared cost example](docs/examples/eval-request.diagnosing-v2-efficiency.json).
+
 ```bash
 node dist/cli.js eval --request ./request.json --dry-run
 node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>

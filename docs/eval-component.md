@@ -6,6 +6,20 @@ changes, observed regressions, spending coverage and a separate adoption decisio
 It never installs, publishes or upgrades a Skill. These interfaces are unreleased;
 build the current checkout rather than assuming npm 0.8.0 includes them.
 
+The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
+the two complete public debugging Skill versions on eight pinned real defects.
+Preview it without writing files or making an agent call:
+
+```bash
+node dist/cli.js eval --request docs/examples/eval-request.diagnosing-v2.json --dry-run
+```
+
+The example declares 80 calls and 25% per-success cost increase ceilings; these
+are explicit example settings, not the component defaults or proof that either
+version is better. A live reproduction requires spending authorization and a
+fresh run group. Public task outcomes can inform later development and should
+not be treated as a new blinded holdout for repeated candidate selection.
+
 ## Input and execution
 
 Save `request.json` outside the evaluated Skill directories. All paths resolve
@@ -19,6 +33,7 @@ relative to that file, regardless of the caller's working directory:
   "bench": "./validation-bench",
   "agent": "codex",
   "purpose": "validation",
+  "pairOrder": "balanced",
   "trials": 5,
   "maxCalls": 80,
   "runsRoot": "./runs",
@@ -43,6 +58,16 @@ parser rejects unknown fields and invalid ranges. `policy` is optional and defau
 to the conservative values above. The two complete Skills must have the same
 frontmatter name and different fingerprints. The caller must supply a fresh run
 group and an explicit call ceiling; eight tasks at five trials need 80 calls.
+
+`pairOrder` is optional and defaults to `baseline-first` for compatibility.
+Use `balanced` for a new comparison when cache warming and elapsed time matter:
+the first arm alternates by task position and trial number, while both arms of
+every pair remain adjacent. Eight tasks with five trials have 20 pairs starting
+with each arm; each task has two or three starts per arm. The preview and native
+plan freeze this choice, the manifest records it, and offline assessment verifies
+the actual invocation ledger against the declared order. Older records without
+order metadata retain their original interpretation. Balancing order does not
+isolate provider cache state, pin sampling or guarantee a latency effect.
 
 ```bash
 node dist/cli.js eval --request ./request.json --dry-run
@@ -82,10 +107,11 @@ callers should retain unknown/new fields for forward-compatible reporting.
 | `plan` | Request, fingerprints, executor, task IDs, trials, call ceiling, output directory and preview SHA; present for request execution |
 | `manifest` | Saved v4 manifest path and byte SHA-256; null when a stopped run produced no final manifest |
 | `identity` | Candidate, baseline, bench and configured executor identities; present with a final manifest |
-| `environment` | Verified native Node/CLI versions, configured settings, served-model limitation and executor injection provenance; null for unverified evidence |
+| `environment` | Verified native Node/CLI versions, configured settings, recorded `pairOrder`, served-model limitation and executor injection provenance; null for unverified evidence; unrecorded order stays null |
 | `quality` | Existing statistical verdict, uncertainty, improved/regressed pairs and per-task outcomes, scores and named-check changes |
 | `costs.populations` | Surviving paired costs and all agent invocations, including graded failures, errored calls and excluded successful partners |
 | `costs.changes` | Descriptive total and per-success changes; null when coverage or the baseline denominator cannot support the comparison |
+| `costs.efficiency` | Explicit policy version 2 only: all-invocation uncached-input point, task-block interval, per-task changes and fixed protocol |
 | `evidence` | Native file/receipt integrity, policy binding, replay coverage and evidence locations; `pairs` retains each pair's outcomes, named-check changes and full cost observations |
 | `acceptance` | `decision`, `eligibleForUpgrade`, policy, reason codes and scope; `automaticUpgrade` is always false |
 
@@ -111,11 +137,11 @@ not introduce an equivalence or non-inferiority test. It returns:
   Paired named-check/score regressions remain rejection reasons even when task
   averages improve or cancel them.
 - `inconclusive` when adoption requirements remain unmet and no rejection applies.
-  Neither this status nor an all-pass tie can authorize an upgrade.
+  This status cannot authorize an upgrade.
 - `accept` only when all requirements below pass. This is advisory eligibility on
   the recorded tasks and environment, with `automaticUpgrade: false`.
 
-Requirements are a positive `effective` verdict meeting the declared minimum
+The default version-1 quality policy requires a positive `effective` verdict meeting the declared minimum
 gain, at least eight tasks with at least five graded pairs **for every task**,
 a completed native revision experiment without excluded errors, no observed
 regressions, a predeclared validation purpose and policy, verified native receipts,
@@ -135,6 +161,35 @@ agent usage and elapsed time, not dollars, active compute or a stable latency ef
 This first interface runs no judge or candidate generator. Their costs, provider
 internal retries with unavailable usage, orchestration and offline verification
 must not be presented as a known complete optimization bill.
+
+### An explicit efficiency objective
+
+Use policy `schemaVersion: 2, objective: "efficiency"` **before execution** when
+the goal is reduced agent usage with no observed correctness regression.
+Version 1 and its hashes retain their original meaning. Version 2 retains the
+same scale, receipt, independent-validation, coverage and non-regression gates,
+and additionally requires `pairOrder: "balanced"`. It can accept an all-pass tie
+only when the separate cost criteria pass; `quality.statisticalVerdict` still
+reports `inconclusive`. It never asserts equivalence or a correctness increase.
+
+`minUncachedInputReductionFraction` defaults to `0.1` (minimum `0.01`), and
+`minImprovedTaskFraction` defaults to `0.75` (minimum `0.75`). The upper 95%
+task-block bootstrap bound must support the declared minimum reduction in all
+invocation uncached input per success, and the declared fraction of tasks must
+individually improve. `costs.efficiency` records the point, interval, per-task
+changes, fixed seed `20261013`, 10,000 resamples and unavailable-evidence reason.
+Every task needs final primary usage and successes in both arms; no tasks are
+discarded. The [exact protocol and its scope](metrics.md#explicit-efficiency-acceptance-policy-version-2-unreleased)
+are frozen separately from the quality test.
+
+Version 2 extends `maxCostIncreaseFraction` with `input` and `cachedInput`;
+all five defaults permit no per-success increase. Declare any allowed tradeoffs
+explicitly. The [cost example](examples/eval-request.diagnosing-v2-efficiency.json)
+permits at most 25% more elapsed time, while permitting no token-partition or
+output increase. Previewing either example makes zero model calls. Cost savings
+remain scoped to recorded token usage, not a complete dollar bill. Missing
+usage, synthetic runs, visible regressions and post-hoc policy changes cannot
+authorize adoption under either objective. `automaticUpgrade` always stays false.
 
 `purpose: "validation"` is a caller declaration, not proof of independence. Bench
 authors must keep outcomes independent of the Skill and hold validation tasks
@@ -182,7 +237,7 @@ node dist/cli.js report eval evidence/artifacts/2026-10-12-normalize-url-v2-vali
 The component tests inject offline executors and synthetic policy fixtures. They
 exercise plan refusal, policy drift, observed improvements and regressions,
 per-pair check regressions, full failed-call spending, unknown receipts, native
-integrity and cloned replay. They also check the unchanged dated real evidence.
+integrity, balanced adjacent execution and cloned replay. They also check the unchanged dated real evidence.
 These are implementation checks, not new model efficacy measurements. The last
 command reproduces the available historical totals and remains ineligible for an
 upgrade; use that package's own replay recipe for its redacted archive.

@@ -60,6 +60,15 @@ gates), and the LLM-judge literature cited in §5.
 
 ## Unit of analysis
 
+Additive pair ordering 2026-10-13: versioned JSON requests can declare
+`pairOrder: "balanced"`. The first arm alternates by task position and trial
+number, keeping both arms adjacent and recording the strategy in the native plan
+and manifest. Offline assessment checks actual ledger order. The compatibility
+default remains `baseline-first`; old records without order metadata keep their
+recorded interpretation. This controls a systematic first/second-arm assignment,
+without isolating cache state or changing any verdict, exclusion or resampling
+formula. See [the component contract](eval-component.md).
+
 One **run** = one (task, condition, trial). Runs are **paired** on (task, trial): baseline and treatment see
 the same fixture and the same prompt, and the two arms of a pair are executed **adjacently** — the trial loop
 is outermost, so condition is never confounded with elapsed time (provider drift, rate-limit degradation,
@@ -356,3 +365,40 @@ Only a paired task experiment can support a claim that the MCP setup improves ou
 
 No cross-model leaderboards, no hosted dashboards, no trajectory-level scoring. skillfit answers one
 question per user: *is this configuration worth enabling for my agent on my tasks?*
+
+## Explicit efficiency acceptance (policy version 2, unreleased)
+
+The default version-1 quality policy and all quality verdicts above remain unchanged.
+An explicitly predeclared version-2 policy with `objective: "efficiency"` can instead
+accept a cost improvement with no **observed** correctness regression. A quality tie
+keeps its `inconclusive` verdict; this is neither proof of equivalence nor a quality
+gain. Both policies require the same native evidence, validation purpose, complete
+usage, error-free finished experiment and eight-task/five-pair floors. Version 2
+also requires native, predeclared balanced adjacent pair order. Any paired task,
+score or named-check regression rejects regardless of aggregate savings.
+
+The primary cost is **all invoked agent uncached-input tokens / successful task
+executions**, including spending on unsuccessful executions. Every task must have
+final uncached-input coverage, positive baseline spending and successes in both
+arms; missing tasks are never removed to improve the estimate. Bootstrap the
+whole paired task blocks, preserving both arms, all recorded trials, all spending
+and successes. For each of 10,000 resamples, draw N tasks with replacement from
+the N declared tasks and recompute the pooled ratio `(T tokens / T successes) /
+(B tokens / B successes) - 1`. Use Mulberry32 seed `20261013`; sort changes and
+take zero-based indices `floor(0.025 * 10000)` and `floor(0.975 * 10000)` for the
+95% percentile interval. The upper bound must be at most the negative declared
+minimum reduction (default 10%, floor 1%; comparison tolerance 1e-12), and at least
+the declared fraction of tasks must individually reduce that same per-success
+measure (default and floor 75%). No trial-level pseudo-replication or replacement
+of failed samples is allowed.
+
+Version 2 separately caps all-invocation input, cached input, uncached input,
+output and elapsed time per success; defaults allow no increase. Explicit caps
+show permitted tradeoffs. An elapsed-time cap is descriptive, not a latency
+significance test. Complete coverage of **all five** measures is still required.
+The interval concerns the recorded task mixture and the empirical distribution
+of its task blocks. Related defects within a repository, inherited configuration,
+provider drift and cache reuse limit generalization; it is not a repository-level
+or future-model guarantee. It estimates neither dollars nor provider-internal
+retry costs. Policy normalization/hashes remain versioned, and a policy chosen
+after execution cannot authorize adoption. See [the component contract](eval-component.md).

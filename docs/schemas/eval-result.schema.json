@@ -11,7 +11,20 @@
     "manifest": { "type": ["object", "null"] },
     "identity": { "type": "object" },
     "quality": { "type": "object", "required": ["statisticalVerdict", "improvedPairs", "regressedPairs", "tasks"] },
-    "costs": { "type": "object", "required": ["populations", "scope"] },
+    "costs": {
+      "type": "object", "required": ["populations", "scope"],
+      "properties": {
+        "efficiency": {
+          "type": "object", "required": ["metric", "method", "seed", "resamples", "tasksCompared", "point", "ci", "unavailableReason"],
+          "properties": {
+            "metric": { "const": "uncachedInput" },
+            "method": { "const": "paired-task-percentile-bootstrap" },
+            "seed": { "const": 20261013 }, "resamples": { "const": 10000 },
+            "point": { "type": ["number", "null"] }, "ci": { "type": ["object", "null"] }
+          }
+        }
+      }
+    },
     "evidence": { "type": "object", "required": ["verified"] },
     "acceptance": {
       "type": "object", "required": ["decision", "eligibleForUpgrade", "automaticUpgrade"],

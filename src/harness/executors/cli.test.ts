@@ -59,6 +59,26 @@ test('CliExecutor rejects on a non-zero exit code', async () => {
   await assert.rejects(() => executor.run('x', process.cwd()), /exited with code 3.*boom/s);
 });
 
+test('stream exit failures retain terminal provider errors despite leading plugin warnings', async () => {
+  const transcript = toNdjson([
+    { type: 'error', message: 'Reconnecting after service unavailable' },
+    { type: 'error', message: 'Selected model is at capacity.' },
+    { type: 'turn.failed', error: { message: 'Selected model is at capacity.' } },
+  ]);
+  const script = `process.stdin.resume();process.stderr.write('Plugin startup warning. '.repeat(40));process.stdout.write(${JSON.stringify(transcript)});process.exitCode=1;`;
+  const executor = new CliExecutor({ argv: [process.execPath, '-e', script], shell: false, triggerSkillName: 'example' });
+  try { await executor.run('x', process.cwd()); assert.fail('Expected provider failure'); }
+  catch (error) {
+    assert.ok(error instanceof ExecutorFailure);
+    assert.match(error.message, /exited with code 1: Selected model is at capacity/);
+    assert.doesNotMatch(error.message, /Plugin startup warning/);
+    assert.equal(error.result.rawOutput, transcript);
+    assert.equal(error.result.usageStatus, 'partial');
+    assert.equal(error.result.tokens, undefined);
+    assert.equal(error.result.executionTiming?.timeoutFiredAfterMs, null);
+  }
+});
+
 test('CliExecutor rejects when the command cannot be started', async () => {
   const executor = new CliExecutor({
     argv: ['skillfit-definitely-not-a-real-binary-xyz'],

@@ -37,7 +37,7 @@ kimi-code and codex only.
 Real eval runs cost tokens and time. Before any non-dry-run eval:
 
 1. Run with `--dry-run` and show the plan (task count × trials = run count).
-2. Tell the user the expected cost and ask before running for real.
+2. State the call ceiling and known cost limits. Continue within existing spending authorization; ask only when the proposed run exceeds it or spending has not been authorized.
 
 ## Interpretation discipline (do not skip)
 
@@ -49,6 +49,14 @@ report was produced. `reject` and `inconclusive` cannot authorize an upgrade.
 `automaticUpgrade` is always false. Reproduce saved outcomes and accounting with
 `report eval <run-dir> --json --replay`, using trusted verifier code; it calls no model.
 This interface is not included in npm 0.8.0.
+For new cost comparisons, declare `pairOrder: "balanced"` to alternate which arm
+runs first while keeping pairs adjacent. Freeze the task set, candidate and policy
+before validation; development results and stopped batches stay separate.
+The default policy needs a positive quality gain. Explicit policy version 2 with
+`objective: "efficiency"` instead tests stable uncached-input savings with no
+observed pass/score/check regression. Declare the objective before calls and read
+`costs.efficiency`; a tied quality result stays inconclusive and is not equivalence.
+Missing usage or an incomplete batch cannot authorize adoption under either objective.
 
 - Read the verdict line, the discordant-pair counts, and the CI — not just the delta. `inconclusive` means
   the run cannot tell, not that the skill is useless.
@@ -64,6 +72,6 @@ This interface is not included in npm 0.8.0.
 
 - `report` and `doctor` are always read-only.
 - `mcp check` starts the configured local server and performs discovery only; it never calls a tool.
-- `eval` writes only under `runs/` (gitignored).
+- `eval` writes under the declared runs root (`runs/` by default, gitignored).
 - `bench init` / `bench add` print a plan and ask before writing; pass `--yes` only when the user has
   explicitly confirmed.

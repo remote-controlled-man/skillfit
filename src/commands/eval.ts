@@ -21,7 +21,7 @@ import {
   runTriggerExperiment,
   type TriggerManifest,
 } from '../harness/trigger.js';
-import type { Bench, EvaluationTarget, Executor, InputMode, SkillBundle } from '../harness/types.js';
+import type { Bench, EvaluationTarget, Executor, InputMode, PairOrder, SkillBundle } from '../harness/types.js';
 import type { ComponentMetadata } from '../harness/eval-contract.js';
 
 export interface EvalPreview {
@@ -36,6 +36,7 @@ export interface EvalPreview {
   plannedCalls: number;
   maxCalls: number;
   outputDir: string;
+  pairOrder?: PairOrder;
 }
 
 export interface EvalOptions {
@@ -45,6 +46,7 @@ export interface EvalOptions {
   baselineSkillPath?: string;
   bench?: string;
   trials?: number;
+  pairOrder?: PairOrder;
   maxCalls?: number;
   sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
   agent?: string;
@@ -409,6 +411,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
 
   if ((options.mode ?? 'inject') === 'trigger') {
+    if (options.pairOrder !== undefined) throw new Error('pairOrder is only available for paired experiments.');
     if (target.kind !== 'skill') {
       throw new Error('trigger mode is only available for Skill targets; rules and MCP targets use paired inject-mode workspaces.');
     }
@@ -460,6 +463,8 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const runGroup = options.runGroup ?? defaultRunGroup();
   const plannedCalls = bench.tasks.length * trials * (judge ? 4 : 2);
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+  const pairOrder = options.pairOrder ?? 'baseline-first';
+  if (pairOrder !== 'baseline-first' && pairOrder !== 'balanced') throw new Error('pairOrder must be baseline-first or balanced.');
 
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   options.onPlan?.({
@@ -467,12 +472,13 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     baseline: baselineTarget ? { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, sha256: baselineTarget.sha256, files: baselineTarget.files } : null,
     bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },
     executor: executor?.describe() ?? null, judge: judge?.describe() ?? null, inputMode,
-    installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, outputDir: join(runsRoot, runGroup),
+    installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, pairOrder, outputDir: join(runsRoot, runGroup),
   });
 
   if (options.dryRun) {
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
+    log(`Pair order: ${pairOrder}; arms remain adjacent`);
     if (skillInstallDir) {
       log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);
       log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
@@ -485,7 +491,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
   const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
-    { mode: installed ? 'installed' : 'inject', inputMode, trials, executor: executor.describe(), judge: judge?.describe() ?? null,
+    { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder, executor: executor.describe(), judge: judge?.describe() ?? null,
       ...(options.component ? { component: options.component } : {}),
       ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
   let manifest: RunManifest;
@@ -495,6 +501,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
       target,
       baselineTarget,
       component: options.component,
+      pairOrder,
       inputMode,
       ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
       executor: session.wrap(executor, 'agent'),

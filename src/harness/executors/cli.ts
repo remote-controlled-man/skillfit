@@ -259,7 +259,8 @@ export class CliExecutor implements Executor {
           return;
         }
         if (code !== 0) {
-          const detail = stderr.trim().slice(0, 500);
+          const detail = (this.triggerSkillName !== undefined ? terminalStreamError(stdout) : null)
+            ?? stderr.trim().slice(0, 500);
           rejectPromise(
             failure(`"${command}" exited with code ${code ?? 'null'}${detail ? `: ${detail}` : ''}`),
           );
@@ -298,6 +299,20 @@ export class CliExecutor implements Executor {
       child.stdin.end();
     });
   }
+}
+
+/** Public terminal stream failures are more useful than leading startup warnings. */
+function terminalStreamError(stdout: string): string | null {
+  let lastError: string | null = null;
+  let terminalError: string | null = null;
+  for (const line of stdout.split(/\r?\n/)) {
+    try {
+      const event = JSON.parse(line) as { type?: string; message?: unknown; error?: { message?: unknown } };
+      if (event?.type === 'turn.failed' && typeof event.error?.message === 'string') terminalError = event.error.message;
+      else if (event?.type === 'error' && typeof event.message === 'string') lastError = event.message;
+    } catch { /* Other output remains in the retained transcript. */ }
+  }
+  return (terminalError ?? lastError)?.trim().slice(0, 500) || null;
 }
 
 interface StreamJsonTranscript {

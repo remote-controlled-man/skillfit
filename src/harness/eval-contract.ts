@@ -4,14 +4,28 @@ import { getAgent } from '../agents.js';
 import { RUN_GROUP_PATTERN } from './constants.js';
 import { sha256Text } from './hash.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS } from './report.js';
+import type { PairOrder } from './types.js';
 
-export interface AcceptancePolicy {
-  schemaVersion: 1;
+interface PolicyBase {
   minTasks: number;
   minTrialsPerTask: number;
-  minDeltaPassRate: number;
   maxCostIncreaseFraction: { uncachedInput: number; output: number; durationSeconds: number };
 }
+
+export interface QualityPolicy extends PolicyBase {
+  schemaVersion: 1;
+  minDeltaPassRate: number;
+}
+
+export interface EfficiencyPolicy extends PolicyBase {
+  schemaVersion: 2;
+  objective: 'efficiency';
+  minUncachedInputReductionFraction: number;
+  minImprovedTaskFraction: number;
+  maxCostIncreaseFraction: PolicyBase['maxCostIncreaseFraction'] & { input: number; cachedInput: number };
+}
+
+export type AcceptancePolicy = QualityPolicy | EfficiencyPolicy;
 
 export interface EvalRequest {
   schemaVersion: 1;
@@ -20,6 +34,7 @@ export interface EvalRequest {
   bench: string;
   agent: string;
   purpose: 'development' | 'validation';
+  pairOrder: PairOrder;
   trials: number;
   maxCalls: number;
   runsRoot: string;
@@ -62,8 +77,30 @@ function numeric(value: unknown, label: string, min: number, max = Number.MAX_SA
 
 export function parseAcceptancePolicy(value: unknown = {}): AcceptancePolicy {
   const p = record(value, 'policy');
+  if (p.schemaVersion === 2) {
+    keys(p, ['schemaVersion', 'objective', 'minTasks', 'minTrialsPerTask', 'minUncachedInputReductionFraction', 'minImprovedTaskFraction', 'maxCostIncreaseFraction'], 'policy');
+    if (p.objective !== 'efficiency') throw new Error('policy.objective must be efficiency for schemaVersion 2.');
+    const costs = record(p.maxCostIncreaseFraction ?? {}, 'policy.maxCostIncreaseFraction');
+    keys(costs, ['input', 'cachedInput', 'uncachedInput', 'output', 'durationSeconds'], 'policy.maxCostIncreaseFraction');
+    return {
+      schemaVersion: 2, objective: 'efficiency',
+      minTasks: numeric(p.minTasks ?? CONCLUSIVE_TASKS, 'policy.minTasks', CONCLUSIVE_TASKS, 10000, true),
+      minTrialsPerTask: numeric(p.minTrialsPerTask ?? CONCLUSIVE_TRIALS, 'policy.minTrialsPerTask', CONCLUSIVE_TRIALS, 20, true),
+      minUncachedInputReductionFraction: numeric(p.minUncachedInputReductionFraction ?? 0.1, 'policy.minUncachedInputReductionFraction', 0.01, 1),
+      minImprovedTaskFraction: numeric(p.minImprovedTaskFraction ?? 0.75, 'policy.minImprovedTaskFraction', 0.75, 1),
+      maxCostIncreaseFraction: {
+        input: numeric(costs.input ?? 0, 'policy.maxCostIncreaseFraction.input', 0),
+        cachedInput: numeric(costs.cachedInput ?? 0, 'policy.maxCostIncreaseFraction.cachedInput', 0),
+        uncachedInput: numeric(costs.uncachedInput ?? 0, 'policy.maxCostIncreaseFraction.uncachedInput', 0),
+        output: numeric(costs.output ?? 0, 'policy.maxCostIncreaseFraction.output', 0),
+        durationSeconds: numeric(costs.durationSeconds ?? 0, 'policy.maxCostIncreaseFraction.durationSeconds', 0),
+      },
+    };
+  }
+  // Preserve the exact version-1 normalization and property order: historical
+  // policy hashes bind these bytes, not just equivalent field values.
   keys(p, ['schemaVersion', 'minTasks', 'minTrialsPerTask', 'minDeltaPassRate', 'maxCostIncreaseFraction'], 'policy');
-  if (p.schemaVersion !== undefined && p.schemaVersion !== 1) throw new Error('policy.schemaVersion must be 1.');
+  if (p.schemaVersion !== undefined && p.schemaVersion !== 1) throw new Error('policy.schemaVersion must be 1 or 2.');
   const costs = record(p.maxCostIncreaseFraction ?? {}, 'policy.maxCostIncreaseFraction');
   keys(costs, ['uncachedInput', 'output', 'durationSeconds'], 'policy.maxCostIncreaseFraction');
   return {
@@ -81,18 +118,19 @@ export function parseAcceptancePolicy(value: unknown = {}): AcceptancePolicy {
 
 export function parseEvalRequest(value: unknown, baseDir: string): EvalRequest {
   const r = record(value, 'request');
-  keys(r, ['schemaVersion', 'baselineSkill', 'candidateSkill', 'bench', 'agent', 'purpose', 'trials', 'maxCalls', 'runsRoot', 'runGroup', 'policy'], 'request');
+  keys(r, ['schemaVersion', 'baselineSkill', 'candidateSkill', 'bench', 'agent', 'purpose', 'pairOrder', 'trials', 'maxCalls', 'runsRoot', 'runGroup', 'policy'], 'request');
   if (r.schemaVersion !== 1) throw new Error('request.schemaVersion must be 1.');
   const agent = text(r.agent, 'request.agent');
   getAgent(agent);
   if (r.purpose !== 'development' && r.purpose !== 'validation') throw new Error('request.purpose must be development or validation.');
+  if (r.pairOrder !== undefined && r.pairOrder !== 'baseline-first' && r.pairOrder !== 'balanced') throw new Error('request.pairOrder must be baseline-first or balanced.');
   const runGroup = text(r.runGroup, 'request.runGroup');
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error('request.runGroup is invalid.');
   return { schemaVersion: 1,
     baselineSkill: resolve(baseDir, text(r.baselineSkill, 'request.baselineSkill')),
     candidateSkill: resolve(baseDir, text(r.candidateSkill, 'request.candidateSkill')),
     bench: resolve(baseDir, text(r.bench, 'request.bench')),
-    agent, purpose: r.purpose,
+    agent, purpose: r.purpose, pairOrder: r.pairOrder ?? 'baseline-first',
     trials: numeric(r.trials, 'request.trials', 1, 20, true),
     maxCalls: numeric(r.maxCalls, 'request.maxCalls', 1, Number.MAX_SAFE_INTEGER, true),
     runsRoot: resolve(baseDir, text(r.runsRoot, 'request.runsRoot')), runGroup,

@@ -19,7 +19,8 @@ import {
 } from './report.js';
 import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
 import { listFilesRecursive } from './hash.js';
-import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, TokenUsage } from './types.js';
+import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, PairOrder, TokenUsage } from './types.js';
+import { pairConditions } from './types.js';
 import { CONDITIONS } from './types.js';
 import { ExecutorFailure } from './types.js';
 import { summarizeCosts } from './costs.js';
@@ -39,6 +40,7 @@ export interface ExperimentPlan {
   executor: Executor;
   judge?: Executor | null;
   trials: number;
+  pairOrder?: PairOrder;
   runsRoot: string;
   runGroup: string;
   log?: (msg: string) => void;
@@ -687,6 +689,8 @@ function summarizeTask(
 
 export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
+  const pairOrder = plan.pairOrder ?? 'baseline-first';
+  if (pairOrder !== 'baseline-first' && pairOrder !== 'balanced') throw new Error('pairOrder must be baseline-first or balanced.');
   if (plan.baselineTarget) {
     if (!plan.skillInstallDir) throw new Error('Skill revision comparison requires installed delivery.');
     assertSkillRevisionTargets(plan.target, plan.baselineTarget);
@@ -715,13 +719,13 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const taskSummaries: TaskSummary[] = [];
   const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
   const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
-  for (const task of plan.bench.tasks) {
+  for (const [taskIndex, task] of plan.bench.tasks.entries()) {
     const outcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
     // Interleaved: the trial loop is outermost so the two arms of a pair run adjacently. Running
     // every baseline trial before every treatment trial confounds condition with elapsed time —
     // provider drift or rate-limit degradation would land entirely on one arm.
     for (let trial = 1; trial <= plan.trials; trial++) {
-      for (const condition of CONDITIONS) {
+      for (const condition of pairConditions(pairOrder, taskIndex, trial)) {
         plan.log?.(`Running ${task.id} / ${condition} / trial ${trial}…`);
         const outcome = await runTrial(plan, task.id, condition, trial);
         outcomes[condition].push(outcome);
@@ -753,6 +757,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     ...(plan.component ? { component: plan.component } : {}),
     ...(plan.session ? { experiment: plan.session.summary() } : {}),
     inputMode: plan.inputMode ?? 'snapshot',
+    pairOrder,
     ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed' as const, installDir: plan.skillInstallDir } } : {}),
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),

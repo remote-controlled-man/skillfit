@@ -84,6 +84,8 @@ export interface OverallSummary {
 
 export interface RunManifest {
   schemaVersion: 4;
+  /** Absent in older records; retain their original order interpretation. */
+  pairOrder?: import('./types.js').PairOrder;
   component?: ComponentMetadata;
   experiment?: ExperimentSummary;
   /** Absent in earlier v4 manifests; those used inline snapshots. */

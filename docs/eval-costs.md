@@ -78,9 +78,16 @@ is `n/a`; a zero baseline or incomplete coverage also prevents a percentage
 comparison. A partial total divided by a known positive success count remains a
 lower bound.
 
-These are observed costs on the declared tasks, without a cost confidence
+These manifest summaries are observed costs on the declared tasks, without a cost confidence
 interval or significance verdict. They are not a billing estimate. Input,
 cache-read input, output and elapsed time remain separate; there is no blended
 price or guessed dollar amount. All quality verdicts, pair exclusions, McNemar
 tests and paired-bootstrap confidence intervals remain governed by the
 [metrics protocol](metrics.md).
+
+An explicitly predeclared version-2 `efficiency` component policy adds a separate
+task-block interval for uncached input per success in `costs.efficiency`. Its
+[fixed protocol](metrics.md#explicit-efficiency-acceptance-policy-version-2-unreleased)
+and coverage gates do not change manifest accounting or the quality verdict.
+It can support scoped savings with no observed correctness regression, not
+equivalence, dollar savings or a general latency effect.

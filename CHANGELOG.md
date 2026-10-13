@@ -2,6 +2,10 @@
 
 ## Unreleased — Agent evaluation component
 
+- Add explicit policy version 2 (`objective: "efficiency"`): whole-task, fixed-seed cost bootstrap, broad per-task savings and all usage-partition caps, retaining every correctness/evidence gate. Version-1 normalization/hashes and positive-quality requirements stay compatible; a quality tie is never relabeled as a quality improvement, and no upgrade is automatic.
+- JSON requests can opt into `pairOrder: "balanced"`; first arms alternate across tasks and trials while pairs remain adjacent. Preview/native plans pin the strategy, manifests record it, and offline audit checks actual ledger order. The baseline-first default and statistical verdict formulas remain compatible.
+- Add four historical minipass development tasks and eight independent p-map/quick-lru validation tasks, with pinned source, dependency-free offline execution, public outcome checks and executable regression replay. Offline gates establish benchmark integrity, not model efficacy.
+
 - Accept a strict version 1 request with `eval --request`, return a JSON preview,
   and require `--plan-sha` before real calls. Freeze the request and inline policy
   with the native session while reusing installed old/new Skill evaluation.
