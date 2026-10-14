@@ -3,8 +3,9 @@
 Use the existing `eval` engine through a versioned JSON request to compare a
 candidate Skill with its previous complete version. The component returns quality
 changes, observed regressions, spending coverage and a separate adoption decision.
-It never installs, publishes or upgrades a Skill. These interfaces are unreleased;
-build the current checkout rather than assuming npm 0.8.0 includes them.
+It never installs, publishes or upgrades a Skill. These interfaces are prepared
+for [0.9.0](releases/0.9.0.md), which is not yet published; build the current
+checkout rather than assuming npm 0.8.0 includes them.
 
 The [retained development stops](../evidence/2026-10-13-debugging-development-stops.md)
 show reproducible failures, timing diagnostics and partial-cost coverage. They
@@ -43,7 +44,18 @@ retains one interrupted recovery invocation and 79 uninvoked entries, plus the
 separate readiness check. Cumulative spending reaches 174 calls. Its offline
 replay keeps partial native costs and the unattested local readiness supplement
 separate; unfinished work receives no grade and remains ineligible. The later
-development proposal is unexecuted, with no automatic expansion or promotion.
+development proposal was unexecuted at that publication, with no automatic
+expansion or promotion.
+
+The [subsequent four-call reading pilot and cost review](../evidence/2026-10-14-debugging-reading-pilot-and-cost-review.md)
+retains four passing deliveries but rejects the more expensive reading draft;
+cumulative spending reaches 178 calls. Its portable offline archive also
+reproduces the corrected diff counts, response costs and separate cohort
+summaries. A narrowed candidate remains unvalidated. The merged native diff
+helper is a common environment repair; delivery and offline tests do not prove
+actual Agent use or net savings. The [ordered delivery plan](plans/2026-10-14-evidence-and-release-sequence.md)
+requires a fresh budget before live experimentation and leaves adoption gates
+unchanged.
 
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.

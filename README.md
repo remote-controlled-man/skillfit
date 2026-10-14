@@ -124,7 +124,7 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 New installed evaluations provide the same native untracked-file diff helper in both arms. Use `node _skillfit/native-diff.cjs <file>` to display a patch without output filtering. The plan and evidence pin the helper version and content; a modified helper stops further calls. This corrects the common evaluation environment, not the Skill. Old runs keep their original environment, and delivery does not prove the agent used the helper.
 
-Use a version 1 JSON request to call the existing Skill revision engine from an Agent. A read-only preview pins inputs and the policy; execution requires its plan hash. JSON results retain improvements, regressions, all-invocation costs and evidence coverage. A separate policy returns `accept`, `reject` or `inconclusive`; insufficient evidence cannot authorize adoption, and the component never upgrades a Skill. This interface is unreleased; build the checkout. See [the input/output and policy contract](docs/eval-component.md).
+Use a version 1 JSON request to call the existing Skill revision engine from an Agent. A read-only preview pins inputs and the policy; execution requires its plan hash. JSON results retain improvements, regressions, all-invocation costs and evidence coverage. A separate policy returns `accept`, `reject` or `inconclusive`; insufficient evidence cannot authorize adoption, and the component never upgrades a Skill. This interface is prepared for [0.9.0](docs/releases/0.9.0.md), which is not yet published; build the checkout. See [the input/output and policy contract](docs/eval-component.md).
 
 For new cost comparisons, set `pairOrder: "balanced"` in the request to alternate which version runs first. The plan freezes the order and offline assessment verifies the invocation ledger; paired statistical formulas remain unchanged.
 
@@ -181,6 +181,8 @@ The [prospective followup tasks](benches/contrib/oss-skill-followup/README.md) p
 The [stopped followup record](evidence/2026-10-14-debugging-followup-routing-stop.md) retains 46 exact offline regrades, a 47th-call CLI routing failure and 33 uninvoked entries. Timing and power are normal, but the failed token cost remains unknown; no completed prefix authorizes adoption. Individual cost increases and all 172 cumulative executor calls remain visible.
 
 The [subsequent spending stop](evidence/2026-10-14-debugging-spending-stop.md) retains a separate readiness check and one user-interrupted recovery invocation, bringing actual cumulative spending to 174 calls. The remaining 79 entries are uninvoked. Its offline archive reproduces partial-cost lower bounds and keeps the unattested local readiness counter separate; no new quality gain, eligibility or automatic upgrade is claimed.
+
+The [four-call reading pilot and cost review](evidence/2026-10-14-debugging-reading-pilot-and-cost-review.md) brings cumulative spending to 178 calls. All four deliveries pass, but the reading draft increases uncached input 34.35%, output 10.16% and time 13.60%, so it is rejected. A post-hoc review corrects 50 literal-empty diffs to 19 missing patches and 31 valid check-only results; the merged common diff helper has offline verification, while actual Agent use and net savings remain untested. A narrowed draft remains unvalidated. The [ordered delivery plan](docs/plans/2026-10-14-evidence-and-release-sequence.md) puts evidence and release preparation before any newly authorized experiment.
 
 ## Selectable Codex setup
 
