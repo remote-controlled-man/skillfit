@@ -75,3 +75,9 @@ original policy, input hashes, declaration and ineligible decision remain
 unchanged. A working CLI connection must be verified before a later batch;
 any next execution needs a separate prospective bound and declaration rather
 than silently extending this closed cohort or its cumulative ceiling.
+
+The [separate recovery declaration](2026-10-14-skill-followup-restart.md)
+prospectively permits one fresh fixed execution cohort after a successful
+one-call readiness check. It preserves this closed record and its original
+ceiling; the new cumulative bound, unchanged inputs and disclosure requirements
+are stated separately before further model calls.
