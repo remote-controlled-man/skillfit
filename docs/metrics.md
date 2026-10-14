@@ -60,6 +60,15 @@ gates), and the LLM-judge literature cited in §5.
 
 ## Unit of analysis
 
+Environment correction (2026-10-14): new paired installed runs deliver the same
+versioned native untracked-file diff helper and usage guidance to both arms.
+Plans, source snapshots and delivered copies bind its content; mutation stops
+further calls while retaining spending. This is common environment tooling,
+not a Skill treatment or an efficacy claim. Its use is not attested by delivery.
+Older runs retain their original environment and cannot be pooled into a new
+validation cohort. All costs, formulas, coverage requirements and verdict gates
+remain unchanged.
+
 Additive pair ordering 2026-10-13: versioned JSON requests can declare
 `pairOrder: "balanced"`. The first arm alternates by task position and trial
 number, keeping both arms adjacent and recording the strategy in the native plan

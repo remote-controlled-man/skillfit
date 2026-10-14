@@ -19,6 +19,7 @@ import {
 } from './report.js';
 import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
 import { listFilesRecursive } from './hash.js';
+import { assertNativeDiffFixtures, assertNativeDiffWorkspace, installNativeDiffTool, nativeDiffDescriptor, NATIVE_DIFF_GUIDANCE, snapshotNativeDiffTool } from './native-diff.js';
 import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, PairOrder, TokenUsage, UsageEvidence } from './types.js';
 import { pairConditions } from './types.js';
 import { CONDITIONS } from './types.js';
@@ -235,6 +236,7 @@ export async function runTrial(
     const destination = installedSkillDestination(runDir, plan.skillInstallDir, target.name);
     if (existsSync(destination)) throw new Error('Fixture already contains the evaluated Skill: ' + destination);
     if (condition === 'treatment' || plan.baselineTarget) installSkillResources(target, runDir, plan.skillInstallDir);
+    installNativeDiffTool(runDir);
   }
   const gitInitialized = await gitInit(runDir);
 
@@ -247,7 +249,7 @@ export async function runTrial(
     // the project even when the final answer is graded as text. Skill-only output benches retain the
     // stricter prompt isolation used by the original harness.
     { workspace: task.verifierKind === 'command' || target.kind !== 'skill', inputMode },
-  );
+  ) + (plan.skillInstallDir ? '\n' + NATIVE_DIFF_GUIDANCE + '\n' : '');
   writeFileSync(join(runDir, '_prompt.txt'), prompt, 'utf8');
 
   const clock = plan.clock ?? executionClock;
@@ -276,6 +278,7 @@ export async function runTrial(
     executionTiming = result.executionTiming ?? null;
     usageEvidence = result.usageEvidence;
     error = result.guardError ?? null;
+    if (plan.skillInstallDir && !error) assertNativeDiffWorkspace(runDir);
   } catch (executorError) {
     error = (executorError as Error).message;
     if (executorError instanceof ExecutorFailure) {
@@ -704,6 +707,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
       throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
     }
     assertInstalledSkillFixtures(plan.bench, plan.target, plan.skillInstallDir, plan.skillSearchDirs);
+    assertNativeDiffFixtures(plan.bench);
   }
   if (!RUN_GROUP_PATTERN.test(plan.runGroup)) {
     throw new Error(
@@ -719,6 +723,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     throw new Error(`Run group directory already exists: ${groupDir}`);
   }
   mkdirSync(groupDir, { recursive: true });
+  if (plan.skillInstallDir) snapshotNativeDiffTool(groupDir);
 
   const taskSummaries: TaskSummary[] = [];
   const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
@@ -763,6 +768,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     inputMode: plan.inputMode ?? 'snapshot',
     pairOrder,
     ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed' as const, installDir: plan.skillInstallDir } } : {}),
+    ...(plan.skillInstallDir ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
     target: {

@@ -78,6 +78,16 @@ pass. No sandbox, network isolation or toolchain-installation guarantee is made.
 
 ## Bench selection before installation
 
+New paired installed runs include the identical native diff helper at
+`_skillfit/native-diff.cjs` and common usage guidance in both conditions. Use
+`node _skillfit/native-diff.cjs <file>` for an untracked-file patch. It runs Git
+directly without an output filter; a displayed difference may return exit 1.
+Its version/content are frozen in the plan and manifest, with sealed source
+`_native-diff.cjs`. Modifications stop further calls. This corrects the shared
+environment without changing global RTK, PATH or shell configuration. Delivery
+does not attest usage. Do not pool old-environment results into a new validation
+cohort; all invocation costs remain included.
+
 Use an unrelated real failure with an independent verifier and reference solution.
 Run the offline NOP/oracle gates and baseline difficulty calibration before a
 predeclared paired study. A saturated baseline is regression evidence, with no

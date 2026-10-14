@@ -35,6 +35,7 @@ export async function reportEvalComponent(path: string, options: { policyPath?: 
     environment: nativePlan ? { nodeVersion: nativePlan.nodeVersion, agent: nativePlan.agent,
       pairOrder: record(nativePlan.details, 'native plan details').pairOrder ?? null,
       executorTimeoutSeconds: record(nativePlan.details, 'native plan details').executorTimeoutSeconds ?? null,
+      nativeDiffTool: record(nativePlan.details, 'native plan details').nativeDiffTool ?? null,
       cliVersion: nativePlan.cliVersion, configuredSettings: nativePlan.configuredSettings,
       servedModel: nativePlan.servedModel, injectedExecutor: nativePlan.injectedExecutor, warnings: nativePlan.warnings } : null,
     evidence: { ...result.evidence, runDir, planPath: join(runDir, '_plan.json'),

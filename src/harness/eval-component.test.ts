@@ -12,6 +12,7 @@ import { parseAcceptancePolicy, parseEvalRequest, policyHash } from './eval-cont
 import { hashFileSet, listFilesRecursive, sha256File } from './hash.js';
 import { summarizeCosts, type CostObservation } from './costs.js';
 import { ExecutorFailure, type Executor } from './types.js';
+import { nativeDiffDescriptor, NATIVE_DIFF_PATH } from './native-diff.js';
 
 const CLI = fileURLToPath(new URL('../cli.js', import.meta.url));
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -48,6 +49,49 @@ async function run(t: TestContext) {
   const result = await runEvalComponent(f.requestPath, { ...f.options, dryRun: false, expectedPlanSha256: preview.plan.sha256 });
   return { ...f, preview, result };
 }
+
+test('installed component delivers and freezes a working diff tool identically in both arms', async t => {
+  const f = setup(t), prompts: string[] = [];
+  const executor: Executor = { ...f.executor, run: async (prompt, workdir) => {
+    prompts.push(prompt); assert.match(prompt, /node _skillfit\/native-diff.cjs/);
+    writeFileSync(join(workdir, 'new-regression.mjs'), 'export const retained = true;\n');
+    const diff = spawnSync(process.execPath, [join(workdir, NATIVE_DIFF_PATH), 'new-regression.mjs'], { cwd: workdir, encoding: 'utf8' });
+    assert.equal(diff.status, 1); assert.match(diff.stdout, /\+export const retained/);
+    return f.executor.run(prompt, workdir);
+  } };
+  const options = { ...f.options, executor }, preview = await runEvalComponent(f.requestPath, { ...options, dryRun: true });
+  assert.ok('plan' in preview); assert.deepEqual(preview.plan.evaluation.nativeDiffTool, nativeDiffDescriptor());
+  assert.equal(existsSync(f.runDir), false);
+  const result = await runEvalComponent(f.requestPath, { ...options, dryRun: false, expectedPlanSha256: preview.plan.sha256 });
+  assert.equal(result.status, 'completed'); assert.ok('environment' in result); assert.equal(result.evidence.verified, true);
+  assert.deepEqual(prompts.slice(0, 2), [prompts[0], prompts[0]]);
+  assert.deepEqual(result.environment?.nativeDiffTool, nativeDiffDescriptor());
+  const replay = await reportEvalComponent(f.runDir, { replay: true });
+  assert.ok('environment' in replay);
+  assert.equal(replay.evidence.verified, true); assert.deepEqual(replay.costs, result.costs);
+  assert.deepEqual(replay.environment?.nativeDiffTool, nativeDiffDescriptor());
+});
+
+test('helper tampering stops further calls and retains invocation spending', async t => {
+  const f = setup(t); let started = 0;
+  const executor: Executor = { ...f.executor, run: async (_prompt, workdir) => {
+    started++; writeFileSync(join(workdir, NATIVE_DIFF_PATH), 'tampered');
+    return { output: 'done', tokens: { input: 100, cachedInput: 50, output: 4 } };
+  } };
+  const options = { ...f.options, executor }, preview = await runEvalComponent(f.requestPath, { ...options, dryRun: true });
+  assert.ok('plan' in preview);
+  const result = await runEvalComponent(f.requestPath, { ...options, dryRun: false, expectedPlanSha256: preview.plan.sha256 });
+  assert.equal(started, 1); assert.equal(result.status, 'stopped');
+  assert.equal(result.acceptance.eligibleForUpgrade, false);
+  const receipt = JSON.parse(readFileSync(join(f.runDir, 'fix/baseline/trial-1/_result.json'), 'utf8'));
+  assert.deepEqual(receipt.tokens, { input: 100, cachedInput: 50, output: 4 }); assert.match(receipt.error, /native diff tool changed/);
+});
+
+test('reserved helper fixture collision is rejected before plan writes or calls', async t => {
+  const f = setup(t); mkdirSync(join(f.root, 'bench/fixture/_skillfit'));
+  await assert.rejects(runEvalComponent(f.requestPath, { ...f.options, dryRun: true }), /reserved evaluation tool/);
+  assert.equal(f.calls(), 0); assert.equal(existsSync(f.runDir), false);
+});
 
 test('component request resolves relative paths, rejects unknown/weak settings and plans without writes', async t => {
   const f = setup(t);
