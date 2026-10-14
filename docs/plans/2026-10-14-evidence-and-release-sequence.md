@@ -6,9 +6,9 @@ development pilot is exhausted. The acceptance policy stays unchanged.
 
 | Order / window | Work | Completion evidence | Next gate |
 | --- | --- | --- | --- |
-| 1 — October 14–15, current delivery | Publish the rejected reading pilot, RTK count correction and cost review as a new append-only report/archive | Fresh extraction regrades four deliveries and checks numeric arithmetic; older published files remain unchanged | Finish before release preparation |
-| 2 — Immediately after item 1, same delivery | Prepare the next source release, package contents and isolated CLI smoke; mirror documentation | Full offline test suite and unpacked package smoke pass; package hash and release checklist retained | Actual npm publication is a separate external release action |
-| 3 — After release preparation | Prepare one fixed, minimal development design to measure actual use of the common native diff helper and its complete added cost | Identical environment in both arms, pinned inputs/tool hashes, full cost coverage and explicit stop rules; no automatic expansion | A fresh user-approved budget is required before any live call |
+| 1 — Completed October 14 | Publish the rejected reading pilot, RTK count correction and cost review as a new append-only report/archive | Fresh extraction regrades four deliveries and checks numeric arithmetic; older published files remain unchanged | Finish before release preparation |
+| 2 — Completed October 15 | Restore npm authentication, publish the reviewed 0.9.0 package, smoke an isolated registry install and mirror documentation | 513 offline tests, exact package integrity, 2,330 installed files and registry-installed CLI pass; [public receipt](../releases/0.9.0-verification.json) retained | New model-call budget remains zero |
+| 3 — After release | Prepare one fixed, minimal development design to measure actual use of the common native diff helper and its complete added cost | Identical environment in both arms, pinned inputs/tool hashes, full cost coverage and explicit stop rules; no automatic expansion | A fresh user-approved budget is required before any live call |
 | 4 — Only after a useful mechanism survives item 3 | Declare a new independent Skill revision validation, using tasks not used for candidate selection | Correctness regressions, failures and all invocation costs retained; frozen conservative efficiency criterion met | Insufficient evidence cannot authorize adoption; no automatic upgrade |
 
 Windows are an order of work, not a promise of future unattended execution.

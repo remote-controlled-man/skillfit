@@ -3,9 +3,9 @@
 Use the existing `eval` engine through a versioned JSON request to compare a
 candidate Skill with its previous complete version. The component returns quality
 changes, observed regressions, spending coverage and a separate adoption decision.
-It never installs, publishes or upgrades a Skill. These interfaces are prepared
-for [0.9.0](releases/0.9.0.md), which is not yet published; build the current
-checkout rather than assuming npm 0.8.0 includes them.
+It never installs, publishes or upgrades a Skill. These interfaces are included
+in [0.9.0](releases/0.9.0.md). Use npm 0.9.0 or newer, or build the current
+checkout; npm 0.8.0 does not include them.
 
 The [retained development stops](../evidence/2026-10-13-debugging-development-stops.md)
 show reproducible failures, timing diagnostics and partial-cost coverage. They

@@ -1,11 +1,12 @@
 # Changelog
 
-## Prepared 0.9.0 — not yet published
+## [0.9.0] — 2026-10-15
 
-- Prepare the Agent-callable evaluation component, installed old/new Skill comparison,
-  explicit efficiency policy, bounded execution and offline receipt replay for the
-  next npm release. The currently published npm version remains 0.8.0; see the
-  [release checklist](docs/releases/0.9.0.md). No automatic Skill upgrade is included.
+- Release the Agent-callable evaluation component, installed old/new Skill comparison,
+  explicit efficiency policy, bounded execution and offline receipt replay as
+  `skillfit@0.9.0`; see the [release guide](docs/releases/0.9.0.md).
+  The [registry installation receipt](docs/releases/0.9.0-verification.json)
+  pins the published archive. No automatic Skill upgrade is included.
 - Supply identical pinned native untracked-file diff tools in new paired installed
   evaluations. Preserve output, native exit status and errors; retain old evidence
   compatibility. Offline delivery tests do not establish live adoption or net savings.
@@ -16,7 +17,7 @@
   old evidence or adoption gates. The narrowed draft remains unvalidated.
 - Align the package and lockfile root version at 0.9.0 without changing dependencies.
 
-## Unreleased — Agent evaluation component
+## 0.9.0 details — Agent evaluation component
 
 - Retain the user-requested recovery spending stop with one ungraded invocation, 79 uninvoked entries and exact offline receipt/cost replay. Account for all 174 cumulative calls, keep partial and unattested readiness counters separate, and leave the subsequent development proposal unexecuted without any upgrade claim.
 - Publish compressed, dependency-free replay packages for stopped and completed debugging development cohorts. Preserve v3 rejection, v4's concrete repair, all increased costs, partial-failure supplements and unchanged earlier evidence; no stable improvement or automatic upgrade is claimed.
@@ -37,7 +38,7 @@
   `--replay` verifies cloned deliveries offline. Retain stopped-run partial spending
   and unknown usage when no final manifest exists. Statistical verdicts are unchanged.
 
-## Unreleased — Skill revision evaluation and reproducible evidence
+## 0.9.0 details — Skill revision evaluation and reproducible evidence
 
 - `eval --mode installed --baseline-skill <previous>` compares two complete versions of
   the same Skill with identical task prompts. Plans, manifests and receipts pin both
@@ -56,7 +57,7 @@
   [script navigation](scripts/README.md). This work does not implement automatic
   Skill evolution or an adoption gate; statistical verdict semantics are unchanged.
 
-## Unreleased — Streamable HTTP MCP preflight
+## 0.9.0 details — Streamable HTTP MCP preflight
 
 - `mcp check` accepts transport `http` for a Streamable HTTP endpoint. It still does not call a tool.
   Cursor, Gemini CLI, and OpenCode adapters remain open until their official paths are verified.

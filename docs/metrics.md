@@ -382,7 +382,13 @@ Only a paired task experiment can support a claim that the MCP setup improves ou
 No cross-model leaderboards, no hosted dashboards, no trajectory-level scoring. skillfit answers one
 question per user: *is this configuration worth enabling for my agent on my tasks?*
 
-## Explicit efficiency acceptance (policy version 2, unreleased)
+Release availability reviewed 2026-10-14: policy version 2 ships in 0.9.0.
+This availability update changes no formula, evidence gate or acceptance threshold.
+The legacy section anchor remains available for existing links.
+
+<a id="explicit-efficiency-acceptance-policy-version-2-unreleased"></a>
+
+## Explicit efficiency acceptance (policy version 2, since 0.9.0)
 
 The default version-1 quality policy and all quality verdicts above remain unchanged.
 An explicitly predeclared version-2 policy with `objective: "efficiency"` can instead
