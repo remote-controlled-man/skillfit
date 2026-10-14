@@ -1,5 +1,21 @@
 # Changelog
 
+## Prepared 0.9.0 — not yet published
+
+- Prepare the Agent-callable evaluation component, installed old/new Skill comparison,
+  explicit efficiency policy, bounded execution and offline receipt replay for the
+  next npm release. The currently published npm version remains 0.8.0; see the
+  [release checklist](docs/releases/0.9.0.md). No automatic Skill upgrade is included.
+- Supply identical pinned native untracked-file diff tools in new paired installed
+  evaluations. Preserve output, native exit status and errors; retain old evidence
+  compatibility. Offline delivery tests do not establish live adoption or net savings.
+- Publish the four-call reading development rejection and numeric cost review:
+  uncached input +34.35%, no observed check regression, 178 cumulative executor
+  calls and seven earlier missing public final usages. Correct the broad 50-empty-diff
+  scan to 19 missing patches plus 31 legitimate check-only traces, without changing
+  old evidence or adoption gates. The narrowed draft remains unvalidated.
+- Align the package and lockfile root version at 0.9.0 without changing dependencies.
+
 ## Unreleased — Agent evaluation component
 
 - Retain the user-requested recovery spending stop with one ungraded invocation, 79 uninvoked entries and exact offline receipt/cost replay. Account for all 174 cumulative calls, keep partial and unattested readiness counters separate, and leave the subsequent development proposal unexecuted without any upgrade claim.

@@ -121,7 +121,7 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 新的安装式评估会给两组提供相同的原生未跟踪文件 diff 工具。使用 `node _skillfit/native-diff.cjs <file>` 可显示未经输出过滤的补丁。计划和证据固定工具版本及内容；工具被修改会停止后续调用。这修正的是共同评估环境，不是 Skill。旧运行保留原环境，提供工具也不代表 Agent 实际使用了它。
 
-用版本 1 JSON 请求，让 Agent 调用现有 Skill 修订评估引擎。只读预览固定输入和策略，执行时必须提供预览的计划指纹。JSON 结果保留提升、退步、全部调用成本和证据覆盖情况。独立策略返回 `accept`、`reject` 或 `inconclusive`；证据不足不能授权采用，组件也不会升级 Skill。这项接口尚未发布，需要构建仓库版本。详见[输入输出与验收策略契约](docs/eval-component.md)。
+用版本 1 JSON 请求，让 Agent 调用现有 Skill 修订评估引擎。只读预览固定输入和策略，执行时必须提供预览的计划指纹。JSON 结果保留提升、退步、全部调用成本和证据覆盖情况。独立策略返回 `accept`、`reject` 或 `inconclusive`；证据不足不能授权采用，组件也不会升级 Skill。这项接口已为 [0.9.0](docs/releases/0.9.0.md) 做发布准备，但尚未发布，需要构建仓库版本。详见[输入输出与验收策略契约](docs/eval-component.md)。
 
 新的成本对比可在请求中设置 `pairOrder: "balanced"`，交替安排两版先运行。计划固定顺序，离线评估核对实际调用记录；配对统计公式保持不变。
 
@@ -178,6 +178,8 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 [后续批次中止记录](evidence/2026-10-14-debugging-followup-routing-stop.md)保留了 46 份精确离线复算、第 47 次调用的 CLI 路由失败及 33 份未调用记录。计时和供电正常，但失败调用的 token 成本仍然未知；已完成的前缀不能授权升级。各任务的成本增加和累计 172 次执行调用均保留。
 
 [之后的消耗控制中止记录](evidence/2026-10-14-debugging-spending-stop.md)保留了单独的恢复检查及一次按用户要求中止的恢复批次调用，实际累计消耗为 174 次，其余 79 份记录未调用。离线归档复算部分成本下限，并将未独立核实的本地恢复检查计数单独保留；不声称新增正确性提升、升级资格或自动升级。
+
+[四次调用的读取实验及成本复查](evidence/2026-10-14-debugging-reading-pilot-and-cost-review.md)将累计消耗计为 178 次。四份交付均通过，但读取草案的未缓存输入增加 34.35%、输出增加 10.16%、耗时增加 13.60%，因此被拒绝。事后复查将 50 条字面空 diff 更正为 19 条缺失补丁和 31 条正常的仅检查结果；已合并的共同 diff 工具通过了离线验证，真实 Agent 使用情况和净节省尚未实测。收窄的草案仍未验证。[顺序交付计划](docs/plans/2026-10-14-evidence-and-release-sequence.md)将证据整理和发布准备排在另行授权的新实验之前。
 
 ## 可选择的 Codex 配置
 
