@@ -21,3 +21,9 @@ Stop on the first executor, configuration or timing error; retain functional fai
 Disclose the sequence of all studies and the routing-triggered restart when interpreting this cohort. A later favorable result does not erase earlier inconclusive results or individual task cost increases, and repeated execution does not create another independent task set. Scope any conclusion to the unchanged task mix and recorded environment, rather than claiming stable benefit across every debugging workload or model.
 
 Replay every completed grade, receipt audit, separate cost population and confidence interval offline without model calls. Count all 173 previous calls plus every new invocation in cumulative spending; keep unknown usage unknown and qualified local supplements separate. Provider billing and complete authoring/orchestration cost remain unmeasured. Preserve every published evidence file. Product checks, mirrored user documentation and verified main-branch integration remain required by the original goal; this launch alone does not complete it.
+
+## Observed user-requested spending stop
+
+The user requests a spending review after the first invocation starts. The owned CLI is explicitly interrupted, the harness seals an ungraded partial invocation and 79 uninvoked entries, and temporary sleep assertions are released. Actual cumulative spending is 174 calls. This closes the cohort without resuming, replacing or adding samples; its prospective ceiling remains a historical declaration, not authority to ignore the later stop.
+
+The [dated spending-stop record](../../evidence/2026-10-14-debugging-spending-stop.md) reproduces native partial costs and the separate unattested readiness supplement offline. A local reading-scope draft and four-call development preview remain unexecuted pending the user's spending choice. They make no stable improvement or adoption claim and do not silently extend this declaration.

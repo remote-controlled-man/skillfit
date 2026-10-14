@@ -38,6 +38,13 @@ upgrade when an executor fails, three tasks remain uninvoked and token usage is
 unknown. Its 46 completed deliveries replay offline; failed work remains ungraded,
 individual cost increases remain visible, and the frozen policy stays unchanged.
 
+The [subsequent user spending stop](../evidence/2026-10-14-debugging-spending-stop.md)
+retains one interrupted recovery invocation and 79 uninvoked entries, plus the
+separate readiness check. Cumulative spending reaches 174 calls. Its offline
+replay keeps partial native costs and the unattested local readiness supplement
+separate; unfinished work receives no grade and remains ineligible. The later
+development proposal is unexecuted, with no automatic expansion or promotion.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:

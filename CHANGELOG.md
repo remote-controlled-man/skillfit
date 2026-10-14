@@ -2,6 +2,7 @@
 
 ## Unreleased — Agent evaluation component
 
+- Retain the user-requested recovery spending stop with one ungraded invocation, 79 uninvoked entries and exact offline receipt/cost replay. Account for all 174 cumulative calls, keep partial and unattested readiness counters separate, and leave the subsequent development proposal unexecuted without any upgrade claim.
 - Publish compressed, dependency-free replay packages for stopped and completed debugging development cohorts. Preserve v3 rejection, v4's concrete repair, all increased costs, partial-failure supplements and unchanged earlier evidence; no stable improvement or automatic upgrade is claimed.
 - Preserve known v4 regression controls and the first independent validation interruption in a separate offline replay package: LRU point savings, normalize-url cost rejection and diagnosed clamshell sleep retain all costs without grading incomplete work or claiming stable improvement.
 - Recover best-effort partial usage for failed Codex JSON calls using a matrix capability, exact thread/workspace/time binding and cumulative numeric counters. Preserve counter provenance without private bodies; errors remain excluded and partial coverage cannot authorize adoption. Existing failure receipts stay unchanged.
