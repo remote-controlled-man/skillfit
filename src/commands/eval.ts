@@ -9,6 +9,7 @@ import { ExperimentSession, validateCallBudget, type SessionOptions } from '../h
 import { ApiExecutor } from '../harness/executors/api.js';
 import { CliExecutor, DEFAULT_CLI_TIMEOUT_MS } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
+import { assertNativeDiffFixtures, nativeDiffDescriptor, type NativeDiffDescriptor } from '../harness/native-diff.js';
 import { assertInstalledSkillFixtures, assertSkillRevisionTargets, collectInstalledSkillTarget } from '../harness/installed-skill.js';
 import { assertInputModeSupported } from '../harness/prompt.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
@@ -38,6 +39,7 @@ export interface EvalPreview {
   outputDir: string;
   pairOrder?: PairOrder;
   executorTimeoutSeconds?: number;
+  nativeDiffTool?: NativeDiffDescriptor;
 }
 
 export interface EvalOptions {
@@ -416,6 +418,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     skillInstallDir = options.skillInstallDir ?? skillSearchDirs[0];
     if (!skillInstallDir) throw new Error('installed mode needs --agent with a matrix-defined project Skill directory.');
     assertInstalledSkillFixtures(bench, target, skillInstallDir, skillSearchDirs);
+    assertNativeDiffFixtures(bench);
   }
 
   if ((options.mode ?? 'inject') === 'trigger') {
@@ -482,6 +485,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },
     executor: executor?.describe() ?? null, judge: judge?.describe() ?? null, inputMode,
     installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, pairOrder,
+    ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
     ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), outputDir: join(runsRoot, runGroup),
   });
 
@@ -491,6 +495,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     log(`Pair order: ${pairOrder}; arms remain adjacent`);
     if (options.agent || options.executorTimeoutSeconds !== undefined) log(`Agent deadline: ${executorTimeoutSeconds}s per invocation in both arms`);
     if (skillInstallDir) {
+      log('Tool     : native untracked-file diff helper in both arms (version 1; environment correction)');
       log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);
       log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
     }
@@ -503,6 +508,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
   const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
     { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder,
+      ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
       ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), executor: executor.describe(), judge: judge?.describe() ?? null,
       ...(options.component ? { component: options.component } : {}),
       ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);

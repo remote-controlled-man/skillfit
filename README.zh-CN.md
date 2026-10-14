@@ -119,6 +119,8 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 ## Agent 评估组件
 
+新的安装式评估会给两组提供相同的原生未跟踪文件 diff 工具。使用 `node _skillfit/native-diff.cjs <file>` 可显示未经输出过滤的补丁。计划和证据固定工具版本及内容；工具被修改会停止后续调用。这修正的是共同评估环境，不是 Skill。旧运行保留原环境，提供工具也不代表 Agent 实际使用了它。
+
 用版本 1 JSON 请求，让 Agent 调用现有 Skill 修订评估引擎。只读预览固定输入和策略，执行时必须提供预览的计划指纹。JSON 结果保留提升、退步、全部调用成本和证据覆盖情况。独立策略返回 `accept`、`reject` 或 `inconclusive`；证据不足不能授权采用，组件也不会升级 Skill。这项接口尚未发布，需要构建仓库版本。详见[输入输出与验收策略契约](docs/eval-component.md)。
 
 新的成本对比可在请求中设置 `pairOrder: "balanced"`，交替安排两版先运行。计划固定顺序，离线评估核对实际调用记录；配对统计公式保持不变。

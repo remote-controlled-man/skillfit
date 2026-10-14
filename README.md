@@ -122,6 +122,8 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 ## Agent evaluation component
 
+New installed evaluations provide the same native untracked-file diff helper in both arms. Use `node _skillfit/native-diff.cjs <file>` to display a patch without output filtering. The plan and evidence pin the helper version and content; a modified helper stops further calls. This corrects the common evaluation environment, not the Skill. Old runs keep their original environment, and delivery does not prove the agent used the helper.
+
 Use a version 1 JSON request to call the existing Skill revision engine from an Agent. A read-only preview pins inputs and the policy; execution requires its plan hash. JSON results retain improvements, regressions, all-invocation costs and evidence coverage. A separate policy returns `accept`, `reject` or `inconclusive`; insufficient evidence cannot authorize adoption, and the component never upgrades a Skill. This interface is unreleased; build the checkout. See [the input/output and policy contract](docs/eval-component.md).
 
 For new cost comparisons, set `pairOrder: "balanced"` in the request to alternate which version runs first. The plan freezes the order and offline assessment verifies the invocation ledger; paired statistical formulas remain unchanged.

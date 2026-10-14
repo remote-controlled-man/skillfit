@@ -12,6 +12,7 @@ import { runVerifier } from './runner.js';
 import { verdictFromOutput } from './verifier-summary.js';
 import { parseEvalReport } from '../commands/eval-report.js';
 import { pairConditions, type PairOrder } from './types.js';
+import { NATIVE_DIFF_PATH, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
 
 function inside(root: string, path: string): boolean {
   const rel = relative(root, path);
@@ -111,6 +112,12 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
       }), 'Component request was not frozen by the native session.');
       audit.policyBound = true;
     }
+    if (details.nativeDiffTool !== undefined) {
+      const tool = record(details.nativeDiffTool, 'native diff tool');
+      assert.equal(tool.id, 'native-untracked-diff'); assert.equal(tool.version, 1); assert.equal(tool.path, NATIVE_DIFF_PATH);
+      assert.deepEqual(raw.nativeDiffTool, tool, 'Native diff tool differs from frozen plan.');
+      assert.equal(sha256File(member(root, NATIVE_DIFF_SNAPSHOT)), tool.sha256, 'Frozen native diff source changed.');
+    } else assert.equal(raw.nativeDiffTool, undefined, 'Unrecorded native diff environment.');
     const all = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] }, paired = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] };
     const bench = options.replay ? loadBench(options.benchDir ?? String(record(raw.bench, 'bench').dir)) : null;
     if (bench) assert.equal(bench.contentSha256, report.bench.sha256, 'Replay bench differs from the frozen task set.');
@@ -128,6 +135,9 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
           const r = receipt(readComponentJson(member(root, rel)).value);
           assert.equal(r.condition, arm); assert.equal(r.taskId, task.id); assert.equal(r.trial, trial);
           audit.receipts++; if (r.executorInvoked) invoked++;
+          if (details.nativeDiffTool !== undefined && r.executorInvoked) {
+            assert.equal(sha256File(member(root, `${task.id}/${arm}/trial-${trial}/${NATIVE_DIFF_PATH}`)), record(details.nativeDiffTool, 'native diff tool').sha256, 'Delivered native diff tool changed.');
+          }
           if (details.executorTimeoutSeconds !== undefined && r.executorInvoked && plan.injectedExecutor === false) {
             assert.ok(typeof details.executorTimeoutSeconds === 'number' && Number.isSafeInteger(details.executorTimeoutSeconds) && details.executorTimeoutSeconds >= 1 && details.executorTimeoutSeconds <= 3600);
             const actualTiming = record(record(r.timing, 'CLI timing').execution, 'CLI execution timing');

@@ -165,6 +165,19 @@ callers should retain unknown/new fields for forward-compatible reporting.
 | `evidence` | Native file/receipt integrity, policy binding, replay coverage and evidence locations; `pairs` retains each pair's outcomes, named-check changes and full cost observations |
 | `acceptance` | `decision`, `eligibleForUpgrade`, policy, reason codes and scope; `automaticUpgrade` is always false |
 
+New installed-eval previews include `evaluation.nativeDiffTool` (ID, version,
+workspace path and SHA-256). `environment.nativeDiffTool` reports the verified
+native plan's descriptor; older runs return null. Both arms receive the same
+`node _skillfit/native-diff.cjs <file>` helper and common usage guidance before
+the fixture Git commit. It displays untracked-file patches through native Git,
+avoiding filtered empty `git diff --no-index` output. A displayed patch may return
+exit 1; command errors retain stderr and their exit status. The helper source is
+sealed as `_native-diff.cjs`, guarded before/after calls and checked in native
+audits. Fixture collisions fail before execution; altered helpers stop subsequent
+calls and retain spending. This corrects the common environment for new runs,
+not a Skill or adoption policy. Delivery does not prove agent use; inspect the
+command trace. Old receipts remain unchanged and replayable.
+
 Planned responses carry no observed quality or spending. Stopped or unfinished
 runs without a manifest carry the available session and receipt-based spending, with missing invocation
 receipts counted as unknown usage rather than zero. They never imply a paired

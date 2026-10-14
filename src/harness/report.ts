@@ -83,6 +83,7 @@ export interface OverallSummary {
 }
 
 export interface RunManifest {
+  nativeDiffTool?: import('./native-diff.js').NativeDiffDescriptor;
   schemaVersion: 4;
   /** Absent in older records; retain their original order interpretation. */
   pairOrder?: import('./types.js').PairOrder;

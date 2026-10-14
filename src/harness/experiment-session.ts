@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { getAgent, skillUserDirSpecs, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
 import { hashFileSet, sha256File, sha256Text } from './hash.js';
+import { assertNativeDiffFile, assertNativeDiffWorkspace, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
 import type { Bench, EvaluationTarget, Executor } from './types.js';
 import { ExecutorFailure } from './types.js';
 
@@ -178,8 +179,10 @@ export class ExperimentSession {
   private stopReason: string | null = null;
   private finished = false;
   private readonly guardFiles: NonNullable<SessionOptions['guardFiles']>;
+  private readonly nativeDiffTool: boolean;
 
   constructor(options: SessionOptions) {
+    this.nativeDiffTool = options.details.nativeDiffTool !== undefined;
     this.guardFiles = (options.guardFiles ?? []).map(file => ({ ...file, path: resolve(file.path) }));
     for (const file of this.guardFiles) if (!lstatSync(file.path).isFile() || sha256File(file.path) !== file.sha256) {
       throw new Error(`Frozen ${file.label} file changed before planning.`);
@@ -266,6 +269,10 @@ export class ExperimentSession {
   check(): void {
     if (this.stopReason) throw new Error(this.stopReason);
     try {
+      if (this.nativeDiffTool) {
+        assertNativeDiffFile(join(this.groupDir, NATIVE_DIFF_SNAPSHOT));
+        for (const workdir of this.workspaces) if (existsSync(workdir)) assertNativeDiffWorkspace(workdir);
+      }
       for (const file of this.guardFiles) if (!lstatSync(file.path).isFile() || sha256File(file.path) !== file.sha256) {
         throw new Error(`Frozen ${file.label} file changed; no further calls.`);
       }
