@@ -59,3 +59,19 @@ and cumulative spending offline without model calls. Preserve all published
 evidence byte-for-byte. Finish source/package checks, mirrored documentation and
 verified main-branch integration only with honest, scoped efficacy conclusions.
 The original goal remains active until its full completion audit passes.
+
+## Observed routing interruption
+
+The cohort stops on invocation 47 with `workspace routing discovery failed`:
+46 complete deliveries form 23 passing pairs, one failed invocation is ungraded
+with unknown token usage, and 33 entries are never invoked. The 1200-second
+deadline does not fire; recorded clock, heartbeat and AC power remain normal.
+Temporary sleep assertions are released. Cumulative spending is 172 executor
+calls and five missing final usages. No attempt is replaced or appended.
+
+The [dated stopped record](../../evidence/2026-10-14-debugging-followup-routing-stop.md)
+retains exact offline reproduction and all individual cost increases. The
+original policy, input hashes, declaration and ineligible decision remain
+unchanged. A working CLI connection must be verified before a later batch;
+any next execution needs a separate prospective bound and declaration rather
+than silently extending this closed cohort or its cumulative ceiling.

@@ -173,6 +173,8 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 [前瞻性后续任务](benches/contrib/oss-skill-followup/README.md)固定了三个新仓库的八个不同缺陷，具备原始失败、完整维护者修复通过和受保护的回归证据。[单独声明的有界方案](docs/plans/2026-10-14-skill-followup.md)保持 v4 和至少 10% 的要求不变，将本轮上限设为 80 次调用、累计消耗上限设为 205 次，并且不合并以前的正确性结果。离线完整性检查证明任务有效，不能证明 Skill 提升。
 
+[后续批次中止记录](evidence/2026-10-14-debugging-followup-routing-stop.md)保留了 46 份精确离线复算、第 47 次调用的 CLI 路由失败及 33 份未调用记录。计时和供电正常，但失败调用的 token 成本仍然未知；已完成的前缀不能授权升级。各任务的成本增加和累计 172 次执行调用均保留。
+
 ## 可选择的 Codex 配置
 
 新用户克隆仓库后，可用 `--list` 查看 67 个可安装 Skills 的来源目录，再重复 `--skill` 只选择与自己任务相关的项目；另有 7 个已退役的本机 Skills 会列出原因。`--starter` 保留原来的 13 个供旧用户沿用，整套尚未验证；`--all` 选全部 67 个，不是推荐默认配置。目录验证的是来源和安装，不是效果：其中仅 8 个有有限的历史配对实验，没有任何一个已证明其当前锁定版本对当前 Codex 模型有效。配置命令从作者仓库的固定提交下载所选第三方 Skills，校验 SHA-256，并规划全局 `AGENTS.md` 受管规则块。两份自写 Skills 直接放在本仓库。详见[选择安装指南与证据摘要](docs/selectable-codex.md)。

@@ -32,6 +32,12 @@ and [request example](examples/eval-request.diagnosing-v4-followup-efficiency.js
 retain the candidate and policy rather than relaxing a completed cohort's gate.
 Task integrity, native eligibility and generalization remain separate claims.
 
+The [routing-interrupted followup](../evidence/2026-10-14-debugging-followup-routing-stop.md)
+demonstrates the incomplete-evidence gate: 23 passing pairs cannot authorize an
+upgrade when an executor fails, three tasks remain uninvoked and token usage is
+unknown. Its 46 completed deliveries replay offline; failed work remains ungraded,
+individual cost increases remain visible, and the frozen policy stays unchanged.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:
