@@ -1,11 +1,12 @@
 # Changelog
 
-## [0.9.0] — 2026-10-14
+## [0.9.0] — 2026-10-15
 
 - Release the Agent-callable evaluation component, installed old/new Skill comparison,
   explicit efficiency policy, bounded execution and offline receipt replay as
   `skillfit@0.9.0`; see the [release guide](docs/releases/0.9.0.md).
-  No automatic Skill upgrade is included.
+  The [registry installation receipt](docs/releases/0.9.0-verification.json)
+  pins the published archive. No automatic Skill upgrade is included.
 - Supply identical pinned native untracked-file diff tools in new paired installed
   evaluations. Preserve output, native exit status and errors; retain old evidence
   compatibility. Offline delivery tests do not establish live adoption or net savings.
