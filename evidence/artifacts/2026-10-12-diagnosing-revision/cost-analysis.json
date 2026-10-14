@@ -1,0 +1,502 @@
+{
+  "schemaVersion": 1,
+  "runGroup": "validation-20261012-rtk",
+  "experiment": {
+    "schemaVersion": 1,
+    "status": "stopped",
+    "plannedCalls": 30,
+    "maxCalls": 30,
+    "callsStarted": 30,
+    "callsFinished": 30,
+    "stopReason": "agent executor failed; inspect the per-trial error receipt. No further calls.",
+    "planSha256": "ef4f25c22d765edc8ac90df36bc1ef99dfebdf115a51d9763aa8b9a9976eb31f"
+  },
+  "taskCount": 3,
+  "gradedPairs": 14,
+  "declaredPairs": 15,
+  "method": "Paired costs on surviving graded pairs, task resampling unit, seed 20261012, 2000 resamples. Three related tasks give limited uncertainty coverage. No monetary or billing inference.",
+  "metrics": {
+    "input": {
+      "pairs": 14,
+      "totals": {
+        "baseline": 5257320,
+        "treatment": 3890644
+      },
+      "meanDelta": -97619.71428571429,
+      "percentDelta": -25.995678406488476,
+      "exploratoryTaskBootstrapCi": {
+        "point": -97619.71428571432,
+        "lo": -186034.2,
+        "hi": -37458,
+        "resamples": 2000
+      }
+    },
+    "output": {
+      "pairs": 14,
+      "totals": {
+        "baseline": 137810,
+        "treatment": 124487
+      },
+      "meanDelta": -951.6428571428571,
+      "percentDelta": -9.667658370219868,
+      "exploratoryTaskBootstrapCi": {
+        "point": -951.6428571428587,
+        "lo": -2269.8,
+        "hi": 506.75,
+        "resamples": 2000
+      }
+    },
+    "cachedInput": {
+      "pairs": 14,
+      "totals": {
+        "baseline": 4630144,
+        "treatment": 3318016
+      },
+      "meanDelta": -93723.42857142857,
+      "percentDelta": -28.338816244160007,
+      "exploratoryTaskBootstrapCi": {
+        "point": -93723.42857142855,
+        "lo": -169753.59999999998,
+        "hi": -50816,
+        "resamples": 2000
+      }
+    },
+    "uncachedInput": {
+      "pairs": 14,
+      "totals": {
+        "baseline": 627176,
+        "treatment": 572628
+      },
+      "meanDelta": -3896.285714285714,
+      "percentDelta": -8.697399135170988,
+      "exploratoryTaskBootstrapCi": {
+        "point": -3896.2857142857174,
+        "lo": -16280.599999999999,
+        "hi": 14862,
+        "resamples": 2000
+      }
+    },
+    "seconds": {
+      "pairs": 14,
+      "totals": {
+        "baseline": 5196.503999999999,
+        "treatment": 4654.0289999999995
+      },
+      "meanDelta": -38.74821428571425,
+      "percentDelta": -10.43922991303383,
+      "exploratoryTaskBootstrapCi": {
+        "point": -38.748214285714255,
+        "lo": -82.79919999999993,
+        "hi": 20.337250000000154,
+        "resamples": 2000
+      }
+    }
+  },
+  "observations": [
+    {
+      "task": "fetch-size",
+      "trial": 1,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 555015,
+        "output": 12547,
+        "cachedInput": 489344,
+        "uncachedInput": 65671,
+        "seconds": 439.022,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 257334,
+        "output": 7491,
+        "cachedInput": 205312,
+        "uncachedInput": 52022,
+        "seconds": 255.197,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-size",
+      "trial": 2,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 261534,
+        "output": 8057,
+        "cachedInput": 219264,
+        "uncachedInput": 42270,
+        "seconds": 274.703,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 263231,
+        "output": 6893,
+        "cachedInput": 236416,
+        "uncachedInput": 26815,
+        "seconds": 237.574,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-size",
+      "trial": 3,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 518066,
+        "output": 10213,
+        "cachedInput": 484096,
+        "uncachedInput": 33970,
+        "seconds": 364.957,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 218005,
+        "output": 7289,
+        "cachedInput": 192384,
+        "uncachedInput": 25621,
+        "seconds": 236.185,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-size",
+      "trial": 4,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 423912,
+        "output": 9062,
+        "cachedInput": 358016,
+        "uncachedInput": 65896,
+        "seconds": 322.036,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 239825,
+        "output": 8881,
+        "cachedInput": 204288,
+        "uncachedInput": 35537,
+        "seconds": 305.307,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-size",
+      "trial": 5,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 409139,
+        "output": 9656,
+        "cachedInput": 369024,
+        "uncachedInput": 40115,
+        "seconds": 311.936,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 259100,
+        "output": 7632,
+        "cachedInput": 232576,
+        "uncachedInput": 26524,
+        "seconds": 264.395,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-abort",
+      "trial": 1,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 335105,
+        "output": 8832,
+        "cachedInput": 289152,
+        "uncachedInput": 45953,
+        "seconds": 304.965,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 265672,
+        "output": 9336,
+        "cachedInput": 209408,
+        "uncachedInput": 56264,
+        "seconds": 300.598,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-abort",
+      "trial": 2,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 250908,
+        "output": 9372,
+        "cachedInput": 221440,
+        "uncachedInput": 29468,
+        "seconds": 310.214,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 197635,
+        "output": 8808,
+        "cachedInput": 165632,
+        "uncachedInput": 32003,
+        "seconds": 316.138,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-abort",
+      "trial": 3,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 247196,
+        "output": 9048,
+        "cachedInput": 204672,
+        "uncachedInput": 42524,
+        "seconds": 314.858,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 189203,
+        "output": 9352,
+        "cachedInput": 157952,
+        "uncachedInput": 31251,
+        "seconds": 323.739,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-abort",
+      "trial": 4,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 281777,
+        "output": 8816,
+        "cachedInput": 240640,
+        "uncachedInput": 41137,
+        "seconds": 354.214,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 216460,
+        "output": 6687,
+        "cachedInput": 192512,
+        "uncachedInput": 23948,
+        "seconds": 253.741,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-abort",
+      "trial": 5,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 349326,
+        "output": 10982,
+        "cachedInput": 295808,
+        "uncachedInput": 53518,
+        "seconds": 446.16,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 308669,
+        "output": 8866,
+        "cachedInput": 272128,
+        "uncachedInput": 36541,
+        "seconds": 326.367,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-lifecycle",
+      "trial": 1,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 426922,
+        "output": 8106,
+        "cachedInput": 389248,
+        "uncachedInput": 37674,
+        "seconds": 327.718,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 361038,
+        "output": 11364,
+        "cachedInput": 293248,
+        "uncachedInput": 67790,
+        "seconds": 438.314,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-lifecycle",
+      "trial": 2,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 416181,
+        "output": 11427,
+        "cachedInput": 373632,
+        "uncachedInput": 42549,
+        "seconds": 490.117,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 274557,
+        "output": 10696,
+        "cachedInput": 232064,
+        "uncachedInput": 42493,
+        "seconds": 438.351,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-lifecycle",
+      "trial": 3,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 355050,
+        "output": 12173,
+        "cachedInput": 312192,
+        "uncachedInput": 42858,
+        "seconds": 542.209,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": false,
+        "score": 0.8888888888888888,
+        "error": null,
+        "input": 424175,
+        "output": 9464,
+        "cachedInput": 382464,
+        "uncachedInput": 41711,
+        "seconds": 443.029,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-lifecycle",
+      "trial": 4,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 427189,
+        "output": 9519,
+        "cachedInput": 383616,
+        "uncachedInput": 43573,
+        "seconds": 393.395,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": false,
+        "score": 0.8888888888888888,
+        "error": null,
+        "input": 415740,
+        "output": 11728,
+        "cachedInput": 341632,
+        "uncachedInput": 74108,
+        "seconds": 515.094,
+        "readObserved": true
+      },
+      "graded": true
+    },
+    {
+      "task": "fetch-lifecycle",
+      "trial": 5,
+      "baseline": {
+        "passed": true,
+        "score": 1,
+        "error": null,
+        "input": 471355,
+        "output": 9064,
+        "cachedInput": 430848,
+        "uncachedInput": 40507,
+        "seconds": 390.834,
+        "readObserved": true
+      },
+      "treatment": {
+        "passed": false,
+        "score": null,
+        "error": "\"codex\" timed out after 600000ms",
+        "input": null,
+        "output": null,
+        "cachedInput": null,
+        "uncachedInput": null,
+        "seconds": 600.022,
+        "readObserved": null
+      },
+      "graded": false
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "agents.schema.json",
+    "title": "skillfit agent capability matrix",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["schemaVersion", "verifiedAt", "agents"],
+    "properties": {
+        "$schema": { "type": "string" },
+        "schemaVersion": { "const": 1 },
+        "verifiedAt": { "type": "string", "format": "date-time" },
+        "agents": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/agent" }
+        }
+    },
+    "$defs": {
+        "agent": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "displayName", "vendor", "detect", "rules", "skills", "mcp", "hooks", "subagents", "headless", "docs"],
+            "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "displayName": { "type": "string" },
+                "vendor": { "type": "string" },
+                "detect": { "$ref": "#/$defs/detect" },
+                "rules": { "$ref": "#/$defs/rules" },
+                "skills": { "$ref": "#/$defs/skills" },
+                "mcp": { "$ref": "#/$defs/mcp" },
+                "hooks": { "$ref": "#/$defs/hooks" },
+                "subagents": { "$ref": "#/$defs/dirs" },
+                "sessions": { "$ref": "#/$defs/sessions" },
+                "headless": { "$ref": "#/$defs/headless" },
+                "docs": { "type": "object", "additionalProperties": { "type": "string" } }
+            }
+        },
+        "detect": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["binaries", "userDirs", "userFiles"],
+            "properties": {
+                "binaries": { "type": "array", "items": { "type": "string" } },
+                "userDirs": { "type": "array", "items": { "type": "string" } },
+                "userFiles": { "type": "array", "items": { "type": "string" } }
+            }
+        },
+        "homeOverride": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["env", "relativePath"],
+            "properties": {
+                "env": { "type": "string" },
+                "relativePath": { "type": "string" },
+                "overrideRelativePath": { "type": "string" },
+                "fallback": { "type": "string" }
+            }
+        },
+        "bridge": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["note", "fileName", "importLine"],
+            "properties": {
+                "note": { "type": "string" },
+                "fileName": { "type": "string" },
+                "importLine": { "type": "string" }
+            }
+        },
+        "rules": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectFiles", "userFiles", "readsAgentsMd", "agentsMdBridge", "notes"],
+            "properties": {
+                "projectFiles": { "type": "array", "items": { "type": "string" } },
+                "userFiles": { "type": "array", "items": { "type": "string" } },
+                "userHomeOverride": { "$ref": "#/$defs/homeOverride" },
+                "readsAgentsMd": { "type": "boolean" },
+                "agentsMdBridge": { "anyOf": [{ "$ref": "#/$defs/bridge" }, { "type": "null" }] },
+                "notes": { "type": "string" }
+            }
+        },
+        "skills": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectDirs", "userDirs", "sharedDirs"],
+            "properties": {
+                "projectDirs": { "type": "array", "items": { "type": "string" } },
+                "userDirs": { "type": "array", "items": { "type": "string" } },
+                "sharedDirs": { "type": "array", "items": { "type": "string" } },
+                "userHomeOverride": { "$ref": "#/$defs/homeOverride" }
+            }
+        },
+        "mcp": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectFiles", "userFiles", "format"],
+            "properties": {
+                "projectFiles": { "type": "array", "items": { "type": "string" } },
+                "userFiles": { "type": "array", "items": { "type": "string" } },
+                "format": { "enum": ["json-mcpServers", "toml-mcp_servers"] }
+            }
+        },
+        "hooks": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectFiles", "userFiles", "eventCasing"],
+            "properties": {
+                "projectFiles": { "type": "array", "items": { "type": "string" } },
+                "userFiles": { "type": "array", "items": { "type": "string" } },
+                "eventCasing": { "type": "string" }
+            }
+        },
+        "dirs": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectDirs", "userDirs"],
+            "properties": {
+                "projectDirs": { "type": "array", "items": { "type": "string" } },
+                "userDirs": { "type": "array", "items": { "type": "string" } }
+            }
+        },
+        "sessions": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["dir", "transcriptGlob", "wireShape", "docs"],
+            "properties": {
+                "dir": { "type": "string" },
+                "homeOverride": { "$ref": "#/$defs/homeOverride" },
+                "transcriptGlob": { "type": "string" },
+                "wireShape": { "enum": ["flat-tool-call", "content-blocks", "codex-rollout"] },
+                "skillToolName": { "type": "string" },
+                "skillKey": { "type": "string" },
+                "docs": { "type": ["string", "null"] }
+            }
+        },
+        "headless": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["argv", "promptVia", "docs"],
+            "properties": {
+                "runtime": { "type": "object" },
+                "argv": { "type": "array", "items": { "type": "string" } },
+                "promptVia": { "enum": ["stdin", "file"] },
+                "promptFile": { "type": "string" },
+                "projectTrustConfigArg": { "type": "string" },
+                "usageFromSessionLog": { "type": "boolean" },
+                "streamJson": { "type": "object" },
+                "docs": { "type": "string" }
+            }
+        }
+    }
+}

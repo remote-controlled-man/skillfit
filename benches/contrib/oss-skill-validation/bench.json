@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "name": "oss-skill-validation",
+  "description": "Eight pinned, independently sourced p-map and quick-lru historical defects. Held-out validation tasks selected before observing new Skill development outcomes. Deterministic public outcomes and regression replay; no model judge.",
+  "tasks": [
+    {
+      "id": "mapper-index",
+      "fixture": "fixtures/mapper-index",
+      "prompt": "prompts/mapper-index.md",
+      "verifier": "node verifiers/mapper-index.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-mapper-index.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "async-concurrency",
+      "fixture": "fixtures/async-concurrency",
+      "prompt": "prompts/async-concurrency.md",
+      "verifier": "node verifiers/async-concurrency.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-async-concurrency.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "consumer-stop",
+      "fixture": "fixtures/consumer-stop",
+      "prompt": "prompts/consumer-stop.md",
+      "verifier": "node verifiers/consumer-stop.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-consumer-stop.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "source-close",
+      "fixture": "fixtures/source-close",
+      "prompt": "prompts/source-close.md",
+      "verifier": "node verifiers/source-close.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-source-close.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "source-error",
+      "fixture": "fixtures/source-error",
+      "prompt": "prompts/source-error.md",
+      "verifier": "node verifiers/source-error.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-source-error.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "cold-thenable",
+      "fixture": "fixtures/cold-thenable",
+      "prompt": "prompts/cold-thenable.md",
+      "verifier": "node verifiers/cold-thenable.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-cold-thenable.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "ttl-refresh",
+      "fixture": "fixtures/ttl-refresh",
+      "prompt": "prompts/ttl-refresh.md",
+      "verifier": "node verifiers/ttl-refresh.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-ttl-refresh.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "ttl-duration",
+      "fixture": "fixtures/ttl-duration",
+      "prompt": "prompts/ttl-duration.md",
+      "verifier": "node verifiers/ttl-duration.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-ttl-duration.mjs",
+      "shouldTrigger": true
+    }
+  ]
+}

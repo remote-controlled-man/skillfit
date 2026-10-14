@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Availability only; not a benchmark, judge or graded success.",
+  "executorInvoked": true,
+  "ready": false,
+  "error": "\"codex\" exited with code 1: Not inside a trusted directory and --skip-git-repo-check was not specified.",
+  "startedAt": "2026-10-12T15:22:37.192Z",
+  "finishedAt": "2026-10-12T15:22:37.314Z",
+  "durationSeconds": 0.122,
+  "wallDurationSeconds": 0.122,
+  "tokens": null,
+  "usageStatus": "partial",
+  "executionTiming": {
+    "clock": "performance.now",
+    "timeoutMs": 90000,
+    "heartbeatMs": 1000,
+    "anomalyThresholdMs": 5000,
+    "elapsedMs": 120.875,
+    "wallElapsedMs": 121,
+    "maxObservationGapMs": 119.206,
+    "maxClockSkewMs": 0.206,
+    "timeoutFiredAfterMs": null,
+    "terminationDelayMs": null,
+    "anomaly": null
+  },
+  "output": ""
+}

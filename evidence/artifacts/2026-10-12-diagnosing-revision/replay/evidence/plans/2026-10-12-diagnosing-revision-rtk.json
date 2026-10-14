@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-12T04:12:52.256026+00:00",
+  "date": "2026-10-12",
+  "name": "diagnosing-bugs revision comparison after RTK configuration change",
+  "inherits": {
+    "path": "evidence/plans/2026-10-12-diagnosing-revision.json",
+    "sha256": "76d145c40322b7d60da83829484ded6b87e3cb6f7fcad0e02aa8f9b6350bf75d",
+    "fields": "hypothesis, baseline, treatment, bench, configured model/effort/tier, validation trials/call ceiling, statistical protocol and compiled runner"
+  },
+  "runGroup": "validation-20261012-rtk",
+  "command": "node scripts/run-diagnosing-revision.mjs --phase validation --run-group validation-20261012-rtk --runs-root <fresh-temp-directory>",
+  "reason": "Initial validation encountered an externally initiated global instruction/configuration/hooks change. Retain that stopped phase separately; do not resume, replace its samples or pool it with this fresh study.",
+  "validation": {
+    "trials": 5,
+    "calls": 30,
+    "mode": "installed",
+    "judge": null,
+    "order": "adjacent baseline/treatment pairs, baseline first, existing protocol"
+  },
+  "configured": {
+    "agent": "codex",
+    "model": "gpt-6.1-sol",
+    "reasoning": "xhigh",
+    "serviceTier": "default",
+    "cli": "codex-cli 0.162.0-alpha.17.2",
+    "node": "v24.21.0",
+    "sandbox": "workspace-write",
+    "timeoutSeconds": 600,
+    "servedModel": "not independently attested",
+    "sampling": null
+  },
+  "environment": {
+    "source": "Current matrix-monitored paths are pinned again by the new native session. Raw file hashes here additionally record RTK.md; global private configuration bodies are not published.",
+    "inputs": [
+      {
+        "label": "AGENTS.md",
+        "state": "file",
+        "rawFileSha256": "4473f2e4c8e7bcec577b8b6d748b91655a3e38eb701149fcc32e195277a0f6c0"
+      },
+      {
+        "label": "config.toml",
+        "state": "file",
+        "rawFileSha256": "2cdce857b4af50a55c91fb73905ddda9499cd3f4bd90377afcfde20e0e2e64f5"
+      },
+      {
+        "label": "hooks.json",
+        "state": "file",
+        "rawFileSha256": "b305e4924d8ad8a52e523ae3b4525a5783d9ea80648fac8f111f980cf758b94a"
+      },
+      {
+        "label": "RTK.md",
+        "state": "file",
+        "rawFileSha256": "13f973cf9d47899124efae2cdb1684021ea2ed4b523c9a8c7f032197175e1aa1"
+      }
+    ],
+    "rtkEndCheck": "Verify RTK.md hash at completion. The native session does not recursively pin files referenced by global instructions."
+  },
+  "calibration": {
+    "sourceRunGroup": "calibration-20261012",
+    "status": "Historical difficulty pilot in the pre-RTK environment, separate from the new cohort; no additional no-Skill calls or pooled calibration inference."
+  },
+  "analysis": "Use only all predeclared pairs from validation-20261012-rtk for the final revision comparison. Retain costs and available outcomes of the interrupted phase separately as study overhead.",
+  "stopping": "Do not edit either Skill, bench, runtime configuration or compiled harness during a phase. No retries, replacement samples, outcome-driven trial additions or aggregation with earlier studies. Errors/drift stop calls; retain partial records.",
+  "runner": {
+    "head": "d09ac7aaf5dfb990b4251d8c3758ed3f9cb8f809",
+    "dirty": true,
+    "compiledSha256": "e8c6d5f8b163847163c007e1187a587c142d695e9bc2035cd6942929b430614a",
+    "entrypoint": "scripts/run-diagnosing-revision.mjs",
+    "entrypointSha256": "a4db8c7c5fc3679192e94f1265d48f27b57571fbf4c4cf5c875c463764da9c69"
+  },
+  "reproducibility": "Preserve declaration, source inputs, compiled runner and source patch, call ledger, manifests, receipts, transcripts and delivered workspaces. Offline regrade reproduces observed scores; new model runs reproduce procedure, not identical samples."
+}

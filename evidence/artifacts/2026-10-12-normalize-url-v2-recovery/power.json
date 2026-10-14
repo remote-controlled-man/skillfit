@@ -1,0 +1,18 @@
+{
+  "startedAt": "2026-10-12T14:46:13.551Z",
+  "args": [
+    "-i",
+    "-s",
+    "-w",
+    "<runner-pid>"
+  ],
+  "asserted": true,
+  "released": true,
+  "assertionTypes": [
+    "PreventUserIdleSystemSleep",
+    "PreventSystemSleep"
+  ],
+  "powerSource": "Now drawing from 'Battery Power'",
+  "aliveAtFinish": true,
+  "finishedAt": "2026-10-12T14:52:54.807Z"
+}

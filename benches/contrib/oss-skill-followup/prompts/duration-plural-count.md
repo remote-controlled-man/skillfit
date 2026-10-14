@@ -1,0 +1,3 @@
+humanize-duration chooses grammatical unit forms from the untruncated count even when maxDecimalPoints displays a different count. For example 1500ms with maxDecimalPoints:0 must render "1 second", and Arabic displayed dual counts must consistently hide the numeral. Preserve per-call precision overrides and ordinary fractional output.
+
+This is pinned historical upstream source with no runtime package dependencies. npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata, clock helper and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

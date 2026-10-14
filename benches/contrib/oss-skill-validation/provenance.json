@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "role": "Independent validation; no candidate outcomes used in task selection",
+  "selection": "Six asynchronous mapping and two expiration defects across two repositories, separate from minipass development. Outcomes cannot support general debugging claims outside this task mix.",
+  "tasks": [
+    {
+      "task": "mapper-index",
+      "repository": "p-map",
+      "commit": "1af51b57534b284ead73cca65f26b56bb9390768",
+      "parent": "65aaa8f4d7e757a5254a146c4c39403efa9e2139",
+      "url": "https://github.com/sindresorhus/p-map/commit/1af51b57534b284ead73cca65f26b56bb9390768",
+      "beforeSourceSha256": "26bed8e9161d2a1215cf8ab12950ca3c00991f27e00e81e7122c0181d86d0de1",
+      "fixedSourceSha256": "c1e5b90ea5de621dcce97ebdfdc89e88bdcef9f639e6dae32d00b732af05d851",
+      "adaptations": [
+        "byte-identical source and upstream documentation",
+        "original metadata retained separately; node:test replaces upstream dev tooling",
+        "deterministic public behavior tests derived from independently published defects; no Skill-derived process scores"
+      ]
+    },
+    {
+      "task": "async-concurrency",
+      "repository": "p-map",
+      "commit": "82b8cdc26d9910c1a9abe6813ddad5f3a55f88b2",
+      "parent": "2ba3a002acac080c60c47ca1dfa2fad3e17f5b7c",
+      "url": "https://github.com/sindresorhus/p-map/commit/82b8cdc26d9910c1a9abe6813ddad5f3a55f88b2",
+      "beforeSourceSha256": "2c042fab32a7f151eb7dd959de1d417581ffc5d7cbd9f2f98015c2f28889aed3",
+      "fixedSourceSha256": "4592763c1650a0d028b425c25fad95cbf2c4e1bcade5e12272f754d10597803f",
+      "adaptations": [
+        "byte-identical source and upstream documentation",
+        "original metadata retained separately; node:test replaces upstream dev tooling",
+        "deterministic public behavior tests derived from independently published defects; no Skill-derived process scores"
+      ]
+    },
+    {
+      "task": "consumer-stop",
+      "repository": "p-map",
+      "commit": "6194e492706ced044d0b409536de417ffb852b05",
+      "parent": "22dda61ea29037ba85af25e84bc5efba77e62f44",
+      "url": "https://github.com/sindresorhus/p-map/commit/6194e492706ced044d0b409536de417ffb852b05",
+      "beforeSourceSha256": "068232b3902aef129b0686228481b1560e64e20b71ef00f9453390d8f72d43e2",
+      "fixedSourceSha256": "904a38f4a42fd457c22e8df6738a072b8fbb2f81be117fdf1db393a035929d60",
+      "adaptations": [
+        "byte-identical source and upstream documentation",
+        "original metadata retained separately; node:test replaces upstream dev tooling",
+        "deterministic public behavior tests derived from independently published defects; no Skill-derived process scores"
+      ]
+    },
+    {
+      "task": "source-close",
+      "repository": "p-map",
+      "commit": "c82bd07b4e15e207086ccdbb87bbd7d57776e163",
+      "parent": "e7c2ecb113e8988165a6798630e4e9c2cdeb9d1b",
+      "url": "https://github.com/sindresorhus/p-map/commit/c82bd07b4e15e207086ccdbb87bbd7d57776e163",
+      "beforeSourceSha256": "f43b207ff859f2bc3ab5fdfcc0053e9775ea198609ad27c6941dd8f1da44cafb",
+      "fixedSourceSha256": "c7e54fdc26af2bee97211aea1eac4b6207044624eb321bc637ddfc32437409bf",
+      "adaptations": [
+        "byte-identical source and upstream documentation",
+        "original metadata retained separately; node:test replaces upstream dev tooling",
+        "deterministic public behavior tests derived from independently published defects; no Skill-derived process scores"
+      ]
+    },
+    {
+      "task": "source-error",
+      "repository": "p-map",
+      "commit": "9c48f07c38e6f8e9ed2e09884ed21a2536d4f4ef",
+      "parent": "6194e492706ced044d0b409536de417ffb852b05",
+      "url": "https://github.com/sindresorhus/p-map/commit/9c48f07c38e6f8e9ed2e09884ed21a2536d4f4ef",
+      "beforeSourceSha256": "904a38f4a42fd457c22e8df6738a072b8fbb2f81be117fdf1db393a035929d60",
+      "fixedSourceSha256": "bf012b76f1ea74c131940deb490bc5112f8be18da53c9ff28f17b997599bb5e0",
+      "adaptations": [
+        "byte-identical source and upstream documentation",
+        "original metadata retained separately; node:test replaces upstream dev tooling",
+        "deterministic public behavior tests derived from independently published defects; no Skill-derived process scores"
+      ]
+    },
+    {
+      "task": "cold-thenable",
+      "repository": "p-map",
+      "commit": "1dc1d1f97512f69daabfcd917dc5802a5d79914e",
+      "parent": "1051ec70aa1b0f5e7cafe15c85311729386370c6",
+      "url": "https://github.com/sindresorhus/p-map/commit/1dc1d1f97512f69daabfcd917dc5802a5d79914e",
+      "beforeSourceSha256": "8d330b4a65013bfb44cb11001801417f1e5d6dcc1d14cd2ae9b0bfaad859e8ba",
+      "fixedSourceSha256": "cc7f3717cef13b84dd673c6eea25346b6fbb047840b77ff835e718ed87adc3a4",
+      "adaptations": [
+        "byte-identical source and upstream documentation",
+        "original metadata retained separately; node:test replaces upstream dev tooling",
+        "deterministic public behavior tests derived from independently published defects; no Skill-derived process scores"
+      ]
+    },
+    {
+      "task": "ttl-refresh",
+      "repository": "quick-lru",
+      "commit": "6033bb74f4262e6784232ddf9c117a02d376e02f",
+      "parent": "ccf759386369a4ee36c36167ded243f7287d425a",
+      "url": "https://github.com/sindresorhus/quick-lru/commit/6033bb74f4262e6784232ddf9c117a02d376e02f",
+      "beforeSourceSha256": "2809e4747f4568d805a6558d1d1a9de0ca5375a79d56963b9114a5615f675105",
+      "fixedSourceSha256": "b846b478e0501f1e7350ff8f4b51d2216b5a32ad51001217999efa17aa45032d",
+      "adaptations": [
+        "byte-identical source and upstream documentation",
+        "original metadata retained separately; node:test replaces upstream dev tooling",
+        "deterministic public behavior tests derived from independently published defects; no Skill-derived process scores"
+      ]
+    },
+    {
+      "task": "ttl-duration",
+      "repository": "quick-lru",
+      "commit": "6a9c875c93ae7e149f0e39c14690e41fd26a1129",
+      "parent": "6ee4b6e9a7391f4536324ea1df909839d5d2734d",
+      "url": "https://github.com/sindresorhus/quick-lru/commit/6a9c875c93ae7e149f0e39c14690e41fd26a1129",
+      "beforeSourceSha256": "b846b478e0501f1e7350ff8f4b51d2216b5a32ad51001217999efa17aa45032d",
+      "fixedSourceSha256": "fd3bceda3d76754434bcfce98ae41f182d3c0d0641058241ffd468e1a2e2eba9",
+      "adaptations": [
+        "byte-identical source and upstream documentation",
+        "original metadata retained separately; node:test replaces upstream dev tooling",
+        "deterministic public behavior tests derived from independently published defects; no Skill-derived process scores"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+A stream registers end, prefinish and finish handlers before ending. Some completion handlers disappear without running when end is emitted. Diagnose and repair completion event delivery, keeping one-shot completion and late-listener behavior intact.
+
+This is pinned historical minipass source, with its original dependency source vendored for offline execution. Load Minipass through runtime.cjs; npm test uses only Node built-ins and the bundled source. Modify index.js and add executable node:test regression coverage in a new *.test.mjs file. Keep supplied tests, runtime, metadata, documentation and vendor assets unchanged. Explain the actual cause and checks you ran. Do not fetch upstream fixes or use the network.

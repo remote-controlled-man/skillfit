@@ -1,0 +1,29 @@
+# Fixed followup recovery cohort
+
+This is a prospective execution amendment after the [routing interruption](../../evidence/2026-10-14-debugging-followup-routing-stop.md), not an extension of its closed cohort. The earlier [followup declaration](2026-10-14-skill-followup.md), its 205-call ceiling and all failed or uninvoked entries remain unchanged. It ended at 47 calls, with 46 complete deliveries, one routing failure and 33 uninvoked entries. No call is retried or replaced in that cohort.
+
+A separately declared, one-call readiness check subsequently returned `READY` without an executor error. It demonstrates a working connection at that time, not a durable service guarantee or an explanation of the routing failure. Its ordinary CLI receipt has unknown final token usage. A local numeric supplement, matched by unique workspace, time interval and exact readiness prompt, is retained separately without public thread identity attestation; it does not change the native receipt or qualify as final usage.
+
+## Prospective bound and fixed inputs
+
+Before any next model call, declare exactly one fresh execution cohort of at most **80 calls**: the same eight [followup tasks](../../benches/contrib/oss-skill-followup/README.md), five adjacent pairs per task, balanced arm order and 1200-second deadlines for both arms. Previous executor spending, including readiness and failures, is **173 actual calls**. The new prospective cumulative ceiling is **253 calls**. No further readiness, generator or judge calls are planned. Metadata checks and offline preparation spend no model calls.
+
+Use a new output root and run group. Bind the absolute request, dry-run preview, actual Node and agent CLI versions, configured model settings, implementation, launch entrypoint and protocol hashes in the declaration before launch. Pin the closed cohort's manifest and the readiness receipt, while retaining the first completed validation and its decision separately. Require AC power and verified temporary idle/system sleep assertions, and retain the timing anomaly guard. Release the assertions on termination.
+
+The complete original and compact v4 Skills, pinned task assets, graders and version-2 efficiency policy remain byte-identical. Candidate selection predates the first validation; no candidate, task, grader, threshold or trial count is selected from the interrupted prefix. The restart is triggered by its terminal routing error, independently of the observed cost estimates. These are unchanged historical holdout tasks whose prefix has now been observed, not eight newly unseen defects. Do not pool their earlier samples, remove difficult tasks or recover unused entries as replacements.
+
+## Unchanged decision and complete disclosure
+
+Keep the frozen policy hash `e6c0610daccd82f4fa326fb2660ae9f6dc722e1544f1caa006b4143de3da4a5e`: eight tasks with five pairs each; verified validation receipts and complete final usage for every invocation; no observed pair/task pass, score or named-check regression; at least 75% of tasks reducing uncached input per success; and a 95% whole-task bootstrap upper bound supporting at least 10% reduction. Keep 10,000 resamples, seed 20261013 and the existing aggregate cost caps. The quality verdict remains separate; all-pass ties do not establish equivalence. The component never upgrades automatically.
+
+Stop on the first executor, configuration or timing error; retain functional failures as observations. Do not retry, append trials, change inputs or silently launch another cohort to obtain acceptance. Publish this fixed outcome whether positive, negative, incomplete or inconclusive. Any later optimization or study requires its own prospective task-selection and spending declaration.
+
+Disclose the sequence of all studies and the routing-triggered restart when interpreting this cohort. A later favorable result does not erase earlier inconclusive results or individual task cost increases, and repeated execution does not create another independent task set. Scope any conclusion to the unchanged task mix and recorded environment, rather than claiming stable benefit across every debugging workload or model.
+
+Replay every completed grade, receipt audit, separate cost population and confidence interval offline without model calls. Count all 173 previous calls plus every new invocation in cumulative spending; keep unknown usage unknown and qualified local supplements separate. Provider billing and complete authoring/orchestration cost remain unmeasured. Preserve every published evidence file. Product checks, mirrored user documentation and verified main-branch integration remain required by the original goal; this launch alone does not complete it.
+
+## Observed user-requested spending stop
+
+The user requests a spending review after the first invocation starts. The owned CLI is explicitly interrupted, the harness seals an ungraded partial invocation and 79 uninvoked entries, and temporary sleep assertions are released. Actual cumulative spending is 174 calls. This closes the cohort without resuming, replacing or adding samples; its prospective ceiling remains a historical declaration, not authority to ignore the later stop.
+
+The [dated spending-stop record](../../evidence/2026-10-14-debugging-spending-stop.md) reproduces native partial costs and the separate unattested readiness supplement offline. A local reading-scope draft and four-call development preview remain unexecuted pending the user's spending choice. They make no stable improvement or adoption claim and do not silently extend this declaration.

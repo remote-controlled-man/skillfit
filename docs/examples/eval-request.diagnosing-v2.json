@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "baselineSkill": "../../evidence/inputs/diagnosing-bugs",
+  "candidateSkill": "../../evidence/inputs/diagnosing-bugs-compact-v2",
+  "bench": "../../benches/contrib/oss-skill-validation",
+  "agent": "codex",
+  "purpose": "validation",
+  "pairOrder": "balanced",
+  "trials": 5,
+  "maxCalls": 80,
+  "runsRoot": "../../runs/eval-example",
+  "runGroup": "diagnosing-v2-validation-example",
+  "policy": {
+    "schemaVersion": 1,
+    "minTasks": 8,
+    "minTrialsPerTask": 5,
+    "minDeltaPassRate": 0,
+    "maxCostIncreaseFraction": {
+      "uncachedInput": 0.25,
+      "output": 0.25,
+      "durationSeconds": 0.25
+    }
+  }
+}

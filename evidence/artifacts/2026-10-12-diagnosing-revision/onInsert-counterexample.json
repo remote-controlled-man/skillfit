@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "runGroup": "validation-20261012-rtk",
+  "task": "fetch-lifecycle",
+  "trial": 3,
+  "method": "Offline replay of the unchanged frozen check against both saved deliverables; no model calls.",
+  "rows": [
+    {
+      "arm": "baseline",
+      "check": "onInsert hides placeholder and classifies resolved application values",
+      "passed": true
+    },
+    {
+      "arm": "treatment",
+      "check": "onInsert hides placeholder and classifies resolved application values",
+      "passed": false,
+      "actual": [
+        [
+          "N",
+          "new",
+          "replace"
+        ],
+        [
+          "S",
+          "same",
+          "add"
+        ],
+        [
+          "S",
+          "same",
+          "replace"
+        ],
+        [
+          "old",
+          "change",
+          "add"
+        ],
+        [
+          "new",
+          "change",
+          "replace"
+        ]
+      ],
+      "expected": [
+        [
+          "N",
+          "new",
+          "add"
+        ],
+        [
+          "S",
+          "same",
+          "add"
+        ],
+        [
+          "S",
+          "same",
+          "update"
+        ],
+        [
+          "old",
+          "change",
+          "add"
+        ],
+        [
+          "new",
+          "change",
+          "replace"
+        ]
+      ]
+    }
+  ]
+}

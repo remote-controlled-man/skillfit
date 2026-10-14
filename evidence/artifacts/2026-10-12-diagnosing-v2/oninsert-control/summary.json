@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "modelCalls": 0,
+  "method": "Manual localized repair of a copy of the saved v1 trial-3 delivery, plus correction of its v1-authored regression expectation to the documented public contract. No grader or supplied fixture assets changed; not evidence of model or Skill efficacy.",
+  "originalDelivery": {
+    "score": 0.8888888888888888,
+    "checks": [
+      {
+        "name": "existing assets unchanged and smoke tests pass",
+        "pass": true
+      },
+      {
+        "name": "ordinary LRU and successful async fetch",
+        "pass": true
+      },
+      {
+        "name": "concurrent fetches deduplicate provider work",
+        "pass": true
+      },
+      {
+        "name": "onInsert hides placeholder and classifies resolved application values",
+        "pass": false
+      },
+      {
+        "name": "refresh eviction disposes stale value once in both callbacks",
+        "pass": true
+      },
+      {
+        "name": "synchronous fetch result settles and is cached",
+        "pass": true
+      },
+      {
+        "name": "own refresh completion does not abort the provider",
+        "pass": true
+      },
+      {
+        "name": "explicit replacement still aborts refresh and retains replacement",
+        "pass": true
+      },
+      {
+        "name": "new regression has submission-pass/original-fail/reference-pass test-case evidence",
+        "pass": true
+      }
+    ],
+    "sourceSha256": "7e1bc128731bfd43a1a8f76c7cc288d105c1d18e8025cfe5094feafd7473172c"
+  },
+  "correctedDelivery": {
+    "score": 1,
+    "checks": [
+      {
+        "name": "existing assets unchanged and smoke tests pass",
+        "pass": true
+      },
+      {
+        "name": "ordinary LRU and successful async fetch",
+        "pass": true
+      },
+      {
+        "name": "concurrent fetches deduplicate provider work",
+        "pass": true
+      },
+      {
+        "name": "onInsert hides placeholder and classifies resolved application values",
+        "pass": true
+      },
+      {
+        "name": "refresh eviction disposes stale value once in both callbacks",
+        "pass": true
+      },
+      {
+        "name": "synchronous fetch result settles and is cached",
+        "pass": true
+      },
+      {
+        "name": "own refresh completion does not abort the provider",
+        "pass": true
+      },
+      {
+        "name": "explicit replacement still aborts refresh and retains replacement",
+        "pass": true
+      },
+      {
+        "name": "new regression has submission-pass/original-fail/reference-pass test-case evidence",
+        "pass": true
+      }
+    ],
+    "sourceSha256": "7369f5be3b449f91fbabde075876c1a244fa6897d4bab7a6d153fa182307f7d5"
+  },
+  "newPublicRegression": {
+    "beforeExit": 1,
+    "afterExit": 0,
+    "file": "oninsert-application-history.test.mjs"
+  },
+  "changedGeneratedTest": {
+    "before": "replace for a fresh fetch",
+    "after": "add for a fresh application value",
+    "why": "The previous test reproduced an implementation assumption rather than the documented callback meaning."
+  }
+}

@@ -53,6 +53,18 @@ export function collectInstalledSkillTarget(skillDir: string): EvaluationTarget 
     payload: null, overlays: {} };
 }
 
+export function assertSkillRevisionTargets(target: EvaluationTarget, baseline: EvaluationTarget): void {
+  if ([target, baseline].some(skill => skill.kind !== 'skill' || skill.payload !== null || !skill.files.includes('SKILL.md'))) {
+    throw new Error('Skill revision comparison requires two complete installed Skill targets.');
+  }
+  if (target.name !== baseline.name) {
+    throw new Error('Skill revisions must have the same SKILL.md frontmatter name; compare versions of one Skill.');
+  }
+  if (target.sha256 === baseline.sha256) {
+    throw new Error('Skill revisions have identical complete-resource fingerprints; there is no version change to evaluate.');
+  }
+}
+
 export function assertInstalledSkillFixtures(bench: Bench, target: EvaluationTarget, installDir: string, searchDirs: readonly string[] = []): void {
   const dirs = [...new Set([installDir, ...searchDirs].map(validateSkillInstallDir))];
   for (const task of bench.tasks) {

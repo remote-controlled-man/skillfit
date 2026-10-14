@@ -1,3 +1,6 @@
 * text=auto eol=lf
 scripts/*.sh text eol=lf
 profiles/codex-curated/skills/** text eol=lf
+
+# Frozen evidence hashes cover exact bytes, including original line endings.
+evidence/artifacts/** -text

@@ -1,0 +1,3 @@
+A debounce callback can execute too early when a caller renews it at exactly the same timestamp as a pending timer. Calls at 100,150,200,250ms with wait:100 should yield one trailing callback at 350ms, or only the initial leading callback. Preserve latest arguments, receiver and clear behavior.
+
+This is pinned historical upstream source with no runtime package dependencies. npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata, clock helper and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

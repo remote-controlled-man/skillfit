@@ -1,0 +1,9 @@
+{
+  "name": "debounce-recursive-args-historical-fixture",
+  "private": true,
+  "type": "commonjs",
+  "fixtureKind": "debounce",
+  "scripts": {
+    "test": "node --test test.mjs *.test.mjs"
+  }
+}

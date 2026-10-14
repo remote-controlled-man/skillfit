@@ -1,0 +1,8 @@
+{
+  "name": "p-map-consumer-stop-historical-fixture",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test test.mjs *.test.mjs"
+  }
+}

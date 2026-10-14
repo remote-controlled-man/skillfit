@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -72,5 +72,28 @@ test('baseline calibration plans use the matrix transcript CLI without starting 
   const cwd = mkdtempSync(join(tmpdir(), 'skillfit-cli-calibrate-wire-')); t.after(() => rmSync(cwd, { recursive: true, force: true }));
   const result = spawnSync(process.execPath, [CLI, ...COMMANDS[1]!, '--agent', 'codex', '--input', 'workspace', '--trials', '2', '--max-calls', '10', '--dry-run'], { cwd, encoding: 'utf8', timeout: 30_000 });
   assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /calibration executor: codex: codex exec --json/);
+  assert.equal(existsSync(join(cwd, 'runs')), false);
+});
+
+test('CLI wires the previous Skill into an installed dry-run and rejects single-arm comparison', t => {
+  const cwd = mkdtempSync(join(tmpdir(), 'skillfit-cli-revision-'));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const current = join(cwd, 'new');
+  const previous = join(cwd, 'old');
+  for (const dir of [current, previous]) cpSync(join(PACKAGE_ROOT, 'skills', 'skillfit'), dir, { recursive: true });
+  writeFileSync(join(previous, 'SKILL.md'), readFileSync(join(previous, 'SKILL.md'), 'utf8') + '\nPrevious-version fixture.\n');
+  const args = ['eval', current, '--baseline-skill', previous, '--bench', join(PACKAGE_ROOT, 'benches', 'code-review'), '--agent', 'codex', '--trials', '1', '--dry-run'];
+  const result = spawnSync(process.execPath, [CLI, ...args, '--mode', 'installed'], { cwd, encoding: 'utf8', timeout: 30_000 });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Baseline\s+: skillfit/);
+  assert.match(result.stdout, /previous Skill in baseline vs target Skill in treatment/);
+  assert.match(result.stdout, /installed in both conditions/);
+  const invalid = spawnSync(process.execPath, [CLI, ...args, '--mode', 'trigger'], { cwd, encoding: 'utf8', timeout: 30_000 });
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /requires --mode installed/);
+  const unrelated = spawnSync(process.execPath, [CLI, 'doctor', '--baseline-skill', previous], { cwd, encoding: 'utf8' });
+  assert.equal(unrelated.status, 1);
+  assert.match(unrelated.stderr, /applies only to eval/);
+  assert.equal(unrelated.stdout, '');
   assert.equal(existsSync(join(cwd, 'runs')), false);
 });

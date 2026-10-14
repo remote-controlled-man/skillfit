@@ -7,9 +7,9 @@ import { loadBench } from '../harness/bench.js';
 import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { ApiExecutor } from '../harness/executors/api.js';
-import { CliExecutor } from '../harness/executors/cli.js';
+import { CliExecutor, DEFAULT_CLI_TIMEOUT_MS } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
-import { assertInstalledSkillFixtures, collectInstalledSkillTarget } from '../harness/installed-skill.js';
+import { assertInstalledSkillFixtures, assertSkillRevisionTargets, collectInstalledSkillTarget } from '../harness/installed-skill.js';
 import { assertInputModeSupported } from '../harness/prompt.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
 import { runExperiment } from '../harness/runner.js';
@@ -21,13 +21,34 @@ import {
   runTriggerExperiment,
   type TriggerManifest,
 } from '../harness/trigger.js';
-import type { Bench, EvaluationTarget, Executor, InputMode, SkillBundle } from '../harness/types.js';
+import type { Bench, EvaluationTarget, Executor, InputMode, PairOrder, SkillBundle } from '../harness/types.js';
+import type { ComponentMetadata } from '../harness/eval-contract.js';
+
+export interface EvalPreview {
+  target: { name: string; sourceDir: string; sha256: string; files: string[] };
+  baseline: { name: string; sourceDir: string; sha256: string; files: string[] } | null;
+  bench: { name: string; dir: string; sha256: string; taskIds: string[] };
+  executor: ReturnType<Executor['describe']> | null;
+  judge: ReturnType<Executor['describe']> | null;
+  inputMode: InputMode;
+  installDir: string | null;
+  trials: number;
+  plannedCalls: number;
+  maxCalls: number;
+  outputDir: string;
+  pairOrder?: PairOrder;
+  executorTimeoutSeconds?: number;
+}
 
 export interface EvalOptions {
   /** A Skill directory or a directory containing skillfit-experiment.json. */
   skillPath: string;
+  /** Previous complete Skill version; available only in installed mode. */
+  baselineSkillPath?: string;
   bench?: string;
   trials?: number;
+  pairOrder?: PairOrder;
+  executorTimeoutSeconds?: number;
   maxCalls?: number;
   sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
   agent?: string;
@@ -44,6 +65,9 @@ export interface EvalOptions {
   /** With trigger mode, copy the user's other matrix user-level Skills into each trial. */
   competeInstalled?: boolean;
   log?: (msg: string) => void;
+  onPlan?: (plan: EvalPreview) => void;
+  component?: ComponentMetadata;
+  guardFiles?: SessionOptions['guardFiles'];
 }
 
 export const DEFAULT_EVAL_TRIALS = 5;
@@ -80,10 +104,11 @@ function resolveBenchDir(bench: string | undefined): string {
   throw new Error(`More than one bundled bench is available; pick one explicitly:\n${names}`);
 }
 
-function resolveExecutor(agent: string | undefined, target: EvaluationTarget, installed = false): Executor {
+function resolveExecutor(agent: string | undefined, target: EvaluationTarget, installed = false, executorTimeoutSeconds?: number): Executor {
   if (agent) {
     const definition = getAgent(agent);
     return CliExecutor.forAgent(agent, {
+      ...(executorTimeoutSeconds !== undefined ? { timeoutMs: executorTimeoutSeconds * 1000 } : {}),
       trustProjectConfig: target.kind === 'mcp' && definition.headless.projectTrustConfigArg !== undefined,
       ...(installed && definition.headless.streamJson ? { triggerSkillName: target.name } : {}),
     });
@@ -138,11 +163,11 @@ function defaultRunGroup(now: Date = new Date()): string {
 
 function sessionFor(options: EvalOptions, bench: Bench, target: EvaluationTarget, trials: number,
   runsRoot: string, runGroup: string, armNames: string[], plannedCalls: number,
-  details: Record<string, unknown>): ExperimentSession {
+  details: Record<string, unknown>, baselineTarget?: EvaluationTarget): ExperimentSession {
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
-  return new ExperimentSession({ bench, target, groupDir: join(runsRoot, runGroup), plannedCalls,
+  return new ExperimentSession({ bench, target, baselineTarget, groupDir: join(runsRoot, runGroup), plannedCalls,
     maxCalls: options.maxCalls, agent: options.agent, injected: options.executor !== undefined,
-    ...options.sessionOptions,
+    ...options.sessionOptions, guardFiles: options.guardFiles,
     workspaces: bench.tasks.flatMap(task => armNames.flatMap(arm =>
       Array.from({ length: trials }, (_, i) => join(runsRoot, runGroup, task.id, arm, `trial-${i + 1}`)))),
     details });
@@ -177,10 +202,15 @@ function renderPlan(
   runsRoot: string,
   runGroup: string,
   inputMode: InputMode,
+  baselineTarget?: EvaluationTarget,
 ): string {
   const lines: string[] = [];
   lines.push('Experiment plan (dry run)');
   lines.push(`Target   : ${target.name} (${target.kind}, ${target.files.length} files, bundle sha256 ${target.sha256.slice(0, 12)}…)`);
+  if (baselineTarget) {
+    lines.push(`Baseline : ${baselineTarget.name} (${baselineTarget.files.length} files, bundle sha256 ${baselineTarget.sha256.slice(0, 12)}…)`);
+    lines.push('Compare  : previous Skill in baseline vs target Skill in treatment; measures revision effects, not benefit over no Skill');
+  }
   if (target.kind !== 'skill') {
     lines.push('           applied as project files; treatment material is never injected into the prompt');
   }
@@ -286,6 +316,8 @@ async function runEvalTrigger(
 
   const plannedCalls = bench.tasks.filter(task => task.shouldTrigger !== undefined).length * trials;
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+
+  if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   const competitors = options.competeInstalled && options.agent
     ? installedUserSkills(getAgent(options.agent), options.sessionOptions?.homeDir ?? homedir(), options.sessionOptions?.env ?? process.env)
       .filter((entry) => entry.name !== skill.name)
@@ -336,8 +368,16 @@ async function runEvalTrigger(
 }
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
+  const executorTimeoutSeconds = options.executorTimeoutSeconds ?? DEFAULT_CLI_TIMEOUT_MS / 1000;
+  if (!Number.isSafeInteger(executorTimeoutSeconds) || executorTimeoutSeconds < 1 || executorTimeoutSeconds > 3600) {
+    throw new Error('executorTimeoutSeconds must be an integer between 1 and 3600.');
+  }
+  if (options.executorTimeoutSeconds !== undefined && !options.agent && !options.executor) throw new Error('executorTimeoutSeconds requires a CLI agent.');
   const log = options.log ?? ((msg: string) => console.log(msg));
   const installed = options.mode === 'installed';
+  if (options.baselineSkillPath !== undefined && !installed) {
+    throw new Error('--baseline-skill requires --mode installed.');
+  }
   if (installed && options.inputMode !== undefined && options.inputMode !== 'workspace') {
     throw new Error('installed mode requires workspace input; omit --input or use --input workspace.');
   }
@@ -362,11 +402,16 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const benchDir = resolveBenchDir(options.bench);
   const bench = loadBench(benchDir);
   let target = collectEvaluationTarget(options.skillPath);
+  let baselineTarget: EvaluationTarget | undefined;
   let skillInstallDir: string | undefined;
   let skillSearchDirs: string[] = [];
   if (installed) {
     if (target.kind !== 'skill') throw new Error('installed mode is only available for Skill targets.');
     target = collectInstalledSkillTarget(options.skillPath);
+    if (options.baselineSkillPath !== undefined) {
+      baselineTarget = collectInstalledSkillTarget(options.baselineSkillPath);
+      assertSkillRevisionTargets(target, baselineTarget);
+    }
     skillSearchDirs = options.agent ? getAgent(options.agent).skills.projectDirs : [];
     skillInstallDir = options.skillInstallDir ?? skillSearchDirs[0];
     if (!skillInstallDir) throw new Error('installed mode needs --agent with a matrix-defined project Skill directory.');
@@ -374,6 +419,8 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
 
   if ((options.mode ?? 'inject') === 'trigger') {
+    if (options.executorTimeoutSeconds !== undefined) throw new Error('executorTimeoutSeconds is only available for paired experiments.');
+    if (options.pairOrder !== undefined) throw new Error('pairOrder is only available for paired experiments.');
     if (target.kind !== 'skill') {
       throw new Error('trigger mode is only available for Skill targets; rules and MCP targets use paired inject-mode workspaces.');
     }
@@ -407,7 +454,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   let executor: Executor | null = null;
   try {
-    executor = options.executor ?? resolveExecutor(options.agent, target, installed);
+    executor = options.executor ?? resolveExecutor(options.agent, target, installed, options.executorTimeoutSeconds);
   } catch (error) {
     if (!options.dryRun) throw error;
     log(`Note: ${(error as Error).message}`);
@@ -425,12 +472,26 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const runGroup = options.runGroup ?? defaultRunGroup();
   const plannedCalls = bench.tasks.length * trials * (judge ? 4 : 2);
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+  const pairOrder = options.pairOrder ?? 'baseline-first';
+  if (pairOrder !== 'baseline-first' && pairOrder !== 'balanced') throw new Error('pairOrder must be baseline-first or balanced.');
+
+  if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+  options.onPlan?.({
+    target: { name: target.name, sourceDir: target.sourceDir, sha256: target.sha256, files: target.files },
+    baseline: baselineTarget ? { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, sha256: baselineTarget.sha256, files: baselineTarget.files } : null,
+    bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },
+    executor: executor?.describe() ?? null, judge: judge?.describe() ?? null, inputMode,
+    installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, pairOrder,
+    ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), outputDir: join(runsRoot, runGroup),
+  });
 
   if (options.dryRun) {
-    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode));
+    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
+    log(`Pair order: ${pairOrder}; arms remain adjacent`);
+    if (options.agent || options.executorTimeoutSeconds !== undefined) log(`Agent deadline: ${executorTimeoutSeconds}s per invocation in both arms`);
     if (skillInstallDir) {
-      log('Delivery : complete Skill resources installed only in treatment at ' + skillInstallDir + '/' + target.name);
+      log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);
       log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
     }
     return null;
@@ -439,14 +500,20 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     throw new Error('No executor available; pass --agent or set SKILLFIT_API_KEY.');
   }
 
-  log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+  log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
   const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
-    { mode: installed ? 'installed' : 'inject', inputMode, trials, executor: executor.describe(), judge: judge?.describe() ?? null });
+    { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder,
+      ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), executor: executor.describe(), judge: judge?.describe() ?? null,
+      ...(options.component ? { component: options.component } : {}),
+      ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
   let manifest: RunManifest;
   try {
     manifest = await runExperiment({
       bench,
       target,
+      baselineTarget,
+      component: options.component,
+      pairOrder,
       inputMode,
       ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
       executor: session.wrap(executor, 'agent'),

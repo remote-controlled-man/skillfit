@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "cohort": "regression",
+  "runGroup": "regression-v2-20261012",
+  "benchSha256": "e2fea611458e794a0a4d8b423e850fd400f1df0616e1b3ab83284f7cad78639d",
+  "matched": 4,
+  "excluded": 0,
+  "invocationCount": 4,
+  "costsMatch": true,
+  "rows": [
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    }
+  ]
+}

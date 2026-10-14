@@ -1,0 +1,10 @@
+{
+  "baseline": {
+    "output": "Findings:\n\n- high: src/order.js:25 throws a bare `Error` with no `code`; SPEC §1 requires every caller-facing error to be an `AppError`, and SPEC §5 mandates the code `INVALID_QUANTITY` for a negative quantity.\n- low: src/order.js:22-23 uses a C-style `for (let i = 0; ...)` loop while the rest of the file iterates with `for...of`.",
+    "tokens": { "input": 1800, "output": 120 }
+  },
+  "treatment": {
+    "output": "Findings:\n\n- high: src/order.js:25 throws a bare `Error` with no `code`; SPEC §1 requires `AppError` and SPEC §5 mandates `INVALID_QUANTITY` for negative quantities.\n- high: src/order.js:30 `item.qty > 10` should be `>= 10`: SPEC §4 grants the 5% bulk discount at quantity 10, but with the strict comparison a line with qty = 10 pays full price.\n- medium: `applyBulkDiscount` is a new exported function with new branches, yet the PR adds nothing under `tests/`; SPEC §2 requires unit tests for it.",
+    "tokens": { "input": 2600, "output": 200 }
+  }
+}

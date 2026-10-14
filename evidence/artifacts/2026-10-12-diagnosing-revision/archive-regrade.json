@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "mode": "installed",
+  "benchSha256": "b276606b5d00bdd98a65d8fa8944ba38b73efc7429e73b5dc56d83b8937950b2",
+  "matched": 29,
+  "excluded": 1,
+  "rows": [
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 3,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 3,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 4,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 4,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "baseline",
+      "trial": 5,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-size",
+      "arm": "treatment",
+      "trial": 5,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 3,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 3,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 4,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 4,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "baseline",
+      "trial": 5,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-abort",
+      "arm": "treatment",
+      "trial": 5,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 1,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 2,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 3,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 3,
+      "excluded": false,
+      "matched": true,
+      "passed": false,
+      "score": 0.8888888888888888
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 4,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 4,
+      "excluded": false,
+      "matched": true,
+      "passed": false,
+      "score": 0.8888888888888888
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "baseline",
+      "trial": 5,
+      "excluded": false,
+      "matched": true,
+      "passed": true,
+      "score": 1
+    },
+    {
+      "task": "fetch-lifecycle",
+      "arm": "treatment",
+      "trial": 5,
+      "excluded": true,
+      "error": "\"codex\" timed out after 600000ms"
+    }
+  ]
+}

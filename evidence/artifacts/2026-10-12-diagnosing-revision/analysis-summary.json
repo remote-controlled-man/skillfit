@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "actualAgentInvocations": 30,
+  "attempts": {
+    "baseline": {
+      "attempts": 15,
+      "graded": 15,
+      "passes": 15,
+      "errors": 0,
+      "seconds": 5587.338,
+      "knownInput": 5728675,
+      "knownOutput": 146874,
+      "finalUsageCoverage": 15
+    },
+    "treatment": {
+      "attempts": 15,
+      "graded": 14,
+      "passes": 12,
+      "errors": 1,
+      "seconds": 5254.051,
+      "knownInput": 3890644,
+      "knownOutput": 124487,
+      "finalUsageCoverage": 14
+    }
+  },
+  "gradedPairs": 14,
+  "pairedPasses": {
+    "baseline": 14,
+    "treatment": 12
+  },
+  "metrics": {
+    "input": {
+      "totals": {
+        "baseline": 5257320,
+        "treatment": 3890644
+      },
+      "percentDelta": -25.995678406488476,
+      "pairsIncreasing": 2,
+      "perSuccessfulTask": {
+        "baseline": 375522.85714285716,
+        "treatment": 324220.3333333333
+      },
+      "perSuccessPercentDelta": -13.661624807569899
+    },
+    "output": {
+      "totals": {
+        "baseline": 137810,
+        "treatment": 124487
+      },
+      "percentDelta": -9.667658370219868,
+      "pairsIncreasing": 4,
+      "perSuccessfulTask": {
+        "baseline": 9843.57142857143,
+        "treatment": 10373.916666666666
+      },
+      "perSuccessPercentDelta": 5.38773190141014
+    },
+    "cachedInput": {
+      "totals": {
+        "baseline": 4630144,
+        "treatment": 3318016
+      },
+      "percentDelta": -28.338816244160007,
+      "pairsIncreasing": 2,
+      "perSuccessfulTask": {
+        "baseline": 330724.5714285714,
+        "treatment": 276501.3333333333
+      },
+      "perSuccessPercentDelta": -16.39528561818668
+    },
+    "uncachedInput": {
+      "totals": {
+        "baseline": 627176,
+        "treatment": 572628
+      },
+      "percentDelta": -8.697399135170988,
+      "pairsIncreasing": 4,
+      "perSuccessfulTask": {
+        "baseline": 44798.28571428572,
+        "treatment": 47719.0
+      },
+      "perSuccessPercentDelta": 6.519701008967173
+    },
+    "seconds": {
+      "totals": {
+        "baseline": 5196.503999999999,
+        "treatment": 4654.0289999999995
+      },
+      "percentDelta": -10.43922991303383,
+      "pairsIncreasing": 4,
+      "perSuccessfulTask": {
+        "baseline": 371.17885714285705,
+        "treatment": 387.83574999999996
+      },
+      "perSuccessPercentDelta": 4.487565101460535
+    }
+  },
+  "tasks": [
+    {
+      "task": "fetch-size",
+      "pairs": 5,
+      "passes": {
+        "baseline": 5,
+        "treatment": 5
+      },
+      "costPercentDeltas": {
+        "input": -42.91117727546587,
+        "output": -22.911072978701927,
+        "cachedInput": -44.21256167488998,
+        "uncachedInput": -32.834117182016925,
+        "seconds": -24.172775119784852
+      }
+    },
+    {
+      "task": "fetch-abort",
+      "pairs": 5,
+      "passes": {
+        "baseline": 5,
+        "treatment": 5
+      },
+      "costPercentDeltas": {
+        "input": -19.577316855970587,
+        "output": -8.503719447396387,
+        "cachedInput": -20.298599038756517,
+        "uncachedInput": -15.330667920978364,
+        "seconds": -12.125905348498128
+      }
+    },
+    {
+      "task": "fetch-lifecycle",
+      "pairs": 4,
+      "passes": {
+        "baseline": 4,
+        "treatment": 2
+      },
+      "costPercentDeltas": {
+        "input": -9.218490631510168,
+        "output": 4.916919345057611,
+        "cachedInput": -14.347139347139347,
+        "uncachedInput": 35.671511034838645,
+        "seconds": 4.639397207430664
+      }
+    }
+  ],
+  "allAttemptExecutorTimePerSuccessRatio": 1.17543698806122,
+  "allStudyInvocationsIncludingOverhead": 39,
+  "studyInputLowerBound": 12457341,
+  "studyOutputLowerBound": 363256,
+  "interpretation": "Pairwise costs include graded successes and failures; both members of the timeout pair are excluded. All-attempt time includes the 600-second timeout. Token bounds add the last partial usage once and are not final billing totals."
+}

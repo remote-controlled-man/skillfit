@@ -1,0 +1,3 @@
+With digitReplacements, humanize-duration emits "undefined" inside scientific notation for very large or tiny durations. Replace digit characters while preserving the exponent letter and signs, existing notation, localized unit words and decimal separators. Ordinary replacements and calls without replacements must stay intact.
+
+This is pinned historical upstream source with no runtime package dependencies. npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata, clock helper and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

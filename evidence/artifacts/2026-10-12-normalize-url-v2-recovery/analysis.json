@@ -1,0 +1,600 @@
+{
+  "schemaVersion": 1,
+  "method": "Cohorts remain separate; descriptive recorded costs only, no cost significance/non-inferiority/billing inference. Model reruns reproduce procedure, not identical samples.",
+  "actualInvocations": 1,
+  "declaredInvocations": 4,
+  "cohorts": [
+    {
+      "name": "transfer-recovery",
+      "runGroup": "normalize-url-v2-recovery-20261012",
+      "experiment": {
+        "schemaVersion": 1,
+        "status": "stopped",
+        "plannedCalls": 4,
+        "maxCalls": 4,
+        "callsStarted": 1,
+        "callsFinished": 1,
+        "stopReason": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls.",
+        "planSha256": "05c81233eded9802126a81659bc1d8d2e661f2de37505063601d523e8d2cca20"
+      },
+      "quality": {
+        "baseline": {
+          "passes": 0,
+          "trials": 0,
+          "errors": 2,
+          "skillReads": {
+            "observed": 0,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 0,
+          "meanScore": null,
+          "tokens": null,
+          "tokenCoverage": {
+            "input": 0,
+            "output": 0
+          }
+        },
+        "treatment": {
+          "passes": 0,
+          "trials": 0,
+          "errors": 2,
+          "skillReads": {
+            "observed": 0,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 0,
+          "meanScore": null,
+          "tokens": null,
+          "tokenCoverage": {
+            "input": 0,
+            "output": 0
+          }
+        },
+        "delta": 0,
+        "scoreDelta": null,
+        "verdict": "inconclusive",
+        "stats": {
+          "discordant": {
+            "improved": 0,
+            "regressed": 0
+          },
+          "mcnemarP": 1,
+          "deltaCi": null,
+          "scoreDeltaCi": null
+        }
+      },
+      "runs": {
+        "paired": {
+          "baseline": {
+            "runs": 0,
+            "passes": 0,
+            "metrics": {
+              "input": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          },
+          "treatment": {
+            "runs": 0,
+            "passes": 0,
+            "metrics": {
+              "input": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          }
+        },
+        "attempts": {
+          "baseline": {
+            "runs": 1,
+            "passes": 0,
+            "metrics": {
+              "input": {
+                "knownTotal": 325088,
+                "coverage": {
+                  "final": 1,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 288512,
+                "coverage": {
+                  "final": 1,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 36576,
+                "coverage": {
+                  "final": 1,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 10752,
+                "coverage": {
+                  "final": 1,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 400.535,
+                "coverage": {
+                  "final": 1,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          },
+          "treatment": {
+            "runs": 0,
+            "passes": 0,
+            "metrics": {
+              "input": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 0,
+                "coverage": {
+                  "final": 0,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          }
+        },
+        "notInvoked": {
+          "baseline": 1,
+          "treatment": 2
+        }
+      },
+      "metrics": {
+        "paired": {
+          "input": {
+            "baseline": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          },
+          "cachedInput": {
+            "baseline": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          },
+          "uncachedInput": {
+            "baseline": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          },
+          "output": {
+            "baseline": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          },
+          "durationSeconds": {
+            "baseline": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          }
+        },
+        "attempts": {
+          "input": {
+            "baseline": {
+              "knownTotal": 325088,
+              "coverage": {
+                "final": 1,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          },
+          "cachedInput": {
+            "baseline": {
+              "knownTotal": 288512,
+              "coverage": {
+                "final": 1,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          },
+          "uncachedInput": {
+            "baseline": {
+              "knownTotal": 36576,
+              "coverage": {
+                "final": 1,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          },
+          "output": {
+            "baseline": {
+              "knownTotal": 10752,
+              "coverage": {
+                "final": 1,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          },
+          "durationSeconds": {
+            "baseline": {
+              "knownTotal": 400.535,
+              "coverage": {
+                "final": 1,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "treatment": {
+              "knownTotal": 0,
+              "coverage": {
+                "final": 0,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "totalChange": null,
+            "perSuccess": {
+              "baseline": null,
+              "treatment": null,
+              "knownLowerBound": true
+            },
+            "perSuccessChange": null
+          }
+        }
+      },
+      "pairs": [
+        {
+          "task": "query-shape",
+          "trial": 1,
+          "graded": false,
+          "baseline": {
+            "passed": false,
+            "score": null,
+            "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls.",
+            "readObserved": true,
+            "misses": []
+          },
+          "treatment": {
+            "passed": false,
+            "score": null,
+            "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls.",
+            "readObserved": null,
+            "misses": []
+          },
+          "timing": {
+            "baseline": {
+              "clock": "performance.now",
+              "wallDurationSeconds": 400.534,
+              "execution": {
+                "clock": "performance.now",
+                "timeoutMs": 600000,
+                "heartbeatMs": 1000,
+                "anomalyThresholdMs": 5000,
+                "elapsedMs": 400520.477,
+                "wallElapsedMs": 400520,
+                "maxObservationGapMs": 1002,
+                "maxClockSkewMs": 1.241,
+                "timeoutFiredAfterMs": null,
+                "terminationDelayMs": null,
+                "anomaly": null
+              }
+            },
+            "treatment": {
+              "clock": "performance.now",
+              "wallDurationSeconds": 0,
+              "execution": null
+            }
+          },
+          "changedChecks": [],
+          "costChanges": {}
+        },
+        {
+          "task": "query-shape",
+          "trial": 2,
+          "graded": false,
+          "baseline": {
+            "passed": false,
+            "score": null,
+            "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls.",
+            "readObserved": null,
+            "misses": []
+          },
+          "treatment": {
+            "passed": false,
+            "score": null,
+            "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls.",
+            "readObserved": null,
+            "misses": []
+          },
+          "timing": {
+            "baseline": {
+              "clock": "performance.now",
+              "wallDurationSeconds": 0,
+              "execution": null
+            },
+            "treatment": {
+              "clock": "performance.now",
+              "wallDurationSeconds": 0,
+              "execution": null
+            }
+          },
+          "changedChecks": [],
+          "costChanges": {}
+        }
+      ]
+    }
+  ]
+}

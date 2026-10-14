@@ -1,0 +1,27 @@
+diff --git a/src/discount.js b/src/discount.js
+--- a/src/discount.js
++++ b/src/discount.js
+@@
+-export function unitPrice(item) {
+-  if (item.qty < 1) {
+-    throw new Error('bad quantity: ' + item.qty);
+-  }
+-  const base = item.price;
+-  if (item.qty > 12) {
+-    return base * 0.95;
+-  }
+-  return base;
+-}
++export const BULK_QTY = 10;
++export const BULK_RATE = 0.05;
++
++export function unitPrice(item) {
++  if (!Number.isInteger(item.qty) || item.qty < 1) {
++    throw new AppError('INVALID_QUANTITY', 'quantity must be a positive integer');
++  }
++  const base = item.price;
++  if (item.qty >= BULK_QTY) {
++    return roundCents(base * (1 - BULK_RATE));
++  }
++  return base;
++}

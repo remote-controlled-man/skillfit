@@ -26,8 +26,17 @@ input automatically; explicit snapshot input and API executors are rejected.
 The destination comes from the agent capability matrix's first project Skill
 directory. No global configuration or global Skill directory is written.
 
+With `--baseline-skill <previous-dir>`, baseline instead receives the previous
+complete version and treatment receives the target version. Both frontmatter names
+must match and their complete-resource hashes must differ. This option requires
+`--mode installed`; inject and single-arm trigger runs reject it. The source guards,
+fixture-contamination checks, paired error exclusions and call budgets remain in
+force. See [comparing Skill revisions](skill-revisions.md) for the independent
+development/validation workflow and interpretation.
+
 Both arms receive identical natural task prompts. All regular resources, including
-scripts, hidden files and binary assets, are copied only into treatment. The
+scripts, hidden files and binary assets, are copied only into treatment by default,
+or from the respective version into both arms with `--baseline-skill`. The
 fingerprint includes sorted relative paths and bytes, not permissions or empty
 directories. Unsafe install paths, nested source symlinks, destination symlinks,
 existing evaluated-Skill fixture destinations in any matrix project search directory
@@ -48,6 +57,11 @@ Compatible v4 manifests add `skillDelivery: {mode: "installed", installDir: ...}
 this mode, rather than the injection-only text bundle. Old manifests without
 delivery metadata retain their prior interpretation. Statistics and verdicts are
 unchanged; small studies remain indicative.
+
+Revision comparisons add `baselineTarget` with the previous Skill's name, source,
+complete-resource file list and SHA-256 hash. `target` continues to identify the
+treatment. Each `_result.json` identifies the version actually installed in that
+arm. Manifests without `baselineTarget` retain the existing baseline interpretation.
 
 Per-trial `_result.json` records delivery and nullable `skillTriggered`. When the
 executor returns a raw stream, `_transcript.jsonl` preserves it. Built-in installed

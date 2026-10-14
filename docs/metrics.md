@@ -1,5 +1,13 @@
 # skillfit metrics (v2, frozen 2026-09-23)
 
+Additive component review 2026-10-13: the [Agent evaluation interface](eval-component.md)
+adds versioned requests, pinned previews, native receipt audits and an independent
+adoption policy. `accept`/`reject`/`inconclusive` adoption decisions do not replace
+or reinterpret the frozen `effective`/`ineffective`/`inconclusive` statistical verdict.
+Insufficient, stopped, synthetic or unverified evidence cannot authorize adoption;
+the component never upgrades a Skill. Complete cost coverage is separate from
+quality significance. All formulas and legacy manifest interpretations below remain unchanged.
+
 This document defines what skillfit measures and how verdicts are computed. It is the contract that
 `src/harness/` implements and that bench authors design against. Changes here are deliberate: edit with a
 reasoned PR, cite sources, and bump the date.
@@ -11,6 +19,24 @@ specification. The v2 verdict protocol is unchanged.
 Additive workflow review 2026-10-09: optional managed-session and native read metadata below
 describe execution coverage and observations. They do not change the v2 statistical formulas,
 verdict thresholds, pairwise exclusions or legal legacy manifest interpretation.
+
+Additive revision review 2026-10-12: `--baseline-skill` in installed mode compares two
+complete versions of the same Skill. Optional v4 `baselineTarget` records the previous
+version; `target` records treatment. Both inputs are frozen, and trial receipts identify
+the installed arm's version. All v2 formulas, verdict thresholds and pairwise exclusions
+remain unchanged. A revision delta is relative to the previous Skill, not to no Skill;
+it establishes neither installation benefit nor general non-regression. See
+[the revision workflow](skill-revisions.md).
+
+Additive timing correction 2026-10-12: new trial receipts use a monotonic
+`performance.now()` interval for elapsed cost and retain wall duration plus
+optional CLI deadline/observation diagnostics. A detected clock discontinuity or
+observation gap is an executor environment error, with the existing pairwise
+exclusion and spending retention. No v2 formula or threshold changes. Legacy
+wall-duration receipts keep their recorded interpretation; see [execution timing](eval-timing.md).
+Plans also pin logical/physical workspace aliases so matrix-defined pure trust
+registrations for either frozen name count as the same bookkeeping. Retargeting
+an alias or changing any other configuration still stops further calls.
 
 This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
 contract — is [bench-authoring.md](bench-authoring.md).
@@ -33,6 +59,15 @@ guidance](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents
 gates), and the LLM-judge literature cited in §5.
 
 ## Unit of analysis
+
+Additive pair ordering 2026-10-13: versioned JSON requests can declare
+`pairOrder: "balanced"`. The first arm alternates by task position and trial
+number, keeping both arms adjacent and recording the strategy in the native plan
+and manifest. Offline assessment checks actual ledger order. The compatibility
+default remains `baseline-first`; old records without order metadata keep their
+recorded interpretation. This controls a systematic first/second-arm assignment,
+without isolating cache state or changing any verdict, exclusion or resampling
+formula. See [the component contract](eval-component.md).
 
 One **run** = one (task, condition, trial). Runs are **paired** on (task, trial): baseline and treatment see
 the same fixture and the same prompt, and the two arms of a pair are executed **adjacently** — the trial loop
@@ -302,6 +337,27 @@ graded surviving runs that supplied each field. Existing `tokens` totals and
 verdict semantics are unchanged. Missing or partial coverage cannot establish a
 complete overhead claim; legacy totals without coverage are shown as unrecorded.
 
+Optional `tasks[].costs` and `overall.costs` (cost schema 1) add descriptive
+accounting for surviving graded pairs and all invoked agent runs separately.
+They partition input into recorded cache-read and uncached tokens, retain
+failed/excluded invocations' spending, and report each measure per successful
+task (total spending / successes, including graded failures). Each measure's
+`final/partial/unknown` coverage sums to its population's run count. Incomplete
+usage is a known lower bound and suppresses percentage comparisons; missing
+cache counts are unknown, never zero. Timeouts retain measured elapsed time and
+available public-transcript usage as partial receipts. Pre-call guard/setup
+refusals are counted separately and do not enter spending totals. Judge and
+other cohorts' spending are excluded. These observations introduce no cost
+significance, monetary estimate or change to the quality protocol. See
+[evaluation cost accounting](eval-costs.md) for field and denominator rules.
+
+Failed JSON CLI invocations may add an identity/time-bound local numeric usage
+snapshot when the matrix capability permits it. This is partial cumulative usage,
+never final coverage or an accepted outcome; receipt `usageEvidence` preserves
+the counter provenance without private transcript bodies. Unknown/ambiguous
+metadata remains unknown, and original frozen failures are not rewritten.
+Quality exclusions, verdicts and every completeness/adoption gate stay unchanged.
+
 Rules and MCP targets use the same paired statistics as Skill targets but a different treatment
 mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The
 baseline/treatment project overlays are applied only after that snapshot, so the local CLI must load
@@ -316,3 +372,40 @@ Only a paired task experiment can support a claim that the MCP setup improves ou
 
 No cross-model leaderboards, no hosted dashboards, no trajectory-level scoring. skillfit answers one
 question per user: *is this configuration worth enabling for my agent on my tasks?*
+
+## Explicit efficiency acceptance (policy version 2, unreleased)
+
+The default version-1 quality policy and all quality verdicts above remain unchanged.
+An explicitly predeclared version-2 policy with `objective: "efficiency"` can instead
+accept a cost improvement with no **observed** correctness regression. A quality tie
+keeps its `inconclusive` verdict; this is neither proof of equivalence nor a quality
+gain. Both policies require the same native evidence, validation purpose, complete
+usage, error-free finished experiment and eight-task/five-pair floors. Version 2
+also requires native, predeclared balanced adjacent pair order. Any paired task,
+score or named-check regression rejects regardless of aggregate savings.
+
+The primary cost is **all invoked agent uncached-input tokens / successful task
+executions**, including spending on unsuccessful executions. Every task must have
+final uncached-input coverage, positive baseline spending and successes in both
+arms; missing tasks are never removed to improve the estimate. Bootstrap the
+whole paired task blocks, preserving both arms, all recorded trials, all spending
+and successes. For each of 10,000 resamples, draw N tasks with replacement from
+the N declared tasks and recompute the pooled ratio `(T tokens / T successes) /
+(B tokens / B successes) - 1`. Use Mulberry32 seed `20261013`; sort changes and
+take zero-based indices `floor(0.025 * 10000)` and `floor(0.975 * 10000)` for the
+95% percentile interval. The upper bound must be at most the negative declared
+minimum reduction (default 10%, floor 1%; comparison tolerance 1e-12), and at least
+the declared fraction of tasks must individually reduce that same per-success
+measure (default and floor 75%). No trial-level pseudo-replication or replacement
+of failed samples is allowed.
+
+Version 2 separately caps all-invocation input, cached input, uncached input,
+output and elapsed time per success; defaults allow no increase. Explicit caps
+show permitted tradeoffs. An elapsed-time cap is descriptive, not a latency
+significance test. Complete coverage of **all five** measures is still required.
+The interval concerns the recorded task mixture and the empirical distribution
+of its task blocks. Related defects within a repository, inherited configuration,
+provider drift and cache reuse limit generalization; it is not a repository-level
+or future-model guarantee. It estimates neither dollars nor provider-internal
+retry costs. Policy normalization/hashes remain versioned, and a policy chosen
+after execution cannot authorize adoption. See [the component contract](eval-component.md).

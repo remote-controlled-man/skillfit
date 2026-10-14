@@ -1,0 +1,77 @@
+commit f7b7b283b317cd374ce754402ca574ddf645fbc6
+Author:     isaacs <i@izs.me>
+AuthorDate: Mon Sep 16 14:57:57 2019 -0700
+Commit:     isaacs <i@izs.me>
+CommitDate: Mon Sep 16 14:57:57 2019 -0700
+
+    fix: do not remove all endish listeners on endish events
+    
+    The 'finish' event was removing the 'end' listeners, which is not
+    what we want, obviously.
+
+diff --git a/index.js b/index.js
+index 287602c..e99a168 100644
+--- a/index.js
++++ b/index.js
+@@ -3,7 +3,6 @@ const EE = require('events')
+ const Yallist = require('yallist')
+ const EOF = Symbol('EOF')
+ const MAYBE_EMIT_END = Symbol('maybeEmitEnd')
+-const REMOVE_ALL_END_LISTENERS = Symbol('removeAllEndListeners')
+ const EMITTED_END = Symbol('emittedEnd')
+ const EMITTING_END = Symbol('emittingEnd')
+ const CLOSED = Symbol('closed')
+@@ -257,7 +256,7 @@ module.exports = class MiniPass extends EE {
+         this[RESUME]()
+       else if (isEndish(ev) && this[EMITTED_END]) {
+         super.emit(ev)
+-        this[REMOVE_ALL_END_LISTENERS]()
++        this.removeAllListeners(ev)
+       }
+     }
+   }
+@@ -277,7 +276,6 @@ module.exports = class MiniPass extends EE {
+       this.emit('finish')
+       if (this[CLOSED])
+         this.emit('close')
+-      this[REMOVE_ALL_END_LISTENERS]()
+       this[EMITTING_END] = false
+     }
+   }
+@@ -332,16 +330,10 @@ module.exports = class MiniPass extends EE {
+       if (!isEndish(ev))
+         this[MAYBE_EMIT_END]()
+       else
+-        this[REMOVE_ALL_END_LISTENERS]()
++        this.removeAllListeners(ev)
+     }
+   }
+ 
+-  [REMOVE_ALL_END_LISTENERS] () {
+-    this.removeAllListeners('end')
+-    this.removeAllListeners('prefinish')
+-    this.removeAllListeners('finish')
+-  }
+-
+   // const all = await stream.collect()
+   collect () {
+     const buf = []
+diff --git a/test/end-missed.js b/test/end-missed.js
+index b337f24..09a7247 100644
+--- a/test/end-missed.js
++++ b/test/end-missed.js
+@@ -19,3 +19,14 @@ t.test('listening for any endish event after end re-emits', t => {
+   mp.on('data', d => str += d)
+   mp.on('finish', () => t.equal(str, 'foo'))
+ })
++
++t.test('all endish listeners get called', t => {
++  t.plan(3)
++  const mp = new MP()
++  let str = ''
++  mp.on('finish', () => t.equal(str, 'foo'))
++  mp.on('prefinish', () => t.equal(str, 'foo'))
++  mp.end('foo')
++  mp.on('data', d => str += d)
++  mp.on('end', () => t.equal(str, 'foo'))
++})

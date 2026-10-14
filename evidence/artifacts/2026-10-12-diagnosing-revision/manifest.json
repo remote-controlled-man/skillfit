@@ -1,0 +1,589 @@
+{
+  "schemaVersion": 4,
+  "experiment": {
+    "schemaVersion": 1,
+    "status": "stopped",
+    "plannedCalls": 30,
+    "maxCalls": 30,
+    "callsStarted": 30,
+    "callsFinished": 30,
+    "stopReason": "agent executor failed; inspect the per-trial error receipt. No further calls.",
+    "planSha256": "ef4f25c22d765edc8ac90df36bc1ef99dfebdf115a51d9763aa8b9a9976eb31f"
+  },
+  "inputMode": "workspace",
+  "skillDelivery": {
+    "mode": "installed",
+    "installDir": ".agents/skills"
+  },
+  "runGroup": "validation-20261012-rtk",
+  "createdAt": "2026-10-12T07:17:35.901Z",
+  "target": {
+    "kind": "skill",
+    "name": "diagnosing-bugs",
+    "sourceDir": "<skillfit-checkout>/evidence/inputs/diagnosing-bugs-compact-v1",
+    "bundleSha256": "f7bc79f291af75091fa0a7ec0abc6f384bb5a5287a63236c800904057f9528b8",
+    "files": [
+      "LICENSE",
+      "SKILL.md",
+      "agents/openai.yaml",
+      "scripts/hitl-loop.template.sh"
+    ]
+  },
+  "baselineTarget": {
+    "kind": "skill",
+    "name": "diagnosing-bugs",
+    "sourceDir": "<skillfit-checkout>/evidence/inputs/diagnosing-bugs",
+    "bundleSha256": "3cf6b2fea38acbdebfbaca564f7a2f10cd7d12dfcad0442756a6842db96eccc1",
+    "files": [
+      "LICENSE",
+      "SKILL.md",
+      "agents/openai.yaml",
+      "scripts/hitl-loop.template.sh"
+    ]
+  },
+  "bench": {
+    "name": "oss-lru-cache",
+    "dir": "<skillfit-checkout>/benches/contrib/oss-lru-cache",
+    "contentSha256": "b276606b5d00bdd98a65d8fa8944ba38b73efc7429e73b5dc56d83b8937950b2",
+    "taskCount": 3
+  },
+  "executor": {
+    "kind": "cli",
+    "model": "cli-configured",
+    "detail": "codex: codex exec --json --sandbox workspace-write -",
+    "sampling": null
+  },
+  "judge": null,
+  "trials": 5,
+  "tasks": [
+    {
+      "id": "fetch-size",
+      "conditions": {
+        "baseline": {
+          "passes": 5,
+          "trials": 5,
+          "errors": 0,
+          "skillReads": {
+            "observed": 5,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 2167666,
+            "output": 49535
+          },
+          "tokenCoverage": {
+            "input": 5,
+            "output": 5
+          }
+        },
+        "treatment": {
+          "passes": 5,
+          "trials": 5,
+          "errors": 0,
+          "skillReads": {
+            "observed": 5,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 1237495,
+            "output": 38186
+          },
+          "tokenCoverage": {
+            "input": 5,
+            "output": 5
+          }
+        }
+      },
+      "outcomes": {
+        "baseline": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "treatment": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      "scores": {
+        "baseline": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "treatment": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "deltaPassRate": 0,
+      "scoreDelta": 0,
+      "facets": [
+        {
+          "name": "existing assets unchanged and smoke tests pass",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "ordinary LRU and successful async fetch",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "concurrent fetches deduplicate provider work",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "size accounting and LRU order after out-of-order resolution",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "size-bound ordinary updates preserve newest entry",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "new regression has submission-pass/original-fail/reference-pass test-case evidence",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        }
+      ],
+      "verifierNotes": [],
+      "tokenDelta": {
+        "input": -930171,
+        "output": -11349
+      },
+      "verdict": "inconclusive",
+      "verdictReason": "only 0 discordant pair(s) (Δpass 0pp); significance needs at least 6",
+      "judge": null
+    },
+    {
+      "id": "fetch-abort",
+      "conditions": {
+        "baseline": {
+          "passes": 5,
+          "trials": 5,
+          "errors": 0,
+          "skillReads": {
+            "observed": 5,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 1464312,
+            "output": 47050
+          },
+          "tokenCoverage": {
+            "input": 5,
+            "output": 5
+          }
+        },
+        "treatment": {
+          "passes": 5,
+          "trials": 5,
+          "errors": 0,
+          "skillReads": {
+            "observed": 5,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 1177639,
+            "output": 43049
+          },
+          "tokenCoverage": {
+            "input": 5,
+            "output": 5
+          }
+        }
+      },
+      "outcomes": {
+        "baseline": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ],
+        "treatment": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      "scores": {
+        "baseline": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "treatment": [
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "deltaPassRate": 0,
+      "scoreDelta": 0,
+      "facets": [
+        {
+          "name": "existing assets unchanged and smoke tests pass",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "ordinary LRU and successful async fetch",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "concurrent fetches deduplicate provider work",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "deleted pending fetch rejects before provider completion",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "evicted pending fetch rejects before provider completion",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "replaced pending fetch rejects before provider completion",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "stale-on-rejection remains supported",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        },
+        {
+          "name": "new regression has submission-pass/original-fail/reference-pass test-case evidence",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 5,
+          "treatmentTrials": 5
+        }
+      ],
+      "verifierNotes": [],
+      "tokenDelta": {
+        "input": -286673,
+        "output": -4001
+      },
+      "verdict": "inconclusive",
+      "verdictReason": "only 0 discordant pair(s) (Δpass 0pp); significance needs at least 6",
+      "judge": null
+    },
+    {
+      "id": "fetch-lifecycle",
+      "conditions": {
+        "baseline": {
+          "passes": 4,
+          "trials": 4,
+          "errors": 0,
+          "skillReads": {
+            "observed": 4,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 1625342,
+            "output": 41225
+          },
+          "tokenCoverage": {
+            "input": 4,
+            "output": 4
+          }
+        },
+        "treatment": {
+          "passes": 2,
+          "trials": 4,
+          "errors": 1,
+          "skillReads": {
+            "observed": 4,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 0.5,
+          "meanScore": 0.9444444444444444,
+          "tokens": {
+            "input": 1475510,
+            "output": 43252
+          },
+          "tokenCoverage": {
+            "input": 4,
+            "output": 4
+          }
+        }
+      },
+      "outcomes": {
+        "baseline": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "treatment": [
+          true,
+          true,
+          false,
+          false
+        ]
+      },
+      "scores": {
+        "baseline": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "treatment": [
+          1,
+          1,
+          0.8888888888888888,
+          0.8888888888888888
+        ]
+      },
+      "deltaPassRate": -0.5,
+      "scoreDelta": -0.05555555555555558,
+      "facets": [
+        {
+          "name": "existing assets unchanged and smoke tests pass",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        },
+        {
+          "name": "ordinary LRU and successful async fetch",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        },
+        {
+          "name": "concurrent fetches deduplicate provider work",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        },
+        {
+          "name": "onInsert hides placeholder and classifies resolved application values",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 0.5,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        },
+        {
+          "name": "refresh eviction disposes stale value once in both callbacks",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        },
+        {
+          "name": "synchronous fetch result settles and is cached",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        },
+        {
+          "name": "own refresh completion does not abort the provider",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        },
+        {
+          "name": "explicit replacement still aborts refresh and retains replacement",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        },
+        {
+          "name": "new regression has submission-pass/original-fail/reference-pass test-case evidence",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 4,
+          "treatmentTrials": 4
+        }
+      ],
+      "verifierNotes": [],
+      "tokenDelta": {
+        "input": -149832,
+        "output": 2027
+      },
+      "verdict": "inconclusive",
+      "verdictReason": "only 2 discordant pair(s) (Δpass -50pp); significance needs at least 6",
+      "judge": null
+    }
+  ],
+  "overall": {
+    "conditions": {
+      "baseline": {
+        "passes": 14,
+        "trials": 14,
+        "errors": 0,
+        "skillReads": {
+          "observed": 14,
+          "unobserved": 0,
+          "unknown": 0
+        },
+        "passRate": 1,
+        "meanScore": 1,
+        "tokens": {
+          "input": 5257320,
+          "output": 137810
+        },
+        "tokenCoverage": {
+          "input": 14,
+          "output": 14
+        }
+      },
+      "treatment": {
+        "passes": 12,
+        "trials": 14,
+        "errors": 1,
+        "skillReads": {
+          "observed": 14,
+          "unobserved": 0,
+          "unknown": 0
+        },
+        "passRate": 0.8571428571428571,
+        "meanScore": 0.9841269841269842,
+        "tokens": {
+          "input": 3890644,
+          "output": 124487
+        },
+        "tokenCoverage": {
+          "input": 14,
+          "output": 14
+        }
+      }
+    },
+    "deltaPassRate": -0.1428571428571429,
+    "scoreDelta": -0.015873015873015817,
+    "tokenDelta": {
+      "input": -1366676,
+      "output": -13323
+    },
+    "verdict": "inconclusive",
+    "verdictReason": "only 2 discordant pair(s) (Δpass -14pp); significance needs at least 6",
+    "stats": {
+      "discordant": {
+        "improved": 0,
+        "regressed": 2
+      },
+      "mcnemarP": 0.5,
+      "deltaCi": {
+        "point": -0.1428571428571429,
+        "lo": -0.5,
+        "hi": 0,
+        "resamples": 2000
+      },
+      "scoreDeltaCi": {
+        "point": -0.015873015873015817,
+        "lo": -0.05555555555555547,
+        "hi": 0,
+        "resamples": 2000
+      }
+    }
+  },
+  "warnings": [
+    "Experiment did not complete its declared calls; no installation recommendation. Inspect _session.json and _calls.jsonl before planning a fresh run.",
+    "Installed Skill mode measures task outcomes with native discovery and complete resources; activation is not guaranteed. Inherited agent configuration still applies.",
+    "Skill revision comparison measures the target against the previous version, not against no Skill. A positive delta does not establish installation benefit or guarantee non-regression on unseen tasks.",
+    "Task \"fetch-size\": baseline pass rate is 100% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power.",
+    "Task \"fetch-size\" facet \"existing assets unchanged and smoke tests pass\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-size\" facet \"ordinary LRU and successful async fetch\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-size\" facet \"concurrent fetches deduplicate provider work\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-size\" facet \"size accounting and LRU order after out-of-order resolution\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-size\" facet \"size-bound ordinary updates preserve newest entry\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-size\" facet \"new regression has submission-pass/original-fail/reference-pass test-case evidence\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-abort\": baseline pass rate is 100% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power.",
+    "Task \"fetch-abort\" facet \"existing assets unchanged and smoke tests pass\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-abort\" facet \"ordinary LRU and successful async fetch\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-abort\" facet \"concurrent fetches deduplicate provider work\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-abort\" facet \"deleted pending fetch rejects before provider completion\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-abort\" facet \"evicted pending fetch rejects before provider completion\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-abort\" facet \"replaced pending fetch rejects before provider completion\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-abort\" facet \"stale-on-rejection remains supported\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-abort\" facet \"new regression has submission-pass/original-fail/reference-pass test-case evidence\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" (treatment): 1 trial(s) hit an executor, verifier, or engagement error and were excluded from the rates, together with their paired baseline trial(s) — an ungraded run is not a failure.",
+    "Task \"fetch-lifecycle\": baseline pass rate is 100% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power.",
+    "Task \"fetch-lifecycle\" facet \"existing assets unchanged and smoke tests pass\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" facet \"ordinary LRU and successful async fetch\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" facet \"concurrent fetches deduplicate provider work\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" facet \"onInsert hides placeholder and classifies resolved application values\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" facet \"refresh eviction disposes stale value once in both callbacks\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" facet \"synchronous fetch result settles and is cached\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" facet \"own refresh completion does not abort the provider\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" facet \"explicit replacement still aborts refresh and retains replacement\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"fetch-lifecycle\" facet \"new regression has submission-pass/original-fail/reference-pass test-case evidence\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Overall baseline pass rate is 100% (>= 90%) — this bench may be too easy and the experiment may lack discriminative power.",
+    "Only 2 discordant pair(s) between conditions — a run this size can only certify very large effects; treat any delta as indicative."
+  ]
+}

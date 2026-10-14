@@ -1,0 +1,179 @@
+commit c82bd07b4e15e207086ccdbb87bbd7d57776e163
+Author:     Sindre Sorhus <sindresorhus@gmail.com>
+AuthorDate: Sat Sep 12 20:17:31 2026 +0200
+Commit:     Sindre Sorhus <sindresorhus@gmail.com>
+CommitDate: Sat Sep 12 20:34:16 2026 +0200
+
+    Fix `pMap` not closing the source iterator when it rejects
+    
+    When a mapper rejected or the signal aborted, the source iterator's `return()` was never called, so async generator sources never ran their `finally` blocks and could not release resources.
+
+diff --git a/index.js b/index.js
+index 5686e5b..e7823ca 100644
+--- a/index.js
++++ b/index.js
+@@ -44,10 +44,18 @@ export default async function pMap(
+ 		};
+ 
+ 		const reject = reason => {
++			if (isResolved) {
++				return;
++			}
++
+ 			isRejected = true;
+ 			isResolved = true;
+ 			reject_(reason);
+ 			cleanup();
++
++			if (!isIterableDone) {
++				closeIterator(iterator);
++			}
+ 		};
+ 
+ 		if (signal) {
+@@ -285,16 +293,18 @@ export function pMapIterable(
+ 				// Stop pulling input once the consumer stops iterating, otherwise pending skipped mappers keep spawning work.
+ 				isDone = true;
+ 
+-				// Close the source so it can release its resources, like `for await` does.
+-				// Not awaited so a source that is blocked in `next()` cannot block the consumer from stopping.
+-				(async () => {
+-					try {
+-						await iterator.return?.();
+-					} catch {}
+-				})();
++				closeIterator(iterator);
+ 			}
+ 		},
+ 	};
+ }
+ 
+ export const pMapSkip = Symbol('skip');
++
++// Close the source so it can release its resources, like `for await` does.
++// Callers must not await this so a source that is blocked in `next()` cannot block them.
++async function closeIterator(iterator) {
++	try {
++		await iterator.return?.();
++	} catch {}
++}
+diff --git a/test.js b/test.js
+index 9f1187e..143292f 100644
+--- a/test.js
++++ b/test.js
+@@ -1117,3 +1117,115 @@ test('pMapIterable - a source blocked in `next()` does not block the consumer fr
+ 
+ 	t.true(end() < 100);
+ });
++
++test('closes the source iterator when a mapper rejects', async t => {
++	let isSourceClosed = false;
++
++	async function * source() {
++		try {
++			for (let index = 0; index < 100; index++) {
++				yield index;
++			}
++		} finally {
++			isSourceClosed = true;
++		}
++	}
++
++	await t.throwsAsync(pMap(source(), async value => {
++		if (value === 1) {
++			throw new Error('mapper error');
++		}
++
++		await delay(10);
++		return value;
++	}, {concurrency: 2}), {message: 'mapper error'});
++
++	await delay(10);
++	t.true(isSourceClosed);
++});
++
++test('closes the source iterator when aborted', async t => {
++	let returnCallCount = 0;
++
++	const iterable = {
++		[Symbol.iterator]() {
++			let index = 0;
++			return {
++				next: () => ({done: false, value: index++}),
++				return() {
++					returnCallCount++;
++					return {done: true, value: undefined};
++				},
++			};
++		},
++	};
++
++	const abortController = new AbortController();
++
++	setTimeout(() => {
++		abortController.abort();
++	}, 50);
++
++	await t.throwsAsync(pMap(iterable, () => delay(1000), {concurrency: 2, signal: abortController.signal}), {name: 'AbortError'});
++	t.is(returnCallCount, 1);
++});
++
++test('does not close the source iterator when it completes', async t => {
++	let returnCallCount = 0;
++
++	const iterable = {
++		[Symbol.iterator]() {
++			let index = 0;
++			return {
++				next: () => ({done: index === 3, value: index++}),
++				return() {
++					returnCallCount++;
++					return {done: true, value: undefined};
++				},
++			};
++		},
++	};
++
++	t.deepEqual(await pMap(iterable, async value => value, {concurrency: 2}), [0, 1, 2]);
++	t.is(returnCallCount, 0);
++
++	await t.throwsAsync(pMap(iterable, async () => {
++		throw new Error('mapper error');
++	}, {concurrency: 2, stopOnError: false}), {instanceOf: AggregateError});
++	t.is(returnCallCount, 0);
++});
++
++test.serial('a source `return()` that rejects does not affect the `pMap` rejection', async t => {
++	const iterable = {
++		[Symbol.asyncIterator]() {
++			let index = 0;
++			return {
++				async next() {
++					return {done: false, value: index++};
++				},
++				async return() {
++					throw new Error('return failed');
++				},
++			};
++		},
++	};
++
++	const unhandledRejections = [];
++	const onUnhandledRejection = error => {
++		unhandledRejections.push(error);
++	};
++
++	process.on('unhandledRejection', onUnhandledRejection);
++
++	try {
++		await t.throwsAsync(pMap(iterable, async () => {
++			throw new Error('mapper error');
++		}, {concurrency: 2}), {message: 'mapper error'});
++
++		await delay(50);
++	} finally {
++		process.off('unhandledRejection', onUnhandledRejection);
++	}
++
++	t.deepEqual(unhandledRejections, []);
++});

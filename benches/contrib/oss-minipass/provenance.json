@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/isaacs/minipass",
+  "role": "Development and calibration only, not independent validation",
+  "tasks": [
+    {
+      "task": "async-end",
+      "repository": "minipass",
+      "commit": "6d80111d0905704929334ce097adf03bbb11f472",
+      "parent": "b5962821660cfa51f570fa5c2aeb8373d98b2270",
+      "url": "https://github.com/isaacs/minipass/commit/6d80111d0905704929334ce097adf03bbb11f472",
+      "fixtureSourceSha256": "cbc7a520286f8c96e9955c2f44e518ee958e2ff203f2352f7cac694151e8a27e",
+      "oracleSourceSha256": "21dd6257c5fcc695526a20812b4ec547e597a37ffebbe75f686fbfb3258ad69f",
+      "vendoredDependency": {
+        "package": "yallist",
+        "version": "4.0.0",
+        "tarSha256": "a80c78aa276536615891ef66efbc17d3bd07c8cb14e3bd5298eed3006bfa4d49"
+      },
+      "adaptations": [
+        "original index.js remains byte-identical",
+        "minimal offline node:test package scripts",
+        "runtime loads only the pinned vendored yallist source",
+        "smoke tests use Node built-ins; upstream regression tests are retained in the public fix patch, outside agent fixtures"
+      ]
+    },
+    {
+      "task": "buffered-readable",
+      "repository": "minipass",
+      "commit": "6472384be41273ae223280342fb9dcd632608a9e",
+      "parent": "781dd8638ad246b034e71edaec0cc58299034a74",
+      "url": "https://github.com/isaacs/minipass/commit/6472384be41273ae223280342fb9dcd632608a9e",
+      "fixtureSourceSha256": "6fe47c54ab10da0e09086a59266459b394e6b9b15de522911ae9b50a05f1a6ea",
+      "oracleSourceSha256": "7621bdbec1f8414cefdb75a792579d8fdb1fe003b7238d4bb6ffff9aebbbcfb0",
+      "vendoredDependency": {
+        "package": "yallist",
+        "version": "4.0.0",
+        "tarSha256": "a80c78aa276536615891ef66efbc17d3bd07c8cb14e3bd5298eed3006bfa4d49"
+      },
+      "adaptations": [
+        "original index.js remains byte-identical",
+        "minimal offline node:test package scripts",
+        "runtime loads only the pinned vendored yallist source",
+        "smoke tests use Node built-ins; upstream regression tests are retained in the public fix patch, outside agent fixtures"
+      ]
+    },
+    {
+      "task": "pipeline-order",
+      "repository": "minipass",
+      "commit": "4c5a106ed34bef4da06083466a476e16c39f4a20",
+      "parent": "846701aaeba63bb9f281069ce97c13cb4c48a9d8",
+      "url": "https://github.com/isaacs/minipass/commit/4c5a106ed34bef4da06083466a476e16c39f4a20",
+      "fixtureSourceSha256": "332f05eb5e7c7dc8776426da2762b75a8b994923347c27e50c3c5f03aebe48c8",
+      "oracleSourceSha256": "f776052d1eecebe3f99a9914b2aad4150d5736331bfd7f8c72569f9d1209c4da",
+      "vendoredDependency": {
+        "package": "yallist",
+        "version": "4.0.0",
+        "tarSha256": "a80c78aa276536615891ef66efbc17d3bd07c8cb14e3bd5298eed3006bfa4d49"
+      },
+      "adaptations": [
+        "original index.js remains byte-identical",
+        "minimal offline node:test package scripts",
+        "runtime loads only the pinned vendored yallist source",
+        "smoke tests use Node built-ins; upstream regression tests are retained in the public fix patch, outside agent fixtures"
+      ]
+    },
+    {
+      "task": "end-listeners",
+      "repository": "minipass",
+      "commit": "f7b7b283b317cd374ce754402ca574ddf645fbc6",
+      "parent": "78150126c62caef9e2f2d59e33ce6101adbaf95b",
+      "url": "https://github.com/isaacs/minipass/commit/f7b7b283b317cd374ce754402ca574ddf645fbc6",
+      "fixtureSourceSha256": "30842df596012b5456cba3bb286e0d2209373f87163b4f5c3bfcd59adcc591c0",
+      "oracleSourceSha256": "bf970218a3820c2be0e905bff20c22ecccefcf45f2eba090f1eeeb9f846bb322",
+      "vendoredDependency": {
+        "package": "yallist",
+        "version": "3.1.1",
+        "tarSha256": "50f14ae6cfe8360cb2259ba3e93305e069036f13251d69d3cbee9e1d4775ca04"
+      },
+      "adaptations": [
+        "original index.js remains byte-identical",
+        "minimal offline node:test package scripts",
+        "runtime loads only the pinned vendored yallist source",
+        "smoke tests use Node built-ins; upstream regression tests are retained in the public fix patch, outside agent fixtures"
+      ]
+    }
+  ]
+}

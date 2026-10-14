@@ -7,8 +7,10 @@ import { test } from 'node:test';
 import { loadBench } from './bench.js';
 import { collectSkillBundle } from './bundle.js';
 import { MockExecutor } from './executors/mock.js';
-import { gitInit, runExperiment, type ExperimentPlan } from './runner.js';
+import { gitInit, runExperiment, runTrial, type ExperimentPlan } from './runner.js';
 import type { EvaluationTarget, Executor, ExecutorResult } from './types.js';
+import { ExecutorFailure } from './types.js';
+import { parseEvalReport, renderEvalMarkdown } from '../commands/eval-report.js';
 
 const PACKAGE_ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const BUNDLED_CODE_REVIEW = join(PACKAGE_ROOT, 'benches', 'code-review');
@@ -168,6 +170,27 @@ test('runExperiment pairs baseline/treatment and records everything', async (t) 
   assert.match(verifierLog, /"decoys":\["c-style-loop"\]/);
 });
 
+test('trial receipts retain monotonic and executor timing without changing paired quality', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-timing-receipts-');
+  const timing = { clock: 'performance.now' as const, timeoutMs: 600000, heartbeatMs: 1000, anomalyThresholdMs: 5000,
+    elapsedMs: 25, wallElapsedMs: 25, maxObservationGapMs: 25, maxClockSkewMs: 0,
+    timeoutFiredAfterMs: null, terminationDelayMs: null, anomaly: null };
+  const mock = new MockExecutor();
+  const clocks = { wall: 100000, mono: 0 };
+  const executor: Executor = { describe: () => mock.describe(), run: async (...args) => {
+    clocks.wall -= 50000; clocks.mono += 250;
+    return { ...await mock.run(...args), executionTiming: timing };
+  } };
+  const outcome = await runTrial(plan({ runsRoot, executor, trials: 1,
+    clock: { wallNow: () => clocks.wall, monotonicNow: () => clocks.mono } }), 'review-r1', 'baseline', 1);
+  const receipt = JSON.parse(readFileSync(join(runsRoot, 'test-group', 'review-r1', 'baseline', 'trial-1', '_result.json'), 'utf8'));
+  assert.equal(receipt.timing.clock, 'performance.now');
+  assert.deepEqual(receipt.timing.execution, timing);
+  assert.equal(receipt.durationSeconds, 0.25);
+  assert.equal(receipt.timing.wallDurationSeconds, -50);
+  assert.equal(outcome.error, null);
+});
+
 test('workspace pairs inspect identical disk inputs without inlining text or binary files', async (t) => {
   const runsRoot = tmp(t, 'skillfit-workspace-');
   const benchDir = join(runsRoot, 'bench');
@@ -225,6 +248,38 @@ test('token coverage counts usage fields only on surviving graded pairs', async 
   const manifest = await runExperiment(plan({ runsRoot, bench, executor, trials: 1 }));
   assert.deepEqual(manifest.overall.conditions.baseline.tokenCoverage, { input: 1, output: 0 });
   assert.deepEqual(manifest.overall.conditions.treatment.tokenCoverage, { input: 0, output: 0 });
+});
+
+test('runExperiment preserves failure costs and distinguishes invocations from guard refusals', async (t) => {
+  const runsRoot = tmp(t, 'skillfit-failure-costs-');
+  const benchDir = join(runsRoot, 'bench');
+  for (const dir of ['fixtures/t1', 'prompts', 'verifiers']) mkdirSync(join(benchDir, dir), { recursive: true });
+  writeFileSync(join(benchDir, 'fixtures/t1/input.txt'), 'input');
+  writeFileSync(join(benchDir, 'prompts/t1.md'), 'Solve the task.');
+  writeFileSync(join(benchDir, 'verifiers/t1.mjs'), 'import { readFileSync } from "node:fs"; process.exit(readFileSync(process.argv[2]+"/_output.md","utf8")==="pass"?0:1);');
+  writeFileSync(join(benchDir, 'bench.json'), JSON.stringify({ schemaVersion: 1, tasks: [{ id: 't1', fixture: 'fixtures/t1', prompt: 'prompts/t1.md', verifier: 'node verifiers/t1.mjs', verifierKind: 'output' }] }));
+  let calls = 0;
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'cost-fixture' }), run: async () => {
+    calls++;
+    if (calls === 4) throw new ExecutorFailure('timeout', { output: 'unfinished', rawOutput: 'public partial transcript', tokens: { input: 3, cachedInput: 2, output: 1 }, usageStatus: 'partial' });
+    if (calls >= 5) throw new ExecutorFailure('stopped before call', { output: '' }, false);
+    return { output: calls === 2 ? 'fail' : 'pass', tokens: { input: 10, cachedInput: 8, output: 2 } };
+  } };
+  const manifest = await runExperiment(plan({ runsRoot, bench: loadBench(benchDir), executor, trials: 3 }));
+  const costs = manifest.overall.costs!;
+  assert.equal(manifest.overall.conditions.baseline.trials, 1);
+  assert.equal(manifest.overall.conditions.treatment.passes, 0);
+  assert.equal(costs.attempts.baseline.passes, 2);
+  assert.equal(costs.attempts.treatment.runs, 2);
+  assert.equal(costs.attempts.treatment.metrics.input.knownTotal, 13);
+  assert.deepEqual(costs.attempts.treatment.metrics.input.coverage, { final: 1, partial: 1, unknown: 0 });
+  assert.deepEqual(costs.notInvoked, { baseline: 1, treatment: 1 });
+  const receipt = JSON.parse(readFileSync(join(runsRoot, 'test-group/t1/treatment/trial-2/_result.json'), 'utf8'));
+  assert.equal(receipt.executorInvoked, true);
+  assert.equal(receipt.usageStatus, 'partial');
+  assert.deepEqual(receipt.tokens, { input: 3, cachedInput: 2, output: 1 });
+  assert.equal(readFileSync(join(runsRoot, 'test-group/t1/treatment/trial-2/_transcript.jsonl'), 'utf8'), 'public partial transcript');
+  assert.match(renderEvalMarkdown(parseEvalReport(manifest)), /All agent executor invocations/);
 });
 
 test('runExperiment applies workspace config after snapshotting so prompts stay identical', async (t) => {

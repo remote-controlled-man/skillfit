@@ -1,0 +1,668 @@
+{
+  "schemaVersion": 4,
+  "experiment": {
+    "schemaVersion": 1,
+    "status": "completed",
+    "plannedCalls": 4,
+    "maxCalls": 4,
+    "callsStarted": 4,
+    "callsFinished": 4,
+    "stopReason": null,
+    "planSha256": "9c9cf3c84b138ec81d7f8bc052550de596f89b01d9ea1adc1f11eba798b57dac"
+  },
+  "inputMode": "workspace",
+  "skillDelivery": {
+    "mode": "installed",
+    "installDir": ".agents/skills"
+  },
+  "runGroup": "normalize-url-v2-validated-20261012",
+  "createdAt": "2026-10-12T15:47:14.807Z",
+  "target": {
+    "kind": "skill",
+    "name": "diagnosing-bugs",
+    "sourceDir": "<skillfit-checkout>/evidence/inputs/diagnosing-bugs-compact-v2",
+    "bundleSha256": "2df457fa462c9d2b082a26364d53047e5612e195099c90c818e597a274eaf0ba",
+    "files": [
+      "LICENSE",
+      "SKILL.md",
+      "agents/openai.yaml",
+      "scripts/hitl-loop.template.sh"
+    ]
+  },
+  "baselineTarget": {
+    "kind": "skill",
+    "name": "diagnosing-bugs",
+    "sourceDir": "<skillfit-checkout>/evidence/inputs/diagnosing-bugs",
+    "bundleSha256": "3cf6b2fea38acbdebfbaca564f7a2f10cd7d12dfcad0442756a6842db96eccc1",
+    "files": [
+      "LICENSE",
+      "SKILL.md",
+      "agents/openai.yaml",
+      "scripts/hitl-loop.template.sh"
+    ]
+  },
+  "bench": {
+    "name": "oss-normalize-url-query-shape",
+    "dir": "<skillfit-checkout>/benches/contrib/oss-normalize-url",
+    "contentSha256": "73ebfa8b2e00513e991df75f9bafdccdaf333dd7517e23ae74604685cca157af",
+    "taskCount": 1
+  },
+  "executor": {
+    "kind": "cli",
+    "model": "cli-configured",
+    "detail": "codex: codex exec --json --sandbox workspace-write -",
+    "sampling": null
+  },
+  "judge": null,
+  "trials": 2,
+  "tasks": [
+    {
+      "id": "query-shape",
+      "conditions": {
+        "baseline": {
+          "passes": 2,
+          "trials": 2,
+          "errors": 0,
+          "skillReads": {
+            "observed": 2,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 714164,
+            "output": 18302
+          },
+          "tokenCoverage": {
+            "input": 2,
+            "output": 2
+          }
+        },
+        "treatment": {
+          "passes": 2,
+          "trials": 2,
+          "errors": 0,
+          "skillReads": {
+            "observed": 2,
+            "unobserved": 0,
+            "unknown": 0
+          },
+          "passRate": 1,
+          "meanScore": 1,
+          "tokens": {
+            "input": 507671,
+            "output": 16180
+          },
+          "tokenCoverage": {
+            "input": 2,
+            "output": 2
+          }
+        }
+      },
+      "outcomes": {
+        "baseline": [
+          true,
+          true
+        ],
+        "treatment": [
+          true,
+          true
+        ]
+      },
+      "scores": {
+        "baseline": [
+          1,
+          1
+        ],
+        "treatment": [
+          1,
+          1
+        ]
+      },
+      "deltaPassRate": 0,
+      "scoreDelta": 0,
+      "facets": [
+        {
+          "name": "existing assets unchanged and smoke tests pass",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 2,
+          "treatmentTrials": 2
+        },
+        {
+          "name": "bare path and flag query parameters retain their shape",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 2,
+          "treatmentTrials": 2
+        },
+        {
+          "name": "mixed bare parameters preserve explicit empty values",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 2,
+          "treatmentTrials": 2
+        },
+        {
+          "name": "similar parameter names do not interfere",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 2,
+          "treatmentTrials": 2
+        },
+        {
+          "name": "default sorting and its opt-out remain supported",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 2,
+          "treatmentTrials": 2
+        },
+        {
+          "name": "ordinary URL normalization and fragments remain intact",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 2,
+          "treatmentTrials": 2
+        },
+        {
+          "name": "encoded backslashes and Unicode query values remain intact",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 2,
+          "treatmentTrials": 2
+        },
+        {
+          "name": "retained regression has submission-pass/original-fail/reference-pass case evidence",
+          "baselinePassRate": 1,
+          "treatmentPassRate": 1,
+          "baselineTrials": 2,
+          "treatmentTrials": 2
+        }
+      ],
+      "verifierNotes": [],
+      "tokenDelta": {
+        "input": -206493,
+        "output": -2122
+      },
+      "costs": {
+        "schemaVersion": 1,
+        "paired": {
+          "baseline": {
+            "runs": 2,
+            "passes": 2,
+            "metrics": {
+              "input": {
+                "knownTotal": 714164,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 644352,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 69812,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 18302,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 640.441,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          },
+          "treatment": {
+            "runs": 2,
+            "passes": 2,
+            "metrics": {
+              "input": {
+                "knownTotal": 507671,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 417408,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 90263,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 16180,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 617.471,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          }
+        },
+        "attempts": {
+          "baseline": {
+            "runs": 2,
+            "passes": 2,
+            "metrics": {
+              "input": {
+                "knownTotal": 714164,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 644352,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 69812,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 18302,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 640.441,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          },
+          "treatment": {
+            "runs": 2,
+            "passes": 2,
+            "metrics": {
+              "input": {
+                "knownTotal": 507671,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "cachedInput": {
+                "knownTotal": 417408,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "uncachedInput": {
+                "knownTotal": 90263,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "output": {
+                "knownTotal": 16180,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              },
+              "durationSeconds": {
+                "knownTotal": 617.471,
+                "coverage": {
+                  "final": 2,
+                  "partial": 0,
+                  "unknown": 0
+                }
+              }
+            }
+          }
+        },
+        "notInvoked": {
+          "baseline": 0,
+          "treatment": 0
+        }
+      },
+      "verdict": "inconclusive",
+      "verdictReason": "only 0 discordant pair(s) (Δpass 0pp); significance needs at least 6",
+      "judge": null
+    }
+  ],
+  "overall": {
+    "conditions": {
+      "baseline": {
+        "passes": 2,
+        "trials": 2,
+        "errors": 0,
+        "skillReads": {
+          "observed": 2,
+          "unobserved": 0,
+          "unknown": 0
+        },
+        "passRate": 1,
+        "meanScore": 1,
+        "tokens": {
+          "input": 714164,
+          "output": 18302
+        },
+        "tokenCoverage": {
+          "input": 2,
+          "output": 2
+        }
+      },
+      "treatment": {
+        "passes": 2,
+        "trials": 2,
+        "errors": 0,
+        "skillReads": {
+          "observed": 2,
+          "unobserved": 0,
+          "unknown": 0
+        },
+        "passRate": 1,
+        "meanScore": 1,
+        "tokens": {
+          "input": 507671,
+          "output": 16180
+        },
+        "tokenCoverage": {
+          "input": 2,
+          "output": 2
+        }
+      }
+    },
+    "deltaPassRate": 0,
+    "scoreDelta": 0,
+    "tokenDelta": {
+      "input": -206493,
+      "output": -2122
+    },
+    "costs": {
+      "schemaVersion": 1,
+      "paired": {
+        "baseline": {
+          "runs": 2,
+          "passes": 2,
+          "metrics": {
+            "input": {
+              "knownTotal": 714164,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "cachedInput": {
+              "knownTotal": 644352,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "uncachedInput": {
+              "knownTotal": 69812,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "output": {
+              "knownTotal": 18302,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "durationSeconds": {
+              "knownTotal": 640.441,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            }
+          }
+        },
+        "treatment": {
+          "runs": 2,
+          "passes": 2,
+          "metrics": {
+            "input": {
+              "knownTotal": 507671,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "cachedInput": {
+              "knownTotal": 417408,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "uncachedInput": {
+              "knownTotal": 90263,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "output": {
+              "knownTotal": 16180,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "durationSeconds": {
+              "knownTotal": 617.471,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            }
+          }
+        }
+      },
+      "attempts": {
+        "baseline": {
+          "runs": 2,
+          "passes": 2,
+          "metrics": {
+            "input": {
+              "knownTotal": 714164,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "cachedInput": {
+              "knownTotal": 644352,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "uncachedInput": {
+              "knownTotal": 69812,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "output": {
+              "knownTotal": 18302,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "durationSeconds": {
+              "knownTotal": 640.441,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            }
+          }
+        },
+        "treatment": {
+          "runs": 2,
+          "passes": 2,
+          "metrics": {
+            "input": {
+              "knownTotal": 507671,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "cachedInput": {
+              "knownTotal": 417408,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "uncachedInput": {
+              "knownTotal": 90263,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "output": {
+              "knownTotal": 16180,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            },
+            "durationSeconds": {
+              "knownTotal": 617.471,
+              "coverage": {
+                "final": 2,
+                "partial": 0,
+                "unknown": 0
+              }
+            }
+          }
+        }
+      },
+      "notInvoked": {
+        "baseline": 0,
+        "treatment": 0
+      }
+    },
+    "verdict": "inconclusive",
+    "verdictReason": "only 0 discordant pair(s) (Δpass 0pp); significance needs at least 6",
+    "stats": {
+      "discordant": {
+        "improved": 0,
+        "regressed": 0
+      },
+      "mcnemarP": 1,
+      "deltaCi": {
+        "point": 0,
+        "lo": 0,
+        "hi": 0,
+        "resamples": 2000
+      },
+      "scoreDeltaCi": {
+        "point": 0,
+        "lo": 0,
+        "hi": 0,
+        "resamples": 2000
+      }
+    }
+  },
+  "warnings": [
+    "Installed Skill mode measures task outcomes with native discovery and complete resources; activation is not guaranteed. Inherited agent configuration still applies.",
+    "Skill revision comparison measures the target against the previous version, not against no Skill. A positive delta does not establish installation benefit or guarantee non-regression on unseen tasks.",
+    "Task \"query-shape\": baseline pass rate is 100% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power.",
+    "Task \"query-shape\" facet \"existing assets unchanged and smoke tests pass\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"query-shape\" facet \"bare path and flag query parameters retain their shape\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"query-shape\" facet \"mixed bare parameters preserve explicit empty values\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"query-shape\" facet \"similar parameter names do not interfere\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"query-shape\" facet \"default sorting and its opt-out remain supported\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"query-shape\" facet \"ordinary URL normalization and fragments remain intact\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"query-shape\" facet \"encoded backslashes and Unicode query values remain intact\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Task \"query-shape\" facet \"retained regression has submission-pass/original-fail/reference-pass case evidence\": baseline check pass rate is 100% (>= 90%) — this facet is saturated and measures no lift.",
+    "Only 0 discordant pair(s) between conditions — a run this size can only certify very large effects; treat any delta as indicative."
+  ]
+}

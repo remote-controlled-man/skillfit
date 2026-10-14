@@ -112,6 +112,32 @@ results, usage coverage and installation evidence gaps. A single task informs
 that task; it does not prove general benefit. Follow the [real OSS workflow](docs/oss-task-evaluation.md)
 or replay the [pinned mcp-use example](benches/contrib/oss-mcp-use-utf8/README.md).
 
+## Compare Skill revisions
+
+Use `--baseline-skill` with `--mode installed` to compare a previous complete Skill against a revised version. Both must have the same `SKILL.md` frontmatter name and different content fingerprints. Baseline receives the previous version; treatment receives the target version, with identical natural task prompts and independent outcome verifiers. Plans, manifests and trial receipts pin both versions, including scripts and binary resources. A change to either source stops further calls. The comparison measures revision effects; installation benefit still needs a separate no-Skill baseline. See [the revision workflow](docs/skill-revisions.md).
+
+```bash
+node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
+```
+
+## Agent evaluation component
+
+Use a version 1 JSON request to call the existing Skill revision engine from an Agent. A read-only preview pins inputs and the policy; execution requires its plan hash. JSON results retain improvements, regressions, all-invocation costs and evidence coverage. A separate policy returns `accept`, `reject` or `inconclusive`; insufficient evidence cannot authorize adoption, and the component never upgrades a Skill. This interface is unreleased; build the checkout. See [the input/output and policy contract](docs/eval-component.md).
+
+For new cost comparisons, set `pairOrder: "balanced"` in the request to alternate which version runs first. The plan freezes the order and offline assessment verifies the invocation ledger; paired statistical formulas remain unchanged.
+
+The default policy requires a demonstrated quality gain. An explicit version-2 `efficiency` policy can accept stable uncached-input savings with no observed correctness regression; a quality tie keeps its `inconclusive` verdict. Both objectives require independent validation, complete evidence and spending coverage. See the [predeclared cost example](docs/examples/eval-request.diagnosing-v2-efficiency.json).
+
+Requests can also pin `executorTimeoutSeconds` (default 600) for both versions. A changed deadline requires a new plan and batch; previous timeouts and their available spending remain in the evidence.
+
+Failed Codex JSON calls can retain identity-bound partial usage from local numeric counters. Private transcript bodies stay out of exports, and partial usage never satisfies the final-cost or adoption gates.
+
+```bash
+node dist/cli.js eval --request ./request.json --dry-run
+node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>
+node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
+```
+
 ## Test rules and MCP setups
 
 Put a `skillfit-experiment.json` next to baseline and treatment project overlays. A rules experiment can add `AGENTS.md`; an MCP experiment can add `.codex/config.toml`, `.mcp.json`, or the path defined for another supported agent. skillfit copies the same task fixture into both arms, snapshots it for an identical prompt, then applies each overlay so the local agent discovers configuration through its normal loader.
@@ -139,6 +165,20 @@ Try the synthetic example below, then replace its path with the `Manifest:` path
 ```bash
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
+
+New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
+
+The latest [debugging development record](evidence/2026-10-13-debugging-completed-development.md) retains a rejected candidate, one concrete repair and increased total costs; [stopped cohorts](evidence/2026-10-13-debugging-development-stops.md) preserve errors and partial spending. Neither establishes stable improvement or authorizes an upgrade.
+
+[Known regression controls and the first validation interruption](evidence/2026-10-13-debugging-controls-and-sleep-stop.md) retain LRU point savings, a normalize-url cost regression and a diagnosed sleep gap. All 16 completed deliveries replay offline; the interrupted invocation keeps its partial cost and receives no grade. A fresh fixed validation batch remains separate.
+
+The [completed independent validation](evidence/2026-10-14-debugging-independent-validation.md) retains 80 real executions: both versions pass 40/40, while compact v4 reduces aggregate uncached input 16.82%, output 16.64% and time 17.48%. Its 95% uncached-input interval supports 7.69%–26.26% savings, below the declared minimum of 10% at the conservative bound. Adoption remains `inconclusive` and ineligible. Individual cost increases, all 125 study calls and a zero-model offline replay remain visible.
+
+The [prospective followup tasks](benches/contrib/oss-skill-followup/README.md) pin eight different defects in three new repositories, with original failures, complete maintainer passes and protected regression witnesses. The [separate bounded protocol](docs/plans/2026-10-14-skill-followup.md) keeps v4 and the 10% requirement unchanged, caps this followup at 80 calls and cumulative spending at 205, and never pools earlier quality results. Offline integrity checks establish task validity, not Skill improvement.
+
+The [stopped followup record](evidence/2026-10-14-debugging-followup-routing-stop.md) retains 46 exact offline regrades, a 47th-call CLI routing failure and 33 uninvoked entries. Timing and power are normal, but the failed token cost remains unknown; no completed prefix authorizes adoption. Individual cost increases and all 172 cumulative executor calls remain visible.
+
+The [subsequent spending stop](evidence/2026-10-14-debugging-spending-stop.md) retains a separate readiness check and one user-interrupted recovery invocation, bringing actual cumulative spending to 174 calls. The remaining 79 entries are uninvoked. Its offline archive reproduces partial-cost lower bounds and keeps the unattested local readiness counter separate; no new quality gain, eligibility or automatic upgrade is claimed.
 
 ## Selectable Codex setup
 

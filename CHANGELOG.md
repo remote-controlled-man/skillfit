@@ -1,5 +1,45 @@
 # Changelog
 
+## Unreleased — Agent evaluation component
+
+- Retain the user-requested recovery spending stop with one ungraded invocation, 79 uninvoked entries and exact offline receipt/cost replay. Account for all 174 cumulative calls, keep partial and unattested readiness counters separate, and leave the subsequent development proposal unexecuted without any upgrade claim.
+- Publish compressed, dependency-free replay packages for stopped and completed debugging development cohorts. Preserve v3 rejection, v4's concrete repair, all increased costs, partial-failure supplements and unchanged earlier evidence; no stable improvement or automatic upgrade is claimed.
+- Preserve known v4 regression controls and the first independent validation interruption in a separate offline replay package: LRU point savings, normalize-url cost rejection and diagnosed clamshell sleep retain all costs without grading incomplete work or claiming stable improvement.
+- Recover best-effort partial usage for failed Codex JSON calls using a matrix capability, exact thread/workspace/time binding and cumulative numeric counters. Preserve counter provenance without private bodies; errors remain excluded and partial coverage cannot authorize adoption. Existing failure receipts stay unchanged.
+- JSON requests can declare a symmetric `executorTimeoutSeconds` (default 600, maximum 3600). Preview/native plans pin the deadline and receipt audit checks it; changing it requires a fresh batch without replacing earlier timeouts.
+- Add explicit policy version 2 (`objective: "efficiency"`): whole-task, fixed-seed cost bootstrap, broad per-task savings and all usage-partition caps, retaining every correctness/evidence gate. Version-1 normalization/hashes and positive-quality requirements stay compatible; a quality tie is never relabeled as a quality improvement, and no upgrade is automatic.
+- JSON requests can opt into `pairOrder: "balanced"`; first arms alternate across tasks and trials while pairs remain adjacent. Preview/native plans pin the strategy, manifests record it, and offline audit checks actual ledger order. The baseline-first default and statistical verdict formulas remain compatible.
+- Add four historical minipass development tasks and eight independent p-map/quick-lru validation tasks, with pinned source, dependency-free offline execution, public outcome checks and executable regression replay. Offline gates establish benchmark integrity, not model efficacy.
+
+- Accept a strict version 1 request with `eval --request`, return a JSON preview,
+  and require `--plan-sha` before real calls. Freeze the request and inline policy
+  with the native session while reusing installed old/new Skill evaluation.
+- Return JSON quality changes, observed task/check regressions, complete agent
+  invocation accounting and a separate adoption policy. Incomplete, stopped,
+  synthetic or unverified evidence cannot authorize adoption; no upgrade is executed.
+- `report eval --json` audits native inventory, hashes, paired receipts and costs;
+  `--replay` verifies cloned deliveries offline. Retain stopped-run partial spending
+  and unknown usage when no final manifest exists. Statistical verdicts are unchanged.
+
+## Unreleased — Skill revision evaluation and reproducible evidence
+
+- `eval --mode installed --baseline-skill <previous>` compares two complete versions of
+  the same Skill with identical task prompts. Plans, manifests and receipts pin both
+  versions; source drift stops execution. Reports identify observed task regressions.
+- Record cached and uncached input, output, elapsed time and usage coverage for both
+  graded pairs and all invocations. Preserve partial usage from failed calls and keep
+  missing usage unknown. These measurements do not establish a dollar bill.
+- Use monotonic trial timing, retain wall timing and detect CLI observation gaps or
+  clock discontinuities. Check deadlines on heartbeat, output and process close;
+  terminate the process tree and bound pipe draining. Pin logical and canonical
+  workspace aliases without exempting unrelated configuration changes.
+- Add the pinned `oss-normalize-url` historical failure bench and retain the original,
+  compact v1 and v2 comparison evidence, including failed recovery stages. Track the
+  frozen compiled replay files so a clean checkout can reproduce saved outcomes.
+  See the [experiment handoff](docs/plans/2026-10-13-skill-experiment-cleanup.md) and
+  [script navigation](scripts/README.md). This work does not implement automatic
+  Skill evolution or an adoption gate; statistical verdict semantics are unchanged.
+
 ## Unreleased — Streamable HTTP MCP preflight
 
 - `mcp check` accepts transport `http` for a Streamable HTTP endpoint. It still does not call a tool.
@@ -91,6 +131,12 @@ All notable changes to this project are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/). Dates are when the work landed on `main`.
 
 ## [Unreleased]
+
+- Preserve the routing-interrupted followup with 46 completed delivery regrades, one ungraded execution error, 33 uninvoked entries and unknown failed-token cost. Keep individual cost increases, all 172 cumulative executor calls, the unavailable efficiency interval and unchanged ineligible decision reproducible offline.
+
+- Add eight prospective p-debounce, debounce and humanize-duration defects with exact source pins, controlled timing, public outcomes and executable regression witnesses. A separate fixed followup preserves original/v4 resources and the 10% policy; earlier inconclusive/negative evidence and cumulative spending remain visible.
+
+- Retain the completed 80-call independent original/v4 comparison and a dependency-free replay archive: 40/40 passes per arm and aggregate savings still receive an ineligible `inconclusive` decision because the frozen 10% conservative reduction bound is unmet. Preserve individual cost increases, all 125 study calls, unknown authoring/billing costs and an exact v4 procedural reproduction request.
 
 Graded facet scoring and verifier/oracle acceptance gates, informed by a Skill2Env review
 (see `docs/metrics.md` v2). The exit code remains the sole pass/fail authority; the McNemar verdict

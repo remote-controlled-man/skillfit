@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit predeclared acceptance policies",
+  "oneOf": [{ "$ref": "#/$defs/quality" }, { "$ref": "#/$defs/efficiency" }],
+  "$defs": {
+    "quality": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {"const": 1, "default": 1},
+        "minTasks": {"type": "integer", "minimum": 8, "maximum": 10000, "default": 8},
+        "minTrialsPerTask": {"type": "integer", "minimum": 5, "maximum": 20, "default": 5},
+        "minDeltaPassRate": {"type": "number", "minimum": 0, "maximum": 1, "default": 0},
+        "maxCostIncreaseFraction": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "uncachedInput": {"type": "number", "minimum": 0, "maximum": 9007199254740991, "default": 0},
+            "output": {"type": "number", "minimum": 0, "maximum": 9007199254740991, "default": 0},
+            "durationSeconds": {"type": "number", "minimum": 0, "maximum": 9007199254740991, "default": 0}
+          }
+        }
+      }
+    },
+    "efficiency": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "objective"],
+      "properties": {
+        "schemaVersion": {"const": 2},
+        "minTasks": {"type": "integer", "minimum": 8, "maximum": 10000, "default": 8},
+        "minTrialsPerTask": {"type": "integer", "minimum": 5, "maximum": 20, "default": 5},
+        "maxCostIncreaseFraction": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "uncachedInput": {"type": "number", "minimum": 0, "maximum": 9007199254740991, "default": 0},
+            "output": {"type": "number", "minimum": 0, "maximum": 9007199254740991, "default": 0},
+            "durationSeconds": {"type": "number", "minimum": 0, "maximum": 9007199254740991, "default": 0},
+            "input": {"type": "number", "minimum": 0, "maximum": 9007199254740991, "default": 0},
+            "cachedInput": {"type": "number", "minimum": 0, "maximum": 9007199254740991, "default": 0}
+          }
+        },
+        "objective": {"const": "efficiency"},
+        "minUncachedInputReductionFraction": {"type": "number", "minimum": 0.01, "maximum": 1, "default": 0.1},
+        "minImprovedTaskFraction": {"type": "number", "minimum": 0.75, "maximum": 1, "default": 0.75}
+      }
+    }
+  }
+}

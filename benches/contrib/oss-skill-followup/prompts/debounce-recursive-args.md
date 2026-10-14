@@ -1,0 +1,3 @@
+A trailing debounce callback that calls its own debounced wrapper again loses the next call's arguments and receiver. A countdown callback should receive 3,2,1 in order, and multiple argument identities should survive. Preserve leading-edge cooldown and return values.
+
+This is pinned historical upstream source with no runtime package dependencies. npm test uses only Node. Change index.js and add a new executable *.test.mjs regression using node:test and the public API. Keep supplied tests, metadata, clock helper and documentation unchanged. Explain the cause and checks actually run. Do not fetch upstream fixes or use the network.

@@ -1,0 +1,48 @@
+commit 1af51b57534b284ead73cca65f26b56bb9390768
+Author:     Anh Hong <hong4rc@gmail.com>
+AuthorDate: Tue Jun 30 05:22:19 2026 +0700
+Commit:     GitHub <noreply@github.com>
+CommitDate: Tue Jun 30 00:22:19 2026 +0200
+
+    Fix `pMapIterable` mapper index for out-of-order promise inputs (#88)
+
+diff --git a/index.js b/index.js
+index f713b9b..5aabf95 100644
+--- a/index.js
++++ b/index.js
+@@ -226,7 +226,8 @@ export function pMapIterable(
+ 					trySpawn();
+ 
+ 					try {
+-						const returnValue = await mapper(await value, index++);
++						const currentIndex = index++;
++						const returnValue = await mapper(await value, currentIndex);
+ 
+ 						pendingPromisesCount--;
+ 
+diff --git a/test.js b/test.js
+index 484bfeb..320863d 100644
+--- a/test.js
++++ b/test.js
+@@ -541,6 +541,21 @@ test('pMapIterable - index in mapper', async t => {
+ 	]);
+ });
+ 
++test('pMapIterable - index in mapper (out-of-order-settling promises)', async t => {
++	const input = [
++		delay(50, {value: 'a'}),
++		delay(10, {value: 'b'}),
++		delay(30, {value: 'c'}),
++	];
++
++	const result = [];
++	for await (const item of pMapIterable(input, async (value, index) => [value, index], {concurrency: 3})) {
++		result.push(item);
++	}
++
++	t.deepEqual(result, [['a', 0], ['b', 1], ['c', 2]]);
++});
++
+ test('pMapIterable - empty', async t => {
+ 	t.deepEqual(await collectAsyncIterable(pMapIterable([], mapper)), []);
+ });

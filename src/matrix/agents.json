@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-10-11T06:45:00Z",
+  "verifiedAt": "2026-10-13T08:39:24Z",
   "agents": [
     {
       "id": "claude-code",
@@ -107,6 +107,7 @@
         "docs": null
       },
       "headless": {
+        "partialUsageFromSessionLog": true,
         "runtime": {
           "versionArgv": ["codex", "--version"],
           "settings": {

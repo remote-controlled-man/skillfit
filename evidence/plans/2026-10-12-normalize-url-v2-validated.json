@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "declaredAt": "2026-10-12T15:25:44.895Z",
+  "name": "normalize-url unchanged Skill revision comparison with initialized readiness worktree",
+  "baseline": {
+    "path": "evidence/inputs/diagnosing-bugs",
+    "sha256": "3cf6b2fea38acbdebfbaca564f7a2f10cd7d12dfcad0442756a6842db96eccc1"
+  },
+  "treatment": {
+    "path": "evidence/inputs/diagnosing-bugs-compact-v2",
+    "sha256": "2df457fa462c9d2b082a26364d53047e5612e195099c90c818e597a274eaf0ba"
+  },
+  "candidateFreeze": {
+    "path": "evidence/plans/2026-10-12-diagnosing-v2-candidate.json",
+    "sha256": "0c58a86432b61ce32a2c167f698910edf62c1c316d87aaf5fdee0c7c54a40e2d"
+  },
+  "previous": {
+    "declaration": "evidence/plans/2026-10-12-diagnosing-v2.json",
+    "report": "evidence/2026-10-12-diagnosing-v2.md",
+    "status": "stopped; retain unchanged, never append or replace samples",
+    "artifactIndex": "evidence/artifacts/2026-10-12-diagnosing-v2/artifact-index.json",
+    "artifactIndexSha256": "4a7267fe95972d807a52659e1e387e62d43ef22e587c41a91f9bd15f527de1f3"
+  },
+  "cohorts": [
+    {
+      "name": "transfer-validated",
+      "runGroup": "normalize-url-v2-validated-20261012",
+      "bench": {
+        "path": "benches/contrib/oss-normalize-url",
+        "sha256": "73ebfa8b2e00513e991df75f9bafdccdaf333dd7517e23ae74604685cca157af"
+      },
+      "trials": 2,
+      "calls": 4,
+      "role": "Independent repository relative to the known lru-cache development control. Previously observed task; this fresh batch is not a new holdout and is not pooled with the stopped run. Freshly declared after a pure-trust path-alias false stop, without pooling either stopped batch."
+    }
+  ],
+  "totalAgentInvocations": 5,
+  "configured": {
+    "agent": "codex",
+    "settings": {
+      "model": "gpt-6.1-sol",
+      "model_reasoning_effort": "xhigh",
+      "service_tier": "default"
+    },
+    "cli": "codex-cli 0.162.0-alpha.17.2",
+    "node": "v24.21.0",
+    "sandbox": "workspace-write",
+    "timeoutSeconds": 600,
+    "sampling": null,
+    "servedModel": "unrecorded; not independently attested"
+  },
+  "delivery": {
+    "mode": "installed",
+    "input": "workspace",
+    "judge": null,
+    "order": "adjacent original-Skill baseline / compact-v2 treatment pairs; baseline first"
+  },
+  "timing": {
+    "elapsedClock": "performance.now",
+    "wallIntervalRetained": true,
+    "heartbeatMs": 1000,
+    "clockSkewThresholdMs": 5000,
+    "observationGapThresholdMs": 6000,
+    "postTerminationDrainMs": 2000,
+    "nominalTimeoutSeconds": 600,
+    "power": "macOS temporary caffeinate -i -s -w runner-pid; idle-sleep assertion verified before calls, released in finally. AC-only system-sleep assertion; forced sleep cannot be prevented."
+  },
+  "environment": {
+    "nativeGuard": "Native session pins matrix-listed user configuration/Skills, both evaluated Skills, bench and compiled runner before/after each invocation. Inherited configuration is not isolated.",
+    "rtkSha256": "13f973cf9d47899124efae2cdb1684021ea2ed4b523c9a8c7f032197175e1aa1",
+    "rtkCheck": "Additional referenced instruction checked before and after the whole batch; native matrix configurations checked around each call.",
+    "workspaceAliases": "Native plan freezes logical and physical paths before calls; only pure trust entries for those names are excluded. Retargeting or any other config change stops calls."
+  },
+  "calibration": {
+    "liveCalls": 0,
+    "reason": "No new calibration; same pinned task, grader and both Skill resources. Timing repair is tested offline before declaring four calls."
+  },
+  "analysis": "Analyze all declared surviving pairs in this new batch separately. Enumerate improved/regressed public checks and pass/fail. Report paired and all-invocation input/cache/uncached/output/monotonic elapsed, coverage, increases and per-success costs including graded failures. Retain errors and refusal receipts. Never pool old wall durations with new monotonic durations or claim billing/active compute. Readiness counts/usage are additional study spending and remain separate from all comparative populations. Older stopped cohorts remain separate; no retrospective grading or pooling.",
+  "stopping": "Any execution error, timing anomaly or input/configuration drift stops further calls. No retries, replacement samples, candidate edits or trial additions. Functional failures remain data. Preserve this batch even if incomplete. Power assertions are verified at startup; utility liveness is recorded at finish, not independently attested before every call. A small saturated two-pair task cannot support efficacy, equivalence, non-inferiority or an installation recommendation. One readiness check is allowed after a ten-minute connection cooldown. It must return READY before any of the four native benchmark calls. Do not retry either phase within this batch or change model/effort/tier/timeout in response to results.",
+  "runner": {
+    "head": "d09ac7aaf5dfb990b4251d8c3758ed3f9cb8f809",
+    "dirty": true,
+    "compiledSha256": "8cad13dd92a9a9095ec51b66bac7328c288e4d91919583016940c6c72eedac44",
+    "entrypoint": "scripts/run-normalize-url-v2-validated.mjs",
+    "entrypointSha256": "efb405d234d49a5d5c7d2e95ae229d2f54e0089458872e7c188885fb0d4b9a82"
+  },
+  "offlineEntrypoints": [
+    {
+      "path": "scripts/replay-normalize-url-v2-validated.mjs",
+      "sha256": "65dd6b20b4a18bf9c169bb3df1a1cec5071a693c17cb89696de7d0b2ae0757e4"
+    },
+    {
+      "path": "scripts/analyze-normalize-url-v2-validated.mjs",
+      "sha256": "35ba86f5cc685dba4e8daf6d354211ebce9846f766824382b8a9972be9b85fab"
+    }
+  ],
+  "validation": {
+    "fullOfflineTests": 460,
+    "failures": 0,
+    "contributedBenchesFailures": 0
+  },
+  "reproducibility": "Frozen compiled runner/source, complete Skill/bench inputs, declaration, native receipts/call ledger/public transcripts, timing diagnostics, power assertion record, all deliveries and archive file hashes. Fresh extraction must regrade and reproduce cost analysis; fresh live runs reproduce procedure, not identical stochastic outputs.",
+  "interruptedRecovery": {
+    "declaration": "evidence/plans/2026-10-12-normalize-url-v2-recovery.json",
+    "runGroup": "normalize-url-v2-recovery-20261012",
+    "status": "stopped after one original-Skill invocation; no graded pairs; do not reclassify or replace it",
+    "artifactIndex": "evidence/artifacts/2026-10-12-normalize-url-v2-recovery/artifact-index.json",
+    "artifactIndexSha256": "d6e55928e7f3fd17ce518bf794228fe48408e37aada943e2d9cc6099121cd36f"
+  },
+  "connectionFailure": {
+    "declaration": "evidence/plans/2026-10-12-normalize-url-v2-comparison.json",
+    "runGroup": "normalize-url-v2-comparison-20261012",
+    "status": "stopped after one executor timeout with public 503/TLS reconnect errors, zero graded pairs; retain unknown usage",
+    "artifactIndex": "evidence/artifacts/2026-10-12-normalize-url-v2-comparison/artifact-index.json",
+    "artifactIndexSha256": "21993ceeb694a39700562ae6785371bb26a6dcd9ea68d6e20076de6dd136569b"
+  },
+  "availability": {
+    "calls": 1,
+    "timeoutMs": 90000,
+    "prompt": "Respond with the single word READY. Do not use tools or modify files.",
+    "notBeforeUTC": "2026-10-12T15:19:28.491Z",
+    "cooldownSeconds": 600,
+    "purpose": "Readiness only, never a graded task, calibration or judge; separately retain spending. A failed readiness check makes no benchmark calls and is never repeated within this batch.",
+    "preparation": "Existing harness gitInit verifies Git/reflog in the disposable readiness directory before its one CLI invocation. No skip-git flag or changed model settings."
+  },
+  "readinessFailure": {
+    "declaration": "evidence/plans/2026-10-12-normalize-url-v2-available.json",
+    "status": "one CLI readiness invocation refused locally for missing Git worktree; no benchmark call; retained unchanged",
+    "artifactIndex": "evidence/artifacts/2026-10-12-normalize-url-v2-available/artifact-index.json",
+    "artifactIndexSha256": "b345c193b34fb8c07d18f1402c1b16262ae6bc50f7fcc66df56b6e989c0fbad8"
+  }
+}

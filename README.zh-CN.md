@@ -109,6 +109,32 @@ node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input works
 报告展示逐项检查结果、使用量覆盖范围和安装决策所缺的证据。单个任务只能说明该任务，不能证明普遍收益。
 详见[真实开源评估流程](docs/oss-task-evaluation.md)，或复跑[固定版本的 mcp-use 示例](benches/contrib/oss-mcp-use-utf8/README.md)。
 
+## 比较 Skill 修订版本
+
+在 `--mode installed` 下用 `--baseline-skill` 比较旧版完整 Skill 和修订版。两版的 `SKILL.md` frontmatter 名称必须一致，内容指纹必须不同。baseline 获得旧版，treatment 获得目标新版，两组使用相同的自然任务提示和独立的结果验证器。计划、manifest 与逐次运行记录固定两版身份，覆盖脚本和二进制资源；任一来源变化都会停止后续调用。这项比较测量修订效果；安装收益仍需另做无 Skill 基线实验。详见[版本修订流程](docs/skill-revisions.md)。
+
+```bash
+node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
+```
+
+## Agent 评估组件
+
+用版本 1 JSON 请求，让 Agent 调用现有 Skill 修订评估引擎。只读预览固定输入和策略，执行时必须提供预览的计划指纹。JSON 结果保留提升、退步、全部调用成本和证据覆盖情况。独立策略返回 `accept`、`reject` 或 `inconclusive`；证据不足不能授权采用，组件也不会升级 Skill。这项接口尚未发布，需要构建仓库版本。详见[输入输出与验收策略契约](docs/eval-component.md)。
+
+新的成本对比可在请求中设置 `pairOrder: "balanced"`，交替安排两版先运行。计划固定顺序，离线评估核对实际调用记录；配对统计公式保持不变。
+
+默认策略要求证实质量提升。显式声明版本 2 的 `efficiency` 策略后，未观察到正确性退步且未缓存输入成本稳定下降，也可通过验收；质量持平仍保留 `inconclusive` 判定。两种目标都要求独立验证、完整证据和成本覆盖。参见[预先声明的成本示例](docs/examples/eval-request.diagnosing-v2-efficiency.json)。
+
+请求还可通过 `executorTimeoutSeconds` 固定两版的单次时限（默认 600 秒）。改变时限必须声明新计划和新批次；之前的超时及已知花费仍保留在证据中。
+
+失败的 Codex JSON 调用可从本地数值计数器保留身份匹配的部分用量。导出不包含私有会话正文；部分用量仍不能满足最终成本覆盖或采用门槛。
+
+```bash
+node dist/cli.js eval --request ./request.json --dry-run
+node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>
+node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
+```
+
 ## 测试规则与 MCP 配置
 
 把 `skillfit-experiment.json` 和 baseline/treatment 项目覆盖层放在同一目录。规则实验可以加入 `AGENTS.md`；MCP 实验可以加入 `.codex/config.toml`、`.mcp.json` 或其他受支持 agent 在能力矩阵中声明的路径。skillfit 会为两组复制相同任务 fixture，先生成完全相同的 prompt 快照，再应用各自覆盖层，让本机 agent 通过正常的项目配置加载器发现配置。
@@ -136,6 +162,20 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 ```bash
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
+
+新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
+
+最新的[调试开发记录](evidence/2026-10-13-debugging-completed-development.md)保留了被拒绝的候选、一个具体修复和增加的总成本；[中止批次](evidence/2026-10-13-debugging-development-stops.md)保留了错误和部分消耗。两者都没有证明稳定提升，也不能授权升级。
+
+[已知退步对照与首次验证中止记录](evidence/2026-10-13-debugging-controls-and-sleep-stop.md)保留了 LRU 的成本下降点估计、normalize-url 的成本退步和已查明的睡眠间隔。16 次完整交付均可离线重放；中止调用保留部分成本、不予评分。新的固定验证批次独立保留。
+
+[已完成的独立验证](evidence/2026-10-14-debugging-independent-validation.md)保留了 80 次真实执行：两个版本均通过 40/40 次，compact v4 的未缓存输入总量下降 16.82%、输出下降 16.64%、耗时下降 17.48%。未缓存输入的 95% 区间支持下降 7.69%–26.26%，保守边界仍未达到声明的至少 10%。验收保持 `inconclusive`，不具备升级资格。各任务的成本增加、全部 125 次研究调用以及零模型调用的离线复算均保留。
+
+[前瞻性后续任务](benches/contrib/oss-skill-followup/README.md)固定了三个新仓库的八个不同缺陷，具备原始失败、完整维护者修复通过和受保护的回归证据。[单独声明的有界方案](docs/plans/2026-10-14-skill-followup.md)保持 v4 和至少 10% 的要求不变，将本轮上限设为 80 次调用、累计消耗上限设为 205 次，并且不合并以前的正确性结果。离线完整性检查证明任务有效，不能证明 Skill 提升。
+
+[后续批次中止记录](evidence/2026-10-14-debugging-followup-routing-stop.md)保留了 46 份精确离线复算、第 47 次调用的 CLI 路由失败及 33 份未调用记录。计时和供电正常，但失败调用的 token 成本仍然未知；已完成的前缀不能授权升级。各任务的成本增加和累计 172 次执行调用均保留。
+
+[之后的消耗控制中止记录](evidence/2026-10-14-debugging-spending-stop.md)保留了单独的恢复检查及一次按用户要求中止的恢复批次调用，实际累计消耗为 174 次，其余 79 份记录未调用。离线归档复算部分成本下限，并将未独立核实的本地恢复检查计数单独保留；不声称新增正确性提升、升级资格或自动升级。
 
 ## 可选择的 Codex 配置
 

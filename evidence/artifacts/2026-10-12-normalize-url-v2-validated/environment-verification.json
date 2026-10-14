@@ -1,0 +1,153 @@
+{
+  "inputs": [
+    {
+      "label": "bench",
+      "matches": true,
+      "sha256": "73ebfa8b2e00513e991df75f9bafdccdaf333dd7517e23ae74604685cca157af"
+    },
+    {
+      "label": "target",
+      "matches": true,
+      "sha256": "2df457fa462c9d2b082a26364d53047e5612e195099c90c818e597a274eaf0ba"
+    },
+    {
+      "label": "implementation",
+      "matches": true,
+      "sha256": "8cad13dd92a9a9095ec51b66bac7328c288e4d91919583016940c6c72eedac44"
+    },
+    {
+      "label": "baseline Skill",
+      "matches": true,
+      "sha256": "3cf6b2fea38acbdebfbaca564f7a2f10cd7d12dfcad0442756a6842db96eccc1"
+    },
+    {
+      "label": "global Skill",
+      "matches": true,
+      "sha256": "1c69dddf96acfc2e0a80085971120979161209600967702a76c75225afd2b739"
+    }
+  ],
+  "configurations": [
+    {
+      "path": "<user-home>/.codex/AGENTS.md",
+      "matches": true,
+      "sha256": "4473f2e4c8e7bcec577b8b6d748b91655a3e38eb701149fcc32e195277a0f6c0"
+    },
+    {
+      "path": "<user-home>/.codex/config.toml",
+      "matches": true,
+      "sha256": "2d8d7838429498a8eb377089545272b1f274a83d91b57799e26a90a3358bd06f"
+    },
+    {
+      "path": "<user-home>/.codex/hooks.json",
+      "matches": true,
+      "sha256": "b305e4924d8ad8a52e523ae3b4525a5783d9ea80648fac8f111f980cf758b94a"
+    },
+    {
+      "path": "<user-home>/.codex/AGENTS.override.md",
+      "matches": true,
+      "sha256": null
+    }
+  ],
+  "installedCopies": [
+    {
+      "arm": "baseline",
+      "trial": 1,
+      "matches": true,
+      "sha256": "3cf6b2fea38acbdebfbaca564f7a2f10cd7d12dfcad0442756a6842db96eccc1",
+      "timing": {
+        "clock": "performance.now",
+        "wallDurationSeconds": 248.603,
+        "execution": {
+          "clock": "performance.now",
+          "timeoutMs": 600000,
+          "heartbeatMs": 1000,
+          "anomalyThresholdMs": 5000,
+          "elapsedMs": 248589.007,
+          "wallElapsedMs": 248590,
+          "maxObservationGapMs": 1003,
+          "maxClockSkewMs": 1.682,
+          "timeoutFiredAfterMs": null,
+          "terminationDelayMs": null,
+          "anomaly": null
+        }
+      }
+    },
+    {
+      "arm": "baseline",
+      "trial": 2,
+      "matches": true,
+      "sha256": "3cf6b2fea38acbdebfbaca564f7a2f10cd7d12dfcad0442756a6842db96eccc1",
+      "timing": {
+        "clock": "performance.now",
+        "wallDurationSeconds": 391.837,
+        "execution": {
+          "clock": "performance.now",
+          "timeoutMs": 600000,
+          "heartbeatMs": 1000,
+          "anomalyThresholdMs": 5000,
+          "elapsedMs": 391825.206,
+          "wallElapsedMs": 391824,
+          "maxObservationGapMs": 1005.01,
+          "maxClockSkewMs": 1.71,
+          "timeoutFiredAfterMs": null,
+          "terminationDelayMs": null,
+          "anomaly": null
+        }
+      }
+    },
+    {
+      "arm": "treatment",
+      "trial": 1,
+      "matches": true,
+      "sha256": "2df457fa462c9d2b082a26364d53047e5612e195099c90c818e597a274eaf0ba",
+      "timing": {
+        "clock": "performance.now",
+        "wallDurationSeconds": 339.384,
+        "execution": {
+          "clock": "performance.now",
+          "timeoutMs": 600000,
+          "heartbeatMs": 1000,
+          "anomalyThresholdMs": 5000,
+          "elapsedMs": 339388.619,
+          "wallElapsedMs": 339370,
+          "maxObservationGapMs": 1003,
+          "maxClockSkewMs": 18.698,
+          "timeoutFiredAfterMs": null,
+          "terminationDelayMs": null,
+          "anomaly": null
+        }
+      }
+    },
+    {
+      "arm": "treatment",
+      "trial": 2,
+      "matches": true,
+      "sha256": "2df457fa462c9d2b082a26364d53047e5612e195099c90c818e597a274eaf0ba",
+      "timing": {
+        "clock": "performance.now",
+        "wallDurationSeconds": 278.069,
+        "execution": {
+          "clock": "performance.now",
+          "timeoutMs": 600000,
+          "heartbeatMs": 1000,
+          "anomalyThresholdMs": 5000,
+          "elapsedMs": 278058.029,
+          "wallElapsedMs": 278058,
+          "maxObservationGapMs": 1003,
+          "maxClockSkewMs": 0.974,
+          "timeoutFiredAfterMs": null,
+          "terminationDelayMs": null,
+          "anomaly": null
+        }
+      }
+    }
+  ],
+  "configuredSettings": {
+    "model": "gpt-6.1-sol",
+    "model_reasoning_effort": "xhigh",
+    "service_tier": "default"
+  },
+  "cliVersion": "codex-cli 0.162.0-alpha.17.2",
+  "servedModel": "unrecorded",
+  "limits": "Native per-call configuration/inputs and workspace aliases are guarded; RTK/CLI extra checks are at phase endpoints. Server-side model, inherited/unlisted plugins and host scheduling are not isolated."
+}

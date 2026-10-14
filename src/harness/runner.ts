@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join, resolve } from 'node:path';
 import type { ExperimentSession } from './experiment-session.js';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
-import { assertInstalledSkillFixtures, installSkillResources, installedSkillDestination } from './installed-skill.js';
+import { assertInstalledSkillFixtures, assertSkillRevisionTargets, installSkillResources, installedSkillDestination } from './installed-skill.js';
 import { collectInstalledSkillFingerprint } from './bundle.js';
 import { judgePair, type JudgeResult } from './judge.js';
 import { killTree, treeSpawnOptions } from './kill-tree.js';
@@ -19,13 +19,20 @@ import {
 } from './report.js';
 import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
 import { listFilesRecursive } from './hash.js';
-import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, TokenUsage } from './types.js';
+import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, PairOrder, TokenUsage, UsageEvidence } from './types.js';
+import { pairConditions } from './types.js';
 import { CONDITIONS } from './types.js';
+import { ExecutorFailure } from './types.js';
+import { summarizeCosts } from './costs.js';
+import { executionClock, type ExecutionClock, type ExecutionTiming } from './execution-timing.js';
+import type { ComponentMetadata } from './eval-contract.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 
 export interface ExperimentPlan {
+  component?: ComponentMetadata;
   bench: Bench;
   target: EvaluationTarget;
+  baselineTarget?: EvaluationTarget;
   inputMode?: InputMode;
   skillInstallDir?: string;
   skillSearchDirs?: readonly string[];
@@ -33,9 +40,12 @@ export interface ExperimentPlan {
   executor: Executor;
   judge?: Executor | null;
   trials: number;
+  pairOrder?: PairOrder;
   runsRoot: string;
   runGroup: string;
   log?: (msg: string) => void;
+  /** Injectable clocks for offline duration checks. */
+  clock?: ExecutionClock;
 }
 
 function applyOverlay(overlayDir: string, runDir: string): void {
@@ -54,6 +64,8 @@ export interface TrialOutcome {
   startedAt: string;
   finishedAt: string;
   durationSeconds: number;
+  /** Wall timestamps stay available; elapsed cost uses the monotonic clock. */
+  timing?: { clock: 'performance.now'; wallDurationSeconds: number; execution: ExecutionTiming | null };
   passed: boolean;
   verifierExitCode: number | null;
   verifierPassed: boolean | null;
@@ -62,6 +74,8 @@ export interface TrialOutcome {
   error: string | null;
   output: string;
   tokens: TokenUsage | null;
+  executorInvoked: boolean;
+  usageStatus: 'final' | 'partial' | 'unknown';
   gitInitialized: boolean;
   skillTriggered?: boolean | null;
 }
@@ -182,15 +196,22 @@ export async function runTrial(
   condition: Condition,
   trial: number,
 ): Promise<TrialOutcome> {
-  const { bench, target, executor } = plan;
+  const { bench, executor } = plan;
+  const target = condition === 'baseline' && plan.baselineTarget ? plan.baselineTarget : plan.target;
+  if (plan.baselineTarget) {
+    if (!plan.skillInstallDir) throw new Error('Skill revision comparison requires installed delivery.');
+    assertSkillRevisionTargets(plan.target, plan.baselineTarget);
+  }
   const inputMode = plan.inputMode ?? 'snapshot';
   assertInputModeSupported(inputMode, executor);
   if (plan.skillInstallDir) {
     if (target.kind !== 'skill' || inputMode !== 'workspace') {
       throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
     }
-    if (collectInstalledSkillFingerprint(target.sourceDir).sha256 !== target.sha256) {
-      throw new Error('Skill resources changed after planning; freeze the input again before running.');
+    for (const skill of [plan.target, ...(plan.baselineTarget ? [plan.baselineTarget] : [])]) {
+      if (collectInstalledSkillFingerprint(skill.sourceDir).sha256 !== skill.sha256) {
+        throw new Error('Skill resources changed after planning; freeze the input again before running.');
+      }
     }
   }
   const task = bench.tasks.find((t) => t.id === taskId);
@@ -213,7 +234,7 @@ export async function runTrial(
   if (plan.skillInstallDir) {
     const destination = installedSkillDestination(runDir, plan.skillInstallDir, target.name);
     if (existsSync(destination)) throw new Error('Fixture already contains the evaluated Skill: ' + destination);
-    if (condition === 'treatment') installSkillResources(target, runDir, plan.skillInstallDir);
+    if (condition === 'treatment' || plan.baselineTarget) installSkillResources(target, runDir, plan.skillInstallDir);
   }
   const gitInitialized = await gitInit(runDir);
 
@@ -229,29 +250,50 @@ export async function runTrial(
   );
   writeFileSync(join(runDir, '_prompt.txt'), prompt, 'utf8');
 
-  const started = new Date();
+  const clock = plan.clock ?? executionClock;
+  const started = new Date(clock.wallNow());
+  const startedMonotonic = clock.monotonicNow();
+  let executionTiming: ExecutionTiming | null = null;
+  let usageEvidence: UsageEvidence | undefined;
   let output = '';
   let error: string | null = null;
   let tokens: TokenUsage | null = null;
   let rawOutput: string | null = null;
   let skillTriggered: boolean | null = null;
+  let executorInvoked = false;
+  let usageStatus: TrialOutcome['usageStatus'] = 'unknown';
   try {
     if (!gitInitialized && task.verifierKind === 'command') {
       throw new Error('Benchmark Git initialization or reflog verification failed; command task was not executed.');
     }
+    executorInvoked = true;
     const result = await executor.run(prompt, runDir);
     output = result.output;
     tokens = result.tokens ?? null;
     rawOutput = result.rawOutput ?? null;
     skillTriggered = result.skillTriggered ?? null;
+    usageStatus = result.usageStatus ?? 'final';
+    executionTiming = result.executionTiming ?? null;
+    usageEvidence = result.usageEvidence;
     error = result.guardError ?? null;
   } catch (executorError) {
     error = (executorError as Error).message;
+    if (executorError instanceof ExecutorFailure) {
+      executorInvoked = executorError.executorInvoked;
+      output = executorError.result.output;
+      tokens = executorError.result.tokens ?? null;
+      rawOutput = executorError.result.rawOutput ?? null;
+      skillTriggered = executorError.result.skillTriggered ?? null;
+      usageStatus = executorError.result.usageStatus ?? (tokens ? 'partial' : 'unknown');
+      executionTiming = executorError.result.executionTiming ?? null;
+      usageEvidence = executorError.result.usageEvidence;
+    }
   }
   if (error === null) {
     error = await engagementError(output, task.verifierKind, runDir, gitInitialized);
   }
-  const finished = new Date();
+  const finished = new Date(clock.wallNow());
+  const durationSeconds = Math.round(clock.monotonicNow() - startedMonotonic) / 1000;
   writeFileSync(join(runDir, '_output.md'), output, 'utf8');
   if (rawOutput !== null) writeFileSync(join(runDir, '_transcript.jsonl'), rawOutput, 'utf8');
 
@@ -286,7 +328,8 @@ export async function runTrial(
     runDir,
     startedAt: started.toISOString(),
     finishedAt: finished.toISOString(),
-    durationSeconds: Math.round(((finished.getTime() - started.getTime()) / 1000) * 1000) / 1000,
+    durationSeconds,
+    timing: { clock: 'performance.now', wallDurationSeconds: (finished.getTime() - started.getTime()) / 1000, execution: executionTiming },
     passed,
     verifierExitCode,
     verifierPassed,
@@ -295,6 +338,9 @@ export async function runTrial(
     error,
     output,
     tokens,
+    executorInvoked,
+    usageStatus,
+    ...(usageEvidence ? { usageEvidence } : {}),
     gitInitialized,
     ...(plan.skillInstallDir ? { skillTriggered } : {}),
   };
@@ -312,7 +358,7 @@ export async function runTrial(
           kind: target.kind,
           name: target.name,
           bundleSha256: target.sha256,
-          applied: condition === 'treatment' || target.overlays.baseline !== undefined,
+          applied: condition === 'treatment' || plan.baselineTarget !== undefined || target.overlays.baseline !== undefined,
         },
         executor: withSampling(executor.describe()),
       },
@@ -357,7 +403,7 @@ function sumTokens(records: TrialOutcome[]): { input: number; output: number } |
   let output = 0;
   let seen = false;
   for (const record of records) {
-    if (!record.tokens) continue;
+    if (!record.tokens || record.usageStatus !== 'final') continue;
     seen = true;
     input += record.tokens.input ?? 0;
     output += record.tokens.output ?? 0;
@@ -431,8 +477,8 @@ function statsFor(records: TrialOutcome[], errors: number, readObservations = fa
     meanScore,
     tokens: sumTokens(records),
     tokenCoverage: {
-      input: records.filter(r => typeof r.tokens?.input === 'number').length,
-      output: records.filter(r => typeof r.tokens?.output === 'number').length,
+      input: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.input === 'number').length,
+      output: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.output === 'number').length,
     },
   };
 }
@@ -638,6 +684,7 @@ function summarizeTask(
     facets: facetStats(survivors),
     verifierNotes: verifierConsistencyNotes(taskId, outcomes),
     tokenDelta: tokenDelta(baseline.tokens, treatment.tokens),
+    costs: summarizeCosts(outcomes, survivors),
     verdict,
     verdictReason: reason,
     judge: summarizeJudge(judgeResults),
@@ -646,6 +693,12 @@ function summarizeTask(
 
 export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
+  const pairOrder = plan.pairOrder ?? 'baseline-first';
+  if (pairOrder !== 'baseline-first' && pairOrder !== 'balanced') throw new Error('pairOrder must be baseline-first or balanced.');
+  if (plan.baselineTarget) {
+    if (!plan.skillInstallDir) throw new Error('Skill revision comparison requires installed delivery.');
+    assertSkillRevisionTargets(plan.target, plan.baselineTarget);
+  }
   if (plan.skillInstallDir) {
     if (plan.target.kind !== 'skill' || plan.inputMode !== 'workspace') {
       throw new Error('Installed Skill delivery requires a Skill target and workspace input.');
@@ -670,13 +723,13 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const taskSummaries: TaskSummary[] = [];
   const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
   const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
-  for (const task of plan.bench.tasks) {
+  for (const [taskIndex, task] of plan.bench.tasks.entries()) {
     const outcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
     // Interleaved: the trial loop is outermost so the two arms of a pair run adjacently. Running
     // every baseline trial before every treatment trial confounds condition with elapsed time —
     // provider drift or rate-limit degradation would land entirely on one arm.
     for (let trial = 1; trial <= plan.trials; trial++) {
-      for (const condition of CONDITIONS) {
+      for (const condition of pairConditions(pairOrder, taskIndex, trial)) {
         plan.log?.(`Running ${task.id} / ${condition} / trial ${trial}…`);
         const outcome = await runTrial(plan, task.id, condition, trial);
         outcomes[condition].push(outcome);
@@ -705,8 +758,10 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   plan.session?.settle();
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
     schemaVersion: 4,
+    ...(plan.component ? { component: plan.component } : {}),
     ...(plan.session ? { experiment: plan.session.summary() } : {}),
     inputMode: plan.inputMode ?? 'snapshot',
+    pairOrder,
     ...(plan.skillInstallDir ? { skillDelivery: { mode: 'installed' as const, installDir: plan.skillInstallDir } } : {}),
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
@@ -717,6 +772,13 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
       bundleSha256: plan.target.sha256,
       files: plan.target.files,
     },
+    ...(plan.baselineTarget ? { baselineTarget: {
+      kind: 'skill' as const,
+      name: plan.baselineTarget.name,
+      sourceDir: plan.baselineTarget.sourceDir,
+      bundleSha256: plan.baselineTarget.sha256,
+      files: plan.baselineTarget.files,
+    } } : {}),
     bench: {
       name: plan.bench.name,
       dir: plan.bench.dir,
@@ -735,6 +797,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
       deltaPassRate: overallDelta,
       scoreDelta,
       tokenDelta: tokenDelta(overallBaseline.tokens, overallTreatment.tokens),
+      costs: summarizeCosts(allOutcomes, allSurvivors),
       verdict: overallVerdict.verdict,
       verdictReason: overallVerdict.reason,
       stats: {

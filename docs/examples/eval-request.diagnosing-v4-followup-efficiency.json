@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "baselineSkill": "../../evidence/inputs/diagnosing-bugs",
+  "candidateSkill": "../../evidence/inputs/diagnosing-bugs-compact-v4",
+  "bench": "../../benches/contrib/oss-skill-followup",
+  "agent": "codex",
+  "purpose": "validation",
+  "pairOrder": "balanced",
+  "executorTimeoutSeconds": 1200,
+  "trials": 5,
+  "maxCalls": 80,
+  "runsRoot": "../../runs/eval-example",
+  "runGroup": "diagnosing-v4-followup-validation-example",
+  "policy": {
+    "schemaVersion": 2,
+    "objective": "efficiency",
+    "minTasks": 8,
+    "minTrialsPerTask": 5,
+    "minUncachedInputReductionFraction": 0.1,
+    "minImprovedTaskFraction": 0.75,
+    "maxCostIncreaseFraction": {
+      "input": 0,
+      "cachedInput": 0,
+      "uncachedInput": 0,
+      "output": 0,
+      "durationSeconds": 0.25
+    }
+  }
+}

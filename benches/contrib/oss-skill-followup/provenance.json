@@ -1,0 +1,730 @@
+{
+  "schemaVersion": 1,
+  "role": "Fresh task preparation after a separately retained inconclusive study; no follow-up model outcomes available.",
+  "selection": "Eight functional defects in three new repositories, excluding feature additions, documentation edits and pure translation replacements. Candidate v4 remains unchanged.",
+  "tasks": [
+    {
+      "task": "promise-falsy-rejection",
+      "repository": "sindresorhus/p-debounce",
+      "commit": "a14c7ac6817248b8db13eb0d30474c1f82588fe6",
+      "parent": "8964dd202004f49d7b814c0292b064287b70f2d8",
+      "url": "https://github.com/sindresorhus/p-debounce/commit/a14c7ac6817248b8db13eb0d30474c1f82588fe6",
+      "sourceFile": "index.js",
+      "fixtureSourceFile": "index.js",
+      "beforeSourceSha256": "18a7a6a1ecba326f27480d2d55212c1d202b2a81ca96687d209b271cab012a6a",
+      "fixedSourceSha256": "7a519eb4afed87d7b3c7eec0800c5379eae5ca53cf3e2ba325669ecf1338eeab",
+      "resources": [
+        {
+          "task": "promise-falsy-rejection",
+          "arm": "before",
+          "ref": "8964dd202004f49d7b814c0292b064287b70f2d8",
+          "file": "index.js",
+          "gitBlobSha": "cecd5737adcde1f43d45f4bfab73313ec31ce27d",
+          "sha256": "18a7a6a1ecba326f27480d2d55212c1d202b2a81ca96687d209b271cab012a6a",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/8964dd202004f49d7b814c0292b064287b70f2d8/index.js"
+        },
+        {
+          "task": "promise-falsy-rejection",
+          "arm": "before",
+          "ref": "8964dd202004f49d7b814c0292b064287b70f2d8",
+          "file": "package.json",
+          "gitBlobSha": "f3cf02af2bdaa662c1f90ea15fc397dd95efdc71",
+          "sha256": "6721ecd2bee87b1f5de30b610c02a9f0e01b06e88605f4a9c8efa0dff5622177",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/8964dd202004f49d7b814c0292b064287b70f2d8/package.json"
+        },
+        {
+          "task": "promise-falsy-rejection",
+          "arm": "before",
+          "ref": "8964dd202004f49d7b814c0292b064287b70f2d8",
+          "file": "readme.md",
+          "gitBlobSha": "9a76ec4c868d62b35239a95cf33c640b153f5c6b",
+          "sha256": "60ab50d68ec211954a97c54d17e28e959152edbc3cf25e9c87eaff4fffe70bf5",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/8964dd202004f49d7b814c0292b064287b70f2d8/readme.md"
+        },
+        {
+          "task": "promise-falsy-rejection",
+          "arm": "before",
+          "ref": "8964dd202004f49d7b814c0292b064287b70f2d8",
+          "file": "license",
+          "gitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/8964dd202004f49d7b814c0292b064287b70f2d8/license"
+        },
+        {
+          "task": "promise-falsy-rejection",
+          "arm": "fixed",
+          "ref": "a14c7ac6817248b8db13eb0d30474c1f82588fe6",
+          "file": "index.js",
+          "gitBlobSha": "a54db7d9ea256467df3cb050074ddeb7a68f5f16",
+          "sha256": "7a519eb4afed87d7b3c7eec0800c5379eae5ca53cf3e2ba325669ecf1338eeab",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/a14c7ac6817248b8db13eb0d30474c1f82588fe6/index.js"
+        },
+        {
+          "task": "promise-falsy-rejection",
+          "arm": "fixed",
+          "ref": "a14c7ac6817248b8db13eb0d30474c1f82588fe6",
+          "file": "package.json",
+          "gitBlobSha": "f3cf02af2bdaa662c1f90ea15fc397dd95efdc71",
+          "sha256": "6721ecd2bee87b1f5de30b610c02a9f0e01b06e88605f4a9c8efa0dff5622177",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/a14c7ac6817248b8db13eb0d30474c1f82588fe6/package.json"
+        },
+        {
+          "task": "promise-falsy-rejection",
+          "arm": "fixed",
+          "ref": "a14c7ac6817248b8db13eb0d30474c1f82588fe6",
+          "file": "readme.md",
+          "gitBlobSha": "9a76ec4c868d62b35239a95cf33c640b153f5c6b",
+          "sha256": "60ab50d68ec211954a97c54d17e28e959152edbc3cf25e9c87eaff4fffe70bf5",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/a14c7ac6817248b8db13eb0d30474c1f82588fe6/readme.md"
+        },
+        {
+          "task": "promise-falsy-rejection",
+          "arm": "fixed",
+          "ref": "a14c7ac6817248b8db13eb0d30474c1f82588fe6",
+          "file": "license",
+          "gitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/a14c7ac6817248b8db13eb0d30474c1f82588fe6/license"
+        }
+      ],
+      "adaptations": [
+        "Byte-identical source and original documentation; one source filename standardized as index.js.",
+        "Original package metadata retained; dependency-free node:test replaces upstream development tooling.",
+        "Controlled timers and promises exercise public behavior; no Skill-derived process scores."
+      ]
+    },
+    {
+      "task": "promise-overlap-results",
+      "repository": "sindresorhus/p-debounce",
+      "commit": "bcbea56f7a8b42fdaadcda5724c045c6545a2e58",
+      "parent": "8f7da4a7ca04c3da7b237a91f679272e9454d5a2",
+      "url": "https://github.com/sindresorhus/p-debounce/commit/bcbea56f7a8b42fdaadcda5724c045c6545a2e58",
+      "sourceFile": "index.js",
+      "fixtureSourceFile": "index.js",
+      "beforeSourceSha256": "5a4d9127c18f1a19a9583f8b48692854c32920d9a1b529fdb2c0043b2273b1d8",
+      "fixedSourceSha256": "17ce78d56b8adc4e85f75b8c35e11bd137f30e650f7a801252e2112cf90f33ce",
+      "resources": [
+        {
+          "task": "promise-overlap-results",
+          "arm": "before",
+          "ref": "8f7da4a7ca04c3da7b237a91f679272e9454d5a2",
+          "file": "index.js",
+          "gitBlobSha": "60e4b26a69659c9685a2132602c10dfcb85c3da4",
+          "sha256": "5a4d9127c18f1a19a9583f8b48692854c32920d9a1b529fdb2c0043b2273b1d8",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/8f7da4a7ca04c3da7b237a91f679272e9454d5a2/index.js"
+        },
+        {
+          "task": "promise-overlap-results",
+          "arm": "before",
+          "ref": "8f7da4a7ca04c3da7b237a91f679272e9454d5a2",
+          "file": "package.json",
+          "gitBlobSha": "a9aafbf6c7f57d3693f75d824bd1fcaa28fc25ef",
+          "sha256": "f1b115c519c3a4bc72a390a5798cc1b47501cfa8da55cda1e66ec0b0f0171abd",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/8f7da4a7ca04c3da7b237a91f679272e9454d5a2/package.json"
+        },
+        {
+          "task": "promise-overlap-results",
+          "arm": "before",
+          "ref": "8f7da4a7ca04c3da7b237a91f679272e9454d5a2",
+          "file": "readme.md",
+          "gitBlobSha": "9c2793e28ff14be072456652a3a64138de53375f",
+          "sha256": "ab744a2ee4c2db07d7a09c51ae08231a58a7a8e7c3d055b54645a7bd8ec6df37",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/8f7da4a7ca04c3da7b237a91f679272e9454d5a2/readme.md"
+        },
+        {
+          "task": "promise-overlap-results",
+          "arm": "before",
+          "ref": "8f7da4a7ca04c3da7b237a91f679272e9454d5a2",
+          "file": "license",
+          "gitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/8f7da4a7ca04c3da7b237a91f679272e9454d5a2/license"
+        },
+        {
+          "task": "promise-overlap-results",
+          "arm": "fixed",
+          "ref": "bcbea56f7a8b42fdaadcda5724c045c6545a2e58",
+          "file": "index.js",
+          "gitBlobSha": "67a76df0fcc6f1cfc608af13aaaae864d5a468d1",
+          "sha256": "17ce78d56b8adc4e85f75b8c35e11bd137f30e650f7a801252e2112cf90f33ce",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/bcbea56f7a8b42fdaadcda5724c045c6545a2e58/index.js"
+        },
+        {
+          "task": "promise-overlap-results",
+          "arm": "fixed",
+          "ref": "bcbea56f7a8b42fdaadcda5724c045c6545a2e58",
+          "file": "package.json",
+          "gitBlobSha": "a9aafbf6c7f57d3693f75d824bd1fcaa28fc25ef",
+          "sha256": "f1b115c519c3a4bc72a390a5798cc1b47501cfa8da55cda1e66ec0b0f0171abd",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/bcbea56f7a8b42fdaadcda5724c045c6545a2e58/package.json"
+        },
+        {
+          "task": "promise-overlap-results",
+          "arm": "fixed",
+          "ref": "bcbea56f7a8b42fdaadcda5724c045c6545a2e58",
+          "file": "readme.md",
+          "gitBlobSha": "64b1eb8cfb142f6eed3b11acd1a230810e843752",
+          "sha256": "01e6f140f99ad82a9d5521544eb60b9fc45206695fe5d6e7a8ec633560031714",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/bcbea56f7a8b42fdaadcda5724c045c6545a2e58/readme.md"
+        },
+        {
+          "task": "promise-overlap-results",
+          "arm": "fixed",
+          "ref": "bcbea56f7a8b42fdaadcda5724c045c6545a2e58",
+          "file": "license",
+          "gitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/bcbea56f7a8b42fdaadcda5724c045c6545a2e58/license"
+        }
+      ],
+      "adaptations": [
+        "Byte-identical source and original documentation; one source filename standardized as index.js.",
+        "Original package metadata retained; dependency-free node:test replaces upstream development tooling.",
+        "Controlled timers and promises exercise public behavior; no Skill-derived process scores."
+      ]
+    },
+    {
+      "task": "promise-method-context",
+      "repository": "sindresorhus/p-debounce",
+      "commit": "cfed83ccf57e71c1bb058e7e16429ec252c1bf69",
+      "parent": "a9ad96b63eb741d9462530540c243e14a6d1cda7",
+      "url": "https://github.com/sindresorhus/p-debounce/commit/cfed83ccf57e71c1bb058e7e16429ec252c1bf69",
+      "sourceFile": "index.js",
+      "fixtureSourceFile": "index.js",
+      "beforeSourceSha256": "d57f62de74ffda460638aee0c2142bf5f24c974e343fc2d6a3a18714a4493cf6",
+      "fixedSourceSha256": "8692ecda4f8e1af60d9ad06520a23a3f8c62b19d086522250c4a0bfd2e03bb66",
+      "resources": [
+        {
+          "task": "promise-method-context",
+          "arm": "before",
+          "ref": "a9ad96b63eb741d9462530540c243e14a6d1cda7",
+          "file": "index.js",
+          "gitBlobSha": "a65ee1eb0db0dc4e31f47e0fe2a0f4e1e8e483a3",
+          "sha256": "d57f62de74ffda460638aee0c2142bf5f24c974e343fc2d6a3a18714a4493cf6",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/a9ad96b63eb741d9462530540c243e14a6d1cda7/index.js"
+        },
+        {
+          "task": "promise-method-context",
+          "arm": "before",
+          "ref": "a9ad96b63eb741d9462530540c243e14a6d1cda7",
+          "file": "package.json",
+          "gitBlobSha": "a45ec9d73424757af2b76c18d471982e81a509a1",
+          "sha256": "2625d6ecf1c149eb248afcbdfcde6b88a793e5ef5f3d4655c4951eb608a0006d",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/a9ad96b63eb741d9462530540c243e14a6d1cda7/package.json"
+        },
+        {
+          "task": "promise-method-context",
+          "arm": "before",
+          "ref": "a9ad96b63eb741d9462530540c243e14a6d1cda7",
+          "file": "readme.md",
+          "gitBlobSha": "0aa5f54732c56ace9803e7df5f33f287ecd16ffc",
+          "sha256": "52fbe00f3386d4d2c0ec8bad5825c5812eed64858944d0a932bc22332911c33a",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/a9ad96b63eb741d9462530540c243e14a6d1cda7/readme.md"
+        },
+        {
+          "task": "promise-method-context",
+          "arm": "before",
+          "ref": "a9ad96b63eb741d9462530540c243e14a6d1cda7",
+          "file": "license",
+          "gitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/a9ad96b63eb741d9462530540c243e14a6d1cda7/license"
+        },
+        {
+          "task": "promise-method-context",
+          "arm": "fixed",
+          "ref": "cfed83ccf57e71c1bb058e7e16429ec252c1bf69",
+          "file": "index.js",
+          "gitBlobSha": "131c62ac8fe1e91eeb466e9ad02f139a71169682",
+          "sha256": "8692ecda4f8e1af60d9ad06520a23a3f8c62b19d086522250c4a0bfd2e03bb66",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/cfed83ccf57e71c1bb058e7e16429ec252c1bf69/index.js"
+        },
+        {
+          "task": "promise-method-context",
+          "arm": "fixed",
+          "ref": "cfed83ccf57e71c1bb058e7e16429ec252c1bf69",
+          "file": "package.json",
+          "gitBlobSha": "a45ec9d73424757af2b76c18d471982e81a509a1",
+          "sha256": "2625d6ecf1c149eb248afcbdfcde6b88a793e5ef5f3d4655c4951eb608a0006d",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/cfed83ccf57e71c1bb058e7e16429ec252c1bf69/package.json"
+        },
+        {
+          "task": "promise-method-context",
+          "arm": "fixed",
+          "ref": "cfed83ccf57e71c1bb058e7e16429ec252c1bf69",
+          "file": "readme.md",
+          "gitBlobSha": "0aa5f54732c56ace9803e7df5f33f287ecd16ffc",
+          "sha256": "52fbe00f3386d4d2c0ec8bad5825c5812eed64858944d0a932bc22332911c33a",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/cfed83ccf57e71c1bb058e7e16429ec252c1bf69/readme.md"
+        },
+        {
+          "task": "promise-method-context",
+          "arm": "fixed",
+          "ref": "cfed83ccf57e71c1bb058e7e16429ec252c1bf69",
+          "file": "license",
+          "gitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "url": "https://github.com/sindresorhus/p-debounce/blob/cfed83ccf57e71c1bb058e7e16429ec252c1bf69/license"
+        }
+      ],
+      "adaptations": [
+        "Byte-identical source and original documentation; one source filename standardized as index.js.",
+        "Original package metadata retained; dependency-free node:test replaces upstream development tooling.",
+        "Controlled timers and promises exercise public behavior; no Skill-derived process scores."
+      ]
+    },
+    {
+      "task": "duration-plural-count",
+      "repository": "EvanHahn/HumanizeDuration.js",
+      "commit": "924c2a183e3a2b7e08fe5fead6bf18bfab0568a6",
+      "parent": "ea005e75a316c94a4778631749c120e47e219688",
+      "url": "https://github.com/EvanHahn/HumanizeDuration.js/commit/924c2a183e3a2b7e08fe5fead6bf18bfab0568a6",
+      "sourceFile": "humanize-duration.js",
+      "fixtureSourceFile": "index.js",
+      "beforeSourceSha256": "cb37de7cec0f23856b725843396d546ac166f001d344bf7764b73e9115244679",
+      "fixedSourceSha256": "fa557682d97d4cf89e978aa3d32599206e9a6b54651aa05f6b6af84d78edefcc",
+      "resources": [
+        {
+          "task": "duration-plural-count",
+          "arm": "before",
+          "ref": "ea005e75a316c94a4778631749c120e47e219688",
+          "file": "humanize-duration.js",
+          "gitBlobSha": "a082c137d20deb43d79d01da16b9ee90a03916ae",
+          "sha256": "cb37de7cec0f23856b725843396d546ac166f001d344bf7764b73e9115244679",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/ea005e75a316c94a4778631749c120e47e219688/humanize-duration.js"
+        },
+        {
+          "task": "duration-plural-count",
+          "arm": "before",
+          "ref": "ea005e75a316c94a4778631749c120e47e219688",
+          "file": "package.json",
+          "gitBlobSha": "02b3f9df3b39ebec90e3f38cf97fd5c36d8aa1ec",
+          "sha256": "8f817d94ee28255d34010ab88d712cd8033646aefb3287703753a8696391d2cf",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/ea005e75a316c94a4778631749c120e47e219688/package.json"
+        },
+        {
+          "task": "duration-plural-count",
+          "arm": "before",
+          "ref": "ea005e75a316c94a4778631749c120e47e219688",
+          "file": "README.md",
+          "gitBlobSha": "283c378bf0a38fa2326e21d7f3bc17759bda68ad",
+          "sha256": "510e91bc4dbcec3ee01e27d38c866a0cd2f22da3d0cfb606ab3e99f9674b163d",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/ea005e75a316c94a4778631749c120e47e219688/README.md"
+        },
+        {
+          "task": "duration-plural-count",
+          "arm": "before",
+          "ref": "ea005e75a316c94a4778631749c120e47e219688",
+          "file": "LICENSE.txt",
+          "gitBlobSha": "efb98088164f5786b17e83ed384971fc3c74f93c",
+          "sha256": "b5065838cbac452dfc855ba6e6e031481ad2c68406f70d21ead9321374653e6c",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/ea005e75a316c94a4778631749c120e47e219688/LICENSE.txt"
+        },
+        {
+          "task": "duration-plural-count",
+          "arm": "fixed",
+          "ref": "924c2a183e3a2b7e08fe5fead6bf18bfab0568a6",
+          "file": "humanize-duration.js",
+          "gitBlobSha": "f2fe2b39f57c2e4301bda21f19b73ae6c16277cc",
+          "sha256": "fa557682d97d4cf89e978aa3d32599206e9a6b54651aa05f6b6af84d78edefcc",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/924c2a183e3a2b7e08fe5fead6bf18bfab0568a6/humanize-duration.js"
+        },
+        {
+          "task": "duration-plural-count",
+          "arm": "fixed",
+          "ref": "924c2a183e3a2b7e08fe5fead6bf18bfab0568a6",
+          "file": "package.json",
+          "gitBlobSha": "02b3f9df3b39ebec90e3f38cf97fd5c36d8aa1ec",
+          "sha256": "8f817d94ee28255d34010ab88d712cd8033646aefb3287703753a8696391d2cf",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/924c2a183e3a2b7e08fe5fead6bf18bfab0568a6/package.json"
+        },
+        {
+          "task": "duration-plural-count",
+          "arm": "fixed",
+          "ref": "924c2a183e3a2b7e08fe5fead6bf18bfab0568a6",
+          "file": "README.md",
+          "gitBlobSha": "283c378bf0a38fa2326e21d7f3bc17759bda68ad",
+          "sha256": "510e91bc4dbcec3ee01e27d38c866a0cd2f22da3d0cfb606ab3e99f9674b163d",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/924c2a183e3a2b7e08fe5fead6bf18bfab0568a6/README.md"
+        },
+        {
+          "task": "duration-plural-count",
+          "arm": "fixed",
+          "ref": "924c2a183e3a2b7e08fe5fead6bf18bfab0568a6",
+          "file": "LICENSE.txt",
+          "gitBlobSha": "efb98088164f5786b17e83ed384971fc3c74f93c",
+          "sha256": "b5065838cbac452dfc855ba6e6e031481ad2c68406f70d21ead9321374653e6c",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/924c2a183e3a2b7e08fe5fead6bf18bfab0568a6/LICENSE.txt"
+        }
+      ],
+      "adaptations": [
+        "Byte-identical source and original documentation; one source filename standardized as index.js.",
+        "Original package metadata retained; dependency-free node:test replaces upstream development tooling.",
+        "Controlled timers and promises exercise public behavior; no Skill-derived process scores."
+      ]
+    },
+    {
+      "task": "duration-large-digits",
+      "repository": "EvanHahn/HumanizeDuration.js",
+      "commit": "e44e0a9d2803cd85506067fa5a6a22e4cd660a02",
+      "parent": "a250645463b3b40e51158bf1944416a78196891c",
+      "url": "https://github.com/EvanHahn/HumanizeDuration.js/commit/e44e0a9d2803cd85506067fa5a6a22e4cd660a02",
+      "sourceFile": "humanize-duration.js",
+      "fixtureSourceFile": "index.js",
+      "beforeSourceSha256": "7f78eef760acca5c0ae40de14328e0613e03caee61451c5d5ae9e0f0cafb97ab",
+      "fixedSourceSha256": "4bec86b7541d09e8db1ae8733d7280b158791baaa672790cf627e00be701eea0",
+      "resources": [
+        {
+          "task": "duration-large-digits",
+          "arm": "before",
+          "ref": "a250645463b3b40e51158bf1944416a78196891c",
+          "file": "humanize-duration.js",
+          "gitBlobSha": "5a7ebe4b615e73cde77fd51830072c8b2eecd0a7",
+          "sha256": "7f78eef760acca5c0ae40de14328e0613e03caee61451c5d5ae9e0f0cafb97ab",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/a250645463b3b40e51158bf1944416a78196891c/humanize-duration.js"
+        },
+        {
+          "task": "duration-large-digits",
+          "arm": "before",
+          "ref": "a250645463b3b40e51158bf1944416a78196891c",
+          "file": "package.json",
+          "gitBlobSha": "ff9d5c8a4fb07014f8655c7c4dab3877e080c37b",
+          "sha256": "5d21f452503d9169e82e3be908b38faf2cccc4169cb0f58b77beb41107f59f97",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/a250645463b3b40e51158bf1944416a78196891c/package.json"
+        },
+        {
+          "task": "duration-large-digits",
+          "arm": "before",
+          "ref": "a250645463b3b40e51158bf1944416a78196891c",
+          "file": "README.md",
+          "gitBlobSha": "c96e737d0e331a0726f8c4488816e4ff51bd3a13",
+          "sha256": "8dd90fe0cb73b8a920ab48458328595988f270f81af4954b65af7b67a43265a2",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/a250645463b3b40e51158bf1944416a78196891c/README.md"
+        },
+        {
+          "task": "duration-large-digits",
+          "arm": "before",
+          "ref": "a250645463b3b40e51158bf1944416a78196891c",
+          "file": "LICENSE.txt",
+          "gitBlobSha": "efb98088164f5786b17e83ed384971fc3c74f93c",
+          "sha256": "b5065838cbac452dfc855ba6e6e031481ad2c68406f70d21ead9321374653e6c",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/a250645463b3b40e51158bf1944416a78196891c/LICENSE.txt"
+        },
+        {
+          "task": "duration-large-digits",
+          "arm": "fixed",
+          "ref": "e44e0a9d2803cd85506067fa5a6a22e4cd660a02",
+          "file": "humanize-duration.js",
+          "gitBlobSha": "8c741a7d6defc92444efe39ebe8b6ddf6e321121",
+          "sha256": "4bec86b7541d09e8db1ae8733d7280b158791baaa672790cf627e00be701eea0",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/e44e0a9d2803cd85506067fa5a6a22e4cd660a02/humanize-duration.js"
+        },
+        {
+          "task": "duration-large-digits",
+          "arm": "fixed",
+          "ref": "e44e0a9d2803cd85506067fa5a6a22e4cd660a02",
+          "file": "package.json",
+          "gitBlobSha": "ff9d5c8a4fb07014f8655c7c4dab3877e080c37b",
+          "sha256": "5d21f452503d9169e82e3be908b38faf2cccc4169cb0f58b77beb41107f59f97",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/e44e0a9d2803cd85506067fa5a6a22e4cd660a02/package.json"
+        },
+        {
+          "task": "duration-large-digits",
+          "arm": "fixed",
+          "ref": "e44e0a9d2803cd85506067fa5a6a22e4cd660a02",
+          "file": "README.md",
+          "gitBlobSha": "c96e737d0e331a0726f8c4488816e4ff51bd3a13",
+          "sha256": "8dd90fe0cb73b8a920ab48458328595988f270f81af4954b65af7b67a43265a2",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/e44e0a9d2803cd85506067fa5a6a22e4cd660a02/README.md"
+        },
+        {
+          "task": "duration-large-digits",
+          "arm": "fixed",
+          "ref": "e44e0a9d2803cd85506067fa5a6a22e4cd660a02",
+          "file": "LICENSE.txt",
+          "gitBlobSha": "efb98088164f5786b17e83ed384971fc3c74f93c",
+          "sha256": "b5065838cbac452dfc855ba6e6e031481ad2c68406f70d21ead9321374653e6c",
+          "url": "https://github.com/EvanHahn/HumanizeDuration.js/blob/e44e0a9d2803cd85506067fa5a6a22e4cd660a02/LICENSE.txt"
+        }
+      ],
+      "adaptations": [
+        "Byte-identical source and original documentation; one source filename standardized as index.js.",
+        "Original package metadata retained; dependency-free node:test replaces upstream development tooling.",
+        "Controlled timers and promises exercise public behavior; no Skill-derived process scores."
+      ]
+    },
+    {
+      "task": "debounce-context-classes",
+      "repository": "sindresorhus/debounce",
+      "commit": "205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0",
+      "parent": "312a06ebd5aa5134d007ce7964cde04ce98e32bd",
+      "url": "https://github.com/sindresorhus/debounce/commit/205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0",
+      "sourceFile": "index.js",
+      "fixtureSourceFile": "index.js",
+      "beforeSourceSha256": "b65acc7a7c1c7413cd3f4e1236503b86df1197893e0cf48d4d4f24b4c2757c10",
+      "fixedSourceSha256": "0ee48a2876699a51c5241da15ffb0fcda7d18c2e4cd33615ed9902c559ffa632",
+      "resources": [
+        {
+          "task": "debounce-context-classes",
+          "arm": "before",
+          "ref": "312a06ebd5aa5134d007ce7964cde04ce98e32bd",
+          "file": "index.js",
+          "gitBlobSha": "6d6a826e561fd70bc3ca628fdbb74349c8af14e0",
+          "sha256": "b65acc7a7c1c7413cd3f4e1236503b86df1197893e0cf48d4d4f24b4c2757c10",
+          "url": "https://github.com/sindresorhus/debounce/blob/312a06ebd5aa5134d007ce7964cde04ce98e32bd/index.js"
+        },
+        {
+          "task": "debounce-context-classes",
+          "arm": "before",
+          "ref": "312a06ebd5aa5134d007ce7964cde04ce98e32bd",
+          "file": "package.json",
+          "gitBlobSha": "99d9aaebf265fa4d9bdc017944f375bdc6d57218",
+          "sha256": "7f6edc2515e5344f2f9a668355b2dd287ee69abd2bcb77fe42a3dd1907545586",
+          "url": "https://github.com/sindresorhus/debounce/blob/312a06ebd5aa5134d007ce7964cde04ce98e32bd/package.json"
+        },
+        {
+          "task": "debounce-context-classes",
+          "arm": "before",
+          "ref": "312a06ebd5aa5134d007ce7964cde04ce98e32bd",
+          "file": "readme.md",
+          "gitBlobSha": "0e9e8e2027eff7929be4f08966f94adf7ff0afd5",
+          "sha256": "ae92e77c81543947a0396a725cdbd28cf75c75d8414e9301d1b123143c3c8a66",
+          "url": "https://github.com/sindresorhus/debounce/blob/312a06ebd5aa5134d007ce7964cde04ce98e32bd/readme.md"
+        },
+        {
+          "task": "debounce-context-classes",
+          "arm": "before",
+          "ref": "312a06ebd5aa5134d007ce7964cde04ce98e32bd",
+          "file": "license",
+          "gitBlobSha": "f1cf0eb7a2bc63f8e1a649f77e54a3a50d1ff9bd",
+          "sha256": "7ee15d9844743d3b3a7a1578bc49a4b47ee0d8006c6c863cd2a9771a73e12b6c",
+          "url": "https://github.com/sindresorhus/debounce/blob/312a06ebd5aa5134d007ce7964cde04ce98e32bd/license"
+        },
+        {
+          "task": "debounce-context-classes",
+          "arm": "fixed",
+          "ref": "205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0",
+          "file": "index.js",
+          "gitBlobSha": "21e45139cb4a92ec8196fdd3b6ff5feae98abba0",
+          "sha256": "0ee48a2876699a51c5241da15ffb0fcda7d18c2e4cd33615ed9902c559ffa632",
+          "url": "https://github.com/sindresorhus/debounce/blob/205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0/index.js"
+        },
+        {
+          "task": "debounce-context-classes",
+          "arm": "fixed",
+          "ref": "205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0",
+          "file": "package.json",
+          "gitBlobSha": "99d9aaebf265fa4d9bdc017944f375bdc6d57218",
+          "sha256": "7f6edc2515e5344f2f9a668355b2dd287ee69abd2bcb77fe42a3dd1907545586",
+          "url": "https://github.com/sindresorhus/debounce/blob/205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0/package.json"
+        },
+        {
+          "task": "debounce-context-classes",
+          "arm": "fixed",
+          "ref": "205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0",
+          "file": "readme.md",
+          "gitBlobSha": "0e9e8e2027eff7929be4f08966f94adf7ff0afd5",
+          "sha256": "ae92e77c81543947a0396a725cdbd28cf75c75d8414e9301d1b123143c3c8a66",
+          "url": "https://github.com/sindresorhus/debounce/blob/205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0/readme.md"
+        },
+        {
+          "task": "debounce-context-classes",
+          "arm": "fixed",
+          "ref": "205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0",
+          "file": "license",
+          "gitBlobSha": "f1cf0eb7a2bc63f8e1a649f77e54a3a50d1ff9bd",
+          "sha256": "7ee15d9844743d3b3a7a1578bc49a4b47ee0d8006c6c863cd2a9771a73e12b6c",
+          "url": "https://github.com/sindresorhus/debounce/blob/205fd8fb3ddae14ab2fbb6cbf9767d2042f154a0/license"
+        }
+      ],
+      "adaptations": [
+        "Byte-identical source and original documentation; one source filename standardized as index.js.",
+        "Original package metadata retained; dependency-free node:test replaces upstream development tooling.",
+        "Controlled timers and promises exercise public behavior; no Skill-derived process scores."
+      ]
+    },
+    {
+      "task": "debounce-recursive-args",
+      "repository": "sindresorhus/debounce",
+      "commit": "c997759c1be6e895e9b26af740c42744a777675f",
+      "parent": "991d8fea13f03a092dd0e5eac343ccd8504925fa",
+      "url": "https://github.com/sindresorhus/debounce/commit/c997759c1be6e895e9b26af740c42744a777675f",
+      "sourceFile": "index.js",
+      "fixtureSourceFile": "index.js",
+      "beforeSourceSha256": "9bd9608607a0c2c350f656c5a8078a9d384bd68b449e08aeed1fe3f6d00d25de",
+      "fixedSourceSha256": "6cf87801b6f49370da28347d952b9980558c3aad6cc4337aa2148dc35ba94f88",
+      "resources": [
+        {
+          "task": "debounce-recursive-args",
+          "arm": "before",
+          "ref": "991d8fea13f03a092dd0e5eac343ccd8504925fa",
+          "file": "index.js",
+          "gitBlobSha": "c6a22c1f76a770aff5a48cf39b70dc57577a33af",
+          "sha256": "9bd9608607a0c2c350f656c5a8078a9d384bd68b449e08aeed1fe3f6d00d25de",
+          "url": "https://github.com/sindresorhus/debounce/blob/991d8fea13f03a092dd0e5eac343ccd8504925fa/index.js"
+        },
+        {
+          "task": "debounce-recursive-args",
+          "arm": "before",
+          "ref": "991d8fea13f03a092dd0e5eac343ccd8504925fa",
+          "file": "package.json",
+          "gitBlobSha": "70d14660efff16597edf180321cc741d69b8baf1",
+          "sha256": "1761f9fd117d03bc0688650f6b09379b01c9728efc2bdda960d62ba66dec95d6",
+          "url": "https://github.com/sindresorhus/debounce/blob/991d8fea13f03a092dd0e5eac343ccd8504925fa/package.json"
+        },
+        {
+          "task": "debounce-recursive-args",
+          "arm": "before",
+          "ref": "991d8fea13f03a092dd0e5eac343ccd8504925fa",
+          "file": "Readme.md",
+          "gitBlobSha": "8639f0bf465c277b37f44bd70ef2222719459ba0",
+          "sha256": "ed1e30861e36833eb0b17d7e0f1a77a4059412e127ede768ea8b52e5ca25f240",
+          "url": "https://github.com/sindresorhus/debounce/blob/991d8fea13f03a092dd0e5eac343ccd8504925fa/Readme.md"
+        },
+        {
+          "task": "debounce-recursive-args",
+          "arm": "before",
+          "ref": "991d8fea13f03a092dd0e5eac343ccd8504925fa",
+          "file": "LICENSE",
+          "gitBlobSha": "5a4d94225429c97acb5849fe13ccb7f36c8e65d2",
+          "sha256": "87c2f96d275cd4fb2b047e23f792f34704ffb798949039da60392b7122685412",
+          "url": "https://github.com/sindresorhus/debounce/blob/991d8fea13f03a092dd0e5eac343ccd8504925fa/LICENSE"
+        },
+        {
+          "task": "debounce-recursive-args",
+          "arm": "fixed",
+          "ref": "c997759c1be6e895e9b26af740c42744a777675f",
+          "file": "index.js",
+          "gitBlobSha": "a2b4947c8422069464e036800cc2c26e24c385c8",
+          "sha256": "6cf87801b6f49370da28347d952b9980558c3aad6cc4337aa2148dc35ba94f88",
+          "url": "https://github.com/sindresorhus/debounce/blob/c997759c1be6e895e9b26af740c42744a777675f/index.js"
+        },
+        {
+          "task": "debounce-recursive-args",
+          "arm": "fixed",
+          "ref": "c997759c1be6e895e9b26af740c42744a777675f",
+          "file": "package.json",
+          "gitBlobSha": "70d14660efff16597edf180321cc741d69b8baf1",
+          "sha256": "1761f9fd117d03bc0688650f6b09379b01c9728efc2bdda960d62ba66dec95d6",
+          "url": "https://github.com/sindresorhus/debounce/blob/c997759c1be6e895e9b26af740c42744a777675f/package.json"
+        },
+        {
+          "task": "debounce-recursive-args",
+          "arm": "fixed",
+          "ref": "c997759c1be6e895e9b26af740c42744a777675f",
+          "file": "Readme.md",
+          "gitBlobSha": "8639f0bf465c277b37f44bd70ef2222719459ba0",
+          "sha256": "ed1e30861e36833eb0b17d7e0f1a77a4059412e127ede768ea8b52e5ca25f240",
+          "url": "https://github.com/sindresorhus/debounce/blob/c997759c1be6e895e9b26af740c42744a777675f/Readme.md"
+        },
+        {
+          "task": "debounce-recursive-args",
+          "arm": "fixed",
+          "ref": "c997759c1be6e895e9b26af740c42744a777675f",
+          "file": "LICENSE",
+          "gitBlobSha": "5a4d94225429c97acb5849fe13ccb7f36c8e65d2",
+          "sha256": "87c2f96d275cd4fb2b047e23f792f34704ffb798949039da60392b7122685412",
+          "url": "https://github.com/sindresorhus/debounce/blob/c997759c1be6e895e9b26af740c42744a777675f/LICENSE"
+        }
+      ],
+      "adaptations": [
+        "Byte-identical source and original documentation; one source filename standardized as index.js.",
+        "Original package metadata retained; dependency-free node:test replaces upstream development tooling.",
+        "Controlled timers and promises exercise public behavior; no Skill-derived process scores."
+      ]
+    },
+    {
+      "task": "debounce-timer-boundary",
+      "repository": "sindresorhus/debounce",
+      "commit": "bdb9228b78bca3442b3e5de7224a046154bc0c0a",
+      "parent": "73a90bc37b3cbc2f154802462e7edda7ec59d403",
+      "url": "https://github.com/sindresorhus/debounce/commit/bdb9228b78bca3442b3e5de7224a046154bc0c0a",
+      "sourceFile": "index.js",
+      "fixtureSourceFile": "index.js",
+      "beforeSourceSha256": "4f03f4a4228a72229af0c48a2da456181a1b09d93b63985b3979590d82acfc61",
+      "fixedSourceSha256": "1f8328ea6237d439ca35619849180d6988b323c672c2d2700de73af087e39659",
+      "resources": [
+        {
+          "task": "debounce-timer-boundary",
+          "arm": "before",
+          "ref": "73a90bc37b3cbc2f154802462e7edda7ec59d403",
+          "file": "index.js",
+          "gitBlobSha": "1bb280ca90cb8784f6fa1420134ac5094f10d50d",
+          "sha256": "4f03f4a4228a72229af0c48a2da456181a1b09d93b63985b3979590d82acfc61",
+          "url": "https://github.com/sindresorhus/debounce/blob/73a90bc37b3cbc2f154802462e7edda7ec59d403/index.js"
+        },
+        {
+          "task": "debounce-timer-boundary",
+          "arm": "before",
+          "ref": "73a90bc37b3cbc2f154802462e7edda7ec59d403",
+          "file": "package.json",
+          "gitBlobSha": "04026b846d0f1d37f27b1c0ad4968c48d58237bc",
+          "sha256": "d8840bca9851c402ee5ea4356af62f77ee8b88c450e1f3234e8c49cf257fdc99",
+          "url": "https://github.com/sindresorhus/debounce/blob/73a90bc37b3cbc2f154802462e7edda7ec59d403/package.json"
+        },
+        {
+          "task": "debounce-timer-boundary",
+          "arm": "before",
+          "ref": "73a90bc37b3cbc2f154802462e7edda7ec59d403",
+          "file": "Readme.md",
+          "gitBlobSha": "2f56c36a48f2eea89fda77b14ee7526146de3512",
+          "sha256": "0baf1f92ac309c1120b81466e76cd8ba587e569ccb0fd7129dc869bb19e862ee",
+          "url": "https://github.com/sindresorhus/debounce/blob/73a90bc37b3cbc2f154802462e7edda7ec59d403/Readme.md"
+        },
+        {
+          "task": "debounce-timer-boundary",
+          "arm": "before",
+          "ref": "e4743ab712b8ab42ad4ccb48b155034d02394e4d",
+          "file": "upstream-implementation-license.txt",
+          "gitBlobSha": "ad0e71bc4baab495b574250ca929087b8692bb36",
+          "sha256": "57c78146cd350e9c88c82d4fa0c8a5369e7a8c4ae9fa47e80fe13e13aa9ff00e",
+          "url": "https://github.com/jashkenas/underscore/blob/e4743ab712b8ab42ad4ccb48b155034d02394e4d/LICENSE",
+          "scope": "Additional original-implementation notice; historical README itself declares MIT"
+        },
+        {
+          "task": "debounce-timer-boundary",
+          "arm": "fixed",
+          "ref": "bdb9228b78bca3442b3e5de7224a046154bc0c0a",
+          "file": "index.js",
+          "gitBlobSha": "b8984272081031548f00f367f0d211aaa69f3415",
+          "sha256": "1f8328ea6237d439ca35619849180d6988b323c672c2d2700de73af087e39659",
+          "url": "https://github.com/sindresorhus/debounce/blob/bdb9228b78bca3442b3e5de7224a046154bc0c0a/index.js"
+        },
+        {
+          "task": "debounce-timer-boundary",
+          "arm": "fixed",
+          "ref": "bdb9228b78bca3442b3e5de7224a046154bc0c0a",
+          "file": "package.json",
+          "gitBlobSha": "b5c58b706bee4b25bbcaa14981a81a1a5181cac4",
+          "sha256": "840f2514de756c14a8dc5c2de0702b85d9d25cc244b972e71bbf583e29b9f53e",
+          "url": "https://github.com/sindresorhus/debounce/blob/bdb9228b78bca3442b3e5de7224a046154bc0c0a/package.json"
+        },
+        {
+          "task": "debounce-timer-boundary",
+          "arm": "fixed",
+          "ref": "bdb9228b78bca3442b3e5de7224a046154bc0c0a",
+          "file": "Readme.md",
+          "gitBlobSha": "2f56c36a48f2eea89fda77b14ee7526146de3512",
+          "sha256": "0baf1f92ac309c1120b81466e76cd8ba587e569ccb0fd7129dc869bb19e862ee",
+          "url": "https://github.com/sindresorhus/debounce/blob/bdb9228b78bca3442b3e5de7224a046154bc0c0a/Readme.md"
+        },
+        {
+          "task": "debounce-timer-boundary",
+          "arm": "fixed",
+          "ref": "e4743ab712b8ab42ad4ccb48b155034d02394e4d",
+          "file": "upstream-implementation-license.txt",
+          "gitBlobSha": "ad0e71bc4baab495b574250ca929087b8692bb36",
+          "sha256": "57c78146cd350e9c88c82d4fa0c8a5369e7a8c4ae9fa47e80fe13e13aa9ff00e",
+          "url": "https://github.com/jashkenas/underscore/blob/e4743ab712b8ab42ad4ccb48b155034d02394e4d/LICENSE",
+          "scope": "Additional original-implementation notice; historical README itself declares MIT"
+        }
+      ],
+      "adaptations": [
+        "Byte-identical source and original documentation; one source filename standardized as index.js.",
+        "Original package metadata retained; dependency-free node:test replaces upstream development tooling.",
+        "Controlled timers and promises exercise public behavior; no Skill-derived process scores.",
+        "Historical README declares MIT and credits Underscore; pinned Underscore 1.8.3 MIT notice supplies additional attribution, not a historical standalone license."
+      ]
+    }
+  ]
+}

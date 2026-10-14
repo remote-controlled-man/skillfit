@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import api from './index.js';import {withClock,observe,flush,gate} from './test-clock.mjs';
+test('falsy rejection is still a rejection',async()=>{const d=api.promise(async()=>{throw null;});const a=observe(d()),b=observe(d());await flush();assert.deepEqual(a,{status:'rejected',reason:null});assert.deepEqual(b,{status:'rejected',reason:null});});

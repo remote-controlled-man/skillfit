@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "scope": "This user-request recovery turn only; excludes earlier studies, orchestration/research/offline checks, cooldown/Git preparation. CLI invocation is not provider request acceptance or billing. No cross-cohort quality/cost-effect pooling.",
+  "all": {
+    "invocations": 8,
+    "metrics": {
+      "input": {
+        "knownTotal": 1563610,
+        "unknownReceipts": 2,
+        "isLowerBound": true
+      },
+      "cachedInput": {
+        "knownTotal": 1363456,
+        "unknownReceipts": 2,
+        "isLowerBound": true
+      },
+      "uncachedInput": {
+        "knownTotal": 200154,
+        "unknownReceipts": 2,
+        "isLowerBound": true
+      },
+      "output": {
+        "knownTotal": 45239,
+        "unknownReceipts": 2,
+        "isLowerBound": true
+      }
+    },
+    "observedMonotonicSeconds": 2283.206
+  },
+  "additionalOutsideComparison": {
+    "invocations": 4,
+    "metrics": {
+      "input": {
+        "knownTotal": 341775,
+        "unknownReceipts": 2,
+        "isLowerBound": true
+      },
+      "cachedInput": {
+        "knownTotal": 301696,
+        "unknownReceipts": 2,
+        "isLowerBound": true
+      },
+      "uncachedInput": {
+        "knownTotal": 40079,
+        "unknownReceipts": 2,
+        "isLowerBound": true
+      },
+      "output": {
+        "knownTotal": 10757,
+        "unknownReceipts": 2,
+        "isLowerBound": true
+      }
+    },
+    "observedMonotonicSeconds": 1025.294
+  },
+  "comparison": {
+    "invocations": 4,
+    "metrics": {
+      "input": {
+        "knownTotal": 1221835,
+        "unknownReceipts": 0,
+        "isLowerBound": false
+      },
+      "cachedInput": {
+        "knownTotal": 1061760,
+        "unknownReceipts": 0,
+        "isLowerBound": false
+      },
+      "uncachedInput": {
+        "knownTotal": 160075,
+        "unknownReceipts": 0,
+        "isLowerBound": false
+      },
+      "output": {
+        "knownTotal": 34482,
+        "unknownReceipts": 0,
+        "isLowerBound": false
+      }
+    },
+    "observedMonotonicSeconds": 1257.912
+  },
+  "records": [
+    {
+      "purpose": "stopped timing batch, trust alias false stop",
+      "executorInvoked": true,
+      "tokens": {
+        "input": 325088,
+        "output": 10752,
+        "cachedInput": 288512
+      },
+      "usageStatus": "final",
+      "durationSeconds": 400.535,
+      "error": "Agent configuration changed: <user-home>/.codex/config.toml; no further calls.",
+      "gradedComparison": false,
+      "passed": null
+    },
+    {
+      "purpose": "stopped canonical batch, provider connection timeout",
+      "executorInvoked": true,
+      "tokens": null,
+      "usageStatus": "partial",
+      "durationSeconds": 600.019,
+      "error": "\"codex\" timed out after 600000ms",
+      "gradedComparison": false,
+      "passed": null
+    },
+    {
+      "purpose": "readiness local Git preflight rejection",
+      "executorInvoked": true,
+      "tokens": null,
+      "usageStatus": "partial",
+      "durationSeconds": 0.122,
+      "error": "\"codex\" exited with code 1: Not inside a trusted directory and --skip-git-repo-check was not specified.",
+      "gradedComparison": false,
+      "passed": null
+    },
+    {
+      "purpose": "successful readiness, outside benchmark populations",
+      "executorInvoked": true,
+      "tokens": {
+        "input": 16687,
+        "output": 5,
+        "cachedInput": 13184
+      },
+      "usageStatus": "final",
+      "durationSeconds": 24.618,
+      "error": null,
+      "gradedComparison": false,
+      "passed": null
+    },
+    {
+      "purpose": "completed paired comparison baseline trial 1",
+      "executorInvoked": true,
+      "tokens": {
+        "input": 290811,
+        "output": 7724,
+        "cachedInput": 262016
+      },
+      "usageStatus": "final",
+      "durationSeconds": 248.602,
+      "error": null,
+      "gradedComparison": true,
+      "passed": true
+    },
+    {
+      "purpose": "completed paired comparison baseline trial 2",
+      "executorInvoked": true,
+      "tokens": {
+        "input": 423353,
+        "output": 10578,
+        "cachedInput": 382336
+      },
+      "usageStatus": "final",
+      "durationSeconds": 391.839,
+      "error": null,
+      "gradedComparison": true,
+      "passed": true
+    },
+    {
+      "purpose": "completed paired comparison treatment trial 1",
+      "executorInvoked": true,
+      "tokens": {
+        "input": 214661,
+        "output": 8951,
+        "cachedInput": 177664
+      },
+      "usageStatus": "final",
+      "durationSeconds": 339.403,
+      "error": null,
+      "gradedComparison": true,
+      "passed": true
+    },
+    {
+      "purpose": "completed paired comparison treatment trial 2",
+      "executorInvoked": true,
+      "tokens": {
+        "input": 293010,
+        "output": 7229,
+        "cachedInput": 239744
+      },
+      "usageStatus": "final",
+      "durationSeconds": 278.068,
+      "error": null,
+      "gradedComparison": true,
+      "passed": true
+    }
+  ]
+}

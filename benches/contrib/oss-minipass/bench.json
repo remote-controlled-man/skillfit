@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "name": "oss-minipass",
+  "description": "Four pinned real minipass stream defects. Development calibration; independent of Skill contents. Public outcome checks and retained regression replay, no model grader. Difficulty not yet calibrated.",
+  "tasks": [
+    {
+      "id": "async-end",
+      "fixture": "fixtures/async-end",
+      "prompt": "prompts/async-end.md",
+      "verifier": "node verifiers/async-end.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-async-end.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "buffered-readable",
+      "fixture": "fixtures/buffered-readable",
+      "prompt": "prompts/buffered-readable.md",
+      "verifier": "node verifiers/buffered-readable.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-buffered-readable.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "pipeline-order",
+      "fixture": "fixtures/pipeline-order",
+      "prompt": "prompts/pipeline-order.md",
+      "verifier": "node verifiers/pipeline-order.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-pipeline-order.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "end-listeners",
+      "fixture": "fixtures/end-listeners",
+      "prompt": "prompts/end-listeners.md",
+      "verifier": "node verifiers/end-listeners.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-end-listeners.mjs",
+      "shouldTrigger": true
+    }
+  ]
+}

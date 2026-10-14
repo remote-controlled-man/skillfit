@@ -1,6 +1,18 @@
+import type { ExecutionTiming } from './execution-timing.js';
+
+export type PairOrder = 'baseline-first' | 'balanced';
+
+/** Keep each pair adjacent; alternate the first arm across both tasks and trials. */
+export function pairConditions(order: PairOrder, taskIndex: number, trial: number): readonly Condition[] {
+  return order === 'balanced' && (taskIndex + trial - 1) % 2 === 1
+    ? ['treatment', 'baseline'] : ['baseline', 'treatment'];
+}
+
 export interface TokenUsage {
   input?: number;
   output?: number;
+  /** Cache-read input, already included in input; absent means unrecorded. */
+  cachedInput?: number;
 }
 
 export interface ExecutorResult {
@@ -10,6 +22,28 @@ export interface ExecutorResult {
   rawOutput?: string;
   /** Returned output retained, but input/configuration drift makes this trial ungradable. */
   guardError?: string;
+  /** Partial usage is a known lower bound, never a complete final receipt. */
+  usageStatus?: 'final' | 'partial';
+  /** Public timing diagnostics; neither clock measures billed/active model computation. */
+  executionTiming?: ExecutionTiming;
+  usageEvidence?: UsageEvidence;
+}
+
+export interface UsageEvidence {
+  source: 'local-session-token-count';
+  threadId: string;
+  counterAt: string;
+  recordSha256: string;
+  tokens: TokenUsage;
+  scope: string;
+}
+
+/** Retain public output/usage from a failed invocation; guards can refuse before invoking. */
+export class ExecutorFailure extends Error {
+  constructor(message: string, readonly result: ExecutorResult = { output: '' }, readonly executorInvoked = true) {
+    super(message);
+    this.name = 'ExecutorFailure';
+  }
 }
 
 export interface ExecutorDescriptor {

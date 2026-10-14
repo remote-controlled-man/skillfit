@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "name": "oss-lru-cache-lifecycle-v2-regression",
+  "description": "Known regression control: unchanged historical fetch-lifecycle task and frozen grader; subset of the original bench, not independent transfer.",
+  "tasks": [
+    {
+      "id": "fetch-lifecycle",
+      "fixture": "fixtures/fetch-lifecycle",
+      "prompt": "prompts/fetch-lifecycle.md",
+      "verifier": "node verifiers/fetch-lifecycle.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-fetch-lifecycle.mjs",
+      "rubric": "ground-truth/fetch-lifecycle.md",
+      "shouldTrigger": true
+    }
+  ]
+}
