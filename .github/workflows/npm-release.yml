@@ -1,0 +1,72 @@
+name: npm release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Prepare and inspect the package without publishing'
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'remote-controlled-man/skillfit' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+      - name: Install and test offline
+        run: |
+          npm ci
+          npm test
+      - name: Prepare the exact package
+        run: |
+          mkdir "$RUNNER_TEMP/skillfit-release"
+          npm pack --json --pack-destination "$RUNNER_TEMP/skillfit-release" > "$RUNNER_TEMP/skillfit-release/pack.json"
+          node scripts/npm-release.mjs check "$RUNNER_TEMP/skillfit-release/pack.json"
+      - name: Preview publication
+        if: inputs.dry_run
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          const root=process.env.RUNNER_TEMP+'/skillfit-release';
+          const pack=JSON.parse(readFileSync(root+'/pack.json'))[0];
+          const preview={name:pack.name,version:pack.version,integrity:pack.integrity,sourceCommit:process.env.GITHUB_SHA,dryRun:true,modelCalls:0};
+          writeFileSync(root+'/preview.json',JSON.stringify(preview,null,2)+'\n',{flag:'wx'});
+          console.log(JSON.stringify(preview));
+          NODE
+      - name: Publish with npm trusted publishing
+        if: '!inputs.dry_run'
+        run: |
+          node scripts/npm-release.mjs guard "$RUNNER_TEMP/skillfit-release/pack.json"
+          archive=$(node -p "JSON.parse(require('node:fs').readFileSync(process.env.RUNNER_TEMP + '/skillfit-release/pack.json'))[0].filename")
+          npm publish "$RUNNER_TEMP/skillfit-release/$archive" --access public --tag latest --fetch-retries=0 --fetch-timeout=600000
+          node scripts/npm-release.mjs verify "$RUNNER_TEMP/skillfit-release/pack.json"
+      - name: Retain reviewed archive and verification receipts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/skillfit-release/*.tgz
+            ${{ runner.temp }}/skillfit-release/*.json
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 14
