@@ -25,9 +25,9 @@
   "bugs": "https://github.com/remote-controlled-man/skillfit/issues",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test \"dist/**/*.test.js\"",
+    "test": "npm run build && node --test \"dist/**/*.test.js\" \"scripts/*.test.mjs\"",
     "doctor": "npm run build && node dist/cli.js doctor",
-    "check": "npm run build && node --test \"dist/**/*.test.js\"",
+    "check": "npm run build && node --test \"dist/**/*.test.js\" \"scripts/*.test.mjs\"",
     "prepublishOnly": "npm test"
   },
   "keywords": [

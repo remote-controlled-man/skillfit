@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — manual trusted publishing
+
+- Prepare a manual, default-dry-run GitHub Actions npm release workflow with
+  OIDC, exact-archive checks, version reuse protection and verified registry
+  installation after publication scanning. Add offline regression checks;
+  see the [maintainer procedure](docs/releases/trusted-publishing.md).
+- A live trusted-publisher binding and its first real publication require
+  separate verification; preparation does not establish OIDC publication.
+
 ## [0.9.0] — 2026-10-15
 
 - Release the Agent-callable evaluation component, installed old/new Skill comparison,
