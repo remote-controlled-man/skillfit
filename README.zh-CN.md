@@ -63,8 +63,8 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## 安装
 
 ```bash
-npx skillfit@0.8.0 --help
-npx skillfit@0.8.0 doctor
+npx skillfit@0.9.0 --help
+npx skillfit@0.9.0 doctor
 ```
 
 `npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。下面的快速开始用的是源码检出，这样才能跑本仓库自带的 bench。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI。`skillfit` 是从 npm 装上的命令。
@@ -121,7 +121,7 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 新的安装式评估会给两组提供相同的原生未跟踪文件 diff 工具。使用 `node _skillfit/native-diff.cjs <file>` 可显示未经输出过滤的补丁。计划和证据固定工具版本及内容；工具被修改会停止后续调用。这修正的是共同评估环境，不是 Skill。旧运行保留原环境，提供工具也不代表 Agent 实际使用了它。
 
-用版本 1 JSON 请求，让 Agent 调用现有 Skill 修订评估引擎。只读预览固定输入和策略，执行时必须提供预览的计划指纹。JSON 结果保留提升、退步、全部调用成本和证据覆盖情况。独立策略返回 `accept`、`reject` 或 `inconclusive`；证据不足不能授权采用，组件也不会升级 Skill。这项接口已为 [0.9.0](docs/releases/0.9.0.md) 做发布准备，但尚未发布，需要构建仓库版本。详见[输入输出与验收策略契约](docs/eval-component.md)。
+用版本 1 JSON 请求，让 Agent 调用现有 Skill 修订评估引擎。只读预览固定输入和策略，执行时必须提供预览的计划指纹。JSON 结果保留提升、退步、全部调用成本和证据覆盖情况。独立策略返回 `accept`、`reject` 或 `inconclusive`；证据不足不能授权采用，组件也不会升级 Skill。这项接口已包含在 [0.9.0](docs/releases/0.9.0.md) 中，可通过 npm 或构建源码使用。详见[输入输出与验收策略契约](docs/eval-component.md)。
 
 新的成本对比可在请求中设置 `pairOrder: "balanced"`，交替安排两版先运行。计划固定顺序，离线评估核对实际调用记录；配对统计公式保持不变。
 
@@ -263,7 +263,7 @@ node ./personal-codex/setup.mjs --yes
 - [x] 正例任务可选 `triggerClass`（`explicit`、`implicit`、`contextual`）。没标类别的任务仍只进汇总召回率。
 - [x] `--compete-installed` 把其他用户级 Skill 复制进 trigger 试验。矩阵目录之外的系统 Skill 和插件不会被复制。`installed` 把「读了长正文」和任务结果分开报告；这次读取不是 trigger 召回率。
 - [ ] 安装建议。2026 年 7 月的 8 个 Skill 实验没有可靠的任务质量增益。67 个 Skill 目录和 13 个入门套装都没有作为一组被评过。
-- [x] 已发布到 npm（`skillfit@0.8.0`）。`npx skillfit` 安装的是这个版本。克隆后 `npm ci` 再 `npm run build` 仍然可用。
+- [x] 已发布到 npm（`skillfit@0.9.0`）。`npx skillfit` 安装的是这个版本。克隆后 `npm ci` 再 `npm run build` 仍然可用。
 - [x] 社区 bench 与 evidence 提交。bench 放在 `benches/contrib`；证据用 Evidence submission issue 模板。CI 只跑离线检查，不调用 agent。
 - [ ] Cursor / Gemini CLI / OpenCode 适配器
 - [x] Streamable HTTP MCP 预检（`mcp check` 的 `http` 传输）。不会调用工具。

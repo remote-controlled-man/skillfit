@@ -86,7 +86,7 @@ These are open. The README roadmap is the public checklist; this list is the sam
 - The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the
   13-Skill starter set are not evaluated as sets. A run labeled indicative is not an installation
   recommendation (README, "Our own data").
-- `skillfit@0.8.0` is published. `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build`
+- `skillfit@0.9.0` includes the Agent evaluation component and is published. `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build`
   remain valid (`skills/skillfit/SKILL.md`).
 - Community benches belong in `benches/contrib`. Evidence uses the Evidence submission issue template.
   CI runs the offline gates and does not call an agent. Cursor, Gemini CLI, and OpenCode adapters

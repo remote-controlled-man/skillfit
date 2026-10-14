@@ -63,8 +63,8 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 ## Install
 
 ```bash
-npx skillfit@0.8.0 --help
-npx skillfit@0.8.0 doctor
+npx skillfit@0.9.0 --help
+npx skillfit@0.9.0 doctor
 ```
 
 `npx skillfit` installs the published release and needs Node.js 22 or newer. The quick start below uses a source checkout so you can run the benches that ship in this repository. After `npm run build`, `node dist/cli.js` is that checkout's CLI. `skillfit` is the command installed from npm.
@@ -124,7 +124,7 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 New installed evaluations provide the same native untracked-file diff helper in both arms. Use `node _skillfit/native-diff.cjs <file>` to display a patch without output filtering. The plan and evidence pin the helper version and content; a modified helper stops further calls. This corrects the common evaluation environment, not the Skill. Old runs keep their original environment, and delivery does not prove the agent used the helper.
 
-Use a version 1 JSON request to call the existing Skill revision engine from an Agent. A read-only preview pins inputs and the policy; execution requires its plan hash. JSON results retain improvements, regressions, all-invocation costs and evidence coverage. A separate policy returns `accept`, `reject` or `inconclusive`; insufficient evidence cannot authorize adoption, and the component never upgrades a Skill. This interface is prepared for [0.9.0](docs/releases/0.9.0.md), which is not yet published; build the checkout. See [the input/output and policy contract](docs/eval-component.md).
+Use a version 1 JSON request to call the existing Skill revision engine from an Agent. A read-only preview pins inputs and the policy; execution requires its plan hash. JSON results retain improvements, regressions, all-invocation costs and evidence coverage. A separate policy returns `accept`, `reject` or `inconclusive`; insufficient evidence cannot authorize adoption, and the component never upgrades a Skill. This interface is included in [0.9.0](docs/releases/0.9.0.md), available from npm or a source checkout. See [the input/output and policy contract](docs/eval-component.md).
 
 For new cost comparisons, set `pairOrder: "balanced"` in the request to alternate which version runs first. The plan freezes the order and offline assessment verifies the invocation ledger; paired statistical formulas remain unchanged.
 
@@ -266,7 +266,7 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 - [x] Optional `triggerClass` (`explicit`, `implicit`, `contextual`) on positive tasks. Unlabeled tasks stay in the pooled recall.
 - [x] `--compete-installed` copies other user-level Skills into a trigger trial. System Skills and plugins outside the matrix directories are not copied. `installed` reports a long-body read separately from the task result; that read is not trigger recall.
 - [ ] An installation recommendation. The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the 13-Skill starter set are not evaluated as sets.
-- [x] npm publication (`skillfit@0.8.0`). `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build` remain valid.
+- [x] npm publication (`skillfit@0.9.0`). `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build` remain valid.
 - [x] Community bench and evidence submissions. Benches go in `benches/contrib`; evidence uses the Evidence submission issue template. CI runs the offline gates and does not call an agent.
 - [ ] Cursor / Gemini CLI / OpenCode adapters
 - [x] Streamable HTTP MCP preflight (`mcp check` transport `http`). It does not call a tool.
