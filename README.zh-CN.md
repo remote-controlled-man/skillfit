@@ -63,8 +63,8 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## 安装
 
 ```bash
-npx skillfit@0.9.0 --help
-npx skillfit@0.9.0 doctor
+npx skillfit@0.9.1 --help
+npx skillfit@0.9.1 doctor
 ```
 
 `npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。下面的快速开始用的是源码检出，这样才能跑本仓库自带的 bench。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI。`skillfit` 是从 npm 装上的命令。
@@ -263,7 +263,7 @@ node ./personal-codex/setup.mjs --yes
 - [x] 正例任务可选 `triggerClass`（`explicit`、`implicit`、`contextual`）。没标类别的任务仍只进汇总召回率。
 - [x] `--compete-installed` 把其他用户级 Skill 复制进 trigger 试验。矩阵目录之外的系统 Skill 和插件不会被复制。`installed` 把「读了长正文」和任务结果分开报告；这次读取不是 trigger 召回率。
 - [ ] 安装建议。2026 年 7 月的 8 个 Skill 实验没有可靠的任务质量增益。67 个 Skill 目录和 13 个入门套装都没有作为一组被评过。
-- [x] 已发布到 npm（`skillfit@0.9.0`）。`npx skillfit` 安装的是这个版本。克隆后 `npm ci` 再 `npm run build` 仍然可用。
+- [x] 已发布到 npm（`skillfit@0.9.1`），并通过 [CLI/OIDC 发布与注册表安装验收](docs/releases/0.9.1-verification.json)。`npx skillfit` 安装的是这个版本。克隆后 `npm ci` 再 `npm run build` 仍然可用。
 - [x] 社区 bench 与 evidence 提交。bench 放在 `benches/contrib`；证据用 Evidence submission issue 模板。CI 只跑离线检查，不调用 agent。
 - [ ] Cursor / Gemini CLI / OpenCode 适配器
 - [x] Streamable HTTP MCP 预检（`mcp check` 的 `http` 传输）。不会调用工具。
