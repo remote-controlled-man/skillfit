@@ -249,7 +249,7 @@ Read the dated reports in [evidence/](evidence/). Some historical raw manifests 
 
 - **Standards, not formats.** AGENTS.md (AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — we write what agents already read.
 - **Deny by default.** We install only what a profile explicitly declares, pinned by content hash.
-- **Dry-run first.** Every write command prints its plan before touching a file. Backups always.
+- **Dry-run first.** Preview configuration changes before applying them; replacements keep backups and are verified. New bench/run/bundle artifacts preserve existing outputs through collision checks.
 - **Honest numbers.** New efficacy submissions need a pinned, shareable manifest; some older reports lack downloadable raw manifests. Verdict semantics are frozen in [docs/metrics.md](docs/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and runs below 8 tasks × 5 trials are labeled *indicative* even if their within-bench verdict is statistically significant.
 
 ## Disclaimer
