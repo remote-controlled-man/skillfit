@@ -23,7 +23,7 @@ Usage:
   skillfit eval --request <request.json> --plan-sha <sha256>  Run that plan and return JSON evidence
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
   skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
-  skillfit bench init [dir]                 Scaffold a new bench directory
+  skillfit bench init [dir] [--kind output|command]  Scaffold a text-output or code-editing case
   skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
   skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
@@ -65,6 +65,9 @@ Options:
   --yes               Non-interactive mode (CI-friendly)
   --help, -h          Show help
   --version, -v       Show version
+
+bench init options:
+  --kind <kind>         output (default, grades a reply) | command (grades file edits)
 
 bench add --freeze options:
   --task <id>            Task id (required)
@@ -127,6 +130,7 @@ async function main(): Promise<void> {
       oracle: { type: 'string' },
       decompose: { type: 'boolean', default: false },
       'verifier-kind': { type: 'string' },
+      kind: { type: 'string' },
       'should-trigger': { type: 'string' },
       calibrate: { type: 'boolean', default: false },
       json: { type: 'boolean', default: false },
@@ -151,6 +155,9 @@ async function main(): Promise<void> {
   }
   if (values['baseline-skill'] !== undefined && command !== 'eval') {
     throw new Error('--baseline-skill applies only to eval --mode installed.');
+  }
+  if (values.kind !== undefined && !(command === 'bench' && positionals[1] === 'init')) {
+    throw new Error('--kind applies only to bench init.');
   }
   if (values.request !== undefined && command !== 'eval') throw new Error('--request applies only to eval.');
   if (values['plan-sha'] !== undefined && (command !== 'eval' || values.request === undefined || values['dry-run'])) throw new Error('--plan-sha requires a non-dry-run eval --request.');
@@ -287,7 +294,11 @@ async function main(): Promise<void> {
     case 'bench': {
       const subcommand = positionals[1];
       if (subcommand === 'init') {
-        await runBenchInit({ ...common, dir: positionals[2] });
+        const kind = values.kind;
+        if (kind !== undefined && kind !== 'output' && kind !== 'command') {
+          throw new Error(`Unknown --kind: ${kind} (expected "output" or "command")`);
+        }
+        await runBenchInit({ ...common, dir: positionals[2], kind });
         return;
       }
       if (subcommand === 'check') {

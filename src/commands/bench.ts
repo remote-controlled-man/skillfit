@@ -15,11 +15,13 @@ import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { VerifierCheck } from '../harness/verifier-summary.js';
 import type { Executor, InputMode, SkillBundle } from '../harness/types.js';
 import { confirm as confirmPrompt } from './confirm.js';
+import { commandTemplateFiles } from './bench-command-template.js';
 import { BACKUP_SUFFIX } from './install.js';
 import type { Check } from './doctor.js';
 
 export interface BenchInitOptions {
   dir?: string;
+  kind?: 'output' | 'command';
   cwd?: string;
   dryRun?: boolean;
   yes?: boolean;
@@ -154,8 +156,12 @@ export async function runBenchInit(
   options: BenchInitOptions,
 ): Promise<{ dir: string; created: string[] } | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
+  const kind = options.kind ?? 'output';
+  if (kind !== 'output' && kind !== 'command') {
+    throw new Error(`Unknown bench kind: ${kind} (expected "output" or "command")`);
+  }
   const dir = resolve(options.cwd ?? process.cwd(), options.dir ?? 'skillfit-bench');
-  const files = templateFiles(basename(dir));
+  const files = kind === 'command' ? commandTemplateFiles(basename(dir)) : templateFiles(basename(dir));
   const created = Object.keys(files);
 
   if (options.dryRun) {
@@ -184,7 +190,8 @@ export async function runBenchInit(
   log(`Bench scaffolded at ${dir} (${created.length} files, self-check passed).`);
   log('Next:');
   log(`  skillfit bench check ${dir}`);
-  log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 5`);
+  log(`  skillfit eval <skill-path> --bench ${dir} --agent <id>${kind === 'command' ? ' --input workspace' : ''} --trials 1 --max-calls 2 --dry-run`);
+  log('This is a teaching case. Replace it with your own task before measuring Skill benefit.');
   return { dir, created };
 }
 

@@ -96,6 +96,19 @@ Use `--max-calls <n>` for eval or baseline calibration to reject plans above a c
 
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
+## Build your own cases
+
+Source-checkout feature (not in npm 0.9.1): start a code-editing case with a broken fixture, protected tests, independent behavioral checks and a reference repair. The first command previews the files; the second creates a fresh directory; checking and eval preview make no model calls.
+
+```bash
+node dist/cli.js bench init my-bench --kind command --dry-run
+node dist/cli.js bench init my-bench --kind command --yes
+node dist/cli.js bench check my-bench
+node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input workspace --trials 1 --max-calls 2 --dry-run
+```
+
+This is a synthetic teaching case, not a Skill benchmark. Replace the fixture, prompt, verifier and oracle with your actual task before measuring benefit. The preview shows two planned calls and starts none. Omit `--kind` (or use `--kind output`) for the existing reply-grading starter. Capture an observed failure with `bench add --freeze`, or import a maintainer fix with `--from-commit`; follow the [authoring guide](docs/bench-authoring.md).
+
 ## Evaluate a real OSS task
 
 Use `--input workspace` for paired CLI runs that inspect and edit files on disk,
@@ -236,7 +249,7 @@ Read the dated reports in [evidence/](evidence/). Some historical raw manifests 
 
 - **Standards, not formats.** AGENTS.md (AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — we write what agents already read.
 - **Deny by default.** We install only what a profile explicitly declares, pinned by content hash.
-- **Dry-run first.** Every write command prints its plan before touching a file. Backups always.
+- **Dry-run first.** Preview configuration changes before applying them; replacements keep backups and are verified. New bench/run/bundle artifacts preserve existing outputs through collision checks.
 - **Honest numbers.** New efficacy submissions need a pinned, shareable manifest; some older reports lack downloadable raw manifests. Verdict semantics are frozen in [docs/metrics.md](docs/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and runs below 8 tasks × 5 trials are labeled *indicative* even if their within-bench verdict is statistically significant.
 
 ## Disclaimer

@@ -13,6 +13,12 @@ CLI coding runs can add `--input workspace` to work from files on disk without a
 inline repository; use the same option for baseline calibration. Snapshot input
 remains the compatible default.
 
+For a new code-editing case, a source build supports `bench init my-bench --kind command`.
+It creates a synthetic teaching fixture, independent verifier and reference
+repair; npm 0.9.1 does not yet include this template. Follow the
+[starter walkthrough](bench-authoring.md#choose-a-starter), replace it with your
+real task, and preview `--trials 1 --max-calls 2` before deciding to spend.
+
 Choose one Skill, rules file, or MCP setup and one task family where it should help. Prefer tasks
 frozen from failures you actually encountered. For a Skill, use the directory that contains its
 `SKILL.md`; for rules or MCP, use the experiment directory described in
