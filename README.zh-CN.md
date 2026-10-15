@@ -37,6 +37,8 @@ Agent 配置生态已经解决了**分发**（`npx skills add`、插件市场、
 
 skillfit 补上缺失的测量层：配对 A/B 实验 + 确定性 verifier + 统计判定 + 触发率测量，打包成任何人都能跑的 CLI。
 
+围绕你自己的任务编写 case：固定初始文件、写下任务请求、定义正确结果必须满足的条件。内置 bench 用来教格式；CLI 负责运行你的 case、对比结果和成本、保存证据。参见[case 编写指南](docs/bench-authoring.md)。
+
 ## 你能得到什么
 
 一次真实运行：skill 已安装但没人提醒时，agent 到底**想不想得起来用它**——
@@ -129,6 +131,8 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 请求还可通过 `executorTimeoutSeconds` 固定两版的单次时限（默认 600 秒）。改变时限必须声明新计划和新批次；之前的超时及已知花费仍保留在证据中。
 
+未发布的源码支持可选 `spendingBudget`，设置五项整批预算停止线。触线或缺失完整最终用量时停止后续调用并保留花费；正在运行的一次仍可能越线。详见[预算检查契约](docs/eval-component.md#input-and-execution)。
+
 失败的 Codex JSON 调用可从本地数值计数器保留身份匹配的部分用量。导出不包含私有会话正文；部分用量仍不能满足最终成本覆盖或采用门槛。
 
 ```bash
@@ -167,21 +171,7 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
 
-最新的[调试开发记录](evidence/2026-10-13-debugging-completed-development.md)保留了被拒绝的候选、一个具体修复和增加的总成本；[中止批次](evidence/2026-10-13-debugging-development-stops.md)保留了错误和部分消耗。两者都没有证明稳定提升，也不能授权升级。
-
-[已知退步对照与首次验证中止记录](evidence/2026-10-13-debugging-controls-and-sleep-stop.md)保留了 LRU 的成本下降点估计、normalize-url 的成本退步和已查明的睡眠间隔。16 次完整交付均可离线重放；中止调用保留部分成本、不予评分。新的固定验证批次独立保留。
-
-[已完成的独立验证](evidence/2026-10-14-debugging-independent-validation.md)保留了 80 次真实执行：两个版本均通过 40/40 次，compact v4 的未缓存输入总量下降 16.82%、输出下降 16.64%、耗时下降 17.48%。未缓存输入的 95% 区间支持下降 7.69%–26.26%，保守边界仍未达到声明的至少 10%。验收保持 `inconclusive`，不具备升级资格。各任务的成本增加、全部 125 次研究调用以及零模型调用的离线复算均保留。
-
-[前瞻性后续任务](benches/contrib/oss-skill-followup/README.md)固定了三个新仓库的八个不同缺陷，具备原始失败、完整维护者修复通过和受保护的回归证据。[单独声明的有界方案](docs/plans/2026-10-14-skill-followup.md)保持 v4 和至少 10% 的要求不变，将本轮上限设为 80 次调用、累计消耗上限设为 205 次，并且不合并以前的正确性结果。离线完整性检查证明任务有效，不能证明 Skill 提升。
-
-[后续批次中止记录](evidence/2026-10-14-debugging-followup-routing-stop.md)保留了 46 份精确离线复算、第 47 次调用的 CLI 路由失败及 33 份未调用记录。计时和供电正常，但失败调用的 token 成本仍然未知；已完成的前缀不能授权升级。各任务的成本增加和累计 172 次执行调用均保留。
-
-[之后的消耗控制中止记录](evidence/2026-10-14-debugging-spending-stop.md)保留了单独的恢复检查及一次按用户要求中止的恢复批次调用，实际累计消耗为 174 次，其余 79 份记录未调用。离线归档复算部分成本下限，并将未独立核实的本地恢复检查计数单独保留；不声称新增正确性提升、升级资格或自动升级。
-
-[四次调用的读取实验及成本复查](evidence/2026-10-14-debugging-reading-pilot-and-cost-review.md)将累计消耗计为 178 次。四份交付均通过，但读取草案的未缓存输入增加 34.35%、输出增加 10.16%、耗时增加 13.60%，因此被拒绝。事后复查将 50 条字面空 diff 更正为 19 条缺失补丁和 31 条正常的仅检查结果；已合并的共同 diff 工具通过了离线验证，真实 Agent 使用情况和净节省尚未实测。收窄的草案仍未验证。[顺序交付计划](docs/plans/2026-10-14-evidence-and-release-sequence.md)将证据整理和发布准备排在另行授权的新实验之前。
-
-[已完成的四次机制验证](evidence/2026-10-15-native-diff-mechanism.md)将累计消耗计为 182 次。两版均通过 2/2 次；v4 的未缓存输入下降 27.76%、输出下降 17.56%、耗时下降 15.92%，每一对的五项成本均下降。Agent 在 4/4 次运行中实际使用共同工具，展示了五份非空补丁。这只是一个复用的开发任务，证明了本次实际使用和配对成本下降，尚不能证明稳定提升或工具带来的因果净节省。离线归档保留全部调用和此前七份未知用量；验收仍为 `inconclusive`，没有启动独立对比或额外调用。
+[Skill 实验证据索引](docs/skill-evaluation-evidence.md)保留各批次、失败和成本限制。当前累计 195 次执行器调用，七份历史最终用量仍未知；没有候选版本满足采用条件。最新的[接收者机制验证](evidence/2026-10-15-receiver-mechanism-stop.md)在一次候选失败后停止，没有运行对照。已发布的失败均保留离线重放入口。这些针对具体任务的结果不能证明 Skill 普遍有效。
 
 ## 可选择的 Codex 配置
 

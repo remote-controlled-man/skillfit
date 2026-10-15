@@ -60,6 +60,19 @@ gates), and the LLM-judge literature cited in §5.
 
 ## Unit of analysis
 
+Operational spending guard (2026-10-15, unreleased source): paired evaluations
+may declare five absolute `spendingBudget` stop lines, pinned in their request,
+preview and native plan. All invoked agent spending counts, including failures
+and excluded partners. Reaching a line prevents the next call; one in-flight call
+may overshoot. Missing/partial/invalid final usage or an execution/guard error
+stops further calls and retains spent/unknown costs. There is no retry or
+replacement. A final predeclared call with complete evidence may finish the
+cohort at a line. Completed audits replay sealed before/after snapshots against
+the chronological receipts. Trigger mode and judges are unsupported. This is
+an operational stop rule, **not** an API hard cap, adoption threshold or new
+statistical protocol; exclusions, formulas, policies and old records remain
+unchanged. See [the component contract](eval-component.md#input-and-execution).
+
 Environment correction (2026-10-14): new paired installed runs deliver the same
 versioned native untracked-file diff helper and usage guidance to both arms.
 Plans, source snapshots and delivered copies bind its content; mutation stops

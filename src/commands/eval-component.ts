@@ -6,6 +6,7 @@ import { auditEvaluation, stoppedAccounting } from '../harness/eval-audit.js';
 import { loadEvalRequest, parseAcceptancePolicy, policyHash, readComponentJson, record, type ComponentMetadata } from '../harness/eval-contract.js';
 import { hashFileSet, listFilesRecursive, sha256Text } from '../harness/hash.js';
 import { runEval, type EvalOptions, type EvalPreview } from './eval.js';
+import { spendingBudgetReport } from '../harness/eval-budget.js';
 
 export function componentError(error: unknown, code = 'INVALID_OR_FAILED_EVALUATION') {
   return { schemaVersion: 1, kind: 'skillfit.eval-error', status: 'error',
@@ -17,12 +18,14 @@ export async function reportEvalComponent(path: string, options: { policyPath?: 
   const input = resolve(path), directory = statSync(input).isDirectory();
   const manifestPath = directory ? join(input, 'manifest.json') : input;
   const runDir = resolve(options.recordsPath ?? (directory ? input : dirname(input)));
+  const spendingBudget = spendingBudgetReport(runDir);
   if (!existsSync(manifestPath)) {
     if (!directory || !existsSync(join(runDir, '_plan.json'))) throw new Error('No saved manifest or native plan found.');
     const sessionPath = join(runDir, '_session.json');
     const session = existsSync(sessionPath) ? record(readComponentJson(sessionPath).value, 'session') : null;
     return { schemaVersion: 1, kind: 'skillfit.eval-result', status: session ? 'stopped' : 'incomplete',
       manifest: null, session, costs: stoppedAccounting(runDir), evidence: { verified: false, runDir, reasons: ['No final evaluation manifest; retained spending only.'] },
+      ...(spendingBudget ? { spendingBudget } : {}),
       acceptance: { decision: 'inconclusive', eligibleForUpgrade: false, automaticUpgrade: false,
         reasons: [{ code: 'EXPERIMENT_NOT_COMPLETED', message: 'No completed paired evaluation is available.' }] } };
   }
@@ -32,6 +35,7 @@ export async function reportEvalComponent(path: string, options: { policyPath?: 
   const result = assessEvaluation(data.value, audit, policy);
   const nativePlan = audit.verified ? record(readComponentJson(join(runDir, '_plan.json')).value, 'native plan') : null;
   return { ...result, manifest: { path: manifestPath, sha256: data.sha256, schemaVersion: 4 },
+    ...(spendingBudget ? { spendingBudget } : {}),
     environment: nativePlan ? { nodeVersion: nativePlan.nodeVersion, agent: nativePlan.agent,
       pairOrder: record(nativePlan.details, 'native plan details').pairOrder ?? null,
       executorTimeoutSeconds: record(nativePlan.details, 'native plan details').executorTimeoutSeconds ?? null,
@@ -64,6 +68,7 @@ export async function runEvalComponent(requestPath: string, options: ComponentRu
     bench: request.bench, agent: request.agent, mode: 'installed', inputMode: 'workspace', trials: request.trials,
     maxCalls: request.maxCalls, pairOrder: request.pairOrder, runsRoot: request.runsRoot, runGroup: request.runGroup, yes: true, dryRun: true,
     executorTimeoutSeconds: request.executorTimeoutSeconds,
+    ...(request.spendingBudget ? { spendingBudget: request.spendingBudget } : {}),
     judgeExecutor: null, executor: options.executor, sessionOptions: options.sessionOptions,
     skillInstallDir: options.skillInstallDir, log: options.log ?? (() => {}) };
   let prepared: EvalPreview | undefined;

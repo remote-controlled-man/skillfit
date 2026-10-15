@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "kind": "skillfit.receiver-mechanism-stop-checks",
+  "verifiedAt": "2026-10-15T14:32:24.516Z",
+  "sourceCommit": "63a1729ba2c9067e119f60bbd0b7633573045c13",
+  "callAccounting": {
+    "maximum": 2,
+    "actual": 1,
+    "candidate": 1,
+    "control": 0,
+    "retries": 0,
+    "replacements": 0,
+    "readiness": 0,
+    "warmup": 0,
+    "judge": 0,
+    "generator": 0,
+    "expansion": 0,
+    "cumulativeStudyCalls": 195,
+    "historicalUnknownPublicFinalUsages": 7,
+    "newIncompleteFinalUsage": 0
+  },
+  "result": {
+    "stopReason": "CANDIDATE_FUNCTIONAL_FAILURE",
+    "originalPassingChecks": 4,
+    "originalChecks": 6,
+    "receiverPassing": 8,
+    "receiverChecks": 18,
+    "actualCompleteSkillRead": true,
+    "sameWrongProductionSource": true,
+    "automaticUpgrade": false,
+    "independentValidation": false
+  },
+  "costs": {
+    "allActualInvocations": {
+      "input": 205272,
+      "cachedInput": 182144,
+      "uncachedInput": 23128,
+      "output": 6182,
+      "durationSeconds": 188.158
+    },
+    "pairedChange": null,
+    "perSuccess": null,
+    "sourceHistoricalArchive": "evidence/artifacts/2026-10-15-independent-comparison-regression-stop/package.tar.gz",
+    "sourceHistoricalArchiveSha256": "6a4d29e55a1b48b7e8cd4e790eb057341b08e92ede7e6fe903a015a6edfe3ed6",
+    "priorNativeKnownLowerBound": {
+      "input": 50254565,
+      "cachedInput": 43946752,
+      "uncachedInput": 6307813,
+      "output": 1485062,
+      "durationSeconds": 51944.802
+    },
+    "cumulativeNativeKnownLowerBound": {
+      "input": 50459837,
+      "cachedInput": 44128896,
+      "uncachedInput": 6330941,
+      "output": 1491244,
+      "durationSeconds": 52132.96
+    },
+    "qualifiedUnattestedSupplementUnchanged": {
+      "input": 16477,
+      "cachedInput": 13184,
+      "uncachedInput": 3293,
+      "output": 5,
+      "durationSeconds": 0
+    },
+    "notACompleteBill": true
+  },
+  "guards": {
+    "controllerOfflineTests": 24,
+    "allPassed": true,
+    "originalNativeSealVerified": true,
+    "originalNativeSealSha256": "daf48aa1c1e5c9aacf24e9239139c04440ea4faf73d7bcd3a98cdefc77b9375a",
+    "declarationPinsVerified": 23,
+    "powerAssertionsReleased": true,
+    "powerAnomalies": 0,
+    "timingAnomaly": null,
+    "tokenOvershoot": false,
+    "sourceAndInputsNotMutated": true,
+    "completeNativeComponentAudit": false
+  },
+  "verification": {
+    "projectTests": 556,
+    "projectFailures": 0,
+    "projectSkips": 0,
+    "projectLogSha256": "c682332cf834f3074f5e28023d57533094f08ed740bea0ac5c6cd2ad0da8667b",
+    "controllerTestLogSha256": "756114d143eb154ab1ab8787f993f3841ca803a0c75507ffd02512d4e437dcec",
+    "previousFilesUnchanged": 2580,
+    "checkpointSha256": "8bef4314af8d6bbbbeea52c26f8cac0f50ad932777f1d3fe366d8ac928963bd6",
+    "freshArchiveReplay": true,
+    "archiveSha256": "b520022e2c6250bfa2b20c864e2f63d9436647a05d69b16b312ec636d36a0a43"
+  },
+  "cleanup": {
+    "disposableCopiesRemoved": 4,
+    "filesRemoved": 1297,
+    "reclaimedBytes": 10362255,
+    "onlyIndexedBackedReplicas": true,
+    "originalNativeFailuresRetained": true,
+    "backingArchivesVerified": true
+  },
+  "files": [
+    {
+      "path": "evidence/2026-10-15-receiver-mechanism-stop.md",
+      "sha256": "8bd46daa2dd23fd9aeb183b91edc3b4ff1bc839a2e58d0a70ffe296fd52c2ba8"
+    },
+    {
+      "path": "evidence/artifacts/2026-10-15-receiver-mechanism-stop/README.md",
+      "sha256": "82a02b5816c44dba17b81f137e1438ce9f2596a49a60c9b812106a2733d35578"
+    },
+    {
+      "path": "evidence/artifacts/2026-10-15-receiver-mechanism-stop/package.tar.gz",
+      "sha256": "b520022e2c6250bfa2b20c864e2f63d9436647a05d69b16b312ec636d36a0a43"
+    },
+    {
+      "path": "evidence/artifacts/2026-10-15-receiver-mechanism-stop/verification.json",
+      "sha256": "72ceda4787782b0839e7b422cdd3825b54dc43b5bd7258dc1aa2168904425e6a"
+    }
+  ]
+}

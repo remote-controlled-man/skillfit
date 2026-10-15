@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — case authoring and evidence maintenance (2026-10-15)
+
+- Add optional request-based `spendingBudget` guards for all five batch cost
+  measures. Retain a stopped run and prevent later calls when a limit is reached
+  or complete final usage is unavailable; a call already in flight may overshoot.
+  This source feature is not part of the published 0.9.1 archive.
+- Retain the eight-task offline validation, the independent correctness-regression
+  stop at 12/80, and the failed receiver probe at 1/2, with portable offline
+  replay packages. The study totals 195 actual calls; seven historical final
+  usages remain unknown and no candidate qualifies for adoption.
+- Move the long experiment history to the maintained
+  [evidence index](docs/skill-evaluation-evidence.md). Refocus onboarding and the
+  roadmap on authoring cases for users' own tasks. No further model calls or npm
+  publication are included.
+
 ## Unreleased — bounded mechanism evidence (2026-10-15)
 
 - Retain exactly four authorized development calls: original/v4 both pass 2/2,

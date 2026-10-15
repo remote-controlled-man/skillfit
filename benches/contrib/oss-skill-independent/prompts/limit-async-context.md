@@ -1,0 +1,3 @@
+Queued calls retain their own AsyncLocalStorage context. Preserve the existing ordinary public behavior and fix the reported defect.
+
+This is pinned historical upstream runtime source with local offline fixtures. Run npm test with Node; do not install dependencies or use the network or fetch upstream fixes. Editable functional files: index.js; package.json imports/files fields; optional async-hooks-stub.js. Add an executable new *.test.mjs regression using node:test and the public API; it must distinguish the defect. Keep supplied tests, helper, vendored dependency, original metadata record, types and documentation unchanged. Explain the cause and checks actually run.

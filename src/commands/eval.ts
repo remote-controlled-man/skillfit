@@ -24,6 +24,7 @@ import {
 } from '../harness/trigger.js';
 import type { Bench, EvaluationTarget, Executor, InputMode, PairOrder, SkillBundle } from '../harness/types.js';
 import type { ComponentMetadata } from '../harness/eval-contract.js';
+import { parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget.js';
 
 export interface EvalPreview {
   target: { name: string; sourceDir: string; sha256: string; files: string[] };
@@ -40,6 +41,7 @@ export interface EvalPreview {
   pairOrder?: PairOrder;
   executorTimeoutSeconds?: number;
   nativeDiffTool?: NativeDiffDescriptor;
+  spendingBudget?: SpendingBudget;
 }
 
 export interface EvalOptions {
@@ -52,6 +54,7 @@ export interface EvalOptions {
   pairOrder?: PairOrder;
   executorTimeoutSeconds?: number;
   maxCalls?: number;
+  spendingBudget?: SpendingBudget;
   sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
   agent?: string;
   judgeAgent?: string;
@@ -370,6 +373,7 @@ async function runEvalTrigger(
 }
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
+  if (options.spendingBudget !== undefined && options.mode === 'trigger') throw new Error('spendingBudget applies only to paired evaluations.');
   const executorTimeoutSeconds = options.executorTimeoutSeconds ?? DEFAULT_CLI_TIMEOUT_MS / 1000;
   if (!Number.isSafeInteger(executorTimeoutSeconds) || executorTimeoutSeconds < 1 || executorTimeoutSeconds > 3600) {
     throw new Error('executorTimeoutSeconds must be an integer between 1 and 3600.');
@@ -468,6 +472,8 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     throw new Error(`${target.kind} experiments require a CLI executor; API executors cannot load project configuration files.`);
   }
   const judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge(options.judgeAgent);
+  const spendingBudget = options.spendingBudget === undefined ? undefined : parseSpendingBudget(options.spendingBudget);
+  if (spendingBudget && judge) throw new Error('spendingBudget requires a paired evaluation without a judge; judge usage is not covered.');
   if (options.judgeAgent && options.judgeAgent === options.agent) {
     log('Warning: judge and executor are the same agent — self-preference bias risk (docs/metrics.md L4).');
   }
@@ -485,6 +491,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },
     executor: executor?.describe() ?? null, judge: judge?.describe() ?? null, inputMode,
     installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, pairOrder,
+    ...(spendingBudget ? { spendingBudget } : {}),
     ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
     ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), outputDir: join(runsRoot, runGroup),
   });
@@ -493,6 +500,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
     log(`Pair order: ${pairOrder}; arms remain adjacent`);
+    if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; checked between calls, in-flight overshoot remains possible`);
     if (options.agent || options.executorTimeoutSeconds !== undefined) log(`Agent deadline: ${executorTimeoutSeconds}s per invocation in both arms`);
     if (skillInstallDir) {
       log('Tool     : native untracked-file diff helper in both arms (version 1; environment correction)');
@@ -508,6 +516,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
   const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
     { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder,
+      ...(spendingBudget ? { spendingBudget } : {}),
       ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
       ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), executor: executor.describe(), judge: judge?.describe() ?? null,
       ...(options.component ? { component: options.component } : {}),
@@ -520,6 +529,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
       baselineTarget,
       component: options.component,
       pairOrder,
+      ...(spendingBudget ? { spendingBudget } : {}),
       inputMode,
       ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
       executor: session.wrap(executor, 'agent'),

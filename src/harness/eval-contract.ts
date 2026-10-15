@@ -6,6 +6,7 @@ import { DEFAULT_CLI_TIMEOUT_MS } from './executors/cli.js';
 import { sha256Text } from './hash.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS } from './report.js';
 import type { PairOrder } from './types.js';
+import { parseSpendingBudget, type SpendingBudget } from './eval-budget.js';
 
 interface PolicyBase {
   minTasks: number;
@@ -39,6 +40,7 @@ export interface EvalRequest {
   executorTimeoutSeconds: number;
   trials: number;
   maxCalls: number;
+  spendingBudget?: SpendingBudget;
   runsRoot: string;
   runGroup: string;
   policy: AcceptancePolicy;
@@ -120,7 +122,7 @@ export function parseAcceptancePolicy(value: unknown = {}): AcceptancePolicy {
 
 export function parseEvalRequest(value: unknown, baseDir: string): EvalRequest {
   const r = record(value, 'request');
-  keys(r, ['schemaVersion', 'baselineSkill', 'candidateSkill', 'bench', 'agent', 'purpose', 'pairOrder', 'executorTimeoutSeconds', 'trials', 'maxCalls', 'runsRoot', 'runGroup', 'policy'], 'request');
+  keys(r, ['schemaVersion', 'baselineSkill', 'candidateSkill', 'bench', 'agent', 'purpose', 'pairOrder', 'executorTimeoutSeconds', 'trials', 'maxCalls', 'spendingBudget', 'runsRoot', 'runGroup', 'policy'], 'request');
   if (r.schemaVersion !== 1) throw new Error('request.schemaVersion must be 1.');
   const agent = text(r.agent, 'request.agent');
   getAgent(agent);
@@ -136,6 +138,7 @@ export function parseEvalRequest(value: unknown, baseDir: string): EvalRequest {
     executorTimeoutSeconds: numeric(r.executorTimeoutSeconds ?? DEFAULT_CLI_TIMEOUT_MS / 1000, 'request.executorTimeoutSeconds', 1, 3600, true),
     trials: numeric(r.trials, 'request.trials', 1, 20, true),
     maxCalls: numeric(r.maxCalls, 'request.maxCalls', 1, Number.MAX_SAFE_INTEGER, true),
+    ...(r.spendingBudget !== undefined ? { spendingBudget: parseSpendingBudget(r.spendingBudget) } : {}),
     runsRoot: resolve(baseDir, text(r.runsRoot, 'request.runsRoot')), runGroup,
     policy: parseAcceptancePolicy(r.policy),
   };

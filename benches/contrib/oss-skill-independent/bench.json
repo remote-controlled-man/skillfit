@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "name": "oss-skill-independent",
+  "description": "Eight source-pinned, previously untuned defects in four repositories; fixed original/v4 validation proposal, offline checks only; difficulty uncalibrated.",
+  "tasks": [
+    {
+      "id": "limit-async-context",
+      "fixture": "fixtures/limit-async-context",
+      "prompt": "prompts/limit-async-context.md",
+      "verifier": "node verifiers/limit-async-context.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-limit-async-context.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "timeout-custom-timers",
+      "fixture": "fixtures/timeout-custom-timers",
+      "prompt": "prompts/timeout-custom-timers.md",
+      "verifier": "node verifiers/timeout-custom-timers.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-timeout-custom-timers.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "throttle-sync-throw",
+      "fixture": "fixtures/throttle-sync-throw",
+      "prompt": "prompts/throttle-sync-throw.md",
+      "verifier": "node verifiers/throttle-sync-throw.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-throttle-sync-throw.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "commander-output-isolation",
+      "fixture": "fixtures/commander-output-isolation",
+      "prompt": "prompts/commander-output-isolation.md",
+      "verifier": "node verifiers/commander-output-isolation.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-commander-output-isolation.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "limit-map-iteration-rejection",
+      "fixture": "fixtures/limit-map-iteration-rejection",
+      "prompt": "prompts/limit-map-iteration-rejection.md",
+      "verifier": "node verifiers/limit-map-iteration-rejection.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-limit-map-iteration-rejection.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "timeout-rejection-listener",
+      "fixture": "fixtures/timeout-rejection-listener",
+      "prompt": "prompts/timeout-rejection-listener.md",
+      "verifier": "node verifiers/timeout-rejection-listener.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-timeout-rejection-listener.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "timeout-infinity-abort",
+      "fixture": "fixtures/timeout-infinity-abort",
+      "prompt": "prompts/timeout-infinity-abort.md",
+      "verifier": "node verifiers/timeout-infinity-abort.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-timeout-infinity-abort.mjs",
+      "shouldTrigger": true
+    },
+    {
+      "id": "commander-async-listener-order",
+      "fixture": "fixtures/commander-async-listener-order",
+      "prompt": "prompts/commander-async-listener-order.md",
+      "verifier": "node verifiers/commander-async-listener-order.mjs",
+      "verifierKind": "command",
+      "oracle": "node ground-truth/oracle-commander-async-listener-order.mjs",
+      "shouldTrigger": true
+    }
+  ]
+}

@@ -37,6 +37,8 @@ The agent-config ecosystem has solved **distribution** (`npx skills add`, plugin
 
 skillfit is the missing measurement layer: paired A/B experiments with deterministic verifiers, statistical verdicts, and trigger-rate measurement — packaged as a CLI anyone can run.
 
+Build cases around your own tasks: pin the starting files, write the request, and define what a correct result must do. The bundled benches teach the format; the CLI runs your cases, compares outcomes and costs, and preserves evidence. See the [case authoring guide](docs/bench-authoring.md).
+
 ## What you get
 
 A real run, measuring whether an agent even *bothers to load* a skill when it is installed but not mentioned:
@@ -132,6 +134,8 @@ The default policy requires a demonstrated quality gain. An explicit version-2 `
 
 Requests can also pin `executorTimeoutSeconds` (default 600) for both versions. A changed deadline requires a new plan and batch; previous timeouts and their available spending remain in the evidence.
 
+Unreleased source support: optional `spendingBudget` sets five absolute batch stop lines. Reaching a line or losing complete final usage stops subsequent calls and retains spending; an in-flight call may overshoot. See the [guard contract](docs/eval-component.md#input-and-execution).
+
 Failed Codex JSON calls can retain identity-bound partial usage from local numeric counters. Private transcript bodies stay out of exports, and partial usage never satisfies the final-cost or adoption gates.
 
 ```bash
@@ -170,21 +174,7 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
 
-The latest [debugging development record](evidence/2026-10-13-debugging-completed-development.md) retains a rejected candidate, one concrete repair and increased total costs; [stopped cohorts](evidence/2026-10-13-debugging-development-stops.md) preserve errors and partial spending. Neither establishes stable improvement or authorizes an upgrade.
-
-[Known regression controls and the first validation interruption](evidence/2026-10-13-debugging-controls-and-sleep-stop.md) retain LRU point savings, a normalize-url cost regression and a diagnosed sleep gap. All 16 completed deliveries replay offline; the interrupted invocation keeps its partial cost and receives no grade. A fresh fixed validation batch remains separate.
-
-The [completed independent validation](evidence/2026-10-14-debugging-independent-validation.md) retains 80 real executions: both versions pass 40/40, while compact v4 reduces aggregate uncached input 16.82%, output 16.64% and time 17.48%. Its 95% uncached-input interval supports 7.69%–26.26% savings, below the declared minimum of 10% at the conservative bound. Adoption remains `inconclusive` and ineligible. Individual cost increases, all 125 study calls and a zero-model offline replay remain visible.
-
-The [prospective followup tasks](benches/contrib/oss-skill-followup/README.md) pin eight different defects in three new repositories, with original failures, complete maintainer passes and protected regression witnesses. The [separate bounded protocol](docs/plans/2026-10-14-skill-followup.md) keeps v4 and the 10% requirement unchanged, caps this followup at 80 calls and cumulative spending at 205, and never pools earlier quality results. Offline integrity checks establish task validity, not Skill improvement.
-
-The [stopped followup record](evidence/2026-10-14-debugging-followup-routing-stop.md) retains 46 exact offline regrades, a 47th-call CLI routing failure and 33 uninvoked entries. Timing and power are normal, but the failed token cost remains unknown; no completed prefix authorizes adoption. Individual cost increases and all 172 cumulative executor calls remain visible.
-
-The [subsequent spending stop](evidence/2026-10-14-debugging-spending-stop.md) retains a separate readiness check and one user-interrupted recovery invocation, bringing actual cumulative spending to 174 calls. The remaining 79 entries are uninvoked. Its offline archive reproduces partial-cost lower bounds and keeps the unattested local readiness counter separate; no new quality gain, eligibility or automatic upgrade is claimed.
-
-The [four-call reading pilot and cost review](evidence/2026-10-14-debugging-reading-pilot-and-cost-review.md) brings cumulative spending to 178 calls. All four deliveries pass, but the reading draft increases uncached input 34.35%, output 10.16% and time 13.60%, so it is rejected. A post-hoc review corrects 50 literal-empty diffs to 19 missing patches and 31 valid check-only results; the merged common diff helper has offline verification, while actual Agent use and net savings remain untested. A narrowed draft remains unvalidated. The [ordered delivery plan](docs/plans/2026-10-14-evidence-and-release-sequence.md) puts evidence and release preparation before any newly authorized experiment.
-
-The [completed four-call mechanism probe](evidence/2026-10-15-native-diff-mechanism.md) brings cumulative spending to 182 calls. Both versions pass 2/2; v4 reduces uncached input 27.76%, output 17.56% and time 15.92%, with all five cost measures lower in each pair. Agents use the common helper in 4/4 runs, displaying five nonempty patches. This is one reused development task: it establishes observed use and favorable paired costs, while stable improvement and the helper's causal net savings remain unproven. The offline archive retains every call and seven earlier unknown usages; adoption remains `inconclusive`, and no independent comparison or further calls have started.
+The [Skill evidence index](docs/skill-evaluation-evidence.md) retains every cohort, failure and cost limit. The study now totals 195 executor calls with seven historical final usages still unknown; no tested revision qualifies for adoption. The latest [receiver mechanism probe](evidence/2026-10-15-receiver-mechanism-stop.md) stops after one failed candidate call, without running its control. Every published failure remains available for offline replay. These task-specific results do not establish general Skill benefit.
 
 ## Selectable Codex setup
 

@@ -1,0 +1,1 @@
+import {copyFileSync} from 'node:fs';import {join} from 'node:path';import {fileURLToPath} from 'node:url';for(const file of ["index.js","package.json","async-hooks-stub.js","regression.test.mjs"])copyFileSync(fileURLToPath(new URL('./limit-async-context/'+file,import.meta.url)),join(process.argv[2],file));

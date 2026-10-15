@@ -1,0 +1,577 @@
+{
+  "kind": "skillfit.offline-receiver-correction",
+  "schemaVersion": 1,
+  "modelCalls": 0,
+  "extraScoredTasks": 0,
+  "independentValidation": false,
+  "skillBehaviorTested": false,
+  "automaticUpgrade": false,
+  "cumulativeCalls": 194,
+  "archiveSha256": "6a4d29e55a1b48b7e8cd4e790eb057341b08e92ede7e6fe903a015a6edfe3ed6",
+  "originalReplay": {
+    "receiverDiagnostic": true,
+    "modelCalls": 0,
+    "totalCalls": 12,
+    "newCalls": 11,
+    "regraded": 12,
+    "paired": 6,
+    "qualityCostsBudgetReplay": true,
+    "compositeNativeComponentAudit": false,
+    "derivedExport": true,
+    "decision": "reject",
+    "automaticUpgrade": false,
+    "cumulativeCalls": 194
+  },
+  "candidate": {
+    "sha256": "c369765671e8cd0ae88af9d34f160c0b5cb48bfb49eef933f6f52812673d8952",
+    "parentSha256": "db5e96d06d52f3c1fbfe4a10b12c999c6191dc6a42f889e074931730ff6eafa9",
+    "skillMdBeforeBytes": 2755,
+    "skillMdAfterBytes": 3074,
+    "addedBytes": 319,
+    "addedWhitespaceWords": 47,
+    "measuredModelTokenDelta": null,
+    "otherResourcesUnchanged": true
+  },
+  "receiverTestSha256": "23661fb62be42d707f567fd0f9686dd734f97467a9548831d7535efc7c3294f6",
+  "variants": [
+    {
+      "variant": "original",
+      "sourceSha256": "bb9f281fbbc8a6eb748c98435da0ca49fc3e0b5cdccfdffe30c9754e99977ad4",
+      "originalGeneratedTests": {
+        "passed": false,
+        "tests": 5,
+        "passing": 0,
+        "failing": [
+          [
+            "custom global timers preserve input resolve and clean up"
+          ],
+          [
+            "custom global timers preserve input reject and clean up"
+          ],
+          [
+            "custom global timers time out and cancel the input"
+          ],
+          [
+            "clear uses a compatible receiver and preserves later input resolution"
+          ],
+          [
+            "abort preserves its reason and clears a custom global timer"
+          ]
+        ]
+      },
+      "receiverContracts": {
+        "passed": false,
+        "tests": 18,
+        "passing": 8,
+        "failing": [
+          [
+            "strict-unbound: input resolve and cleanup"
+          ],
+          [
+            "strict-unbound: input reject and cleanup"
+          ],
+          [
+            "strict-unbound: timeout and input cancellation"
+          ],
+          [
+            "strict-unbound: explicit clear preserves later input"
+          ],
+          [
+            "strict-unbound: abort reason and cleanup"
+          ],
+          [
+            "foreign-realm: input resolve and cleanup"
+          ],
+          [
+            "foreign-realm: input reject and cleanup"
+          ],
+          [
+            "foreign-realm: timeout and input cancellation"
+          ],
+          [
+            "foreign-realm: explicit clear preserves later input"
+          ],
+          [
+            "foreign-realm: abort reason and cleanup"
+          ]
+        ]
+      },
+      "verifierWithCorrectedRegression": {
+        "passed": false,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Scheduling does not bind this to the customTimers container",
+            "pass": false
+          },
+          {
+            "name": "Clearing does not bind this to that container",
+            "pass": false
+          },
+          {
+            "name": "Timeout and fallback paths keep their results",
+            "pass": true
+          },
+          {
+            "name": "Ordinary fulfillment and rejection keep identity",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false
+          }
+        ],
+        "witnesses": []
+      }
+    },
+    {
+      "variant": "v4Delivery",
+      "sourceSha256": "dfab3e342fa631c840eea2322c8da22690c973423202b597c2fdfa7934a08335",
+      "originalGeneratedTests": {
+        "passed": true,
+        "tests": 5,
+        "passing": 5,
+        "failing": []
+      },
+      "receiverContracts": {
+        "passed": false,
+        "tests": 18,
+        "passing": 8,
+        "failing": [
+          [
+            "strict-unbound: input resolve and cleanup"
+          ],
+          [
+            "strict-unbound: input reject and cleanup"
+          ],
+          [
+            "strict-unbound: timeout and input cancellation"
+          ],
+          [
+            "strict-unbound: explicit clear preserves later input"
+          ],
+          [
+            "strict-unbound: abort reason and cleanup"
+          ],
+          [
+            "foreign-realm: input resolve and cleanup"
+          ],
+          [
+            "foreign-realm: input reject and cleanup"
+          ],
+          [
+            "foreign-realm: timeout and input cancellation"
+          ],
+          [
+            "foreign-realm: explicit clear preserves later input"
+          ],
+          [
+            "foreign-realm: abort reason and cleanup"
+          ]
+        ]
+      },
+      "verifierWithCorrectedRegression": {
+        "passed": false,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Scheduling does not bind this to the customTimers container",
+            "pass": false
+          },
+          {
+            "name": "Clearing does not bind this to that container",
+            "pass": false
+          },
+          {
+            "name": "Timeout and fallback paths keep their results",
+            "pass": true
+          },
+          {
+            "name": "Ordinary fulfillment and rejection keep identity",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false
+          }
+        ],
+        "witnesses": []
+      }
+    },
+    {
+      "variant": "baselineDelivery",
+      "sourceSha256": "847777264a2711794a4193e77e61723372f8abdc3d26e0cbc806f6e3e4481940",
+      "originalGeneratedTests": {
+        "passed": false,
+        "tests": 5,
+        "passing": 0,
+        "failing": [
+          [
+            "custom global timers preserve input resolve and clean up"
+          ],
+          [
+            "custom global timers preserve input reject and clean up"
+          ],
+          [
+            "custom global timers time out and cancel the input"
+          ],
+          [
+            "clear uses a compatible receiver and preserves later input resolution"
+          ],
+          [
+            "abort preserves its reason and clears a custom global timer"
+          ]
+        ]
+      },
+      "receiverContracts": {
+        "passed": true,
+        "tests": 18,
+        "passing": 18,
+        "failing": []
+      },
+      "verifierWithCorrectedRegression": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Scheduling does not bind this to the customTimers container",
+            "pass": true
+          },
+          {
+            "name": "Clearing does not bind this to that container",
+            "pass": true
+          },
+          {
+            "name": "Timeout and fallback paths keep their results",
+            "pass": true
+          },
+          {
+            "name": "Ordinary fulfillment and rejection keep identity",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "witnesses": [
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: input resolve and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: input reject and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: timeout and input cancellation"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: explicit clear preserves later input"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: abort reason and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: input resolve and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: input reject and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: timeout and input cancellation"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: explicit clear preserves later input"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: abort reason and cleanup"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "variant": "maintainer",
+      "sourceSha256": "abf97d3629c06bbff31aa73162440032b63baf746e9d2570539c03d43ff2c0fa",
+      "originalGeneratedTests": {
+        "passed": false,
+        "tests": 5,
+        "passing": 0,
+        "failing": [
+          [
+            "custom global timers preserve input resolve and clean up"
+          ],
+          [
+            "custom global timers preserve input reject and clean up"
+          ],
+          [
+            "custom global timers time out and cancel the input"
+          ],
+          [
+            "clear uses a compatible receiver and preserves later input resolution"
+          ],
+          [
+            "abort preserves its reason and clears a custom global timer"
+          ]
+        ]
+      },
+      "receiverContracts": {
+        "passed": true,
+        "tests": 18,
+        "passing": 18,
+        "failing": []
+      },
+      "verifierWithCorrectedRegression": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Scheduling does not bind this to the customTimers container",
+            "pass": true
+          },
+          {
+            "name": "Clearing does not bind this to that container",
+            "pass": true
+          },
+          {
+            "name": "Timeout and fallback paths keep their results",
+            "pass": true
+          },
+          {
+            "name": "Ordinary fulfillment and rejection keep identity",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "witnesses": [
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: input resolve and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: input reject and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: timeout and input cancellation"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: explicit clear preserves later input"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: abort reason and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: input resolve and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: input reject and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: timeout and input cancellation"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: explicit clear preserves later input"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: abort reason and cleanup"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "variant": "manualRepair",
+      "sourceSha256": "2596d753076595741c4f9fb1942762e5f1faa31a650c2aac01a88c7984884c8e",
+      "originalGeneratedTests": {
+        "passed": false,
+        "tests": 5,
+        "passing": 0,
+        "failing": [
+          [
+            "custom global timers preserve input resolve and clean up"
+          ],
+          [
+            "custom global timers preserve input reject and clean up"
+          ],
+          [
+            "custom global timers time out and cancel the input"
+          ],
+          [
+            "clear uses a compatible receiver and preserves later input resolution"
+          ],
+          [
+            "abort preserves its reason and clears a custom global timer"
+          ]
+        ]
+      },
+      "receiverContracts": {
+        "passed": true,
+        "tests": 18,
+        "passing": 18,
+        "failing": []
+      },
+      "verifierWithCorrectedRegression": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Scheduling does not bind this to the customTimers container",
+            "pass": true
+          },
+          {
+            "name": "Clearing does not bind this to that container",
+            "pass": true
+          },
+          {
+            "name": "Timeout and fallback paths keep their results",
+            "pass": true
+          },
+          {
+            "name": "Ordinary fulfillment and rejection keep identity",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "witnesses": [
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: input resolve and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: input reject and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: timeout and input cancellation"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: explicit clear preserves later input"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "strict-unbound: abort reason and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: input resolve and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: input reject and cleanup"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: timeout and input cancellation"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: explicit clear preserves later input"
+            ]
+          },
+          {
+            "file": "receiver-contract.test.mjs",
+            "path": [
+              "foreign-realm: abort reason and cleanup"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
