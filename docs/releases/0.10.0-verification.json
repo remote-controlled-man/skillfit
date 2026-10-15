@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-15T17:50:03.630Z",
+  "version": "0.10.0",
+  "latest": "0.10.0",
+  "integrity": "sha512-esrFLFqZymxg0DCOWXBZB9BFXdUfbGK2GizNrng9kSBLvSzI21L7qou4kBypU2cH6f6twv8zFXR7NfftOfiHYg==",
+  "sha256": "2a4e2a95fd903078cbf1e29c28aff6e2ce1420ee996e205a24fec72eae9992c3",
+  "sourceCommit": "9027d8d80a3974c7e352af10e8ede3029c69205b",
+  "publishedAt": "2026-10-15T17:46:05.738Z",
+  "releaseDate": "2026-10-16",
+  "releaseTimeZone": "Asia/Shanghai",
+  "registry": "https://registry.npmjs.org/",
+  "tarball": "https://registry.npmjs.org/skillfit/-/skillfit-0.10.0.tgz",
+  "packageBytes": 22274164,
+  "installedFilesVerified": 2609,
+  "zeroRuntimeDependencies": true,
+  "globalInstall": false,
+  "modelCalls": 0,
+  "agentCliCalls": 0,
+  "automaticUpgrade": false,
+  "fullOfflineTestsPassed": 600,
+  "platformCI": {
+    "runUrl": "https://github.com/remote-controlled-man/skillfit/actions/runs/38777086013",
+    "linux": true,
+    "macOS": true,
+    "windows": true
+  },
+  "publication": {
+    "authentication": "GitHub Actions OIDC trusted publishing",
+    "repository": "remote-controlled-man/skillfit",
+    "workflow": "npm-release.yml",
+    "environment": "npm-release",
+    "previewRunUrl": "https://github.com/remote-controlled-man/skillfit/actions/runs/38777935270",
+    "runUrl": "https://github.com/remote-controlled-man/skillfit/actions/runs/38778295053",
+    "uploadCount": 1,
+    "workflowConclusion": "success",
+    "previewMatchesPublishedArchive": true,
+    "registryAttempts": 24,
+    "unavailableReadsRetained": 23
+  },
+  "ciRegistryReceipt": {
+    "path": "0.10.0-ci-registry-install.json",
+    "sha256": "091d207827a3435de7f0cd453bcb29b0d3506c4dff01c5b01ec4cf5025ba2e42"
+  },
+  "featureSmoke": {
+    "path": "0.10.0-feature-smoke.json",
+    "sha256": "490a0b4f2909b39c81e448f65a274fb2b9f29d7a6252c1f3e97af02e8b4b29ff",
+    "recipe": "0.10.0-feature-smoke.mjs",
+    "recipeSha256": "869289bd92046d2e93af203c64633697089471d38df9aeb0fe57ed6caf123969",
+    "checks": {
+      "version": true,
+      "help": true,
+      "listShow": true,
+      "editPlanBackup": true,
+      "removePreservesFiles": true,
+      "benchCheckJson": true,
+      "selectedPreviewNoCalls": true,
+      "exportPlan": true,
+      "portableChecksums": true,
+      "movedPackageReplayWithoutOriginals": true,
+      "exactCosts": true
+    },
+    "syntheticExecutorCalls": 2
+  },
+  "registryAudit": {
+    "exitCode": 0,
+    "packages": 1,
+    "verifiedRegistrySignatures": 1,
+    "verifiedAttestations": 1,
+    "log": "0.10.0-signatures.txt",
+    "sha256": "7656b138c603262c0e62f7aa447f422e16e0bb20a3fb0bf0bf0b12a51375f4d8"
+  },
+  "verificationKind": "CI registry installation plus independent local file-by-file installation and offline feature replay",
+  "comparisonSource": "extracted accepted CI archive, not a local rebuild",
+  "scope": "CLI usability and reproducibility; no new real Skill efficacy observations or upgrade eligibility"
+}

@@ -28,3 +28,22 @@ green `npm test`, offline bench checks, a fresh-directory portable replay test,
 remote synchronization, and a verified npm installation. No new Skill efficacy
 claim or automatic upgrade is part of this work. Published evidence and private
 lab contents remain untouched.
+
+## Completion record
+
+- [PR #26](https://github.com/remote-controlled-man/skillfit/pull/26) merged at
+  `9027d8d80a3974c7e352af10e8ede3029c69205b`: all three feature groups, contracts,
+  mirrored READMEs, driver Skill and 0.10.0 preparation; 600 offline tests and
+  Linux/macOS/Windows CI passed. The merged feature branch was cleaned up.
+- [OIDC preview](https://github.com/remote-controlled-man/skillfit/actions/runs/38777935270)
+  and [one real publication](https://github.com/remote-controlled-man/skillfit/actions/runs/38778295053)
+  passed. Registry/latest 0.10.0 and every one of 2,609 installed files match the
+  previewed archive. The 23 initial unavailable-version reads remain in the
+  original CI receipt; no upload was repeated.
+- [Independent installed-feature checks](../releases/0.10.0-feature-smoke.json)
+  passed, including moved-package replay after originals are removed and exact
+  retained costs. Registry signature/attestation passed. See the
+  [release receipt](../releases/0.10.0-verification.json) and executable recipe.
+- Actual model/agent evaluation calls added: zero. Historical study totals,
+  unknown final usage, immutable evidence and private lab contents are unchanged.
+  Partial/stopped evidence cannot authorize an upgrade; no upgrade is automatic.

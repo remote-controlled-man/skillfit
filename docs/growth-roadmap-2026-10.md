@@ -7,10 +7,10 @@ create a case, verify its acceptance checks, preview a small budget, then inspec
 outcomes and complete spending. Bundled benches teach the format. Repeatedly
 optimizing one external debugging Skill is not the product roadmap.
 
-The previous published CLI is 0.9.1, with a [verified registry install](releases/0.9.1-verification.json).
-The user authorized the case workflow and 0.10.0 publication on October 16;
-[release preparation](releases/0.10.0.md) is in progress. No live model calls
-are authorized by this delivery.
+The published CLI is 0.10.0, with a [verified registry installation](releases/0.10.0-verification.json)
+and [installed-feature replay](releases/0.10.0-feature-smoke.json). The user-authorized
+October 16 case workflow is complete. No live model calls were added or authorized
+for this delivery.
 
 ## Available foundations
 
@@ -33,18 +33,17 @@ of the CLI's evidence gates, not a universal Skill benchmark.
 Work is sequential. Dates are work records, not timers or unattended execution.
 The code-editing starter is merged in PR #24 and JSON checks in PR #25.
 The October 16 delivery completes task selection, case management and portable
-exports, with publication tracked separately from source and CI completion.
+exports, with publication tracked separately from source and CI completion. PR #26 passed 600 offline tests and Linux/macOS/Windows CI.
 
 | Priority / order | Work | Acceptance |
 | --- | --- | --- |
 | 0 — complete, PR #23 merged | Commit existing work, update both READMEs and mutable guides, preserve dated evidence, push and review CI | [PR #23](https://github.com/remote-controlled-man/skillfit/pull/23): 556 offline tests and Linux/macOS/Windows CI pass; evidence replay adds no live calls |
 | 1 — complete in source, PR #24 merged | `bench init --kind command` alongside the existing text-output starter, with a broken fixture, reference repair and behavioral verifier | Dry run writes nothing; original fails, oracle passes, equivalent repair passes, modified protected tests fail; CLI/docs and three-OS CI pass in PR #24 |
 | 2 — complete in source, PR #25 merged | `bench check --json`: stable gate codes, task IDs, locations, remediation and verifier evidence; [contract and schema](bench-check-json.md) | JSON-only stdout; exit 0/1/2 distinguish completed checks from errors; calibration rejected before calls; 585 offline tests and Linux/macOS/Windows CI pass in PR #25 |
-| 3 — implemented, final validation pending | Explicit task selection for preview and eval, preserving the selected IDs and costs in the frozen plan and report | Unknown/duplicate selections fail before calls; preview counts only selected cases; small samples cannot authorize adoption |
-
-| 4 — implemented, final validation pending | `bench list/show/edit/remove` with machine output | Preview by default; apply with backup/verification; preserve files and provenance; reject last-task removal |
-| 5 — implemented, final validation pending | `report eval --export` portable directory | Exact original receipts and matching inputs; move/delete-original replay; missing/changed inputs reject; stopped costs stay incomplete |
-| 6 — authorized, pending publication | Publish 0.10.0 through existing manual OIDC workflow | Three-OS CI, exact-archive dry run, one upload, registry integrity and isolated feature smoke |
+| 3 — complete, PR #26 merged | Explicit task selection for preview and eval, preserving the selected IDs and costs in the frozen plan and report | Unknown/duplicate selections fail before calls; preview counts only selected cases; small samples cannot authorize adoption |
+| 4 — complete, PR #26 merged | `bench list/show/edit/remove` with machine output | Preview by default; apply with backup/verification; preserve files and provenance; reject last-task removal |
+| 5 — complete, PR #26 merged | `report eval --export` portable directory | Exact original receipts and matching inputs; move/delete-original replay; missing/changed inputs reject; stopped costs stay incomplete |
+| 6 — complete, 0.10.0 verified | Publish 0.10.0 through existing manual OIDC workflow | 600 offline tests and three-OS CI pass; preview archive matches the one upload; 2,609 installed files and eleven feature checks pass; registry signature/attestation verified |
 
 Items 2–5 address basic usability gaps, not missing statistical methods.
 Inspect existing APIs before implementation and avoid duplicating request preview,
