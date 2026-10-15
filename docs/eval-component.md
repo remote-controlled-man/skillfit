@@ -64,6 +64,17 @@ authorization. Both versions receive the same helper; helper adoption, paired
 cost observations and causal net savings remain distinct. It cannot satisfy
 independent validation or adoption gates.
 
+The [completed four-call mechanism probe](../evidence/2026-10-15-native-diff-mechanism.md)
+executes that fixed proposal after fresh user authorization, then stops at four.
+Original/v4 both pass 2/2; v4 reduces uncached input 27.76%, output 17.56% and
+time 15.92%, with all five measures lower in each pair. All four agents actually
+use the unchanged common helper. The portable offline archive reproduces four
+grades, exact costs, five patch displays, four common startup warnings and
+inconclusive acceptance. One reused development task cannot demonstrate stable
+improvement or isolate causal helper savings. Cumulative spending is 182 calls;
+seven earlier missing public final usages stay unknown. No new independent
+comparison or extra call has started; it requires a separate decision and budget.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:

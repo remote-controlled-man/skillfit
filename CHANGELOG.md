@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — bounded mechanism evidence (2026-10-15)
+
+- Retain exactly four authorized development calls: original/v4 both pass 2/2,
+  with v4 uncached input down 27.76%, output 17.56% and time 15.92%. Agents
+  actually use the common native diff helper in 4/4 runs, displaying five patches.
+  A dependency-free offline archive regrades every delivery and reproduces costs,
+  adoption gates, startup warnings and all 182 cumulative calls, including seven
+  earlier unknown usages. This reused task cannot establish stable improvement
+  or causal helper savings; acceptance stays inconclusive and no further calls
+  or independent validation are authorized. See the [report](evidence/2026-10-15-native-diff-mechanism.md).
+- These evidence files follow the immutable npm 0.9.1 publication; no new package
+  publication, runtime change, dependency or acceptance-policy change is included.
+
 ## [0.9.1] — 2026-10-15
 
 - Prepare a manual, default-dry-run GitHub Actions npm release workflow with
