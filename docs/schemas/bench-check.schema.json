@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/remote-controlled-man/skillfit/blob/main/docs/schemas/bench-check.schema.json",
+  "title": "skillfit offline bench check result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "scope", "status", "dir", "bench", "checks", "summary", "error"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "kind": {"const": "skillfit.bench-check"},
+    "scope": {"const": "offline-integrity"},
+    "status": {"enum": ["passed", "failed", "error"]},
+    "dir": {"type": ["string", "null"]},
+    "bench": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["name", "sha256", "taskCount"],
+      "properties": {"name": {"type": "string"}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "taskCount": {"type": "integer", "minimum": 1}}
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "status", "message", "taskId", "location", "remediation", "evidence"],
+        "properties": {
+          "code": {
+            "enum": [
+              "BENCH_LOAD",
+              "UNTOUCHED_FIXTURE",
+              "MISSING_OUTPUT",
+              "EMPTY_OUTPUT",
+              "FACET_COUNT",
+              "ORACLE",
+              "MOCK_COVERAGE",
+              "MOCK_MARKER",
+              "MOCK_BASELINE",
+              "MOCK_TREATMENT",
+              "FIXTURE_SIZE",
+              "TRIGGER_LABEL",
+              "NEGATIVE_CONTROLS"
+            ]
+          },
+          "status": {"enum": ["PASS", "WARN", "FAIL", "INFO"]},
+          "message": {"type": "string"},
+          "taskId": {"type": ["string", "null"]},
+          "location": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "field"],
+            "properties": {"path": {"type": "string"}, "field": {"type": ["string", "null"]}}
+          },
+          "remediation": {"type": ["string", "null"]},
+          "evidence": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["command", "exitCode", "error", "output", "outputTruncated", "checks"],
+            "properties": {
+              "command": {"type": "string"},
+              "exitCode": {"type": ["integer", "null"]},
+              "error": {"type": ["string", "null"]},
+              "output": {"type": "string", "maxLength": 8192},
+              "outputTruncated": {"type": "boolean"},
+              "checks": {
+                "type": ["array", "null"],
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "pass"],
+                  "properties": {"name": {"type": "string", "minLength": 1}, "pass": {"type": "boolean"}}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["total", "passed", "warnings", "failures", "info"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "warnings": {"type": "integer", "minimum": 0},
+        "failures": {"type": "integer", "minimum": 0},
+        "info": {"type": "integer", "minimum": 0}
+      }
+    },
+    "error": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {"code": {"const": "INVALID_OR_FAILED_CHECK"}, "message": {"type": "string"}}
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "error"}}},
+      "then": {"properties": {"dir": {"type": "null"}, "bench": {"type": "null"}, "checks": {"maxItems": 0}, "summary": {"type": "null"}, "error": {"type": "object"}}},
+      "else": {"properties": {"dir": {"type": "string"}, "summary": {"type": "object"}, "error": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "passed"}}},
+      "then": {"properties": {"bench": {"type": "object"}, "summary": {"properties": {"failures": {"const": 0}}}}}
+    },
+    {"if": {"properties": {"status": {"const": "failed"}}}, "then": {"properties": {"summary": {"properties": {"failures": {"minimum": 1}}}}}}
+  ]
+}

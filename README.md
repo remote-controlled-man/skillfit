@@ -104,10 +104,13 @@ Source-checkout feature (not in npm 0.9.1): start a code-editing case with a bro
 node dist/cli.js bench init my-bench --kind command --dry-run
 node dist/cli.js bench init my-bench --kind command --yes
 node dist/cli.js bench check my-bench
+node dist/cli.js bench check my-bench --json
 node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input workspace --trials 1 --max-calls 2 --dry-run
 ```
 
 This is a synthetic teaching case, not a Skill benchmark. Replace the fixture, prompt, verifier and oracle with your actual task before measuring benefit. The preview shows two planned calls and starts none. Omit `--kind` (or use `--kind output`) for the existing reply-grading starter. Capture an observed failure with `bench add --freeze`, or import a maintainer fix with `--from-commit`; follow the [authoring guide](docs/bench-authoring.md).
+
+Agent callers can use `bench check --json` for versioned gate identifiers, task IDs, locations, failure reasons, remediation suggestions and bounded verifier evidence. stdout is JSON only; exit codes distinguish passed checks, failed checks and errors. This source feature is offline only and rejects `--calibrate`; warnings still need review. See the [JSON contract](docs/bench-check-json.md).
 
 ## Evaluate a real OSS task
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased — machine-readable bench checks (2026-10-16)
+
+- Add offline `bench check --json` with a version 1 contract and JSON Schema.
+  Every gate carries a stable code, status, task ID, related location and
+  actionable warning/failure guidance. Process evidence retains the actual
+  command, exit code, named verifier checks and the last 8,192 output code units.
+- Preserve human output and existing validation rules. JSON stdout contains one
+  document; exits 0/1/2 distinguish no failed gates, failed gates, and incomplete
+  checks / option errors. Warnings remain visible. JSON mode rejects calibration,
+  including calibration previews, before executing any verifier or agent.
+- Add offline regression coverage and mirror the README examples. No live model
+  calls, runtime dependencies, statistical-policy changes or npm release.
+
 ## Unreleased — case authoring and evidence maintenance (2026-10-15)
 
 - Add `bench init --kind command` to scaffold a code-editing case with a broken

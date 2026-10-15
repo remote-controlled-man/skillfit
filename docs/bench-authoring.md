@@ -18,6 +18,7 @@ the agent must edit files. The existing `output` starter remains the default.
 node dist/cli.js bench init my-bench --kind command --dry-run
 node dist/cli.js bench init my-bench --kind command --yes
 node dist/cli.js bench check my-bench
+node dist/cli.js bench check my-bench --json
 node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input workspace --trials 1 --max-calls 2 --dry-run
 ```
 
@@ -329,6 +330,13 @@ tokens — so spend the smallest amount that answers the question, before spendi
 band it never measured. Errored runs are excluded from the rate rather than counted as failures.
 
 ---
+
+Agent callers can add `--json` to the offline check. It returns stable gate
+identifiers, task IDs, related paths, suggested repairs and captured verifier
+failures without human log text on stdout. Exit 0 may still contain warnings;
+exit 1 means failed integrity gates and exit 2 means validation did not complete.
+JSON mode rejects `--calibrate` before starting any verifier or agent. This is a
+source feature, not in npm 0.9.1; see the [version 1 contract](bench-check-json.md).
 
 ## The two gates
 

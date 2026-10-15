@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
 import { runBenchAdd, runBenchCheck, runBenchInit } from './commands/bench.js';
+import { benchCheckError, benchCheckJson } from './commands/bench-check-report.js';
 import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
 import { DEFAULT_EVAL_TRIALS, runEval } from './commands/eval.js';
@@ -24,7 +25,7 @@ Usage:
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
   skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
   skillfit bench init [dir] [--kind output|command]  Scaffold a text-output or code-editing case
-  skillfit bench check [dir]                Validate a bench offline (verifier self-tests, hygiene)
+  skillfit bench check [dir] [--json]       Validate a bench offline (verifier self-tests, hygiene)
   skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
@@ -39,7 +40,7 @@ Options:
   --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target
   --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
   --plan-sha <hash>   Confirm the current --request dry-run plan before real calls
-  --json             Machine output for report, report eval, and request-based eval
+  --json             Machine output for bench check (offline only), report, report eval, and request-based eval
   --policy <path>    With report eval --json, assess against a policy (post-hoc changes cannot authorize adoption)
   --records <dir>    With report eval --json, use native evidence from this run directory
   --replay           With report eval --json, regrade cloned deliveries using the frozen bench
@@ -90,57 +91,75 @@ bench add --from-commit options:
 Docs: https://github.com/remote-controlled-man/skillfit
 `;
 
+const CLI_OPTIONS = {
+  agent: { type: 'string' },
+  'judge-agent': { type: 'string' },
+  mode: { type: 'string' },
+  'baseline-skill': { type: 'string' },
+  request: { type: 'string' },
+  'plan-sha': { type: 'string' },
+  policy: { type: 'string' },
+  records: { type: 'string' },
+  replay: { type: 'boolean', default: false },
+  'compete-installed': { type: 'boolean', default: false },
+  input: { type: 'string' },
+  bench: { type: 'string' },
+  trials: { type: 'string' },
+  'max-calls': { type: 'string' },
+  profile: { type: 'string' },
+  'profile-path': { type: 'string' },
+  skill: { type: 'string', multiple: true },
+  all: { type: 'boolean', default: false },
+  starter: { type: 'boolean', default: false },
+  list: { type: 'boolean', default: false },
+  'no-rules': { type: 'boolean', default: false },
+  'min-sessions': { type: 'string' },
+  'upstream-lock': { type: 'string' },
+  task: { type: 'string' },
+  prompt: { type: 'string' },
+  'prompt-file': { type: 'string' },
+  freeze: { type: 'boolean', default: false },
+  'from-commit': { type: 'string' },
+  include: { type: 'string', multiple: true },
+  'source-dir': { type: 'string' },
+  'verifier-cmd': { type: 'string' },
+  expect: { type: 'string' },
+  oracle: { type: 'string' },
+  decompose: { type: 'boolean', default: false },
+  'verifier-kind': { type: 'string' },
+  kind: { type: 'string' },
+  'should-trigger': { type: 'string' },
+  calibrate: { type: 'boolean', default: false },
+  json: { type: 'boolean', default: false },
+  'dry-run': { type: 'boolean', default: false },
+  project: { type: 'boolean', default: false },
+  strict: { type: 'boolean', default: false },
+  yes: { type: 'boolean', default: false },
+  help: { type: 'boolean', short: 'h', default: false },
+  version: { type: 'boolean', short: 'v', default: false },
+} as const;
+
+function isBenchCheckJsonRequest(): boolean {
+  const args = process.argv.slice(2);
+  try {
+    const { values, positionals } = parseArgs({ args, allowPositionals: true, strict: false, options: CLI_OPTIONS });
+    // Loose parsing retains an invalid inline boolean value (for example
+    // --json=true). It still requests the JSON error envelope, not text output.
+    return values.json !== false && positionals[0] === 'bench' && positionals[1] === 'check';
+  } catch {
+    // A missing option value may prevent even loose parsing. Preserve JSON errors
+    // for the standard command spelling, including a leading --json flag.
+    const jsonFlag = (arg: string) => arg === '--json' || arg.startsWith('--json=');
+    const command = args.filter(arg => !jsonFlag(arg));
+    return args.some(jsonFlag) && command[0] === 'bench' && command[1] === 'check';
+  }
+}
+
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
     allowPositionals: true,
-    options: {
-      agent: { type: 'string' },
-      'judge-agent': { type: 'string' },
-      mode: { type: 'string' },
-      'baseline-skill': { type: 'string' },
-      request: { type: 'string' },
-      'plan-sha': { type: 'string' },
-      policy: { type: 'string' },
-      records: { type: 'string' },
-      replay: { type: 'boolean', default: false },
-      'compete-installed': { type: 'boolean', default: false },
-      input: { type: 'string' },
-      bench: { type: 'string' },
-      trials: { type: 'string' },
-      'max-calls': { type: 'string' },
-      profile: { type: 'string' },
-      'profile-path': { type: 'string' },
-      skill: { type: 'string', multiple: true },
-      all: { type: 'boolean', default: false },
-      starter: { type: 'boolean', default: false },
-      list: { type: 'boolean', default: false },
-      'no-rules': { type: 'boolean', default: false },
-      'min-sessions': { type: 'string' },
-      'upstream-lock': { type: 'string' },
-      task: { type: 'string' },
-      prompt: { type: 'string' },
-      'prompt-file': { type: 'string' },
-      freeze: { type: 'boolean', default: false },
-      'from-commit': { type: 'string' },
-      include: { type: 'string', multiple: true },
-      'source-dir': { type: 'string' },
-      'verifier-cmd': { type: 'string' },
-      expect: { type: 'string' },
-      oracle: { type: 'string' },
-      decompose: { type: 'boolean', default: false },
-      'verifier-kind': { type: 'string' },
-      kind: { type: 'string' },
-      'should-trigger': { type: 'string' },
-      calibrate: { type: 'boolean', default: false },
-      json: { type: 'boolean', default: false },
-      'dry-run': { type: 'boolean', default: false },
-      project: { type: 'boolean', default: false },
-      strict: { type: 'boolean', default: false },
-      yes: { type: 'boolean', default: false },
-      help: { type: 'boolean', short: 'h', default: false },
-      version: { type: 'boolean', short: 'v', default: false },
-    },
+    options: CLI_OPTIONS,
   });
 
   if (values.version) {
@@ -302,8 +321,10 @@ async function main(): Promise<void> {
         return;
       }
       if (subcommand === 'check') {
+        if (values.json && values.calibrate) throw new Error('bench check --json is offline only; --calibrate cannot be combined with --json.');
         const report = await runBenchCheck({
           dir: positionals[2],
+          log: values.json ? () => {} : undefined,
           calibrate: values.calibrate
             ? {
                 agent: values.agent,
@@ -314,6 +335,7 @@ async function main(): Promise<void> {
               }
             : false,
         });
+        if (values.json) console.log(JSON.stringify(benchCheckJson(report), null, 2));
         if (report.failures > 0) process.exitCode = 1;
         return;
       }
@@ -361,6 +383,11 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
+  if (isBenchCheckJsonRequest()) {
+    console.log(JSON.stringify(benchCheckError(err), null, 2));
+    process.exitCode = 2;
+    return;
+  }
   if (process.argv.some(arg => arg === '--request' || arg.startsWith('--request=')) ||
       (process.argv.includes('--json') && process.argv.includes('report') && process.argv.includes('eval'))) {
     console.log(JSON.stringify(componentError(err), null, 2));

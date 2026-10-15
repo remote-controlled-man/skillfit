@@ -13,9 +13,12 @@ import type { ExperimentPlan } from '../harness/runner.js';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { VerifierCheck } from '../harness/verifier-summary.js';
-import type { Executor, InputMode, SkillBundle } from '../harness/types.js';
+import type { BenchTask, Executor, InputMode, SkillBundle } from '../harness/types.js';
 import { confirm as confirmPrompt } from './confirm.js';
 import { commandTemplateFiles } from './bench-command-template.js';
+import { benchDiagnostic, benchCheckEvidence, type BenchCheckCode, type BenchCheckEvidence,
+  type BenchCheckReport, type BenchDiagnostic } from './bench-check-report.js';
+export type { BenchCheckReport } from './bench-check-report.js';
 import { BACKUP_SUFFIX } from './install.js';
 import type { Check } from './doctor.js';
 
@@ -45,13 +48,6 @@ export interface BenchCheckOptions {
   dir?: string;
   log?: (msg: string) => void;
   calibrate?: BenchCheckCalibrateOptions | false;
-}
-
-export interface BenchCheckReport {
-  dir: string;
-  checks: Check[];
-  failures: number;
-  warnings: number;
 }
 
 const FIXTURE_SIZE_WARN_BYTES = 64 * 1024;
@@ -204,7 +200,7 @@ async function probeVerifier(
   benchDir: string,
   verifier: string,
   output: string | null,
-): Promise<{ exitCode: number | null; error: string | null; checks: readonly VerifierCheck[] | null }> {
+): Promise<{ exitCode: number | null; error: string | null; output: string; checks: readonly VerifierCheck[] | null }> {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
   try {
     if (output !== null) {
@@ -214,6 +210,7 @@ async function probeVerifier(
     return {
       exitCode: result.exitCode,
       error: result.error,
+      output: result.output,
       checks: verdictFromOutput(result.output)?.checks ?? null,
     };
   } finally {
@@ -248,11 +245,11 @@ function copyFixture(fixtureDir: string, dest: string): void {
   }
 }
 
-type OracleGateOutcome =
+type OracleGateOutcome = (
   | { kind: 'oracle-failed'; exitCode: number | null; reason: string | null }
   | { kind: 'verifier-failed'; reason: string | null }
   | { kind: 'low-score'; score: number }
-  | { kind: 'pass'; score: number | null };
+  | { kind: 'pass'; score: number | null }) & { result: Awaited<ReturnType<typeof runVerifier>>; command: string };
 
 async function runOracleGate(
   benchDir: string,
@@ -267,6 +264,8 @@ async function runOracleGate(
     if (oracleRun.exitCode !== 0) {
       return {
         kind: 'oracle-failed',
+        result: oracleRun,
+        command: oracle,
         exitCode: oracleRun.exitCode,
         reason: oracleRun.exitCode === null ? verifierFailure('oracle', oracle, oracleRun.error) : null,
       };
@@ -275,14 +274,16 @@ async function runOracleGate(
     if (graded.exitCode !== 0) {
       return {
         kind: 'verifier-failed',
+        result: graded,
+        command: verifier,
         reason: graded.exitCode === null ? verifierFailure('verifier', verifier, graded.error) : null,
       };
     }
     const score = verdictFromOutput(graded.output)?.score ?? null;
     if (score !== null && score < 1) {
-      return { kind: 'low-score', score };
+      return { kind: 'low-score', score, result: graded, command: verifier };
     }
-    return { kind: 'pass', score };
+    return { kind: 'pass', score, result: graded, command: verifier };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -293,12 +294,13 @@ async function probeOracle(
   fixture: string,
   oracle: string,
   verifier: string,
-): Promise<{ status: Check['status']; message: string }> {
+): Promise<{ status: Check['status']; message: string; evidence: BenchCheckEvidence }> {
   const gate = await runOracleGate(benchDir, join(benchDir, fixture), oracle, verifier);
   switch (gate.kind) {
     case 'oracle-failed':
       return {
         status: 'FAIL',
+        evidence: benchCheckEvidence(gate.result, gate.command),
         message:
           gate.reason ??
           `oracle command itself failed (exit ${gate.exitCode}) — the reference solution cannot run`,
@@ -306,17 +308,20 @@ async function probeOracle(
     case 'verifier-failed':
       return {
         status: 'FAIL',
+        evidence: benchCheckEvidence(gate.result, gate.command),
         message:
           gate.reason ?? 'oracle solution does not pass the verifier — the task is unwinnable or the oracle is stale',
       };
     case 'low-score':
       return {
         status: 'FAIL',
+        evidence: benchCheckEvidence(gate.result, gate.command),
         message: `oracle passes the verifier but scores ${gate.score.toFixed(2)} on its checks — the checks are stricter than the exit code`,
       };
     case 'pass':
       return {
         status: 'PASS',
+        evidence: benchCheckEvidence(gate.result, gate.command),
         message: `oracle solution passes the verifier${gate.score !== null ? ' with full checks' : ''}`,
       };
   }
@@ -329,9 +334,10 @@ function renderCheck({ status, message }: Check): string {
 export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCheckReport> {
   const log = options.log ?? ((msg: string) => console.log(msg));
   const dir = resolve(options.dir ?? '.');
-  const checks: Check[] = [];
-  const push = (status: Check['status'], message: string): void => {
-    checks.push({ status, message });
+  const checks: BenchDiagnostic[] = [];
+  let identity: BenchCheckReport['bench'] = null;
+  const push = (code: BenchCheckCode, status: Check['status'], message: string, task?: BenchTask, evidence?: BenchCheckEvidence): void => {
+    checks.push(benchDiagnostic(code, status, message, task, evidence));
     log(renderCheck({ status, message }));
   };
 
@@ -339,10 +345,11 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
   try {
     bench = loadBench(dir);
   } catch (error) {
-    push('FAIL', `bench does not load: ${(error as Error).message}`);
-    return finish(dir, checks, log);
+    push('BENCH_LOAD', 'FAIL', `bench does not load: ${(error as Error).message}`);
+    return finish(dir, checks, log, false, identity);
   }
-  push('PASS', `bench.json valid (${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…)`);
+  identity = { name: bench.name, sha256: bench.contentSha256, taskCount: bench.tasks.length };
+  push('BENCH_LOAD', 'PASS', `bench.json valid (${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…)`);
   if (options.calibrate) {
     const trials = options.calibrate.trials ?? CALIBRATE_DEFAULT_TRIALS;
     if (!Number.isInteger(trials) || trials < 1 || trials > 20) throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
@@ -352,6 +359,8 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
   let labeledTasks = 0;
   let negativeTasks = 0;
   for (const task of bench.tasks) {
+    const taskPush = (code: BenchCheckCode, status: Check['status'], message: string, evidence?: BenchCheckEvidence) =>
+      push(code, status, message, task, evidence);
     let facetChecks: readonly VerifierCheck[] | null = null;
     if ((task.verifierKind ?? 'output') === 'command') {
       const fixtureCopy = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
@@ -362,16 +371,16 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
         if (pristine.exitCode === null) {
           // Without this branch a verifier that cannot even be spawned reads as a clean NOP gate:
           // "fails on the untouched fixture" is exactly what `exitCode !== 0` looks like.
-          push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, pristine.error)}`);
+          taskPush('UNTOUCHED_FIXTURE', 'FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, pristine.error)}`, benchCheckEvidence(pristine, task.verifier));
         } else if (pristine.exitCode === 0) {
-          push(
-            'FAIL',
-            `${task.id}: command verifier already passes on the untouched fixture — the task is solved or the verifier is broken`,
+          taskPush(
+            'UNTOUCHED_FIXTURE', 'FAIL',
+            `${task.id}: command verifier already passes on the untouched fixture — the task is solved or the verifier is broken`, benchCheckEvidence(pristine, task.verifier),
           );
         } else {
-          push(
-            'PASS',
-            `${task.id}: command verifier fails on the untouched fixture (the failure reproduces)`,
+          taskPush(
+            'UNTOUCHED_FIXTURE', 'PASS',
+            `${task.id}: command verifier fails on the untouched fixture (the failure reproduces)`, benchCheckEvidence(pristine, task.verifier),
           );
         }
       } finally {
@@ -380,40 +389,40 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     } else {
       const missing = await probeVerifier(bench.dir, task.verifier, null);
       if (missing.exitCode === null) {
-        push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, missing.error)}`);
+        taskPush('MISSING_OUTPUT', 'FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, missing.error)}`, benchCheckEvidence(missing, task.verifier));
       } else if (missing.exitCode === 0) {
-        push('FAIL', `${task.id}: verifier does not reject a missing _output.md`);
+        taskPush('MISSING_OUTPUT', 'FAIL', `${task.id}: verifier does not reject a missing _output.md`, benchCheckEvidence(missing, task.verifier));
       } else {
-        push('PASS', `${task.id}: verifier rejects missing output`);
+        taskPush('MISSING_OUTPUT', 'PASS', `${task.id}: verifier rejects missing output`, benchCheckEvidence(missing, task.verifier));
       }
       const empty = await probeVerifier(bench.dir, task.verifier, '');
       facetChecks = empty.checks;
       if (empty.exitCode === null) {
-        push('FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, empty.error)}`);
+        taskPush('EMPTY_OUTPUT', 'FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, empty.error)}`, benchCheckEvidence(empty, task.verifier));
       } else if (empty.exitCode === 0) {
-        push('FAIL', `${task.id}: verifier passes an empty output — it cannot tell success from silence`);
+        taskPush('EMPTY_OUTPUT', 'FAIL', `${task.id}: verifier passes an empty output — it cannot tell success from silence`, benchCheckEvidence(empty, task.verifier));
       } else {
-        push('PASS', `${task.id}: verifier rejects empty output`);
+        taskPush('EMPTY_OUTPUT', 'PASS', `${task.id}: verifier rejects empty output`, benchCheckEvidence(empty, task.verifier));
       }
     }
 
     const facetGate = facetCountCheck(task.id, facetChecks);
-    if (facetGate) push(facetGate.status, facetGate.message);
+    if (facetGate) taskPush('FACET_COUNT', facetGate.status, facetGate.message);
 
     if (task.oracle) {
       const oracleResult = await probeOracle(bench.dir, task.fixture, task.oracle, task.verifier);
-      push(oracleResult.status, `${task.id}: ${oracleResult.message}`);
+      taskPush('ORACLE', oracleResult.status, `${task.id}: ${oracleResult.message}`, oracleResult.evidence);
     } else {
-      push(
-        'WARN',
+      taskPush(
+        'ORACLE', 'WARN',
         `${task.id}: no oracle — task winnability is unverified (nothing proves a correct solution passes this verifier; register one with --oracle or write ground-truth/oracle-${task.id}.mjs)`,
       );
     }
 
     const markerPath = join(bench.dir, task.fixture, MOCK_MARKER_FILE);
     if ((task.verifierKind ?? 'output') === 'command') {
-      push(
-        'INFO',
+      taskPush(
+        'MOCK_COVERAGE', 'INFO',
         `${task.id}: command verifier — mock-arm probes not applicable (a mock writes _output.md text, not file edits)${
           task.oracle
             ? '; offline coverage comes from the oracle and NOP gates above'
@@ -427,16 +436,16 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
           const behavior = marker[arm];
           if (behavior?.output === undefined) continue;
           const probe = await probeVerifier(bench.dir, task.verifier, behavior.output);
-          push(
-            'INFO',
-            `${task.id}: mock ${arm} output → verifier ${probe.exitCode === 0 ? 'pass' : 'fail'}`,
+          taskPush(
+            arm === 'baseline' ? 'MOCK_BASELINE' : 'MOCK_TREATMENT', 'INFO',
+            `${task.id}: mock ${arm} output → verifier ${probe.exitCode === 0 ? 'pass' : 'fail'}`, benchCheckEvidence(probe, task.verifier),
           );
         }
       } catch (error) {
-        push('FAIL', `${task.id}: ${MOCK_MARKER_FILE} is unreadable (${(error as Error).message})`);
+        taskPush('MOCK_MARKER', 'FAIL', `${task.id}: ${MOCK_MARKER_FILE} is unreadable (${(error as Error).message})`);
       }
     } else {
-      push('INFO', `${task.id}: no ${MOCK_MARKER_FILE} (offline mock runs will produce empty outputs)`);
+      taskPush('MOCK_COVERAGE', 'INFO', `${task.id}: no ${MOCK_MARKER_FILE} (offline mock runs will produce empty outputs)`);
     }
 
     const fixtureDir = join(bench.dir, task.fixture);
@@ -444,16 +453,16 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
       .map((rel) => statSync(join(fixtureDir, rel)).size)
       .reduce((sum, size) => sum + size, 0);
     if (fixtureBytes > FIXTURE_SIZE_WARN_BYTES) {
-      push(
-        'WARN',
+      taskPush(
+        'FIXTURE_SIZE', 'WARN',
         `${task.id}: fixture is ${Math.round(fixtureBytes / 1024)} KB — inject mode inlines it into every prompt; keep it lean`,
       );
     } else {
-      push('PASS', `${task.id}: fixture size ${Math.round(fixtureBytes / 1024)} KB`);
+      taskPush('FIXTURE_SIZE', 'PASS', `${task.id}: fixture size ${Math.round(fixtureBytes / 1024)} KB`);
     }
 
     if (task.shouldTrigger === undefined) {
-      push('INFO', `${task.id}: no shouldTrigger label (trigger mode will skip this task)`);
+      taskPush('TRIGGER_LABEL', 'INFO', `${task.id}: no shouldTrigger label (trigger mode will skip this task)`);
     } else {
       labeledTasks++;
       if (task.shouldTrigger === false) negativeTasks++;
@@ -465,27 +474,27 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     const percent = Math.round(fraction * 100);
     if (negativeTasks === 0) {
       push(
-        'WARN',
+        'NEGATIVE_CONTROLS', 'WARN',
         'no shouldTrigger:false (negative-control) tasks — trigger mode cannot measure false-trigger rate (see docs/metrics.md)',
       );
     } else if (fraction < NEGATIVE_CONTROL_TARGET) {
       push(
-        'WARN',
+        'NEGATIVE_CONTROLS', 'WARN',
         `${negativeTasks}/${labeledTasks} labeled task(s) are negative controls (${percent}%) — below the ${NEGATIVE_CONTROL_PERCENT}% target in docs/metrics.md, so false-trigger rate rests on a thin sample`,
       );
     } else {
       push(
-        'PASS',
+        'NEGATIVE_CONTROLS', 'PASS',
         `${negativeTasks}/${labeledTasks} labeled task(s) are negative controls (${percent}%) — at or above the ${NEGATIVE_CONTROL_PERCENT}% target`,
       );
     }
   }
 
   if (options.calibrate) {
-    await calibrateBench(bench, options.calibrate, push, log);
+    await calibrateBench(bench, options.calibrate, (status, message) => push('CALIBRATION', status, message), log);
   }
 
-  return finish(dir, checks, log, options.calibrate !== false && options.calibrate !== undefined);
+  return finish(dir, checks, log, options.calibrate !== false && options.calibrate !== undefined, identity);
 }
 
 const CALIBRATE_DEFAULT_TRIALS = 2;
@@ -612,9 +621,10 @@ async function calibrateBench(
 
 function finish(
   dir: string,
-  checks: Check[],
+  checks: BenchDiagnostic[],
   log: (msg: string) => void,
   calibrated = false,
+  bench: BenchCheckReport['bench'] = null,
 ): BenchCheckReport {
   const failures = checks.filter((c) => c.status === 'FAIL').length;
   const warnings = checks.filter((c) => c.status === 'WARN').length;
@@ -626,7 +636,7 @@ function finish(
     log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 5`);
     log('  target: baseline pass rate 30–70%; --calibrate warns outside 10–90% (docs/metrics.md L0).');
   }
-  return { dir, checks, failures, warnings };
+  return { dir, bench, checks, failures, warnings };
 }
 
 const TASK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;

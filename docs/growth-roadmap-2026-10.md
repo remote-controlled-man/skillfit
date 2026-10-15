@@ -30,14 +30,14 @@ of the CLI's evidence gates, not a universal Skill benchmark.
 ## Delivery order
 
 Work is sequential. Dates are work records, not timers or unattended execution.
-Only the first usability item below is in the current implementation scope;
-subsequent items require their own scoped implementation and validation.
+The code-editing starter is merged in PR #24. The current implementation scope
+is item 2, offline JSON checks; task selection needs a separate scoped change.
 
 | Priority / order | Work | Acceptance |
 | --- | --- | --- |
 | 0 — complete, PR #23 merged | Commit existing work, update both READMEs and mutable guides, preserve dated evidence, push and review CI | [PR #23](https://github.com/remote-controlled-man/skillfit/pull/23): 556 offline tests and Linux/macOS/Windows CI pass; evidence replay adds no live calls |
-| 1 — code-editing case starter, implemented in source | `bench init --kind command` alongside the existing text-output starter, with a broken fixture, reference repair and behavioral verifier | Dry run writes nothing; original fails, oracle passes, equivalent repair passes, modified protected tests fail; CLI/docs and three-OS CI must agree before merge |
-| 2 — return case validation to an Agent | Add machine-readable `bench check --json` with per-gate status, warnings and actionable locations | JSON-only stdout, nonzero status on failures, no calls, stable documented shape; offline tests cover invalid cases |
+| 1 — complete in source, PR #24 merged | `bench init --kind command` alongside the existing text-output starter, with a broken fixture, reference repair and behavioral verifier | Dry run writes nothing; original fails, oracle passes, equivalent repair passes, modified protected tests fail; CLI/docs and three-OS CI pass in PR #24 |
+| 2 — offline JSON checks, implemented in source | `bench check --json`: stable gate codes, task IDs, locations, remediation and verifier evidence; [contract and schema](bench-check-json.md) | JSON-only stdout; exit 0/1/2 distinguish completed checks from errors; calibration rejected before calls; offline tests and three-OS CI must pass before merge |
 | 3 — run a small chosen case set | Design explicit task selection for preview and eval, preserving the selected IDs and costs in the frozen plan and report | Unknown/duplicate selections fail before calls; preview counts only selected cases; small samples cannot authorize adoption |
 
 Items 2 and 3 address basic usability gaps, not missing statistical methods.
