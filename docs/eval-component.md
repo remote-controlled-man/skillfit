@@ -7,79 +7,22 @@ It never installs, publishes or upgrades a Skill. These interfaces are included
 in [0.9.0](releases/0.9.0.md). Use npm 0.9.0 or newer, or build the current
 checkout; npm 0.8.0 does not include them.
 
-The [retained development stops](../evidence/2026-10-13-debugging-development-stops.md)
-show reproducible failures, timing diagnostics and partial-cost coverage. They
-are development evidence and make no stable improvement or adoption claim.
-The [completed development comparisons](../evidence/2026-10-13-debugging-completed-development.md)
-also retain a rejected candidate and a concrete v4 repair with its extra costs;
-they remain separate from the frozen independent validation request.
+Build the bench around the task being evaluated, with deterministic acceptance
+checks and an independent reference repair. Bundled and contributed benches are
+examples, not a universal test of every Skill. See the [authoring guide](bench-authoring.md).
 
-The [known controls and sleep interruption](../evidence/2026-10-13-debugging-controls-and-sleep-stop.md)
-retain a normalize-url cost rejection alongside LRU point savings. An interrupted
-invocation has partial usage and no grade; a fresh cohort never discards its cost
-or changes the candidate, grader or acceptance thresholds to obtain a gain.
+The [maintained evidence index](skill-evaluation-evidence.md) links all development
+and independent cohorts, their exact costs and offline replay packages. As of
+October 15, the debugging study totals 195 actual calls with seven historical
+final usages unknown. No candidate qualifies for adoption: favorable point
+estimates, incomplete costs and observed regressions remain distinct outcomes.
 
-The [completed independent validation](../evidence/2026-10-14-debugging-independent-validation.md)
-shows the component withholding eligibility despite favorable point estimates:
-original/v4 both pass 40/40, with uncached input down 16.82%, but the conservative
-95% bound supports only 7.69% savings against a frozen 10% requirement. Its
-80 deliveries and exact cost interval replay offline. The [v4 reproduction example](examples/eval-request.diagnosing-v4-efficiency.json)
-keeps that policy and symmetric 1200-second deadlines; it does not create fresh
-independent evidence for a candidate selected from these public outcomes.
-
-The [fresh followup bench](../benches/contrib/oss-skill-followup/README.md) supplies
-eight different defects from three new repositories. Its [bounded protocol](plans/2026-10-14-skill-followup.md)
-and [request example](examples/eval-request.diagnosing-v4-followup-efficiency.json)
-retain the candidate and policy rather than relaxing a completed cohort's gate.
-Task integrity, native eligibility and generalization remain separate claims.
-
-The [routing-interrupted followup](../evidence/2026-10-14-debugging-followup-routing-stop.md)
-demonstrates the incomplete-evidence gate: 23 passing pairs cannot authorize an
-upgrade when an executor fails, three tasks remain uninvoked and token usage is
-unknown. Its 46 completed deliveries replay offline; failed work remains ungraded,
-individual cost increases remain visible, and the frozen policy stays unchanged.
-
-The [subsequent user spending stop](../evidence/2026-10-14-debugging-spending-stop.md)
-retains one interrupted recovery invocation and 79 uninvoked entries, plus the
-separate readiness check. Cumulative spending reaches 174 calls. Its offline
-replay keeps partial native costs and the unattested local readiness supplement
-separate; unfinished work receives no grade and remains ineligible. The later
-development proposal was unexecuted at that publication, with no automatic
-expansion or promotion.
-
-The [subsequent four-call reading pilot and cost review](../evidence/2026-10-14-debugging-reading-pilot-and-cost-review.md)
-retains four passing deliveries but rejects the more expensive reading draft;
-cumulative spending reaches 178 calls. Its portable offline archive also
-reproduces the corrected diff counts, response costs and separate cohort
-summaries. A narrowed candidate remains unvalidated. The merged native diff
-helper is a common environment repair; delivery and offline tests do not prove
-actual Agent use or net savings. The [ordered delivery plan](plans/2026-10-14-evidence-and-release-sequence.md)
-requires a fresh budget before live experimentation and leaves adoption gates
-unchanged.
-
-The [native diff mechanism proposal](plans/2026-10-15-native-diff-mechanism.md)
-provides a reproducible source-checkout preparation path for one reused development
-task. Its read-only preview declares at most four calls but grants no spending
-authorization. Both versions receive the same helper; helper adoption, paired
-cost observations and causal net savings remain distinct. It cannot satisfy
-independent validation or adoption gates.
-
-The [completed four-call mechanism probe](../evidence/2026-10-15-native-diff-mechanism.md)
-executes that fixed proposal after fresh user authorization, then stops at four.
-Original/v4 both pass 2/2; v4 reduces uncached input 27.76%, output 17.56% and
-time 15.92%, with all five measures lower in each pair. All four agents actually
-use the unchanged common helper. The portable offline archive reproduces four
-grades, exact costs, five patch displays, four common startup warnings and
-inconclusive acceptance. One reused development task cannot demonstrate stable
-improvement or isolate causal helper savings. Cumulative spending is 182 calls;
-seven earlier missing public final usages stay unknown. No new independent
-comparison or extra call has started; it requires a separate decision and budget.
-
-The [eight-task offline readiness record](../evidence/2026-10-15-independent-offline-readiness.md)
-confirms actual original failures and full maintainer fixes passing 6/6, plus
-twenty mock-only spending guard checks and thirteen integrity checks. The
-independent comparison remains unexecuted and needs a new user spending decision.
-Offline readiness provides no evidence of Skill efficacy or model difficulty.
+The latest [receiver mechanism probe](../evidence/2026-10-15-receiver-mechanism-stop.md)
+stops after one failed v4.1 call; its control never runs. The preceding
+[independent comparison](../evidence/2026-10-15-independent-comparison-regression-stop.md)
+stops at 12/80 after an observed correctness regression. Both are closed; unused
+slots authorize no retry, replacement or expansion. The eight-task offline
+readiness record establishes task integrity, not Skill efficacy.
 
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.

@@ -1,103 +1,60 @@
-# skillfit: adoption and evidence roadmap (October 2026)
+# skillfit: case authoring and evaluation roadmap (October 2026)
 
 ## Goal and current position
 
-Make it easy for someone who has never seen skillfit to reach a trustworthy, repeatable result,
-then make that result useful to a team. Stars are an outcome to observe, not an acceptance test.
+Help a user evaluate a Skill, rules file or MCP setup on tasks from their own work:
+create a case, verify its acceptance checks, preview a small budget, then inspect
+outcomes and complete spending. Bundled benches teach the format. Repeatedly
+optimizing one external debugging Skill is not the product roadmap.
 
-The product already has paired evaluations, deterministic bench gates, trigger measurements,
-configuration experiments, an MCP preflight, and English and Simplified Chinese READMEs. The main adoption gap is the
-path from a fresh clone to understanding what was measured: 0.9.1 is published with a
-[verified registry install](releases/0.9.1-verification.json), live evaluations still need a local agent
-or API key, and the first offline check is easy to mistake for an
-agent-quality result. Keep the native Node first-run path usable in Bash and
-PowerShell, and label Bash convenience scripts as alternatives.
+The published CLI is 0.9.1, with a [verified registry install](releases/0.9.1-verification.json).
+New source features need a source build until another release is explicitly
+approved. No new package publication or live model calls are scheduled here.
 
-Patterns worth borrowing, without copying their claims:
+## Available foundations
 
-| Project | Observable practice | skillfit decision |
-|---|---|
-| [Vercel Skills](https://github.com/vercel-labs/skills) | Short install and list paths make a first action obvious | Keep one short, copyable path from clone to an offline result; label commands that need an agent |
-| [Promptfoo Action](https://github.com/promptfoo/promptfoo-action) | Evaluation can run in a pull request and leave a workflow summary | Add an opt-in, offline CI recipe before attempting hosted or paid evaluation |
-| [Aider benchmark](https://github.com/Aider-AI/aider/blob/main/benchmark/README.md) | Published results carry model, command, version, and commit context | Export readable reports from pinned run manifests; keep provenance and limitations beside scores |
+| User need | Existing path | Boundary |
+| --- | --- | --- |
+| Start or capture a case | `bench init`, `bench add --freeze`, `bench add --from-commit` | The starter currently only grades text output; real tasks need their own fixture and acceptance checks |
+| Validate the case offline | `bench check`: original/NOP failure, oracle pass, facet checks and fixture hygiene | Case integrity is not model quality or proof of difficulty |
+| Preview and run a bounded comparison | `eval --dry-run`, `--max-calls`, JSON request preview and plan hash | Real runs need separate spending consent; source-only `spendingBudget` stops between calls and can overshoot in flight |
+| Compare revisions and inspect evidence | `--baseline-skill`, balanced order, `report eval`, JSON assessment and offline replay | Missing evidence stays missing; the component never upgrades a Skill |
+| Share or contribute | [Report guide](sharing-results.md), [offline CI example](examples/bench-check.yml), [bench guide](bench-authoring.md), contribution/issue templates | CI stays offline and never calls a model |
+| First run across operating systems | Native Node CLI, mirrored READMEs, macOS/Linux/Windows CI | Local agents and credentials are needed only for live evaluation |
+
+The [evidence index](skill-evaluation-evidence.md) retains 195 study calls,
+including failed and interrupted runs. Seven historical final usages remain
+unknown, and no tested revision has qualified for adoption. These are examples
+of the CLI's evidence gates, not a universal Skill benchmark.
 
 ## Delivery order
 
-### 0. Establish a reliable baseline — shipped
+Work is sequential. Dates are work records, not timers or unattended execution.
+Only the first usability item below is in the current implementation scope;
+subsequent items require their own scoped implementation and validation.
 
-- Merge the rules/MCP experiment and documentation review in PR #6.
-- Require the same offline suite, bench checks, and CLI smoke tests on macOS, Linux, and Windows.
-- Keep the Codex disposable-project trust override scoped to each MCP trial.
+| Priority / order | Work | Acceptance |
+| --- | --- | --- |
+| 0 — synchronize current work | Commit existing work, update both READMEs and mutable guides, preserve dated evidence, push and review CI | Clean committed tree, remote PR/merge recorded, offline suite green; no live calls |
+| 1 — create a code-editing case | Add `bench init --kind command` alongside the existing text-output starter, with a broken fixture, reference repair and behavioral verifier | Dry run writes nothing; original fails, oracle passes, equivalent repair passes, modified protected tests fail; CLI/docs and three-OS CI agree |
+| 2 — return case validation to an Agent | Add machine-readable `bench check --json` with per-gate status, warnings and actionable locations | JSON-only stdout, nonzero status on failures, no calls, stable documented shape; offline tests cover invalid cases |
+| 3 — run a small chosen case set | Design explicit task selection for preview and eval, preserving the selected IDs and costs in the frozen plan and report | Unknown/duplicate selections fail before calls; preview counts only selected cases; small samples cannot authorize adoption |
 
-Acceptance: all three CI operating-system jobs pass on the merged change. No live model call is part
-of CI.
+Items 2 and 3 address basic usability gaps, not missing statistical methods.
+Inspect existing APIs before implementation and avoid duplicating request preview,
+report export, failure freezing or existing budget controls.
 
-### 1. Make the first ten minutes work on every supported OS
+## Later decisions
 
-- Make both README quick starts use commands that work in Bash and PowerShell after cloning.
-- Separate offline verification, local-agent evaluation, and installation so a new user knows which
-  commands need credentials, network access, or file writes.
-- Provide native Node CLI commands for selectable Codex setup; document the Bash convenience script
-  as an alternative.
-- Add a concise repository description, homepage, and focused topics on GitHub.
+- Improve error messages based on actual failed case-authoring attempts.
+- Verify Claude Code trigger capture when working authentication is available.
+- Add Cursor, Gemini CLI or OpenCode only with verified official paths and
+  compatibility tests. A hosted dashboard needs demonstrated demand.
+- Review new evidence against the fixed [metrics protocol](metrics.md). Task-specific
+  regressions and all spending stay visible; insufficient evidence cannot upgrade
+  a Skill. Future live evaluations need a fresh, bounded authorization.
 
-Acceptance: a fresh clone can run `npm ci`, build, inspect the CLI, and check both bundled benches on
-macOS, Linux, and Windows. The README's first path needs no model API. Both languages preserve
-the same command blocks. No package publication is required.
-
-### 2. Turn a run into a shareable review artifact
-
-- Add a read-only command that renders an existing evaluation manifest as Markdown with its target,
-  bench hash, executor, trial count, verdict, uncertainty, and warnings. The JSON manifest remains the
-  canonical machine-readable record.
-- Include a small, clearly synthetic example and a real-run example in the documentation. Do not
-  present mock results as evidence that a Skill helps.
-- Add an opt-in GitHub Actions recipe that validates a contributed bench offline and uploads a
-  Markdown summary. It must not require an API key or call a real agent.
-
-Acceptance: the rendered report can be reproduced from the same manifest without rerunning an agent;
-missing or old fields are handled explicitly; CI stays offline and passes on all three systems.
-
-### 3. Make community evidence auditable
-
-- Give contributors a compact bench/evidence submission path: required fixture, verifier, oracle,
-  pinned configuration, model identity, and limitations.
-- Review evidence submissions against the published metrics protocol before adding dated evidence
-  entries. Corrections to published evidence become new dated entries.
-- Publish one maintained example that a reader can reproduce locally, with an honest statement about
-  its scope and cost.
-
-Acceptance: a first-time contributor can run the two offline bench gates and submit a complete issue
-or PR without private paths or tokens. New efficacy claims link to a dated evidence entry and a
-reviewed, shareable manifest. Older entries whose raw manifests remain local are labeled as such.
-
-## Later decisions, after adoption evidence
-
-These are open. The README roadmap is the public checklist; this list is the same work with its home.
-
-- `--compete-installed` copies other user-level Skills into a trigger trial. Without it, recall is an
-  upper bound. System Skills and plugins outside the matrix directories are still not copied
-  (`docs/metrics.md`, L1).
-- Positive tasks may set `triggerClass` to `explicit`, `implicit`, or `contextual`. Unlabeled tasks
-  stay in the pooled recall (`docs/metrics.md`, L1).
-- Codex trigger detection counts a `SKILL.md` read. It is not a Skill-invocation event. Claude Code
-  capture is not machine-verified (`docs/metrics.md`, L1).
-- `installed` reports long-body reads separately from the task result. A read is not trigger recall,
-  and a missing read does not prove the description was ignored (`docs/installed-skill-evaluation.md`).
-- The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the
-  13-Skill starter set are not evaluated as sets. A run labeled indicative is not an installation
-  recommendation (README, "Our own data").
-- The Agent evaluation component has been available since 0.9.0; 0.9.1 verifies CLI/OIDC publication. `npx skillfit` installs 0.9.1. Clone, `npm ci`, and `npm run build`
-  remain valid (`skills/skillfit/SKILL.md`).
-- Community benches belong in `benches/contrib`. Evidence uses the Evidence submission issue template.
-  CI runs the offline gates and does not call an agent. Cursor, Gemini CLI, and OpenCode adapters
-  remain open until their official paths are verified. `mcp check` now also preflights a Streamable
-  HTTP endpoint and still does not call a tool.
-- More agent adapters and a hosted dashboard need real demand and their own compatibility tests. They
-  should not delay the first-run and reporting work.
-- Track useful signals: clean-clone success on three operating systems, bench-check completions,
-  reproducible evidence contributions, and issue-to-fix time. Do not optimize the product for a star
-  count alone.
-
-The hard boundaries remain: zero runtime dependencies, offline tests, English CLI output, no writes
-without a plan/backup/verification, and no access to the private `workspace4skills/` lab.
+Keep zero runtime dependencies and offline tests. Configuration writers retain
+dry runs, confirmation, backups and verification. New artifacts preserve existing
+outputs; normal repository edits use Git review and checks. Never commit or
+clean the private `workspace4skills/` lab.
