@@ -1,0 +1,1548 @@
+{
+  "schemaVersion": 1,
+  "kind": "skillfit.independent-offline-readiness",
+  "at": "2026-10-15T06:11:13.144Z",
+  "nodeVersion": "v24.21.0",
+  "realModelCalls": 0,
+  "authorizedFutureModelCalls": 0,
+  "actualStudyLedgerCalls": 182,
+  "previousMissingFinalUsages": 7,
+  "status": "offline-gates-passed-awaiting-user-decision",
+  "benchSha256": "1a6b890d2d36ee1419eeff44b95e5fc3be92b2662984f484a4190a24e0b6d0ac",
+  "compiledRuntimeSha256": "1be33d57c3b19896eae2ba0fd68724fddda1aeff12efe0c44e22b11a74646e0e",
+  "sources": [
+    {
+      "path": "src/harness/eval-budget.ts",
+      "sha256": "5d40f8ca6199d70f4338e574fb5ed13373f6d42faabd2899c76cae063df650f4"
+    },
+    {
+      "path": "src/harness/eval-budget.test.ts",
+      "sha256": "232af0fba4df2c67209d8df4735d5aabc4f16615a827cdf6c83b02a3299e02dc"
+    },
+    {
+      "path": "src/harness/eval-contract.ts",
+      "sha256": "ae12225cae93f979d49e305d30bc4c9a766e8b07c640261551613f29e0c16204"
+    },
+    {
+      "path": "src/harness/runner.ts",
+      "sha256": "33617975e873aa3f5eedf07d34ee12d94e1d1631d8c3f57a9d52e066afcd284e"
+    },
+    {
+      "path": "src/harness/eval-audit.ts",
+      "sha256": "66416976bf47424165f5239109fe08429b6d02f05ee5ebfe54b900a1eec87877"
+    },
+    {
+      "path": "src/commands/eval.ts",
+      "sha256": "a7d2f4052df28f4a51709ab42c3a76943942580ab9ddd4734359901937d4d29e"
+    },
+    {
+      "path": "src/commands/eval-component.ts",
+      "sha256": "a216d9559223cfe4b48f16442d2eadd0033c89cc6126075ff8b5780f336c5ad9"
+    },
+    {
+      "path": "docs/schemas/eval-request.schema.json",
+      "sha256": "717417dbb589196bc188e38dd1fc4a86914f76c41055c7c99c12387a5372cce5"
+    },
+    {
+      "path": "scripts/check-independent-readiness.mjs",
+      "sha256": "007431ab9b045f802ad296dbb6cfa112bb9ceeeac6446a9a836e1bebf898120d"
+    },
+    {
+      "path": "scripts/independent-offline.test.mjs",
+      "sha256": "7336b60b025d60ebd620c53fe2b4e5202dbb656cc0b634cd9a5bc3d934330eac"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "limit-async-context",
+      "repository": "sindresorhus/p-limit",
+      "beforeCommit": "38a6773e552d24f4c9eb2d79d57b6cff017c587d",
+      "fixCommit": "ad8afe6f46429e726b32fdedf063c553ebcb0196",
+      "fixtureBytes": 14546,
+      "sameRegressionSha256": "45c64676dbe1a935e7e209586fd5d2f5e4c9c467dfa30f0ceb86d0d609bc9912",
+      "original": {
+        "exitCode": 1,
+        "passed": false,
+        "score": 0.3333333333333333,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Distinct callers retain their own store",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n\n0 !== 2\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Queued-to-active transitions retain context",
+            "pass": false,
+            "detail": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n    'first',\n+   'first',\n+   'first'\n-   'second',\n-   'third'\n  ]\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Concurrency one and multiple preserve isolation",
+            "pass": false,
+            "detail": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n    0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0,\n+   0\n-   1,\n-   2,\n-   3,\n-   4,\n-   5,\n-   6,\n-   7,\n-   8,\n-   9,\n-   10,\n-   11,\n-   12,\n-   13,\n-   14,\n-   15,\n-   16,\n-   17,\n-   18,\n-   19\n  ]\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Ordinary fulfillment and rejection remain intact",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false,
+            "detail": "A retained registered regression must distinguish original and full maintainer fix"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": false,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      },
+      "maintainer": {
+        "exitCode": 0,
+        "passed": true,
+        "score": 1,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Distinct callers retain their own store",
+            "pass": true
+          },
+          {
+            "name": "Queued-to-active transitions retain context",
+            "pass": true
+          },
+          {
+            "name": "Concurrency one and multiple preserve isolation",
+            "pass": true
+          },
+          {
+            "name": "Ordinary fulfillment and rejection remain intact",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": true,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [
+              {
+                "file": "regression.test.mjs",
+                "path": [
+                  "queued calls retain distinct async stores"
+                ]
+              }
+            ],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "timeout-custom-timers",
+      "repository": "sindresorhus/p-timeout",
+      "beforeCommit": "f9ced5e18ad81eab24a9a8d0f07bf3002f7bea64",
+      "fixCommit": "ed58372c62d3dddfe6f58de37558fb132e1a4e9b",
+      "fixtureBytes": 16212,
+      "sameRegressionSha256": "231f8f35e06113b4f38a59a11df38b4a2afc84fb03908b4f78798a0e8c912aef",
+      "original": {
+        "exitCode": 1,
+        "passed": false,
+        "score": 0.5,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Scheduling does not bind this to the customTimers container",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'rejected'\n- 'fulfilled'\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Clearing does not bind this to that container",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'rejected'\n- 'fulfilled'\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Timeout and fallback paths keep their results",
+            "pass": true
+          },
+          {
+            "name": "Ordinary fulfillment and rejection keep identity",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false,
+            "detail": "A retained registered regression must distinguish original and full maintainer fix"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": false,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      },
+      "maintainer": {
+        "exitCode": 0,
+        "passed": true,
+        "score": 1,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Scheduling does not bind this to the customTimers container",
+            "pass": true
+          },
+          {
+            "name": "Clearing does not bind this to that container",
+            "pass": true
+          },
+          {
+            "name": "Timeout and fallback paths keep their results",
+            "pass": true
+          },
+          {
+            "name": "Ordinary fulfillment and rejection keep identity",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": true,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [
+              {
+                "file": "regression.test.mjs",
+                "path": [
+                  "native-compatible custom timer receivers"
+                ]
+              }
+            ],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "throttle-sync-throw",
+      "repository": "sindresorhus/p-throttle",
+      "beforeCommit": "5b566f4eecab5b054840896287e46806585747db",
+      "fixCommit": "bee3f7d0b048f251de2f910ddd122c6babf49380",
+      "fixtureBytes": 15235,
+      "sameRegressionSha256": "6642bf6f6721dee26987c40ab64f5e91f218c038ff1885517872bd4cdaa23c3f",
+      "original": {
+        "exitCode": 1,
+        "passed": false,
+        "score": 0.5,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Delayed sync throw rejects with the original error",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'pending'\n- 'rejected'\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Queue state is cleaned after failure",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n\n1 !== 0\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Async rejections still propagate",
+            "pass": true
+          },
+          {
+            "name": "Successful calls preserve receiver and arguments",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false,
+            "detail": "A retained registered regression must distinguish original and full maintainer fix"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": false,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      },
+      "maintainer": {
+        "exitCode": 0,
+        "passed": true,
+        "score": 1,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Delayed sync throw rejects with the original error",
+            "pass": true
+          },
+          {
+            "name": "Queue state is cleaned after failure",
+            "pass": true
+          },
+          {
+            "name": "Async rejections still propagate",
+            "pass": true
+          },
+          {
+            "name": "Successful calls preserve receiver and arguments",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": true,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [
+              {
+                "file": "regression.test.mjs",
+                "path": [
+                  "a delayed synchronous throw rejects its public promise"
+                ]
+              }
+            ],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "commander-output-isolation",
+      "repository": "tj/commander.js",
+      "beforeCommit": "672e3806c68421f91b3a1f628f6207b8b26d1a2c",
+      "fixCommit": "68199e64b31851839c03dff1567a81d7714baa08",
+      "fixtureBytes": 228513,
+      "sameRegressionSha256": "5433d1ad5ff5a6c28c392fcf3cba7379df8b9e9f2bce725c6b2e6212a96d674e",
+      "original": {
+        "exitCode": 1,
+        "passed": false,
+        "score": 0.5,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Child configuration applies locally",
+            "pass": true
+          },
+          {
+            "name": "Parent output configuration remains intact",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n\n40 !== 80\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Sibling configuration remains intact",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n\n40 !== 80\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Unmodified output callbacks remain available",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false,
+            "detail": "A retained registered regression must distinguish original and full maintainer fix"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": false,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      },
+      "maintainer": {
+        "exitCode": 0,
+        "passed": true,
+        "score": 1,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Child configuration applies locally",
+            "pass": true
+          },
+          {
+            "name": "Parent output configuration remains intact",
+            "pass": true
+          },
+          {
+            "name": "Sibling configuration remains intact",
+            "pass": true
+          },
+          {
+            "name": "Unmodified output callbacks remain available",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": true,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [
+              {
+                "file": "regression.test.mjs",
+                "path": [
+                  "child output configuration does not mutate parent"
+                ]
+              }
+            ],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "limit-map-iteration-rejection",
+      "repository": "sindresorhus/p-limit",
+      "beforeCommit": "783068bb9e967fd7bea8642e1bf5a3627fe38bdf",
+      "fixCommit": "9df0d27f82ab3cb6d7e1087f5bda94ce911d33ca",
+      "fixtureBytes": 22356,
+      "sameRegressionSha256": "8eab2ed5b0881607d857f41f4e07e38f63246ef8b294fc6a2c9c31a2292b0935",
+      "original": {
+        "exitCode": 1,
+        "passed": false,
+        "score": 0.6666666666666666,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Iterator error identity reaches the caller",
+            "pass": true
+          },
+          {
+            "name": "Scheduled mapper failures create no unhandled rejection",
+            "pass": false,
+            "detail": "public calls must not produce unhandled rejections\n+ actual - expected\n\n+ [\n+   'mapper-1',\n+   'mapper-2',\n+   'mapper-3'\n+ ]\n- []\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Already queued work still finishes with correct queue counts",
+            "pass": true
+          },
+          {
+            "name": "Ordinary arrays and array-like inputs keep map behavior",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false,
+            "detail": "A retained registered regression must distinguish original and full maintainer fix"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": false,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      },
+      "maintainer": {
+        "exitCode": 0,
+        "passed": true,
+        "score": 1,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Iterator error identity reaches the caller",
+            "pass": true
+          },
+          {
+            "name": "Scheduled mapper failures create no unhandled rejection",
+            "pass": true
+          },
+          {
+            "name": "Already queued work still finishes with correct queue counts",
+            "pass": true
+          },
+          {
+            "name": "Ordinary arrays and array-like inputs keep map behavior",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": true,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [
+              {
+                "file": "regression.test.mjs",
+                "path": [
+                  "iterator failure leaves no unhandled mapper rejection"
+                ]
+              }
+            ],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "timeout-rejection-listener",
+      "repository": "sindresorhus/p-timeout",
+      "beforeCommit": "3cabb7a7e576b5acc344db7f55acf4d56e47400a",
+      "fixCommit": "fd93994892d0b3cba6da61787ac6b5da3ad3f2d5",
+      "fixtureBytes": 16982,
+      "sameRegressionSha256": "047862f8e9000bd384f3719b573da9cb6f6dd49cf5e9d833a5a3cdeaea3d57f1",
+      "original": {
+        "exitCode": 1,
+        "passed": false,
+        "score": 0.6666666666666666,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Original rejection identity is retained",
+            "pass": true
+          },
+          {
+            "name": "No derived promise creates an unhandled rejection",
+            "pass": false,
+            "detail": "public calls must not produce unhandled rejections\n+ actual - expected\n\n+ [\n+   'source'\n+ ]\n- []\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Abort listeners are removed on settlement",
+            "pass": true
+          },
+          {
+            "name": "Fulfillment, explicit abort and timeout paths remain intact",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false,
+            "detail": "A retained registered regression must distinguish original and full maintainer fix"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": false,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      },
+      "maintainer": {
+        "exitCode": 0,
+        "passed": true,
+        "score": 1,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Original rejection identity is retained",
+            "pass": true
+          },
+          {
+            "name": "No derived promise creates an unhandled rejection",
+            "pass": true
+          },
+          {
+            "name": "Abort listeners are removed on settlement",
+            "pass": true
+          },
+          {
+            "name": "Fulfillment, explicit abort and timeout paths remain intact",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": true,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [
+              {
+                "file": "regression.test.mjs",
+                "path": [
+                  "input rejection has no unhandled cleanup promise"
+                ]
+              }
+            ],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "timeout-infinity-abort",
+      "repository": "sindresorhus/p-timeout",
+      "beforeCommit": "e8c2c9e16d2653bacbc404033af1166b5f07b91e",
+      "fixCommit": "9260b098885d11d53d0cc39884e5cadc8b85f229",
+      "fixtureBytes": 15346,
+      "sameRegressionSha256": "934317ee929bb9ca8a05d7813a81b0b00a4436f5dcad596fb0a048f4da954ae3",
+      "original": {
+        "exitCode": 1,
+        "passed": false,
+        "score": 0.5,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "An already aborted signal rejects",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'pending'\n- 'rejected'\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "An abort after wrapping also rejects",
+            "pass": false,
+            "detail": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'pending'\n- 'rejected'\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Unaborted input fulfillment and rejection pass through",
+            "pass": true
+          },
+          {
+            "name": "Infinity schedules no finite timeout",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false,
+            "detail": "A retained registered regression must distinguish original and full maintainer fix"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": false,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      },
+      "maintainer": {
+        "exitCode": 0,
+        "passed": true,
+        "score": 1,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "An already aborted signal rejects",
+            "pass": true
+          },
+          {
+            "name": "An abort after wrapping also rejects",
+            "pass": true
+          },
+          {
+            "name": "Unaborted input fulfillment and rejection pass through",
+            "pass": true
+          },
+          {
+            "name": "Infinity schedules no finite timeout",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": true,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [
+              {
+                "file": "regression.test.mjs",
+                "path": [
+                  "Infinity keeps abort handling"
+                ]
+              }
+            ],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "commander-async-listener-order",
+      "repository": "tj/commander.js",
+      "beforeCommit": "e649291869553e68b583b70ee910abb5ec6bcce4",
+      "fixCommit": "35a028b6253a38d00c16dca2a36b69c5888c022a",
+      "fixtureBytes": 172598,
+      "sameRegressionSha256": "7fe0d1eed3f3422996fef7924f5b12b7b84525f686dbcf63f12616fa6cd5fe8d",
+      "original": {
+        "exitCode": 1,
+        "passed": false,
+        "score": 0.3333333333333333,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Async preAction then action precede the legacy event",
+            "pass": false,
+            "detail": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n    'pre-start',\n+   'legacy',\n    'pre-end',\n    'action-start',\n    'action-end',\n-   'legacy'\n  ]\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "postAction follows that event",
+            "pass": false,
+            "detail": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n+   'legacy',\n    'action',\n-   'legacy',\n    'post'\n  ]\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "parseAsync waits for the action chain",
+            "pass": false,
+            "detail": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   'legacy'\n+ ]\n- []\n\n\nfalse !== true\n"
+          },
+          {
+            "name": "Synchronous and no-subcommand cases keep their order",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": false,
+            "detail": "A retained registered regression must distinguish original and full maintainer fix"
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": false,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      },
+      "maintainer": {
+        "exitCode": 0,
+        "passed": true,
+        "score": 1,
+        "checks": [
+          {
+            "name": "Protected supplied assets and ordinary smoke behavior",
+            "pass": true
+          },
+          {
+            "name": "Async preAction then action precede the legacy event",
+            "pass": true
+          },
+          {
+            "name": "postAction follows that event",
+            "pass": true
+          },
+          {
+            "name": "parseAsync waits for the action chain",
+            "pass": true
+          },
+          {
+            "name": "Synchronous and no-subcommand cases keep their order",
+            "pass": true
+          },
+          {
+            "name": "Submitted regression passes the repair and complete functional upstream fix, and fails the original",
+            "pass": true
+          }
+        ],
+        "evidence": [
+          {
+            "path": "regression.test.mjs",
+            "finalPassed": true,
+            "originalFailed": true,
+            "referencePassed": true,
+            "caseWitnesses": [
+              {
+                "file": "regression.test.mjs",
+                "path": [
+                  "legacy event follows asynchronous hooks and action"
+                ]
+              }
+            ],
+            "targeted": [],
+            "counts": {
+              "submitted": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "original": {
+                "tests": 1,
+                "failed": 1,
+                "passed": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              },
+              "reference": {
+                "tests": 1,
+                "failed": 0,
+                "passed": 1,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0,
+                "topLevel": 1,
+                "suites": 0
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "suites": [
+    {
+      "file": "dist/harness/eval-budget.test.js",
+      "counts": {
+        "tests": 20,
+        "failed": 0,
+        "passed": 20,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "topLevel": 20,
+        "suites": 0
+      },
+      "checks": [
+        {
+          "name": "spending stop lines require all five positive values and reject malformed counters/limits",
+          "pass": true
+        },
+        {
+          "name": "all-invocation budgets count functional failures, partial costs and unknown partitions without double counting cache",
+          "pass": true
+        },
+        {
+          "name": "input stop line blocks the second executor and retains the first complete receipt",
+          "pass": true
+        },
+        {
+          "name": "cachedInput stop line blocks the second executor and retains the first complete receipt",
+          "pass": true
+        },
+        {
+          "name": "uncachedInput stop line blocks the second executor and retains the first complete receipt",
+          "pass": true
+        },
+        {
+          "name": "output stop line blocks the second executor and retains the first complete receipt",
+          "pass": true
+        },
+        {
+          "name": "durationSeconds stop line blocks the second executor and retains the first complete receipt",
+          "pass": true
+        },
+        {
+          "name": "an in-flight overshoot is retained instead of clamped to its stop line",
+          "pass": true
+        },
+        {
+          "name": "no counters: missing or incompatible final usage refuses another call without filling cache with zero",
+          "pass": true
+        },
+        {
+          "name": "missing cache: missing or incompatible final usage refuses another call without filling cache with zero",
+          "pass": true
+        },
+        {
+          "name": "incompatible cache: missing or incompatible final usage refuses another call without filling cache with zero",
+          "pass": true
+        },
+        {
+          "name": "invalid retained receipts remain untouched and appear as unknown rather than disappearing or becoming zero-cost success",
+          "pass": true
+        },
+        {
+          "name": "an executor guard failure stops immediately while retaining its complete returned usage",
+          "pass": true
+        },
+        {
+          "name": "executor failure retains partial usage, stops once and never replaces the call",
+          "pass": true
+        },
+        {
+          "name": "ordinary functional failures spend budget and are not executor failures or replacement samples",
+          "pass": true
+        },
+        {
+          "name": "complete budget events bind the plan and reproduce from native receipts",
+          "pass": true
+        },
+        {
+          "name": "a resealed under-reported budget trace fails the semantic native audit",
+          "pass": true
+        },
+        {
+          "name": "changed stop lines invalidate a preview and cannot silently increase the approved budget",
+          "pass": true
+        },
+        {
+          "name": "call ceiling remains independent and old request normalization omits the new optional field",
+          "pass": true
+        },
+        {
+          "name": "a stop line reached only by the final declared call permits no extra call and preserves a complete cohort",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "file": "scripts/independent-offline.test.mjs",
+      "counts": {
+        "tests": 13,
+        "failed": 0,
+        "passed": 13,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "topLevel": 13,
+        "suites": 0
+      },
+      "checks": [
+        {
+          "name": "independent source tasks retain proposal identities, complete fixture/reference hashes and pinned Git blobs",
+          "pass": true
+        },
+        {
+          "name": "limit-async-context: identical registered regression fails original and full functional maintainer fix passes 6/6",
+          "pass": true
+        },
+        {
+          "name": "timeout-custom-timers: identical registered regression fails original and full functional maintainer fix passes 6/6",
+          "pass": true
+        },
+        {
+          "name": "throttle-sync-throw: identical registered regression fails original and full functional maintainer fix passes 6/6",
+          "pass": true
+        },
+        {
+          "name": "commander-output-isolation: identical registered regression fails original and full functional maintainer fix passes 6/6",
+          "pass": true
+        },
+        {
+          "name": "limit-map-iteration-rejection: identical registered regression fails original and full functional maintainer fix passes 6/6",
+          "pass": true
+        },
+        {
+          "name": "timeout-rejection-listener: identical registered regression fails original and full functional maintainer fix passes 6/6",
+          "pass": true
+        },
+        {
+          "name": "timeout-infinity-abort: identical registered regression fails original and full functional maintainer fix passes 6/6",
+          "pass": true
+        },
+        {
+          "name": "commander-async-listener-order: identical registered regression fails original and full functional maintainer fix passes 6/6",
+          "pass": true
+        },
+        {
+          "name": "a constant passing regression does not create an original/fix witness",
+          "pass": true
+        },
+        {
+          "name": "a test file exiting zero without a registered test cannot create a witness",
+          "pass": true
+        },
+        {
+          "name": "modifying a protected vendored dependency is rejected even with the real functional fix",
+          "pass": true
+        },
+        {
+          "name": "the incomplete maintainer context patch without its import mapping is rejected",
+          "pass": true
+        }
+      ]
+    }
+  ],
+  "budgetLimits": {
+    "input": 40000000,
+    "cachedInput": 36000000,
+    "uncachedInput": 5000000,
+    "output": 1250000,
+    "durationSeconds": 43200
+  },
+  "budgetScope": "Synthetic injected executors only; before/after events and exact supplied counters. No new model quality, monetary bill or timing improvement.",
+  "pending": [
+    "User decision and fresh real-call authorization",
+    "Execution-specific environment/power checks and frozen preview after any source/configuration change"
+  ],
+  "automaticExpansion": false,
+  "eligibleForUpgrade": false,
+  "automaticUpgrade": false
+}

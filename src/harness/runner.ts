@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { ExperimentSession } from './experiment-session.js';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
@@ -28,6 +28,7 @@ import { summarizeCosts } from './costs.js';
 import { executionClock, type ExecutionClock, type ExecutionTiming } from './execution-timing.js';
 import type { ComponentMetadata } from './eval-contract.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
+import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState, type SpendingBudget } from './eval-budget.js';
 
 export interface ExperimentPlan {
   component?: ComponentMetadata;
@@ -45,6 +46,7 @@ export interface ExperimentPlan {
   runsRoot: string;
   runGroup: string;
   log?: (msg: string) => void;
+  spendingBudget?: SpendingBudget;
   /** Injectable clocks for offline duration checks. */
   clock?: ExecutionClock;
 }
@@ -695,6 +697,8 @@ function summarizeTask(
 }
 
 export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
+  const budget = plan.spendingBudget === undefined ? undefined : parseSpendingBudget(plan.spendingBudget);
+  if (budget && plan.judge) throw new Error('spendingBudget does not cover judge calls.');
   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
   const pairOrder = plan.pairOrder ?? 'baseline-first';
   if (pairOrder !== 'baseline-first' && pairOrder !== 'balanced') throw new Error('pairOrder must be baseline-first or balanced.');
@@ -728,6 +732,13 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const taskSummaries: TaskSummary[] = [];
   const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
   const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
+  const budgetObservations: TrialOutcome[] = [];
+  const budgetEvent = (phase: 'before-call' | 'after-call', taskId: string, condition: Condition, trial: number) => {
+    if (!budget) return null;
+    const state = spendingBudgetState(budget, budgetObservations);
+    appendFileSync(join(groupDir, '_budget.jsonl'), JSON.stringify({ phase, taskId, condition, trial, state }) + '\n', 'utf8');
+    return state;
+  };
   for (const [taskIndex, task] of plan.bench.tasks.entries()) {
     const outcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
     // Interleaved: the trial loop is outermost so the two arms of a pair run adjacently. Running
@@ -735,10 +746,17 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     // provider drift or rate-limit degradation would land entirely on one arm.
     for (let trial = 1; trial <= plan.trials; trial++) {
       for (const condition of pairConditions(pairOrder, taskIndex, trial)) {
+        const before = budgetEvent('before-call', task.id, condition, trial);
+        if (before) assertSpendingCanContinue(before);
         plan.log?.(`Running ${task.id} / ${condition} / trial ${trial}…`);
         const outcome = await runTrial(plan, task.id, condition, trial);
         outcomes[condition].push(outcome);
         allOutcomes[condition].push(outcome);
+        budgetObservations.push(outcome);
+        const after = budgetEvent('after-call', task.id, condition, trial);
+        // A reached line prevents the next call; incomplete or failed evidence stops even
+        // after the final scheduled call. One in-flight invocation may cross a stop line.
+        if (after && (after.incomplete.length || after.reason === 'EXECUTION_FAILED')) assertSpendingCanContinue(after);
       }
     }
     const survivors = pairedSurvivors(outcomes);

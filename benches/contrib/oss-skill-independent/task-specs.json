@@ -1,0 +1,63 @@
+{
+  "limit-async-context": {
+    "repository": "sindresorhus/p-limit",
+    "sourcePaths": [
+      "index.js",
+      "package.json",
+      "async-hooks-stub.js"
+    ],
+    "metadataEditable": [
+      "imports",
+      "files"
+    ]
+  },
+  "timeout-custom-timers": {
+    "repository": "sindresorhus/p-timeout",
+    "sourcePaths": [
+      "index.js"
+    ],
+    "metadataEditable": []
+  },
+  "throttle-sync-throw": {
+    "repository": "sindresorhus/p-throttle",
+    "sourcePaths": [
+      "index.js"
+    ],
+    "metadataEditable": []
+  },
+  "commander-output-isolation": {
+    "repository": "tj/commander.js",
+    "sourcePaths": [
+      "lib/command.js"
+    ],
+    "metadataEditable": []
+  },
+  "limit-map-iteration-rejection": {
+    "repository": "sindresorhus/p-limit",
+    "sourcePaths": [
+      "index.js"
+    ],
+    "metadataEditable": []
+  },
+  "timeout-rejection-listener": {
+    "repository": "sindresorhus/p-timeout",
+    "sourcePaths": [
+      "index.js"
+    ],
+    "metadataEditable": []
+  },
+  "timeout-infinity-abort": {
+    "repository": "sindresorhus/p-timeout",
+    "sourcePaths": [
+      "index.js"
+    ],
+    "metadataEditable": []
+  },
+  "commander-async-listener-order": {
+    "repository": "tj/commander.js",
+    "sourcePaths": [
+      "lib/command.js"
+    ],
+    "metadataEditable": []
+  }
+}

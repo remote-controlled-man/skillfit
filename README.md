@@ -132,6 +132,8 @@ The default policy requires a demonstrated quality gain. An explicit version-2 `
 
 Requests can also pin `executorTimeoutSeconds` (default 600) for both versions. A changed deadline requires a new plan and batch; previous timeouts and their available spending remain in the evidence.
 
+Unreleased source support: optional `spendingBudget` sets five absolute batch stop lines. Reaching a line or losing complete final usage stops subsequent calls and retains spending; an in-flight call may overshoot. See the [guard contract](docs/eval-component.md#input-and-execution).
+
 Failed Codex JSON calls can retain identity-bound partial usage from local numeric counters. Private transcript bodies stay out of exports, and partial usage never satisfies the final-cost or adoption gates.
 
 ```bash

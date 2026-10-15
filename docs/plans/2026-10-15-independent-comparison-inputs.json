@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "kind": "skillfit.independent-comparison-proposal",
-  "status": "proposal-awaiting-user-decision",
+  "status": "offline-verified-awaiting-user-decision",
   "sourceCommit": "98227b48703d753aa0f7918a8a04fe490b9dce27",
   "authorizedModelCalls": 0,
   "readyForModelCalls": false,
@@ -87,7 +87,7 @@
         "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
       ],
       "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
-      "offlineOriginalOracleGate": "pending"
+      "offlineOriginalOracleGate": "passed: identical registered regression and actual behavior fail original; full functional maintainer repair passes 6/6"
     },
     {
       "position": 2,
@@ -115,7 +115,7 @@
         "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
       ],
       "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
-      "offlineOriginalOracleGate": "pending"
+      "offlineOriginalOracleGate": "passed: identical registered regression and actual behavior fail original; full functional maintainer repair passes 6/6"
     },
     {
       "position": 3,
@@ -143,7 +143,7 @@
         "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
       ],
       "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
-      "offlineOriginalOracleGate": "pending"
+      "offlineOriginalOracleGate": "passed: identical registered regression and actual behavior fail original; full functional maintainer repair passes 6/6"
     },
     {
       "position": 4,
@@ -171,7 +171,7 @@
         "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
       ],
       "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
-      "offlineOriginalOracleGate": "pending"
+      "offlineOriginalOracleGate": "passed: identical registered regression and actual behavior fail original; full functional maintainer repair passes 6/6"
     },
     {
       "position": 5,
@@ -199,7 +199,7 @@
         "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
       ],
       "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
-      "offlineOriginalOracleGate": "pending"
+      "offlineOriginalOracleGate": "passed: identical registered regression and actual behavior fail original; full functional maintainer repair passes 6/6"
     },
     {
       "position": 6,
@@ -227,7 +227,7 @@
         "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
       ],
       "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
-      "offlineOriginalOracleGate": "pending"
+      "offlineOriginalOracleGate": "passed: identical registered regression and actual behavior fail original; full functional maintainer repair passes 6/6"
     },
     {
       "position": 7,
@@ -255,7 +255,7 @@
         "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
       ],
       "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
-      "offlineOriginalOracleGate": "pending"
+      "offlineOriginalOracleGate": "passed: identical registered regression and actual behavior fail original; full functional maintainer repair passes 6/6"
     },
     {
       "position": 8,
@@ -283,7 +283,7 @@
         "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
       ],
       "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
-      "offlineOriginalOracleGate": "pending"
+      "offlineOriginalOracleGate": "passed: identical registered regression and actual behavior fail original; full functional maintainer repair passes 6/6"
     }
   ],
   "independence": {
@@ -356,14 +356,18 @@
   },
   "prerequisites": {
     "userBudgetDecision": "pending",
-    "sourceFixturePackaging": "pending",
-    "completeNodeOnlyOutcomeVerifiers": "pending",
-    "originalFailMaintainerPassAndRegressionWitness": "pending for all 8",
-    "offlineBudgetGuardChecks": "pending",
-    "executionInputRuntimeConfigurationHashesAndPreview": "pending; no runnable live request created"
+    "sourceFixturePackaging": "passed: pinned full runtime, original documentation/types and MIT licenses; local pinned queue import adaptation disclosed",
+    "completeNodeOnlyOutcomeVerifiers": "passed: all eight tasks, six outcome groups each",
+    "originalFailMaintainerPassAndRegressionWitness": "passed for all 8; see evidence/2026-10-15-independent-offline-readiness.md",
+    "offlineBudgetGuardChecks": "passed: 20 injected-executor checks; five stop lines, usage completeness, failure retention, preview binding and native replay",
+    "executionInputRuntimeConfigurationHashesAndPreview": "pending live decision and current environment checks; offline bench/runtime/source hashes retained; no live request created"
   },
   "currentStudyLedgerCalls": 182,
   "projectedStudyCeilingIfSeparatelyAuthorizedAndCompleted": 262,
   "historicalMissingPublicFinalUsages": 7,
-  "automaticUpgrade": false
+  "automaticUpgrade": false,
+  "bench": {
+    "path": "benches/contrib/oss-skill-independent",
+    "sha256": "1a6b890d2d36ee1419eeff44b95e5fc3be92b2662984f484a4190a24e0b6d0ac"
+  }
 }

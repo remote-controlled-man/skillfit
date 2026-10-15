@@ -75,6 +75,12 @@ improvement or isolate causal helper savings. Cumulative spending is 182 calls;
 seven earlier missing public final usages stay unknown. No new independent
 comparison or extra call has started; it requires a separate decision and budget.
 
+The [eight-task offline readiness record](../evidence/2026-10-15-independent-offline-readiness.md)
+confirms actual original failures and full maintainer fixes passing 6/6, plus
+twenty mock-only spending guard checks and thirteen integrity checks. The
+independent comparison remains unexecuted and needs a new user spending decision.
+Offline readiness provides no evidence of Skill efficacy or model difficulty.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:
@@ -149,6 +155,34 @@ Timeouts retain their measured duration and available partial usage. A larger
 deadline increases the maximum elapsed budget without changing the call ceiling;
 it neither guarantees completion nor repairs provider availability.
 
+Unreleased source support: optional `spendingBudget` freezes five whole-batch
+stop lines in the request, preview and native plan. All five fields are required
+when supplied: `input`, `cachedInput`, `uncachedInput`, `output` (positive safe
+integer token counts), and `durationSeconds` (positive finite seconds). For
+example, the independent proposal uses 40000000, 36000000, 5000000, 1250000 and
+43200 respectively. These absolute spending lines are separate from the
+adoption policy's relative cost ceilings and the `maxCalls` ceiling. Old requests
+that omit the field retain their previous interpretation.
+
+Before every call, the engine checks accumulated spending from **all actual
+agent invocations**, including functional failures and excluded partners. Reaching
+any line prevents the next invocation. A currently running call may overshoot;
+this is a between-call guard, not a provider token cap. Missing, partial or invalid
+final usage, an execution error, or a configuration guard error stops further
+calls immediately. There is no retry, replacement or automatic expansion. If the
+last predeclared call reaches a line with complete evidence, the completed cohort
+is retained; exceeding a line is never hidden or clamped. A stopped prefix cannot
+authorize adoption. Judges and trigger evaluations reject this option because
+their separate spending is outside this paired-agent accounting.
+
+The native `_budget.jsonl` records before/after snapshots. Completed receipt audit
+recomputes every snapshot in declared execution order and checks its sealed
+bytes; resealing a fabricated lower total does not pass. Stopped reports retain
+available receipts and expose invalid receipt paths as unknown usage while leaving
+the original files untouched. `spendingBudget` in results includes frozen limits,
+event count, latest recorded state and read errors. Its stopped-run summary is
+informational, not evidence of a complete verified comparison.
+
 ```bash
 node dist/cli.js eval --request ./request.json --dry-run
 node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>
@@ -192,6 +226,7 @@ callers should retain unknown/new fields for forward-compatible reporting.
 | `costs.populations` | Surviving paired costs and all agent invocations, including graded failures, errored calls and excluded successful partners |
 | `costs.changes` | Descriptive total and per-success changes; null when coverage or the baseline denominator cannot support the comparison |
 | `costs.efficiency` | Explicit policy version 2 only: all-invocation uncached-input point, task-block interval, per-task changes and fixed protocol |
+| `spendingBudget` | Optional frozen absolute stop lines and retained event state; completed native audit verifies snapshots against receipts |
 | `evidence` | Native file/receipt integrity, policy binding, replay coverage and evidence locations; `pairs` retains each pair's outcomes, named-check changes and full cost observations |
 | `acceptance` | `decision`, `eligibleForUpgrade`, policy, reason codes and scope; `automaticUpgrade` is always false |
 

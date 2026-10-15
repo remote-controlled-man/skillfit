@@ -13,6 +13,7 @@ import { verdictFromOutput } from './verifier-summary.js';
 import { parseEvalReport } from '../commands/eval-report.js';
 import { pairConditions, type PairOrder } from './types.js';
 import { NATIVE_DIFF_PATH, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
+import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } from './eval-budget.js';
 
 function inside(root: string, path: string): boolean {
   const rel = relative(root, path);
@@ -123,6 +124,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     if (bench) assert.equal(bench.contentSha256, report.bench.sha256, 'Replay bench differs from the frozen task set.');
     let invoked = 0;
     const expectedAgentOrder: string[] = [];
+    const budgetReceipts = new Map<string, CostObservation>();
     const rawTasks = raw.tasks as Record<string, unknown>[];
     for (const [taskIndex, task] of report.tasks.entries()) {
       assert.ok(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(task.id), 'Unsafe task id.');
@@ -133,6 +135,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
           const rel = `${task.id}/${arm}/trial-${trial}/_result.json`;
           assert.ok(typeof files[rel] === 'string', `Receipt not sealed: ${rel}`);
           const r = receipt(readComponentJson(member(root, rel)).value);
+          budgetReceipts.set(`${task.id}/${arm}/trial-${trial}`, r);
           assert.equal(r.condition, arm); assert.equal(r.taskId, task.id); assert.equal(r.trial, trial);
           audit.receipts++; if (r.executorInvoked) invoked++;
           if (details.nativeDiffTool !== undefined && r.executorInvoked) {
@@ -204,6 +207,25 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     if (pairOrder) assert.deepEqual(ledger.filter(e => e.event === 'started' && e.role === 'agent')
       .map(e => String(e.workdir).split(/[\\/]/).slice(-3).join('/')), expectedAgentOrder,
     'Recorded execution order differs from the frozen pair order.');
+    if (details.spendingBudget !== undefined) {
+      const limits = parseSpendingBudget(details.spendingBudget);
+      assert.ok(pairOrder, 'Budget replay requires the recorded pair order.');
+      assert.ok(typeof files['_budget.jsonl'] === 'string', 'Budget events are not sealed.');
+      const events = readFileSync(join(root, '_budget.jsonl'), 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line) as unknown);
+      assert.equal(events.length, expectedAgentOrder.length * 2, 'Budget event coverage differs from calls.');
+      const observations: CostObservation[] = [];
+      for (const [ordinal, path] of expectedAgentOrder.entries()) {
+        const [taskId, condition, trialPath] = path.split('/');
+        const trial = Number(trialPath!.slice('trial-'.length));
+        const before = spendingBudgetState(limits, observations); assertSpendingCanContinue(before);
+        assert.deepEqual(events[ordinal * 2], { phase: 'before-call', taskId, condition, trial, state: before }, 'Budget before-call state differs from receipts.');
+        observations.push(budgetReceipts.get(path)!);
+        const after = spendingBudgetState(limits, observations);
+        assert.equal(after.incomplete.length, 0, 'Budget run has missing final usage.');
+        assert.notEqual(after.reason, 'EXECUTION_FAILED');
+        assert.deepEqual(events[ordinal * 2 + 1], { phase: 'after-call', taskId, condition, trial, state: after }, 'Budget after-call state differs from receipts.');
+      }
+    } else assert.equal(files['_budget.jsonl'], undefined, 'Budget events were not declared in the native plan.');
     // This component does not run a judge whose separate usage would be absent from agent costs.
     assert.ok(raw.judge == null, 'Judge usage is not covered by component accounting.');
     audit.verified = true;
@@ -217,16 +239,25 @@ export function stoppedAccounting(runDir: string) {
   const paired = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] };
   const ledger = existsSync(join(root, '_calls.jsonl')) ? readFileSync(join(root, '_calls.jsonl'), 'utf8').trim().split('\n').filter(Boolean).map(line => record(JSON.parse(line), 'ledger')) : [];
   let missingReceipts = 0;
+  const invalidReceipts: { path: string; reason: string }[] = [];
   for (const event of ledger.filter(e => e.event === 'started' && e.role === 'agent')) {
     const parts = String(event.workdir).split(/[\\/]/), trialDir = parts.slice(-3).join('/');
     assert.ok(/^[a-zA-Z0-9][a-zA-Z0-9._-]*\/(baseline|treatment)\/trial-[0-9]+$/.test(trialDir));
     const arm = parts.at(-2) as 'baseline' | 'treatment', file = join(root, trialDir, '_result.json');
-    if (existsSync(file)) all[arm].push(receipt(readComponentJson(file).value));
-    else { missingReceipts++; all[arm].push({ executorInvoked: true, passed: false, error: 'Invocation receipt missing', durationSeconds: NaN, tokens: null, usageStatus: 'unknown' }); }
+    if (existsSync(file)) {
+      try { all[arm].push(receipt(readComponentJson(file).value)); }
+      catch (error) {
+        // Keep the malformed file untouched. It is not safe to turn invalid counters
+        // into a complete cost record, nor to hide every other retained invocation.
+        invalidReceipts.push({ path: `${trialDir}/_result.json`, reason: String(error) });
+        all[arm].push({ executorInvoked: true, passed: false, error: 'Invocation receipt invalid; raw file retained', durationSeconds: NaN, tokens: null, usageStatus: 'unknown' });
+      }
+    } else { missingReceipts++; all[arm].push({ executorInvoked: true, passed: false, error: 'Invocation receipt missing', durationSeconds: NaN, tokens: null, usageStatus: 'unknown' }); }
   }
   const populations = summarizeCosts(all, paired);
   return { populations, startedAgentDispatches: all.baseline.length + all.treatment.length,
-    recordedExecutorInvocations: populations.attempts.baseline.runs + populations.attempts.treatment.runs - missingReceipts,
-    invocationsWithUnknownReceipts: missingReceipts,
+    recordedExecutorInvocations: populations.attempts.baseline.runs + populations.attempts.treatment.runs - missingReceipts - invalidReceipts.length,
+    invocationsWithUnknownReceipts: missingReceipts + invalidReceipts.length,
+    ...(invalidReceipts.length ? { invalidReceipts } : {}),
     scope: 'Known agent invocation spending from stopped-run receipts; missing fields remain unknown. No paired efficacy comparison or exact bill.' };
 }

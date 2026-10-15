@@ -1758,7 +1758,7 @@
     "output": 1250000,
     "durationSeconds": 43200
   },
-  "stopLineSemantics": "Proposed operator guard before subsequent calls; not an implemented API token cap. Stop all future calls on reaching any line; a single in-flight call may exceed a line. Missing usage stops immediately. Guard and entrypoint must pass offline checks and be pinned before any live authorization is acted on.",
+  "stopLineSemantics": "Implemented and offline-verified in the unreleased source branch. Five cumulative whole-cohort lines are frozen in request/preview/native plan; reaching any line prevents the next agent call. One in-flight call may overshoot. Missing/partial/invalid final usage or executor/guard error stops further calls; failed and excluded spending is retained. No retry, replacement or automatic expansion. Not an API hard token cap or live spending authorization.",
   "theoreticalDeadlineCeilingSeconds": 96000,
   "unknown": [
     "Provider-internal retries and served-model billing",

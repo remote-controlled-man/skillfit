@@ -129,6 +129,8 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 请求还可通过 `executorTimeoutSeconds` 固定两版的单次时限（默认 600 秒）。改变时限必须声明新计划和新批次；之前的超时及已知花费仍保留在证据中。
 
+未发布的源码支持可选 `spendingBudget`，设置五项整批预算停止线。触线或缺失完整最终用量时停止后续调用并保留花费；正在运行的一次仍可能越线。详见[预算检查契约](docs/eval-component.md#input-and-execution)。
+
 失败的 Codex JSON 调用可从本地数值计数器保留身份匹配的部分用量。导出不包含私有会话正文；部分用量仍不能满足最终成本覆盖或采用门槛。
 
 ```bash

@@ -1,0 +1,1903 @@
+{
+  "schemaVersion": 1,
+  "selectionProposal": "docs/plans/2026-10-15-independent-comparison-inputs.json",
+  "modelCalls": 0,
+  "tasks": [
+    {
+      "task": "limit-async-context",
+      "repository": "sindresorhus/p-limit",
+      "before": "38a6773e552d24f4c9eb2d79d57b6cff017c587d",
+      "fix": "ad8afe6f46429e726b32fdedf063c553ebcb0196",
+      "url": "https://github.com/sindresorhus/p-limit/commit/ad8afe6f46429e726b32fdedf063c553ebcb0196",
+      "sourceRecords": [
+        {
+          "arm": "before",
+          "path": "index.d.ts",
+          "rawSha256": "098ef3f011cfadd9e4ff013dd051a39545536793ecbb92da1b3c32b808a7c114",
+          "rawGitBlobSha": "caae030938fe9542988958c1206fb574adb59910",
+          "fixtureSha256": "098ef3f011cfadd9e4ff013dd051a39545536793ecbb92da1b3c32b808a7c114",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "index.js",
+          "rawSha256": "f80d1e76df221c95ac831ed00ad0aac83496fd0b2bc98d3d0e4296e6e8f6b2e9",
+          "rawGitBlobSha": "b54b99b09cbf26981000c36d5d7b5b5d6627ec8d",
+          "fixtureSha256": "55b28ff9351f4303361ca079677d75fd1a0a87e1d8e544a4186117dfb69b5ae6",
+          "adapted": true
+        },
+        {
+          "arm": "before",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "readme.md",
+          "rawSha256": "eed2a19777099d88a898c580c8b3f8e071671ab2121ac1cb65330dc0ed9e7882",
+          "rawGitBlobSha": "b02253bddc408bf09b60b2bbf9b2ab282f1cd790",
+          "fixtureSha256": "eed2a19777099d88a898c580c8b3f8e071671ab2121ac1cb65330dc0ed9e7882",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.d.ts",
+          "rawSha256": "098ef3f011cfadd9e4ff013dd051a39545536793ecbb92da1b3c32b808a7c114",
+          "rawGitBlobSha": "caae030938fe9542988958c1206fb574adb59910",
+          "fixtureSha256": "098ef3f011cfadd9e4ff013dd051a39545536793ecbb92da1b3c32b808a7c114",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.js",
+          "rawSha256": "38c043149a3eece8284d0ec82607ef4a9263fe1ef14eb6bd414532ddb4c09e96",
+          "rawGitBlobSha": "c5ebcc9c8c7ce10f9f8b1844cd899adaf5edb192",
+          "fixtureSha256": "c82783e2ed07bab73e7ec98044df719544241d89437ec64ab3c4d663d52ce938",
+          "adapted": true
+        },
+        {
+          "arm": "fixed",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "readme.md",
+          "rawSha256": "eed2a19777099d88a898c580c8b3f8e071671ab2121ac1cb65330dc0ed9e7882",
+          "rawGitBlobSha": "b02253bddc408bf09b60b2bbf9b2ab282f1cd790",
+          "fixtureSha256": "eed2a19777099d88a898c580c8b3f8e071671ab2121ac1cb65330dc0ed9e7882",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "async-hooks-stub.js",
+          "rawSha256": "0ed363bf0ca08e8fa407ed2e0a5e9eceb0c64576afc6192f9aacaece1f73b8c2",
+          "rawGitBlobSha": "913c7c6171a31464510d7ea6744d319aeb34682a",
+          "fixtureSha256": "0ed363bf0ca08e8fa407ed2e0a5e9eceb0c64576afc6192f9aacaece1f73b8c2",
+          "adapted": false
+        }
+      ],
+      "adaptations": [
+        "All runtime source files retained; upstream test/development tooling stays outside workspaces; Node-only outcome tests replace development dependencies.",
+        "Effective package scripts run the protected Node smoke test; original metadata retained separately.",
+        "Only the yocto-queue import specifier is changed, identically in original/fix, to a pinned local vendor; no implementation lines are removed.",
+        "Reference workspaces apply all functional upstream modifications while retaining original docs/types; documentation-only upstream edits do not change protected context."
+      ],
+      "fixtureFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "098ef3f011cfadd9e4ff013dd051a39545536793ecbb92da1b3c32b808a7c114"
+        },
+        {
+          "path": "index.js",
+          "sha256": "55b28ff9351f4303361ca079677d75fd1a0a87e1d8e544a4186117dfb69b5ae6"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "d0d904093c527507411f676c6ea889777156ad07a7794bbbb36b96940cf4b55d"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "eed2a19777099d88a898c580c8b3f8e071671ab2121ac1cb65330dc0ed9e7882"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "c26f3d0359672545310efd0c806dcf0ce613f055ef501c5ff1d824f494f2030e"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "71b014415b5b254af73a26d5ffdb0757f919587de66b7984567aff2167c1d5d6"
+        },
+        {
+          "path": "vendor/yocto-queue/index.js",
+          "sha256": "617c9b04fec118622b0bb8eb1e126b08236799461a223bcc59274a54b110d3ed"
+        },
+        {
+          "path": "vendor/yocto-queue/license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "vendor/yocto-queue/package.json",
+          "sha256": "22a9628bb56b9f0ffc23d1dcfafeb04c01da4208ab20d782b4934db7ed0d9cc3"
+        }
+      ],
+      "referenceFiles": [
+        {
+          "path": "async-hooks-stub.js",
+          "sha256": "0ed363bf0ca08e8fa407ed2e0a5e9eceb0c64576afc6192f9aacaece1f73b8c2"
+        },
+        {
+          "path": "index.d.ts",
+          "sha256": "098ef3f011cfadd9e4ff013dd051a39545536793ecbb92da1b3c32b808a7c114"
+        },
+        {
+          "path": "index.js",
+          "sha256": "c82783e2ed07bab73e7ec98044df719544241d89437ec64ab3c4d663d52ce938"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "ee291b3211a2faeb7a48319a2ebfeadd9e2f12cd8efe3d8de5166c42023c45fe"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "eed2a19777099d88a898c580c8b3f8e071671ab2121ac1cb65330dc0ed9e7882"
+        },
+        {
+          "path": "regression.test.mjs",
+          "sha256": "45c64676dbe1a935e7e209586fd5d2f5e4c9c467dfa30f0ceb86d0d609bc9912"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "c26f3d0359672545310efd0c806dcf0ce613f055ef501c5ff1d824f494f2030e"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "71b014415b5b254af73a26d5ffdb0757f919587de66b7984567aff2167c1d5d6"
+        },
+        {
+          "path": "vendor/yocto-queue/index.js",
+          "sha256": "617c9b04fec118622b0bb8eb1e126b08236799461a223bcc59274a54b110d3ed"
+        },
+        {
+          "path": "vendor/yocto-queue/license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "vendor/yocto-queue/package.json",
+          "sha256": "22a9628bb56b9f0ffc23d1dcfafeb04c01da4208ab20d782b4934db7ed0d9cc3"
+        }
+      ],
+      "packageRecords": [
+        {
+          "arm": "before",
+          "rawSha256": "71b014415b5b254af73a26d5ffdb0757f919587de66b7984567aff2167c1d5d6",
+          "rawGitBlobSha": "2e41e6e172c99235b59e6cf5c9bd6592741c19d3",
+          "effectiveSha256": "d0d904093c527507411f676c6ea889777156ad07a7794bbbb36b96940cf4b55d",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        },
+        {
+          "arm": "fixed",
+          "rawSha256": "8c5aedc793a3cd4ebc06b92099cf113ce61a88a29070081fd59a1aeda50bd302",
+          "rawGitBlobSha": "22aba982ede36f408ae3ca70ca686514562f1a9d",
+          "effectiveSha256": "ee291b3211a2faeb7a48319a2ebfeadd9e2f12cd8efe3d8de5166c42023c45fe",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        }
+      ]
+    },
+    {
+      "task": "timeout-custom-timers",
+      "repository": "sindresorhus/p-timeout",
+      "before": "f9ced5e18ad81eab24a9a8d0f07bf3002f7bea64",
+      "fix": "ed58372c62d3dddfe6f58de37558fb132e1a4e9b",
+      "url": "https://github.com/sindresorhus/p-timeout/commit/ed58372c62d3dddfe6f58de37558fb132e1a4e9b",
+      "sourceRecords": [
+        {
+          "arm": "before",
+          "path": "index.d.ts",
+          "rawSha256": "12a547397ef8c6bef7a46c20677520a43b2b633856408ba255625f7a5b93726f",
+          "rawGitBlobSha": "b4e44f85e1a757690a86d0e217d2d0738ed1e59d",
+          "fixtureSha256": "12a547397ef8c6bef7a46c20677520a43b2b633856408ba255625f7a5b93726f",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "index.js",
+          "rawSha256": "bb9f281fbbc8a6eb748c98435da0ca49fc3e0b5cdccfdffe30c9754e99977ad4",
+          "rawGitBlobSha": "80c893abb28e7a0085bbf9cc91e34d2f61e7acfd",
+          "fixtureSha256": "bb9f281fbbc8a6eb748c98435da0ca49fc3e0b5cdccfdffe30c9754e99977ad4",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "readme.md",
+          "rawSha256": "ee62dc27d431ad507e1db4e57ebce479ac177033fb5f295755fb1eb63b0993d4",
+          "rawGitBlobSha": "d23ea82e6bc1d69ac2989a898e278a1dedf59c90",
+          "fixtureSha256": "ee62dc27d431ad507e1db4e57ebce479ac177033fb5f295755fb1eb63b0993d4",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.d.ts",
+          "rawSha256": "12a547397ef8c6bef7a46c20677520a43b2b633856408ba255625f7a5b93726f",
+          "rawGitBlobSha": "b4e44f85e1a757690a86d0e217d2d0738ed1e59d",
+          "fixtureSha256": "12a547397ef8c6bef7a46c20677520a43b2b633856408ba255625f7a5b93726f",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.js",
+          "rawSha256": "abf97d3629c06bbff31aa73162440032b63baf746e9d2570539c03d43ff2c0fa",
+          "rawGitBlobSha": "76e98d2842cb18c36640a48bcd251fe21fc50114",
+          "fixtureSha256": "abf97d3629c06bbff31aa73162440032b63baf746e9d2570539c03d43ff2c0fa",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "readme.md",
+          "rawSha256": "ee62dc27d431ad507e1db4e57ebce479ac177033fb5f295755fb1eb63b0993d4",
+          "rawGitBlobSha": "d23ea82e6bc1d69ac2989a898e278a1dedf59c90",
+          "fixtureSha256": "ee62dc27d431ad507e1db4e57ebce479ac177033fb5f295755fb1eb63b0993d4",
+          "adapted": false
+        }
+      ],
+      "adaptations": [
+        "All runtime source files retained; upstream test/development tooling stays outside workspaces; Node-only outcome tests replace development dependencies.",
+        "Effective package scripts run the protected Node smoke test; original metadata retained separately.",
+        "Reference workspaces apply all functional upstream modifications while retaining original docs/types; documentation-only upstream edits do not change protected context."
+      ],
+      "fixtureFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "12a547397ef8c6bef7a46c20677520a43b2b633856408ba255625f7a5b93726f"
+        },
+        {
+          "path": "index.js",
+          "sha256": "bb9f281fbbc8a6eb748c98435da0ca49fc3e0b5cdccfdffe30c9754e99977ad4"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "430611025b71e3a0a0e860eaf2c6c739c62660f545dfc69005d341e88bb46d1b"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "ee62dc27d431ad507e1db4e57ebce479ac177033fb5f295755fb1eb63b0993d4"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ed36b32ac8985afdb4403915e92f78df9e81da673948dcc088dc1a28c721557"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "5b7f9be2937466bb00947a5ba29325569493f1a54598646f37e0a07fcbd71da9"
+        }
+      ],
+      "referenceFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "12a547397ef8c6bef7a46c20677520a43b2b633856408ba255625f7a5b93726f"
+        },
+        {
+          "path": "index.js",
+          "sha256": "abf97d3629c06bbff31aa73162440032b63baf746e9d2570539c03d43ff2c0fa"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "430611025b71e3a0a0e860eaf2c6c739c62660f545dfc69005d341e88bb46d1b"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "ee62dc27d431ad507e1db4e57ebce479ac177033fb5f295755fb1eb63b0993d4"
+        },
+        {
+          "path": "regression.test.mjs",
+          "sha256": "231f8f35e06113b4f38a59a11df38b4a2afc84fb03908b4f78798a0e8c912aef"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ed36b32ac8985afdb4403915e92f78df9e81da673948dcc088dc1a28c721557"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "5b7f9be2937466bb00947a5ba29325569493f1a54598646f37e0a07fcbd71da9"
+        }
+      ],
+      "packageRecords": [
+        {
+          "arm": "before",
+          "rawSha256": "5b7f9be2937466bb00947a5ba29325569493f1a54598646f37e0a07fcbd71da9",
+          "rawGitBlobSha": "c5c9130b04f5c55ffa82e624eda7337f0b435164",
+          "effectiveSha256": "430611025b71e3a0a0e860eaf2c6c739c62660f545dfc69005d341e88bb46d1b",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        },
+        {
+          "arm": "fixed",
+          "rawSha256": "5b7f9be2937466bb00947a5ba29325569493f1a54598646f37e0a07fcbd71da9",
+          "rawGitBlobSha": "c5c9130b04f5c55ffa82e624eda7337f0b435164",
+          "effectiveSha256": "430611025b71e3a0a0e860eaf2c6c739c62660f545dfc69005d341e88bb46d1b",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        }
+      ]
+    },
+    {
+      "task": "throttle-sync-throw",
+      "repository": "sindresorhus/p-throttle",
+      "before": "5b566f4eecab5b054840896287e46806585747db",
+      "fix": "bee3f7d0b048f251de2f910ddd122c6babf49380",
+      "url": "https://github.com/sindresorhus/p-throttle/commit/bee3f7d0b048f251de2f910ddd122c6babf49380",
+      "sourceRecords": [
+        {
+          "arm": "before",
+          "path": "index.d.ts",
+          "rawSha256": "73661c1b75b51c2ddf5b03228262ecdcb9adcdec091a14068dc4d28f435f992e",
+          "rawGitBlobSha": "a5f1a958771552097b4e92445648e69e437dbe9b",
+          "fixtureSha256": "73661c1b75b51c2ddf5b03228262ecdcb9adcdec091a14068dc4d28f435f992e",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "index.js",
+          "rawSha256": "39654d928ceb59bfcc717c65f0ce188f663084c9009289873145544546aeebca",
+          "rawGitBlobSha": "e54af84ba25d583a32c94caeedb71fb55940716a",
+          "fixtureSha256": "39654d928ceb59bfcc717c65f0ce188f663084c9009289873145544546aeebca",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "readme.md",
+          "rawSha256": "1cafda93d438ecbb83824e700a2171640b3cf5953df80411898b4143b9d37ed0",
+          "rawGitBlobSha": "b1adfbfa6290f326df45dd82812404358abfe9d8",
+          "fixtureSha256": "1cafda93d438ecbb83824e700a2171640b3cf5953df80411898b4143b9d37ed0",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.d.ts",
+          "rawSha256": "73661c1b75b51c2ddf5b03228262ecdcb9adcdec091a14068dc4d28f435f992e",
+          "rawGitBlobSha": "a5f1a958771552097b4e92445648e69e437dbe9b",
+          "fixtureSha256": "73661c1b75b51c2ddf5b03228262ecdcb9adcdec091a14068dc4d28f435f992e",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.js",
+          "rawSha256": "bd8d2a1701d4ad4edb386df96abce8ebdedbb72a35d2db5238707626afc48b7b",
+          "rawGitBlobSha": "ec506894eb442dcee67d2ff9e8ab0df9cc3887f5",
+          "fixtureSha256": "bd8d2a1701d4ad4edb386df96abce8ebdedbb72a35d2db5238707626afc48b7b",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "readme.md",
+          "rawSha256": "1cafda93d438ecbb83824e700a2171640b3cf5953df80411898b4143b9d37ed0",
+          "rawGitBlobSha": "b1adfbfa6290f326df45dd82812404358abfe9d8",
+          "fixtureSha256": "1cafda93d438ecbb83824e700a2171640b3cf5953df80411898b4143b9d37ed0",
+          "adapted": false
+        }
+      ],
+      "adaptations": [
+        "All runtime source files retained; upstream test/development tooling stays outside workspaces; Node-only outcome tests replace development dependencies.",
+        "Effective package scripts run the protected Node smoke test; original metadata retained separately.",
+        "Reference workspaces apply all functional upstream modifications while retaining original docs/types; documentation-only upstream edits do not change protected context."
+      ],
+      "fixtureFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "73661c1b75b51c2ddf5b03228262ecdcb9adcdec091a14068dc4d28f435f992e"
+        },
+        {
+          "path": "index.js",
+          "sha256": "39654d928ceb59bfcc717c65f0ce188f663084c9009289873145544546aeebca"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "35f5d55ca69f2152d9d17f62e35befeaedad7eb619b655340593e307b2049fde"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "1cafda93d438ecbb83824e700a2171640b3cf5953df80411898b4143b9d37ed0"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "1b6da2d9e3607d22441ad2f45a26706ff032b2127be8fcf9a39ade7f833b75a6"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "9b6dac64a7dbc4ffdce1136f76dfdb731719c58c25f6329afa62195d490ff610"
+        }
+      ],
+      "referenceFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "73661c1b75b51c2ddf5b03228262ecdcb9adcdec091a14068dc4d28f435f992e"
+        },
+        {
+          "path": "index.js",
+          "sha256": "bd8d2a1701d4ad4edb386df96abce8ebdedbb72a35d2db5238707626afc48b7b"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "35f5d55ca69f2152d9d17f62e35befeaedad7eb619b655340593e307b2049fde"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "1cafda93d438ecbb83824e700a2171640b3cf5953df80411898b4143b9d37ed0"
+        },
+        {
+          "path": "regression.test.mjs",
+          "sha256": "6642bf6f6721dee26987c40ab64f5e91f218c038ff1885517872bd4cdaa23c3f"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "1b6da2d9e3607d22441ad2f45a26706ff032b2127be8fcf9a39ade7f833b75a6"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "9b6dac64a7dbc4ffdce1136f76dfdb731719c58c25f6329afa62195d490ff610"
+        }
+      ],
+      "packageRecords": [
+        {
+          "arm": "before",
+          "rawSha256": "9b6dac64a7dbc4ffdce1136f76dfdb731719c58c25f6329afa62195d490ff610",
+          "rawGitBlobSha": "04922ae943f909e5796af250b50f6f7b83999fed",
+          "effectiveSha256": "35f5d55ca69f2152d9d17f62e35befeaedad7eb619b655340593e307b2049fde",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        },
+        {
+          "arm": "fixed",
+          "rawSha256": "9b6dac64a7dbc4ffdce1136f76dfdb731719c58c25f6329afa62195d490ff610",
+          "rawGitBlobSha": "04922ae943f909e5796af250b50f6f7b83999fed",
+          "effectiveSha256": "35f5d55ca69f2152d9d17f62e35befeaedad7eb619b655340593e307b2049fde",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        }
+      ]
+    },
+    {
+      "task": "commander-output-isolation",
+      "repository": "tj/commander.js",
+      "before": "672e3806c68421f91b3a1f628f6207b8b26d1a2c",
+      "fix": "68199e64b31851839c03dff1567a81d7714baa08",
+      "url": "https://github.com/tj/commander.js/commit/68199e64b31851839c03dff1567a81d7714baa08",
+      "sourceRecords": [
+        {
+          "arm": "before",
+          "path": "LICENSE",
+          "rawSha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+          "rawGitBlobSha": "10f997ab104594695189c3fca8fa6c65ae9ccdd6",
+          "fixtureSha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "Readme.md",
+          "rawSha256": "6691344174cbe5a509bfba37accd7687c8e770223dadf11c43b35a09d884145c",
+          "rawGitBlobSha": "8fcc64cd9e7b1b2764bb7b031814d71cc6bc3a6f",
+          "fixtureSha256": "6691344174cbe5a509bfba37accd7687c8e770223dadf11c43b35a09d884145c",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "esm.mjs",
+          "rawSha256": "19331de9ae2588143e74effe5a3072b67faf6c4ed4a00725399c6de477a86971",
+          "rawGitBlobSha": "796ec3a5834ff4f3e2e9b0a8d5e335a6e9957dce",
+          "fixtureSha256": "19331de9ae2588143e74effe5a3072b67faf6c4ed4a00725399c6de477a86971",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "index.js",
+          "rawSha256": "a1bb4f6511f3801f961ab3efe5b735e6f248dd52c3937b260fc6c0d85d1896b3",
+          "rawGitBlobSha": "c30bb21a63d8cb5de1f12c93eeaa3e6dd2aba2de",
+          "fixtureSha256": "a1bb4f6511f3801f961ab3efe5b735e6f248dd52c3937b260fc6c0d85d1896b3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "package-support.json",
+          "rawSha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063",
+          "rawGitBlobSha": "4eabb970ef40263e388f60ee31d3a23c86ff5151",
+          "fixtureSha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/argument.js",
+          "rawSha256": "4248cfb984f6213a152d030b7f6f425ff7c3c892875bd45e941a74a4272db096",
+          "rawGitBlobSha": "ee46c365a9bb01dd63e87c389abe0b1cc9fc1a0a",
+          "fixtureSha256": "4248cfb984f6213a152d030b7f6f425ff7c3c892875bd45e941a74a4272db096",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/command.js",
+          "rawSha256": "d3624546fbf3c46ca71ffc7c2094752238eff1b49de0e3796860e67409c888be",
+          "rawGitBlobSha": "efbb8f61452536660796d2affeea6a14d5f1547c",
+          "fixtureSha256": "d3624546fbf3c46ca71ffc7c2094752238eff1b49de0e3796860e67409c888be",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/error.js",
+          "rawSha256": "013d254f21524dc912aa61a53394d5ebb97e722be1c683f7bd2313c14597d521",
+          "rawGitBlobSha": "7b5b0d3992ea3c065aea60b6021e5c59e5d4a5d6",
+          "fixtureSha256": "013d254f21524dc912aa61a53394d5ebb97e722be1c683f7bd2313c14597d521",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/help.js",
+          "rawSha256": "67f71a032311b493d6ed25461f1e2d5d216bf9c9f945a966354c8b35c071c940",
+          "rawGitBlobSha": "a862078d2cb7c2d0ed138cca330f2d055e4143f6",
+          "fixtureSha256": "67f71a032311b493d6ed25461f1e2d5d216bf9c9f945a966354c8b35c071c940",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/option.js",
+          "rawSha256": "4aabed4e64cf2fa540b23de8c1d7b09b4c04fd2c1de4799dd69ebad3341c8fb2",
+          "rawGitBlobSha": "5d43dfbd775929d51b4a12f5f51f8508d359f435",
+          "fixtureSha256": "4aabed4e64cf2fa540b23de8c1d7b09b4c04fd2c1de4799dd69ebad3341c8fb2",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/suggestSimilar.js",
+          "rawSha256": "6a3a368ace1abd1cc6b551ae10bcbae18eda3fed0fb0cfd60c7960c6663dad58",
+          "rawGitBlobSha": "6047306df01b3ab7878a6e6172d3ee3847127d36",
+          "fixtureSha256": "6a3a368ace1abd1cc6b551ae10bcbae18eda3fed0fb0cfd60c7960c6663dad58",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "typings/esm.d.mts",
+          "rawSha256": "b124c0624b15412ace7d54644ade38d7a69db7e25488a1a4d2a8df6e11696538",
+          "rawGitBlobSha": "40b0230ed85f7ec5741409cb210470e4c9e5bf49",
+          "fixtureSha256": "b124c0624b15412ace7d54644ade38d7a69db7e25488a1a4d2a8df6e11696538",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "typings/index.d.ts",
+          "rawSha256": "f70c407d79749859db326d714554c92b6f46bbf00bfdb40a1e2e6f705baa52a0",
+          "rawGitBlobSha": "f92ee19e1e844f6f08b5f1a66fdb60ed7a2899d2",
+          "fixtureSha256": "f70c407d79749859db326d714554c92b6f46bbf00bfdb40a1e2e6f705baa52a0",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "typings/index.test-d.ts",
+          "rawSha256": "1c1425bc5c192bd5651007b6784a255be0d9826c48f3c1e2ae939ef2442c871b",
+          "rawGitBlobSha": "9c03cf2cde3661f2da128a86c775a43050731054",
+          "fixtureSha256": "1c1425bc5c192bd5651007b6784a255be0d9826c48f3c1e2ae939ef2442c871b",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "LICENSE",
+          "rawSha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+          "rawGitBlobSha": "10f997ab104594695189c3fca8fa6c65ae9ccdd6",
+          "fixtureSha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "Readme.md",
+          "rawSha256": "6691344174cbe5a509bfba37accd7687c8e770223dadf11c43b35a09d884145c",
+          "rawGitBlobSha": "8fcc64cd9e7b1b2764bb7b031814d71cc6bc3a6f",
+          "fixtureSha256": "6691344174cbe5a509bfba37accd7687c8e770223dadf11c43b35a09d884145c",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "esm.mjs",
+          "rawSha256": "19331de9ae2588143e74effe5a3072b67faf6c4ed4a00725399c6de477a86971",
+          "rawGitBlobSha": "796ec3a5834ff4f3e2e9b0a8d5e335a6e9957dce",
+          "fixtureSha256": "19331de9ae2588143e74effe5a3072b67faf6c4ed4a00725399c6de477a86971",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.js",
+          "rawSha256": "a1bb4f6511f3801f961ab3efe5b735e6f248dd52c3937b260fc6c0d85d1896b3",
+          "rawGitBlobSha": "c30bb21a63d8cb5de1f12c93eeaa3e6dd2aba2de",
+          "fixtureSha256": "a1bb4f6511f3801f961ab3efe5b735e6f248dd52c3937b260fc6c0d85d1896b3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "package-support.json",
+          "rawSha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063",
+          "rawGitBlobSha": "4eabb970ef40263e388f60ee31d3a23c86ff5151",
+          "fixtureSha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/argument.js",
+          "rawSha256": "4248cfb984f6213a152d030b7f6f425ff7c3c892875bd45e941a74a4272db096",
+          "rawGitBlobSha": "ee46c365a9bb01dd63e87c389abe0b1cc9fc1a0a",
+          "fixtureSha256": "4248cfb984f6213a152d030b7f6f425ff7c3c892875bd45e941a74a4272db096",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/command.js",
+          "rawSha256": "0ea2a6f816d495a33bbf4a2ee07daae72d3c45fcd5078f09e03805622f8af533",
+          "rawGitBlobSha": "0d14ee4131e5c562814e9061dbdedf5881499a0d",
+          "fixtureSha256": "0ea2a6f816d495a33bbf4a2ee07daae72d3c45fcd5078f09e03805622f8af533",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/error.js",
+          "rawSha256": "013d254f21524dc912aa61a53394d5ebb97e722be1c683f7bd2313c14597d521",
+          "rawGitBlobSha": "7b5b0d3992ea3c065aea60b6021e5c59e5d4a5d6",
+          "fixtureSha256": "013d254f21524dc912aa61a53394d5ebb97e722be1c683f7bd2313c14597d521",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/help.js",
+          "rawSha256": "67f71a032311b493d6ed25461f1e2d5d216bf9c9f945a966354c8b35c071c940",
+          "rawGitBlobSha": "a862078d2cb7c2d0ed138cca330f2d055e4143f6",
+          "fixtureSha256": "67f71a032311b493d6ed25461f1e2d5d216bf9c9f945a966354c8b35c071c940",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/option.js",
+          "rawSha256": "4aabed4e64cf2fa540b23de8c1d7b09b4c04fd2c1de4799dd69ebad3341c8fb2",
+          "rawGitBlobSha": "5d43dfbd775929d51b4a12f5f51f8508d359f435",
+          "fixtureSha256": "4aabed4e64cf2fa540b23de8c1d7b09b4c04fd2c1de4799dd69ebad3341c8fb2",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/suggestSimilar.js",
+          "rawSha256": "6a3a368ace1abd1cc6b551ae10bcbae18eda3fed0fb0cfd60c7960c6663dad58",
+          "rawGitBlobSha": "6047306df01b3ab7878a6e6172d3ee3847127d36",
+          "fixtureSha256": "6a3a368ace1abd1cc6b551ae10bcbae18eda3fed0fb0cfd60c7960c6663dad58",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "typings/esm.d.mts",
+          "rawSha256": "b124c0624b15412ace7d54644ade38d7a69db7e25488a1a4d2a8df6e11696538",
+          "rawGitBlobSha": "40b0230ed85f7ec5741409cb210470e4c9e5bf49",
+          "fixtureSha256": "b124c0624b15412ace7d54644ade38d7a69db7e25488a1a4d2a8df6e11696538",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "typings/index.d.ts",
+          "rawSha256": "f70c407d79749859db326d714554c92b6f46bbf00bfdb40a1e2e6f705baa52a0",
+          "rawGitBlobSha": "f92ee19e1e844f6f08b5f1a66fdb60ed7a2899d2",
+          "fixtureSha256": "f70c407d79749859db326d714554c92b6f46bbf00bfdb40a1e2e6f705baa52a0",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "typings/index.test-d.ts",
+          "rawSha256": "1c1425bc5c192bd5651007b6784a255be0d9826c48f3c1e2ae939ef2442c871b",
+          "rawGitBlobSha": "9c03cf2cde3661f2da128a86c775a43050731054",
+          "fixtureSha256": "1c1425bc5c192bd5651007b6784a255be0d9826c48f3c1e2ae939ef2442c871b",
+          "adapted": false
+        }
+      ],
+      "adaptations": [
+        "All runtime source files retained; upstream test/development tooling stays outside workspaces; Node-only outcome tests replace development dependencies.",
+        "Effective package scripts run the protected Node smoke test; original metadata retained separately.",
+        "Reference workspaces apply all functional upstream modifications while retaining original docs/types; documentation-only upstream edits do not change protected context."
+      ],
+      "fixtureFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b"
+        },
+        {
+          "path": "Readme.md",
+          "sha256": "6691344174cbe5a509bfba37accd7687c8e770223dadf11c43b35a09d884145c"
+        },
+        {
+          "path": "esm.mjs",
+          "sha256": "19331de9ae2588143e74effe5a3072b67faf6c4ed4a00725399c6de477a86971"
+        },
+        {
+          "path": "index.js",
+          "sha256": "a1bb4f6511f3801f961ab3efe5b735e6f248dd52c3937b260fc6c0d85d1896b3"
+        },
+        {
+          "path": "lib/argument.js",
+          "sha256": "4248cfb984f6213a152d030b7f6f425ff7c3c892875bd45e941a74a4272db096"
+        },
+        {
+          "path": "lib/command.js",
+          "sha256": "d3624546fbf3c46ca71ffc7c2094752238eff1b49de0e3796860e67409c888be"
+        },
+        {
+          "path": "lib/error.js",
+          "sha256": "013d254f21524dc912aa61a53394d5ebb97e722be1c683f7bd2313c14597d521"
+        },
+        {
+          "path": "lib/help.js",
+          "sha256": "67f71a032311b493d6ed25461f1e2d5d216bf9c9f945a966354c8b35c071c940"
+        },
+        {
+          "path": "lib/option.js",
+          "sha256": "4aabed4e64cf2fa540b23de8c1d7b09b4c04fd2c1de4799dd69ebad3341c8fb2"
+        },
+        {
+          "path": "lib/suggestSimilar.js",
+          "sha256": "6a3a368ace1abd1cc6b551ae10bcbae18eda3fed0fb0cfd60c7960c6663dad58"
+        },
+        {
+          "path": "package-support.json",
+          "sha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063"
+        },
+        {
+          "path": "package.json",
+          "sha256": "12561313d5cb33bbf303d900adfd422cf18418804086cfa123a836f7615f4892"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ae1ee52a39c2e717174a52ffb00293d767a4b8e31e1389d5625fbc6bda8bf34"
+        },
+        {
+          "path": "typings/esm.d.mts",
+          "sha256": "b124c0624b15412ace7d54644ade38d7a69db7e25488a1a4d2a8df6e11696538"
+        },
+        {
+          "path": "typings/index.d.ts",
+          "sha256": "f70c407d79749859db326d714554c92b6f46bbf00bfdb40a1e2e6f705baa52a0"
+        },
+        {
+          "path": "typings/index.test-d.ts",
+          "sha256": "1c1425bc5c192bd5651007b6784a255be0d9826c48f3c1e2ae939ef2442c871b"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "e966711fff9d995000dd52077373863ba6541aae6433b918abc29736867ce3df"
+        }
+      ],
+      "referenceFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b"
+        },
+        {
+          "path": "Readme.md",
+          "sha256": "6691344174cbe5a509bfba37accd7687c8e770223dadf11c43b35a09d884145c"
+        },
+        {
+          "path": "esm.mjs",
+          "sha256": "19331de9ae2588143e74effe5a3072b67faf6c4ed4a00725399c6de477a86971"
+        },
+        {
+          "path": "index.js",
+          "sha256": "a1bb4f6511f3801f961ab3efe5b735e6f248dd52c3937b260fc6c0d85d1896b3"
+        },
+        {
+          "path": "lib/argument.js",
+          "sha256": "4248cfb984f6213a152d030b7f6f425ff7c3c892875bd45e941a74a4272db096"
+        },
+        {
+          "path": "lib/command.js",
+          "sha256": "0ea2a6f816d495a33bbf4a2ee07daae72d3c45fcd5078f09e03805622f8af533"
+        },
+        {
+          "path": "lib/error.js",
+          "sha256": "013d254f21524dc912aa61a53394d5ebb97e722be1c683f7bd2313c14597d521"
+        },
+        {
+          "path": "lib/help.js",
+          "sha256": "67f71a032311b493d6ed25461f1e2d5d216bf9c9f945a966354c8b35c071c940"
+        },
+        {
+          "path": "lib/option.js",
+          "sha256": "4aabed4e64cf2fa540b23de8c1d7b09b4c04fd2c1de4799dd69ebad3341c8fb2"
+        },
+        {
+          "path": "lib/suggestSimilar.js",
+          "sha256": "6a3a368ace1abd1cc6b551ae10bcbae18eda3fed0fb0cfd60c7960c6663dad58"
+        },
+        {
+          "path": "package-support.json",
+          "sha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063"
+        },
+        {
+          "path": "package.json",
+          "sha256": "12561313d5cb33bbf303d900adfd422cf18418804086cfa123a836f7615f4892"
+        },
+        {
+          "path": "regression.test.mjs",
+          "sha256": "5433d1ad5ff5a6c28c392fcf3cba7379df8b9e9f2bce725c6b2e6212a96d674e"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ae1ee52a39c2e717174a52ffb00293d767a4b8e31e1389d5625fbc6bda8bf34"
+        },
+        {
+          "path": "typings/esm.d.mts",
+          "sha256": "b124c0624b15412ace7d54644ade38d7a69db7e25488a1a4d2a8df6e11696538"
+        },
+        {
+          "path": "typings/index.d.ts",
+          "sha256": "f70c407d79749859db326d714554c92b6f46bbf00bfdb40a1e2e6f705baa52a0"
+        },
+        {
+          "path": "typings/index.test-d.ts",
+          "sha256": "1c1425bc5c192bd5651007b6784a255be0d9826c48f3c1e2ae939ef2442c871b"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "e966711fff9d995000dd52077373863ba6541aae6433b918abc29736867ce3df"
+        }
+      ],
+      "packageRecords": [
+        {
+          "arm": "before",
+          "rawSha256": "e966711fff9d995000dd52077373863ba6541aae6433b918abc29736867ce3df",
+          "rawGitBlobSha": "e6199234e2846462f7a0a5aed10e696086edd38f",
+          "effectiveSha256": "12561313d5cb33bbf303d900adfd422cf18418804086cfa123a836f7615f4892",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        },
+        {
+          "arm": "fixed",
+          "rawSha256": "e966711fff9d995000dd52077373863ba6541aae6433b918abc29736867ce3df",
+          "rawGitBlobSha": "e6199234e2846462f7a0a5aed10e696086edd38f",
+          "effectiveSha256": "12561313d5cb33bbf303d900adfd422cf18418804086cfa123a836f7615f4892",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        }
+      ]
+    },
+    {
+      "task": "limit-map-iteration-rejection",
+      "repository": "sindresorhus/p-limit",
+      "before": "783068bb9e967fd7bea8642e1bf5a3627fe38bdf",
+      "fix": "9df0d27f82ab3cb6d7e1087f5bda94ce911d33ca",
+      "url": "https://github.com/sindresorhus/p-limit/commit/9df0d27f82ab3cb6d7e1087f5bda94ce911d33ca",
+      "sourceRecords": [
+        {
+          "arm": "before",
+          "path": "index.d.ts",
+          "rawSha256": "7b1abaeec6af1540ed700b39fd5b6c0aa0b7dd1a17b5f82d0d1e6f2bf87ae1e4",
+          "rawGitBlobSha": "1a20857eadff3f14d22cbf94fb740c6e728cb0b8",
+          "fixtureSha256": "7b1abaeec6af1540ed700b39fd5b6c0aa0b7dd1a17b5f82d0d1e6f2bf87ae1e4",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "index.js",
+          "rawSha256": "63239cd9ae80b1433e05014fe6ec501475c6fa59fad06418cb5972dbc7cc14e2",
+          "rawGitBlobSha": "b74d48ab0e37788e657e5ad12d90e281ef1f39d1",
+          "fixtureSha256": "171631f2a0e69f7e694c77c24062fb9d01cde189f63af17f51b1d07b88f00cd4",
+          "adapted": true
+        },
+        {
+          "arm": "before",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "readme.md",
+          "rawSha256": "d319b5cd690ff94a7957a225aa449b297e8bfc545767d8fa23dbb11c6a2afc85",
+          "rawGitBlobSha": "64347920c589731fccd568dd3fa4d34e71bee451",
+          "fixtureSha256": "d319b5cd690ff94a7957a225aa449b297e8bfc545767d8fa23dbb11c6a2afc85",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.d.ts",
+          "rawSha256": "7b1abaeec6af1540ed700b39fd5b6c0aa0b7dd1a17b5f82d0d1e6f2bf87ae1e4",
+          "rawGitBlobSha": "1a20857eadff3f14d22cbf94fb740c6e728cb0b8",
+          "fixtureSha256": "7b1abaeec6af1540ed700b39fd5b6c0aa0b7dd1a17b5f82d0d1e6f2bf87ae1e4",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.js",
+          "rawSha256": "edde12a4a4dbdbe8d27161cdd0853db0bab435d5dc6c15f9f4dedc27ee9bca60",
+          "rawGitBlobSha": "c24de5782032605aa83636bcf455f700e3b2ada7",
+          "fixtureSha256": "eeb6a4332ae1759daabd87c5fd196bf74358c7632b0d33dad6d521907fee59e3",
+          "adapted": true
+        },
+        {
+          "arm": "fixed",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "readme.md",
+          "rawSha256": "d319b5cd690ff94a7957a225aa449b297e8bfc545767d8fa23dbb11c6a2afc85",
+          "rawGitBlobSha": "64347920c589731fccd568dd3fa4d34e71bee451",
+          "fixtureSha256": "d319b5cd690ff94a7957a225aa449b297e8bfc545767d8fa23dbb11c6a2afc85",
+          "adapted": false
+        }
+      ],
+      "adaptations": [
+        "All runtime source files retained; upstream test/development tooling stays outside workspaces; Node-only outcome tests replace development dependencies.",
+        "Effective package scripts run the protected Node smoke test; original metadata retained separately.",
+        "Only the yocto-queue import specifier is changed, identically in original/fix, to a pinned local vendor; no implementation lines are removed.",
+        "Reference workspaces apply all functional upstream modifications while retaining original docs/types; documentation-only upstream edits do not change protected context."
+      ],
+      "fixtureFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "7b1abaeec6af1540ed700b39fd5b6c0aa0b7dd1a17b5f82d0d1e6f2bf87ae1e4"
+        },
+        {
+          "path": "index.js",
+          "sha256": "171631f2a0e69f7e694c77c24062fb9d01cde189f63af17f51b1d07b88f00cd4"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "cd881cca6c29350b13f86959870b2373d18178e349e3b11bcbe41f840001bf6a"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "d319b5cd690ff94a7957a225aa449b297e8bfc545767d8fa23dbb11c6a2afc85"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "c26f3d0359672545310efd0c806dcf0ce613f055ef501c5ff1d824f494f2030e"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "b28d1f6ff207a8572d6fde695cc771c95c9debbee4be77f924b95ad13ada0bd0"
+        },
+        {
+          "path": "vendor/yocto-queue/index.js",
+          "sha256": "84f06f3dc53d844dfd64806bc2b712d2a0444f303c73b9e9df1dba3e2f738b04"
+        },
+        {
+          "path": "vendor/yocto-queue/license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "vendor/yocto-queue/package.json",
+          "sha256": "f4deaab9476d38639b6d6eefdb26292fab99ae546b4db68cf13fa8a92ee43992"
+        }
+      ],
+      "referenceFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "7b1abaeec6af1540ed700b39fd5b6c0aa0b7dd1a17b5f82d0d1e6f2bf87ae1e4"
+        },
+        {
+          "path": "index.js",
+          "sha256": "eeb6a4332ae1759daabd87c5fd196bf74358c7632b0d33dad6d521907fee59e3"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "cd881cca6c29350b13f86959870b2373d18178e349e3b11bcbe41f840001bf6a"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "d319b5cd690ff94a7957a225aa449b297e8bfc545767d8fa23dbb11c6a2afc85"
+        },
+        {
+          "path": "regression.test.mjs",
+          "sha256": "8eab2ed5b0881607d857f41f4e07e38f63246ef8b294fc6a2c9c31a2292b0935"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "c26f3d0359672545310efd0c806dcf0ce613f055ef501c5ff1d824f494f2030e"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "b28d1f6ff207a8572d6fde695cc771c95c9debbee4be77f924b95ad13ada0bd0"
+        },
+        {
+          "path": "vendor/yocto-queue/index.js",
+          "sha256": "84f06f3dc53d844dfd64806bc2b712d2a0444f303c73b9e9df1dba3e2f738b04"
+        },
+        {
+          "path": "vendor/yocto-queue/license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "vendor/yocto-queue/package.json",
+          "sha256": "f4deaab9476d38639b6d6eefdb26292fab99ae546b4db68cf13fa8a92ee43992"
+        }
+      ],
+      "packageRecords": [
+        {
+          "arm": "before",
+          "rawSha256": "b28d1f6ff207a8572d6fde695cc771c95c9debbee4be77f924b95ad13ada0bd0",
+          "rawGitBlobSha": "c8733b193e039e9c2cae8c6a2ff9c719a3eb78d9",
+          "effectiveSha256": "cd881cca6c29350b13f86959870b2373d18178e349e3b11bcbe41f840001bf6a",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        },
+        {
+          "arm": "fixed",
+          "rawSha256": "b28d1f6ff207a8572d6fde695cc771c95c9debbee4be77f924b95ad13ada0bd0",
+          "rawGitBlobSha": "c8733b193e039e9c2cae8c6a2ff9c719a3eb78d9",
+          "effectiveSha256": "cd881cca6c29350b13f86959870b2373d18178e349e3b11bcbe41f840001bf6a",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        }
+      ]
+    },
+    {
+      "task": "timeout-rejection-listener",
+      "repository": "sindresorhus/p-timeout",
+      "before": "3cabb7a7e576b5acc344db7f55acf4d56e47400a",
+      "fix": "fd93994892d0b3cba6da61787ac6b5da3ad3f2d5",
+      "url": "https://github.com/sindresorhus/p-timeout/commit/fd93994892d0b3cba6da61787ac6b5da3ad3f2d5",
+      "sourceRecords": [
+        {
+          "arm": "before",
+          "path": "index.d.ts",
+          "rawSha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3",
+          "rawGitBlobSha": "91e448fe0ccd59dcbd2043b21615a8f534230d1e",
+          "fixtureSha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "index.js",
+          "rawSha256": "e1cf4ec0b495d317b4bb052116c21ebb22be29775e25de6e5ca3b31c7a32964f",
+          "rawGitBlobSha": "6322c8923ecdcc8f317f8a91d65d2c82ca1fbf5d",
+          "fixtureSha256": "e1cf4ec0b495d317b4bb052116c21ebb22be29775e25de6e5ca3b31c7a32964f",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "readme.md",
+          "rawSha256": "0cd744f8f2dac8a62c60e4ac3ba76c4344a87d78a24281766332cc5efec4a417",
+          "rawGitBlobSha": "b5b23334a760fdc45bd2907b2771e02bbc23f72f",
+          "fixtureSha256": "0cd744f8f2dac8a62c60e4ac3ba76c4344a87d78a24281766332cc5efec4a417",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.d.ts",
+          "rawSha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3",
+          "rawGitBlobSha": "91e448fe0ccd59dcbd2043b21615a8f534230d1e",
+          "fixtureSha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.js",
+          "rawSha256": "b2e410ad62be2c58f9570a3e87f0819b3ffe02e0b255a4f18ba91bac80500a58",
+          "rawGitBlobSha": "f88dd071a2ec3b3a509acb10ffc39863788fa766",
+          "fixtureSha256": "b2e410ad62be2c58f9570a3e87f0819b3ffe02e0b255a4f18ba91bac80500a58",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "readme.md",
+          "rawSha256": "0cd744f8f2dac8a62c60e4ac3ba76c4344a87d78a24281766332cc5efec4a417",
+          "rawGitBlobSha": "b5b23334a760fdc45bd2907b2771e02bbc23f72f",
+          "fixtureSha256": "0cd744f8f2dac8a62c60e4ac3ba76c4344a87d78a24281766332cc5efec4a417",
+          "adapted": false
+        }
+      ],
+      "adaptations": [
+        "All runtime source files retained; upstream test/development tooling stays outside workspaces; Node-only outcome tests replace development dependencies.",
+        "Effective package scripts run the protected Node smoke test; original metadata retained separately.",
+        "Reference workspaces apply all functional upstream modifications while retaining original docs/types; documentation-only upstream edits do not change protected context."
+      ],
+      "fixtureFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3"
+        },
+        {
+          "path": "index.js",
+          "sha256": "e1cf4ec0b495d317b4bb052116c21ebb22be29775e25de6e5ca3b31c7a32964f"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "ba7e00f912bb0e3e793e8fc2838e39cbcd707915dce6af1771340b0906b6fca2"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "0cd744f8f2dac8a62c60e4ac3ba76c4344a87d78a24281766332cc5efec4a417"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ed36b32ac8985afdb4403915e92f78df9e81da673948dcc088dc1a28c721557"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "2d17077f74dfa1ae16a065653b9722d9568e0e4b13143808643ad55ba130ddd8"
+        }
+      ],
+      "referenceFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3"
+        },
+        {
+          "path": "index.js",
+          "sha256": "b2e410ad62be2c58f9570a3e87f0819b3ffe02e0b255a4f18ba91bac80500a58"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "ba7e00f912bb0e3e793e8fc2838e39cbcd707915dce6af1771340b0906b6fca2"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "0cd744f8f2dac8a62c60e4ac3ba76c4344a87d78a24281766332cc5efec4a417"
+        },
+        {
+          "path": "regression.test.mjs",
+          "sha256": "047862f8e9000bd384f3719b573da9cb6f6dd49cf5e9d833a5a3cdeaea3d57f1"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ed36b32ac8985afdb4403915e92f78df9e81da673948dcc088dc1a28c721557"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "2d17077f74dfa1ae16a065653b9722d9568e0e4b13143808643ad55ba130ddd8"
+        }
+      ],
+      "packageRecords": [
+        {
+          "arm": "before",
+          "rawSha256": "2d17077f74dfa1ae16a065653b9722d9568e0e4b13143808643ad55ba130ddd8",
+          "rawGitBlobSha": "a02274582a0671fb46f7d50f1094e29096ca8b80",
+          "effectiveSha256": "ba7e00f912bb0e3e793e8fc2838e39cbcd707915dce6af1771340b0906b6fca2",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        },
+        {
+          "arm": "fixed",
+          "rawSha256": "2d17077f74dfa1ae16a065653b9722d9568e0e4b13143808643ad55ba130ddd8",
+          "rawGitBlobSha": "a02274582a0671fb46f7d50f1094e29096ca8b80",
+          "effectiveSha256": "ba7e00f912bb0e3e793e8fc2838e39cbcd707915dce6af1771340b0906b6fca2",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        }
+      ]
+    },
+    {
+      "task": "timeout-infinity-abort",
+      "repository": "sindresorhus/p-timeout",
+      "before": "e8c2c9e16d2653bacbc404033af1166b5f07b91e",
+      "fix": "9260b098885d11d53d0cc39884e5cadc8b85f229",
+      "url": "https://github.com/sindresorhus/p-timeout/commit/9260b098885d11d53d0cc39884e5cadc8b85f229",
+      "sourceRecords": [
+        {
+          "arm": "before",
+          "path": "index.d.ts",
+          "rawSha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3",
+          "rawGitBlobSha": "91e448fe0ccd59dcbd2043b21615a8f534230d1e",
+          "fixtureSha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "index.js",
+          "rawSha256": "89ce21dd763ea220da7ce1898d86e3629f8755bd74fce5256a87fc17c45f60e3",
+          "rawGitBlobSha": "9cdbec6c1c84c08b956c30d08847b0a59deb796d",
+          "fixtureSha256": "89ce21dd763ea220da7ce1898d86e3629f8755bd74fce5256a87fc17c45f60e3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "readme.md",
+          "rawSha256": "877e9d50decdbfe4f225dfea4ec2e1b46112598542a354daaa82cb4e2f786e1d",
+          "rawGitBlobSha": "2e27aad2d0c177081cf4d66c60f2293041887842",
+          "fixtureSha256": "877e9d50decdbfe4f225dfea4ec2e1b46112598542a354daaa82cb4e2f786e1d",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.d.ts",
+          "rawSha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3",
+          "rawGitBlobSha": "91e448fe0ccd59dcbd2043b21615a8f534230d1e",
+          "fixtureSha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.js",
+          "rawSha256": "015b4ecad7d16b5d8258c1c10bb08d5b54dd4695433c34d4fd1c457b628f0f29",
+          "rawGitBlobSha": "29f44e345389cee6d68b1ff6af5ad13989f51461",
+          "fixtureSha256": "015b4ecad7d16b5d8258c1c10bb08d5b54dd4695433c34d4fd1c457b628f0f29",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "license",
+          "rawSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "rawGitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de",
+          "fixtureSha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "readme.md",
+          "rawSha256": "877e9d50decdbfe4f225dfea4ec2e1b46112598542a354daaa82cb4e2f786e1d",
+          "rawGitBlobSha": "2e27aad2d0c177081cf4d66c60f2293041887842",
+          "fixtureSha256": "877e9d50decdbfe4f225dfea4ec2e1b46112598542a354daaa82cb4e2f786e1d",
+          "adapted": false
+        }
+      ],
+      "adaptations": [
+        "All runtime source files retained; upstream test/development tooling stays outside workspaces; Node-only outcome tests replace development dependencies.",
+        "Effective package scripts run the protected Node smoke test; original metadata retained separately.",
+        "Reference workspaces apply all functional upstream modifications while retaining original docs/types; documentation-only upstream edits do not change protected context."
+      ],
+      "fixtureFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3"
+        },
+        {
+          "path": "index.js",
+          "sha256": "89ce21dd763ea220da7ce1898d86e3629f8755bd74fce5256a87fc17c45f60e3"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "4698c919d9ca60b11b43212c9651afb0d3bc787117a999d935abbeed7f54fc32"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "877e9d50decdbfe4f225dfea4ec2e1b46112598542a354daaa82cb4e2f786e1d"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ed36b32ac8985afdb4403915e92f78df9e81da673948dcc088dc1a28c721557"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "c8eb46168c7060863c91805bfa6c720d303ccd905ecf14bd3abd8ad9d7d5a5aa"
+        }
+      ],
+      "referenceFiles": [
+        {
+          "path": "index.d.ts",
+          "sha256": "91764b36fe5e1c5d688f5f90eeea47703a059ab9a81bf80f7bbc9b04507b7bd3"
+        },
+        {
+          "path": "index.js",
+          "sha256": "015b4ecad7d16b5d8258c1c10bb08d5b54dd4695433c34d4fd1c457b628f0f29"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3"
+        },
+        {
+          "path": "package.json",
+          "sha256": "4698c919d9ca60b11b43212c9651afb0d3bc787117a999d935abbeed7f54fc32"
+        },
+        {
+          "path": "readme.md",
+          "sha256": "877e9d50decdbfe4f225dfea4ec2e1b46112598542a354daaa82cb4e2f786e1d"
+        },
+        {
+          "path": "regression.test.mjs",
+          "sha256": "934317ee929bb9ca8a05d7813a81b0b00a4436f5dcad596fb0a048f4da954ae3"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ed36b32ac8985afdb4403915e92f78df9e81da673948dcc088dc1a28c721557"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "c8eb46168c7060863c91805bfa6c720d303ccd905ecf14bd3abd8ad9d7d5a5aa"
+        }
+      ],
+      "packageRecords": [
+        {
+          "arm": "before",
+          "rawSha256": "c8eb46168c7060863c91805bfa6c720d303ccd905ecf14bd3abd8ad9d7d5a5aa",
+          "rawGitBlobSha": "f97f6e93aabe1653b9bb8f09b302a42fafb390a8",
+          "effectiveSha256": "4698c919d9ca60b11b43212c9651afb0d3bc787117a999d935abbeed7f54fc32",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        },
+        {
+          "arm": "fixed",
+          "rawSha256": "c8eb46168c7060863c91805bfa6c720d303ccd905ecf14bd3abd8ad9d7d5a5aa",
+          "rawGitBlobSha": "f97f6e93aabe1653b9bb8f09b302a42fafb390a8",
+          "effectiveSha256": "4698c919d9ca60b11b43212c9651afb0d3bc787117a999d935abbeed7f54fc32",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        }
+      ]
+    },
+    {
+      "task": "commander-async-listener-order",
+      "repository": "tj/commander.js",
+      "before": "e649291869553e68b583b70ee910abb5ec6bcce4",
+      "fix": "35a028b6253a38d00c16dca2a36b69c5888c022a",
+      "url": "https://github.com/tj/commander.js/commit/35a028b6253a38d00c16dca2a36b69c5888c022a",
+      "sourceRecords": [
+        {
+          "arm": "before",
+          "path": "LICENSE",
+          "rawSha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+          "rawGitBlobSha": "10f997ab104594695189c3fca8fa6c65ae9ccdd6",
+          "fixtureSha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "Readme.md",
+          "rawSha256": "6bbdce2494eef5c630769e8713325cb0ec145fdd04f960e6b3dd53e4744457a7",
+          "rawGitBlobSha": "8f17587845be48e720401024d08d42f566099185",
+          "fixtureSha256": "6bbdce2494eef5c630769e8713325cb0ec145fdd04f960e6b3dd53e4744457a7",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "esm.mjs",
+          "rawSha256": "d590f9c55c9f8bfec81fdc4170b3e7653226a39956055aec657b52ae45495d88",
+          "rawGitBlobSha": "dc6bd11c91cc03faedef6b7fcd9ff9cf75ae390e",
+          "fixtureSha256": "d590f9c55c9f8bfec81fdc4170b3e7653226a39956055aec657b52ae45495d88",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "index.js",
+          "rawSha256": "d4f8af488a7a08cd71df8503fcc3e5f2fd61e9b26eb368ecd5cc8159862cde3f",
+          "rawGitBlobSha": "7563b1bacf209afb8a7afc8b4c5dbf509dc87e1c",
+          "fixtureSha256": "d4f8af488a7a08cd71df8503fcc3e5f2fd61e9b26eb368ecd5cc8159862cde3f",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "package-support.json",
+          "rawSha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063",
+          "rawGitBlobSha": "4eabb970ef40263e388f60ee31d3a23c86ff5151",
+          "fixtureSha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/argument.js",
+          "rawSha256": "ce14713946bcbdba61e16c54e2571f6ad159fbe034b989145044fc1db7447668",
+          "rawGitBlobSha": "c91e5a5c493bd72f9ca9121624bf80a173a6b373",
+          "fixtureSha256": "ce14713946bcbdba61e16c54e2571f6ad159fbe034b989145044fc1db7447668",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/command.js",
+          "rawSha256": "69047076c77593471bbf1aa2ba5f01f0565bffa187d415a600d8ec5998d2056b",
+          "rawGitBlobSha": "4756cf5a049e0c46f021b93d0d903dd75c8edec8",
+          "fixtureSha256": "69047076c77593471bbf1aa2ba5f01f0565bffa187d415a600d8ec5998d2056b",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/error.js",
+          "rawSha256": "c69bbc276b3c7fec052f930b9de091db2206646761f765a2077d5731f763dc55",
+          "rawGitBlobSha": "e7cde9cc77fa8678c631c416c589f9d2ad917caa",
+          "fixtureSha256": "c69bbc276b3c7fec052f930b9de091db2206646761f765a2077d5731f763dc55",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/help.js",
+          "rawSha256": "f07a902508e463968826dd36b567640a563f0192989355c6559723415951bcf2",
+          "rawGitBlobSha": "2187f2b9752b253bdf5dda531f3de622b8c064b0",
+          "fixtureSha256": "f07a902508e463968826dd36b567640a563f0192989355c6559723415951bcf2",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/option.js",
+          "rawSha256": "9dfc7ae4b048435196cbdd888819bb84253d2693460adfa262cffcbb31d6cf98",
+          "rawGitBlobSha": "2ec20440147270b9cee6693cb1feef8892ece33d",
+          "fixtureSha256": "9dfc7ae4b048435196cbdd888819bb84253d2693460adfa262cffcbb31d6cf98",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "lib/suggestSimilar.js",
+          "rawSha256": "2f96448988ab89b4acd941d298e51bb103544bf65b60eb0a4260a26a8b39bb57",
+          "rawGitBlobSha": "9a4066c71e32a53dc10471bfb74aa290e45b1ed8",
+          "fixtureSha256": "2f96448988ab89b4acd941d298e51bb103544bf65b60eb0a4260a26a8b39bb57",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "typings/index.d.ts",
+          "rawSha256": "57febcc5fc770d5d0b75a332d9837f20bc12291397fb34eefdc058ae5c200df2",
+          "rawGitBlobSha": "ee4fd4944e0b38a82432461b5457cb03a06c3aa1",
+          "fixtureSha256": "57febcc5fc770d5d0b75a332d9837f20bc12291397fb34eefdc058ae5c200df2",
+          "adapted": false
+        },
+        {
+          "arm": "before",
+          "path": "typings/index.test-d.ts",
+          "rawSha256": "9bae8cbe74f46dca144de948702a53e9dfb478b8d9574de82910c455aadfbc7e",
+          "rawGitBlobSha": "d83c198c1c904a8c69fa3aa0b1e37fbb67e03184",
+          "fixtureSha256": "9bae8cbe74f46dca144de948702a53e9dfb478b8d9574de82910c455aadfbc7e",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "LICENSE",
+          "rawSha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+          "rawGitBlobSha": "10f997ab104594695189c3fca8fa6c65ae9ccdd6",
+          "fixtureSha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "Readme.md",
+          "rawSha256": "6bbdce2494eef5c630769e8713325cb0ec145fdd04f960e6b3dd53e4744457a7",
+          "rawGitBlobSha": "8f17587845be48e720401024d08d42f566099185",
+          "fixtureSha256": "6bbdce2494eef5c630769e8713325cb0ec145fdd04f960e6b3dd53e4744457a7",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "esm.mjs",
+          "rawSha256": "d590f9c55c9f8bfec81fdc4170b3e7653226a39956055aec657b52ae45495d88",
+          "rawGitBlobSha": "dc6bd11c91cc03faedef6b7fcd9ff9cf75ae390e",
+          "fixtureSha256": "d590f9c55c9f8bfec81fdc4170b3e7653226a39956055aec657b52ae45495d88",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "index.js",
+          "rawSha256": "d4f8af488a7a08cd71df8503fcc3e5f2fd61e9b26eb368ecd5cc8159862cde3f",
+          "rawGitBlobSha": "7563b1bacf209afb8a7afc8b4c5dbf509dc87e1c",
+          "fixtureSha256": "d4f8af488a7a08cd71df8503fcc3e5f2fd61e9b26eb368ecd5cc8159862cde3f",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "package-support.json",
+          "rawSha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063",
+          "rawGitBlobSha": "4eabb970ef40263e388f60ee31d3a23c86ff5151",
+          "fixtureSha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/argument.js",
+          "rawSha256": "ce14713946bcbdba61e16c54e2571f6ad159fbe034b989145044fc1db7447668",
+          "rawGitBlobSha": "c91e5a5c493bd72f9ca9121624bf80a173a6b373",
+          "fixtureSha256": "ce14713946bcbdba61e16c54e2571f6ad159fbe034b989145044fc1db7447668",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/command.js",
+          "rawSha256": "32b40bd8d12b6291ef48bbecb831e15a5a9e8c1645bc56065ef1aeaa51b6309a",
+          "rawGitBlobSha": "695c840ec8040407fb4444f4cd0a7f3657ea7eb5",
+          "fixtureSha256": "32b40bd8d12b6291ef48bbecb831e15a5a9e8c1645bc56065ef1aeaa51b6309a",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/error.js",
+          "rawSha256": "c69bbc276b3c7fec052f930b9de091db2206646761f765a2077d5731f763dc55",
+          "rawGitBlobSha": "e7cde9cc77fa8678c631c416c589f9d2ad917caa",
+          "fixtureSha256": "c69bbc276b3c7fec052f930b9de091db2206646761f765a2077d5731f763dc55",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/help.js",
+          "rawSha256": "f07a902508e463968826dd36b567640a563f0192989355c6559723415951bcf2",
+          "rawGitBlobSha": "2187f2b9752b253bdf5dda531f3de622b8c064b0",
+          "fixtureSha256": "f07a902508e463968826dd36b567640a563f0192989355c6559723415951bcf2",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/option.js",
+          "rawSha256": "9dfc7ae4b048435196cbdd888819bb84253d2693460adfa262cffcbb31d6cf98",
+          "rawGitBlobSha": "2ec20440147270b9cee6693cb1feef8892ece33d",
+          "fixtureSha256": "9dfc7ae4b048435196cbdd888819bb84253d2693460adfa262cffcbb31d6cf98",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "lib/suggestSimilar.js",
+          "rawSha256": "2f96448988ab89b4acd941d298e51bb103544bf65b60eb0a4260a26a8b39bb57",
+          "rawGitBlobSha": "9a4066c71e32a53dc10471bfb74aa290e45b1ed8",
+          "fixtureSha256": "2f96448988ab89b4acd941d298e51bb103544bf65b60eb0a4260a26a8b39bb57",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "typings/index.d.ts",
+          "rawSha256": "57febcc5fc770d5d0b75a332d9837f20bc12291397fb34eefdc058ae5c200df2",
+          "rawGitBlobSha": "ee4fd4944e0b38a82432461b5457cb03a06c3aa1",
+          "fixtureSha256": "57febcc5fc770d5d0b75a332d9837f20bc12291397fb34eefdc058ae5c200df2",
+          "adapted": false
+        },
+        {
+          "arm": "fixed",
+          "path": "typings/index.test-d.ts",
+          "rawSha256": "9bae8cbe74f46dca144de948702a53e9dfb478b8d9574de82910c455aadfbc7e",
+          "rawGitBlobSha": "d83c198c1c904a8c69fa3aa0b1e37fbb67e03184",
+          "fixtureSha256": "9bae8cbe74f46dca144de948702a53e9dfb478b8d9574de82910c455aadfbc7e",
+          "adapted": false
+        }
+      ],
+      "adaptations": [
+        "All runtime source files retained; upstream test/development tooling stays outside workspaces; Node-only outcome tests replace development dependencies.",
+        "Effective package scripts run the protected Node smoke test; original metadata retained separately.",
+        "Reference workspaces apply all functional upstream modifications while retaining original docs/types; documentation-only upstream edits do not change protected context."
+      ],
+      "fixtureFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b"
+        },
+        {
+          "path": "Readme.md",
+          "sha256": "6bbdce2494eef5c630769e8713325cb0ec145fdd04f960e6b3dd53e4744457a7"
+        },
+        {
+          "path": "esm.mjs",
+          "sha256": "d590f9c55c9f8bfec81fdc4170b3e7653226a39956055aec657b52ae45495d88"
+        },
+        {
+          "path": "index.js",
+          "sha256": "d4f8af488a7a08cd71df8503fcc3e5f2fd61e9b26eb368ecd5cc8159862cde3f"
+        },
+        {
+          "path": "lib/argument.js",
+          "sha256": "ce14713946bcbdba61e16c54e2571f6ad159fbe034b989145044fc1db7447668"
+        },
+        {
+          "path": "lib/command.js",
+          "sha256": "69047076c77593471bbf1aa2ba5f01f0565bffa187d415a600d8ec5998d2056b"
+        },
+        {
+          "path": "lib/error.js",
+          "sha256": "c69bbc276b3c7fec052f930b9de091db2206646761f765a2077d5731f763dc55"
+        },
+        {
+          "path": "lib/help.js",
+          "sha256": "f07a902508e463968826dd36b567640a563f0192989355c6559723415951bcf2"
+        },
+        {
+          "path": "lib/option.js",
+          "sha256": "9dfc7ae4b048435196cbdd888819bb84253d2693460adfa262cffcbb31d6cf98"
+        },
+        {
+          "path": "lib/suggestSimilar.js",
+          "sha256": "2f96448988ab89b4acd941d298e51bb103544bf65b60eb0a4260a26a8b39bb57"
+        },
+        {
+          "path": "package-support.json",
+          "sha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063"
+        },
+        {
+          "path": "package.json",
+          "sha256": "506a992f6e06cfaf8cfab2943d4921fa6e3a3691930677fb1f4d9d3e9c3e6985"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ae1ee52a39c2e717174a52ffb00293d767a4b8e31e1389d5625fbc6bda8bf34"
+        },
+        {
+          "path": "typings/index.d.ts",
+          "sha256": "57febcc5fc770d5d0b75a332d9837f20bc12291397fb34eefdc058ae5c200df2"
+        },
+        {
+          "path": "typings/index.test-d.ts",
+          "sha256": "9bae8cbe74f46dca144de948702a53e9dfb478b8d9574de82910c455aadfbc7e"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "5f5944b2fa479bf68003ca239940f8ad9cae893ddfc3662272a1855dfb9ce4db"
+        }
+      ],
+      "referenceFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "04512a63dce4d2d506ad612dc0bd7681ccf6e3655f7b6eaef7dfac8323d1ec0b"
+        },
+        {
+          "path": "Readme.md",
+          "sha256": "6bbdce2494eef5c630769e8713325cb0ec145fdd04f960e6b3dd53e4744457a7"
+        },
+        {
+          "path": "esm.mjs",
+          "sha256": "d590f9c55c9f8bfec81fdc4170b3e7653226a39956055aec657b52ae45495d88"
+        },
+        {
+          "path": "index.js",
+          "sha256": "d4f8af488a7a08cd71df8503fcc3e5f2fd61e9b26eb368ecd5cc8159862cde3f"
+        },
+        {
+          "path": "lib/argument.js",
+          "sha256": "ce14713946bcbdba61e16c54e2571f6ad159fbe034b989145044fc1db7447668"
+        },
+        {
+          "path": "lib/command.js",
+          "sha256": "32b40bd8d12b6291ef48bbecb831e15a5a9e8c1645bc56065ef1aeaa51b6309a"
+        },
+        {
+          "path": "lib/error.js",
+          "sha256": "c69bbc276b3c7fec052f930b9de091db2206646761f765a2077d5731f763dc55"
+        },
+        {
+          "path": "lib/help.js",
+          "sha256": "f07a902508e463968826dd36b567640a563f0192989355c6559723415951bcf2"
+        },
+        {
+          "path": "lib/option.js",
+          "sha256": "9dfc7ae4b048435196cbdd888819bb84253d2693460adfa262cffcbb31d6cf98"
+        },
+        {
+          "path": "lib/suggestSimilar.js",
+          "sha256": "2f96448988ab89b4acd941d298e51bb103544bf65b60eb0a4260a26a8b39bb57"
+        },
+        {
+          "path": "package-support.json",
+          "sha256": "b07a441d1dbc88588a2e7f219d43a5ea9b7c429a44f119caa49229da86bb0063"
+        },
+        {
+          "path": "package.json",
+          "sha256": "506a992f6e06cfaf8cfab2943d4921fa6e3a3691930677fb1f4d9d3e9c3e6985"
+        },
+        {
+          "path": "regression.test.mjs",
+          "sha256": "7fe0d1eed3f3422996fef7924f5b12b7b84525f686dbcf63f12616fa6cd5fe8d"
+        },
+        {
+          "path": "test-clock.mjs",
+          "sha256": "923bb9412f069703f517749e22a7e081aca9083acd8491860f6f398636262962"
+        },
+        {
+          "path": "test.mjs",
+          "sha256": "5ae1ee52a39c2e717174a52ffb00293d767a4b8e31e1389d5625fbc6bda8bf34"
+        },
+        {
+          "path": "typings/index.d.ts",
+          "sha256": "57febcc5fc770d5d0b75a332d9837f20bc12291397fb34eefdc058ae5c200df2"
+        },
+        {
+          "path": "typings/index.test-d.ts",
+          "sha256": "9bae8cbe74f46dca144de948702a53e9dfb478b8d9574de82910c455aadfbc7e"
+        },
+        {
+          "path": "upstream-package.json",
+          "sha256": "5f5944b2fa479bf68003ca239940f8ad9cae893ddfc3662272a1855dfb9ce4db"
+        }
+      ],
+      "packageRecords": [
+        {
+          "arm": "before",
+          "rawSha256": "5f5944b2fa479bf68003ca239940f8ad9cae893ddfc3662272a1855dfb9ce4db",
+          "rawGitBlobSha": "384b2e8194e5d0f7aa94fabe9fece6ee706190f9",
+          "effectiveSha256": "506a992f6e06cfaf8cfab2943d4921fa6e3a3691930677fb1f4d9d3e9c3e6985",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        },
+        {
+          "arm": "fixed",
+          "rawSha256": "5f5944b2fa479bf68003ca239940f8ad9cae893ddfc3662272a1855dfb9ce4db",
+          "rawGitBlobSha": "384b2e8194e5d0f7aa94fabe9fece6ee706190f9",
+          "effectiveSha256": "506a992f6e06cfaf8cfab2943d4921fa6e3a3691930677fb1f4d9d3e9c3e6985",
+          "adaptation": "Protected Node-only test script; functional package imports/files changes retained for the async-context task"
+        }
+      ]
+    }
+  ],
+  "vendoredDependencies": [
+    {
+      "name": "yocto-queue",
+      "version": "1.0.0",
+      "repository": "sindresorhus/yocto-queue",
+      "commit": "2e57f8c95e5e1f40379c6f85d18aee962662eb22",
+      "url": "https://github.com/sindresorhus/yocto-queue/commit/2e57f8c95e5e1f40379c6f85d18aee962662eb22",
+      "files": [
+        {
+          "path": "index.js",
+          "sha256": "617c9b04fec118622b0bb8eb1e126b08236799461a223bcc59274a54b110d3ed",
+          "gitBlobSha": "af3801489d3483626d05d32f4e2c36c529825d25"
+        },
+        {
+          "path": "package.json",
+          "sha256": "22a9628bb56b9f0ffc23d1dcfafeb04c01da4208ab20d782b4934db7ed0d9cc3",
+          "gitBlobSha": "7d50eb0a3ff624db1a499da92d5b3f49712438d9"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "gitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de"
+        }
+      ]
+    },
+    {
+      "name": "yocto-queue",
+      "version": "1.2.1",
+      "repository": "sindresorhus/yocto-queue",
+      "commit": "ce72d41de87b2a4ec7c50e10480300bee674d845",
+      "url": "https://github.com/sindresorhus/yocto-queue/commit/ce72d41de87b2a4ec7c50e10480300bee674d845",
+      "files": [
+        {
+          "path": "index.js",
+          "sha256": "84f06f3dc53d844dfd64806bc2b712d2a0444f303c73b9e9df1dba3e2f738b04",
+          "gitBlobSha": "fb645592b5e17d1b8f876a747757d5686e011d04"
+        },
+        {
+          "path": "package.json",
+          "sha256": "f4deaab9476d38639b6d6eefdb26292fab99ae546b4db68cf13fa8a92ee43992",
+          "gitBlobSha": "7fde9acb43a5ec3abed97b481ae36de4d24a8a43"
+        },
+        {
+          "path": "license",
+          "sha256": "5c932d88256b4ab958f64a856fa48e8bd1f55bc1d96b8149c65689e0c61789d3",
+          "gitBlobSha": "fa7ceba3eb4a9657a9db7f3ffca4e4e97a9019de"
+        }
+      ]
+    }
+  ]
+}
