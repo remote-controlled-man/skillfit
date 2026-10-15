@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — manual trusted publishing
+## 0.9.1 — manual trusted publishing
 
 - Prepare a manual, default-dry-run GitHub Actions npm release workflow with
   OIDC, exact-archive checks, version reuse protection and verified registry
@@ -8,6 +8,9 @@
   see the [maintainer procedure](docs/releases/trusted-publishing.md).
 - A live trusted-publisher binding and its first real publication require
   separate verification; preparation does not establish OIDC publication.
+- Align package and lockfile versions at 0.9.1 for the first reviewed OIDC
+  publication. Runtime behavior, evaluation policies and dependencies are unchanged;
+  see the [release guide](docs/releases/0.9.1.md).
 
 ## [0.9.0] — 2026-10-15
 
