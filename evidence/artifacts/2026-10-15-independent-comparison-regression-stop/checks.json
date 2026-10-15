@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-15T12:04:34.289Z",
+  "realCalls": 12,
+  "retainedCalls": 1,
+  "newCalls": 11,
+  "unexecutedCalls": 68,
+  "realCallsAddedByFinalChecks": 0,
+  "priorPublishedFilesUnchanged": 1582,
+  "skillsBenchRuntimePolicyUnchanged": true,
+  "readmeCodeBlocksMatch": 11,
+  "markdownLinksValid": true,
+  "projectTests": 556,
+  "queueTests": 11,
+  "freshArchiveReplay": [
+    {
+      "receiverDiagnostic": true,
+      "modelCalls": 0,
+      "totalCalls": 12,
+      "newCalls": 11,
+      "regraded": 12,
+      "paired": 6,
+      "qualityCostsBudgetReplay": true,
+      "compositeNativeComponentAudit": false,
+      "derivedExport": true,
+      "decision": "reject",
+      "automaticUpgrade": false,
+      "cumulativeCalls": 194
+    }
+  ],
+  "decision": "reject",
+  "automaticUpgrade": false
+}
