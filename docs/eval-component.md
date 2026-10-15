@@ -57,6 +57,13 @@ actual Agent use or net savings. The [ordered delivery plan](plans/2026-10-14-ev
 requires a fresh budget before live experimentation and leaves adoption gates
 unchanged.
 
+The [native diff mechanism proposal](plans/2026-10-15-native-diff-mechanism.md)
+provides a reproducible source-checkout preparation path for one reused development
+task. Its read-only preview declares at most four calls but grants no spending
+authorization. Both versions receive the same helper; helper adoption, paired
+cost observations and causal net savings remain distinct. It cannot satisfy
+independent validation or adoption gates.
+
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
 Preview it without writing files or making an agent call:

@@ -7,10 +7,11 @@ then make that result useful to a team. Stars are an outcome to observe, not an 
 
 The product already has paired evaluations, deterministic bench gates, trigger measurements,
 configuration experiments, an MCP preflight, and English and Simplified Chinese READMEs. The main adoption gap is the
-path from a fresh clone to understanding what was measured: the package has not been published, live
-evaluations need a local agent or API key, and the first offline check is easy to mistake for an
-agent-quality result. The README also mixes cross-platform Node commands with Bash-only setup and
-POSIX copy commands.
+path from a fresh clone to understanding what was measured: 0.9.0 is published with a
+[verified registry install](releases/0.9.0-verification.json), live evaluations still need a local agent
+or API key, and the first offline check is easy to mistake for an
+agent-quality result. Keep the native Node first-run path usable in Bash and
+PowerShell, and label Bash convenience scripts as alternatives.
 
 Patterns worth borrowing, without copying their claims:
 
