@@ -15,7 +15,7 @@ approved. No new package publication or live model calls are scheduled here.
 
 | User need | Existing path | Boundary |
 | --- | --- | --- |
-| Start or capture a case | `bench init`, `bench add --freeze`, `bench add --from-commit` | The starter currently only grades text output; real tasks need their own fixture and acceptance checks |
+| Start or capture a case | `bench init`, `bench add --freeze`, `bench add --from-commit`; source adds `bench init --kind command` | Starters teach text-output or file-edit grading; real tasks need their own fixture and acceptance checks |
 | Validate the case offline | `bench check`: original/NOP failure, oracle pass, facet checks and fixture hygiene | Case integrity is not model quality or proof of difficulty |
 | Preview and run a bounded comparison | `eval --dry-run`, `--max-calls`, JSON request preview and plan hash | Real runs need separate spending consent; source-only `spendingBudget` stops between calls and can overshoot in flight |
 | Compare revisions and inspect evidence | `--baseline-skill`, balanced order, `report eval`, JSON assessment and offline replay | Missing evidence stays missing; the component never upgrades a Skill |
@@ -35,8 +35,8 @@ subsequent items require their own scoped implementation and validation.
 
 | Priority / order | Work | Acceptance |
 | --- | --- | --- |
-| 0 — synchronize current work | Commit existing work, update both READMEs and mutable guides, preserve dated evidence, push and review CI | Clean committed tree, remote PR/merge recorded, offline suite green; no live calls |
-| 1 — create a code-editing case | Add `bench init --kind command` alongside the existing text-output starter, with a broken fixture, reference repair and behavioral verifier | Dry run writes nothing; original fails, oracle passes, equivalent repair passes, modified protected tests fail; CLI/docs and three-OS CI agree |
+| 0 — complete, PR #23 merged | Commit existing work, update both READMEs and mutable guides, preserve dated evidence, push and review CI | [PR #23](https://github.com/remote-controlled-man/skillfit/pull/23): 556 offline tests and Linux/macOS/Windows CI pass; evidence replay adds no live calls |
+| 1 — code-editing case starter, implemented in source | `bench init --kind command` alongside the existing text-output starter, with a broken fixture, reference repair and behavioral verifier | Dry run writes nothing; original fails, oracle passes, equivalent repair passes, modified protected tests fail; CLI/docs and three-OS CI must agree before merge |
 | 2 — return case validation to an Agent | Add machine-readable `bench check --json` with per-gate status, warnings and actionable locations | JSON-only stdout, nonzero status on failures, no calls, stable documented shape; offline tests cover invalid cases |
 | 3 — run a small chosen case set | Design explicit task selection for preview and eval, preserving the selected IDs and costs in the frozen plan and report | Unknown/duplicate selections fail before calls; preview counts only selected cases; small samples cannot authorize adoption |
 

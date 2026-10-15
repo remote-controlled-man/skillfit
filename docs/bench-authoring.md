@@ -9,6 +9,31 @@ If you want to know what the numbers mean once you have them, that is
 [docs/metrics.md](metrics.md). This document is the part in between: **how to build a bench whose
 numbers you can trust.**
 
+## Choose a starter
+
+Source-checkout feature (not in npm 0.9.1): use `--kind command` for tasks where
+the agent must edit files. The existing `output` starter remains the default.
+
+```bash
+node dist/cli.js bench init my-bench --kind command --dry-run
+node dist/cli.js bench init my-bench --kind command --yes
+node dist/cli.js bench check my-bench
+node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input workspace --trials 1 --max-calls 2 --dry-run
+```
+
+The starter is a synthetic addition bug: the original fails, the reference
+repair passes, and equivalent implementations are accepted. Its verifier checks
+behavior separately from the editable fixture and rejects changes to protected
+`package.json` / `test.mjs`. The oracle and grading probes stay outside the
+fixture. No dependency installation is needed. All commands above make zero
+model calls; creating the scaffold writes ten files to a fresh directory.
+
+Replace the fixture, prompt, verifier, oracle and ground truth together with
+your own task. Then check it again and preview the call count. One teaching
+case cannot establish Skill efficacy. The starter is not trigger-labeled;
+trigger studies need appropriate positive tasks and negative controls. The
+seven steps below explain how to build those real cases.
+
 ---
 
 ## What a bench is

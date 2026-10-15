@@ -2,6 +2,11 @@
 
 ## Unreleased — case authoring and evidence maintenance (2026-10-15)
 
+- Add `bench init --kind command` to scaffold a code-editing case with a broken
+  fixture, protected tests, independent behavioral verifier and reference repair.
+  The existing output template remains the default. Generated next steps preview
+  at most two calls; no model is called while scaffolding or checking the case.
+  The starter is synthetic and must be adapted to the user's real task.
 - Add optional request-based `spendingBudget` guards for all five batch cost
   measures. Retain a stopped run and prevent later calls when a limit is reached
   or complete final usage is unavailable; a call already in flight may overshoot.

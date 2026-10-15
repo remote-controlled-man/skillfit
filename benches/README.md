@@ -8,6 +8,15 @@ A **bench** is a portable, deterministic test suite for measuring whether a skil
 
 `skillfit eval <skill-path> --bench <bench-dir>` pairs every task twice — once **baseline** (no skill injected) and once **treatment** (skill injected into the prompt) — for `N` trials each, then compares pass rates. `skillfit bench init` scaffolds a new bench (with a working example task) and `skillfit bench check` validates one offline — verifier self-tests, oracle/NOP gates, facet-count bounds, mock-arm probes, fixture hygiene — before you spend a single token on runs. Add `--calibrate --agent <id>` to also run real baseline-difficulty probes: one inject-mode arm per task with an empty skill payload, so `shouldTrigger` labels are **not** required and you pay for one arm, not two. Each task is banded against the L0 floor/ceiling as too hard or broken (≤10% baseline pass rate), discriminative (in between), or too easy/saturated (≥90%); aim for 30–70%. A calibration that completes no runs fails loudly instead of reporting a band it never measured.
 
+Source-checkout starter (not in npm 0.9.1): `skillfit bench init my-bench --kind command`
+creates a code-editing teaching case, with protected tests, separate behavioral
+probes and a reference repair. The original must fail and the oracle must pass
+`bench check`; equivalent repairs are accepted. Use `--dry-run` before creating
+files, and `--input workspace` when previewing/running it with a CLI executor.
+Without `--kind`, the text-output starter remains the default. Replace either
+starter with a real task before making an efficacy claim; see the
+[starter walkthrough](../docs/bench-authoring.md#choose-a-starter).
+
 ## Bench directory layout
 
 ```

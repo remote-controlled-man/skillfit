@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { loadBench } from '../harness/bench.js';
 import { runVerifier } from '../harness/runner.js';
+import { parseVerifierSummary } from '../harness/verifier-summary.js';
 import type { Executor } from '../harness/types.js';
 import { runBenchAdd, runBenchCheck, runBenchInit } from './bench.js';
 
@@ -61,6 +62,7 @@ test('runBenchInit scaffolds a bench that loads and passes bench check', async (
   const bench = loadBench(result.dir);
   assert.equal(bench.name, 'skillfit-bench');
   assert.equal(bench.tasks.length, 1);
+  assert.equal(bench.tasks[0]?.verifierKind, undefined, 'default output template is unchanged');
   const report = await runBenchCheck({ dir: result.dir, log: () => {} });
   assert.equal(report.failures, 0);
   assert.ok(
@@ -68,6 +70,108 @@ test('runBenchInit scaffolds a bench that loads and passes bench check', async (
       (c) => c.status === 'INFO' && c.message.includes('no shouldTrigger label'),
     ),
   );
+});
+
+test('command starter dry-run writes nothing and invalid kinds fail before writing', async (t) => {
+  const cwd = tmp(t, 'skillfit-command-init-');
+  const { lines, log } = collector();
+  await runBenchInit({ cwd, kind: 'command', dryRun: true, log });
+  assert.ok(!existsSync(join(cwd, 'skillfit-bench')));
+  assert.match(lines.join('\n'), /fixtures\/example-task\/index\.js/);
+  await assert.rejects(() => runBenchInit({ cwd, kind: 'typo' as 'command', yes: true, log }), /Unknown bench kind/);
+  assert.ok(!existsSync(join(cwd, 'skillfit-bench')));
+});
+
+test('command starter is self-contained, passes offline NOP/oracle gates and previews two calls', async (t) => {
+  const cwd = tmp(t, 'skillfit-command-init-');
+  const dir = join(cwd, 'my bench');
+  const { lines, log } = collector();
+  await runBenchInit({ dir, kind: 'command', yes: true, log });
+  const bench = loadBench(dir);
+  assert.equal(bench.tasks[0]?.verifierKind, 'command');
+  assert.equal(bench.tasks[0]?.promptTrigger, 'prompts/example-task.trigger.md');
+  const original = readFileSync(join(dir, 'fixtures/example-task/index.js'), 'utf8');
+  const report = await runBenchCheck({ dir, log: () => {} });
+  assert.equal(report.failures, 0, JSON.stringify(report.checks));
+  assert.equal(report.warnings, 0, JSON.stringify(report.checks));
+  assert.equal(readFileSync(join(dir, 'fixtures/example-task/index.js'), 'utf8'), original,
+    'offline check must solve only a disposable copy');
+  assert.match(lines.join('\n'), /--input workspace --trials 1 --max-calls 2 --dry-run/);
+  const preview = spawnSync(process.execPath, [join(PACKAGE_ROOT, 'dist/cli.js'),
+    'eval', join(PACKAGE_ROOT, 'skills/skillfit'), '--bench', dir, '--agent', 'codex',
+    '--input', 'workspace', '--trials', '1', '--max-calls', '2', '--dry-run'],
+    { cwd, encoding: 'utf8', timeout: 30_000 });
+  assert.equal(preview.status, 0, preview.stderr);
+  assert.match(preview.stdout, /2 planned; ceiling 2/);
+  assert.match(preview.stdout, /workspace files on disk/);
+  assert.ok(!existsSync(join(cwd, 'runs')), 'preview must not create a run');
+});
+
+test('command starter grades behavior, accepting equivalent repairs and rejecting wrong or incomplete programs', async (t) => {
+  const cwd = tmp(t, 'skillfit-command-grade-');
+  const dir = join(cwd, 'bench');
+  await runBenchInit({ dir, kind: 'command', yes: true, log: () => {} });
+  const programs = [
+    { id: 'original', source: 'export const add = (a, b) => a - b;', passed: false },
+    { id: 'equivalent', source: 'export const add = (left, right) => [left, right].reduce((sum, n) => sum + n, 0);', passed: true },
+    { id: 'hardcoded', source: 'export const add = () => 5;', passed: false },
+    { id: 'partial', source: 'export const add = (a, b) => Math.abs(a + b);', passed: false },
+    { id: 'syntax-error', source: 'export const add = ;', passed: false },
+    { id: 'early-exit', source: 'process.exit(0);', passed: false },
+  ];
+  for (const program of programs) await t.test(program.id, async () => {
+    const runDir = join(cwd, `run ${program.id}`);
+    cpSync(join(dir, 'fixtures/example-task'), runDir, { recursive: true });
+    writeFileSync(join(runDir, 'index.js'), program.source);
+    const result = await runVerifier(dir, 'node verifiers/example-task.mjs', runDir);
+    assert.equal(result.exitCode, program.passed ? 0 : 1, result.output);
+    const summary = parseVerifierSummary(result.output);
+    assert.equal(summary?.passed, program.passed);
+    assert.equal(summary?.checks.length, 4);
+    assert.equal(summary?.checks[0]?.pass, true);
+    if (program.id === 'partial') {
+      assert.equal(summary?.checks[1]?.pass, true);
+      assert.equal(summary?.checks[2]?.pass, false, 'negative-input failures must stay visible');
+    }
+  });
+});
+
+test('command starter rejects modified or missing protected tests and package metadata', async (t) => {
+  const cwd = tmp(t, 'skillfit-command-protected-');
+  const dir = join(cwd, 'bench');
+  await runBenchInit({ dir, kind: 'command', yes: true, log: () => {} });
+  for (const file of ['package.json', 'test.mjs']) {
+    for (const mutation of ['modify', 'remove']) await t.test(`${mutation} ${file}`, async () => {
+      const runDir = join(cwd, `${mutation}-${file}`);
+      cpSync(join(dir, 'fixtures/example-task'), runDir, { recursive: true });
+      writeFileSync(join(runDir, 'index.js'), 'export const add = (a, b) => a + b;');
+      if (mutation === 'remove') rmSync(join(runDir, file));
+      else writeFileSync(join(runDir, file), file === 'package.json' ? '{"type":"module"}' : '// tests removed');
+      const result = await runVerifier(dir, 'node verifiers/example-task.mjs', runDir);
+      assert.equal(result.exitCode, 1, result.output);
+      assert.equal(parseVerifierSummary(result.output)?.checks[0]?.pass, false);
+    });
+  }
+});
+
+test('bench init CLI validates template kind and keeps existing output untouched', (t) => {
+  const cwd = tmp(t, 'skillfit-command-cli-');
+  const cli = join(PACKAGE_ROOT, 'dist/cli.js');
+  const dir = join(cwd, 'bench');
+  const invalid = spawnSync(process.execPath, [cli, 'bench', 'init', dir, '--kind', 'typo', '--yes'], { encoding: 'utf8' });
+  assert.notEqual(invalid.status, 0);
+  assert.match(invalid.stderr, /Unknown --kind/);
+  assert.ok(!existsSync(dir));
+  const misplaced = spawnSync(process.execPath, [cli, 'bench', 'check', dir, '--kind', 'command'], { encoding: 'utf8' });
+  assert.notEqual(misplaced.status, 0);
+  assert.match(misplaced.stderr, /--kind applies only to bench init/);
+  const created = spawnSync(process.execPath, [cli, 'bench', 'init', dir, '--kind', 'command', '--yes'], { encoding: 'utf8' });
+  assert.equal(created.status, 0, created.stderr);
+  const manifest = readFileSync(join(dir, 'bench.json'), 'utf8');
+  const collision = spawnSync(process.execPath, [cli, 'bench', 'init', dir, '--kind', 'command', '--yes'], { encoding: 'utf8' });
+  assert.notEqual(collision.status, 0);
+  assert.match(collision.stderr, /not empty/);
+  assert.equal(readFileSync(join(dir, 'bench.json'), 'utf8'), manifest);
 });
 
 test('runBenchInit refuses a non-empty target directory', async (t) => {
