@@ -17,6 +17,13 @@ Without `--kind`, the text-output starter remains the default. Replace either
 starter with a real task before making an efficacy claim; see the
 [starter walkthrough](../docs/bench-authoring.md#choose-a-starter).
 
+For Agent integration, source builds also support `skillfit bench check my-bench --json`.
+The [version 1 JSON contract](../docs/bench-check-json.md) includes each gate's
+identifier, status, task, location, remediation and bounded process evidence.
+It uses the same offline checks; JSON mode rejects `--calibrate`. Exit 0 permits
+warnings, exit 1 identifies failed gates, and exit 2 identifies incomplete checks
+or option errors. This interface is not in the npm 0.9.1 archive.
+
 ## Bench directory layout
 
 ```

@@ -104,10 +104,13 @@ eval 和基线校准可用 `--max-calls <n>` 拒绝超出调用上限的计划�
 node dist/cli.js bench init my-bench --kind command --dry-run
 node dist/cli.js bench init my-bench --kind command --yes
 node dist/cli.js bench check my-bench
+node dist/cli.js bench check my-bench --json
 node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input workspace --trials 1 --max-calls 2 --dry-run
 ```
 
 这是用于教格式的合成案例，不是 Skill 基准。在衡量收益前，把初始文件、任务请求、评分器和参考修复一起替换为你的真实任务。预览会显示计划调用两次，实际一次也不会启动。不传 `--kind`（或用 `--kind output`）仍生成原来的回复评分模板。已有失败可用 `bench add --freeze` 固定，维护者修复可用 `--from-commit` 导入；参见[编写指南](docs/bench-authoring.md)。
+
+Agent 可以用 `bench check --json` 读取带版本的校验标识、任务 ID、位置、失败原因、处理建议和限长的评分器证据。标准输出只有 JSON，退出码区分通过、校验失败和执行错误。这项源码版功能仅做离线校验，拒绝与 `--calibrate` 混用；警告仍需检查。参见 [JSON 契约](docs/bench-check-json.md)。
 
 ## 评估真实开源任务
 
