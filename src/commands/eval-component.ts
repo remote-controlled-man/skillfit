@@ -7,6 +7,7 @@ import { loadEvalRequest, parseAcceptancePolicy, policyHash, readComponentJson, 
 import { hashFileSet, listFilesRecursive, sha256Text } from '../harness/hash.js';
 import { runEval, type EvalOptions, type EvalPreview } from './eval.js';
 import { spendingBudgetReport } from '../harness/eval-budget.js';
+import { verifyReplayPackage } from '../harness/replay-package.js';
 
 export function componentError(error: unknown, code = 'INVALID_OR_FAILED_EVALUATION') {
   return { schemaVersion: 1, kind: 'skillfit.eval-error', status: 'error',
@@ -14,7 +15,19 @@ export function componentError(error: unknown, code = 'INVALID_OR_FAILED_EVALUAT
     acceptance: { decision: 'inconclusive', eligibleForUpgrade: false, automaticUpgrade: false } };
 }
 
-export async function reportEvalComponent(path: string, options: { policyPath?: string; recordsPath?: string; replay?: boolean; benchDir?: string } = {}) {
+interface EvalReportOptions { policyPath?: string; recordsPath?: string; replay?: boolean; benchDir?: string }
+
+export async function reportEvalComponent(path: string, options: EvalReportOptions = {}) {
+  if (statSync(resolve(path)).isDirectory() && existsSync(join(resolve(path), 'replay-package.json'))) {
+    if (options.recordsPath || options.benchDir) throw new Error('Portable packages already pin their run and bench; external overrides are not allowed.');
+    const metadata = verifyReplayPackage(resolve(path));
+    return { ...await reportNativeEvaluation(join(resolve(path), 'run'), { ...options, benchDir: join(resolve(path), 'inputs/bench') }),
+      portablePackage: { integrityVerified: true, sourcePlanSha256: metadata.sourcePlanSha256, files: Object.keys(metadata.files).length } };
+  }
+  return reportNativeEvaluation(path, options);
+}
+
+async function reportNativeEvaluation(path: string, options: EvalReportOptions) {
   const input = resolve(path), directory = statSync(input).isDirectory();
   const manifestPath = directory ? join(input, 'manifest.json') : input;
   const runDir = resolve(options.recordsPath ?? (directory ? input : dirname(input)));
@@ -68,6 +81,7 @@ export async function runEvalComponent(requestPath: string, options: ComponentRu
     bench: request.bench, agent: request.agent, mode: 'installed', inputMode: 'workspace', trials: request.trials,
     maxCalls: request.maxCalls, pairOrder: request.pairOrder, runsRoot: request.runsRoot, runGroup: request.runGroup, yes: true, dryRun: true,
     executorTimeoutSeconds: request.executorTimeoutSeconds,
+    ...(request.taskIds ? { taskIds: request.taskIds } : {}),
     ...(request.spendingBudget ? { spendingBudget: request.spendingBudget } : {}),
     judgeExecutor: null, executor: options.executor, sessionOptions: options.sessionOptions,
     skillInstallDir: options.skillInstallDir, log: options.log ?? (() => {}) };

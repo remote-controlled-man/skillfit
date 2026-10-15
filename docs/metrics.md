@@ -60,7 +60,7 @@ gates), and the LLM-judge literature cited in §5.
 
 ## Unit of analysis
 
-Operational spending guard (2026-10-15, unreleased source): paired evaluations
+Operational spending guard (2026-10-15, included in 0.10.0): paired evaluations
 may declare five absolute `spendingBudget` stop lines, pinned in their request,
 preview and native plan. All invoked agent spending counts, including failures
 and excluded partners. Reaching a line prevents the next call; one in-flight call
@@ -104,6 +104,14 @@ treatment is always *paired*: per-task first, then pooled across tasks with task
 Never pool unpaired.
 
 ## L0 — bench health (guard metrics)
+
+Task selection (2026-10-16, 0.10.0): repeated CLI `--task` or request `taskIds`
+restricts the evaluated population before calls. Native plans bind selected IDs
+and manifest order while keeping the full bench hash. Planned calls, observed
+costs and task counts use only that population. Empty, duplicate, unsafe or
+unknown IDs are rejected. No statistical formula, eight-task/five-pair floor,
+independence requirement or historical verdict changes; a selected small subset
+remains indicative. See [case management](case-management.md).
 
 A bench that cannot discriminate must not produce verdicts.
 

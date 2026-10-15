@@ -1,6 +1,6 @@
 # Offline bench checks for Agents
 
-Source-checkout feature, not part of the published npm 0.9.1 archive:
+Available in skillfit 0.10.0:
 
 ```bash
 node dist/cli.js bench check my-bench --json

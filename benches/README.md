@@ -8,7 +8,7 @@ A **bench** is a portable, deterministic test suite for measuring whether a skil
 
 `skillfit eval <skill-path> --bench <bench-dir>` pairs every task twice — once **baseline** (no skill injected) and once **treatment** (skill injected into the prompt) — for `N` trials each, then compares pass rates. `skillfit bench init` scaffolds a new bench (with a working example task) and `skillfit bench check` validates one offline — verifier self-tests, oracle/NOP gates, facet-count bounds, mock-arm probes, fixture hygiene — before you spend a single token on runs. Add `--calibrate --agent <id>` to also run real baseline-difficulty probes: one inject-mode arm per task with an empty skill payload, so `shouldTrigger` labels are **not** required and you pay for one arm, not two. Each task is banded against the L0 floor/ceiling as too hard or broken (≤10% baseline pass rate), discriminative (in between), or too easy/saturated (≥90%); aim for 30–70%. A calibration that completes no runs fails loudly instead of reporting a band it never measured.
 
-Source-checkout starter (not in npm 0.9.1): `skillfit bench init my-bench --kind command`
+Available in 0.10.0: `skillfit bench init my-bench --kind command`
 creates a code-editing teaching case, with protected tests, separate behavioral
 probes and a reference repair. The original must fail and the oracle must pass
 `bench check`; equivalent repairs are accepted. Use `--dry-run` before creating
@@ -17,12 +17,19 @@ Without `--kind`, the text-output starter remains the default. Replace either
 starter with a real task before making an efficacy claim; see the
 [starter walkthrough](../docs/bench-authoring.md#choose-a-starter).
 
-For Agent integration, source builds also support `skillfit bench check my-bench --json`.
+For Agent integration, use `skillfit bench check my-bench --json` (0.10.0+).
 The [version 1 JSON contract](../docs/bench-check-json.md) includes each gate's
 identifier, status, task, location, remediation and bounded process evidence.
 It uses the same offline checks; JSON mode rejects `--calibrate`. Exit 0 permits
 warnings, exit 1 identifies failed gates, and exit 2 identifies incomplete checks
-or option errors. This interface is not in the npm 0.9.1 archive.
+or option errors.
+
+Use `bench list/show` for inspection and `bench edit/remove` for previewed manifest
+changes (`--yes` applies with backup/verification). Removal preserves files. Select
+eval cases with repeated `--task <id>` or request `taskIds`; native plans freeze
+the selected IDs in manifest order and retain the full bench hash. Small subsets
+remain indicative. See [case management](../docs/case-management.md) and
+[portable offline exports](../docs/replay-packages.md).
 
 ## Bench directory layout
 

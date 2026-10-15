@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent } from '../agents.js';
-import { loadBench } from '../harness/bench.js';
+import { loadBench, selectBenchTasks } from '../harness/bench.js';
 import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { ApiExecutor } from '../harness/executors/api.js';
@@ -50,6 +50,7 @@ export interface EvalOptions {
   /** Previous complete Skill version; available only in installed mode. */
   baselineSkillPath?: string;
   bench?: string;
+  taskIds?: string[];
   trials?: number;
   pairOrder?: PairOrder;
   executorTimeoutSeconds?: number;
@@ -175,7 +176,7 @@ function sessionFor(options: EvalOptions, bench: Bench, target: EvaluationTarget
     ...options.sessionOptions, guardFiles: options.guardFiles,
     workspaces: bench.tasks.flatMap(task => armNames.flatMap(arm =>
       Array.from({ length: trials }, (_, i) => join(runsRoot, runGroup, task.id, arm, `trial-${i + 1}`)))),
-    details });
+    details: { ...details, ...(options.taskIds ? { taskIds: bench.tasks.map(task => task.id) } : {}) } });
 }
 
 function estimatePromptTokens(bench: Bench, target: EvaluationTarget, inputMode: InputMode): { baseline: number; treatment: number } {
@@ -406,7 +407,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     throw new Error(`--trials must be an integer between 1 and 20, got ${trials}`);
   }
   const benchDir = resolveBenchDir(options.bench);
-  const bench = loadBench(benchDir);
+  const bench = selectBenchTasks(loadBench(benchDir), options.taskIds);
   let target = collectEvaluationTarget(options.skillPath);
   let baselineTarget: EvaluationTarget | undefined;
   let skillInstallDir: string | undefined;

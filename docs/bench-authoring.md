@@ -11,7 +11,7 @@ numbers you can trust.**
 
 ## Choose a starter
 
-Source-checkout feature (not in npm 0.9.1): use `--kind command` for tasks where
+Available in 0.10.0: use `--kind command` for tasks where
 the agent must edit files. The existing `output` starter remains the default.
 
 ```bash
@@ -38,6 +38,13 @@ seven steps below explain how to build those real cases.
 ---
 
 ## What a bench is
+
+After creating a bench, use `bench list/show` to inspect registrations and
+`bench edit/remove` to preview changes. Applying with `--yes` backs up and validates
+the manifest; removal preserves task files and cannot empty a schema-1 bench.
+For a small development preview, select cases with repeated `eval --task <id>` or
+request `taskIds`. Keep independent validation tasks separate and preserve the
+sample-size requirements. See [case management](case-management.md).
 
 A bench is a folder of small tasks your agent has already failed at, plus a program that decides —
 with no human reading and no second LLM judging — whether this attempt succeeded.

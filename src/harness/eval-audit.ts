@@ -120,6 +120,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
       assert.equal(sha256File(member(root, NATIVE_DIFF_SNAPSHOT)), tool.sha256, 'Frozen native diff source changed.');
     } else assert.equal(raw.nativeDiffTool, undefined, 'Unrecorded native diff environment.');
     const all = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] }, paired = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] };
+    if (details.taskIds !== undefined) assert.deepEqual(details.taskIds, report.tasks.map(task => task.id), 'Selected task IDs differ from the frozen plan.');
     const bench = options.replay ? loadBench(options.benchDir ?? String(record(raw.bench, 'bench').dir)) : null;
     if (bench) assert.equal(bench.contentSha256, report.bench.sha256, 'Replay bench differs from the frozen task set.');
     let invoked = 0;

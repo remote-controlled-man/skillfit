@@ -7,6 +7,7 @@ import { sha256Text } from './hash.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS } from './report.js';
 import type { PairOrder } from './types.js';
 import { parseSpendingBudget, type SpendingBudget } from './eval-budget.js';
+import { parseTaskIds } from './bench.js';
 
 interface PolicyBase {
   minTasks: number;
@@ -30,6 +31,7 @@ export interface EfficiencyPolicy extends PolicyBase {
 export type AcceptancePolicy = QualityPolicy | EfficiencyPolicy;
 
 export interface EvalRequest {
+  taskIds?: string[];
   schemaVersion: 1;
   baselineSkill: string;
   candidateSkill: string;
@@ -122,7 +124,7 @@ export function parseAcceptancePolicy(value: unknown = {}): AcceptancePolicy {
 
 export function parseEvalRequest(value: unknown, baseDir: string): EvalRequest {
   const r = record(value, 'request');
-  keys(r, ['schemaVersion', 'baselineSkill', 'candidateSkill', 'bench', 'agent', 'purpose', 'pairOrder', 'executorTimeoutSeconds', 'trials', 'maxCalls', 'spendingBudget', 'runsRoot', 'runGroup', 'policy'], 'request');
+  keys(r, ['schemaVersion', 'baselineSkill', 'candidateSkill', 'bench', 'taskIds', 'agent', 'purpose', 'pairOrder', 'executorTimeoutSeconds', 'trials', 'maxCalls', 'spendingBudget', 'runsRoot', 'runGroup', 'policy'], 'request');
   if (r.schemaVersion !== 1) throw new Error('request.schemaVersion must be 1.');
   const agent = text(r.agent, 'request.agent');
   getAgent(agent);
@@ -134,6 +136,7 @@ export function parseEvalRequest(value: unknown, baseDir: string): EvalRequest {
     baselineSkill: resolve(baseDir, text(r.baselineSkill, 'request.baselineSkill')),
     candidateSkill: resolve(baseDir, text(r.candidateSkill, 'request.candidateSkill')),
     bench: resolve(baseDir, text(r.bench, 'request.bench')),
+    ...(r.taskIds !== undefined ? { taskIds: parseTaskIds(r.taskIds) } : {}),
     agent, purpose: r.purpose, pairOrder: r.pairOrder ?? 'baseline-first',
     executorTimeoutSeconds: numeric(r.executorTimeoutSeconds ?? DEFAULT_CLI_TIMEOUT_MS / 1000, 'request.executorTimeoutSeconds', 1, 3600, true),
     trials: numeric(r.trials, 'request.trials', 1, 20, true),

@@ -1,5 +1,11 @@
 # Share an evaluation result
 
+For a complete portable directory of a paired native run without a judge, use
+`report eval <run-dir> --export <new-dir> --json` to preview, then add `--yes`.
+The [portable package guide](replay-packages.md) covers checksums, matching source
+recovery, offline replay, stopped costs and review of private project contents.
+The Markdown report below is a shorter summary, without the full replay inputs.
+
 Try a clearly synthetic schema-v4 example first:
 
 ```bash

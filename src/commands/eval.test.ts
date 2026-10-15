@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,10 +8,63 @@ import { test } from 'node:test';
 import { MockExecutor } from '../harness/executors/mock.js';
 import type { Executor } from '../harness/types.js';
 import { runEval } from './eval.js';
+import { loadBench, selectBenchTasks } from '../harness/bench.js';
+import { reportEvalComponent } from './eval-component.js';
 
 const PACKAGE_ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const BUNDLED_CODE_REVIEW = join(PACKAGE_ROOT, 'benches', 'code-review');
 const BUNDLED_DEBUGGING = join(PACKAGE_ROOT, 'benches', 'debugging');
+
+test('task selection preserves manifest order and full hash; budgets and replay use only selected tasks', async t => {
+  const full = loadBench(BUNDLED_CODE_REVIEW);
+  const ids = [full.tasks[1]!.id, full.tasks[0]!.id];
+  const selected = selectBenchTasks(full, ids);
+  assert.deepEqual(selected.tasks.map(task => task.id), [...ids].reverse());
+  assert.equal(selected.contentSha256, full.contentSha256);
+  const root = tmp(t, 'skillfit-selection-'), runsRoot = join(root, 'runs');
+  let calls = 0;
+  const mock = new MockExecutor();
+  const executor: Executor = { describe: () => mock.describe(), run: async (...args) => { calls++; return mock.run(...args); } };
+  const base = { skillPath: makeSkill(t), bench: BUNDLED_CODE_REVIEW, taskIds: ids, trials: 1, maxCalls: 4,
+    yes: true, executor, judgeExecutor: null, runsRoot, runGroup: 'subset', log: () => {} };
+  await runEval({ ...base, dryRun: true, onPlan: plan => {
+    assert.equal(plan.plannedCalls, 4); assert.deepEqual(plan.bench.taskIds, [...ids].reverse());
+  } });
+  assert.equal(calls, 0); assert.ok(!existsSync(runsRoot));
+  const manifest = await runEval({ ...base, dryRun: false });
+  assert.ok(manifest && 'overall' in manifest);
+  assert.equal(calls, 4); assert.equal(manifest.bench.taskCount, 2);
+  assert.ok(manifest.warnings.some(w => w.includes('indicative')));
+  const native = JSON.parse(readFileSync(join(runsRoot, 'subset/_plan.json'), 'utf8'));
+  assert.deepEqual(native.details.taskIds, [...ids].reverse());
+  const replay = await reportEvalComponent(join(runsRoot, 'subset'), { replay: true });
+  assert.ok('evidence' in replay && replay.evidence.verified);
+  assert.equal(calls, 4, 'replay must not call an executor');
+});
+
+test('invalid or over-budget selections stop before any executor or output starts', async t => {
+  const runsRoot = join(tmp(t, 'skillfit-selection-invalid-'), 'runs');
+  const task = loadBench(BUNDLED_CODE_REVIEW).tasks[0]!.id;
+  let calls = 0;
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline' }), run: async () => { calls++; throw new Error('must not run'); } };
+  const base = { skillPath: makeSkill(t), bench: BUNDLED_CODE_REVIEW, trials: 1, yes: true,
+    dryRun: false, executor, judgeExecutor: null, runsRoot, log: () => {} };
+  for (const ids of [[], [task, task], ['absent'], ['../bad']]) {
+    await assert.rejects(() => runEval({ ...base, taskIds: ids }), /taskIds|Duplicate task|Unknown task/);
+  }
+  await assert.rejects(() => runEval({ ...base, taskIds: [task], maxCalls: 1 }), /exceeding/);
+  assert.equal(calls, 0); assert.ok(!existsSync(runsRoot));
+});
+
+test('CLI repeatable task selectors preview only selected cases and reject duplicate IDs', t => {
+  const cli = fileURLToPath(new URL('../cli.js', import.meta.url));
+  const base = [cli, 'eval', makeSkill(t), '--bench', BUNDLED_CODE_REVIEW, '--agent', 'codex', '--trials', '1', '--dry-run'];
+  const result = spawnSync(process.execPath, [...base, '--task', 'review-r2', '--task', 'review-r1'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /2 task\(s\) × 2 conditions × 1 = 4 runs/);
+  assert.ok(result.stdout.indexOf('review-r1: fixture') < result.stdout.indexOf('review-r2: fixture'));
+  const invalid = spawnSync(process.execPath, [...base, '--task', 'review-r1', '--task', 'review-r1'], { encoding: 'utf8' });
+  assert.equal(invalid.status, 1); assert.match(invalid.stderr, /Duplicate task/);
+});
 
 function tmp(t: import('node:test').TestContext, prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
