@@ -58,6 +58,9 @@ jobs:
           node scripts/npm-release.mjs guard "$RUNNER_TEMP/skillfit-release/pack.json"
           archive=$(node -p "JSON.parse(require('node:fs').readFileSync(process.env.RUNNER_TEMP + '/skillfit-release/pack.json'))[0].filename")
           npm publish "$RUNNER_TEMP/skillfit-release/$archive" --access public --tag latest --fetch-retries=0 --fetch-timeout=600000
+      - name: Verify registry availability and isolated install
+        if: '!inputs.dry_run'
+        run: |
           node scripts/npm-release.mjs verify "$RUNNER_TEMP/skillfit-release/pack.json"
       - name: Retain reviewed archive and verification receipts
         if: always()
