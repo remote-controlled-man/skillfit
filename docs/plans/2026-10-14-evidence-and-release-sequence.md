@@ -10,7 +10,7 @@ mechanism probe completed and stopped at four. The acceptance policy stays uncha
 | 2 — Completed October 15 | Restore npm authentication, publish the reviewed 0.9.0 package, smoke an isolated registry install and mirror documentation | 513 offline tests, exact package integrity, 2,330 installed files and registry-installed CLI pass; [public receipt](../releases/0.9.0-verification.json) retained | New model-call budget remains zero |
 | 2a — Completed October 15 | Verify the first 0.9.1 CLI/OIDC publication | [Verified receipt](../releases/0.9.1-verification.json): exact archive, 2,333 installed files, CLI smoke, registry signature and source attestation; both deadline failures retained | Original workflow remains failed; one upload, independent recovery, zero model calls |
 | 3 — Completed October 15, exactly four live calls | Execute the [fixed mechanism proposal](2026-10-15-native-diff-mechanism.md) under fresh authorization | [Report and offline archive](../../evidence/2026-10-15-native-diff-mechanism.md): both arms pass 2/2, helper use 4/4, five patch displays, all paired cost measures lower; no extra calls | Development signal only; inconclusive acceptance, remaining live budget zero |
-| 4 — Awaiting decision after item 3 | Review whether to declare a new independent Skill revision validation, using tasks not used for candidate selection | Require a frozen candidate, unused tasks, explicit spending envelope, correctness checks and complete failure/cost retention before execution | Separate user decision and fresh budget required; insufficient evidence cannot authorize adoption; no automatic upgrade |
+| 4 — Proposal prepared October 15; no live authorization | Review the [independent comparison proposal](2026-10-15-independent-comparison-proposal.md): eight unused source defects, unchanged original/v4, at most 80 calls | Pinned source fixes/parents and an archive-verified 130-call cost forecast; formal bench gates, budget guard and final execution hashes remain prerequisites | Remaining live budget is zero; separate user decision required; no automatic calls or upgrade |
 
 Windows are an order of work, not a promise of future unattended execution.
 No timer, monitor or automatic live experiment is created by this plan.
@@ -42,3 +42,9 @@ an independent-comparison proposal, not automatic execution. The task is reused,
 both arms receive the helper, and four common CLI startup warnings remain visible.
 There is no stable-improvement or causal helper-savings claim, no candidate
 promotion and no independent cohort started.
+
+The new independent-comparison proposal is a planning artifact, not an executable
+request or evidence of efficacy. It selects four new source repositories and
+keeps all acceptance gates unchanged. Offline original/oracle checks must finish
+before live execution; projected usage and proposed stop lines are not a hard
+provider token cap or a spending authorization.

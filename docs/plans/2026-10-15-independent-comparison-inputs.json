@@ -1,0 +1,369 @@
+{
+  "schemaVersion": 1,
+  "kind": "skillfit.independent-comparison-proposal",
+  "status": "proposal-awaiting-user-decision",
+  "sourceCommit": "98227b48703d753aa0f7918a8a04fe490b9dce27",
+  "authorizedModelCalls": 0,
+  "readyForModelCalls": false,
+  "plannedCalls": 80,
+  "trialsPerArm": 5,
+  "proposedPurpose": "validation",
+  "pairOrder": "balanced",
+  "executorTimeoutSeconds": 1200,
+  "extras": {
+    "readinessCalls": 0,
+    "retries": 0,
+    "replacements": 0,
+    "generatorCalls": 0,
+    "judgeCalls": 0,
+    "automaticExpansion": false
+  },
+  "baseline": {
+    "path": "evidence/inputs/diagnosing-bugs",
+    "sha256": "3cf6b2fea38acbdebfbaca564f7a2f10cd7d12dfcad0442756a6842db96eccc1"
+  },
+  "candidate": {
+    "path": "evidence/inputs/diagnosing-bugs-compact-v4",
+    "sha256": "db5e96d06d52f3c1fbfe4a10b12c999c6191dc6a42f889e074931730ff6eafa9"
+  },
+  "nativeDiffToolSha256": "231e245a827bfa0bbf6b0e486d8697fb7becd7b42f24a3d585321055eb7eccb7",
+  "proposedConfiguration": {
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "xhigh",
+    "serviceTier": "default",
+    "servedModel": "must record attestation status; not inferred from configuration",
+    "isolation": "Same pinned inherited configuration in both arms; retain common startup warnings"
+  },
+  "policy": {
+    "schemaVersion": 2,
+    "objective": "efficiency",
+    "minTasks": 8,
+    "minTrialsPerTask": 5,
+    "minUncachedInputReductionFraction": 0.1,
+    "minImprovedTaskFraction": 0.75,
+    "maxCostIncreaseFraction": {
+      "input": 0,
+      "cachedInput": 0,
+      "uncachedInput": 0,
+      "output": 0,
+      "durationSeconds": 0.25
+    }
+  },
+  "policySha256": "e6c0610daccd82f4fa326fb2660ae9f6dc722e1544f1caa006b4143de3da4a5e",
+  "tasks": [
+    {
+      "position": 1,
+      "id": "limit-async-context",
+      "repository": "sindresorhus/p-limit",
+      "upstreamFix": "ad8afe6f46429e726b32fdedf063c553ebcb0196",
+      "before": "38a6773e552d24f4c9eb2d79d57b6cff017c587d",
+      "url": "https://github.com/sindresorhus/p-limit/commit/ad8afe6f46429e726b32fdedf063c553ebcb0196",
+      "upstreamTitle": "Fix AsyncResource propagation issue (#71)",
+      "upstreamDate": "2023-11-01T06:13:46Z",
+      "behavior": "Queued calls retain their own AsyncLocalStorage context",
+      "functionalFiles": [
+        {
+          "path": "async-hooks-stub.js",
+          "status": "added",
+          "fixedGitBlobSha": "913c7c6171a31464510d7ea6744d319aeb34682a"
+        },
+        {
+          "path": "index.js",
+          "status": "modified",
+          "fixedGitBlobSha": "c5ebcc9c8c7ce10f9f8b1844cd899adaf5edb192"
+        },
+        {
+          "path": "package.json",
+          "status": "modified",
+          "fixedGitBlobSha": "22aba982ede36f408ae3ca70ca686514562f1a9d"
+        }
+      ],
+      "outcomeGroups": [
+        "Protected supplied assets and ordinary smoke behavior",
+        "Distinct callers retain their own store",
+        "Queued-to-active transitions retain context",
+        "Concurrency one and multiple preserve isolation",
+        "Ordinary fulfillment and rejection remain intact",
+        "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
+      ],
+      "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
+      "offlineOriginalOracleGate": "pending"
+    },
+    {
+      "position": 2,
+      "id": "timeout-custom-timers",
+      "repository": "sindresorhus/p-timeout",
+      "upstreamFix": "ed58372c62d3dddfe6f58de37558fb132e1a4e9b",
+      "before": "f9ced5e18ad81eab24a9a8d0f07bf3002f7bea64",
+      "url": "https://github.com/sindresorhus/p-timeout/commit/ed58372c62d3dddfe6f58de37558fb132e1a4e9b",
+      "upstreamTitle": "Fix \"Illegal invocation\" error with custom timers",
+      "upstreamDate": "2025-10-07T01:44:36Z",
+      "behavior": "Custom timers receive a compatible call receiver",
+      "functionalFiles": [
+        {
+          "path": "index.js",
+          "status": "modified",
+          "fixedGitBlobSha": "76e98d2842cb18c36640a48bcd251fe21fc50114"
+        }
+      ],
+      "outcomeGroups": [
+        "Protected supplied assets and ordinary smoke behavior",
+        "Scheduling does not bind this to the customTimers container",
+        "Clearing does not bind this to that container",
+        "Timeout and fallback paths keep their results",
+        "Ordinary fulfillment and rejection keep identity",
+        "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
+      ],
+      "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
+      "offlineOriginalOracleGate": "pending"
+    },
+    {
+      "position": 3,
+      "id": "throttle-sync-throw",
+      "repository": "sindresorhus/p-throttle",
+      "upstreamFix": "bee3f7d0b048f251de2f910ddd122c6babf49380",
+      "before": "5b566f4eecab5b054840896287e46806585747db",
+      "url": "https://github.com/sindresorhus/p-throttle/commit/bee3f7d0b048f251de2f910ddd122c6babf49380",
+      "upstreamTitle": "Fix handling of synchronously thrown errors (#64)",
+      "upstreamDate": "2025-08-20T07:18:53Z",
+      "behavior": "Delayed synchronous exceptions reject the returned promise",
+      "functionalFiles": [
+        {
+          "path": "index.js",
+          "status": "modified",
+          "fixedGitBlobSha": "ec506894eb442dcee67d2ff9e8ab0df9cc3887f5"
+        }
+      ],
+      "outcomeGroups": [
+        "Protected supplied assets and ordinary smoke behavior",
+        "Delayed sync throw rejects with the original error",
+        "Queue state is cleaned after failure",
+        "Async rejections still propagate",
+        "Successful calls preserve receiver and arguments",
+        "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
+      ],
+      "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
+      "offlineOriginalOracleGate": "pending"
+    },
+    {
+      "position": 4,
+      "id": "commander-output-isolation",
+      "repository": "tj/commander.js",
+      "upstreamFix": "68199e64b31851839c03dff1567a81d7714baa08",
+      "before": "672e3806c68421f91b3a1f628f6207b8b26d1a2c",
+      "url": "https://github.com/tj/commander.js/commit/68199e64b31851839c03dff1567a81d7714baa08",
+      "upstreamTitle": "Make .configureOutput() create copy of settings instead of in-place change (#2350)",
+      "upstreamDate": "2025-03-26T23:55:12Z",
+      "behavior": "A child output configuration change leaves its parent unchanged",
+      "functionalFiles": [
+        {
+          "path": "lib/command.js",
+          "status": "modified",
+          "fixedGitBlobSha": "0d14ee4131e5c562814e9061dbdedf5881499a0d"
+        }
+      ],
+      "outcomeGroups": [
+        "Protected supplied assets and ordinary smoke behavior",
+        "Child configuration applies locally",
+        "Parent output configuration remains intact",
+        "Sibling configuration remains intact",
+        "Unmodified output callbacks remain available",
+        "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
+      ],
+      "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
+      "offlineOriginalOracleGate": "pending"
+    },
+    {
+      "position": 5,
+      "id": "limit-map-iteration-rejection",
+      "repository": "sindresorhus/p-limit",
+      "upstreamFix": "9df0d27f82ab3cb6d7e1087f5bda94ce911d33ca",
+      "before": "783068bb9e967fd7bea8642e1bf5a3627fe38bdf",
+      "url": "https://github.com/sindresorhus/p-limit/commit/9df0d27f82ab3cb6d7e1087f5bda94ce911d33ca",
+      "upstreamTitle": "Fix unhandled rejections in `limit.map()` when the iterable throws",
+      "upstreamDate": "2026-09-18T18:17:12Z",
+      "behavior": "Iterator failure does not leave scheduled mapper rejections unhandled",
+      "functionalFiles": [
+        {
+          "path": "index.js",
+          "status": "modified",
+          "fixedGitBlobSha": "c24de5782032605aa83636bcf455f700e3b2ada7"
+        }
+      ],
+      "outcomeGroups": [
+        "Protected supplied assets and ordinary smoke behavior",
+        "Iterator error identity reaches the caller",
+        "Scheduled mapper failures create no unhandled rejection",
+        "Already queued work still finishes with correct queue counts",
+        "Ordinary arrays and array-like inputs keep map behavior",
+        "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
+      ],
+      "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
+      "offlineOriginalOracleGate": "pending"
+    },
+    {
+      "position": 6,
+      "id": "timeout-rejection-listener",
+      "repository": "sindresorhus/p-timeout",
+      "upstreamFix": "fd93994892d0b3cba6da61787ac6b5da3ad3f2d5",
+      "before": "3cabb7a7e576b5acc344db7f55acf4d56e47400a",
+      "url": "https://github.com/sindresorhus/p-timeout/commit/fd93994892d0b3cba6da61787ac6b5da3ad3f2d5",
+      "upstreamTitle": "Fix removing abort listener after promise rejects (#44)",
+      "upstreamDate": "2025-01-01T13:03:23Z",
+      "behavior": "Rejected input releases its abort listener without an unhandled derived rejection",
+      "functionalFiles": [
+        {
+          "path": "index.js",
+          "status": "modified",
+          "fixedGitBlobSha": "f88dd071a2ec3b3a509acb10ffc39863788fa766"
+        }
+      ],
+      "outcomeGroups": [
+        "Protected supplied assets and ordinary smoke behavior",
+        "Original rejection identity is retained",
+        "No derived promise creates an unhandled rejection",
+        "Abort listeners are removed on settlement",
+        "Fulfillment, explicit abort and timeout paths remain intact",
+        "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
+      ],
+      "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
+      "offlineOriginalOracleGate": "pending"
+    },
+    {
+      "position": 7,
+      "id": "timeout-infinity-abort",
+      "repository": "sindresorhus/p-timeout",
+      "upstreamFix": "9260b098885d11d53d0cc39884e5cadc8b85f229",
+      "before": "e8c2c9e16d2653bacbc404033af1166b5f07b91e",
+      "url": "https://github.com/sindresorhus/p-timeout/commit/9260b098885d11d53d0cc39884e5cadc8b85f229",
+      "upstreamTitle": "Fix infinite milliseconds (#38)",
+      "upstreamDate": "2023-06-12T14:16:18Z",
+      "behavior": "Infinity disables the timer while retaining AbortSignal handling",
+      "functionalFiles": [
+        {
+          "path": "index.js",
+          "status": "modified",
+          "fixedGitBlobSha": "29f44e345389cee6d68b1ff6af5ad13989f51461"
+        }
+      ],
+      "outcomeGroups": [
+        "Protected supplied assets and ordinary smoke behavior",
+        "An already aborted signal rejects",
+        "An abort after wrapping also rejects",
+        "Unaborted input fulfillment and rejection pass through",
+        "Infinity schedules no finite timeout",
+        "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
+      ],
+      "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
+      "offlineOriginalOracleGate": "pending"
+    },
+    {
+      "position": 8,
+      "id": "commander-async-listener-order",
+      "repository": "tj/commander.js",
+      "upstreamFix": "35a028b6253a38d00c16dca2a36b69c5888c022a",
+      "before": "e649291869553e68b583b70ee910abb5ec6bcce4",
+      "url": "https://github.com/tj/commander.js/commit/35a028b6253a38d00c16dca2a36b69c5888c022a",
+      "upstreamTitle": "Wrap emit to preserve callback order when async (#1638)",
+      "upstreamDate": "2021-11-09T05:37:07Z",
+      "behavior": "Legacy command events follow async hooks and the action",
+      "functionalFiles": [
+        {
+          "path": "lib/command.js",
+          "status": "modified",
+          "fixedGitBlobSha": "695c840ec8040407fb4444f4cd0a7f3657ea7eb5"
+        }
+      ],
+      "outcomeGroups": [
+        "Protected supplied assets and ordinary smoke behavior",
+        "Async preAction then action precede the legacy event",
+        "postAction follows that event",
+        "parseAsync waits for the action chain",
+        "Synchronous and no-subcommand cases keep their order",
+        "Submitted regression passes the repair and complete functional upstream fix, and fails the original"
+      ],
+      "sourceReview": "Commit, parent, functional diff and available upstream tests reviewed; no agent outcome used",
+      "offlineOriginalOracleGate": "pending"
+    }
+  ],
+  "independence": {
+    "scannedLocalManifestFiles": 162,
+    "previouslyScheduledTaskIds": [
+      "async-concurrency",
+      "async-end",
+      "buffered-readable",
+      "cold-thenable",
+      "consumer-stop",
+      "debounce-context-classes",
+      "debounce-recursive-args",
+      "debounce-timer-boundary",
+      "duration-large-digits",
+      "duration-plural-count",
+      "end-listeners",
+      "explicit-hold",
+      "feat-slug",
+      "fetch-abort",
+      "fetch-lifecycle",
+      "fetch-size",
+      "mapper-index",
+      "pipeline-order",
+      "promise-falsy-rejection",
+      "promise-method-context",
+      "promise-overlap-results",
+      "query-shape",
+      "range-parser",
+      "receipt-current",
+      "receipt-stale",
+      "scheduled-nav",
+      "source-close",
+      "source-error",
+      "temporal-filter",
+      "ttl-cache",
+      "ttl-duration",
+      "ttl-refresh",
+      "view-utf8"
+    ],
+    "sourceDefectsPreviouslyScheduled": false,
+    "candidateChangedForThisSet": false,
+    "newTaskModelCalls": 0,
+    "repositoryReferencesAlreadyPresent": [
+      "p-limit and p-throttle names occur in old fixtures as Related links/composition documentation; that is not evidence that these source defects were tuned"
+    ],
+    "excludedSourceFamilies": [
+      "minipass",
+      "normalize-url",
+      "lru-cache",
+      "p-map",
+      "quick-lru",
+      "p-debounce",
+      "debounce",
+      "HumanizeDuration",
+      "mcp-use",
+      "mcp-agent",
+      "Chrome DevTools",
+      "waza",
+      "earlier range/TTL/slug probes"
+    ],
+    "scope": "Unused as source defects in available project tuning/evaluation records; no claim of absence from model pretraining or uninspected external work",
+    "repositories": 4,
+    "repositoryTaskCounts": {
+      "sindresorhus/p-limit": 2,
+      "sindresorhus/p-timeout": 3,
+      "sindresorhus/p-throttle": 1,
+      "tj/commander.js": 2
+    },
+    "limitation": "Related promise packages and repeated repositories are correlated; task-block intervals are not repository-level generalization guarantees"
+  },
+  "prerequisites": {
+    "userBudgetDecision": "pending",
+    "sourceFixturePackaging": "pending",
+    "completeNodeOnlyOutcomeVerifiers": "pending",
+    "originalFailMaintainerPassAndRegressionWitness": "pending for all 8",
+    "offlineBudgetGuardChecks": "pending",
+    "executionInputRuntimeConfigurationHashesAndPreview": "pending; no runnable live request created"
+  },
+  "currentStudyLedgerCalls": 182,
+  "projectedStudyCeilingIfSeparatelyAuthorizedAndCompleted": 262,
+  "historicalMissingPublicFinalUsages": 7,
+  "automaticUpgrade": false
+}
