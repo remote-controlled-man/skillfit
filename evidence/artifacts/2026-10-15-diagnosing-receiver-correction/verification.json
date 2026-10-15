@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "kind": "skillfit.offline-receiver-correction-verification",
+  "verifiedAt": "2026-10-15T12:34:55.965Z",
+  "baseCommit": "2cbe5f907e5bedb32501a5d13d77288c662ca1bd",
+  "modelCalls": 0,
+  "agentCliCalls": 0,
+  "independentValidation": false,
+  "skillBehaviorTested": false,
+  "automaticUpgrade": false,
+  "candidateStatus": "development-only; not installed or promoted",
+  "cumulativeStudyCalls": 194,
+  "unknownHistoricalPublicFinalUsages": 7,
+  "preservation": {
+    "fingerprintsChecked": 2702,
+    "changed": 0,
+    "checkpointSha256": "32338bc2bdd9b48798bb29d330597152c484c52789a51984875977bd1e3f2e01",
+    "originalArchiveSha256": "6a4d29e55a1b48b7e8cd4e790eb057341b08e92ede7e6fe903a015a6edfe3ed6",
+    "originalSkillAndBenchAndMetricsUnchanged": true,
+    "retainedNativeRecordsUnchanged": true
+  },
+  "replay": {
+    "passed": true,
+    "expectedMatched": true,
+    "originalDeliveryGradesReplayed": 12,
+    "originalPairs": 6,
+    "originalDecision": "reject",
+    "sourceVariants": 5,
+    "receiverTestsPerSource": 18,
+    "correctedRegressionWitnessesPerValidRepair": 10,
+    "originalVerifierUnchanged": true
+  },
+  "projectChecks": {
+    "initialSandboxAttempt": {
+      "passed": 555,
+      "failed": 1,
+      "reason": "listen EPERM on 127.0.0.1; localhost test listener blocked by sandbox",
+      "logSha256": "53598de16d05ec17fa85a1ab407e66a606e44232c9750328cc6f4fe23a7c9758"
+    },
+    "localListenerAllowedRerun": {
+      "passed": 556,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "logSha256": "d766a44b35bf077861015fa63203f57006cce7c06100c424ea3244a11897cefa"
+    },
+    "skillStructure": {
+      "passed": true,
+      "environment": "Existing isolated uv-managed environment; Python 3.12.14; PyYAML 6.0.3",
+      "packagesInstalled": 0,
+      "globalEnvironmentModified": false,
+      "provesModelBehavior": false
+    },
+    "syntax": "Both new JavaScript files passed node --check",
+    "localDocumentTargets": "All exist"
+  },
+  "costs": {
+    "additionalHarnessModelCalls": 0,
+    "additionalSkillUtf8Bytes": 319,
+    "additionalSkillWhitespaceWords": 47,
+    "modelTokenEffect": null,
+    "modelLatencyEffect": null,
+    "conversationalAuthoringUsageMeasured": false,
+    "providerInvoiceMeasured": false,
+    "priorCostsUnchanged": true
+  },
+  "files": [
+    {
+      "path": "evidence/artifacts/2026-10-15-diagnosing-receiver-correction/replay.mjs",
+      "sha256": "e89e79b58db0335608d67fe4c42e0f021cb3bce42abbe55cab915bb9e31cb5e2"
+    },
+    {
+      "path": "evidence/artifacts/2026-10-15-diagnosing-receiver-correction/receiver-contract.test.mjs",
+      "sha256": "23661fb62be42d707f567fd0f9686dd734f97467a9548831d7535efc7c3294f6"
+    },
+    {
+      "path": "evidence/artifacts/2026-10-15-diagnosing-receiver-correction/expected.json",
+      "sha256": "1a4079b88a76d430b6cd7696207edc15a56ac06981c58c82cd667e3a020f5886"
+    },
+    {
+      "path": "evidence/artifacts/2026-10-15-diagnosing-receiver-correction/README.md",
+      "sha256": "3a83a977e27920cc48cac00db30e65f405a5baeb6fbb04d9035f74327d33087e"
+    },
+    {
+      "path": "evidence/2026-10-15-diagnosing-receiver-correction.md",
+      "sha256": "e5878c9d21ec48d161289e37a4bbac88c295f0014d553c53bad288bc9fe274d8"
+    },
+    {
+      "path": "evidence/inputs/diagnosing-bugs-compact-v4.1-receiver/SKILL.md",
+      "sha256": "0881a5a10fee9d8c95ca63eea00ee8ec0991c9fa36884db8d5c4cd015bb76921"
+    },
+    {
+      "path": "evidence/inputs/diagnosing-bugs-compact-v4.1-receiver/agents/openai.yaml",
+      "sha256": "3e430dbe4334a87597488c060cb3dc3786bb00c9182877d6f5ec41f62490e90b"
+    },
+    {
+      "path": "evidence/inputs/diagnosing-bugs-compact-v4.1-receiver/LICENSE",
+      "sha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5"
+    },
+    {
+      "path": "evidence/inputs/diagnosing-bugs-compact-v4.1-receiver/scripts/hitl-loop.template.sh",
+      "sha256": "35103539fc36873eea36074769ad454f9379d6fc8b2dc0e26ce987fd3bfe5503"
+    }
+  ]
+}
