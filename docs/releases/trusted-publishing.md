@@ -49,5 +49,38 @@ running a dry run does not verify OIDC publication. See
    changed archive or unavailable installation never becomes a successful
    release receipt. Inspect the retained artifact and failure logs.
 
+## Upload accepted but verification timed out
+
+The upload and registry verification are separate workflow steps. A successful
+upload does not establish availability: npm can still show the version as
+`Validating`. The verification step retains its 20-minute deadline and fails
+without a success receipt if the version is unavailable. See
+[npm's publication scanning notice](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/).
+
+Do not rerun publication after npm accepts the upload. Preserve the original
+logs, `pack.json`, archive and `registry-read-*.json` files. Inspect the package's
+Version History for its review status. A pending scan is not a staged release
+that needs promotion, and a deadline failure does not authorize another upload.
+
+For an independent, read-only recovery, download the original workflow artifact
+into an isolated directory. Copy its `pack.json` and archive to a **new** attempt
+directory; verification receipts use exclusive creation and must not overwrite
+the failed attempt. Check out the original run's source commit, build with the
+same toolchain and run the helper against that attempt's `pack.json`:
+
+```bash
+node scripts/npm-release.mjs verify /absolute/path/to/new-attempt/pack.json
+```
+
+The helper does not publish. It requires the original archive integrity, matching
+version/latest, an isolated install and exact file comparisons. For a local
+cross-platform check, use a disposable directory extracted from the original CI
+archive as the comparison source, plus the original commit's package lock; this
+checks installed bytes against the accepted archive without rebuilding its
+generated files. Record this as independent verification, not a successful rerun
+of the original workflow. Retain the first failure even if later verification
+succeeds. Keep availability, provenance and installation evidence separate from
+any Skill quality claim.
+
 This workflow does not change the evaluation acceptance policy or upgrade a
 Skill. Package publication success establishes package availability only.
