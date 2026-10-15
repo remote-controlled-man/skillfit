@@ -7,8 +7,8 @@ then make that result useful to a team. Stars are an outcome to observe, not an 
 
 The product already has paired evaluations, deterministic bench gates, trigger measurements,
 configuration experiments, an MCP preflight, and English and Simplified Chinese READMEs. The main adoption gap is the
-path from a fresh clone to understanding what was measured: 0.9.0 is published with a
-[verified registry install](releases/0.9.0-verification.json), live evaluations still need a local agent
+path from a fresh clone to understanding what was measured: 0.9.1 is published with a
+[verified registry install](releases/0.9.1-verification.json), live evaluations still need a local agent
 or API key, and the first offline check is easy to mistake for an
 agent-quality result. Keep the native Node first-run path usable in Bash and
 PowerShell, and label Bash convenience scripts as alternatives.
@@ -87,7 +87,7 @@ These are open. The README roadmap is the public checklist; this list is the sam
 - The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the
   13-Skill starter set are not evaluated as sets. A run labeled indicative is not an installation
   recommendation (README, "Our own data").
-- `skillfit@0.9.0` includes the Agent evaluation component and is published. `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build`
+- The Agent evaluation component has been available since 0.9.0; 0.9.1 verifies CLI/OIDC publication. `npx skillfit` installs 0.9.1. Clone, `npm ci`, and `npm run build`
   remain valid (`skills/skillfit/SKILL.md`).
 - Community benches belong in `benches/contrib`. Evidence uses the Evidence submission issue template.
   CI runs the offline gates and does not call an agent. Cursor, Gemini CLI, and OpenCode adapters

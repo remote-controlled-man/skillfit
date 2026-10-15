@@ -49,6 +49,24 @@ running a dry run does not verify OIDC publication. See
    changed archive or unavailable installation never becomes a successful
    release receipt. Inspect the retained artifact and failure logs.
 
+The same manual workflow can be triggered from the GitHub CLI. After preparing
+the reviewed new version on `main`, start the preview:
+
+```bash
+gh workflow run npm-release.yml --repo remote-controlled-man/skillfit --ref main -f dry_run=true
+gh run list --repo remote-controlled-man/skillfit --workflow npm-release.yml --limit 5
+```
+
+Inspect that run's checks, source commit and archive preview. Only after the
+preview passes and publication is authorized, start the real run:
+
+```bash
+gh workflow run npm-release.yml --repo remote-controlled-man/skillfit --ref main -f dry_run=false
+```
+
+This uses the existing GitHub CLI login; npm authentication comes from the
+workflow's OIDC binding. It does not require browser automation for each release.
+
 ## Upload accepted but verification timed out
 
 The upload and registry verification are separate workflow steps. A successful
@@ -84,3 +102,13 @@ any Skill quality claim.
 
 This workflow does not change the evaluation acceptance policy or upgrade a
 Skill. Package publication success establishes package availability only.
+
+## First verified OIDC publication
+
+The [0.9.1 receipt](0.9.1-verification.json) records the first real publication
+through this binding and an independent registry installation. npm's package
+metadata identifies the GitHub trusted publisher, and the verified attestation
+pins the repository, source commit, workflow and original run. The initial
+availability deadline failures remain preserved; the original run is still
+failed. This recovery did not repeat the upload. Future reviewed releases can
+use the manual CLI-triggered workflow without a local npm login or publish token.

@@ -1,13 +1,16 @@
 # Changelog
 
-## 0.9.1 — manual trusted publishing
+## [0.9.1] — 2026-10-15
 
 - Prepare a manual, default-dry-run GitHub Actions npm release workflow with
   OIDC, exact-archive checks, version reuse protection and verified registry
   installation after publication scanning. Add offline regression checks;
   see the [maintainer procedure](docs/releases/trusted-publishing.md).
-- A live trusted-publisher binding and its first real publication require
-  separate verification; preparation does not establish OIDC publication.
+- Verify the first real GitHub Actions OIDC publication: registry version/latest,
+  exact archive, 2,333 installed files, CLI smoke, registry signature and source
+  attestation all pass. Retain the original workflow timeout and a separate
+  read-only verification timeout; the original run remains failed. See the
+  [publication receipt](docs/releases/0.9.1-verification.json).
 - Align package and lockfile versions at 0.9.1 for the first reviewed OIDC
   publication. Runtime behavior, evaluation policies and dependencies are unchanged;
   see the [release guide](docs/releases/0.9.1.md).
