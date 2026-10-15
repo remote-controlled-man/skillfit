@@ -98,7 +98,7 @@ Timeouts retain their measured duration and available partial usage. A larger
 deadline increases the maximum elapsed budget without changing the call ceiling;
 it neither guarantees completion nor repairs provider availability.
 
-Unreleased source support: optional `spendingBudget` freezes five whole-batch
+Available in 0.10.0: optional `spendingBudget` freezes five whole-batch
 stop lines in the request, preview and native plan. All five fields are required
 when supplied: `input`, `cachedInput`, `uncachedInput`, `output` (positive safe
 integer token counts), and `durationSeconds` (positive finite seconds). For
@@ -125,6 +125,13 @@ available receipts and expose invalid receipt paths as unknown usage while leavi
 the original files untouched. `spendingBudget` in results includes frozen limits,
 event count, latest recorded state and read errors. Its stopped-run summary is
 informational, not evidence of a complete verified comparison.
+
+Optional `taskIds` (0.10.0+) selects a nonempty set of unique task IDs. Unknown or
+unsafe IDs fail before calls. The bench's manifest order is preserved, and only
+selected cases contribute to planned calls, costs and outcomes. The complete bench
+hash and selected IDs/order are frozen into the plan. CLI positional eval uses
+repeatable `--task <id>` instead. Selection never lowers the adoption scale or
+creates independent validation; see [case management](case-management.md).
 
 ```bash
 node dist/cli.js eval --request ./request.json --dry-run
@@ -304,6 +311,14 @@ inventory. A new request cannot overwrite an existing group or replace failed
 samples. A model upgrade or changed inputs requires a fresh bounded declaration.
 
 ## Verify the component offline
+
+Use `report eval <run-dir> --export <new-dir> --json` for a read-only export plan,
+then `--yes` to build a portable directory with unchanged receipts, matching
+inputs, pinned runtime and a checksum/replay entry point. Native paired runs
+without a judge are supported, including stopped runs. Missing inputs prevent
+export; partial/unknown costs and ineligible acceptance remain visible. See
+[portable offline packages](replay-packages.md) for relocated inputs and privacy
+review. This does not rerun an agent or produce new efficacy observations.
 
 ```bash
 npm test

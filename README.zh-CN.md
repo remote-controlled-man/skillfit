@@ -65,8 +65,8 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## 安装
 
 ```bash
-npx skillfit@0.9.1 --help
-npx skillfit@0.9.1 doctor
+npx skillfit@0.10.0 --help
+npx skillfit@0.10.0 doctor
 ```
 
 `npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。下面的快速开始用的是源码检出，这样才能跑本仓库自带的 bench。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI。`skillfit` 是从 npm 装上的命令。
@@ -98,7 +98,7 @@ eval 和基线校准可用 `--max-calls <n>` 拒绝超出调用上限的计划�
 
 ## 创建自己的 case
 
-源码版功能（npm 0.9.1 尚未包含）：生成代码修复 case，带有错误的初始文件、受保护的测试、独立行为检查和参考修复。第一条命令预览文件，第二条创建新目录；校验和 eval 预览都不会调用模型。
+0.10.0 已包含：生成代码修复 case，带有错误的初始文件、受保护的测试、独立行为检查和参考修复。第一条命令预览文件，第二条创建新目录；校验和 eval 预览都不会调用模型。
 
 ```bash
 node dist/cli.js bench init my-bench --kind command --dry-run
@@ -110,7 +110,16 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 这是用于教格式的合成案例，不是 Skill 基准。在衡量收益前，把初始文件、任务请求、评分器和参考修复一起替换为你的真实任务。预览会显示计划调用两次，实际一次也不会启动。不传 `--kind`（或用 `--kind output`）仍生成原来的回复评分模板。已有失败可用 `bench add --freeze` 固定，维护者修复可用 `--from-commit` 导入；参见[编写指南](docs/bench-authoring.md)。
 
-Agent 可以用 `bench check --json` 读取带版本的校验标识、任务 ID、位置、失败原因、处理建议和限长的评分器证据。标准输出只有 JSON，退出码区分通过、校验失败和执行错误。这项源码版功能仅做离线校验，拒绝与 `--calibrate` 混用；警告仍需检查。参见 [JSON 契约](docs/bench-check-json.md)。
+Agent 可以用 `bench check --json` 读取带版本的校验标识、任务 ID、位置、失败原因、处理建议和限长的评分器证据。标准输出只有 JSON，退出码区分通过、校验失败和执行错误。这项接口仅做离线校验，拒绝与 `--calibrate` 混用；警告仍需检查。参见 [JSON 契约](docs/bench-check-json.md)。
+
+可以列出和查看 case，再预览编辑或移除操作。加 `--yes` 才会备份并应用通过校验的清单变更；移除会保留 case 文件。重复 `--task` 或在 JSON 请求中设置 `taskIds` 可以只评估部分 case。所选 ID 和顺序会固定到计划中，预算只计算所选 case，小样本仍只作参考。参见 [case 管理](docs/case-management.md)。
+
+```bash
+node dist/cli.js bench list my-bench --json
+node dist/cli.js bench show my-bench example-task --json
+node dist/cli.js bench edit my-bench example-task --set shouldTrigger=true --json
+node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --task example-task --input workspace --trials 1 --max-calls 2 --dry-run
+```
 
 ## 评估真实开源任务
 
@@ -147,7 +156,7 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 请求还可通过 `executorTimeoutSeconds` 固定两版的单次时限（默认 600 秒）。改变时限必须声明新计划和新批次；之前的超时及已知花费仍保留在证据中。
 
-未发布的源码支持可选 `spendingBudget`，设置五项整批预算停止线。触线或缺失完整最终用量时停止后续调用并保留花费；正在运行的一次仍可能越线。详见[预算检查契约](docs/eval-component.md#input-and-execution)。
+0.10.0 已包含可选 `spendingBudget`，设置五项整批预算停止线。触线或缺失完整最终用量时停止后续调用并保留花费；正在运行的一次仍可能越线。详见[预算检查契约](docs/eval-component.md#input-and-execution)。
 
 失败的 Codex JSON 调用可从本地数值计数器保留身份匹配的部分用量。导出不包含私有会话正文；部分用量仍不能满足最终成本覆盖或采用门槛。
 
@@ -186,6 +195,15 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
 
 新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
+
+没有 judge 的原生配对实验可导出为独立目录，包含原始记录、匹配的输入、当时的编译版 CLI、校验清单和重放入口。默认只预览；缺输入或目标目录已存在就停止。整个目录可搬到另一台机器，重放不调用模型，保留中止状态和未知成本，也不能授权升级。分享前检查项目数据，参见[可搬走的复现包](docs/replay-packages.md)。
+
+```bash
+node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
+node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --yes --json
+node ./exports/my-run/reproduce.mjs --verify-only
+node ./exports/my-run/reproduce.mjs
+```
 
 [Skill 实验证据索引](docs/skill-evaluation-evidence.md)保留各批次、失败和成本限制。当前累计 195 次执行器调用，七份历史最终用量仍未知；没有候选版本满足采用条件。最新的[接收者机制验证](evidence/2026-10-15-receiver-mechanism-stop.md)在一次候选失败后停止，没有运行对照。已发布的失败均保留离线重放入口。这些针对具体任务的结果不能证明 Skill 普遍有效。
 

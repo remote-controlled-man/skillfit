@@ -34,7 +34,7 @@ function assertCommandTokensExist(benchDir: string, command: string, label: stri
   }
 }
 
-function validateTask(benchDir: string, raw: unknown, index: number): BenchTask {
+export function validateBenchTask(benchDir: string, raw: unknown, index: number): BenchTask {
   if (typeof raw !== 'object' || raw === null) {
     throw new Error(`bench.json task #${index + 1} must be an object`);
   }
@@ -137,7 +137,7 @@ export function loadBench(benchDir: string): Bench {
   if (!Array.isArray(raw.tasks) || raw.tasks.length === 0) {
     throw new Error(`bench.json in ${dir} must list at least one task`);
   }
-  const tasks = raw.tasks.map((task, index) => validateTask(dir, task, index));
+  const tasks = raw.tasks.map((task, index) => validateBenchTask(dir, task, index));
   const seen = new Set<string>();
   for (const task of tasks) {
     if (seen.has(task.id)) {
@@ -148,4 +148,22 @@ export function loadBench(benchDir: string): Bench {
   const name = typeof raw.name === 'string' && raw.name.trim() !== '' ? raw.name : basename(dir);
   const contentSha256 = hashFileSet(dir, listFilesRecursive(dir));
   return { dir, name, schemaVersion: BENCH_SCHEMA_VERSION, tasks, contentSha256 };
+}
+
+/** Keep manifest order so selecting IDs cannot silently change balanced pair order. */
+export function parseTaskIds(value: unknown): string[] {
+  const taskIds = value as string[];
+  if (!Array.isArray(taskIds) || taskIds.length === 0 || taskIds.some(id => typeof id !== 'string' || !TASK_ID_PATTERN.test(id))) {
+    throw new Error('taskIds must be a nonempty array of valid task IDs.');
+  }
+  if (new Set(taskIds).size !== taskIds.length) throw new Error('Duplicate task selection.');
+  return [...taskIds];
+}
+
+export function selectBenchTasks(bench: Bench, selection?: readonly string[]): Bench {
+  if (selection === undefined) return bench;
+  const taskIds = parseTaskIds(selection);
+  const missing = taskIds.filter(id => !bench.tasks.some(task => task.id === id));
+  if (missing.length) throw new Error(`Unknown task selection: ${missing.join(', ')}`);
+  return { ...bench, tasks: bench.tasks.filter(task => taskIds.includes(task.id)) };
 }

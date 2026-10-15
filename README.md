@@ -65,8 +65,8 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 ## Install
 
 ```bash
-npx skillfit@0.9.1 --help
-npx skillfit@0.9.1 doctor
+npx skillfit@0.10.0 --help
+npx skillfit@0.10.0 doctor
 ```
 
 `npx skillfit` installs the published release and needs Node.js 22 or newer. The quick start below uses a source checkout so you can run the benches that ship in this repository. After `npm run build`, `node dist/cli.js` is that checkout's CLI. `skillfit` is the command installed from npm.
@@ -98,7 +98,7 @@ Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capabil
 
 ## Build your own cases
 
-Source-checkout feature (not in npm 0.9.1): start a code-editing case with a broken fixture, protected tests, independent behavioral checks and a reference repair. The first command previews the files; the second creates a fresh directory; checking and eval preview make no model calls.
+Available in 0.10.0: start a code-editing case with a broken fixture, protected tests, independent behavioral checks and a reference repair. The first command previews the files; the second creates a fresh directory; checking and eval preview make no model calls.
 
 ```bash
 node dist/cli.js bench init my-bench --kind command --dry-run
@@ -110,7 +110,16 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 This is a synthetic teaching case, not a Skill benchmark. Replace the fixture, prompt, verifier and oracle with your actual task before measuring benefit. The preview shows two planned calls and starts none. Omit `--kind` (or use `--kind output`) for the existing reply-grading starter. Capture an observed failure with `bench add --freeze`, or import a maintainer fix with `--from-commit`; follow the [authoring guide](docs/bench-authoring.md).
 
-Agent callers can use `bench check --json` for versioned gate identifiers, task IDs, locations, failure reasons, remediation suggestions and bounded verifier evidence. stdout is JSON only; exit codes distinguish passed checks, failed checks and errors. This source feature is offline only and rejects `--calibrate`; warnings still need review. See the [JSON contract](docs/bench-check-json.md).
+Agent callers can use `bench check --json` for versioned gate identifiers, task IDs, locations, failure reasons, remediation suggestions and bounded verifier evidence. stdout is JSON only; exit codes distinguish passed checks, failed checks and errors. This interface is offline only and rejects `--calibrate`; warnings still need review. See the [JSON contract](docs/bench-check-json.md).
+
+List and inspect cases, then preview an edit or removal. `--yes` applies a validated manifest change with a backup; removal preserves the case files. Select a smaller eval using repeated `--task`, or `taskIds` in a JSON request. IDs and order are frozen, budgets count only selected cases, and small samples remain indicative. See [case management](docs/case-management.md).
+
+```bash
+node dist/cli.js bench list my-bench --json
+node dist/cli.js bench show my-bench example-task --json
+node dist/cli.js bench edit my-bench example-task --set shouldTrigger=true --json
+node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --task example-task --input workspace --trials 1 --max-calls 2 --dry-run
+```
 
 ## Evaluate a real OSS task
 
@@ -150,7 +159,7 @@ The default policy requires a demonstrated quality gain. An explicit version-2 `
 
 Requests can also pin `executorTimeoutSeconds` (default 600) for both versions. A changed deadline requires a new plan and batch; previous timeouts and their available spending remain in the evidence.
 
-Unreleased source support: optional `spendingBudget` sets five absolute batch stop lines. Reaching a line or losing complete final usage stops subsequent calls and retains spending; an in-flight call may overshoot. See the [guard contract](docs/eval-component.md#input-and-execution).
+Available in 0.10.0: optional `spendingBudget` sets five absolute batch stop lines. Reaching a line or losing complete final usage stops subsequent calls and retains spending; an in-flight call may overshoot. See the [guard contract](docs/eval-component.md#input-and-execution).
 
 Failed Codex JSON calls can retain identity-bound partial usage from local numeric counters. Private transcript bodies stay out of exports, and partial usage never satisfies the final-cost or adoption gates.
 
@@ -189,6 +198,15 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
 
 New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
+
+Export a native paired run without a judge as a portable directory with original receipts, matching inputs, pinned compiled CLI, checksums and a replay entry point. Export previews by default; missing inputs or an existing destination stop it. The whole package can move to another machine. Replay calls no model, preserves stopped/unknown costs and authorizes no upgrade. Review project data before sharing; see [portable replay packages](docs/replay-packages.md).
+
+```bash
+node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
+node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --yes --json
+node ./exports/my-run/reproduce.mjs --verify-only
+node ./exports/my-run/reproduce.mjs
+```
 
 The [Skill evidence index](docs/skill-evaluation-evidence.md) retains every cohort, failure and cost limit. The study now totals 195 executor calls with seven historical final usages still unknown; no tested revision qualifies for adoption. The latest [receiver mechanism probe](evidence/2026-10-15-receiver-mechanism-stop.md) stops after one failed candidate call, without running its control. Every published failure remains available for offline replay. These task-specific results do not establish general Skill benefit.
 

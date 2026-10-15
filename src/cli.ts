@@ -2,6 +2,8 @@
 import { parseArgs } from 'node:util';
 import { runBenchAdd, runBenchCheck, runBenchInit } from './commands/bench.js';
 import { benchCheckError, benchCheckJson } from './commands/bench-check-report.js';
+import { inspectBench, manageBench } from './commands/bench-manage.js';
+import { exportEvaluation } from './commands/eval-export.js';
 import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
 import { DEFAULT_EVAL_TRIALS, runEval } from './commands/eval.js';
@@ -20,6 +22,7 @@ Usage:
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
   skillfit report eval <manifest.json>     Render an existing evaluation as Markdown (read-only)
   skillfit report eval <manifest-or-run-dir> --json [--replay]  Assess saved evidence for an Agent
+  skillfit report eval <run-dir> --export <new-dir>  Plan a portable offline replay package
   skillfit eval --request <request.json> --dry-run  Return a pinned JSON plan without calls
   skillfit eval --request <request.json> --plan-sha <sha256>  Run that plan and return JSON evidence
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
@@ -29,6 +32,10 @@ Usage:
   skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
+  skillfit bench list <dir> [--json]        List registered cases without running verifiers
+  skillfit bench show <dir> <task-id> [--json]  Inspect one registered case
+  skillfit bench edit <dir> <task-id> --set <field=value>  Plan a manifest edit (apply with --yes)
+  skillfit bench remove <dir> <task-id>     Plan to unregister a case, preserving its files
   skillfit install [options]                Inspect or apply a managed configuration profile
   skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance
   skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile
@@ -40,13 +47,16 @@ Options:
   --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target
   --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
   --plan-sha <hash>   Confirm the current --request dry-run plan before real calls
-  --json             Machine output for bench check (offline only), report, report eval, and request-based eval
+  --json             Machine output for bench check/list/show/edit/remove, report, and request-based eval
   --policy <path>    With report eval --json, assess against a policy (post-hoc changes cannot authorize adoption)
   --records <dir>    With report eval --json, use native evidence from this run directory
   --replay           With report eval --json, regrade cloned deliveries using the frozen bench
+  --export <dir>     With report eval, plan a portable package; --yes writes a fresh destination
+  --input-root <label=path>  With --export, recover pinned inputs from a matching copy (repeatable)
   --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
   --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
   --bench <path>      Bench directory for eval (default: bundled benches)
+  --task <id>        With eval, select cases (repeatable, manifest order); requests use taskIds
   --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})
   --max-calls <n>     Call ceiling for eval / bench check --calibrate (includes enabled judges)
                      Also controls baseline calibration repetitions
@@ -69,6 +79,12 @@ Options:
 
 bench init options:
   --kind <kind>         output (default, grades a reply) | command (grades file edits)
+
+bench edit options:
+  --set <field=value>   Change fixture, prompt, promptTrigger, verifier, verifierKind,
+                       oracle, rubric or shouldTrigger (repeatable)
+  --unset <field>       Remove promptTrigger, oracle, rubric or shouldTrigger (repeatable)
+                       Edits/removals default to a plan; --yes backs up bench.json and applies
 
 bench add --freeze options:
   --task <id>            Task id (required)
@@ -115,7 +131,11 @@ const CLI_OPTIONS = {
   'no-rules': { type: 'boolean', default: false },
   'min-sessions': { type: 'string' },
   'upstream-lock': { type: 'string' },
-  task: { type: 'string' },
+  task: { type: 'string', multiple: true },
+  set: { type: 'string', multiple: true },
+  unset: { type: 'string', multiple: true },
+  export: { type: 'string' },
+  'input-root': { type: 'string', multiple: true },
   prompt: { type: 'string' },
   'prompt-file': { type: 'string' },
   freeze: { type: 'boolean', default: false },
@@ -139,19 +159,20 @@ const CLI_OPTIONS = {
   version: { type: 'boolean', short: 'v', default: false },
 } as const;
 
-function isBenchCheckJsonRequest(): boolean {
+function jsonBenchCommand(): string | null {
+  const supported = ['check', 'list', 'show', 'edit', 'remove'];
   const args = process.argv.slice(2);
   try {
     const { values, positionals } = parseArgs({ args, allowPositionals: true, strict: false, options: CLI_OPTIONS });
     // Loose parsing retains an invalid inline boolean value (for example
     // --json=true). It still requests the JSON error envelope, not text output.
-    return values.json !== false && positionals[0] === 'bench' && positionals[1] === 'check';
+    return values.json !== false && positionals[0] === 'bench' && supported.includes(positionals[1] ?? '') ? positionals[1]! : null;
   } catch {
     // A missing option value may prevent even loose parsing. Preserve JSON errors
     // for the standard command spelling, including a leading --json flag.
     const jsonFlag = (arg: string) => arg === '--json' || arg.startsWith('--json=');
     const command = args.filter(arg => !jsonFlag(arg));
-    return args.some(jsonFlag) && command[0] === 'bench' && command[1] === 'check';
+    return args.some(jsonFlag) && command[0] === 'bench' && supported.includes(command[1] ?? '') ? command[1]! : null;
   }
 }
 
@@ -178,6 +199,14 @@ async function main(): Promise<void> {
   if (values.kind !== undefined && !(command === 'bench' && positionals[1] === 'init')) {
     throw new Error('--kind applies only to bench init.');
   }
+  if (values.task !== undefined && command !== 'eval' && !(command === 'bench' && positionals[1] === 'add')) {
+    throw new Error('--task applies only to eval or bench add.');
+  }
+  if ((values.set || values.unset) && !(command === 'bench' && positionals[1] === 'edit')) throw new Error('--set and --unset apply only to bench edit.');
+  if (values.export !== undefined && !(command === 'report' && positionals[1] === 'eval')) throw new Error('--export applies only to report eval.');
+  if (values['input-root'] && values.export === undefined) throw new Error('--input-root requires report eval --export.');
+  if (values.export !== undefined && (values.replay || values.records || values.policy)) throw new Error('--export cannot be combined with --replay, --records or --policy.');
+  if (command === 'bench' && positionals[1] === 'add' && values.task && values.task.length !== 1) throw new Error('bench add requires exactly one --task.');
   if (values.request !== undefined && command !== 'eval') throw new Error('--request applies only to eval.');
   if (values['plan-sha'] !== undefined && (command !== 'eval' || values.request === undefined || values['dry-run'])) throw new Error('--plan-sha requires a non-dry-run eval --request.');
   if ((values.policy !== undefined || values.records !== undefined || values.replay) && !(command === 'report' && positionals[1] === 'eval' && values.json)) {
@@ -219,6 +248,12 @@ async function main(): Promise<void> {
           process.exitCode = 2;
           return;
         }
+        if (values.export !== undefined) {
+          const result = await exportEvaluation(positionals[2], values.export, { yes: values.yes, dryRun: values['dry-run'], benchDir: values.bench, inputRoots: values['input-root'],
+            log: values.json ? () => {} : undefined });
+          if (values.json) console.log(JSON.stringify(result, null, 2));
+          return;
+        }
         if (values.json) console.log(JSON.stringify(await reportEvalComponent(positionals[2], {
           policyPath: values.policy, recordsPath: values.records, replay: values.replay, benchDir: values.bench,
         }), null, 2));
@@ -229,7 +264,7 @@ async function main(): Promise<void> {
       return;
     case 'eval': {
       if (values.request !== undefined) {
-        if (positionals.length !== 1 || ['agent', 'mode', 'baseline-skill', 'bench', 'trials', 'max-calls', 'input', 'judge-agent'].some(key => values[key as keyof typeof values] !== undefined) || values['compete-installed']) {
+        if (positionals.length !== 1 || ['agent', 'mode', 'baseline-skill', 'bench', 'task', 'trials', 'max-calls', 'input', 'judge-agent'].some(key => values[key as keyof typeof values] !== undefined) || values['compete-installed']) {
           throw new Error('--request cannot be combined with a target or positional eval settings; put settings in the request.');
         }
         const result = await runEvalComponent(values.request, { dryRun: values['dry-run'], expectedPlanSha256: values['plan-sha'], log: line => console.error(line) });
@@ -255,6 +290,7 @@ async function main(): Promise<void> {
         skillPath,
         baselineSkillPath: values['baseline-skill'],
         bench: values.bench,
+        taskIds: values.task,
         mode,
         inputMode,
         judgeAgent: values['judge-agent'],
@@ -312,6 +348,25 @@ async function main(): Promise<void> {
     }
     case 'bench': {
       const subcommand = positionals[1];
+      if (subcommand === 'list' || subcommand === 'show') {
+        if (subcommand === 'show' && !positionals[3]) throw new Error('Usage: skillfit bench show <dir> <task-id> [--json]');
+        const result = inspectBench(positionals[2] ?? '.', subcommand === 'show' ? positionals[3] : undefined);
+        if (values.json) console.log(JSON.stringify(result, null, 2));
+        else if (subcommand === 'show') console.log(JSON.stringify(result.tasks[0], null, 2));
+        else {
+          console.log(`Bench: ${result.name} (${result.tasks.length} tasks, sha256 ${result.sha256})`);
+          for (const task of result.tasks) console.log(`${task.id}\t${task.verifierKind}\t${task.oracle ? 'oracle' : 'no oracle'}\t${task.fixture}`);
+        }
+        return;
+      }
+      if (subcommand === 'edit' || subcommand === 'remove') {
+        if (!positionals[2] || !positionals[3]) throw new Error(`Usage: skillfit bench ${subcommand} <dir> <task-id> [--json] [--dry-run] [--yes]`);
+        const result = manageBench({ dir: positionals[2], taskId: positionals[3], action: subcommand,
+          set: values.set, unset: values.unset, dryRun: values['dry-run'], yes: values.yes,
+          log: values.json ? () => {} : undefined });
+        if (values.json) console.log(JSON.stringify(result, null, 2));
+        return;
+      }
       if (subcommand === 'init') {
         const kind = values.kind;
         if (kind !== undefined && kind !== 'output' && kind !== 'command') {
@@ -355,7 +410,7 @@ async function main(): Promise<void> {
         await runBenchAdd({
           ...common,
           benchDir: positionals[2],
-          task: values.task,
+          task: values.task?.[0],
           prompt: values.prompt,
           promptFile: values['prompt-file'],
           freeze: values.freeze ?? false,
@@ -371,7 +426,7 @@ async function main(): Promise<void> {
         });
         return;
       }
-      console.error('Usage: skillfit bench init [dir] | skillfit bench check [dir] | skillfit bench add <dir> --freeze ...');
+      console.error('Usage: skillfit bench init [dir] | check [dir] | add <dir> ... | list <dir> | show/edit/remove <dir> <task-id>');
       process.exitCode = 2;
       return;
     }
@@ -383,10 +438,16 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
-  if (isBenchCheckJsonRequest()) {
+  const benchCommand = jsonBenchCommand();
+  if (benchCommand === 'check') {
     console.log(JSON.stringify(benchCheckError(err), null, 2));
     process.exitCode = 2;
     return;
+  }
+  if (benchCommand) {
+    console.log(JSON.stringify({ schemaVersion: 1, kind: 'skillfit.bench-error', status: 'error',
+      error: { code: 'INVALID_BENCH_OPERATION', message: err instanceof Error ? err.message : String(err) } }, null, 2));
+    process.exitCode = 2; return;
   }
   if (process.argv.some(arg => arg === '--request' || arg.startsWith('--request=')) ||
       (process.argv.includes('--json') && process.argv.includes('report') && process.argv.includes('eval'))) {

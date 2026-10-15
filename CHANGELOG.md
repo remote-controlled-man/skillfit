@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased — machine-readable bench checks (2026-10-16)
+## [0.10.0] — 2026-10-16
+
+- Select cases with repeatable `eval --task` or request `taskIds`. Freeze selected
+  IDs/order and full bench hash; reject invalid selections before calls. Preview
+  and costs count the selected population; small samples stay indicative.
+- Add JSON-capable `bench list/show/edit/remove`. Edits/removals preview by default,
+  apply with `--yes`, back up and validate the manifest. Preserve unknown metadata
+  and all task files; prevent removal of the final task. Reject symlink backups.
+- Export paired native evidence without a judge as a portable offline directory:
+  matching inputs, unchanged receipts, pinned compiled CLI, checksums and a replay
+  entry point. Refuse missing/changed inputs and existing destinations; preserve
+  stopped runs and partial/unknown costs. Export only writes locally.
+- Include the post-0.9.1 code-edit starter, JSON bench checks, spending stop lines
+  and retained experiment evidence described below. Update CLI help, mirrored
+  READMEs, Agent driver and operational contracts. Zero runtime dependencies,
+  no new real model calls, unchanged statistical gates and no automatic upgrade.
+- See the [release record](docs/releases/0.10.0.md) for source, checks and publication
+  verification. Historical experiment and release records remain unchanged.
+
+## 0.10.0 details — machine-readable bench checks (2026-10-16)
 
 - Add offline `bench check --json` with a version 1 contract and JSON Schema.
   Every gate carries a stable code, status, task ID, related location and
@@ -13,7 +32,7 @@
 - Add offline regression coverage and mirror the README examples. No live model
   calls, runtime dependencies, statistical-policy changes or npm release.
 
-## Unreleased — case authoring and evidence maintenance (2026-10-15)
+## 0.10.0 details — case authoring and evidence maintenance (2026-10-15)
 
 - Add `bench init --kind command` to scaffold a code-editing case with a broken
   fixture, protected tests, independent behavioral verifier and reference repair.
@@ -33,7 +52,7 @@
   roadmap on authoring cases for users' own tasks. No further model calls or npm
   publication are included.
 
-## Unreleased — bounded mechanism evidence (2026-10-15)
+## 0.10.0 details — bounded mechanism evidence (2026-10-15)
 
 - Retain exactly four authorized development calls: original/v4 both pass 2/2,
   with v4 uncached input down 27.76%, output 17.56% and time 15.92%. Agents

@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { test, type TestContext } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { reportEvalComponent, runEvalComponent } from '../commands/eval-component.js';
+import { exportEvaluation } from '../commands/eval-export.js';
 import { runEval } from '../commands/eval.js';
 import { assessEvaluation, type EvidenceAudit } from './eval-acceptance.js';
 import { parseAcceptancePolicy, parseEvalRequest, policyHash } from './eval-contract.js';
@@ -49,6 +50,37 @@ async function run(t: TestContext) {
   const result = await runEvalComponent(f.requestPath, { ...f.options, dryRun: false, expectedPlanSha256: preview.plan.sha256 });
   return { ...f, preview, result };
 }
+
+test('request taskIds bind preview, native scope and offline assessment without relaxing adoption', async t => {
+  const f = setup(t);
+  writeFileSync(f.requestPath, JSON.stringify({ ...f.body, taskIds: ['fix'], maxCalls: 2 }));
+  const preview = await runEvalComponent(f.requestPath, { ...f.options, dryRun: true });
+  assert.ok('plan' in preview); assert.equal(preview.plan.evaluation.plannedCalls, 2);
+  assert.deepEqual(preview.plan.evaluation.bench.taskIds, ['fix']);
+  const result = await runEvalComponent(f.requestPath, { ...f.options, dryRun: false, expectedPlanSha256: preview.plan.sha256 });
+  assert.equal(f.calls(), 2); assert.equal(result.acceptance.eligibleForUpgrade, false);
+  const replay = await reportEvalComponent(f.runDir, { replay: true });
+  assert.ok('evidence' in replay && replay.evidence.verified);
+  assert.equal(f.calls(), 2);
+});
+
+test('component exports include the frozen request and both complete Skills and replay without originals', async t => {
+  const f = await run(t), output = join(f.root, 'portable');
+  const originalRequest = readFileSync(f.requestPath, 'utf8');
+  writeFileSync(f.requestPath, '{}');
+  await assert.rejects(() => exportEvaluation(f.runDir, output, { yes: true, log: () => {} }), /request changed/);
+  const recovered = join(f.root, 'recovered-request.json'); writeFileSync(recovered, originalRequest);
+  await exportEvaluation(f.runDir, output, { yes: true, inputRoots: [`request=${recovered}`], log: () => {} });
+  assert.equal(readFileSync(join(output, 'inputs/request.json'), 'utf8'), originalRequest);
+  assert.equal(readFileSync(join(output, 'inputs/baseline-skill/answer.txt'), 'utf8'), '1');
+  assert.equal(readFileSync(join(output, 'inputs/target/answer.txt'), 'utf8'), '2');
+  for (const path of ['bench', 'old', 'new', 'runs']) rmSync(join(f.root, path), { recursive: true });
+  const child = spawnSync(process.execPath, [join(output, 'reproduce.mjs')], { encoding: 'utf8', timeout: 30_000 });
+  assert.equal(child.status, 0, child.stderr);
+  const replay = JSON.parse(child.stdout); assert.equal(replay.evidence.verified, true);
+  assert.deepEqual(replay.costs, 'costs' in f.result ? f.result.costs : null);
+  assert.equal(replay.acceptance.decision, 'reject'); assert.equal(f.calls(), 4);
+});
 
 test('installed component delivers and freezes a working diff tool identically in both arms', async t => {
   const f = setup(t), prompts: string[] = [];

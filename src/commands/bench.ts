@@ -866,7 +866,7 @@ function assertInsideBench(benchDir: string, target: string): void {
   }
 }
 
-function applyBenchWrites(benchDir: string, writes: Array<{ target: string; content: Buffer | string }>): void {
+export function applyBenchWrites(benchDir: string, writes: Array<{ target: string; content: Buffer | string }>): void {
   const applied: Array<{ target: string; previous: Buffer | null }> = [];
   try {
     for (const write of writes) {
@@ -879,7 +879,13 @@ function applyBenchWrites(benchDir: string, writes: Array<{ target: string; cont
         if (!stat.isFile()) throw new Error(`Refusing to overwrite a non-file: ${write.target}`);
         previous = readFileSync(write.target);
         const backup = write.target + BACKUP_SUFFIX;
-        if (!existsSync(backup)) writeFileSync(backup, previous);
+        let backupExists = false;
+        try {
+          const backupStat = lstatSync(backup);
+          if (backupStat.isSymbolicLink() || !backupStat.isFile()) throw new Error(`Refusing an unsafe backup target: ${backup}`);
+          backupExists = true;
+        } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+        if (!backupExists) writeFileSync(backup, previous, { flag: 'wx' });
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       }
