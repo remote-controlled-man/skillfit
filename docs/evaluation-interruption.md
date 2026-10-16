@@ -34,6 +34,8 @@ are removed so later operations do not inherit a cancelled run.
 The native run directory keeps:
 
 - `_plan.json` and `_calls.jsonl`: original declaration and actual dispatch events.
+- In new source runs, `_inputs.json` and `_inputs/`: sealed inputs available even
+  if original Skill/bench/request paths later change or disappear.
 - Existing per-trial output, transcripts and `_result.json`: settled final usage
   stays final; recovered counters from an interrupted call stay partial; missing
   usage stays unknown. Interruption is an execution error, not a graded failure.
@@ -57,7 +59,8 @@ node dist/cli.js report eval ./runs/my-run --json
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
 ```
 
-Export still requires matching pinned inputs and a fresh destination. A completed
+Export uses [sealed inputs](evaluation-input-snapshots.md) for new source runs;
+older runs still require matching recovered inputs. A fresh destination is required. A completed
 export replays the same stopped status and cost coverage; it cannot authorize an
 upgrade. Preserve this run, fix the cause and make a fresh bounded declaration if
 further spending is authorized. Unused slots are not permission to continue.

@@ -1,9 +1,10 @@
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { loadBench } from '../harness/bench.js';
 import { hashFileSet, sha256File } from '../harness/hash.js';
 import { packageFiles, packageMember, portableReproducer, verifyReplayPackage } from '../harness/replay-package.js';
 import { reportEvalComponent } from './eval-component.js';
+import { verifyInputSnapshot } from '../harness/input-snapshot.js';
 
 function overlaps(root: string, path: string): boolean {
   const rel = relative(root, path);
@@ -12,7 +13,11 @@ function overlaps(root: string, path: string): boolean {
 
 function physical(path: string): string {
   let parent = resolve(path); const parts: string[] = [];
-  while (!existsSync(parent)) { parts.unshift(basename(parent)); parent = dirname(parent); }
+  while (!existsSync(parent)) {
+    const next = dirname(parent);
+    if (next === parent) return resolve(path); // An original Windows drive can be absent after moving a run.
+    parts.unshift(basename(parent)); parent = next;
+  }
   return join(realpathSync(parent), ...parts);
 }
 
@@ -41,38 +46,54 @@ export async function exportEvaluation(input: string, output: string, options: {
   if (hasManifest && (!('evidence' in report) || !report.evidence.verified)) throw new Error(`Native evidence audit failed; cannot export a complete replay package: ${'evidence' in report ? JSON.stringify(report.evidence) : 'missing audit'}`);
   if (plan.details?.mode === 'trigger' || plan.details?.judge != null) throw new Error('Portable replay currently requires paired native runs without a judge; separate judge spending is not fully recorded.');
   if (!Array.isArray(plan.inputs) || typeof plan.packageVersion !== 'string') throw new Error('Native input fingerprints or version are missing.');
+  const snapshot = verifyInputSnapshot(run, plan);
   const copies: { source: string; target: string; sha256: string }[] = [];
+  const directories = new Set<string>();
+  for (const entry of snapshot?.entries ?? []) if (entry.label !== 'request') {
+    directories.add(`run/${entry.path}`);
+    for (const dir of entry.directories) directories.add(`run/${entry.path}/${dir}`);
+  }
   for (const path of [...files, '_artifacts.json']) copies.push({ source: packageMember(run, path), target: `run/${path}`, sha256: sha256File(join(run, path)) });
   const required = ['bench', 'target', 'implementation'];
   if (plan.details?.baselineTarget) required.push('baseline Skill');
   const roots = [run];
+  // Even when copies come from the archive, preserve the existing boundary
+  // against writing an export into any original input directory.
+  const protectedRoots: string[] = [run];
   for (const label of required) {
     const fingerprint = plan.inputs.find((entry: { label: string }) => entry.label === label);
     if (!fingerprint || !Array.isArray(fingerprint.files) || typeof fingerprint.root !== 'string') throw new Error(`Missing pinned input: ${label}`);
     const alias = label === 'baseline Skill' ? 'baseline-skill' : label;
-    const root = overrides.get(alias) ?? (label === 'bench' && options.benchDir ? resolve(options.benchDir) : fingerprint.root);
+    protectedRoots.push(fingerprint.root);
+    const root = overrides.get(alias) ?? (label === 'bench' && options.benchDir ? resolve(options.benchDir) : snapshot?.roots.get(alias) ?? fingerprint.root);
     roots.push(root);
+    protectedRoots.push(root);
     const prefix = label === 'implementation' ? 'runtime/dist' : `inputs/${label === 'baseline Skill' ? 'baseline-skill' : label}`;
     const paths = fingerprint.files as string[];
     // Every path must be safe before it is read; no configuration or global Skill roots are copied.
     for (const path of paths) packageMember(root, path);
     if (hashFileSet(root, paths) !== fingerprint.sha256) throw new Error(`Pinned ${label} input changed or is unavailable; recover the original files before exporting.`);
+    const archived = snapshot?.entries.find(entry => entry.label === alias);
+    if (archived) {
+      directories.add(prefix);
+      for (const dir of archived.directories) directories.add(`${prefix}/${dir}`);
+    }
     for (const path of paths) copies.push({ source: packageMember(root, path), target: `${prefix}/${path}`, sha256: sha256File(join(root, path)) });
   }
   const request = plan.guardFiles?.find((file: { label: string }) => file.label === 'component request');
   for (const [label] of overrides) if (!(label === 'request' && request) && !required.includes(label === 'baseline-skill' ? 'baseline Skill' : label)) throw new Error(`Input root is not part of this run: ${label}`);
   if (request) {
-    const path = overrides.get('request') ?? request.path;
+    const path = overrides.get('request') ?? snapshot?.roots.get('request') ?? request.path;
     if (!lstatSync(path).isFile() || sha256File(path) !== request.sha256) throw new Error('Frozen request changed; recover the original request before exporting.');
     copies.push({ source: path, target: 'inputs/request.json', sha256: request.sha256 });
   }
-  if (roots.some(root => overlaps(physical(root), physical(destination)))) throw new Error('Export destination must be outside the native run and pinned input roots.');
+  if (protectedRoots.some(root => overlaps(physical(root), physical(destination)))) throw new Error('Export destination must be outside the native run and pinned input roots.');
   const log = options.log ?? console.log;
   const apply = options.yes === true && !options.dryRun;
   const preview = { schemaVersion: 1, kind: 'skillfit.eval-export', status: apply ? 'exported' : 'planned',
     source: run, destination, sourcePlanSha256: planSha256, nativeStatus: session.status, hasManifest,
     files: copies.length + 3, bytes: copies.reduce((sum, file) => sum + lstatSync(file.source).size, 0),
-    inputs: roots, modelCalls: 0, sharingReviewRequired: true };
+    inputs: roots, inputSource: snapshot ? 'sealed-snapshot' : 'original-or-recovered', modelCalls: 0, sharingReviewRequired: true };
   log(`Portable export: ${run} -> ${destination}`);
   for (const root of roots) log(`  source: ${root}`);
   log(`${preview.files} payload files; ${preview.bytes} source bytes. Review paths, prompts and outputs before sharing.`);
@@ -80,10 +101,12 @@ export async function exportEvaluation(input: string, output: string, options: {
   mkdirSync(dirname(destination), { recursive: true });
   const stage = mkdtempSync(join(dirname(destination), '.skillfit-export-'));
   try {
+    for (const dir of directories) mkdirSync(join(stage, dir), { recursive: true });
     for (const file of copies) {
       const bytes = readFileSync(file.source);
       if (sha256File(file.source) !== file.sha256) throw new Error(`Source changed during export: ${file.source}`);
       const target = join(stage, file.target); mkdirSync(dirname(target), { recursive: true }); writeFileSync(target, bytes, { flag: 'wx' });
+      chmodSync(target, lstatSync(file.source).mode & 0o777);
       if (sha256File(target) !== file.sha256) throw new Error(`Export copy verification failed: ${file.target}`);
     }
     const bench = loadBench(join(stage, 'inputs/bench'));

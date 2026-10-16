@@ -10,6 +10,7 @@ import { sha256File } from './hash.js';
 import type { Executor } from './types.js';
 import { runEval } from '../commands/eval.js';
 import { runBenchCheck } from '../commands/bench.js';
+import { packageFiles } from './replay-package.js';
 
 function setup(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-session-'));
@@ -85,6 +86,38 @@ test('a changed frozen input retains returned output but blocks subsequent calls
   session.finish(); assert.equal(calls, 1); assert.equal(session.summary().status, 'stopped');
 });
 
+test('input snapshots exist and are bound before dispatch; modifying one stops further calls with usage retained', async t => {
+  const s = setup(t), session = new ExperimentSession(s.options);
+  const plan = JSON.parse(readFileSync(join(s.groupDir, '_plan.json'), 'utf8'));
+  const snapshot = JSON.parse(readFileSync(join(s.groupDir, '_inputs.json'), 'utf8'));
+  assert.equal(plan.inputSnapshot.sha256, sha256File(join(s.groupDir, '_inputs.json')));
+  assert.deepEqual(snapshot.entries.map((entry: { label: string }) => entry.label).sort(), ['bench', 'implementation', 'target']);
+  const files = packageFiles(join(s.groupDir, '_inputs'));
+  assert.equal(plan.inputSnapshot.cost.files, files.length + 1);
+  assert.equal(plan.inputSnapshot.cost.bytes, files.reduce((sum, file) => sum + readFileSync(join(s.groupDir, '_inputs', file)).length, 0) + readFileSync(join(s.groupDir, '_inputs.json')).length);
+  assert.equal(plan.inputSnapshot.cost.modelCalls, 0); assert.ok(plan.inputSnapshot.cost.durationMs >= 0);
+  let calls = 0;
+  const guarded = session.wrap({ ...s.executor, run: async () => {
+    calls++; assert.equal(readFileSync(join(s.groupDir, '_inputs/target/SKILL.md'), 'utf8'), readFileSync(join(s.skill, 'SKILL.md'), 'utf8'));
+    writeFileSync(join(s.groupDir, '_inputs/target/SKILL.md'), 'changed snapshot');
+    return { output: 'retained', tokens: { input: 12, output: 3 } };
+  } }, 'agent');
+  const result = await guarded.run('first', s.root);
+  assert.match(result.guardError!, /snapshot hash mismatch/); assert.deepEqual(result.tokens, { input: 12, output: 3 });
+  await assert.rejects(guarded.run('partner', s.root), /snapshot hash mismatch/);
+  assert.equal(calls, 1); session.finish(); assert.equal(session.summary().status, 'stopped');
+});
+
+test('source drift during snapshot setup fails before dispatch and removes only its fresh output', async t => {
+  const s = setup(t); let calls = 0;
+  const runsRoot = join(s.root, 'drift'), group = join(runsRoot, 'saved');
+  mkdirSync(runsRoot); writeFileSync(join(runsRoot, 'kept'), 'existing sibling');
+  await assert.rejects(runEval({ skillPath: s.skill, bench: s.benchDir, executor: { ...s.executor, run: async () => { calls++; return { output: 'done' }; } },
+    judgeExecutor: null, agent: 'codex', trials: 1, dryRun: false, yes: true, runsRoot, runGroup: 'saved', log: () => {},
+    sessionOptions: { homeDir: s.root, env: {}, versionProbe: () => { writeFileSync(join(s.benchDir, 'prompt.md'), 'changed after fingerprinting'); return 'fake 1.0'; } } }), /changed.*snapshot|snapshot.*changed/i);
+  assert.equal(calls, 0); assert.ok(!existsSync(group)); assert.equal(readFileSync(join(runsRoot, 'kept'), 'utf8'), 'existing sibling');
+});
+
 test('executor failure stops further actual calls and keeps a failure receipt without secrets', async t => {
   const s = setup(t); let calls = 0;
   const session = new ExperimentSession(s.options);
@@ -113,6 +146,8 @@ test('temporary profile config is pinned, planned trust additions are allowed, m
     env: { CODEX_HOME: profile }, versionProbe: () => 'codex-cli 1.2.3' });
   const plan = readFileSync(join(s.groupDir, '_plan.json'), 'utf8');
   assert.equal(plan.includes('PRIVATE_SECRET'), false); assert.match(plan, /"model_reasoning_effort": "high"/);
+  const snapshot = JSON.parse(readFileSync(join(s.groupDir, '_inputs.json'), 'utf8'));
+  assert.deepEqual(snapshot.entries.map((entry: { label: string }) => entry.label).sort(), ['bench', 'implementation', 'target'], 'private agent configuration remains fingerprint-only');
   writeFileSync(config, readFileSync(config, 'utf8') + `\n[projects.${JSON.stringify(s.options.workspaces[0])}]\ntrust_level = "trusted"\n`);
   session.check();
   writeFileSync(config, readFileSync(config, 'utf8').replace('"offline"', '"changed"'));

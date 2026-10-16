@@ -336,6 +336,13 @@ plan retains probes and separate offline elapsed time; previews mark checks
 pending. This changes no statistical verdict, cost population or adoption rule.
 See [the preflight contract](eval-case-preflight.md).
 
+New native sessions also [seal input copies](evaluation-input-snapshots.md) before
+dispatch. The archive's index/fingerprints bind to the frozen plan; offline replay
+uses its bench and portable export uses its Skill/implementation/request copies.
+Local copy time and apparent storage are separate from primary-agent token and
+duration populations. Missing historical copies remain unrecorded; snapshots do
+not create new observations, complete partial usage or change adoption gates.
+
 These are the targets. [bench-authoring.md](bench-authoring.md) is the walkthrough that gets a bench to
 them, step by step, on one real task.
 

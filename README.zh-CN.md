@@ -202,6 +202,8 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 没有 judge 的原生配对实验可导出为独立目录，包含原始记录、匹配的输入、当时的编译版 CLI、校验清单和重放入口。默认只预览；缺输入或目标目录已存在就停止。整个目录可搬到另一台机器，重放不调用模型，保留中止状态和未知成本，也不能授权升级。分享前检查项目数据，参见[可搬走的复现包](docs/replay-packages.md)。
 
+0.10.0 之后的源码会在调用前封存输入副本：原始 Skill、bench 或请求之后被修改、删除，也不影响导出和重放。计划会记录快照校验信息、本地复制耗时和存储量；已声明的快照损坏就拒绝使用。历史记录仍需找回匹配的原始输入。参见[评测输入封存](docs/evaluation-input-snapshots.md)。
+
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --yes --json

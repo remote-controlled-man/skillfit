@@ -10,6 +10,16 @@
     "plan": { "type": "object", "required": ["sha256", "request", "evaluation"] },
     "manifest": { "type": ["object", "null"] },
     "casePreflight": { "anyOf": [{ "$ref": "eval-preflight.schema.json" }, { "type": "null" }] },
+    "inputSnapshot": {
+      "type": ["object", "null"],
+      "required": ["schemaVersion", "indexPath", "sha256", "cost"],
+      "properties": {
+        "schemaVersion": { "const": 1 }, "indexPath": { "const": "_inputs.json" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "cost": { "type": "object", "required": ["modelCalls", "durationMs", "bytes", "files"],
+          "properties": { "modelCalls": { "const": 0 }, "durationMs": { "type": "integer", "minimum": 0 }, "bytes": { "type": "integer", "minimum": 0 }, "files": { "type": "integer", "minimum": 0 } } }
+      }
+    },
     "identity": { "type": "object" },
     "quality": { "type": "object", "required": ["statisticalVerdict", "improvedPairs", "regressedPairs", "tasks"] },
     "costs": {

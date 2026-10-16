@@ -27,6 +27,7 @@ import type { ComponentMetadata } from '../harness/eval-contract.js';
 import { parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget.js';
 import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import { CASE_PREFLIGHT_POLICY, checkEvalCases } from './eval-preflight.js';
+import { INPUT_SNAPSHOT_POLICY } from '../harness/input-snapshot.js';
 
 export interface EvalPreview {
   target: { name: string; sourceDir: string; sha256: string; files: string[] };
@@ -41,6 +42,7 @@ export interface EvalPreview {
   maxCalls: number;
   outputDir: string;
   casePreflight: typeof CASE_PREFLIGHT_POLICY & { status: 'pending' };
+  inputSnapshot: typeof INPUT_SNAPSHOT_POLICY;
   pairOrder?: PairOrder;
   executorTimeoutSeconds?: number;
   nativeDiffTool?: NativeDiffDescriptor;
@@ -499,6 +501,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   options.onPlan?.({
     casePreflight: { ...CASE_PREFLIGHT_POLICY, status: 'pending' },
+    inputSnapshot: { ...INPUT_SNAPSHOT_POLICY },
     target: { name: target.name, sourceDir: target.sourceDir, sha256: target.sha256, files: target.files },
     baseline: baselineTarget ? { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, sha256: baselineTarget.sha256, files: baselineTarget.files } : null,
     bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },

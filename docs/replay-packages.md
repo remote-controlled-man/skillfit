@@ -30,10 +30,12 @@ the copied compiled CLI, grades temporary delivery copies and returns JSON. The
 last command above uses the currently installed CLI and the packaged bench.
 
 The source must have sealed native evidence. A completed manifest must pass the
-native evidence audit. Missing, changed or linked artifacts and missing/changed
-pinned inputs reject the export. Original bench, complete candidate/baseline Skill
-resources, compiled implementation and original request (when recorded) must still
-be available. The live harness does not automatically archive every source tree.
+native evidence audit. Missing, changed or linked native artifacts reject export.
+The current source after npm 0.10.0 [seals inputs before dispatch](evaluation-input-snapshots.md)
+and exports those copies even after original bench/Skill/request directories change
+or disappear. A declared but damaged snapshot is an error, never a silent fallback.
+Older runs without snapshots still need matching original or recovered bench,
+complete candidate/baseline resources, compiled implementation and original request.
 
 Recover original files elsewhere and provide matching paths when necessary:
 
@@ -44,7 +46,8 @@ skillfit report eval ./runs/my-run --export ./exports/my-run --input-root bench=
 Only labels present in that run may be supplied; fingerprints must match exactly.
 `request` names a file, all other labels name directories. `--bench <path>` is a
 shortcut for the export's bench root; do not combine it with `--input-root bench`.
-This recovers paths, not missing evidence or permission to change a cohort.
+This recovers paths, not missing evidence or permission to change a cohort. Explicit
+overrides do not bypass validation of a new run's declared input archive.
 
 ## Contents and machine contract
 
@@ -68,6 +71,12 @@ count (excluding generated metadata), `modelCalls: 0` and
 `sharingReviewRequired: true`. `--json` stdout is one document; errors use the
 evaluation error envelope and exit 2. Export cannot be mixed with `--replay`,
 `--records` or `--policy`.
+
+Current source also returns `inputSource: "sealed-snapshot"` for archived inputs
+or `"original-or-recovered"` for historical runs. Native archives remain unchanged
+inside `run/`; portable layout inputs/runtime are extra copies counted by the
+export preview. Per-run snapshot copy time and storage are recorded separately
+in the native plan and JSON assessment's `inputSnapshot.cost`.
 
 ## Evidence and sharing boundaries
 
