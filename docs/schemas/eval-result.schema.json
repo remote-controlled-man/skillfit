@@ -9,6 +9,7 @@
     "status": { "enum": ["planned", "completed", "stopped", "incomplete", "reported", "error"] },
     "plan": { "type": "object", "required": ["sha256", "request", "evaluation"] },
     "manifest": { "type": ["object", "null"] },
+    "casePreflight": { "anyOf": [{ "$ref": "eval-preflight.schema.json" }, { "type": "null" }] },
     "identity": { "type": "object" },
     "quality": { "type": "object", "required": ["statisticalVerdict", "improvedPairs", "regressedPairs", "tasks"] },
     "costs": {

@@ -11,6 +11,11 @@ It covers paired inject/installed evaluations, JSON request execution, trigger
 evaluations and live `bench check --calibrate`. It also stops an active harness
 verifier or judge. Previews and read-only reports install no interrupt handlers.
 
+The source also cancels [offline case preflight](eval-case-preflight.md) before
+dispatch. Its verifier/oracle trees stop with exit 130/143 and zero model calls;
+because a native run has not started, no stopped run directory is synthesized.
+Once a run directory exists, the retained-evidence contract below applies.
+
 The runner stops subsequent dispatches, terminates managed CLI/process trees
 and waits for output to close. POSIX uses the process group; Windows uses
 `taskkill /T`. Pipe draining is bounded when a descendant retains a pipe. HTTP

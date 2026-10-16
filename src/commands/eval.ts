@@ -26,6 +26,7 @@ import type { Bench, EvaluationTarget, Executor, InputMode, PairOrder, SkillBund
 import type { ComponentMetadata } from '../harness/eval-contract.js';
 import { parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget.js';
 import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
+import { CASE_PREFLIGHT_POLICY, checkEvalCases } from './eval-preflight.js';
 
 export interface EvalPreview {
   target: { name: string; sourceDir: string; sha256: string; files: string[] };
@@ -39,6 +40,7 @@ export interface EvalPreview {
   plannedCalls: number;
   maxCalls: number;
   outputDir: string;
+  casePreflight: typeof CASE_PREFLIGHT_POLICY & { status: 'pending' };
   pairOrder?: PairOrder;
   executorTimeoutSeconds?: number;
   nativeDiffTool?: NativeDiffDescriptor;
@@ -337,6 +339,7 @@ async function runEvalTrigger(
 
   if (options.dryRun) {
     log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir));
+    log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(competeLine);
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (agent calls only)`);
     return null;
@@ -350,10 +353,14 @@ async function runEvalTrigger(
     );
   }
   return withEvaluationInterrupts(async () => {
+    if (existsSync(join(runsRoot, runGroup))) throw new Error(`Run group directory already exists: ${join(runsRoot, runGroup)}`);
+    const eligible = { ...bench, tasks: bench.tasks.filter(t => t.shouldTrigger !== undefined) };
+    const casePreflight = await checkEvalCases(eligible, [skill], false, log);
+    throwIfEvaluationInterrupted();
     log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
     log(competeLine);
     const session = sessionFor(options, bench, skill, trials, runsRoot, runGroup, ['installed'], plannedCalls,
-      { mode: 'trigger', trials, executor: executor.describe() });
+      { mode: 'trigger', trials, executor: executor.describe(), casePreflight });
     let manifest: TriggerManifest;
     try {
       manifest = await runTriggerExperiment({
@@ -491,6 +498,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   options.onPlan?.({
+    casePreflight: { ...CASE_PREFLIGHT_POLICY, status: 'pending' },
     target: { name: target.name, sourceDir: target.sourceDir, sha256: target.sha256, files: target.files },
     baseline: baselineTarget ? { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, sha256: baselineTarget.sha256, files: baselineTarget.files } : null,
     bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },
@@ -503,6 +511,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   if (options.dryRun) {
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
+    log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
     log(`Pair order: ${pairOrder}; arms remain adjacent`);
     if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; checked between calls, in-flight overshoot remains possible`);
@@ -519,9 +528,12 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
 
   return withEvaluationInterrupts(async () => {
+    if (existsSync(join(runsRoot, runGroup))) throw new Error(`Run group directory already exists: ${join(runsRoot, runGroup)}`);
+    const casePreflight = await checkEvalCases(bench, [target, ...(baselineTarget ? [baselineTarget] : [])], installed, log);
+    throwIfEvaluationInterrupted();
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
     const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
-      { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder,
+      { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder, casePreflight,
         ...(spendingBudget ? { spendingBudget } : {}),
         ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
         ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), executor: executor.describe(), judge: judge?.describe() ?? null,

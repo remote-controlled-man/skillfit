@@ -96,6 +96,8 @@ Use `--max-calls <n>` for eval or baseline calibration to reject plans above a c
 
 Source-checkout fix (not in npm 0.10.0): Ctrl+C stops live evaluation processes and subsequent calls, retains available output/usage and seals a stopped run before exit 130. SIGTERM uses exit 143. Partial or unknown usage stays incomplete; interrupted prefixes cannot authorize an upgrade or retry themselves. See [interruption and retained records](docs/evaluation-interruption.md).
 
+Also in source after 0.10.0: live `eval` checks selected cases offline before any agent/judge call. Hard failures block execution; warnings and unknown evidence are reported separately and retained with the run. Previews declare these checks pending and execute no verifier/oracle. This adds local checking time and zero model calls. See [case preflight](docs/eval-case-preflight.md).
+
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
 ## Build your own cases

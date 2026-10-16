@@ -91,7 +91,7 @@ inspect coverage notes and warnings before deciding what the bench establishes.
 | `ORACLE` | Reference repair executes and passes the verifier with full named checks, or warns when no oracle is registered |
 | `MOCK_COVERAGE` | Why mock probes are unavailable or not applicable |
 | `MOCK_MARKER` | A present mock marker must parse |
-| `MOCK_BASELINE`, `MOCK_TREATMENT` | Observed mock-arm results, retained as informational checks |
+| `MOCK_BASELINE`, `MOCK_TREATMENT` | Observed mock-arm results or omitted-arm notes; process failures are `FAIL` in source after 0.10.0 |
 | `FIXTURE_SIZE` | Existing fixture-size check and 64 KiB warning |
 | `TRIGGER_LABEL` | An unlabeled task is skipped in trigger mode |
 | `NEGATIVE_CONTROLS` | Existing negative-control coverage and 30% target |
@@ -100,6 +100,13 @@ A nonzero verifier exit can be a **PASS** for `UNTOUCHED_FIXTURE`, `MISSING_OUTP
 or `EMPTY_OUTPUT`: those gates deliberately test unsolved/absent work. Read the
 gate status before interpreting process evidence. A verifier that cannot start
 never counts as reproducing a failure.
+
+Source after npm 0.10.0 identifies omitted mock arms as `INFO` with null evidence,
+and treats a mock verifier without an exit verdict as a hard failure. A functioning
+verifier's ordinary pass/fail on supplied mock output remains informational.
+Standalone no-oracle status remains `WARN`; automatic
+[eval preflight](eval-case-preflight.md) separately classifies unmeasured evidence
+as `UNKNOWN`. The version 1 JSON shape and status vocabulary are unchanged.
 
 ## Exit status and acceptance
 

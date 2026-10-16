@@ -39,7 +39,7 @@ function setup(t: TestContext, change: Partial<SpendingBudget> = {}, result?: ()
   for (const name of ['old', 'new']) { mkdirSync(join(root, name)); writeFileSync(join(root, name, 'SKILL.md'), `---\nname: budget-skill\ndescription: Diagnose answers.\n---\nCheck the public answer using the ${name} revision.\n`); }
   const bench = join(root, 'bench'); mkdirSync(join(bench, 'fixture'), { recursive: true });
   writeFileSync(join(bench, 'fixture/answer.txt'), 'pending'); writeFileSync(join(bench, 'prompt.md'), 'Repair the answer.');
-  writeFileSync(join(bench, 'check.mjs'), `const passed=${!functionalFailure};console.log(JSON.stringify({passed,checks:[{name:'answer',pass:passed}]}));process.exit(passed?0:1);\n`);
+  writeFileSync(join(bench, 'check.mjs'), `import{readFileSync}from'node:fs';import{join}from'node:path';const passed=readFileSync(join(process.argv[2],'answer.txt'),'utf8')==='fixed';console.log(JSON.stringify({passed,checks:[{name:'answer',pass:passed}]}));process.exit(passed?0:1);\n`);
   writeFileSync(join(bench, 'bench.json'), JSON.stringify({ schemaVersion: 1, name: 'budget', tasks: [
     { id: 'first', fixture: 'fixture', prompt: 'prompt.md', verifier: 'node check.mjs', verifierKind: 'command' },
     { id: 'second', fixture: 'fixture', prompt: 'prompt.md', verifier: 'node check.mjs', verifierKind: 'command' },
@@ -48,7 +48,8 @@ function setup(t: TestContext, change: Partial<SpendingBudget> = {}, result?: ()
     pairOrder: 'balanced', trials: 1, maxCalls: 4, spendingBudget: { ...limits, ...change }, runsRoot: 'runs', runGroup: 'budget' };
   const request = join(root, 'request.json'); writeFileSync(request, JSON.stringify(body));
   let count = 0;
-  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline-budget' }), run: async () => {
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline-budget' }), run: async (_prompt, workdir) => {
+    if (!functionalFailure) writeFileSync(join(workdir, 'answer.txt'), 'fixed');
     count++; return result ? result() : { output: 'done', tokens: { input: 10, cachedInput: 6, output: 3 } };
   } };
   const options = { executor, skillInstallDir: 'project-skills', sessionOptions: { homeDir: root, env: {}, versionProbe: () => null } };

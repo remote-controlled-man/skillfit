@@ -54,8 +54,12 @@ const leaf=spawn(process.execPath,[${JSON.stringify(leaf)}],{stdio:'ignore'});
 const timer=setInterval(()=>{if(existsSync(${JSON.stringify(heartbeat)})){clearInterval(timer);writeFileSync(${JSON.stringify(ready)},JSON.stringify({pids:[process.pid,leaf.pid]}));}},20);
 setTimeout(()=>process.exit(),30000);`;
   const fake = join(root, 'fake.mjs'); writeFileSync(fake, fakeSource);
-  if (mode === 'verifier') {
-    writeFileSync(join(bench, 'verifiers/block.mjs'), fakeSource);
+  if (mode === 'verifier' || mode === 'preflight') {
+    writeFileSync(join(bench, 'verifiers/live-block.mjs'), fakeSource);
+    // Only the post-agent verifier blocks in the verifier scenario. Preflight
+    // still exercises the real missing/empty/oracle gates of the starter.
+    writeFileSync(join(bench, 'verifiers/block.mjs'), mode === 'preflight' ? fakeSource :
+      "import{existsSync}from'node:fs';import{join}from'node:path';await import(existsSync(join(process.argv[2],'_prompt.txt'))?'./live-block.mjs':'./example-task.mjs');");
     raw.tasks[0].verifier = 'node verifiers/block.mjs';
   }
   writeFileSync(join(bench, 'bench.json'), JSON.stringify(raw));
@@ -75,7 +79,7 @@ process.on('message',message=>{process.emit(message.signal);if(message.repeat){p
 const fake=new CliExecutor({argv:[process.execPath,${JSON.stringify(fake)}],shell:false,triggerSkillName:'interrupt-skill',timeoutMs:20000});
 let calls=0;const mock={describe:()=>({kind:'mock',model:'offline'}),run:async()=>{calls++;return{output:'offline answer',tokens:{input:20,cachedInput:5,output:4}}}};
 const api=new ApiExecutor({apiKey:'offline-only',fetchImpl:async(_url,options)=>{writeFileSync(${JSON.stringify(ready)},JSON.stringify({pids:[]}));return await new Promise((_,reject)=>options.signal.addEventListener('abort',()=>{writeFileSync(root+'/api-aborted','yes');reject(options.signal.reason);},{once:true}));}});
-const base={skillPath:${JSON.stringify(skill)},bench:${JSON.stringify(bench)},trials:2,maxCalls:4,executor:mode==='verifier'||mode==='judge'||mode==='between'?mock:mode==='api'?api:fake,judgeExecutor:mode==='judge'?fake:null,yes:true,dryRun:false,runsRoot:root+'/runs',runGroup:'saved',log:message=>{if(mode==='between'&&message.includes('/ treatment / trial 1'))process.emit('SIGINT');}};
+const base={skillPath:${JSON.stringify(skill)},bench:${JSON.stringify(bench)},trials:2,maxCalls:4,executor:mode==='verifier'||mode==='preflight'||mode==='judge'||mode==='between'?mock:mode==='api'?api:fake,judgeExecutor:mode==='judge'?fake:null,yes:true,dryRun:false,runsRoot:root+'/runs',runGroup:'saved',log:message=>{if(mode==='between'&&message.includes('/ treatment / trial 1'))process.emit('SIGINT');}};
 try{
  if(mode==='request'){const options={executor:fake,skillInstallDir:'skills',dryRun:true};const preview=await runEvalComponent(${JSON.stringify(request)},options);const result=await runEvalComponent(${JSON.stringify(request)},{...options,dryRun:false,expectedPlanSha256:preview.plan.sha256});writeFileSync(root+'/component.json',JSON.stringify(result));}
  else if(mode==='calibration')await runBenchCheck({dir:base.bench,log:()=>{},calibrate:{executor:fake,trials:2,maxCalls:2,runsRoot:base.runsRoot,runGroup:base.runGroup}});
@@ -100,6 +104,13 @@ finally{writeFileSync(root+'/done.json',JSON.stringify({before,after:counts(),ca
   assert.deepEqual(exit, { code: signal === 'SIGINT' ? 130 : 143, signal: null }, stderr);
   const run = join(root, 'runs/saved'), done = json(join(root, 'done.json'));
   assert.deepEqual(done.after, done.before, 'signal handlers must be removed after sealing');
+  if (mode === 'preflight') {
+    assert.equal(done.calls, 0); assert.ok(!existsSync(run));
+    assert.match(readFileSync(join(root, 'error.txt'), 'utf8'), new RegExp(signal));
+    for (let i = 0; i < 100 && json(ready).pids.some(running); i++) await delay(50);
+    assert.ok(json(ready).pids.every((pid: number) => !running(pid)), 'preflight verifier and grandchild must stop');
+    return { root, run, done, session: null, events: [], stderr };
+  }
   const session = json(join(run, '_session.json'));
   assert.equal(session.status, 'stopped'); assert.match(session.stopReason, new RegExp(signal));
   const interruption = json(join(run, '_interruption.json'));
@@ -133,6 +144,10 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) test(`${signal} stops the C
     assert.equal(saved.status, 'stopped'); assert.equal(saved.acceptance.eligibleForUpgrade, false);
     assert.deepEqual(saved.costs, report.costs, 'sealed interruption costs must reproduce unchanged');
   }
+});
+
+for (const signal of ['SIGINT', 'SIGTERM'] as const) test(`${signal} cancels offline preflight without dispatch or a misleading completed run`, { timeout: 30_000 }, async t => {
+  await scenario(t, 'preflight', signal);
 });
 
 test('interrupting a verifier kills its tree and preserves final agent usage', { timeout: 30_000 }, async t => {
