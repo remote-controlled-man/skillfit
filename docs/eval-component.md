@@ -11,6 +11,15 @@ Build the bench around the task being evaluated, with deterministic acceptance
 checks and an independent reference repair. Bundled and contributed benches are
 examples, not a universal test of every Skill. See the [authoring guide](bench-authoring.md).
 
+In the source build after npm 0.10.0, execution requires an automatic offline
+[case preflight](eval-case-preflight.md) after preview-hash confirmation and before
+any agent/judge call. `plan.evaluation.casePreflight.status` is `pending`; preview
+executes no verifier/oracle. Hard failures return `CASE_PREFLIGHT_FAILED` and a
+structured `casePreflight` report with zero calls and no native run directory.
+Warnings and unknowns remain separate and nonblocking. Successful probes are
+frozen in the native plan and included in JSON assessment/replay; they do not
+authorize adoption or alter statistical/cost requirements.
+
 The [maintained evidence index](skill-evaluation-evidence.md) links all development
 and independent cohorts, their exact costs and offline replay packages. As of
 October 15, the debugging study totals 195 actual calls with seven historical

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit offline evaluation case preflight version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "scope", "status", "bench", "checks", "summary", "cost"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "skillfit.eval-preflight" },
+    "scope": { "const": "offline-case-integrity" },
+    "status": { "enum": ["ready", "blocked"] },
+    "bench": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dir", "sha256", "taskIds"],
+      "properties": {
+        "dir": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "taskIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["code", "status", "message", "taskId", "location", "remediation", "evidence"],
+        "properties": {
+          "code": { "enum": ["BENCH_LOAD", "UNTOUCHED_FIXTURE", "MISSING_OUTPUT", "EMPTY_OUTPUT", "FACET_COUNT", "ORACLE", "MOCK_COVERAGE", "MOCK_MARKER", "MOCK_BASELINE", "MOCK_TREATMENT", "FIXTURE_SIZE", "TRIGGER_LABEL", "NEGATIVE_CONTROLS", "LIVE_DIFFICULTY", "INPUT_CHANGED", "CHECK_ERROR"] },
+          "status": { "enum": ["PASS", "FAIL", "WARN", "UNKNOWN", "INFO"] },
+          "message": { "type": "string" },
+          "taskId": { "type": ["string", "null"] },
+          "location": { "$ref": "bench-check.schema.json#/properties/checks/items/properties/location" },
+          "remediation": { "type": ["string", "null"] },
+          "evidence": { "$ref": "bench-check.schema.json#/properties/checks/items/properties/evidence" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["failures", "warnings", "unknown", "passed", "info"],
+      "properties": {
+        "failures": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "cost": {
+      "type": "object", "additionalProperties": false,
+      "required": ["modelCalls", "durationMs"],
+      "properties": { "modelCalls": { "const": 0 }, "durationMs": { "type": "integer", "minimum": 0 } }
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "status": { "const": "ready" } } }, "then": { "properties": { "summary": { "properties": { "failures": { "const": 0 } } } } }, "else": { "properties": { "summary": { "properties": { "failures": { "minimum": 1 } } } } } }
+  ]
+}

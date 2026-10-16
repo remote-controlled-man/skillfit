@@ -327,6 +327,15 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
 
 ## Bench composition guidance (for authors and the upcoming scaffolding tooling)
 
+Operational gate (source after npm 0.10.0): live `eval` reuses offline bench
+integrity checks before dispatch, scoped to selected tasks (labelled tasks in
+trigger mode). Hard failures block all agent/judge calls. Missing oracles and
+other unmeasured coverage are explicit `UNKNOWN` diagnostics; observed concerns
+remain `WARN`. Neither blocks calls nor counts as passed evidence. The native
+plan retains probes and separate offline elapsed time; previews mark checks
+pending. This changes no statistical verdict, cost population or adoption rule.
+See [the preflight contract](eval-case-preflight.md).
+
 These are the targets. [bench-authoring.md](bench-authoring.md) is the walkthrough that gets a bench to
 them, step by step, on one real task.
 

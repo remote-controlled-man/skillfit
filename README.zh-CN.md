@@ -96,6 +96,8 @@ eval 和基线校准可用 `--max-calls <n>` 拒绝超出调用上限的计划�
 
 源码版修复（npm 0.10.0 尚未包含）：Ctrl+C 会停止正在运行的评测进程和后续调用，保留可用输出与用量，封存中止记录后以 130 退出。SIGTERM 对应 143。部分或未知用量仍不完整；中止批次不能获准升级，也不会自行重试。参见[中断与记录保留](docs/evaluation-interruption.md)。
 
+0.10.0 之后的源码还包含：正式 `eval` 会在任何 agent／裁判调用前离线检查所选 case。硬失败会阻止开跑；警告与未知证据分别报告，并随本批记录保留。预览会标明校验尚未执行，不运行评分器或参考解。它只增加本地校验时间，新增模型调用为零。参见 [case 开跑前校验](docs/eval-case-preflight.md)。
+
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
 ## 创建自己的 case

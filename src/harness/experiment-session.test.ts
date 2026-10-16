@@ -21,7 +21,7 @@ function setup(t: TestContext) {
   writeFileSync(join(skill, 'SKILL.md'), '---\nname: candidate\ndescription: offline fixture\n---\nInspect boundaries.\n');
   writeFileSync(join(benchDir, 'fixture', 'index.js'), 'module.exports = 1;\n');
   writeFileSync(join(benchDir, 'prompt.md'), 'Fix the cache.\n');
-  writeFileSync(join(benchDir, 'verify.mjs'), 'process.exit(0);\n');
+  writeFileSync(join(benchDir, 'verify.mjs'), "import{existsSync,readFileSync}from'node:fs';import{join}from'node:path';const output=join(process.argv[2],'_output.md');process.exit(existsSync(output)&&readFileSync(output,'utf8').trim()?0:1);\n");
   writeFileSync(join(benchDir, 'bench.json'), JSON.stringify({ schemaVersion: 1, name: 'session-test', tasks: [
     { id: 'one', fixture: 'fixture', prompt: 'prompt.md', verifier: 'node verify.mjs', shouldTrigger: true },
   ] }));

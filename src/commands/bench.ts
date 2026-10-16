@@ -3,7 +3,7 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSyn
 import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
-import { loadBench } from '../harness/bench.js';
+import { loadBench, selectBenchTasks } from '../harness/bench.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
@@ -47,6 +47,8 @@ export interface BenchCheckCalibrateOptions {
 
 export interface BenchCheckOptions {
   dir?: string;
+  /** Internal eval scope; preserves the full bench fingerprint. */
+  taskIds?: string[];
   log?: (msg: string) => void;
   calibrate?: BenchCheckCalibrateOptions | false;
 }
@@ -338,13 +340,14 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
   const checks: BenchDiagnostic[] = [];
   let identity: BenchCheckReport['bench'] = null;
   const push = (code: BenchCheckCode, status: Check['status'], message: string, task?: BenchTask, evidence?: BenchCheckEvidence): void => {
+    throwIfEvaluationInterrupted();
     checks.push(benchDiagnostic(code, status, message, task, evidence));
     log(renderCheck({ status, message }));
   };
 
   let bench;
   try {
-    bench = loadBench(dir);
+    bench = selectBenchTasks(loadBench(dir), options.taskIds);
   } catch (error) {
     push('BENCH_LOAD', 'FAIL', `bench does not load: ${(error as Error).message}`);
     return finish(dir, checks, log, false, identity);
@@ -435,14 +438,18 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
         const marker = JSON.parse(readFileSync(markerPath, 'utf8')) as MockMarkerOutputs;
         for (const arm of ['baseline', 'treatment'] as const) {
           const behavior = marker[arm];
-          if (behavior?.output === undefined) continue;
+          if (behavior?.output === undefined) {
+            taskPush(arm === 'baseline' ? 'MOCK_BASELINE' : 'MOCK_TREATMENT', 'INFO', `${task.id}: no mock ${arm} output — this arm was not probed`);
+            continue;
+          }
           const probe = await probeVerifier(bench.dir, task.verifier, behavior.output);
           taskPush(
-            arm === 'baseline' ? 'MOCK_BASELINE' : 'MOCK_TREATMENT', 'INFO',
-            `${task.id}: mock ${arm} output → verifier ${probe.exitCode === 0 ? 'pass' : 'fail'}`, benchCheckEvidence(probe, task.verifier),
+            arm === 'baseline' ? 'MOCK_BASELINE' : 'MOCK_TREATMENT', probe.exitCode === null ? 'FAIL' : 'INFO',
+            `${task.id}: mock ${arm} output → ${probe.exitCode === null ? verifierFailure('verifier', task.verifier, probe.error) : `verifier ${probe.exitCode === 0 ? 'pass' : 'fail'}`}`, benchCheckEvidence(probe, task.verifier),
           );
         }
       } catch (error) {
+        throwIfEvaluationInterrupted();
         taskPush('MOCK_MARKER', 'FAIL', `${task.id}: ${MOCK_MARKER_FILE} is unreadable (${(error as Error).message})`);
       }
     } else {

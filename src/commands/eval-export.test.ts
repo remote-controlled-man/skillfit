@@ -52,6 +52,7 @@ test('export previews are read-only and complete packages replay after original 
   const replay = spawnSync(process.execPath, [join(moved, 'reproduce.mjs')], { encoding: 'utf8', timeout: 30_000 });
   assert.equal(replay.status, 0, replay.stderr);
   const data = JSON.parse(replay.stdout); assert.equal(data.evidence.verified, true); assert.equal(data.acceptance.automaticUpgrade, false);
+  assert.deepEqual(data.casePreflight, JSON.parse(originalPlan).details.casePreflight, 'export retains the original probes, including offline timing and unknowns');
   const inspected = await reportEvalComponent(moved, { replay: true });
   assert.ok('portablePackage' in inspected && inspected.portablePackage.integrityVerified);
   assert.equal(f.calls(), 2);

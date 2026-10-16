@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased — enforce offline case gates before eval (2026-10-16)
+
+- Run selected cases through offline integrity checks before any live eval
+  agent/judge call, including installed revisions, configuration and trigger
+  modes. Reject hard failures and changed inputs without creating a run. Dry-run
+  remains side-effect-free and declares required checks pending.
+- Distinguish observed warnings from unknown winnability/mock coverage and live
+  difficulty. Preserve inapplicable probes as information; ready means only zero
+  hard failures. Freeze diagnostics and offline elapsed time in native plans,
+  return structured JSON failures and retain results through offline export/replay.
+- Fail incomplete mock verifier probes instead of treating process failure as an
+  ordinary negative example; identify omitted mock arms explicitly. Preserve
+  standalone bench-check version 1 statuses, including no-oracle warnings.
+- Add offline regressions for zero-call gates, scope, input drift, previews,
+  warning/unknown separation, request JSON, process interruption and portable
+  retention. Use real-output assertions in old test fixtures instead of always-pass
+  verifiers. No dependencies, new model calls, verdict-policy change or npm release.
+
 ## Unreleased — reliable evaluation interruption (2026-10-16)
 
 - Handle Ctrl+C/SIGTERM across live paired, request, trigger and calibration
