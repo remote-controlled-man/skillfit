@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-16T17:19:45.071Z",
+  "version": "0.11.0",
+  "latest": "0.11.0",
+  "integrity": "sha512-t6xajvQrkYD3/orFQVuPX9iEwAlR60Qq1MLHwII8D/8cPj4iqRMWCJQmzGCuRPaiET1BN+D/xdCzUikz0sPFaQ==",
+  "sha256": "01b96ab271ae25ba04399e70a5b6a7889bd4657311e3b2b31326e798c4548461",
+  "sourceCommit": "62be7fe93cfb3291de00357f38aa575f25679649",
+  "installedFilesVerified": 2667,
+  "zeroRuntimeDependencies": true,
+  "globalInstall": false,
+  "modelCalls": 0,
+  "smoke": {
+    "version": true,
+    "help": true,
+    "requestPreview": true
+  },
+  "attempts": [
+    {
+      "at": "2026-10-16T17:19:39.987Z",
+      "versionStatus": 200,
+      "latestStatus": 200
+    }
+  ]
+}
