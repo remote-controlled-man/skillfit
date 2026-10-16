@@ -57,6 +57,12 @@ a controlled agent profile for the experiment and record its relevant global con
 does not automatically remove the user's configuration. `doctor` and `report` are read-only aids,
 but neither proves that an agent actually ignored a globally installed Skill during an eval.
 
+Source after npm 0.10.1 makes [Agent environment checks](eval-agent-preflight.md)
+part of preview and the live gate. CLI absence, incompatible matrix capabilities
+and global same-name Skills are explicit failures; login stays unknown without
+network/authentication probes. Inspect the nested environment status even when a
+dry run successfully generated a plan. Reports retain the original checks.
+
 For Codex CLI, skillfit explicitly starts both paired and trigger trials with
 `--sandbox workspace-write`. The agent can edit its disposable trial directory, which command-graded
 tasks require. Check any extra writable roots in your Codex configuration before a run. Codex still

@@ -7,6 +7,7 @@ import { stoppedAccounting } from '../harness/eval-audit.js';
 import { COST_METRICS } from '../harness/costs.js';
 import { triggerMetrics, type TriggerTaskSummary } from '../harness/trigger.js';
 import type { EvalReportOptions } from './eval-component.js';
+import { agentEnvironmentReportLines } from '../harness/agent-preflight.js';
 
 function text(value: unknown, label: string): string {
   if (typeof value !== 'string' || !value.trim()) throw new Error(`${label} must be a nonempty string.`);
@@ -121,6 +122,7 @@ export function readSingleArmReport(inputPath: string, options: EvalReportOption
     startedAgentDispatches: accounting.startedAgentDispatches, invocationsWithUnknownReceipts: accounting.invocationsWithUnknownReceipts,
     scope: 'Available baseline invocation receipts only; missing or invalid usage remains unknown. No paired comparison or billing estimate.' } : null;
   const base = { schemaVersion: 1 as const, status, runGroup: value ? text(value.runGroup, 'runGroup') : basename(root), session,
+    agentPreflight: plan?.details ? record(plan.details, 'native plan details').agentPreflight ?? null : null,
     usage,
     source: data && source ? { path: source, sha256: data.sha256, schemaVersion: 1 } : null,
     warnings: [...warnings as string[], ...(!value ? ['Final summary is missing; no aggregate metrics inferred from an unfinished run.'] : [])],
@@ -142,6 +144,7 @@ export function renderSingleArmReport(report: SingleArmReport): string {
   const lines = [`# skillfit ${report.evaluationType} report: ${escape(report.runGroup)}`, '', `- State: ${report.status}`,
     '- Evidence: saved summary only; no paired native audit or adoption decision.', '- Eligible for upgrade: no', '- Automatic upgrade: no'];
   if (report.session?.stopReason) lines.push(`- Stop reason: ${escape(report.session.stopReason.replaceAll(report.evidence.runDir, '[run]'))}`);
+  lines.push(...agentEnvironmentReportLines(report.agentPreflight).map(line => `- ${escape(line)}`));
   if (report.evaluationType === 'calibration' && report.summary) {
     const { tasks, metrics } = report.summary;
     lines.push('', '## Baseline difficulty', '', `- Baseline pass rate: ${metrics.passes}/${metrics.completed} (${percent(metrics.baselinePassRate)})`,

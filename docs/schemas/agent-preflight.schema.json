@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit offline Agent environment preflight version 1",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "scope", "status", "matrix", "checks", "summary", "cost"],
+  "properties": {
+    "schemaVersion": { "const": 1 }, "kind": { "const": "skillfit.agent-preflight" },
+    "scope": { "const": "offline-agent-environment" }, "status": { "enum": ["ready", "blocked"] },
+    "matrix": { "type": "object", "required": ["schemaVersion", "verifiedAt"], "properties": {
+      "schemaVersion": { "type": "integer", "minimum": 1 }, "verifiedAt": { "type": "string" }
+    } },
+    "checks": { "type": "array", "minItems": 1, "items": {
+      "type": "object", "required": ["code", "role", "agent", "status", "message", "remediation", "paths"],
+      "properties": {
+        "code": { "enum": ["CLI_AVAILABLE", "MATRIX_CAPABILITY", "EXECUTOR_INJECTED", "AUTHENTICATION", "GLOBAL_SKILL_CONFLICT", "GLOBAL_SKILL_SCAN", "ENVIRONMENT_CHANGED"] },
+        "role": { "enum": ["agent", "judge"] }, "agent": { "type": ["string", "null"] },
+        "status": { "enum": ["PASS", "FAIL", "UNKNOWN", "INFO"] }, "message": { "type": "string" },
+        "remediation": { "type": ["string", "null"] }, "paths": { "type": "array", "items": { "type": "string" } }
+      },
+      "allOf": [{ "if": { "properties": { "code": { "const": "AUTHENTICATION" } } },
+        "then": { "properties": { "status": { "const": "UNKNOWN" }, "paths": { "maxItems": 0 } } } }]
+    } },
+    "summary": { "type": "object", "required": ["failures", "passed", "unknown", "info"], "properties": {
+      "failures": { "type": "integer", "minimum": 0 }, "passed": { "type": "integer", "minimum": 0 },
+      "unknown": { "type": "integer", "minimum": 0 }, "info": { "type": "integer", "minimum": 0 }
+    } },
+    "cost": { "type": "object", "required": ["modelCalls", "cliInvocations"], "properties": {
+      "modelCalls": { "const": 0 }, "cliInvocations": { "const": 0 }
+    } }
+  }
+}

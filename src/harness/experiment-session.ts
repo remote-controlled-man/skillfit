@@ -3,7 +3,7 @@ import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlin
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAgent, skillUserDirSpecs, type AgentDef } from '../agents.js';
+import { getAgent, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
 import { hashFileSet, sha256File, sha256Text } from './hash.js';
 import { assertNativeDiffFile, assertNativeDiffWorkspace, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
@@ -12,6 +12,7 @@ import { ExecutorFailure } from './types.js';
 import { EvaluationInterrupted, evaluationSignal, throwIfEvaluationInterrupted } from './interruption.js';
 import { freezeInputSnapshot, verifyInputSnapshot, type InputSnapshot, type PinnedInput } from './input-snapshot.js';
 import { loadBench } from './bench.js';
+import { globalSkillRoots } from './agent-preflight.js';
 
 export interface ExperimentSummary {
   schemaVersion: 1;
@@ -236,8 +237,7 @@ export class ExperimentSession {
       const match = agent.headless.projectTrustConfigArg?.match(/^([^.]+)\.'\{workdir\}'\.([^=]+)='([^']+)'$/);
       const trust = match ? { table: match[1]!, field: match[2]!, value: match[3]! } : undefined;
       for (const path of paths) this.configs.push(configState(path, path === settings.path ? trust : undefined, this.trustWorkspaces));
-      for (const spec of new Set([...skillUserDirSpecs(agent, env), ...agent.skills.sharedDirs.filter(path => path.startsWith('~/'))])) {
-        const root = expand(spec, home);
+      for (const root of globalSkillRoots(agent, home, env)) {
         this.inventories.push(skillInventory(root));
         if (!existsSync(root)) continue;
         for (const entry of readdirSync(root)) {

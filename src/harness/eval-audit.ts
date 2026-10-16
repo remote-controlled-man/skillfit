@@ -15,6 +15,7 @@ import { pairConditions, type PairOrder } from './types.js';
 import { NATIVE_DIFF_PATH, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
 import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } from './eval-budget.js';
 import { verifyInputSnapshot } from './input-snapshot.js';
+import { assertRecordedAgentEnvironment } from './agent-preflight.js';
 
 function inside(root: string, path: string): boolean {
   const rel = relative(root, path);
@@ -90,6 +91,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     const plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
     const inputSnapshot = verifyInputSnapshot(root, plan);
     const details = record(plan.details, 'native plan details');
+    if (details.agentPreflight !== undefined) assertRecordedAgentEnvironment(details.agentPreflight);
     if (details.reviewedPlan !== undefined) {
       const reviewed = record(details.reviewedPlan, 'reviewed plan'), { sha256, ...data } = reviewed;
       assert.equal(data.schemaVersion, 1); assert.equal(data.kind, 'skillfit.eval-plan');
@@ -107,6 +109,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
       assert.equal(e.inputMode, raw.inputMode); assert.equal(e.installDir, report.skillDelivery?.installDir ?? null);
       assert.equal(e.pairOrder, details.pairOrder); assert.equal(e.executorTimeoutSeconds, details.executorTimeoutSeconds);
       assert.deepEqual(e.spendingBudget, details.spendingBudget, 'Reviewed spending limits differ from the native plan.');
+      assert.deepEqual(e.agentPreflight, details.agentPreflight, 'Reviewed Agent preflight differs from the native plan.');
     }
     let pairOrder: PairOrder | null = null;
     if (raw.pairOrder !== undefined || details.pairOrder !== undefined) {

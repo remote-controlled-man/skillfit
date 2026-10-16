@@ -8,10 +8,12 @@ import { prepareEvalPlan, confirmEvalPlan, plannedEvalResult } from './eval-plan
 import { spendingBudgetReport } from '../harness/eval-budget.js';
 import { verifyReplayPackage } from '../harness/replay-package.js';
 import { CasePreflightFailed } from './eval-preflight.js';
+import { AgentPreflightFailed } from '../harness/agent-preflight.js';
 
 export function componentError(error: unknown, code = 'INVALID_OR_FAILED_EVALUATION') {
   return { schemaVersion: 1, kind: 'skillfit.eval-error', status: 'error',
-    error: { code: error instanceof CasePreflightFailed ? 'CASE_PREFLIGHT_FAILED' : code, message: error instanceof Error ? error.message : String(error) },
+    error: { code: error instanceof CasePreflightFailed ? 'CASE_PREFLIGHT_FAILED' : error instanceof AgentPreflightFailed ? 'AGENT_PREFLIGHT_FAILED' : code, message: error instanceof Error ? error.message : String(error) },
+    ...(error instanceof AgentPreflightFailed ? { agentPreflight: error.agentPreflight } : {}),
     ...(error instanceof CasePreflightFailed ? { casePreflight: error.preflight } : {}),
     acceptance: { decision: 'inconclusive', eligibleForUpgrade: false, automaticUpgrade: false } };
 }
@@ -39,6 +41,7 @@ async function reportNativeEvaluation(path: string, options: EvalReportOptions) 
     const session = existsSync(sessionPath) ? record(readComponentJson(sessionPath).value, 'session') : null;
     const nativePlan = record(readComponentJson(join(runDir, '_plan.json')).value, 'native plan');
     return { schemaVersion: 1, kind: 'skillfit.eval-result', status: session ? 'stopped' : 'incomplete',
+      agentPreflight: nativePlan.details ? record(nativePlan.details, 'native plan details').agentPreflight ?? null : null,
       casePreflight: nativePlan.details ? record(nativePlan.details, 'native plan details').casePreflight ?? null : null,
       inputSnapshot: nativePlan.inputSnapshot ?? null,
       manifest: null, session, costs: stoppedAccounting(runDir), evidence: { verified: false, runDir, reasons: ['No final evaluation manifest; retained spending only.'] },
@@ -52,6 +55,7 @@ async function reportNativeEvaluation(path: string, options: EvalReportOptions) 
   const result = assessEvaluation(data.value, audit, policy);
   const nativePlan = audit.verified ? record(readComponentJson(join(runDir, '_plan.json')).value, 'native plan') : null;
   return { ...result, manifest: { path: manifestPath, sha256: data.sha256, schemaVersion: 4 },
+    agentPreflight: nativePlan ? record(nativePlan.details, 'native plan details').agentPreflight ?? null : null,
     casePreflight: nativePlan ? record(nativePlan.details, 'native plan details').casePreflight ?? null : null,
     inputSnapshot: nativePlan?.inputSnapshot ?? null,
     ...(spendingBudget ? { spendingBudget } : {}),
