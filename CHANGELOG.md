@@ -65,10 +65,11 @@
   without relaxing revision adoption gates or inherited-configuration limits.
 - Apply explicit deadlines to API calls too; expose effective defaults (CLI/
   requests 600s, API 120s). Freeze parsed spending limits, retain incomplete costs
-  and stop without retries. Keep trigger/judge budget restrictions. Add offline
+  and stop without retries. The completed release also applies shared limits to
+  trigger, calibration and judge calls as described above. Add offline
   confirmation, delivery, stop-line and delete-original/export/replay regressions,
   mirrored README guidance and the shared planning contract. No dependencies,
-  statistical changes, real model calls or npm publication.
+  statistical changes or real model calls.
 
 ### Included: calibration and trigger report dispatch (2026-10-16)
 

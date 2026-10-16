@@ -60,5 +60,40 @@ registry install. Tests and plan records alone do not establish a complete deliv
   [installed-feature recipe](../releases/0.11.0-feature-smoke.mjs): seven feature
   groups, five moved/deleted-original replay packages, eight synthetic executor
   invocations and zero real model/Agent CLI invocations or network attempts.
-- Remote CI, merge, OIDC preview/publication and registry-installed verification
-  remain pending. These local results are not a publication or efficacy claim.
+- [PR #37](https://github.com/remote-controlled-man/skillfit/pull/37) is merged.
+  [Three-platform CI](https://github.com/remote-controlled-man/skillfit/actions/runs/38934720554)
+  passed on Linux, macOS and Windows. The approved source commit is
+  `62be7fe93cfb3291de00357f38aa575f25679649`.
+- The [OIDC preview](https://github.com/remote-controlled-man/skillfit/actions/runs/38936210102)
+  passed, and its archive passed an independent temporary installation with all
+  2,667 files matching. The installed-feature recipe passed on that archive too.
+  This preview check does not establish registry availability.
+- The user approved the one formal 0.11.0 upload. The
+  [publication workflow](https://github.com/remote-controlled-man/skillfit/actions/runs/38936960037)
+  passed, retaining 21 unavailable observations before availability. The preview
+  and accepted archives match exactly. CI and independent registry installations
+  each verified all 2,667 packaged files, with zero runtime dependencies and no
+  global install. One independent read attempt stopped on a TLS connection reset;
+  its failure remains retained alongside successful verification in a fresh
+  directory. The installed-feature recipe passed on the registry-installed
+  package, including seven feature groups and five portable replays. Registry
+  signatures and the source attestation passed too. See the
+  [completed release record](../releases/0.11.0.md) and
+  [pinned receipts](../releases/0.11.0-verification.json).
+
+## Completion audit
+
+| Required outcome | Observable evidence | Result |
+| --- | --- | --- |
+| 1. Calibration preflight and stopped evidence | Calibration/CLI regression tests; installed recipe rejects hard case failures with zero calls | Complete |
+| 2. Cancel checks and descendants | Standalone/nested bench and replay cancellation regressions for signals, cleanup and retained originals | Complete |
+| 3. Full judge accounting and shared budgets | Judge accounting, spending and session regressions; installed recipe retains two Agent and two judge calls with exact role/combined costs | Complete |
+| 4. Reviewed controls across modes | Workflow-entrypoint and calibration CLI regressions; installed public previews remain pure without Agent CLIs | Complete |
+| 5. Native/portable reports for all supported modes | Export, tamper and replay-cancellation regressions; five installed portable packages replay after relocation and original deletion, without extra calls or adoption | Complete |
+| 6. Public contracts and guidance | CLI/schema tests, bilingual README code-block parity, link validation and driver Skill validation; historical evidence unchanged | Complete |
+| 7. Remote and installed delivery | Merged PR #37, three-platform CI, one OIDC upload, exact archive comparisons, two registry installs and verified attestation/signature | Complete |
+
+This completes the authorized basic workflow work. Future live evaluations,
+additional Agent adapters, authenticated trigger validation and usability
+optimization are separate work; offline authentication and unknown usage remain
+explicit limitations. No Skill efficacy improvement or automatic upgrade follows.

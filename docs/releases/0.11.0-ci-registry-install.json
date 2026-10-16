@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-16T17:17:39.021Z",
+  "version": "0.11.0",
+  "latest": "0.11.0",
+  "integrity": "sha512-t6xajvQrkYD3/orFQVuPX9iEwAlR60Qq1MLHwII8D/8cPj4iqRMWCJQmzGCuRPaiET1BN+D/xdCzUikz0sPFaQ==",
+  "sha256": "01b96ab271ae25ba04399e70a5b6a7889bd4657311e3b2b31326e798c4548461",
+  "sourceCommit": "62be7fe93cfb3291de00357f38aa575f25679649",
+  "installedFilesVerified": 2667,
+  "zeroRuntimeDependencies": true,
+  "globalInstall": false,
+  "modelCalls": 0,
+  "smoke": {
+    "version": true,
+    "help": true,
+    "requestPreview": true
+  },
+  "attempts": [
+    {
+      "at": "2026-10-16T17:07:03.098Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:07:33.263Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:08:03.433Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:08:33.593Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:09:03.924Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:09:34.113Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:10:04.303Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:10:34.476Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:11:04.660Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:11:34.810Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:12:04.970Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:12:35.169Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:13:05.428Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:13:35.588Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:14:05.743Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:14:35.898Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:15:06.056Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:15:36.228Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:16:06.396Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:16:36.581Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:17:06.734Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T17:17:36.854Z",
+      "versionStatus": 200,
+      "latestStatus": 200
+    }
+  ]
+}

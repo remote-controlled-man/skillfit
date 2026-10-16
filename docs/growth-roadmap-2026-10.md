@@ -7,12 +7,12 @@ create a case, verify its acceptance checks, preview a small budget, then inspec
 outcomes and complete spending. Bundled benches teach the format. Repeatedly
 optimizing one external debugging Skill is not the product roadmap.
 
-The 0.10.1 release has a [verified registry installation](releases/0.10.1-verification.json)
-and [installed-feature replay](releases/0.10.1-feature-smoke.json). The user-authorized
-October 16 case workflow is complete. The October 17 source work extends the
-basic workflow across calibration, trigger and judge runs; publication and final
-verification are tracked separately. No live model calls were added or authorized
-for this delivery.
+The 0.11.0 release has a [verified registry installation](releases/0.11.0-verification.json)
+and [installed-feature replay](releases/0.11.0-feature-smoke.json). The user-authorized
+October 16 case workflow and October 17 extensions across calibration, trigger
+and judge runs are complete. The [completion audit](plans/2026-10-17-workflow-foundations.md#completion-audit)
+links the required outcomes to their evidence. No live model calls were added or
+authorized for this delivery.
 
 ## Available foundations
 
@@ -64,18 +64,19 @@ report export, failure freezing or existing budget controls.
 
 See [planning](eval-planning.md), [interruption](evaluation-interruption.md),
 [cost accounting](eval-costs.md), [report types](evaluation-reports.md) and
-[portable packages](replay-packages.md). These are source features until a new
-release is published and its installed package is checked. The statistical
-protocol, dated evidence and automatic-upgrade prohibition are unchanged.
+[portable packages](replay-packages.md). These features are published and checked
+in [0.11.0](releases/0.11.0.md), with 794 offline tests and Linux/macOS/Windows CI
+passing. The statistical protocol, dated evidence and automatic-upgrade
+prohibition are unchanged.
 
 ## Later decisions
 
 The 0.10.1 release includes interruption cleanup, offline case preflight, sealed
-inputs, API cache counts and shared paired report inputs. Source after that release
-also reads calibration and trigger summaries through the public report dispatcher,
+inputs, API cache counts and shared paired report inputs. Version 0.11.0 also
+reads calibration and trigger summaries through the public report dispatcher,
 with their correct states/metrics and separate descriptive JSON kinds. See
 [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
-This reporting correction adds no live calls or npm publication.
+This reporting correction adds no live calls.
 
 The same source line now shares ordinary/Agent paired plans, budget stop lines
 and executor deadlines, with ordinary JSON preview/confirmation and explicit
@@ -83,11 +84,11 @@ no-Skill request baselines. [Shared planning](eval-planning.md) documents defaul
 frozen limits and unchanged adoption restrictions. Version 0.11.0 includes
 these additions, with registry delivery tracked in its release record.
 
-Source eval also performs [offline Agent environment preflight](eval-agent-preflight.md)
+Version 0.11.0 also performs [offline Agent environment preflight](eval-agent-preflight.md)
 in preview and before dispatch: CLI availability, matrix compatibility, existing
 same-name global Skill conflicts and unknown offline authentication. Checks are
 sealed and preserved by reporting/replay without a new machine probe. This
-source addition makes no live calls and is not yet in npm 0.10.1.
+check makes no live calls; authentication remains unknown offline.
 
 - Improve error messages based on actual failed case-authoring attempts.
 - Verify Claude Code trigger capture when working authentication is available.
