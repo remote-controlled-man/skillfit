@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — calibration and trigger report dispatch (2026-10-16)
+
+- Resolve calibration `_calibration.json` and trigger v1 manifests before the
+  paired report path. Markdown/JSON show the same recorded state and type-specific
+  metrics; completed calibration is no longer mislabeled stopped. Missing final
+  summaries stay stopped/incomplete, with no fabricated aggregate metrics.
+- Add descriptive `skillfit.calibration-report` and `skillfit.trigger-report`
+  JSON kinds. Retain difficulty bands, baseline usage coverage, trigger rates and
+  Wilson intervals, class/competition/detection context, and unknown/error counts.
+  Reject inconsistent summaries and incompatible paired options.
+- Keep paired requests, report contract, statistical/adoption policy and original
+  receipts unchanged. Single-arm summaries remain unverified/ineligible and do
+  not enable portable replay exports. Add offline regression tests and update
+  mirrored READMEs and workflow guides. No dependencies or real model calls.
+
 ## [0.10.1] — 2026-10-16
 
 - Read chat-completions `usage.prompt_tokens_details.cached_tokens` into cached

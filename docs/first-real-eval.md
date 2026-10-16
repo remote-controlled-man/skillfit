@@ -89,8 +89,10 @@ that into a broad efficacy claim. The [metrics protocol](metrics.md) defines the
 When the paired result is useful, run `--mode trigger` separately to ask whether the agent would
 load the Skill on its own. Trigger mode has one arm and uses 5 trials per task by default. It does
 not yet reproduce competition from the user's whole installed Skill set, so its recall is an
-optimistic estimate. Share the paired and trigger manifests separately; `report eval` currently
-renders paired schema-v4 manifests only.
+optimistic estimate. Share paired and trigger results separately. Source after npm
+0.10.1 reads both through `report eval`, with distinct JSON kinds and metrics;
+calibration directories or `_calibration.json` also work. See [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
+Single-arm reports do not enter the paired acceptance policy or authorize upgrades.
 
 New trigger manifests record both the injectable-text hash and a separate full installed-file hash,
 including scripts and binary resources. Keep the Skill directory unchanged while the experiment runs;

@@ -145,6 +145,14 @@ A bench that cannot discriminate must not produce verdicts.
 
 ## L1 — trigger quality (activation)
 
+Operational reporting correction (source after npm 0.10.1): `report eval`
+dispatches paired, baseline-calibration and trigger summaries separately.
+Calibration preserves recorded session status and existing >=90%/<=10%
+difficulty bands. Trigger reports retain the existing count denominators, Wilson
+intervals and unknown/error exclusions. Neither single-arm report enters paired
+quality/adoption gates; no statistical formula or historical receipt changes.
+See [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
+
 Paired installed-Skill runs may additionally record `skillReads` counts (`observed`,
 `unobserved`, `unknown`) per arm, task and overall, with the **surviving graded pair**
 denominator. These mechanical transcript observations are not trigger recall/precision and do

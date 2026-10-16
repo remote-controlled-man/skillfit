@@ -200,6 +200,8 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 0.10.1 中，普通报告和 JSON 都接受同样的 manifest、原生运行目录或复现包，包括中止和未完成批次。两者都会核查已存证据，并把采用决定与质量判定分开解释。`--replay`、`--records` 和 `--policy` 两种格式都能用；成功生成报告不代表获准升级。参见[报告输入和状态](docs/evaluation-reports.md)。
 
+npm 0.10.1 之后的源码还支持用两种格式读取校准目录／`_calibration.json` 和触发率 manifest。已完成的校准保持完成状态，展示基线难度；触发率报告展示召回率、误触发率、精确率、F1 和检测覆盖情况。这两种单组报告不能授权采用，也不能使用配对重放或策略选项。参见[报告类型](docs/evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101)。
+
 新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。Chat completions API 明确返回的缓存输入计数（包括零）会被保留；缺失或非法值仍记为未知。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
 
 没有 judge 的原生配对实验可导出为独立目录，包含原始记录、匹配的输入、当时的编译版 CLI、校验清单和重放入口。默认只预览；缺输入或目标目录已存在就停止。整个目录可搬到另一台机器，重放不调用模型，保留中止状态和未知成本，也不能授权升级。分享前检查项目数据，参见[可搬走的复现包](docs/replay-packages.md)。

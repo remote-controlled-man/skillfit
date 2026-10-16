@@ -7,8 +7,8 @@ create a case, verify its acceptance checks, preview a small budget, then inspec
 outcomes and complete spending. Bundled benches teach the format. Repeatedly
 optimizing one external debugging Skill is not the product roadmap.
 
-The published CLI is 0.10.0, with a [verified registry installation](releases/0.10.0-verification.json)
-and [installed-feature replay](releases/0.10.0-feature-smoke.json). The user-authorized
+The published CLI is 0.10.1, with a [verified registry installation](releases/0.10.1-verification.json)
+and [installed-feature replay](releases/0.10.1-feature-smoke.json). The user-authorized
 October 16 case workflow is complete. No live model calls were added or authorized
 for this delivery.
 
@@ -51,11 +51,12 @@ report export, failure freezing or existing budget controls.
 
 ## Later decisions
 
-The October 16 source reliability repair adds Ctrl+C/SIGTERM process cleanup and
-stopped evidence sealing, with offline fake CLI/fetch regression coverage. The
-published 0.10.0 archive predates this repair; see the
-[interruption contract](evaluation-interruption.md). No new live calls or package
-publication are included in the repair.
+The 0.10.1 release includes interruption cleanup, offline case preflight, sealed
+inputs, API cache counts and shared paired report inputs. Source after that release
+also reads calibration and trigger summaries through the public report dispatcher,
+with their correct states/metrics and separate descriptive JSON kinds. See
+[report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
+This reporting correction adds no live calls or npm publication.
 
 - Improve error messages based on actual failed case-authoring attempts.
 - Verify Claude Code trigger capture when working authentication is available.

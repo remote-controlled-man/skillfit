@@ -5,6 +5,9 @@ For a complete portable directory of a paired native run without a judge, use
 The [portable package guide](replay-packages.md) covers checksums, matching source
 recovery, offline replay, stopped costs and review of private project contents.
 The Markdown report below is a shorter summary, without the full replay inputs.
+Source after npm 0.10.1 also reads calibration and trigger summaries with separate
+states/metrics and JSON kinds; see [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
+They are descriptive single-arm reports and do not enable paired portable exports.
 
 Try a clearly synthetic schema-v4 example first:
 
