@@ -17,7 +17,7 @@ export function componentError(error: unknown, code = 'INVALID_OR_FAILED_EVALUAT
     acceptance: { decision: 'inconclusive', eligibleForUpgrade: false, automaticUpgrade: false } };
 }
 
-interface EvalReportOptions { policyPath?: string; recordsPath?: string; replay?: boolean; benchDir?: string }
+export interface EvalReportOptions { policyPath?: string; recordsPath?: string; replay?: boolean; benchDir?: string }
 
 export async function reportEvalComponent(path: string, options: EvalReportOptions = {}) {
   if (statSync(resolve(path)).isDirectory() && existsSync(join(resolve(path), 'replay-package.json'))) {

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ApiExecutor } from './api.js';
+import { summarizeCosts } from '../costs.js';
+import { spendingBudgetState } from '../eval-budget.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -36,6 +38,46 @@ test('ApiExecutor throws on non-2xx responses', async () => {
   const fetchImpl: typeof fetch = (async () => jsonResponse({ error: 'bad' }, 500)) as typeof fetch;
   const executor = new ApiExecutor({ apiKey: 'k', fetchImpl });
   await assert.rejects(() => executor.run('hi', '/tmp'), /status 500/);
+});
+
+test('API cache counts reach cost partitions and budget stop lines without double counting', async () => {
+  for (const cached of [0, 80, 100]) {
+    const fetchImpl: typeof fetch = async () => jsonResponse({ choices: [{ message: { content: 'offline' } }],
+      usage: { prompt_tokens: 100, completion_tokens: 10, prompt_tokens_details: { cached_tokens: cached } } });
+    const result = await new ApiExecutor({ apiKey: 'offline-only', fetchImpl }).run('offline');
+    assert.deepEqual(result.tokens, { input: 100, output: 10, cachedInput: cached });
+    const record = { executorInvoked: true, passed: true, error: null, durationSeconds: 1, tokens: result.tokens!, usageStatus: 'final' as const };
+    const costs = summarizeCosts({ baseline: [record], treatment: [] }, { baseline: [record], treatment: [] });
+    const metrics = costs.attempts.baseline.metrics;
+    assert.equal(metrics.input.knownTotal, 100); assert.equal(metrics.cachedInput.knownTotal, cached);
+    assert.equal(metrics.uncachedInput.knownTotal, 100 - cached); assert.equal(metrics.cachedInput.coverage.final, 1);
+    const state = spendingBudgetState({ input: 100, cachedInput: 1000, uncachedInput: 1000, output: 1000, durationSeconds: 1000 }, [record]);
+    assert.equal(state.incomplete.length, 0); assert.ok(state.reached.includes('input'));
+  }
+});
+
+test('missing, malformed and incompatible API cache counts stay unknown rather than becoming zero', async () => {
+  const cases = [undefined, null, false, 'cache', [], {}, { cached_tokens: null }, { cached_tokens: '0' },
+    { cached_tokens: -1 }, { cached_tokens: 101 }, { cached_tokens: 0.5 }, { cached_tokens: Number.MAX_SAFE_INTEGER + 1 }];
+  for (const details of cases) {
+    const fetchImpl: typeof fetch = async () => jsonResponse({ choices: [{ message: { content: 'offline' } }],
+      usage: { prompt_tokens: 100, completion_tokens: 10, prompt_tokens_details: details } });
+    const tokens = (await new ApiExecutor({ apiKey: 'offline-only', fetchImpl }).run('offline')).tokens!;
+    assert.deepEqual(tokens, { input: 100, output: 10 });
+    const state = spendingBudgetState({ input: 1000, cachedInput: 1000, uncachedInput: 1000, output: 1000, durationSeconds: 1000 },
+      [{ executorInvoked: true, passed: true, error: null, durationSeconds: 1, tokens, usageStatus: 'final' }]);
+    assert.equal(state.reason, 'FINAL_USAGE_MISSING'); assert.ok(state.incomplete.includes('cachedInput'));
+    assert.equal(state.metrics.uncachedInput.coverage.unknown, 1);
+  }
+});
+
+test('cache counts without a valid input total cannot establish an API input partition', async () => {
+  for (const input of [undefined, null, '100', -1, 0.5]) {
+    const fetchImpl: typeof fetch = async () => jsonResponse({ choices: [{ message: { content: 'offline' } }],
+      usage: { prompt_tokens: input, completion_tokens: 10, prompt_tokens_details: { cached_tokens: 0 } } });
+    const tokens = (await new ApiExecutor({ apiKey: 'offline-only', fetchImpl }).run('offline')).tokens!;
+    assert.equal(tokens.cachedInput, undefined); assert.equal(tokens.output, 10);
+  }
 });
 
 test('ApiExecutor ignores usage objects that do not contain finite token counts', async () => {

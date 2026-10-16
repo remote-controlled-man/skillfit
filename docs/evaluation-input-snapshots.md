@@ -1,7 +1,7 @@
 # Sealed evaluation inputs
 
-This is a source-checkout feature after npm 0.10.0. Build the current source to
-use it; existing npm archives and historical evidence are unchanged.
+This feature is included in 0.10.1; see its [release record](releases/0.10.1.md)
+for publication status. Existing npm archives and historical evidence are unchanged.
 
 New evaluation sessions copy and verify their inputs **before the first agent
 or judge dispatch**. Editing, moving or deleting the original Skill or bench

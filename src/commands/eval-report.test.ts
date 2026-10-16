@@ -102,14 +102,14 @@ test('report eval keeps legacy manifests readable and does not infer missing cac
   assert.ok(!output.includes('| Cached input tokens | 0'));
 });
 
-test('report eval renders a v4 manifest without executing an agent or writing a file', () => {
+test('report eval renders a v4 manifest without executing an agent or writing a file', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-eval-report-'));
   try {
     const path = join(dir, 'manifest.json');
     const original = `${JSON.stringify(manifest(), null, 2)}\n`;
     writeFileSync(path, original);
     const output: string[] = [];
-    runEvalReport(path, (line) => output.push(line));
+    await runEvalReport(path, (line) => output.push(line));
     assert.equal(readFileSync(path, 'utf8'), original);
     assert.equal(output.length, 1);
     const markdown = output[0] ?? '';

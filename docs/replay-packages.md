@@ -31,7 +31,7 @@ last command above uses the currently installed CLI and the packaged bench.
 
 The source must have sealed native evidence. A completed manifest must pass the
 native evidence audit. Missing, changed or linked native artifacts reject export.
-The current source after npm 0.10.0 [seals inputs before dispatch](evaluation-input-snapshots.md)
+Version 0.10.1 [seals inputs before dispatch](evaluation-input-snapshots.md)
 and exports those copies even after original bench/Skill/request directories change
 or disappear. A declared but damaged snapshot is an error, never a silent fallback.
 Older runs without snapshots still need matching original or recovered bench,

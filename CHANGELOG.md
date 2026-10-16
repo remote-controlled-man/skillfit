@@ -1,6 +1,23 @@
 # Changelog
 
-## Unreleased — seal evaluation inputs before dispatch (2026-10-16)
+## [0.10.1] — 2026-10-16
+
+- Read chat-completions `usage.prompt_tokens_details.cached_tokens` into cached
+  input costs and budget checks. Preserve explicit zero; missing, malformed,
+  fractional or incompatible counts stay unknown. Never double-count cached
+  input, invent billing or backfill published evidence.
+- Use one saved-evidence assessment for Markdown and JSON reports. Both accept
+  manifests, native run directories and portable packages, including stopped or
+  incomplete batches, and support `--replay`, `--records` and `--policy`. Retain
+  available costs and show audit/acceptance reasons; rendering is not adoption.
+- Ship the interruption, offline case-gate and sealed-input fixes described below.
+  Add offline regressions, a reproducible installed-feature smoke recipe and
+  operational documentation. No runtime dependencies, real model calls,
+  automatic upgrades or statistical-policy changes.
+- See the [release record](docs/releases/0.10.1.md) for publication status and
+  verification. Historical evidence and release receipts remain unchanged.
+
+## 0.10.1 details — seal evaluation inputs before dispatch (2026-10-16)
 
 - Copy and hash-verify the full pinned bench, target, previous Skill, compiled
   implementation and component request in fresh native sessions before dispatch.
@@ -17,9 +34,9 @@
 - Add offline regressions for deleted originals, moved runs, full Skill/request
   retention, stopped costs, portable replay, historical recovery, corrupted
   snapshots, empty fixtures, executable files and zero-call setup failure.
-  No runtime dependencies, new real evaluations, verdict change or npm release.
+  No runtime dependencies, new real evaluations or verdict change.
 
-## Unreleased — enforce offline case gates before eval (2026-10-16)
+## 0.10.1 details — enforce offline case gates before eval (2026-10-16)
 
 - Run selected cases through offline integrity checks before any live eval
   agent/judge call, including installed revisions, configuration and trigger
@@ -35,9 +52,9 @@
 - Add offline regressions for zero-call gates, scope, input drift, previews,
   warning/unknown separation, request JSON, process interruption and portable
   retention. Use real-output assertions in old test fixtures instead of always-pass
-  verifiers. No dependencies, new model calls, verdict-policy change or npm release.
+  verifiers. No dependencies, new model calls or verdict-policy change.
 
-## Unreleased — reliable evaluation interruption (2026-10-16)
+## 0.10.1 details — reliable evaluation interruption (2026-10-16)
 
 - Handle Ctrl+C/SIGTERM across live paired, request, trigger and calibration
   evaluations. Stop subsequent calls, terminate managed CLI/verifier/judge process
@@ -49,7 +66,7 @@
 - Add offline fake-process/fetch regressions for tree cleanup, retained costs,
   repeat signals, between-call cancellation, stopped-package replay, exit codes
   and signal-handler/context cleanup. No runtime dependencies or real model calls.
-  The published npm 0.10.0 archive is unchanged; build source for this fix.
+  Included in 0.10.1; the immutable npm 0.10.0 archive is unchanged.
 
 ## [0.10.0] — 2026-10-16
 

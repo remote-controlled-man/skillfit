@@ -15,7 +15,7 @@ remains the compatible default.
 
 For a new code-editing case, a source build supports `bench init my-bench --kind command`.
 It creates a synthetic teaching fixture, independent verifier and reference
-repair; npm 0.9.1 does not yet include this template. Follow the
+repair; this template is included in npm 0.10.0 and newer. Follow the
 [starter walkthrough](bench-authoring.md#choose-a-starter), replace it with your
 real task, and preview `--trials 1 --max-calls 2` before deciding to spend.
 
@@ -74,7 +74,10 @@ The first command creates a new directory under `runs/` and prints its `Manifest
 exact path for the second command; the report command is read-only. Each task and trial has an
 `_output.md`, `_verifier.txt`, and `_result.json` beside the summary manifest. Keep the manifest and
 the pinned target and bench hashes so another person can inspect the same result. Review those files
-for private paths or content before sharing.
+for private paths or content before sharing. In 0.10.1, the report also accepts
+the native run directory or a portable package directory, with the same audit
+and acceptance result as `--json`. Stopped runs retain their available costs and
+stay ineligible. See [report formats](evaluation-reports.md).
 
 Read the **errors** first: a pair with an executor or verifier error was not graded, and neither arm
 gets a failure for it. Then inspect baseline ceiling/floor warnings, the number and direction of
