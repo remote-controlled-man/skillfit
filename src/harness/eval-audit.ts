@@ -14,6 +14,7 @@ import { parseEvalReport } from '../commands/eval-report.js';
 import { pairConditions, type PairOrder } from './types.js';
 import { NATIVE_DIFF_PATH, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
 import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } from './eval-budget.js';
+import { verifyInputSnapshot } from './input-snapshot.js';
 
 function inside(root: string, path: string): boolean {
   const rel = relative(root, path);
@@ -87,6 +88,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     assert.equal(index.planSha256, report.experiment.planSha256);
     assert.deepEqual(readComponentJson(join(root, '_session.json')).value, report.experiment);
     const plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
+    const inputSnapshot = verifyInputSnapshot(root, plan);
     const details = record(plan.details, 'native plan details');
     let pairOrder: PairOrder | null = null;
     if (raw.pairOrder !== undefined || details.pairOrder !== undefined) {
@@ -121,7 +123,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     } else assert.equal(raw.nativeDiffTool, undefined, 'Unrecorded native diff environment.');
     const all = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] }, paired = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] };
     if (details.taskIds !== undefined) assert.deepEqual(details.taskIds, report.tasks.map(task => task.id), 'Selected task IDs differ from the frozen plan.');
-    const bench = options.replay ? loadBench(options.benchDir ?? String(record(raw.bench, 'bench').dir)) : null;
+    const bench = options.replay ? loadBench(options.benchDir ?? inputSnapshot?.roots.get('bench') ?? String(record(raw.bench, 'bench').dir)) : null;
     if (bench) assert.equal(bench.contentSha256, report.bench.sha256, 'Replay bench differs from the frozen task set.');
     let invoked = 0;
     const expectedAgentOrder: string[] = [];

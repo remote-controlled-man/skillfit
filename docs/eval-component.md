@@ -20,6 +20,14 @@ Warnings and unknowns remain separate and nonblocking. Successful probes are
 frozen in the native plan and included in JSON assessment/replay; they do not
 authorize adoption or alter statistical/cost requirements.
 
+The same source build [seals original inputs](evaluation-input-snapshots.md)
+before dispatch. Preview declares `plan.evaluation.inputSnapshot.status: "pending"`;
+completed/stopped JSON assessment includes `inputSnapshot` with the plan-bound
+index hash and local copy/storage cost. Native replay/export use sealed inputs
+after originals change or disappear; a damaged archive cannot be overridden.
+Historical runs return null and retain matching-root recovery. Snapshot copies
+make zero model calls and do not change acceptance or incomplete-cost semantics.
+
 The [maintained evidence index](skill-evaluation-evidence.md) links all development
 and independent cohorts, their exact costs and offline replay packages. As of
 October 15, the debugging study totals 195 actual calls with seven historical

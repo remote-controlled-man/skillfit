@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { ExperimentSession, ExperimentSummary } from './experiment-session.js';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
@@ -376,9 +376,9 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
     throw new Error('Trigger mode requires a real CLI executor with trigger detection; the mock executor cannot invoke skills.');
   }
   const groupDir = join(plan.runsRoot, plan.runGroup);
-  if (existsSync(groupDir) && !(plan.session?.groupDir === resolve(groupDir) &&
-      readdirSync(groupDir).join() === '_plan.json')) {
-    throw new Error(`Run group directory already exists: ${groupDir}`);
+  if (existsSync(groupDir)) {
+    if (plan.session?.groupDir !== resolve(groupDir)) throw new Error(`Run group directory already exists: ${groupDir}`);
+    plan.session.assertPrepared();
   }
   const installedSkill = collectInstalledSkillFingerprint(plan.skill.sourceDir);
   if (collectSkillBundle(plan.skill.sourceDir, plan.skill.name).sha256 !== plan.skill.sha256) {

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { ExperimentSession } from './experiment-session.js';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
@@ -749,9 +749,9 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     throw new Error(`trials must be an integer between 1 and 20, got ${plan.trials}`);
   }
   const groupDir = join(plan.runsRoot, plan.runGroup);
-  if (existsSync(groupDir) && !(plan.session?.groupDir === resolve(groupDir) &&
-      readdirSync(groupDir).join() === '_plan.json')) {
-    throw new Error(`Run group directory already exists: ${groupDir}`);
+  if (existsSync(groupDir)) {
+    if (plan.session?.groupDir !== resolve(groupDir)) throw new Error(`Run group directory already exists: ${groupDir}`);
+    plan.session.assertPrepared();
   }
   mkdirSync(groupDir, { recursive: true });
   if (plan.skillInstallDir) snapshotNativeDiffTool(groupDir);

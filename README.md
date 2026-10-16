@@ -205,6 +205,8 @@ New reports separate cached and uncached input, output, and elapsed time, with s
 
 Export a native paired run without a judge as a portable directory with original receipts, matching inputs, pinned compiled CLI, checksums and a replay entry point. Export previews by default; missing inputs or an existing destination stop it. The whole package can move to another machine. Replay calls no model, preserves stopped/unknown costs and authorizes no upgrade. Review project data before sharing; see [portable replay packages](docs/replay-packages.md).
 
+Source after npm 0.10.0 seals input copies before dispatch: later edits/deletions of the original Skill, bench or request no longer prevent export/replay. The plan records snapshot integrity, local copy time and storage; a damaged declared snapshot is rejected. Historical runs still need matching recovered inputs. See [sealed evaluation inputs](docs/evaluation-input-snapshots.md).
+
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --yes --json

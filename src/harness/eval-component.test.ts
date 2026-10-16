@@ -68,13 +68,14 @@ test('component exports include the frozen request and both complete Skills and 
   const f = await run(t), output = join(f.root, 'portable');
   const originalRequest = readFileSync(f.requestPath, 'utf8');
   writeFileSync(f.requestPath, '{}');
-  await assert.rejects(() => exportEvaluation(f.runDir, output, { yes: true, log: () => {} }), /request changed/);
-  const recovered = join(f.root, 'recovered-request.json'); writeFileSync(recovered, originalRequest);
-  await exportEvaluation(f.runDir, output, { yes: true, inputRoots: [`request=${recovered}`], log: () => {} });
+  for (const path of ['bench', 'old', 'new']) rmSync(join(f.root, path), { recursive: true });
+  const nativeReplay = await reportEvalComponent(f.runDir, { replay: true });
+  assert.ok('evidence' in nativeReplay && nativeReplay.evidence.verified);
+  await exportEvaluation(f.runDir, output, { yes: true, log: () => {} });
   assert.equal(readFileSync(join(output, 'inputs/request.json'), 'utf8'), originalRequest);
   assert.equal(readFileSync(join(output, 'inputs/baseline-skill/answer.txt'), 'utf8'), '1');
   assert.equal(readFileSync(join(output, 'inputs/target/answer.txt'), 'utf8'), '2');
-  for (const path of ['bench', 'old', 'new', 'runs']) rmSync(join(f.root, path), { recursive: true });
+  rmSync(join(f.root, 'runs'), { recursive: true });
   const child = spawnSync(process.execPath, [join(output, 'reproduce.mjs')], { encoding: 'utf8', timeout: 30_000 });
   assert.equal(child.status, 0, child.stderr);
   const replay = JSON.parse(child.stdout); assert.equal(replay.evidence.verified, true);

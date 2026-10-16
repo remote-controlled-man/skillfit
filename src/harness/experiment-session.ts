@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,8 @@ import { assertNativeDiffFile, assertNativeDiffWorkspace, NATIVE_DIFF_SNAPSHOT }
 import type { Bench, EvaluationTarget, Executor } from './types.js';
 import { ExecutorFailure } from './types.js';
 import { EvaluationInterrupted, evaluationSignal, throwIfEvaluationInterrupted } from './interruption.js';
+import { freezeInputSnapshot, verifyInputSnapshot, type InputSnapshot, type PinnedInput } from './input-snapshot.js';
+import { loadBench } from './bench.js';
 
 export interface ExperimentSummary {
   schemaVersion: 1;
@@ -39,7 +41,7 @@ export interface SessionOptions {
   guardFiles?: { label: string; path: string; sha256: string }[];
 }
 
-interface InputFingerprint { label: string; root: string; files: string[]; sha256: string; exclude?: string }
+type InputFingerprint = PinnedInput;
 interface ConfigFingerprint { path: string; state: 'missing' | 'file'; sha256: string | null; trust?: { table: string; field: string; value: string } }
 interface SkillInventory { root: string; entries: string[] }
 
@@ -181,6 +183,7 @@ export class ExperimentSession {
   private finished = false;
   private readonly guardFiles: NonNullable<SessionOptions['guardFiles']>;
   private readonly nativeDiffTool: boolean;
+  private readonly inputSnapshot: InputSnapshot;
 
   constructor(options: SessionOptions) {
     this.nativeDiffTool = options.details.nativeDiffTool !== undefined;
@@ -260,17 +263,27 @@ export class ExperimentSession {
       agent: options.agent ?? null, cliVersion, configuredSettings: configured, servedModel: 'unrecorded',
       plannedCalls: this.plannedCalls, maxCalls: this.maxCalls, workspaces: this.workspaces, workspaceAliases: this.workspaceAliases,
       inputs: this.inputs, guardFiles: this.guardFiles, configurations: this.configs, skillInventories: this.inventories, warnings, details: options.details };
-    const bytes = JSON.stringify(plan, null, 2) + '\n';
-    this.planSha256 = sha256Text(bytes);
-    mkdirSync(this.groupDir, { recursive: true });
-    writeFileSync(join(this.groupDir, '_plan.json'), bytes, { flag: 'wx' });
-    if (sha256File(join(this.groupDir, '_plan.json')) !== this.planSha256) throw new Error('Frozen plan write verification failed.');
+    mkdirSync(dirname(this.groupDir), { recursive: true });
+    // Claim exclusively; a failed setup removes only the fresh directory we own.
+    mkdirSync(this.groupDir);
+    try {
+      this.inputSnapshot = freezeInputSnapshot(this.groupDir, this.inputs, this.guardFiles);
+      if (loadBench(join(this.groupDir, '_inputs/bench')).contentSha256 !== options.bench.contentSha256) throw new Error('Sealed bench does not match the planned content hash; keep Git metadata and run outputs outside bench inputs.');
+      for (const input of this.inputs) if (pin(input.label, input.root, input.exclude).sha256 !== input.sha256) throw new Error(`Frozen ${input.label} input changed while sealing snapshots.`);
+      for (const file of this.guardFiles) if (sha256File(file.path) !== file.sha256) throw new Error(`Frozen ${file.label} changed while sealing snapshots.`);
+      throwIfEvaluationInterrupted();
+      const bytes = JSON.stringify({ ...plan, inputSnapshot: this.inputSnapshot }, null, 2) + '\n';
+      this.planSha256 = sha256Text(bytes);
+      writeFileSync(join(this.groupDir, '_plan.json'), bytes, { flag: 'wx' });
+      if (sha256File(join(this.groupDir, '_plan.json')) !== this.planSha256) throw new Error('Frozen plan write verification failed.');
+    } catch (error) { rmSync(this.groupDir, { recursive: true, force: true }); throw error; }
   }
 
   check(): void {
     if (this.stopReason) throw new Error(this.stopReason);
     try {
       throwIfEvaluationInterrupted();
+      verifyInputSnapshot(this.groupDir, { inputs: this.inputs, guardFiles: this.guardFiles, inputSnapshot: this.inputSnapshot });
       if (this.nativeDiffTool) {
         assertNativeDiffFile(join(this.groupDir, NATIVE_DIFF_SNAPSHOT));
         for (const workdir of this.workspaces) if (existsSync(workdir)) assertNativeDiffWorkspace(workdir);
@@ -290,6 +303,16 @@ export class ExperimentSession {
         throw new Error(`Global Skill inventory changed: ${inventory.root}; no further calls.`);
       }
     } catch (error) { this.stopReason = (error as Error).message; throw error; }
+  }
+
+  /** Only this fresh session may hand its prepared directory to an engine. */
+  assertPrepared(): void {
+    if (this.finished || this.callsStarted !== 0 ||
+        readdirSync(this.groupDir).sort().join() !== '_inputs,_inputs.json,_plan.json' ||
+        sha256File(join(this.groupDir, '_plan.json')) !== this.planSha256) {
+      throw new Error(`Run group directory already exists or preparation changed: ${this.groupDir}`);
+    }
+    verifyInputSnapshot(this.groupDir, { inputs: this.inputs, guardFiles: this.guardFiles, inputSnapshot: this.inputSnapshot });
   }
 
   wrap(executor: Executor, role: 'agent' | 'judge'): Executor {

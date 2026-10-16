@@ -41,6 +41,7 @@ async function reportNativeEvaluation(path: string, options: EvalReportOptions) 
     const nativePlan = record(readComponentJson(join(runDir, '_plan.json')).value, 'native plan');
     return { schemaVersion: 1, kind: 'skillfit.eval-result', status: session ? 'stopped' : 'incomplete',
       casePreflight: nativePlan.details ? record(nativePlan.details, 'native plan details').casePreflight ?? null : null,
+      inputSnapshot: nativePlan.inputSnapshot ?? null,
       manifest: null, session, costs: stoppedAccounting(runDir), evidence: { verified: false, runDir, reasons: ['No final evaluation manifest; retained spending only.'] },
       ...(spendingBudget ? { spendingBudget } : {}),
       acceptance: { decision: 'inconclusive', eligibleForUpgrade: false, automaticUpgrade: false,
@@ -53,6 +54,7 @@ async function reportNativeEvaluation(path: string, options: EvalReportOptions) 
   const nativePlan = audit.verified ? record(readComponentJson(join(runDir, '_plan.json')).value, 'native plan') : null;
   return { ...result, manifest: { path: manifestPath, sha256: data.sha256, schemaVersion: 4 },
     casePreflight: nativePlan ? record(nativePlan.details, 'native plan details').casePreflight ?? null : null,
+    inputSnapshot: nativePlan?.inputSnapshot ?? null,
     ...(spendingBudget ? { spendingBudget } : {}),
     environment: nativePlan ? { nodeVersion: nativePlan.nodeVersion, agent: nativePlan.agent,
       pairOrder: record(nativePlan.details, 'native plan details').pairOrder ?? null,

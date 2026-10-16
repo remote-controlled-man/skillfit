@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased — seal evaluation inputs before dispatch (2026-10-16)
+
+- Copy and hash-verify the full pinned bench, target, previous Skill, compiled
+  implementation and component request in fresh native sessions before dispatch.
+  Preserve empty directories and executable bits, bind the snapshot index in
+  the frozen plan, and fail setup with zero calls if sealing cannot finish.
+- Native replay and portable export default to sealed inputs after originals
+  are edited, deleted or moved. Reject damaged snapshots without silently using
+  current originals or overrides. Historical runs retain matching-root recovery;
+  published evidence is never rewritten or backfilled.
+- Keep original-input/configuration drift guards and collision protection;
+  also guard snapshot integrity between calls. Record local sealing time,
+  file/byte counts and zero model calls separately from agent cost populations.
+  Global configuration/Skill contents remain fingerprint-only.
+- Add offline regressions for deleted originals, moved runs, full Skill/request
+  retention, stopped costs, portable replay, historical recovery, corrupted
+  snapshots, empty fixtures, executable files and zero-call setup failure.
+  No runtime dependencies, new real evaluations, verdict change or npm release.
+
 ## Unreleased — enforce offline case gates before eval (2026-10-16)
 
 - Run selected cases through offline integrity checks before any live eval
