@@ -51,6 +51,12 @@ report export, failure freezing or existing budget controls.
 
 ## Later decisions
 
+The October 16 source reliability repair adds Ctrl+C/SIGTERM process cleanup and
+stopped evidence sealing, with offline fake CLI/fetch regression coverage. The
+published 0.10.0 archive predates this repair; see the
+[interruption contract](evaluation-interruption.md). No new live calls or package
+publication are included in the repair.
+
 - Improve error messages based on actual failed case-authoring attempts.
 - Verify Claude Code trigger capture when working authentication is available.
 - Add Cursor, Gemini CLI or OpenCode only with verified official paths and

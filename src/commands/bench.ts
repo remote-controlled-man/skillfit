@@ -20,6 +20,7 @@ import { benchDiagnostic, benchCheckEvidence, type BenchCheckCode, type BenchChe
   type BenchCheckReport, type BenchDiagnostic } from './bench-check-report.js';
 export type { BenchCheckReport } from './bench-check-report.js';
 import { BACKUP_SUFFIX } from './install.js';
+import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import type { Check } from './doctor.js';
 
 export interface BenchInitOptions {
@@ -525,98 +526,101 @@ async function calibrateBench(
     push('INFO', `calibration plan: ${bench.tasks.length} task(s) × ${trials} baseline run(s), input ${inputMode}; ${plannedCalls} calls, ceiling ${maxCalls}; no agent started and no run directory created`);
     return;
   }
-  const emptySkillDir = mkdtempSync(join(tmpdir(), 'skillfit-calibrate-'));
-  let session: ExperimentSession | undefined;
-  let failure: unknown;
-  try {
-    const skill: SkillBundle = {
-      kind: 'skill',
-      name: 'calibration-none',
-      sourceDir: emptySkillDir,
-      files: [],
-      sha256: '0'.repeat(64),
-      payload: '',
-      overlays: {},
-    };
-    const runGroup =
-      options.runGroup ??
-      `calibrate-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(Date.now() % 100000).padStart(5, '0')}`;
-    if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
-    const runsRoot = options.runsRoot ?? resolve('runs');
-    push('INFO', `calibration plan: ${plannedCalls} baseline calls, ceiling ${maxCalls}; fresh output ${join(runsRoot, runGroup)}`);
-    session = new ExperimentSession({ bench, target: skill, groupDir: join(runsRoot, runGroup), plannedCalls,
-      maxCalls, agent: options.agent, injected: options.executor !== undefined, ...options.sessionOptions,
-      workspaces: bench.tasks.flatMap(task => Array.from({ length: trials }, (_, i) =>
-        join(runsRoot, runGroup, task.id, 'baseline', `trial-${i + 1}`))),
-      details: { mode: 'calibration', inputMode, trials, executor: executor.describe() } });
-    // Calibration measures inject-mode baseline difficulty, so it drives the inject path with an
-    // empty skill payload (prompt.ts drops a falsy payload, so no skill block is injected) and runs
-    // one arm per task. This used to route through trigger mode, whose `shouldTrigger` filter
-    // silently calibrated zero tasks on an unlabelled bench and then reported PASS 0/0.
-    const plan: ExperimentPlan = {
-      bench,
-      target: skill,
-      inputMode,
-      executor: session.wrap(executor, 'agent'),
-      trials,
-      runsRoot,
-      runGroup,
-      log,
-    };
-    push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty; input ${inputMode})`);
-    let discriminative = 0;
-    let tasksRun = 0;
-    const taskResults: { id: string; passes: number; completed: number; errors: number }[] = [];
-    for (const task of bench.tasks) {
-      let passes = 0;
-      let completed = 0;
-      let errors = 0;
-      for (let trial = 1; trial <= trials; trial++) {
-        const outcome = await runTrial(plan, task.id, 'baseline', trial);
-        if (outcome.error !== null) {
-          errors++;
+  return withEvaluationInterrupts(async () => {
+    const emptySkillDir = mkdtempSync(join(tmpdir(), 'skillfit-calibrate-'));
+    let session: ExperimentSession | undefined;
+    let failure: unknown;
+    try {
+      const skill: SkillBundle = {
+        kind: 'skill',
+        name: 'calibration-none',
+        sourceDir: emptySkillDir,
+        files: [],
+        sha256: '0'.repeat(64),
+        payload: '',
+        overlays: {},
+      };
+      const runGroup =
+        options.runGroup ??
+        `calibrate-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(Date.now() % 100000).padStart(5, '0')}`;
+      if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+      const runsRoot = options.runsRoot ?? resolve('runs');
+      push('INFO', `calibration plan: ${plannedCalls} baseline calls, ceiling ${maxCalls}; fresh output ${join(runsRoot, runGroup)}`);
+      session = new ExperimentSession({ bench, target: skill, groupDir: join(runsRoot, runGroup), plannedCalls,
+        maxCalls, agent: options.agent, injected: options.executor !== undefined, ...options.sessionOptions,
+        workspaces: bench.tasks.flatMap(task => Array.from({ length: trials }, (_, i) =>
+          join(runsRoot, runGroup, task.id, 'baseline', `trial-${i + 1}`))),
+        details: { mode: 'calibration', inputMode, trials, executor: executor.describe() } });
+      // Calibration measures inject-mode baseline difficulty, so it drives the inject path with an
+      // empty skill payload (prompt.ts drops a falsy payload, so no skill block is injected) and runs
+      // one arm per task. This used to route through trigger mode, whose `shouldTrigger` filter
+      // silently calibrated zero tasks on an unlabelled bench and then reported PASS 0/0.
+      const plan: ExperimentPlan = {
+        bench,
+        target: skill,
+        inputMode,
+        executor: session.wrap(executor, 'agent'),
+        trials,
+        runsRoot,
+        runGroup,
+        log,
+      };
+      push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty; input ${inputMode})`);
+      let discriminative = 0;
+      let tasksRun = 0;
+      const taskResults: { id: string; passes: number; completed: number; errors: number }[] = [];
+      for (const task of bench.tasks) {
+        let passes = 0;
+        let completed = 0;
+        let errors = 0;
+        for (let trial = 1; trial <= trials; trial++) {
+          const outcome = await runTrial(plan, task.id, 'baseline', trial);
+          throwIfEvaluationInterrupted();
+          if (outcome.error !== null) {
+            errors++;
+            continue;
+          }
+          completed++;
+          if (outcome.passed) passes++;
+        }
+        taskResults.push({ id: task.id, passes, completed, errors });
+        if (completed === 0) {
+          push(
+            'WARN',
+            `${task.id}: no completed runs${errors > 0 ? ` (${errors} ungraded run(s))` : ''} — cannot assess difficulty`,
+          );
           continue;
         }
-        completed++;
-        if (outcome.passed) passes++;
+        tasksRun++;
+        const rate = passes / completed;
+        if (rate >= 0.9) {
+          push('WARN', `${task.id}: baseline ${passes}/${completed} — too easy (saturated; cannot discriminate skill effects)`);
+        } else if (rate <= 0.1) {
+          push('WARN', `${task.id}: baseline ${passes}/${completed} — too hard or broken (floor)`);
+        } else {
+          discriminative++;
+          push('PASS', `${task.id}: baseline ${passes}/${completed} — discriminative band`);
+        }
       }
-      taskResults.push({ id: task.id, passes, completed, errors });
-      if (completed === 0) {
-        push(
-          'WARN',
-          `${task.id}: no completed runs${errors > 0 ? ` (${errors} ungraded run(s))` : ''} — cannot assess difficulty`,
-        );
-        continue;
+      session.settle();
+      const result = { schemaVersion: 1, runGroup, inputMode, trials, tasks: taskResults, experiment: session.summary() };
+      writeFileSync(join(session.groupDir, '_calibration.json'), JSON.stringify(result, null, 2) + '\n', { flag: 'wx' });
+      session.finish(undefined, result, '_calibration.json');
+      if (session.summary().status !== 'completed') push('FAIL', 'Calibration stopped or incomplete; inspect _session.json and _calls.jsonl before a fresh plan.');
+      if (tasksRun === 0) {
+        push('FAIL', `calibration ran 0 task(s): difficulty unmeasured (runs under ${runGroup})`);
+        return;
       }
-      tasksRun++;
-      const rate = passes / completed;
-      if (rate >= 0.9) {
-        push('WARN', `${task.id}: baseline ${passes}/${completed} — too easy (saturated; cannot discriminate skill effects)`);
-      } else if (rate <= 0.1) {
-        push('WARN', `${task.id}: baseline ${passes}/${completed} — too hard or broken (floor)`);
-      } else {
-        discriminative++;
-        push('PASS', `${task.id}: baseline ${passes}/${completed} — discriminative band`);
-      }
+      push(
+        discriminative === tasksRun ? 'PASS' : 'INFO',
+        `calibration: ${discriminative}/${tasksRun} task(s) in the discriminative band (runs under ${runGroup}; use --trials 3+ for steadier reads)`,
+      );
+    } catch (error) { failure = error; throw error; }
+    finally {
+      session?.finish(failure);
+      rmSync(emptySkillDir, { recursive: true, force: true });
     }
-    session.settle();
-    const result = { schemaVersion: 1, runGroup, inputMode, trials, tasks: taskResults, experiment: session.summary() };
-    writeFileSync(join(session.groupDir, '_calibration.json'), JSON.stringify(result, null, 2) + '\n', { flag: 'wx' });
-    session.finish(undefined, result, '_calibration.json');
-    if (session.summary().status !== 'completed') push('FAIL', 'Calibration stopped or incomplete; inspect _session.json and _calls.jsonl before a fresh plan.');
-    if (tasksRun === 0) {
-      push('FAIL', `calibration ran 0 task(s): difficulty unmeasured (runs under ${runGroup})`);
-      return;
-    }
-    push(
-      discriminative === tasksRun ? 'PASS' : 'INFO',
-      `calibration: ${discriminative}/${tasksRun} task(s) in the discriminative band (runs under ${runGroup}; use --trials 3+ for steadier reads)`,
-    );
-  } catch (error) { failure = error; throw error; }
-  finally {
-    session?.finish(failure);
-    rmSync(emptySkillDir, { recursive: true, force: true });
-  }
+  });
 }
 
 function finish(

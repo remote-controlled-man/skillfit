@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased — reliable evaluation interruption (2026-10-16)
+
+- Handle Ctrl+C/SIGTERM across live paired, request, trigger and calibration
+  evaluations. Stop subsequent calls, terminate managed CLI/verifier/judge process
+  trees and abort local HTTP requests. Preserve exit 130/143 after sealing.
+- Retain available outputs, partial/unknown or already-final usage, the original
+  ledger, stopped session, interruption metadata and artifact hashes. Preserve
+  interrupted judge output/usage separately without claiming complete judge costs.
+  No automatic retry, replacement, new efficacy verdict or upgrade occurs.
+- Add offline fake-process/fetch regressions for tree cleanup, retained costs,
+  repeat signals, between-call cancellation, stopped-package replay, exit codes
+  and signal-handler/context cleanup. No runtime dependencies or real model calls.
+  The published npm 0.10.0 archive is unchanged; build source for this fix.
+
 ## [0.10.0] — 2026-10-16
 
 - Select cases with repeatable `eval --task` or request `taskIds`. Freeze selected

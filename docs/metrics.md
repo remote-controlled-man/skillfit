@@ -60,6 +60,14 @@ gates), and the LLM-judge literature cited in §5.
 
 ## Unit of analysis
 
+Operational interruption handling (2026-10-16, unreleased source): SIGINT/SIGTERM
+stops subsequent dispatches and managed active processes, retaining receipts and
+sealing a stopped prefix. Interrupted execution is ungraded; available counters
+remain partial unless the invocation already settled with final usage. Missing
+usage remains unknown. No retries, replacements, new observations, efficacy
+verdict or upgrade eligibility are inferred from cancellation. Existing formulas
+and historical evidence are unchanged. See [the interruption contract](evaluation-interruption.md).
+
 Operational spending guard (2026-10-15, included in 0.10.0): paired evaluations
 may declare five absolute `spendingBudget` stop lines, pinned in their request,
 preview and native plan. All invoked agent spending counts, including failures

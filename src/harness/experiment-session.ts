@@ -9,6 +9,7 @@ import { hashFileSet, sha256File, sha256Text } from './hash.js';
 import { assertNativeDiffFile, assertNativeDiffWorkspace, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
 import type { Bench, EvaluationTarget, Executor } from './types.js';
 import { ExecutorFailure } from './types.js';
+import { EvaluationInterrupted, evaluationSignal, throwIfEvaluationInterrupted } from './interruption.js';
 
 export interface ExperimentSummary {
   schemaVersion: 1;
@@ -269,6 +270,7 @@ export class ExperimentSession {
   check(): void {
     if (this.stopReason) throw new Error(this.stopReason);
     try {
+      throwIfEvaluationInterrupted();
       if (this.nativeDiffTool) {
         assertNativeDiffFile(join(this.groupDir, NATIVE_DIFF_SNAPSHOT));
         for (const workdir of this.workspaces) if (existsSync(workdir)) assertNativeDiffWorkspace(workdir);
@@ -306,12 +308,21 @@ export class ExperimentSession {
         this.callsFinished++;
         appendFileSync(ledger, JSON.stringify({ event: 'finished', call, at: new Date().toISOString() }) + '\n');
         try { this.check(); } catch {
-          if (role === 'judge') throw new Error(this.stopReason!);
+          if (role === 'judge') throw new ExecutorFailure(this.stopReason!, result);
           return { ...result, guardError: this.stopReason! };
         }
         return result;
       } catch (error) {
-        if (!this.stopReason) this.stopReason = `${role} executor failed; inspect the per-trial error receipt. No further calls.`;
+        if (!this.stopReason) this.stopReason = evaluationSignal()?.aborted
+          ? (evaluationSignal()!.reason as Error).message
+          : `${role} executor failed; inspect the per-trial error receipt. No further calls.`;
+        if (role === 'judge' && evaluationSignal()?.aborted) {
+          const result = error instanceof ExecutorFailure ? error.result : null;
+          writeFileSync(join(this.groupDir, `_interrupted-judge-${call}.json`), JSON.stringify({
+            schemaVersion: 1, call, role, error: (error as Error).message, result,
+            scope: 'Interrupted judge output and available usage only; separate judge spending is not a complete primary-agent cost total.',
+          }, null, 2) + '\n', { flag: 'wx' });
+        }
         if (this.callsFinished < call) {
           this.callsFinished++;
           appendFileSync(ledger, JSON.stringify({ event: 'failed', call, at: new Date().toISOString() }) + '\n');
@@ -334,6 +345,14 @@ export class ExperimentSession {
   finish(error?: unknown, result?: { experiment?: ExperimentSummary; warnings?: string[] }, resultName = 'manifest.json'): void {
     if (this.finished) return;
     this.finished = true;
+    const interruption = evaluationSignal()?.reason;
+    if (interruption instanceof EvaluationInterrupted) {
+      if (!this.stopReason) this.stopReason = interruption.message;
+      writeFileSync(join(this.groupDir, '_interruption.json'), JSON.stringify({
+        schemaVersion: 1, signal: interruption.signalName, receivedAt: interruption.receivedAt,
+        exitCode: interruption.exitCode, automaticRetry: false,
+      }, null, 2) + '\n', { flag: 'wx' });
+    }
     if (error && !this.stopReason) this.stopReason = 'Experiment setup or execution stopped; inspect the command error and retained receipts.';
     this.settle();
     if (result && JSON.stringify(result.experiment) !== JSON.stringify(this.summary())) {
