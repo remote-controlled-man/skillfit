@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased — offline Agent environment preflight (2026-10-16)
+
+- Check selected primary/judge CLI executables via filesystem PATH lookup and
+  match declared matrix capabilities before case probes, run creation or calls.
+  Preserve preview without execution, with explicit ready/blocked check results.
+- Expose the existing global same-name Skill contamination block in previews,
+  including directory/frontmatter aliases and matrix home overrides. Keep login
+  UNKNOWN offline; no auth files, login/version commands or network probes are
+  used by this check. Unreadable/unlisted Skill scopes remain unverified.
+- Bind deterministic checks into paired plans, recheck after case probes and
+  seal results with native evidence. Reports and portable replay retain original
+  checks without probing the current machine. Keep injected/synthetic evidence
+  restrictions, costs, statistics, acceptance and old records unchanged.
+- Add offline regressions, schema, shared preflight guide and mirrored README
+  updates. No dependencies, real model calls or npm publication.
+
 ## Unreleased — verifier errors and quoted commands (2026-10-16)
 
 - Share a shell-free quote-aware parser across bench validation, verifier/oracle

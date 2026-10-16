@@ -118,6 +118,8 @@ Agent callers can use `bench check --json` for versioned gate identifiers, task 
 
 Source after npm 0.10.1 supports quoted verifier/oracle arguments, including script paths with spaces. Recognized grader load/runtime errors and explicit infrastructure-error messages block offline gates or become ungraded evaluation errors, preserving agent costs. Normal task failures and assertions remain graded failures. See [verifier commands and error reporting](docs/verifier-contract.md).
 
+The same source checks the Agent environment in eval previews and before dispatch: CLI file availability, matrix capability matching and global same-name Skill conflicts. Known failures block before case probes or model calls; login remains explicitly unknown offline. Checks are sealed with the run and read without probing the current machine during report/replay. See [Agent environment preflight](docs/eval-agent-preflight.md).
+
 List and inspect cases, then preview an edit or removal. `--yes` applies a validated manifest change with a backup; removal preserves the case files. Select a smaller eval using repeated `--task`, or `taskIds` in a JSON request. IDs and order are frozen, budgets count only selected cases, and small samples remain indicative. See [case management](docs/case-management.md).
 
 ```bash

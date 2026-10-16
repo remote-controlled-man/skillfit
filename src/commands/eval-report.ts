@@ -1,6 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EvalReportOptions } from './eval-component.js';
+import { agentEnvironmentReportLines } from '../harness/agent-preflight.js';
 import { renderSingleArmReport } from './eval-single-arm-report.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1, verdictFor } from '../harness/report.js';
 import { mcnemarExactP } from '../harness/stats.js';
@@ -688,6 +689,7 @@ export async function runEvalReport(inputPath: string, log: (line: string) => vo
     '- Automatic upgrade: no');
   for (const reason of result.acceptance.reasons) lines.push(`- ${reason.code}: ${safe(reason.message)}`);
   for (const reason of result.evidence.reasons) lines.push(`- Audit: ${safe(reason)}`);
+  lines.push(...agentEnvironmentReportLines(result.agentPreflight).map(line => `- ${safe(line)}`));
   if (result.casePreflight) {
     const gate = result.casePreflight as { status?: unknown; summary?: { failures?: unknown; warnings?: unknown; unknown?: unknown } };
     if (typeof gate.status === 'string' && gate.summary && [gate.summary.failures, gate.summary.warnings, gate.summary.unknown].every(n => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0)) {

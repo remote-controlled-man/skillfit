@@ -29,6 +29,8 @@ import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harne
 import { CASE_PREFLIGHT_POLICY, checkEvalCases } from './eval-preflight.js';
 import { INPUT_SNAPSHOT_POLICY } from '../harness/input-snapshot.js';
 import type { ReviewedEvalPlan } from './eval-plan.js';
+import { inspectAgentEnvironment, assertAgentEnvironment, assertAgentEnvironmentUnchanged, renderAgentEnvironment,
+  type AgentEnvironmentPreflight, type EnvironmentRole } from '../harness/agent-preflight.js';
 
 export interface EvalPreview {
   mode: 'inject' | 'installed';
@@ -44,6 +46,7 @@ export interface EvalPreview {
   maxCalls: number;
   outputDir: string;
   casePreflight: typeof CASE_PREFLIGHT_POLICY & { status: 'pending' };
+  agentPreflight: AgentEnvironmentPreflight;
   inputSnapshot: typeof INPUT_SNAPSHOT_POLICY;
   pairOrder?: PairOrder;
   executorTimeoutSeconds?: number;
@@ -173,6 +176,16 @@ function defaultRunGroup(now: Date = new Date()): string {
   const date = `${now.getFullYear()}${pad2(now.getMonth() + 1)}${pad2(now.getDate())}`;
   const time = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
   return `eval-${date}-${time}`;
+}
+
+function inspectEvalAgent(options: EvalOptions, target: EvaluationTarget, executor: Executor | null, judge: Executor | null,
+  capabilityError?: string, resolutionError?: string, judgeError?: string): AgentEnvironmentPreflight {
+  const roles: EnvironmentRole[] = [{ role: 'agent', definition: options.agent ? getAgent(options.agent) : undefined,
+    executor: executor?.describe() ?? null, injected: options.executor !== undefined, resolutionError }];
+  if (judge || judgeError) roles.push({ role: 'judge', definition: options.judgeAgent ? getAgent(options.judgeAgent) : undefined,
+    executor: judge?.describe() ?? null, injected: options.judgeExecutor != null, resolutionError: judgeError });
+  return inspectAgentEnvironment({ roles, mode: options.mode ?? 'inject', target, capabilityError,
+    homeDir: options.sessionOptions?.homeDir, env: options.sessionOptions?.env });
 }
 
 function sessionFor(options: EvalOptions, bench: Bench, target: EvaluationTarget, trials: number,
@@ -310,6 +323,7 @@ async function runEvalTrigger(
   log: (msg: string) => void,
 ): Promise<TriggerManifest | null> {
   let executor = options.executor ?? null;
+  let resolutionError: string | undefined;
   if (!executor) {
     if (!options.agent) {
       throw new Error(
@@ -319,7 +333,7 @@ async function runEvalTrigger(
     try {
       executor = CliExecutor.forAgent(options.agent, { triggerSkillName: skill.name });
     } catch (error) {
-      if (!options.dryRun) throw error;
+      resolutionError = (error as Error).message;
       log(`Note: ${(error as Error).message}`);
     }
   }
@@ -330,6 +344,8 @@ async function runEvalTrigger(
 
   const plannedCalls = bench.tasks.filter(task => task.shouldTrigger !== undefined).length * trials;
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
+  const inspect = () => inspectEvalAgent(options, skill, executor, null, undefined, resolutionError);
+  const agentPreflight = inspect();
 
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   const competitors = options.competeInstalled && options.agent
@@ -344,11 +360,13 @@ async function runEvalTrigger(
 
   if (options.dryRun) {
     log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir));
+    log(renderAgentEnvironment(agentPreflight));
     log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(competeLine);
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (agent calls only)`);
     return null;
   }
+  assertAgentEnvironment(agentPreflight);
   if (!executor) {
     throw new Error('No executor available for trigger mode; pass --agent.');
   }
@@ -361,11 +379,13 @@ async function runEvalTrigger(
     if (existsSync(join(runsRoot, runGroup))) throw new Error(`Run group directory already exists: ${join(runsRoot, runGroup)}`);
     const eligible = { ...bench, tasks: bench.tasks.filter(t => t.shouldTrigger !== undefined) };
     const casePreflight = await checkEvalCases(eligible, [skill], false, log);
+    assertAgentEnvironmentUnchanged(agentPreflight, inspect());
     throwIfEvaluationInterrupted();
     log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
     log(competeLine);
+    log(renderAgentEnvironment(agentPreflight));
     const session = sessionFor(options, bench, skill, trials, runsRoot, runGroup, ['installed'], plannedCalls,
-      { mode: 'trigger', trials, executor: executor.describe(), casePreflight });
+      { mode: 'trigger', trials, executor: executor.describe(), casePreflight, agentPreflight });
     let manifest: TriggerManifest;
     try {
       manifest = await runTriggerExperiment({
@@ -403,9 +423,6 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
   const inputMode = options.inputMode ?? (installed ? 'workspace' : 'snapshot');
   assertInputModeSupported(inputMode, null);
-  if (inputMode === 'workspace' && !options.agent && !options.executor) {
-    throw new Error('workspace input requires --agent <id> for a CLI executor; API keys do not provide filesystem access.');
-  }
   if (options.mode === 'trigger' && options.inputMode !== undefined) {
     throw new Error('--input applies only to paired modes; trigger mode already presents files on disk.');
   }
@@ -448,9 +465,6 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     return runEvalTrigger(options, bench, target as SkillBundle, trials, log);
   }
 
-  if (target.kind !== 'skill' && !options.agent && !options.executor) {
-    throw new Error(`${target.kind} experiments require --agent because API executors do not load project configuration files.`);
-  }
   if (target.kind !== 'skill' && options.agent) {
     const agent = getAgent(options.agent);
     const expected = (target.kind === 'mcp' ? agent.mcp.projectFiles : agent.rules.projectFiles)
@@ -474,18 +488,33 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
 
   let executor: Executor | null = null;
+  let resolutionError: string | undefined;
   try {
     executor = options.executor ?? resolveExecutor(options.agent, target, installed, executorTimeoutSeconds);
   } catch (error) {
-    if (!options.dryRun) throw error;
+    resolutionError = (error as Error).message;
     log(`Note: ${(error as Error).message}`);
   }
-  assertExecutorSupportsBench(executor, bench);
-  assertInputModeSupported(inputMode, executor);
-  if (target.kind !== 'skill' && executor?.describe().kind === 'api') {
-    throw new Error(`${target.kind} experiments require a CLI executor; API executors cannot load project configuration files.`);
-  }
-  const judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge(options.judgeAgent);
+  let capabilityError: string | undefined;
+  try {
+    if (inputMode === 'workspace' && !options.agent && !options.executor) {
+      throw new Error('workspace input requires --agent <id> for a CLI executor; API keys do not provide filesystem access.');
+    }
+    if (target.kind !== 'skill' && !options.agent && !options.executor) {
+      throw new Error(`${target.kind} experiments require --agent because API executors do not load project configuration files.`);
+    }
+    assertExecutorSupportsBench(executor, bench);
+    assertInputModeSupported(inputMode, executor);
+    if (target.kind !== 'skill' && executor?.describe().kind === 'api') {
+      throw new Error(`${target.kind} experiments require a CLI executor; API executors cannot load project configuration files.`);
+    }
+  } catch (error) { capabilityError = (error as Error).message; }
+  let judge: Executor | null = null, judgeError: string | undefined;
+  try { judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge(options.judgeAgent); }
+  catch (error) { judgeError = (error as Error).message; }
+  const inspect = () => inspectEvalAgent(options, target, executor, judge, capabilityError, resolutionError, judgeError);
+  const agentPreflight = inspect();
+  if (capabilityError) assertAgentEnvironment(agentPreflight);
   const spendingBudget = options.spendingBudget === undefined ? undefined : parseSpendingBudget(options.spendingBudget);
   if (spendingBudget && judge) throw new Error('spendingBudget requires a paired evaluation without a judge; judge usage is not covered.');
   if (options.judgeAgent && options.judgeAgent === options.agent) {
@@ -500,6 +529,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   options.onPlan?.({
     mode: installed ? 'installed' : 'inject',
+    agentPreflight,
     casePreflight: { ...CASE_PREFLIGHT_POLICY, status: 'pending' },
     inputSnapshot: { ...INPUT_SNAPSHOT_POLICY },
     target: { kind: target.kind, name: target.name, sourceDir: target.sourceDir, sha256: target.sha256, files: target.files },
@@ -514,6 +544,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   if (options.dryRun) {
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget));
+    log(renderAgentEnvironment(agentPreflight));
     log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
     log(`Pair order: ${pairOrder}; arms remain adjacent`);
@@ -526,6 +557,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     }
     return null;
   }
+  assertAgentEnvironment(agentPreflight);
   if (!executor) {
     throw new Error('No executor available; pass --agent or set SKILLFIT_API_KEY.');
   }
@@ -533,10 +565,12 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   return withEvaluationInterrupts(async () => {
     if (existsSync(join(runsRoot, runGroup))) throw new Error(`Run group directory already exists: ${join(runsRoot, runGroup)}`);
     const casePreflight = await checkEvalCases(bench, [target, ...(baselineTarget ? [baselineTarget] : [])], installed, log);
+    assertAgentEnvironmentUnchanged(agentPreflight, inspect());
     throwIfEvaluationInterrupted();
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+    log(renderAgentEnvironment(agentPreflight));
     const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
-      { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder, casePreflight,
+      { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder, casePreflight, agentPreflight,
         ...(options.reviewedPlan ? { reviewedPlan: options.reviewedPlan } : {}),
         ...(spendingBudget ? { spendingBudget } : {}),
         ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),

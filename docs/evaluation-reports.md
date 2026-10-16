@@ -4,6 +4,11 @@ Version 0.10.1 uses the same saved-evidence assessment for Markdown and JSON.
 Both formats accept a manifest file, native run directory or portable replay
 package directory. Neither starts an agent or changes the saved run.
 
+Source after npm 0.10.1 also displays the saved [Agent environment preflight](eval-agent-preflight.md).
+JSON exposes `agentPreflight`; human reports omit its local evidence paths.
+Missing historical metadata stays null. Reading/replaying a report does not
+repeat environment/authentication probes or claim the current machine is ready.
+
 ```bash
 skillfit report eval ./runs/my-run
 skillfit report eval ./runs/my-run --json

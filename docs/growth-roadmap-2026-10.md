@@ -64,6 +64,12 @@ no-Skill request baselines. [Shared planning](eval-planning.md) documents defaul
 frozen limits and unchanged adoption restrictions. These additions also require
 a source build until a later npm release.
 
+Source eval also performs [offline Agent environment preflight](eval-agent-preflight.md)
+in preview and before dispatch: CLI availability, matrix compatibility, existing
+same-name global Skill conflicts and unknown offline authentication. Checks are
+sealed and preserved by reporting/replay without a new machine probe. This
+source addition makes no live calls and is not yet in npm 0.10.1.
+
 - Improve error messages based on actual failed case-authoring attempts.
 - Verify Claude Code trigger capture when working authentication is available.
 - Add Cursor, Gemini CLI or OpenCode only with verified official paths and

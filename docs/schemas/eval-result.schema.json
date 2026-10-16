@@ -10,6 +10,7 @@
     "plan": { "type": "object", "required": ["sha256", "evaluation"] },
     "manifest": { "type": ["object", "null"] },
     "casePreflight": { "anyOf": [{ "$ref": "eval-preflight.schema.json" }, { "type": "null" }] },
+    "agentPreflight": { "anyOf": [{ "$ref": "agent-preflight.schema.json" }, { "type": "null" }] },
     "inputSnapshot": {
       "type": ["object", "null"],
       "required": ["schemaVersion", "indexPath", "sha256", "cost"],

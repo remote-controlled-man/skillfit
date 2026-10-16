@@ -14,6 +14,13 @@ Build the bench around the task being evaluated, with deterministic acceptance
 checks and an independent reference repair. Bundled and contributed benches are
 examples, not a universal test of every Skill. See the [authoring guide](bench-authoring.md).
 
+Source after npm 0.10.1 adds [offline Agent environment preflight](eval-agent-preflight.md).
+`plan.evaluation.agentPreflight` separates executable availability, declared
+capabilities, same-name global Skill conflicts and unknown authentication. A dry
+plan can be blocked; execution returns `AGENT_PREFLIGHT_FAILED` with the checks
+before case probes, writes or calls. The native plan and report retain the saved
+checks. Authentication remains unknown; preview is not proof of login or consent.
+
 In 0.10.1, execution requires an automatic offline
 [case preflight](eval-case-preflight.md) after preview-hash confirmation and before
 any agent/judge call. `plan.evaluation.casePreflight.status` is `pending`; preview

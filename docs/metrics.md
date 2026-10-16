@@ -8,6 +8,15 @@ Insufficient, stopped, synthetic or unverified evidence cannot authorize adoptio
 the component never upgrades a Skill. Complete cost coverage is separate from
 quality significance. All formulas and legacy manifest interpretations below remain unchanged.
 
+Operational Agent preflight (source after npm 0.10.1): eval preview and dispatch
+check executable files, declared matrix capabilities and global same-name Skill
+conflicts, keeping authentication explicitly unknown offline. Known failures
+block before case probes, native run creation and calls. Sealed checks are
+read as historical metadata during reporting/replay, not rerun on today's
+machine. This adds no observations, environment isolation or adoption authority;
+statistics, cost coverage and acceptance thresholds remain unchanged. See
+[Agent environment preflight](eval-agent-preflight.md).
+
 This document defines what skillfit measures and how verdicts are computed. It is the contract that
 `src/harness/` implements and that bench authors design against. Changes here are deliberate: edit with a
 reasoned PR, cite sources, and bump the date.

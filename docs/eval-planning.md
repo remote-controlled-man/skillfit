@@ -62,6 +62,11 @@ print the same hash and support the same confirmation, while existing human
 execution without `--json` may still run without a hash. Dry run never executes.
 Agent requests retain their required preview-hash confirmation.
 
+`plan.evaluation.agentPreflight` reports the [offline Agent environment checks](eval-agent-preflight.md).
+Preview can return `planned` with a `blocked` environment; live execution rejects
+known failures before case probes or calls. CLI resolution and check results are
+bound into the plan hash and rechecked after case probes. Login remains unknown.
+
 `plan.evaluation` has the same effective settings for equivalent installed
 comparisons through either entry point. Request plans additionally bind request
 bytes, purpose and acceptance policy, so their hashes differ from ordinary plans.
