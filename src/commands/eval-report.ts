@@ -1,5 +1,6 @@
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { EvalReportOptions } from './eval-component.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1, verdictFor } from '../harness/report.js';
 import { mcnemarExactP } from '../harness/stats.js';
 import { validateSkillInstallDir } from '../harness/installed-skill.js';
@@ -656,14 +657,46 @@ export function renderEvalMarkdown(report: ReportData): string {
   return lines.join('\n');
 }
 
-export function runEvalReport(manifestPath: string, log: (line: string) => void = console.log): void {
-  const path = resolve(manifestPath);
-  if (statSync(path).size > MAX_MANIFEST_BYTES) throw new Error(`Evaluation manifest exceeds ${MAX_MANIFEST_BYTES} bytes`);
-  let value: unknown;
-  try {
-    value = JSON.parse(readFileSync(path, 'utf8'));
-  } catch (error) {
-    throw new Error(`Cannot read evaluation manifest: ${(error as Error).message}`);
+export async function runEvalReport(inputPath: string, log: (line: string) => void = console.log, options: EvalReportOptions = {}): Promise<void> {
+  // Import after module initialization: component assessment itself uses this
+  // module's manifest parser. Both CLI formats must share the same assessment.
+  const { reportEvalComponent } = await import('./eval-component.js');
+  const result = await reportEvalComponent(inputPath, options);
+  const root = result.evidence.runDir;
+  const safe = (message: string) => escapeMarkdown(message.replaceAll(root, '[run]'));
+  const lines: string[] = [];
+  if (result.manifest) {
+    const path = result.manifest.path;
+    if (statSync(path).size > MAX_MANIFEST_BYTES) throw new Error(`Evaluation manifest exceeds ${MAX_MANIFEST_BYTES} bytes`);
+    lines.push(renderEvalMarkdown(parseEvalReport(JSON.parse(readFileSync(path, 'utf8')))));
+  } else {
+    lines.push(`# skillfit evaluation: ${result.status} run`, '',
+      `- State: ${result.status}`,
+      '- No completed paired comparison is available. Retained spending is not a quality verdict.');
+    if (result.session?.stopReason) lines.push(`- Stop reason: ${safe(String(result.session.stopReason))}`);
+    if ('startedAgentDispatches' in result.costs) lines.push(`- Started agent dispatches: ${result.costs.startedAgentDispatches}`,
+      `- Missing or invalid invocation receipts: ${result.costs.invocationsWithUnknownReceipts}`);
+    lines.push('', '## Retained costs', '', ...renderCostLines(result.costs.populations));
   }
-  log(renderEvalMarkdown(parseEvalReport(value)));
+  lines.push('', '## Evidence and acceptance', '',
+    `- State: ${result.status}`,
+    `- Native evidence: ${result.evidence.verified ? 'verified' : 'unverified'}`,
+    `- Acceptance: ${result.acceptance.decision}`,
+    `- Eligible for upgrade: ${result.acceptance.eligibleForUpgrade ? 'yes' : 'no'}`,
+    '- Automatic upgrade: no');
+  for (const reason of result.acceptance.reasons) lines.push(`- ${reason.code}: ${safe(reason.message)}`);
+  for (const reason of result.evidence.reasons) lines.push(`- Audit: ${safe(reason)}`);
+  if (result.casePreflight) {
+    const gate = result.casePreflight as { status?: unknown; summary?: { failures?: unknown; warnings?: unknown; unknown?: unknown } };
+    if (typeof gate.status === 'string' && gate.summary && [gate.summary.failures, gate.summary.warnings, gate.summary.unknown].every(n => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0)) {
+      lines.push(`- Case preflight: ${safe(gate.status)}; ${gate.summary.failures} failure(s), ${gate.summary.warnings} warning(s), ${gate.summary.unknown} unknown(s)`);
+    } else lines.push('- Case preflight: invalid or unavailable metadata; inspect the unverified JSON record.');
+  }
+  if (result.inputSnapshot) {
+    const archive = result.inputSnapshot as { cost?: { durationMs?: unknown; files?: unknown; bytes?: unknown } };
+    if (archive.cost && [archive.cost.files, archive.cost.bytes, archive.cost.durationMs].every(n => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0)) {
+      lines.push(`- Sealed input cost: ${archive.cost.files} files; ${archive.cost.bytes} bytes; ${archive.cost.durationMs}ms local sealing; 0 model calls`);
+    } else lines.push('- Sealed input cost: invalid or unavailable metadata; no copy-cost total inferred.');
+  }
+  log(lines.join('\n') + '\n');
 }

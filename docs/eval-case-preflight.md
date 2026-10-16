@@ -1,7 +1,7 @@
 # Offline case gates before evaluation
 
-This behavior is in the current source checkout, after npm 0.10.0. Build source
-to use it; the published archive is unchanged.
+This behavior is included in 0.10.1. The immutable npm 0.10.0 archive predates it.
+See the [release record](releases/0.10.1.md) for publication status.
 
 Every live `eval` runs the existing offline `bench check` probes before creating
 the native run directory or dispatching its first agent/judge call. This covers

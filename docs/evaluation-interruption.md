@@ -1,7 +1,7 @@
 # Interrupt and retain an evaluation
 
-This is an unreleased source fix; the immutable npm 0.10.0 archive does not
-include it. Build the current checkout to use it. It changes interruption
+This fix is included in 0.10.1; see the [release record](releases/0.10.1.md)
+for publication status. The immutable npm 0.10.0 archive does not include it. It changes interruption
 handling, not the statistical or adoption protocol.
 
 ## Stop a live run

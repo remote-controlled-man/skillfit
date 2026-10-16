@@ -12,8 +12,11 @@ Try a clearly synthetic schema-v4 example first:
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
 
-After a paired `skillfit eval` run, replace the example path with the `Manifest:` path printed at the
-bottom of its output. This command is read-only: it does not call an agent,
+After a paired `skillfit eval` run, replace the example path with its native run
+directory or the printed `Manifest:` path. Since 0.10.1, Markdown and JSON accept
+the same manifest/run/package inputs and show audit and acceptance reasons.
+Stopped/incomplete runs show retained costs without inventing a completed quality
+comparison. See [report inputs and states](evaluation-reports.md). This command is read-only: it does not call an agent,
 rerun a verifier, change the manifest, or alter the verdict. Paste its output into a pull request or
 issue. The JSON manifest remains the canonical record; attach it when you want someone else to audit
 the task-level outcomes and provenance. The Markdown includes target and bench hashes, the executor,

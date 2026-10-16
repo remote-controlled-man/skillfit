@@ -94,9 +94,9 @@ eval 和基线校准的 `--trials` 必须是 1 到 20 的整数。小数、格�
 
 eval 和基线校准可用 `--max-calls <n>` 拒绝超出调用上限的计划（包括启用的裁判调用）。新运行会保留固定计划、调用记录、session 状态和文件哈希；输入或配置变化、执行器失败后停止后续调用。未完成的运行不能支持安装建议。详见[有限且可核查的实验流程](docs/experiment-workflow.md)，其中也说明环境控制的边界。
 
-源码版修复（npm 0.10.0 尚未包含）：Ctrl+C 会停止正在运行的评测进程和后续调用，保留可用输出与用量，封存中止记录后以 130 退出。SIGTERM 对应 143。部分或未知用量仍不完整；中止批次不能获准升级，也不会自行重试。参见[中断与记录保留](docs/evaluation-interruption.md)。
+0.10.1 已包含：Ctrl+C 会停止正在运行的评测进程和后续调用，保留可用输出与用量，封存中止记录后以 130 退出。SIGTERM 对应 143。部分或未知用量仍不完整；中止批次不能获准升级，也不会自行重试。参见[中断与记录保留](docs/evaluation-interruption.md)。
 
-0.10.0 之后的源码还包含：正式 `eval` 会在任何 agent／裁判调用前离线检查所选 case。硬失败会阻止开跑；警告与未知证据分别报告，并随本批记录保留。预览会标明校验尚未执行，不运行评分器或参考解。它只增加本地校验时间，新增模型调用为零。参见 [case 开跑前校验](docs/eval-case-preflight.md)。
+0.10.1 还包含：正式 `eval` 会在任何 agent／裁判调用前离线检查所选 case。硬失败会阻止开跑；警告与未知证据分别报告，并随本批记录保留。预览会标明校验尚未执行，不运行评分器或参考解。它只增加本地校验时间，新增模型调用为零。参见 [case 开跑前校验](docs/eval-case-preflight.md)。
 
 支持的 agent：**Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)——机器可读、带验证日期、附官方文档链接）。trigger 模式的捕获目前已在 Kimi Code 和 Codex CLI 上验证过。
 
@@ -198,11 +198,13 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
 
-新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
+0.10.1 中，普通报告和 JSON 都接受同样的 manifest、原生运行目录或复现包，包括中止和未完成批次。两者都会核查已存证据，并把采用决定与质量判定分开解释。`--replay`、`--records` 和 `--policy` 两种格式都能用；成功生成报告不代表获准升级。参见[报告输入和状态](docs/evaluation-reports.md)。
+
+新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。Chat completions API 明确返回的缓存输入计数（包括零）会被保留；缺失或非法值仍记为未知。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
 
 没有 judge 的原生配对实验可导出为独立目录，包含原始记录、匹配的输入、当时的编译版 CLI、校验清单和重放入口。默认只预览；缺输入或目标目录已存在就停止。整个目录可搬到另一台机器，重放不调用模型，保留中止状态和未知成本，也不能授权升级。分享前检查项目数据，参见[可搬走的复现包](docs/replay-packages.md)。
 
-0.10.0 之后的源码会在调用前封存输入副本：原始 Skill、bench 或请求之后被修改、删除，也不影响导出和重放。计划会记录快照校验信息、本地复制耗时和存储量；已声明的快照损坏就拒绝使用。历史记录仍需找回匹配的原始输入。参见[评测输入封存](docs/evaluation-input-snapshots.md)。
+0.10.1 会在调用前封存输入副本：原始 Skill、bench 或请求之后被修改、删除，也不影响导出和重放。计划会记录快照校验信息、本地复制耗时和存储量；已声明的快照损坏就拒绝使用。历史记录仍需找回匹配的原始输入。参见[评测输入封存](docs/evaluation-input-snapshots.md)。
 
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json

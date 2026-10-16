@@ -76,6 +76,52 @@ test('stopped exports preserve partial costs and cannot become completed evidenc
   assert.equal(data.acceptance.eligibleForUpgrade, false); assert.equal(f.calls(), 1);
 });
 
+test('human and JSON reports accept identical native inputs and preserve completed/stopped evidence', async t => {
+  const cli = fileURLToPath(new URL('../cli.js', import.meta.url));
+  for (const stopped of [false, true]) await t.test(stopped ? 'stopped' : 'completed', async t => {
+    const f = await fixture(t, stopped), before = readFileSync(join(f.run, '_artifacts.json'), 'utf8');
+    const invoke = (path: string, args: string[] = []) => spawnSync(process.execPath, [cli, 'report', 'eval', path, ...args], { encoding: 'utf8', timeout: 30_000, maxBuffer: 8 * 1024 * 1024 });
+    const machine = invoke(f.run, ['--json']); assert.equal(machine.status, 0, machine.stderr);
+    const data = JSON.parse(machine.stdout), human = invoke(f.run);
+    assert.equal(human.status, 0, human.stderr);
+    assert.match(human.stdout, new RegExp(`State: ${data.status}`));
+    assert.match(human.stdout, new RegExp(`Acceptance: ${data.acceptance.decision}`));
+    assert.match(human.stdout, new RegExp(`Native evidence: ${data.evidence.verified ? 'verified' : 'unverified'}`));
+    assert.match(human.stdout, /Automatic upgrade: no/);
+    assert.match(human.stdout, /Sealed input cost:/);
+    if (!stopped) {
+      const manifest = invoke(join(f.run, 'manifest.json'));
+      assert.equal(manifest.status, 0, manifest.stderr); assert.equal(manifest.stdout, human.stdout);
+      const policyPath = join(f.root, 'policy.json'); writeFileSync(policyPath, '{}');
+      const flags = ['--records', f.run, '--policy', policyPath];
+      const policyJson = invoke(join(f.run, 'manifest.json'), [...flags, '--json']);
+      const policyHuman = invoke(join(f.run, 'manifest.json'), flags);
+      assert.equal(policyJson.status, 0, policyJson.stderr); assert.equal(policyHuman.status, 0, policyHuman.stderr);
+      assert.match(policyHuman.stdout, new RegExp(`Acceptance: ${JSON.parse(policyJson.stdout).acceptance.decision}`));
+      const replay = invoke(f.run, ['--replay']); assert.equal(replay.status, 0, replay.stderr);
+      assert.match(replay.stdout, /Native evidence: verified/);
+    } else { assert.match(human.stdout, /No completed paired comparison/); assert.match(human.stdout, /Retained costs/); assert.match(human.stdout, /partial/); }
+    await exportEvaluation(f.run, f.output, { yes: true, log: () => {} });
+    const portable = invoke(f.output, ['--replay']); assert.equal(portable.status, 0, portable.stderr);
+    assert.match(portable.stdout, new RegExp(`State: ${data.status}`));
+    assert.match(portable.stdout, /Automatic upgrade: no/);
+    assert.equal(readFileSync(join(f.run, '_artifacts.json'), 'utf8'), before);
+    assert.equal(f.calls(), stopped ? 1 : 2);
+  });
+});
+
+test('human incomplete reports retain unknown receipts and never invent a completed quality result', async t => {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-report-incomplete-')); t.after(() => rmSync(root, { recursive: true, force: true }));
+  writeFileSync(join(root, '_plan.json'), '{}');
+  writeFileSync(join(root, '_calls.jsonl'), JSON.stringify({ event: 'started', role: 'agent', workdir: join(root, 'case/baseline/trial-1') }) + '\n');
+  const cli = fileURLToPath(new URL('../cli.js', import.meta.url));
+  const human = spawnSync(process.execPath, [cli, 'report', 'eval', root], { encoding: 'utf8' });
+  assert.equal(human.status, 0, human.stderr); assert.match(human.stdout, /State: incomplete/);
+  assert.match(human.stdout, /Missing or invalid invocation receipts: 1/);
+  assert.match(human.stdout, /Acceptance: inconclusive/); assert.match(human.stdout, /Eligible for upgrade: no/);
+  assert.match(human.stdout, /unknown/); assert.ok(!existsSync(join(root, 'manifest.json')));
+});
+
 test('changed original inputs do not prevent export; nested destinations and collisions still fail', async t => {
   const f = await fixture(t), original = readFileSync(join(f.run, '_artifacts.json'), 'utf8');
   await assert.rejects(() => exportEvaluation(f.run, join(f.run, 'bad'), { yes: true, log: () => {} }), /outside/);
@@ -94,6 +140,8 @@ test('portable inspections reject changed files, extra files and unsafe paths', 
   writeFileSync(join(f.output, 'extra'), 'unexpected'); assert.throws(() => verifyReplayPackage(f.output), /inventory/); rmSync(join(f.output, 'extra'));
   writeFileSync(join(f.output, 'run/manifest.json'), '{}');
   await assert.rejects(() => reportEvalComponent(f.output, { replay: true }), /hash mismatch/);
+  const human = spawnSync(process.execPath, [fileURLToPath(new URL('../cli.js', import.meta.url)), 'report', 'eval', f.output], { encoding: 'utf8' });
+  assert.notEqual(human.status, 0); assert.match(human.stderr, /hash mismatch/);
   const verify = spawnSync(process.execPath, [join(f.output, 'reproduce.mjs'), '--verify-only'], { encoding: 'utf8' });
   assert.equal(verify.status, 2); assert.equal(f.calls(), 2);
 });

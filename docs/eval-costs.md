@@ -45,6 +45,15 @@ is recorded as zero. Other executors can supply cache counts through the same
 optional `TokenUsage.cachedInput` field. Existing surfaces without such counts
 continue to report unknown cache coverage.
 
+In 0.10.1, the Chat Completions API executor reads
+`usage.prompt_tokens_details.cached_tokens` into `TokenUsage.cachedInput`, as
+documented by the [official OpenAI API reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create).
+It requires a nonnegative safe integer no greater than a valid input total.
+An explicit zero is preserved; missing, malformed, fractional, negative or
+incompatible cache counts remain unknown. Input already includes cached tokens;
+uncached input is still computed by subtraction, with no double counting.
+This fixes new receipts only; historical unknown cache usage is not backfilled.
+
 Each measure contains `knownTotal` and coverage counts `final`, `partial` and
 `unknown`, which sum to its population's run count. A successful stream with
 missing input/output usage on a completed turn retains available increments as

@@ -94,9 +94,9 @@ For eval and baseline calibration, `--trials` must be an integer from 1 to 20. F
 
 Use `--max-calls <n>` for eval or baseline calibration to reject plans above a call ceiling (including enabled judges). New runs retain a frozen plan, call ledger, session state and artifact hashes; input/config drift or executor failures stop further calls. Partial runs cannot support an installation recommendation. Follow the [bounded experiment workflow](docs/experiment-workflow.md), including its environment limits.
 
-Source-checkout fix (not in npm 0.10.0): Ctrl+C stops live evaluation processes and subsequent calls, retains available output/usage and seals a stopped run before exit 130. SIGTERM uses exit 143. Partial or unknown usage stays incomplete; interrupted prefixes cannot authorize an upgrade or retry themselves. See [interruption and retained records](docs/evaluation-interruption.md).
+Included in 0.10.1: Ctrl+C stops live evaluation processes and subsequent calls, retains available output/usage and seals a stopped run before exit 130. SIGTERM uses exit 143. Partial or unknown usage stays incomplete; interrupted prefixes cannot authorize an upgrade or retry themselves. See [interruption and retained records](docs/evaluation-interruption.md).
 
-Also in source after 0.10.0: live `eval` checks selected cases offline before any agent/judge call. Hard failures block execution; warnings and unknown evidence are reported separately and retained with the run. Previews declare these checks pending and execute no verifier/oracle. This adds local checking time and zero model calls. See [case preflight](docs/eval-case-preflight.md).
+Also included in 0.10.1: live `eval` checks selected cases offline before any agent/judge call. Hard failures block execution; warnings and unknown evidence are reported separately and retained with the run. Previews declare these checks pending and execute no verifier/oracle. This adds local checking time and zero model calls. See [case preflight](docs/eval-case-preflight.md).
 
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
@@ -201,11 +201,13 @@ Try the synthetic example below, then replace its path with the `Manifest:` path
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
 
-New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
+In 0.10.1, Markdown and JSON accept the same manifest, native run directory or portable package, including stopped/incomplete batches. Both assess saved evidence and explain acceptance separately from a quality verdict. `--replay`, `--records` and `--policy` work in either format; successful rendering does not authorize an upgrade. See [report inputs and states](docs/evaluation-reports.md).
+
+New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Chat-completions API responses retain explicit cached-input counts, including zero; missing or invalid counts stay unknown. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
 
 Export a native paired run without a judge as a portable directory with original receipts, matching inputs, pinned compiled CLI, checksums and a replay entry point. Export previews by default; missing inputs or an existing destination stop it. The whole package can move to another machine. Replay calls no model, preserves stopped/unknown costs and authorizes no upgrade. Review project data before sharing; see [portable replay packages](docs/replay-packages.md).
 
-Source after npm 0.10.0 seals input copies before dispatch: later edits/deletions of the original Skill, bench or request no longer prevent export/replay. The plan records snapshot integrity, local copy time and storage; a damaged declared snapshot is rejected. Historical runs still need matching recovered inputs. See [sealed evaluation inputs](docs/evaluation-input-snapshots.md).
+Version 0.10.1 seals input copies before dispatch: later edits/deletions of the original Skill, bench or request no longer prevent export/replay. The plan records snapshot integrity, local copy time and storage; a damaged declared snapshot is rejected. Historical runs still need matching recovered inputs. See [sealed evaluation inputs](docs/evaluation-input-snapshots.md).
 
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json

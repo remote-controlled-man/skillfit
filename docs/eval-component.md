@@ -11,7 +11,7 @@ Build the bench around the task being evaluated, with deterministic acceptance
 checks and an independent reference repair. Bundled and contributed benches are
 examples, not a universal test of every Skill. See the [authoring guide](bench-authoring.md).
 
-In the source build after npm 0.10.0, execution requires an automatic offline
+In 0.10.1, execution requires an automatic offline
 [case preflight](eval-case-preflight.md) after preview-hash confirmation and before
 any agent/judge call. `plan.evaluation.casePreflight.status` is `pending`; preview
 executes no verifier/oracle. Hard failures return `CASE_PREFLIGHT_FAILED` and a
@@ -301,12 +301,16 @@ and retain/share an external copy of evidence hashes for provenance.
 
 ## Offline assessment and replay
 
-The current source build seals Ctrl+C/SIGTERM interruptions with available trial
+Version 0.10.1 seals Ctrl+C/SIGTERM interruptions with available trial
 receipts, `_interruption.json`, stopped `_session.json` and `_artifacts.json`.
 Request execution preserves exit 130/143 and returns a stopped assessment after
 sealing. Partial/unknown costs stay incomplete and ineligible; no automatic retry
 or replacement occurs. See [the interruption contract](evaluation-interruption.md).
 The npm 0.10.0 archive predates this fix.
+
+Markdown and JSON accept the same manifest/run/package inputs and assessment
+options in 0.10.1. Markdown also displays stopped/incomplete spending and the
+separate acceptance decision. See [report inputs and states](evaluation-reports.md).
 
 ```bash
 node dist/cli.js report eval ./runs/revision-validation-001 --json

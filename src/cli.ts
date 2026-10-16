@@ -20,7 +20,7 @@ const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI codi
 Usage:
   skillfit doctor [--agent <id>]            Inspect current agent configuration health
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
-  skillfit report eval <manifest.json>     Render an existing evaluation as Markdown (read-only)
+  skillfit report eval <manifest-or-run-dir>  Assess saved evidence as Markdown (read-only)
   skillfit report eval <manifest-or-run-dir> --json [--replay]  Assess saved evidence for an Agent
   skillfit report eval <run-dir> --export <new-dir>  Plan a portable offline replay package
   skillfit eval --request <request.json> --dry-run  Return a pinned JSON plan without calls
@@ -48,9 +48,9 @@ Options:
   --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
   --plan-sha <hash>   Confirm the current --request dry-run plan before real calls
   --json             Machine output for bench check/list/show/edit/remove, report, and request-based eval
-  --policy <path>    With report eval --json, assess against a policy (post-hoc changes cannot authorize adoption)
-  --records <dir>    With report eval --json, use native evidence from this run directory
-  --replay           With report eval --json, regrade cloned deliveries using the frozen bench
+  --policy <path>    With report eval, assess against a policy (post-hoc changes cannot authorize adoption)
+  --records <dir>    With report eval, use native evidence from this run directory
+  --replay           With report eval, regrade cloned deliveries using the frozen bench
   --export <dir>     With report eval, plan a portable package; --yes writes a fresh destination
   --input-root <label=path>  With --export, recover pinned inputs from a matching copy (repeatable)
   --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
@@ -214,8 +214,8 @@ async function main(): Promise<void> {
   if (command === 'bench' && positionals[1] === 'add' && values.task && values.task.length !== 1) throw new Error('bench add requires exactly one --task.');
   if (values.request !== undefined && command !== 'eval') throw new Error('--request applies only to eval.');
   if (values['plan-sha'] !== undefined && (command !== 'eval' || values.request === undefined || values['dry-run'])) throw new Error('--plan-sha requires a non-dry-run eval --request.');
-  if ((values.policy !== undefined || values.records !== undefined || values.replay) && !(command === 'report' && positionals[1] === 'eval' && values.json)) {
-    throw new Error('--policy, --records and --replay require report eval --json.');
+  if ((values.policy !== undefined || values.records !== undefined || values.replay) && !(command === 'report' && positionals[1] === 'eval')) {
+    throw new Error('--policy, --records and --replay require report eval.');
   }
 
   const common = {
@@ -249,7 +249,7 @@ async function main(): Promise<void> {
       if (positionals[1] === 'eval') {
         if (!positionals[2]) {
           if (values.json) throw new Error('report eval --json requires a manifest or native run directory.');
-          console.error('Usage: skillfit report eval <manifest.json>');
+          console.error('Usage: skillfit report eval <manifest-or-run-dir>');
           process.exitCode = 2;
           return;
         }
@@ -262,7 +262,9 @@ async function main(): Promise<void> {
         if (values.json) console.log(JSON.stringify(await reportEvalComponent(positionals[2], {
           policyPath: values.policy, recordsPath: values.records, replay: values.replay, benchDir: values.bench,
         }), null, 2));
-        else runEvalReport(positionals[2]);
+        else await runEvalReport(positionals[2], undefined, {
+          policyPath: values.policy, recordsPath: values.records, replay: values.replay, benchDir: values.bench,
+        });
         return;
       }
       await runReport({ agent: values.agent, json: values.json ?? false });

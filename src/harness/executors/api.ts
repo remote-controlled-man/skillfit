@@ -11,7 +11,7 @@ export interface ApiExecutorOptions {
 
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: unknown } }>;
-  usage?: { prompt_tokens?: unknown; completion_tokens?: unknown };
+  usage?: { prompt_tokens?: unknown; completion_tokens?: unknown; prompt_tokens_details?: unknown };
 }
 
 function tokenCount(value: unknown): number | undefined {
@@ -22,10 +22,16 @@ function tokenUsage(usage: ChatCompletionResponse['usage']): TokenUsage | undefi
   if (!usage || typeof usage !== 'object') return undefined;
   const input = tokenCount(usage.prompt_tokens);
   const output = tokenCount(usage.completion_tokens);
+  const details = usage.prompt_tokens_details;
+  const cached = details && typeof details === 'object' && !Array.isArray(details)
+    ? tokenCount((details as { cached_tokens?: unknown }).cached_tokens) : undefined;
+  const cachedInput = input !== undefined && Number.isSafeInteger(input) && cached !== undefined && Number.isSafeInteger(cached) && cached <= input
+    ? cached : undefined;
   if (input === undefined && output === undefined) return undefined;
   return {
     ...(input !== undefined ? { input } : {}),
     ...(output !== undefined ? { output } : {}),
+    ...(cachedInput !== undefined ? { cachedInput } : {}),
   };
 }
 

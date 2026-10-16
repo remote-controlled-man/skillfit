@@ -60,7 +60,7 @@ gates), and the LLM-judge literature cited in §5.
 
 ## Unit of analysis
 
-Operational interruption handling (2026-10-16, unreleased source): SIGINT/SIGTERM
+Operational interruption handling (2026-10-16, included in 0.10.1): SIGINT/SIGTERM
 stops subsequent dispatches and managed active processes, retaining receipts and
 sealing a stopped prefix. Interrupted execution is ungraded; available counters
 remain partial unless the invocation already settled with final usage. Missing
@@ -327,7 +327,14 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
 
 ## Bench composition guidance (for authors and the upcoming scaffolding tooling)
 
-Operational gate (source after npm 0.10.0): live `eval` reuses offline bench
+Operational correction in 0.10.1: the API executor retains explicitly reported
+Chat Completions cache counts, preserving absent/invalid values as unknown.
+Markdown and JSON reports share native audit, cost coverage and acceptance
+assessment for files, run directories and portable packages. These changes do
+not alter cost populations, statistical formulas, acceptance policy or historical
+receipts. See [report inputs and statuses](evaluation-reports.md).
+
+Operational gate (included in 0.10.1): live `eval` reuses offline bench
 integrity checks before dispatch, scoped to selected tasks (labelled tasks in
 trigger mode). Hard failures block all agent/judge calls. Missing oracles and
 other unmeasured coverage are explicit `UNKNOWN` diagnostics; observed concerns
