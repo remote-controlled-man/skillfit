@@ -7,6 +7,7 @@ import { assertInstalledSkillFixtures, assertSkillRevisionTargets, installSkillR
 import { collectInstalledSkillFingerprint } from './bundle.js';
 import { judgePair, type JudgeResult } from './judge.js';
 import { killTree, treeSpawnOptions } from './kill-tree.js';
+import { evaluationSignal, throwIfEvaluationInterrupted } from './interruption.js';
 import { assertInputModeSupported, buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
 import {
   buildWarnings,
@@ -98,6 +99,8 @@ function runProcess(
   cwd: string,
   timeoutMs: number,
 ): Promise<ProcessResult> {
+  const signal = evaluationSignal();
+  if (signal?.aborted) return Promise.resolve({ exitCode: null, output: '', error: (signal.reason as Error).message });
   return new Promise((resolvePromise) => {
     let child;
     try {
@@ -112,15 +115,41 @@ function runProcess(
     let bytes = 0;
     let timedOut = false;
     let overflow = false;
+    let stopping = false;
+    let settled = false;
+    let drainTimer: NodeJS.Timeout | undefined;
+    const finish = (result: ProcessResult): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer); clearTimeout(drainTimer);
+      signal?.removeEventListener('abort', onAbort);
+      resolvePromise(result);
+    };
+    const result = (code: number | null): ProcessResult => ({
+      exitCode: signal?.aborted || timedOut || overflow ? null : code,
+      output: timedOut ? `${output}\n[timed out after ${timeoutMs}ms]` : output,
+      error: signal?.aborted ? (signal.reason as Error).message : overflow
+        ? `output exceeded ${MAX_PROCESS_OUTPUT_BYTES} bytes` : timedOut ? `timed out after ${timeoutMs}ms` : null,
+    });
+    const stop = (): void => {
+      if (stopping || settled) return;
+      stopping = true;
+      killTree(child);
+      drainTimer = setTimeout(() => {
+        child.stdin?.destroy(); child.stdout.destroy(); child.stderr.destroy(); child.unref();
+        finish(result(null));
+      }, 2000);
+    };
+    const onAbort = (): void => stop();
     const timer = setTimeout(() => {
       timedOut = true;
-      killTree(child);
+      stop();
     }, timeoutMs);
     const take = (chunk: Buffer): void => {
       bytes += chunk.length;
       if (bytes > MAX_PROCESS_OUTPUT_BYTES) {
         overflow = true;
-        killTree(child);
+        stop();
         return;
       }
       output += chunk.toString('utf8');
@@ -132,18 +161,13 @@ function runProcess(
     child.stdin?.on('error', () => {});
     child.stdin?.end();
     child.on('error', (error) => {
-      clearTimeout(timer);
-      resolvePromise({ exitCode: null, output, error: error.message });
+      finish({ exitCode: null, output, error: error.message });
     });
     child.on('close', (code) => {
-      clearTimeout(timer);
-      const limited = overflow ? `output exceeded ${MAX_PROCESS_OUTPUT_BYTES} bytes` : null;
-      resolvePromise({
-        exitCode: timedOut || overflow ? null : code,
-        output: timedOut ? `${output}\n[timed out after ${timeoutMs}ms]` : output,
-        error: limited ?? (timedOut ? `timed out after ${timeoutMs}ms` : null),
-      });
+      finish(result(code));
     });
+    signal?.addEventListener('abort', onAbort, { once: true });
+    if (signal?.aborted) onAbort();
   });
 }
 
@@ -199,6 +223,7 @@ export async function runTrial(
   condition: Condition,
   trial: number,
 ): Promise<TrialOutcome> {
+  throwIfEvaluationInterrupted();
   const { bench, executor } = plan;
   const target = condition === 'baseline' && plan.baselineTarget ? plan.baselineTarget : plan.target;
   if (plan.baselineTarget) {
@@ -241,6 +266,7 @@ export async function runTrial(
     installNativeDiffTool(runDir);
   }
   const gitInitialized = await gitInit(runDir);
+  throwIfEvaluationInterrupted();
 
   const taskPromptText = readFileSync(join(bench.dir, task.prompt), 'utf8');
   const prompt = buildTaskPrompt(
@@ -547,6 +573,7 @@ async function judgeTaskTrials(
         'utf8',
       );
     } catch (error) {
+      throwIfEvaluationInterrupted();
       plan.log?.(`Judge failed for ${task.id} trial ${trial}: ${(error as Error).message}`);
     }
   }
@@ -746,6 +773,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     // provider drift or rate-limit degradation would land entirely on one arm.
     for (let trial = 1; trial <= plan.trials; trial++) {
       for (const condition of pairConditions(pairOrder, taskIndex, trial)) {
+        throwIfEvaluationInterrupted();
         const before = budgetEvent('before-call', task.id, condition, trial);
         if (before) assertSpendingCanContinue(before);
         plan.log?.(`Running ${task.id} / ${condition} / trial ${trial}…`);
@@ -754,6 +782,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
         allOutcomes[condition].push(outcome);
         budgetObservations.push(outcome);
         const after = budgetEvent('after-call', task.id, condition, trial);
+        throwIfEvaluationInterrupted();
         // A reached line prevents the next call; incomplete or failed evidence stops even
         // after the final scheduled call. One in-flight invocation may cross a stop line.
         if (after && (after.incomplete.length || after.reason === 'EXECUTION_FAILED')) assertSpendingCanContinue(after);

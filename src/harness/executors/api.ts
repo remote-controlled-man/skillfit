@@ -1,4 +1,5 @@
 import type { Executor, ExecutorDescriptor, ExecutorResult, TokenUsage } from '../types.js';
+import { evaluationSignal } from '../interruption.js';
 
 export interface ApiExecutorOptions {
   apiKey?: string;
@@ -63,6 +64,8 @@ export class ApiExecutor implements Executor {
   }
 
   async run(prompt: string, _workdir?: string): Promise<ExecutorResult> {
+    const interrupted = evaluationSignal();
+    interrupted?.throwIfAborted();
     const response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -73,7 +76,7 @@ export class ApiExecutor implements Executor {
         model: this.model,
         messages: [{ role: 'user', content: prompt }],
       }),
-      signal: AbortSignal.timeout(this.timeoutMs),
+      signal: interrupted ? AbortSignal.any([interrupted, AbortSignal.timeout(this.timeoutMs)]) : AbortSignal.timeout(this.timeoutMs),
     });
     if (!response.ok) {
       const body = (await response.text()).slice(0, 300);

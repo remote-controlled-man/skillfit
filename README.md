@@ -94,6 +94,8 @@ For eval and baseline calibration, `--trials` must be an integer from 1 to 20. F
 
 Use `--max-calls <n>` for eval or baseline calibration to reject plans above a call ceiling (including enabled judges). New runs retain a frozen plan, call ledger, session state and artifact hashes; input/config drift or executor failures stop further calls. Partial runs cannot support an installation recommendation. Follow the [bounded experiment workflow](docs/experiment-workflow.md), including its environment limits.
 
+Source-checkout fix (not in npm 0.10.0): Ctrl+C stops live evaluation processes and subsequent calls, retains available output/usage and seals a stopped run before exit 130. SIGTERM uses exit 143. Partial or unknown usage stays incomplete; interrupted prefixes cannot authorize an upgrade or retry themselves. See [interruption and retained records](docs/evaluation-interruption.md).
+
 Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json) — machine-readable, dated, doc-linked). Trigger-mode capture is currently verified for Kimi Code and Codex CLI.
 
 ## Build your own cases

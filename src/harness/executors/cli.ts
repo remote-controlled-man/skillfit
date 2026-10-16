@@ -8,6 +8,7 @@ import { probeKimiSessionUsage } from '../kimi-usage.js';
 import { probeCodexPartialUsage } from '../codex-usage.js';
 import { ExecutorFailure, type TokenUsage } from '../types.js';
 import { ExecutionDeadline, type ExecutionClock } from '../execution-timing.js';
+import { evaluationSignal } from '../interruption.js';
 import type { Executor, ExecutorDescriptor, ExecutorResult } from '../types.js';
 
 export interface CliExecutorOptions {
@@ -168,6 +169,8 @@ export class CliExecutor implements Executor {
   }
 
   run(prompt: string, workdir: string): Promise<ExecutorResult> {
+    const signal = evaluationSignal();
+    if (signal?.aborted) return Promise.reject(new ExecutorFailure(String(signal.reason), { output: '' }, false));
     const startedAtMs = Date.now();
     let argv = this.argv;
     if (this.projectTrustConfigArg) {
@@ -225,7 +228,7 @@ export class CliExecutor implements Executor {
         }
         return new ExecutorFailure(message, { ...result, usageStatus: 'partial' });
       };
-      const stopMessage = (): string => overflow
+      const stopMessage = (): string => signal?.aborted ? (signal.reason as Error).message : overflow
         ? `"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`
         : deadline.timingError ? `"${command}" execution timing anomaly: ${deadline.timingError}`
           : `"${command}" timed out after ${this.timeoutMs}ms`;
@@ -253,7 +256,11 @@ export class CliExecutor implements Executor {
         checkDeadline();
       }, this.timeoutMs);
       const heartbeat = setInterval(() => checkDeadline(), deadline.heartbeatMs);
-      const clearTimers = (): void => { clearTimeout(timer); clearInterval(heartbeat); clearTimeout(drainTimer); };
+      const onAbort = (): void => stopChild();
+      const clearTimers = (): void => {
+        clearTimeout(timer); clearInterval(heartbeat); clearTimeout(drainTimer);
+        signal?.removeEventListener('abort', onAbort);
+      };
       const take = (chunk: Buffer, sink: 'stdout' | 'stderr'): void => {
         checkDeadline();
         bytes += chunk.length;
@@ -275,6 +282,10 @@ export class CliExecutor implements Executor {
       child.on('close', (code) => {
         checkDeadline(false);
         clearTimers();
+        if (signal?.aborted) {
+          rejectPromise(failure(stopMessage()));
+          return;
+        }
         if (overflow) {
           rejectPromise(failure(`"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`));
           return;
@@ -310,12 +321,17 @@ export class CliExecutor implements Executor {
         }
         resolvePromise(result);
       });
-      if (this.promptVia === 'stdin') {
+      signal?.addEventListener('abort', onAbort, { once: true });
+      if (signal?.aborted) onAbort();
+      if (this.promptVia === 'stdin' && !signal?.aborted) {
         // A child that exits before draining stdin makes the write fail (EPIPE on POSIX, EOF on
         // Windows). With no listener that surfaces as an uncaught exception rather than a rejection,
         // so the caller's catch never runs and the process dies mid-trial leaving a half-populated
         // run group behind. Reject instead, and kill the child so it cannot outlive the failure.
         child.stdin.on('error', (error: Error) => {
+          // Killing the tree can close stdin too. Let close/the bounded drain
+          // retain parsed usage instead of replacing cancellation with EPIPE.
+          if (stopping) return;
           clearTimers();
           deadline.observe();
           killTree(child);

@@ -25,6 +25,7 @@ import {
 import type { Bench, EvaluationTarget, Executor, InputMode, PairOrder, SkillBundle } from '../harness/types.js';
 import type { ComponentMetadata } from '../harness/eval-contract.js';
 import { parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget.js';
+import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 
 export interface EvalPreview {
   target: { name: string; sourceDir: string; sha256: string; files: string[] };
@@ -348,29 +349,32 @@ async function runEvalTrigger(
       'trigger mode needs a skill install directory: pass --agent (the matrix provides one) or skillInstallDir.',
     );
   }
-  log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
-  log(competeLine);
-  const session = sessionFor(options, bench, skill, trials, runsRoot, runGroup, ['installed'], plannedCalls,
-    { mode: 'trigger', trials, executor: executor.describe() });
-  let manifest: TriggerManifest;
-  try {
-    manifest = await runTriggerExperiment({
-      bench,
-      skill,
-      executor: session.wrap(executor, 'agent'),
-      session,
-      trials,
-      runsRoot,
-      runGroup,
-      skillInstallDir: installDir,
-      competitors,
-      detection,
-      log,
-    });
-  } catch (error) { session.finish(error); throw error; }
-  session.finish(undefined, manifest);
-  log(renderTriggerSummary(manifest, join(runsRoot, runGroup, 'manifest.json')));
-  return manifest;
+  return withEvaluationInterrupts(async () => {
+    log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+    log(competeLine);
+    const session = sessionFor(options, bench, skill, trials, runsRoot, runGroup, ['installed'], plannedCalls,
+      { mode: 'trigger', trials, executor: executor.describe() });
+    let manifest: TriggerManifest;
+    try {
+      manifest = await runTriggerExperiment({
+        bench,
+        skill,
+        executor: session.wrap(executor, 'agent'),
+        session,
+        trials,
+        runsRoot,
+        runGroup,
+        skillInstallDir: installDir,
+        competitors,
+        detection,
+        log,
+      });
+      throwIfEvaluationInterrupted();
+    } catch (error) { session.finish(error); throw error; }
+    session.finish(undefined, manifest);
+    log(renderTriggerSummary(manifest, join(runsRoot, runGroup, 'manifest.json')));
+    return manifest;
+  });
 }
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
@@ -514,35 +518,38 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     throw new Error('No executor available; pass --agent or set SKILLFIT_API_KEY.');
   }
 
-  log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
-  const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
-    { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder,
-      ...(spendingBudget ? { spendingBudget } : {}),
-      ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
-      ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), executor: executor.describe(), judge: judge?.describe() ?? null,
-      ...(options.component ? { component: options.component } : {}),
-      ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
-  let manifest: RunManifest;
-  try {
-    manifest = await runExperiment({
-      bench,
-      target,
-      baselineTarget,
-      component: options.component,
-      pairOrder,
-      ...(spendingBudget ? { spendingBudget } : {}),
-      inputMode,
-      ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
-      executor: session.wrap(executor, 'agent'),
-      judge: judge ? session.wrap(judge, 'judge') : null,
-      session,
-      trials,
-      runsRoot,
-      runGroup,
-      log,
-    });
-  } catch (error) { session.finish(error); throw error; }
-  session.finish(undefined, manifest);
-  log(renderSummary(manifest, join(runsRoot, runGroup, 'manifest.json')));
-  return manifest;
+  return withEvaluationInterrupts(async () => {
+    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+    const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
+      { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder,
+        ...(spendingBudget ? { spendingBudget } : {}),
+        ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
+        ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), executor: executor.describe(), judge: judge?.describe() ?? null,
+        ...(options.component ? { component: options.component } : {}),
+        ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
+    let manifest: RunManifest;
+    try {
+      manifest = await runExperiment({
+        bench,
+        target,
+        baselineTarget,
+        component: options.component,
+        pairOrder,
+        ...(spendingBudget ? { spendingBudget } : {}),
+        inputMode,
+        ...(skillInstallDir ? { skillInstallDir, skillSearchDirs } : {}),
+        executor: session.wrap(executor, 'agent'),
+        judge: judge ? session.wrap(judge, 'judge') : null,
+        session,
+        trials,
+        runsRoot,
+        runGroup,
+        log,
+      });
+      throwIfEvaluationInterrupted();
+    } catch (error) { session.finish(error); throw error; }
+    session.finish(undefined, manifest);
+    log(renderSummary(manifest, join(runsRoot, runGroup, 'manifest.json')));
+    return manifest;
+  });
 }

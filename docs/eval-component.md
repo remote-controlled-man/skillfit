@@ -284,6 +284,13 @@ and retain/share an external copy of evidence hashes for provenance.
 
 ## Offline assessment and replay
 
+The current source build seals Ctrl+C/SIGTERM interruptions with available trial
+receipts, `_interruption.json`, stopped `_session.json` and `_artifacts.json`.
+Request execution preserves exit 130/143 and returns a stopped assessment after
+sealing. Partial/unknown costs stay incomplete and ineligible; no automatic retry
+or replacement occurs. See [the interruption contract](evaluation-interruption.md).
+The npm 0.10.0 archive predates this fix.
+
 ```bash
 node dist/cli.js report eval ./runs/revision-validation-001 --json
 node dist/cli.js report eval ./runs/revision-validation-001 --json --replay

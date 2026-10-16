@@ -2,6 +2,12 @@
 
 Use the existing CLI workflow to compare a pinned Skill with baseline on real failures. A historical replay does not create an upstream PR: its purpose is to grade both arms consistently before spending time installing a Skill.
 
+The current source build handles Ctrl+C/SIGTERM by stopping managed evaluation
+processes, retaining available output/usage and sealing a stopped run before
+exit 130/143. No partner/retry/replacement is dispatched after cancellation.
+See [interruption and retained records](evaluation-interruption.md); npm 0.10.0
+does not include this fix, and forced termination/power loss may prevent sealing.
+
 1. Prepare independent tasks from issue requirements and pinned bug/fix revisions. Keep the fix, grader and oracle outside trial workspaces. Run `bench check` offline and review its NOP, oracle and counterexample gates. The [lru-cache replay](../benches/contrib/oss-lru-cache/README.md) has three independently sourced failures; difficulty is initially unknown.
 2. Dry-run baseline calibration with the input mode you will later evaluate. For the three-task replay: `skillfit bench check benches/contrib/oss-lru-cache --calibrate --agent codex --input workspace --trials 2 --max-calls 6 --dry-run`. Run without `--dry-run` only after reviewing the fixed plan. Keep saturated tasks as regression controls; repair broken graders/environments before interpreting a floor.
 3. Declare a fresh paired run with the full Skill installed only in treatment: `skillfit eval <skill-dir> --mode installed --bench <bench-dir> --agent codex --trials 5 --max-calls <ceiling> --dry-run`. The declared count is tasks × trials × two arms, plus two judge calls per pair when enabled. The default ceiling equals the declared count. A lower ceiling rejects the entire plan; it never truncates tasks, retries errors, or adds replacement samples.

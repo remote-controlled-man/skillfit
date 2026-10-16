@@ -176,6 +176,11 @@ function jsonBenchCommand(): string | null {
   }
 }
 
+function failureExitCode(fallback: number): number {
+  const current = Number(process.exitCode);
+  return current === 130 || current === 143 ? current : fallback;
+}
+
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
@@ -269,7 +274,7 @@ async function main(): Promise<void> {
         }
         const result = await runEvalComponent(values.request, { dryRun: values['dry-run'], expectedPlanSha256: values['plan-sha'], log: line => console.error(line) });
         console.log(JSON.stringify(result, null, 2));
-        if (result.status === 'stopped') process.exitCode = 2;
+        if (result.status === 'stopped') process.exitCode = failureExitCode(2);
         return;
       }
       if (values.json) throw new Error('eval --json requires --request.');
@@ -441,20 +446,20 @@ main().catch((err: unknown) => {
   const benchCommand = jsonBenchCommand();
   if (benchCommand === 'check') {
     console.log(JSON.stringify(benchCheckError(err), null, 2));
-    process.exitCode = 2;
+    process.exitCode = failureExitCode(2);
     return;
   }
   if (benchCommand) {
     console.log(JSON.stringify({ schemaVersion: 1, kind: 'skillfit.bench-error', status: 'error',
       error: { code: 'INVALID_BENCH_OPERATION', message: err instanceof Error ? err.message : String(err) } }, null, 2));
-    process.exitCode = 2; return;
+    process.exitCode = failureExitCode(2); return;
   }
   if (process.argv.some(arg => arg === '--request' || arg.startsWith('--request=')) ||
       (process.argv.includes('--json') && process.argv.includes('report') && process.argv.includes('eval'))) {
     console.log(JSON.stringify(componentError(err), null, 2));
-    process.exitCode = 2;
+    process.exitCode = failureExitCode(2);
     return;
   }
   console.error(err instanceof Error ? err.message : String(err));
-  process.exitCode = 1;
+  process.exitCode = failureExitCode(1);
 });

@@ -6,6 +6,8 @@ import { collectInstalledSkillFingerprint, collectSkillBundle, type InstalledSki
 import { OUTPUT_CONTRACT } from './prompt.js';
 import { engagementError, gitInit, runVerifier, verifierFailure, verifierLogFor } from './runner.js';
 import { wilson95 } from './stats.js';
+import { throwIfEvaluationInterrupted } from './interruption.js';
+import { ExecutorFailure } from './types.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import type {
   Bench,
@@ -50,6 +52,7 @@ export interface TriggerTrialRecord {
   checks: VerifierCheck[] | null;
   error: string | null;
   tokens: TokenUsage | null;
+  usageStatus?: 'final' | 'partial' | 'unknown';
 }
 
 export interface TriggerTaskSummary {
@@ -116,6 +119,7 @@ async function runTriggerTrial(
   trial: number,
   installedSkill: InstalledSkillFingerprint,
 ): Promise<TriggerTrialRecord> {
+  throwIfEvaluationInterrupted();
   const task = plan.bench.tasks.find((t) => t.id === taskId);
   if (!task) throw new Error(`Unknown task: ${taskId}`);
   const runDir = join(plan.runsRoot, plan.runGroup, task.id, 'installed', `trial-${trial}`);
@@ -126,6 +130,7 @@ async function runTriggerTrial(
   cpSync(join(plan.bench.dir, task.fixture), runDir, { recursive: true });
   rmSync(join(runDir, MOCK_MARKER_FILE), { force: true });
   const gitInitialized = await gitInit(runDir);
+  throwIfEvaluationInterrupted();
 
   const taskPromptText = readFileSync(
     join(plan.bench.dir, task.promptTrigger ?? task.prompt),
@@ -156,6 +161,7 @@ async function runTriggerTrial(
   let rawOutput: string | null = null;
   let error: string | null = null;
   let tokens: TokenUsage | null = null;
+  let failedUsage: TriggerTrialRecord['usageStatus'];
   let triggered: boolean | null = null;
   try {
     if (!gitInitialized && task.verifierKind === 'command') {
@@ -169,6 +175,13 @@ async function runTriggerTrial(
     error = result.guardError ?? null;
   } catch (executorError) {
     error = (executorError as Error).message;
+    if (executorError instanceof ExecutorFailure) {
+      output = executorError.result.output;
+      rawOutput = executorError.result.rawOutput ?? null;
+      tokens = executorError.result.tokens ?? null;
+      triggered = executorError.result.skillTriggered ?? null;
+      failedUsage = executorError.result.usageStatus ?? 'unknown';
+    }
   }
   if (error === null) {
     error = await engagementError(output, task.verifierKind, runDir, gitInitialized);
@@ -212,6 +225,7 @@ async function runTriggerTrial(
     checks,
     error,
     tokens,
+    ...(failedUsage ? { usageStatus: failedUsage } : {}),
   };
   writeFileSync(
     join(runDir, '_result.json'),
@@ -382,8 +396,10 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
   for (const task of eligible) {
     const records: TriggerTrialRecord[] = [];
     for (let trial = 1; trial <= plan.trials; trial++) {
+      throwIfEvaluationInterrupted();
       plan.log?.(`Running ${task.id} / installed / trial ${trial}…`);
       records.push(await runTriggerTrial(plan, task.id, trial, installedSkill));
+      throwIfEvaluationInterrupted();
     }
     taskSummaries.push(summarizeTriggerTask(task.id, task.shouldTrigger ?? false, task.triggerClass, records));
   }
