@@ -65,8 +65,8 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 ## Install
 
 ```bash
-npx skillfit@0.10.0 --help
-npx skillfit@0.10.0 doctor
+npx skillfit@0.10.1 --help
+npx skillfit@0.10.1 doctor
 ```
 
 `npx skillfit` installs the published release and needs Node.js 22 or newer. The quick start below uses a source checkout so you can run the benches that ship in this repository. After `npm run build`, `node dist/cli.js` is that checkout's CLI. `skillfit` is the command installed from npm.
@@ -300,7 +300,7 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 - [x] Optional `triggerClass` (`explicit`, `implicit`, `contextual`) on positive tasks. Unlabeled tasks stay in the pooled recall.
 - [x] `--compete-installed` copies other user-level Skills into a trigger trial. System Skills and plugins outside the matrix directories are not copied. `installed` reports a long-body read separately from the task result; that read is not trigger recall.
 - [ ] An installation recommendation. The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the 13-Skill starter set are not evaluated as sets.
-- [x] npm publication (`skillfit@0.10.0`), with [verified CLI/OIDC publication and registry installation](docs/releases/0.10.0-verification.json). `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build` remain valid.
+- [x] npm publication (`skillfit@0.10.1`), with [verified CLI/OIDC publication and registry installation](docs/releases/0.10.1-verification.json). `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build` remain valid.
 - [x] Community bench and evidence submissions. Benches go in `benches/contrib`; evidence uses the Evidence submission issue template. CI runs the offline gates and does not call an agent.
 - [ ] Cursor / Gemini CLI / OpenCode adapters
 - [x] Streamable HTTP MCP preflight (`mcp check` transport `http`). It does not call a tool.
