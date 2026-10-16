@@ -10,8 +10,11 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 
 ## Prerequisites
 
-Check availability with `npx skillfit@0.10.0 --version`, or `node dist/cli.js --version` inside a clone.
+Check availability with `npx skillfit@0.11.0 --version`, or `node dist/cli.js --version` inside a clone.
 If neither works, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
+The complete planning, calibration, judge-cost and replay workflow below requires
+0.11.0 or newer. Use a built checkout while that version awaits registry availability;
+the immutable npm 0.10.1 package does not contain these additions.
 
 ## Which command for which question
 
@@ -19,30 +22,48 @@ If neither works, tell the user to install from https://github.com/remote-contro
 |---|---|
 | "我的 skill 有没有被用到 / are my skills used at all" | `skillfit report` — read-only, free, instant; start here |
 | "这个配置健不健康" | `skillfit doctor` — read-only |
-| "这个 skill 值不值得装 / does this skill help" | `skillfit eval <skill-path> --bench <bench> --agent <id> --trials 3` |
+| "这个 skill 值不值得装 / does this skill help" | Preview `skillfit eval <skill-path> --bench <bench> --agent <id> --trials 3 --dry-run`, then run within authorized spending |
 | "新版 Skill 是否值得采用 / evaluate a candidate for a Skill evolution workflow" | With npm 0.9.0 or a current checkout, use `eval --request <request.json> --dry-run`; read the [component contract](https://github.com/remote-controlled-man/skillfit/blob/main/docs/eval-component.md) for inputs and acceptance policy |
 | "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger`. Add `--compete-installed` to copy other user Skills; otherwise recall is an upper bound. Codex counts a `SKILL.md` read |
 | "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
-| "这个 MCP / AGENTS.md 真的有帮助吗" | `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/config-experiments.md) |
+| "这个 MCP / AGENTS.md 真的有帮助吗" | Preview `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3 --dry-run`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/config-experiments.md) |
 | "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]` |
 | "做代码修改 case" | `bench init <dir> --kind command --dry-run`, then apply within the authorized scope; replace the teaching case with the real fixture, prompt, verifier and oracle |
-| "给 Agent 看 case 校验失败原因" | `bench check <dir> --json` — offline gate IDs, evidence and remediation; rejects calibration |
+| "给 Agent 看 case 校验失败原因" | `bench check <dir> --json` — offline gate IDs, evidence and remediation; this is the integrity result, not calibration |
+| "先测 case 难度" | Version 0.11.0: `bench check <dir> --calibrate --agent <id> --task <id> --trials 1 --max-calls 1 --run-group <fresh-name> --json --dry-run`; calibrate only within authorized spending |
 | "查看或管理 case" | `bench list <dir> --json`, `bench show <dir> <id> --json`; preview `bench edit <dir> <id> --set field=value --json` or `bench remove <dir> <id> --json` |
-| "只测几个 case" | Repeat `eval --task <id>` or set request `taskIds`; preview the selected budget and keep validation independent |
+| "只测几个 case" | Repeat `eval --task <id>` or set request `taskIds`; source also supports task selection for calibration/trigger; preview the selected budget and keep validation independent |
 | "把结果交给另一台机器复现" | Preview `report eval <run-dir> --export <new-dir> --json`, then apply within the authorized scope; read the [portable package contract](https://github.com/remote-controlled-man/skillfit/blob/main/docs/replay-packages.md) for matching inputs, stopped costs and sharing review |
 | "把这次翻车存成任务" | `skillfit bench add <bench> --freeze --task <id> --prompt "..." --verifier-cmd "<cmd>"` |
 | "帮我起草 verifier" | same but `--decompose --agent <id>` — an agent drafts verifier + oracle; admitted only if the NOP + oracle gates pass |
 
 Executor choice: `--agent kimi-code` or `--agent codex` drives the local CLI (no API key needed).
-Without `--agent`, eval needs `SKILLFIT_API_KEY`/`OPENAI_API_KEY`. Trigger mode currently verified for
+It uses that CLI's authentication; offline preflight cannot confirm login.
+Without `--agent`, paired eval needs `SKILLFIT_API_KEY`/`OPENAI_API_KEY`. Trigger mode currently verified for
 kimi-code and codex only.
 
 ## Spend discipline
 
-Real eval runs cost tokens and time. Before any non-dry-run eval:
+Real eval and calibration runs cost tokens and time. Before any non-dry-run run:
 
 1. Run with `--dry-run` and show planned calls (selected tasks × trials × conditions, plus enabled judges).
 2. State the call ceiling and known cost limits. Continue within existing spending authorization; ask only when the proposed run exceeds it or spending has not been authorized.
+
+Version 0.11.0 supports JSON preview/confirmation, fixed task selection,
+five-field spending limits and executor timeouts for ordinary eval, trigger and
+calibration. JSON execution needs the same explicit fresh `--run-group` and
+exact preview hash: `plan.sha256` for eval, `plan.planSha256` for calibration.
+Dry previews execute no verifier/oracle/agent. Inspect the environment's nested
+`status`: a generated `planned` result can still be blocked by a missing CLI.
+Login always remains offline unknown. Live calibration/eval block hard case or
+environment failures; warnings and unknown evidence are not interchangeable.
+See [shared planning](https://github.com/remote-controlled-man/skillfit/blob/main/docs/eval-planning.md).
+
+Calibration has one no-Skill baseline arm and defaults to two trials; trigger
+has one installed arm, defaults to five and skips unlabeled selected tasks.
+Retain positive and negative labels for trigger measurement. Trigger already
+uses on-disk files; omit `--input`, paired order and judge options. A small
+development mechanism check cannot become independent validation by renaming it.
 
 ## Interpretation discipline (do not skip)
 
@@ -65,6 +86,12 @@ Missing usage or an incomplete batch cannot authorize adoption under either obje
 Optional request `spendingBudget` (0.10.0+) sets five whole-batch stop lines;
 reaching a line or losing complete final usage stops subsequent calls. An in-flight
 call can overshoot; do not treat it as a provider hard cap or retry permission.
+In version 0.11.0, those stops include optional ordinary-eval judge calls.
+Read separate Agent/judge/total `invocationCosts` and coverage; older missing
+judge receipts remain unknown. An explicitly enabled API judge without
+credentials fails instead of silently disabling judging. Ctrl+C/SIGTERM stop
+managed work and retain records; do not retry, replace or expand stopped calls
+without a fresh authorized plan.
 
 - Read the verdict line, the discordant-pair counts, and the CI — not just the delta. `inconclusive` means
   the run cannot tell, not that the skill is useless.
@@ -73,7 +100,13 @@ call can overshoot; do not treat it as a provider hard cap or retry permission.
   0pp delta as a finding.
 - Trigger mode: report recall and false-trigger rate separately, with their CIs. A skill that never fires
   has zero realized value regardless of content quality.
-- Always cite the manifest path (`runs/<group>/manifest.json`) so the user can audit.
+- Cite the actual native run and summary path: paired/trigger `manifest.json`,
+  calibration `_calibration.json`, or retained session/receipts for a stopped run.
+- Source supports native audit, offline delivery replay and portable export for
+  supported sealed calibration/trigger and new judge runs. Historical standalone
+  summaries stay unverified; missing receipts/runtime support cannot be fabricated.
+  Replay preserves observations and cannot authorize single-arm adoption or prove
+  independent validation. Paired `--policy`/`--records` do not apply to single-arm reports.
 - Full metric definitions: `docs/metrics.md` in the skillfit repo.
 
 ## Safety

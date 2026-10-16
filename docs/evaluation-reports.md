@@ -4,7 +4,7 @@ Version 0.10.1 uses the same saved-evidence assessment for Markdown and JSON.
 Both formats accept a manifest file, native run directory or portable replay
 package directory. Neither starts an agent or changes the saved run.
 
-Source after npm 0.10.1 also displays the saved [Agent environment preflight](eval-agent-preflight.md).
+Version 0.11.0 also displays the saved [Agent environment preflight](eval-agent-preflight.md).
 JSON exposes `agentPreflight`; human reports omit its local evidence paths.
 Missing historical metadata stays null. Reading/replaying a report does not
 repeat environment/authentication probes or claim the current machine is ready.
@@ -56,8 +56,8 @@ and [portable packages](replay-packages.md). Review project data before sharing.
 
 ## Calibration and trigger reports (source after npm 0.10.1)
 
-The current source also recognizes baseline calibration and trigger runs. Build
-source to use this addition; the immutable npm 0.10.1 archive is unchanged.
+Version 0.11.0 recognizes baseline calibration and trigger runs; the immutable
+npm 0.10.1 archive is unchanged.
 Markdown and JSON use the same read-only dispatcher:
 
 ```bash
@@ -106,16 +106,38 @@ mode, source warnings and the distinction between a `SKILL.md` read and a Skill
 invocation stay visible. Historical input/output token aggregates are not a
 complete cost population; absent cache/final-usage evidence remains unknown.
 
-These descriptive single-arm kinds always return `evidence.verified: false`
-with scope `saved-summary-only`, and `acceptance.decision: "inconclusive"`,
+Standalone historical single-arm summaries return `evidence.verified: false`
+with scope `saved-summary-only`. Version 0.11.0 can audit sealed native single-arm
+receipts with scope `single-arm-native`; `evidence.verified` reports the actual
+inventory/ledger/input/receipt check result. Both return `acceptance.decision: "inconclusive"`,
 `eligibleForUpgrade: false`, `automaticUpgrade: false`. Parsing a consistent
 summary is not a paired native audit, independent validation or adoption decision.
-They do not enter the paired efficacy protocol. The existing request-based
+Verifying single-arm evidence does not establish an A/B effect. They do not enter the paired efficacy protocol. The existing request-based
 revision component and paired report JSON contract remain unchanged.
 
-`--replay`, `--policy`, `--records` and `--bench` are paired-report options;
-single-arm reports reject them in both formats instead of silently ignoring
-them. This addition does not enable portable calibration/trigger replay exports.
+`--policy` and external `--records` remain paired-report options. Sealed native
+single-arm reports now accept `--replay` and an optional matching `--bench` only
+with replay. Regrading uses disposable saved deliveries. Trigger discovery is
+recomputed from retained observations, not a new Agent invocation. Changed
+deliveries, fingerprints and verdicts fail verification. Calibration/trigger
+exports retain the original compiled implementation and reject older runtimes
+without single-arm replay support; see [portable packages](replay-packages.md).
 Successful rendering exits 0; invalid human inputs exit 1, while invalid JSON
 reports use the existing error envelope and exit 2. Saved input files are never
 rewritten, and reading any of these reports makes zero model or agent CLI calls.
+
+## Judge spending and stop reasons (source after npm 0.10.1)
+
+Paired Markdown and JSON additionally show `invocationCosts`: separate primary,
+judge and combined populations. The original Agent A/B quality and cost tables
+remain unchanged. Successful, failed and interrupted judge orders have independent
+receipts and final/partial/unknown usage. Missing historical judge usage stays
+unknown. See [all executor roles](eval-costs.md#all-executor-roles-source-after-npm-0101).
+
+Budget stops retain `session.stopCode` and safe reason text. Single-arm reports
+show the same frozen `spendingBudget` limits/latest state as paired reports.
+The native audit and any upgrade eligibility are separate decisions; all
+single-arm, stopped and insufficient-evidence results remain ineligible.
+The [single-arm schema](schemas/single-arm-report.schema.json) and
+[calibration command schema](schemas/calibration-result.schema.json) describe
+their machine envelopes.

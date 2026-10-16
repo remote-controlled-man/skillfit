@@ -8,7 +8,7 @@ import { policyHash, parseAcceptancePolicy, readComponentJson, record } from './
 import { costChanges, type EvidenceAudit } from './eval-acceptance.js';
 import { sha256File, sha256Text } from './hash.js';
 import { collectInstalledSkillTarget } from './installed-skill.js';
-import { runVerifier } from './runner.js';
+import { runVerifier, summarizeJudge } from './runner.js';
 import { verdictFromOutput } from './verifier-summary.js';
 import { parseEvalReport } from '../commands/eval-report.js';
 import { pairConditions, type PairOrder } from './types.js';
@@ -16,6 +16,10 @@ import { NATIVE_DIFF_PATH, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
 import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } from './eval-budget.js';
 import { verifyInputSnapshot } from './input-snapshot.js';
 import { assertRecordedAgentEnvironment } from './agent-preflight.js';
+import { judgeCallReceipt } from './judge-audit.js';
+import { buildJudgePrompt, judgeOrder, type JudgeCallReceipt, type JudgeResult } from './judge.js';
+import { summarizeInvocationCosts } from './invocation-costs.js';
+import type { BudgetCallIdentity } from './eval-budget.js';
 
 function inside(root: string, path: string): boolean {
   const rel = relative(root, path);
@@ -149,6 +153,8 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     let invoked = 0;
     const expectedAgentOrder: string[] = [];
     const budgetReceipts = new Map<string, CostObservation>();
+    const expectedDispatches: { role: 'agent' | 'judge'; identity: BudgetCallIdentity; receipt: CostObservation; promptSha256?: string }[] = [];
+    const judgeCalls: JudgeCallReceipt[] = [];
     const rawTasks = raw.tasks as Record<string, unknown>[];
     for (const [taskIndex, task] of report.tasks.entries()) {
       assert.ok(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(task.id), 'Unsafe task id.');
@@ -203,7 +209,10 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
         }
         const b = pair.baseline! as CostObservation & Record<string, unknown>, t = pair.treatment! as CostObservation & Record<string, unknown>;
         if (pairOrder) for (const arm of pairConditions(pairOrder, taskIndex, trial)) {
-          if (pair[arm]!.executorInvoked) expectedAgentOrder.push(`${task.id}/${arm}/trial-${trial}`);
+          if (pair[arm]!.executorInvoked) {
+            expectedAgentOrder.push(`${task.id}/${arm}/trial-${trial}`);
+            expectedDispatches.push({ role: 'agent', identity: { taskId: task.id, condition: arm, trial }, receipt: pair[arm]! });
+          }
         }
         const graded = b.error === null && t.error === null;
         const changes: { name: string; change: 'improved' | 'regressed' }[] = [];
@@ -224,35 +233,88 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
       assert.deepEqual(summarizeCosts(taskAll, taskPaired), source.costs, `Task ${task.id} cost accounting differs from its receipts.`);
       const outcomes = record(source.outcomes, 'paired outcomes');
       for (const arm of ['baseline', 'treatment'] as const) assert.deepEqual(taskPaired[arm].map(r => r.passed), outcomes[arm]);
+      if (raw.judge != null) {
+        assert.ok(raw.invocationCosts != null, 'Judge usage unrecorded; cannot verify full invocation accounting.');
+        const judged: JudgeResult[] = [];
+        for (let trial = 1; trial <= report.trials; trial++) {
+          const baseline = budgetReceipts.get(`${task.id}/baseline/trial-${trial}`)!;
+          const treatment = budgetReceipts.get(`${task.id}/treatment/trial-${trial}`)!;
+          if (baseline.error !== null || treatment.error !== null) continue;
+          const seed = `${raw.runGroup}:${task.id}:${trial}`, order = judgeOrder(seed), calls: JudgeCallReceipt[] = [];
+          for (const callIndex of [1, 2] as const) {
+            const path = `${task.id}/judge-trial-${trial}/call-${callIndex}.json`;
+            assert.equal(typeof files[path], 'string', 'Judge invocation receipt was not sealed.');
+            const call = judgeCallReceipt(readComponentJson(member(root, path)).value);
+            assert.equal(call.taskId, task.id); assert.equal(call.trial, trial); assert.equal(call.callIndex, callIndex); assert.equal(call.seed, seed);
+            assert.equal(call.firstCondition, order[callIndex - 1]); assert.equal(call.error, null);
+            assert.deepEqual(call.executor, raw.judge, 'Judge receipt executor differs from frozen metadata.');
+            if (details.executorTimeoutSeconds !== undefined && plan.injectedExecutor === false && record(raw.judge, 'judge').kind === 'cli') {
+              assert.equal(record(call.timing.execution, 'judge execution timing').timeoutMs, Number(details.executorTimeoutSeconds) * 1000, 'Judge deadline differs from the native plan.');
+            }
+            const nonce = call.prompt.match(/<<<BEGIN ANSWER A ([0-9a-f]{16})>>>/)?.[1]; assert.ok(nonce, 'Judge prompt anonymity nonce is missing.');
+            const benchSource = inputSnapshot?.roots.get('bench'); assert.ok(benchSource, 'Judge prompt auditing requires the sealed bench input.');
+            const frozenBench = loadBench(benchSource), definition = frozenBench.tasks.find(t => t.id === task.id); assert.ok(definition);
+            const baseOutput = readFileSync(member(root, `${task.id}/baseline/trial-${trial}/_output.md`), 'utf8');
+            const treatmentOutput = readFileSync(member(root, `${task.id}/treatment/trial-${trial}/_output.md`), 'utf8');
+            assert.deepEqual(call.prompt, buildJudgePrompt(readFileSync(join(benchSource, definition.prompt), 'utf8'),
+              definition.rubric ? readFileSync(join(benchSource, definition.rubric), 'utf8') : null,
+              call.firstCondition === 'baseline' ? baseOutput : treatmentOutput,
+              call.firstCondition === 'baseline' ? treatmentOutput : baseOutput, nonce), 'Judge prompt differs from the sealed task and anonymized answers.');
+            calls.push(call); judgeCalls.push(call); audit.receipts++;
+            expectedDispatches.push({ role: 'judge', identity: { role: 'judge', taskId: task.id, trial, callIndex }, receipt: call, promptSha256: call.promptSha256 });
+          }
+          const forward = calls[0]!.scores!, reverse = calls[1]!.scores!;
+          const result: JudgeResult = { baselineScore: (forward.baseline + reverse.baseline) / 2, treatmentScore: (forward.treatment + reverse.treatment) / 2,
+            consistent: Math.sign(forward.baseline - forward.treatment) === Math.sign(reverse.baseline - reverse.treatment),
+            firstCondition: order[0], raw: `${calls[0]!.output}\n--- reverse order ---\n${calls[1]!.output}`, calls };
+          const path = `${task.id}/judge-trial-${trial}.json`; assert.equal(typeof files[path], 'string');
+          assert.deepEqual(readComponentJson(member(root, path)).value, { trial, seed, ...result }, 'Judge pair summary differs from independent invocation receipts.');
+          judged.push(result);
+        }
+        assert.deepEqual(source.judge, summarizeJudge(judged), 'Judge task summary differs from invocation receipts.');
+      }
     }
     assert.deepEqual(summarizeCosts(all, paired), report.overall.costs, 'Overall cost accounting differs from receipts.');
     const ledger = readFileSync(join(root, '_calls.jsonl'), 'utf8').trim().split('\n').filter(Boolean).map(line => record(JSON.parse(line), 'ledger'));
+    const startedEvents = ledger.filter(e => e.event === 'started'), terminalEvents = ledger.filter(e => e.event === 'finished' || e.event === 'failed');
+    assert.equal(terminalEvents.length, report.experiment.callsFinished, 'Terminal call ledger differs from session accounting.');
+    for (const [ordinal, event] of startedEvents.entries()) {
+      assert.equal(event.call, ordinal + 1, 'Call ledger dispatch numbers must be consecutive.');
+      assert.ok(event.role === 'agent' || event.role === 'judge');
+      assert.ok(typeof event.promptSha256 === 'string' && /^[a-f0-9]{64}$/.test(event.promptSha256));
+      assert.equal(terminalEvents.filter(terminal => terminal.call === event.call).length, 1, 'Each dispatched call needs one terminal ledger receipt.');
+    }
     assert.equal(ledger.filter(e => e.event === 'started' && e.role === 'agent').length, invoked);
     assert.equal(ledger.filter(e => e.event === 'started').length, report.experiment.callsStarted);
     if (pairOrder) assert.deepEqual(ledger.filter(e => e.event === 'started' && e.role === 'agent')
       .map(e => String(e.workdir).split(/[\\/]/).slice(-3).join('/')), expectedAgentOrder,
     'Recorded execution order differs from the frozen pair order.');
+    if (raw.invocationCosts !== undefined) {
+      assert.deepEqual(raw.invocationCosts, summarizeInvocationCosts([...all.baseline, ...all.treatment], judgeCalls, raw.judge != null), 'Full invocation accounting differs from agent/judge receipts.');
+      const started = ledger.filter(e => e.event === 'started');
+      assert.equal(started.length, expectedDispatches.length, 'Agent/judge receipt coverage differs from the dispatch ledger.');
+      for (const [index, event] of started.entries()) {
+        const expected = expectedDispatches[index]!; assert.equal(event.role, expected.role, 'Agent/judge dispatch order differs from frozen execution.');
+        if (expected.promptSha256) assert.equal(event.promptSha256, expected.promptSha256, 'Judge invocation prompt hash differs from the call ledger.');
+      }
+    }
     if (details.spendingBudget !== undefined) {
       const limits = parseSpendingBudget(details.spendingBudget);
       assert.ok(pairOrder, 'Budget replay requires the recorded pair order.');
       assert.ok(typeof files['_budget.jsonl'] === 'string', 'Budget events are not sealed.');
       const events = readFileSync(join(root, '_budget.jsonl'), 'utf8').trim().split('\n').filter(Boolean).map(line => JSON.parse(line) as unknown);
-      assert.equal(events.length, expectedAgentOrder.length * 2, 'Budget event coverage differs from calls.');
+      assert.equal(events.length, expectedDispatches.length * 2, 'Budget event coverage differs from calls.');
       const observations: CostObservation[] = [];
-      for (const [ordinal, path] of expectedAgentOrder.entries()) {
-        const [taskId, condition, trialPath] = path.split('/');
-        const trial = Number(trialPath!.slice('trial-'.length));
+      for (const [ordinal, dispatch] of expectedDispatches.entries()) {
         const before = spendingBudgetState(limits, observations); assertSpendingCanContinue(before);
-        assert.deepEqual(events[ordinal * 2], { phase: 'before-call', taskId, condition, trial, state: before }, 'Budget before-call state differs from receipts.');
-        observations.push(budgetReceipts.get(path)!);
+        assert.deepEqual(events[ordinal * 2], { phase: 'before-call', ...dispatch.identity, state: before }, 'Budget before-call state differs from receipts.');
+        observations.push(dispatch.receipt);
         const after = spendingBudgetState(limits, observations);
         assert.equal(after.incomplete.length, 0, 'Budget run has missing final usage.');
         assert.notEqual(after.reason, 'EXECUTION_FAILED');
-        assert.deepEqual(events[ordinal * 2 + 1], { phase: 'after-call', taskId, condition, trial, state: after }, 'Budget after-call state differs from receipts.');
+        assert.deepEqual(events[ordinal * 2 + 1], { phase: 'after-call', ...dispatch.identity, state: after }, 'Budget after-call state differs from receipts.');
       }
     } else assert.equal(files['_budget.jsonl'], undefined, 'Budget events were not declared in the native plan.');
-    // This component does not run a judge whose separate usage would be absent from agent costs.
-    assert.ok(raw.judge == null, 'Judge usage is not covered by component accounting.');
     audit.verified = true;
   } catch (error) { audit.reasons.push(error instanceof Error ? error.message : String(error)); audit.policyBound = false; }
   return audit;
@@ -280,9 +342,41 @@ export function stoppedAccounting(runDir: string) {
     } else { missingReceipts++; all[arm].push({ executorInvoked: true, passed: false, error: 'Invocation receipt missing', durationSeconds: NaN, tokens: null, usageStatus: 'unknown' }); }
   }
   const populations = summarizeCosts(all, paired);
+  const judgeEvents = ledger.filter(e => e.event === 'started' && e.role === 'judge');
+  const retainedJudgeCalls = new Map<string, { path: string; value: unknown }>();
+  const walkJudge = (dir: string, prefix = ''): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name === '.git' || entry.name === '_inputs') continue;
+      const path = join(dir, entry.name), rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (/^[a-zA-Z0-9][a-zA-Z0-9._-]*\/judge-trial-[0-9]+$/.test(rel)) {
+        for (const name of ['call-1.json', 'call-2.json']) if (existsSync(join(path, name))) {
+          try {
+            const value = readComponentJson(join(path, name)).value, r = record(value, 'judge receipt');
+            if (typeof r.promptSha256 === 'string') retainedJudgeCalls.set(r.promptSha256, { path: `${rel}/${name}`, value });
+          } catch { /* Unparseable files remain on disk; unmatched dispatch is unknown below. */ }
+        }
+      } else if (!prefix) walkJudge(path, rel);
+    }
+  };
+  walkJudge(root);
+  let missingJudgeReceipts = 0;
+  const judgeObservations = judgeEvents.map(event => {
+    const retained = retainedJudgeCalls.get(String(event.promptSha256));
+    if (retained) {
+      try { const receipt = judgeCallReceipt(retained.value); assert.equal(receipt.executorInvoked, true); return receipt; }
+      catch (error) { invalidReceipts.push({ path: retained.path, reason: String(error) }); }
+    }
+    missingJudgeReceipts++;
+    return { executorInvoked: true, passed: false, error: 'Judge invocation receipt missing or invalid', durationSeconds: NaN, tokens: null, usageStatus: 'unknown' as const };
+  });
+  const nativePlan = existsSync(join(root, '_plan.json')) ? record(readComponentJson(join(root, '_plan.json')).value, 'native plan') : null;
+  const judgeRequested = judgeEvents.length > 0 || Boolean(nativePlan?.details && record(nativePlan.details, 'native plan details').judge != null);
+  const invocationCosts = summarizeInvocationCosts([...all.baseline, ...all.treatment], judgeObservations, judgeRequested);
+  if (missingJudgeReceipts) invocationCosts.judgeUsage = 'unknown';
   return { populations, startedAgentDispatches: all.baseline.length + all.treatment.length,
-    recordedExecutorInvocations: populations.attempts.baseline.runs + populations.attempts.treatment.runs - missingReceipts - invalidReceipts.length,
-    invocationsWithUnknownReceipts: missingReceipts + invalidReceipts.length,
+    invocationCosts, startedJudgeDispatches: judgeEvents.length, judgeInvocationsWithUnknownReceipts: missingJudgeReceipts,
+    recordedExecutorInvocations: populations.attempts.baseline.runs + populations.attempts.treatment.runs - missingReceipts - invalidReceipts.filter(r => !r.path.includes('/judge-trial-')).length,
+    invocationsWithUnknownReceipts: missingReceipts + invalidReceipts.filter(r => !r.path.includes('/judge-trial-')).length,
     ...(invalidReceipts.length ? { invalidReceipts } : {}),
-    scope: 'Known agent invocation spending from stopped-run receipts; missing fields remain unknown. No paired efficacy comparison or exact bill.' };
+    scope: 'Known primary Agent spending and separate all-role invocation totals from stopped-run receipts; missing fields remain unknown. No paired efficacy comparison or exact bill.' };
 }

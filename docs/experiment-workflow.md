@@ -9,7 +9,7 @@ See [interruption and retained records](evaluation-interruption.md). Forced
 termination/power loss may prevent sealing. The same release enforces offline
 case gates and seals project input copies before dispatch. See [sealed inputs](evaluation-input-snapshots.md).
 
-Source after npm 0.10.1 shares reviewed plans between ordinary paired eval and
+Version 0.11.0 shares reviewed plans between ordinary paired eval and
 Agent requests, including [budget/deadline/output controls](eval-planning.md).
 Use `--json --dry-run` for a machine-readable ordinary plan. JSON execution
 requires its hash and an explicit fresh group. Request `baselineSkill: null`

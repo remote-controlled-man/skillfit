@@ -275,7 +275,7 @@ test('changing the request policy during a call stops further calls and retains 
   assert.equal(calls, 1); assert.equal(result.status, 'stopped'); assert.equal(result.acceptance.eligibleForUpgrade, false);
   assert.ok('costs' in result);
   assert.equal(result.costs.populations?.attempts.baseline.metrics.input.knownTotal, 10);
-  const replay = await reportEvalComponent(f.runDir); assert.deepEqual(replay.costs, result.costs);
+  const replay = await reportEvalComponent(f.runDir); assert.ok('costs' in replay); assert.deepEqual(replay.costs, result.costs);
 });
 
 test('executor failures preserve partial usage and missing cache counts remain unknown', async t => {
@@ -605,11 +605,12 @@ test('ordinary execution seals the shared reviewed plan and retains replayable c
   const preview = await runEvalCli(base); assert.ok('plan' in preview);
   const result = await runEvalCli({ ...base, dryRun: false }, preview.plan.sha256);
   assert.equal(result.status, 'completed'); assert.ok('evidence' in result); assert.equal(result.evidence.verified, true, result.evidence.reasons.join('; '));
+  assert.ok('costs' in result);
   const native = JSON.parse(readFileSync(join(f.runDir, '_plan.json'), 'utf8'));
   assert.deepEqual(native.details.reviewedPlan, preview.plan); assert.equal(native.details.executorTimeoutSeconds, 17);
   assert.equal(native.details.component, undefined); assert.equal(result.acceptance.eligibleForUpgrade, false);
   for (const path of ['bench', 'old', 'new']) rmSync(join(f.root, path), { recursive: true });
-  const replay = await reportEvalComponent(f.runDir, { replay: true }); assert.equal(replay.evidence.verified, true);
+  const replay = await reportEvalComponent(f.runDir, { replay: true }); assert.equal(replay.evidence.verified, true); assert.ok('costs' in replay);
   assert.deepEqual(replay.costs, result.costs); assert.deepEqual(replay.spendingBudget?.limits, spendingBudget);
   const output = join(f.root, 'portable'); await exportEvaluation(f.runDir, output, { yes: true, log: () => {} });
   rmSync(f.runDir, { recursive: true });

@@ -1,7 +1,7 @@
 # Agent evaluation component
 
 Use the existing `eval` engine through a versioned JSON request to compare a
-candidate Skill with its previous complete version. Source after npm 0.10.1 also
+candidate Skill with its previous complete version. Version 0.11.0 also
 accepts an explicit `baselineSkill: null` to compare with no Skill installed by
 the harness. See [shared planning, budgets and deadlines](eval-planning.md).
 The component returns quality
@@ -14,7 +14,7 @@ Build the bench around the task being evaluated, with deterministic acceptance
 checks and an independent reference repair. Bundled and contributed benches are
 examples, not a universal test of every Skill. See the [authoring guide](bench-authoring.md).
 
-Source after npm 0.10.1 adds [offline Agent environment preflight](eval-agent-preflight.md).
+Version 0.11.0 adds [offline Agent environment preflight](eval-agent-preflight.md).
 `plan.evaluation.agentPreflight` separates executable availability, declared
 capabilities, same-name global Skill conflicts and unknown authentication. A dry
 plan can be blocked; execution returns `AGENT_PREFLIGHT_FAILED` with the checks
@@ -30,7 +30,7 @@ Warnings and unknowns remain separate and nonblocking. Successful probes are
 frozen in the native plan and included in JSON assessment/replay; they do not
 authorize adoption or alter statistical/cost requirements.
 
-The same source build [seals original inputs](evaluation-input-snapshots.md)
+Version 0.11.0 [seals original inputs](evaluation-input-snapshots.md)
 before dispatch. Preview declares `plan.evaluation.inputSnapshot.status: "pending"`;
 completed/stopped JSON assessment includes `inputSnapshot` with the plan-bound
 index hash and local copy/storage cost. Native replay/export use sealed inputs
@@ -104,7 +104,7 @@ the versioned quality/efficiency policies. The runtime
 parser rejects unknown fields and invalid ranges. `policy` is optional and defaults
 to the conservative values above. `baselineSkill` is required: a string selects
 the previous complete Skill; explicit null selects no harness-installed Skill in
-baseline (source after npm 0.10.1). Omitted/empty/invalid values are rejected.
+baseline (version 0.11.0). Omitted/empty/invalid values are rejected.
 When comparing revisions, the two complete Skills must have the same
 frontmatter name and different fingerprints. Inherited global configuration
 still applies in both arms. No-Skill comparisons retain measurements but cannot
@@ -148,8 +148,9 @@ final usage, an execution error, or a configuration guard error stops further
 calls immediately. There is no retry, replacement or automatic expansion. If the
 last predeclared call reaches a line with complete evidence, the completed cohort
 is retained; exceeding a line is never hidden or clamped. A stopped prefix cannot
-authorize adoption. Judges and trigger evaluations reject this option because
-their separate spending is outside this paired-agent accounting.
+authorize adoption. The request component still runs without a judge. Current
+source also supports these limits in ordinary paired evaluations with a judge,
+trigger runs and calibration; each role consumes the same run-wide budget.
 
 The native `_budget.jsonl` records before/after snapshots. Completed receipt audit
 recomputes every snapshot in declared execution order and checks its sealed
@@ -210,6 +211,7 @@ callers should retain unknown/new fields for forward-compatible reporting.
 | `costs.populations` | Surviving paired costs and all agent invocations, including graded failures, errored calls and excluded successful partners |
 | `costs.changes` | Descriptive total and per-success changes; null when coverage or the baseline denominator cannot support the comparison |
 | `costs.efficiency` | Explicit policy version 2 only: all-invocation uncached-input point, task-block interval, per-task changes and fixed protocol |
+| `invocationCosts` | Primary, optional judge and combined invocation populations with final/partial/unknown coverage; historical absent usage remains unknown |
 | `spendingBudget` | Optional frozen absolute stop lines and retained event state; completed native audit verifies snapshots against receipts |
 | `evidence` | Native file/receipt integrity, policy binding, replay coverage and evidence locations; `pairs` retains each pair's outcomes, named-check changes and full cost observations |
 | `acceptance` | `decision`, `eligibleForUpgrade`, policy, reason codes and scope; `automaticUpgrade` is always false |
@@ -318,7 +320,7 @@ and retain/share an external copy of evidence hashes for provenance.
 
 ## Offline assessment and replay
 
-The public `report eval` dispatcher in source after npm 0.10.1 also reads
+The public `report eval` dispatcher in version 0.11.0 also reads
 calibration/trigger summaries as distinct descriptive JSON kinds. They are not
 revision-component results and never enter its paired adoption policy. See
 [report types and option restrictions](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
@@ -365,8 +367,11 @@ samples. A model upgrade or changed inputs requires a fresh bounded declaration.
 
 Use `report eval <run-dir> --export <new-dir> --json` for a read-only export plan,
 then `--yes` to build a portable directory with unchanged receipts, matching
-inputs, pinned runtime and a checksum/replay entry point. Native paired runs
-without a judge are supported, including stopped runs. Missing inputs prevent
+inputs, pinned runtime and a checksum/replay entry point. Version 0.11.0 supports
+paired runs with/without a judge, calibration and trigger sessions, including
+stopped prefixes. Single-arm replay verifies saved observations and local grading,
+never paired efficacy. Historical inputs must retain a runtime supporting their
+replay type; missing judge usage is not reconstructed. Missing inputs prevent
 export; partial/unknown costs and ineligible acceptance remain visible. See
 [portable offline packages](replay-packages.md) for relocated inputs and privacy
 review. This does not rerun an agent or produce new efficacy observations.

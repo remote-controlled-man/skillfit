@@ -4,16 +4,13 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
 import { loadBench, selectBenchTasks } from '../harness/bench.js';
-import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
-import { assertInputModeSupported } from '../harness/prompt.js';
-import { runTrial, runVerifier, verifierFailure } from '../harness/runner.js';
-import type { ExperimentPlan } from '../harness/runner.js';
-import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from '../harness/constants.js';
+import { runVerifier, verifierFailure } from '../harness/runner.js';
+import { MOCK_MARKER_FILE } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
 import type { VerifierCheck } from '../harness/verifier-summary.js';
-import type { BenchTask, Executor, InputMode, SkillBundle } from '../harness/types.js';
+import type { BenchTask, Executor } from '../harness/types.js';
 import { confirm as confirmPrompt } from './confirm.js';
 import { commandTemplateFiles } from './bench-command-template.js';
 import { benchDiagnostic, benchCheckEvidence, type BenchCheckCode, type BenchCheckEvidence,
@@ -22,6 +19,10 @@ export type { BenchCheckReport } from './bench-check-report.js';
 import { BACKUP_SUFFIX } from './install.js';
 import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import type { Check } from './doctor.js';
+import { assertAgentEnvironment, renderAgentEnvironment } from '../harness/agent-preflight.js';
+import { calibrationCasePreflight, executeCalibration, prepareCalibration, type BenchCheckCalibrateOptions } from './bench-calibration.js';
+export { prepareBenchCalibration } from './bench-calibration.js';
+export type { BenchCheckCalibrateOptions, BenchCalibrationPreview } from './bench-calibration.js';
 
 export interface BenchInitOptions {
   dir?: string;
@@ -31,18 +32,6 @@ export interface BenchInitOptions {
   yes?: boolean;
   confirm?: (question: string) => Promise<boolean>;
   log?: (msg: string) => void;
-}
-
-export interface BenchCheckCalibrateOptions {
-  maxCalls?: number;
-  sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
-  agent?: string;
-  inputMode?: InputMode;
-  dryRun?: boolean;
-  trials?: number;
-  executor?: Executor;
-  runsRoot?: string;
-  runGroup?: string;
 }
 
 export interface BenchCheckOptions {
@@ -335,6 +324,14 @@ function renderCheck({ status, message }: Check): string {
 }
 
 export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCheckReport> {
+  return withEvaluationInterrupts(() => runBenchCheckWithinInterrupts(options));
+}
+
+export async function runBenchCalibration(options: BenchCheckOptions & { calibrate: BenchCheckCalibrateOptions }): Promise<BenchCheckReport> {
+  return withEvaluationInterrupts(() => runBenchCheckWithinInterrupts(options, true));
+}
+
+async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictCalibration = false): Promise<BenchCheckReport> {
   const log = options.log ?? ((msg: string) => console.log(msg));
   const dir = resolve(options.dir ?? '.');
   const checks: BenchDiagnostic[] = [];
@@ -347,18 +344,30 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
 
   let bench;
   try {
-    bench = selectBenchTasks(loadBench(dir), options.taskIds);
+    bench = selectBenchTasks(loadBench(dir), options.taskIds ?? (options.calibrate ? options.calibrate.taskIds : undefined));
   } catch (error) {
     push('BENCH_LOAD', 'FAIL', `bench does not load: ${(error as Error).message}`);
     return finish(dir, checks, log, false, identity);
   }
   identity = { name: bench.name, sha256: bench.contentSha256, taskCount: bench.tasks.length };
   push('BENCH_LOAD', 'PASS', `bench.json valid (${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…)`);
-  if (options.calibrate) {
-    const trials = options.calibrate.trials ?? CALIBRATE_DEFAULT_TRIALS;
-    if (!Number.isInteger(trials) || trials < 1 || trials > 20) throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
-    validateCallBudget(bench.tasks.length * trials, options.calibrate.maxCalls);
+  const calibration = options.calibrate ? prepareCalibration({ dir, taskIds: options.taskIds, calibrate: options.calibrate }) : null;
+  if (calibration) {
+    log(renderAgentEnvironment(calibration.plan.agentPreflight));
+    if (options.calibrate && options.calibrate.dryRun) {
+      push('CALIBRATION', 'INFO', `calibration executor: ${calibration.plan.executor?.detail ?? calibration.plan.executor?.model ?? 'unavailable'}`);
+      push('CALIBRATION', 'INFO', `calibration plan: ${bench.tasks.length} task(s) × ${calibration.plan.trials} baseline run(s), input ${calibration.plan.inputMode}; ${calibration.plan.plannedCalls} calls, ceiling ${calibration.plan.maxCalls}; deadline ${calibration.plan.executorTimeoutSeconds}s; no verifier, oracle or agent started and no run directory created`);
+      push('CALIBRATION', 'INFO', `Plan SHA-256: ${calibration.plan.planSha256}; fresh output ${calibration.plan.outputDir}`);
+      return finish(dir, checks, log, true, identity);
+    }
+    try { assertAgentEnvironment(calibration.plan.agentPreflight); }
+    catch (error) {
+      if (strictCalibration) throw error;
+      push('CALIBRATION', 'FAIL', (error as Error).message);
+      return finish(dir, checks, log, true, identity);
+    }
   }
+  const offlineStarted = performance.now();
 
   let labeledTasks = 0;
   let negativeTasks = 0;
@@ -498,136 +507,25 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
     }
   }
 
-  if (options.calibrate) {
-    await calibrateBench(bench, options.calibrate, (status, message) => push('CALIBRATION', status, message), log);
+  if (calibration) {
+    const offlineReport = { dir, bench: identity, checks, failures: checks.filter(check => check.status === 'FAIL').length,
+      warnings: checks.filter(check => check.status === 'WARN').length };
+    const casePreflight = calibrationCasePreflight(bench, offlineReport, Math.round(performance.now() - offlineStarted));
+    log(`Case preflight: ${casePreflight.status}; ${casePreflight.summary.failures} failure(s), ${casePreflight.summary.warnings} warning(s), ${casePreflight.summary.unknown} unknown(s); 0 model calls`);
+    for (const check of casePreflight.checks.filter(check => check.status === 'UNKNOWN')) log(`[UNKNOWN] ${check.code}: ${check.message}`);
+    if (casePreflight.status === 'blocked') {
+      if (strictCalibration) {
+        const { CasePreflightFailed } = await import('./eval-preflight.js');
+        throw new CasePreflightFailed(casePreflight);
+      }
+      push('CALIBRATION', 'FAIL', 'Offline case preflight blocked calibration; no agent calls or run directory were created. Fix every hard failure before a fresh plan.');
+      for (const check of casePreflight.checks.filter(check => check.code === 'INPUT_CHANGED')) push('CALIBRATION', 'FAIL', check.message);
+    } else {
+      await executeCalibration(calibration, casePreflight, (status, message) => push('CALIBRATION', status, message), log);
+    }
   }
 
   return finish(dir, checks, log, options.calibrate !== false && options.calibrate !== undefined, identity);
-}
-
-const CALIBRATE_DEFAULT_TRIALS = 2;
-
-async function calibrateBench(
-  bench: ReturnType<typeof loadBench>,
-  options: BenchCheckCalibrateOptions,
-  push: (status: Check['status'], message: string) => void,
-  log: (msg: string) => void,
-): Promise<void> {
-  if (!options.agent && !options.executor) {
-    push('FAIL', '--calibrate needs --agent (a CLI executor for real runs)');
-    return;
-  }
-  const trials = options.trials ?? CALIBRATE_DEFAULT_TRIALS;
-  const inputMode = options.inputMode ?? 'snapshot';
-  const capture = options.agent && getAgent(options.agent).headless.streamJson;
-  const executor = options.executor ?? CliExecutor.forAgent(options.agent ?? '',
-    capture ? { triggerSkillName: 'calibration-none' } : undefined);
-  assertInputModeSupported(inputMode, executor);
-  if (!Number.isInteger(trials) || trials < 1 || trials > 20) {
-    throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
-  }
-  const plannedCalls = bench.tasks.length * trials;
-  const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
-  if (options.dryRun) {
-    push('INFO', `calibration executor: ${executor.describe().detail ?? executor.describe().model}`);
-    push('INFO', `calibration plan: ${bench.tasks.length} task(s) × ${trials} baseline run(s), input ${inputMode}; ${plannedCalls} calls, ceiling ${maxCalls}; no agent started and no run directory created`);
-    return;
-  }
-  return withEvaluationInterrupts(async () => {
-    const emptySkillDir = mkdtempSync(join(tmpdir(), 'skillfit-calibrate-'));
-    let session: ExperimentSession | undefined;
-    let failure: unknown;
-    try {
-      const skill: SkillBundle = {
-        kind: 'skill',
-        name: 'calibration-none',
-        sourceDir: emptySkillDir,
-        files: [],
-        sha256: '0'.repeat(64),
-        payload: '',
-        overlays: {},
-      };
-      const runGroup =
-        options.runGroup ??
-        `calibrate-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}-${String(Date.now() % 100000).padStart(5, '0')}`;
-      if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
-      const runsRoot = options.runsRoot ?? resolve('runs');
-      push('INFO', `calibration plan: ${plannedCalls} baseline calls, ceiling ${maxCalls}; fresh output ${join(runsRoot, runGroup)}`);
-      session = new ExperimentSession({ bench, target: skill, groupDir: join(runsRoot, runGroup), plannedCalls,
-        maxCalls, agent: options.agent, injected: options.executor !== undefined, ...options.sessionOptions,
-        workspaces: bench.tasks.flatMap(task => Array.from({ length: trials }, (_, i) =>
-          join(runsRoot, runGroup, task.id, 'baseline', `trial-${i + 1}`))),
-        details: { mode: 'calibration', inputMode, trials, executor: executor.describe() } });
-      // Calibration measures inject-mode baseline difficulty, so it drives the inject path with an
-      // empty skill payload (prompt.ts drops a falsy payload, so no skill block is injected) and runs
-      // one arm per task. This used to route through trigger mode, whose `shouldTrigger` filter
-      // silently calibrated zero tasks on an unlabelled bench and then reported PASS 0/0.
-      const plan: ExperimentPlan = {
-        bench,
-        target: skill,
-        inputMode,
-        executor: session.wrap(executor, 'agent'),
-        trials,
-        runsRoot,
-        runGroup,
-        log,
-      };
-      push('INFO', `calibration: ${trials} run(s) per task with no skill installed (baseline difficulty; input ${inputMode})`);
-      let discriminative = 0;
-      let tasksRun = 0;
-      const taskResults: { id: string; passes: number; completed: number; errors: number }[] = [];
-      for (const task of bench.tasks) {
-        let passes = 0;
-        let completed = 0;
-        let errors = 0;
-        for (let trial = 1; trial <= trials; trial++) {
-          const outcome = await runTrial(plan, task.id, 'baseline', trial);
-          throwIfEvaluationInterrupted();
-          if (outcome.error !== null) {
-            errors++;
-            continue;
-          }
-          completed++;
-          if (outcome.passed) passes++;
-        }
-        taskResults.push({ id: task.id, passes, completed, errors });
-        if (completed === 0) {
-          push(
-            'WARN',
-            `${task.id}: no completed runs${errors > 0 ? ` (${errors} ungraded run(s))` : ''} — cannot assess difficulty`,
-          );
-          continue;
-        }
-        tasksRun++;
-        const rate = passes / completed;
-        if (rate >= 0.9) {
-          push('WARN', `${task.id}: baseline ${passes}/${completed} — too easy (saturated; cannot discriminate skill effects)`);
-        } else if (rate <= 0.1) {
-          push('WARN', `${task.id}: baseline ${passes}/${completed} — too hard or broken (floor)`);
-        } else {
-          discriminative++;
-          push('PASS', `${task.id}: baseline ${passes}/${completed} — discriminative band`);
-        }
-      }
-      session.settle();
-      const result = { schemaVersion: 1, runGroup, inputMode, trials, tasks: taskResults, experiment: session.summary() };
-      writeFileSync(join(session.groupDir, '_calibration.json'), JSON.stringify(result, null, 2) + '\n', { flag: 'wx' });
-      session.finish(undefined, result, '_calibration.json');
-      if (session.summary().status !== 'completed') push('FAIL', 'Calibration stopped or incomplete; inspect _session.json and _calls.jsonl before a fresh plan.');
-      if (tasksRun === 0) {
-        push('FAIL', `calibration ran 0 task(s): difficulty unmeasured (runs under ${runGroup})`);
-        return;
-      }
-      push(
-        discriminative === tasksRun ? 'PASS' : 'INFO',
-        `calibration: ${discriminative}/${tasksRun} task(s) in the discriminative band (runs under ${runGroup}; use --trials 3+ for steadier reads)`,
-      );
-    } catch (error) { failure = error; throw error; }
-    finally {
-      session?.finish(failure);
-      rmSync(emptySkillDir, { recursive: true, force: true });
-    }
-  });
 }
 
 function finish(

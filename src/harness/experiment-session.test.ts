@@ -129,6 +129,14 @@ test('executor failure stops further actual calls and keeps a failure receipt wi
   assert.match(readFileSync(join(s.groupDir, '_calls.jsonl'), 'utf8'), /"event":"failed"/);
 });
 
+test('finalizing arbitrary errors keeps generic session diagnostics instead of copying secret-bearing messages', t => {
+  const s = setup(t), session = new ExperimentSession(s.options);
+  session.finish(new Error('secret-bearing untrusted executor error'));
+  const saved = readFileSync(join(s.groupDir, '_session.json'), 'utf8');
+  assert.doesNotMatch(saved, /secret-bearing/); assert.equal(session.summary().stopCode, undefined);
+  assert.match(session.summary().stopReason!, /Experiment setup or execution stopped/);
+});
+
 test('trust normalization covers declared pure blocks only and preserves other configuration bytes', () => {
   const trust = { table: 'projects', field: 'trust_level', value: 'trusted' };
   const base = 'model = "m"\n'; const block = '[projects."/tmp/trial"]\ntrust_level = "trusted"\n';

@@ -184,6 +184,7 @@ test('a missing judge CLI blocks before spending on the primary injected executo
 test('saved preflight survives changed machine inputs and portable replay without new readiness/auth probes', async t => {
   const f = setup(t), preview = await runEvalCli({ ...f.base, dryRun: true });
   const result = await runEvalCli(f.base, preview.plan.sha256); assert.ok('agentPreflight' in result);
+  assert.ok('costs' in result);
   assert.equal(result.status, 'completed'); assert.equal(result.evidence.verified, true);
   assert.deepEqual(result.agentPreflight, preview.plan.evaluation.agentPreflight);
   f.conflict(); rmSync(f.binary); rmSync(f.skill, { recursive: true }); rmSync(f.bench, { recursive: true });

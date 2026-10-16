@@ -150,7 +150,7 @@ test('positional JSON eval rejects unconfirmed execution and invalid new control
   assert.equal(existsSync(join(cwd, 'runs')), false);
 });
 
-test('ordinary API previews bind explicit deadlines while unsupported trigger plans and budgets fail offline', t => {
+test('API, trigger and judged paired previews bind deadlines and budgets without starting executors', t => {
   const cwd = mkdtempSync(join(tmpdir(), 'skillfit-cli-api-plan-')); t.after(() => rmSync(cwd, { recursive: true, force: true }));
   const env = { ...process.env, SKILLFIT_API_KEY: 'synthetic-dry-run-only', SKILLFIT_API_BASE_URL: 'https://offline.invalid/v1', SKILLFIT_JUDGE: '0' };
   const api = spawnSync(process.execPath, [CLI, ...COMMANDS[0]!, '--dry-run', '--json', '--executor-timeout-seconds', '9'], { cwd, env, encoding: 'utf8' });
@@ -159,11 +159,13 @@ test('ordinary API previews bind explicit deadlines while unsupported trigger pl
   const defaults = spawnSync(process.execPath, [CLI, ...COMMANDS[0]!, '--dry-run', '--json'], { cwd, env, encoding: 'utf8' });
   assert.equal(defaults.status, 0, defaults.stderr); assert.equal(JSON.parse(defaults.stdout).plan.evaluation.executorTimeoutSeconds, 120);
   const trigger = spawnSync(process.execPath, [CLI, ...COMMANDS[0]!, '--agent', 'codex', '--mode', 'trigger', '--dry-run', '--json'], { cwd, env, encoding: 'utf8' });
-  assert.equal(trigger.status, 2); assert.match(JSON.parse(trigger.stdout).error.message, /require a paired evaluation/);
+  assert.equal(trigger.status, 0, trigger.stderr); assert.equal(JSON.parse(trigger.stdout).plan.evaluation.mode, 'trigger');
   const file = join(cwd, 'budget.json'); writeFileSync(file, JSON.stringify({ input: 100, cachedInput: 100, uncachedInput: 100, output: 100, durationSeconds: 100 }));
   for (const flags of [['--mode', 'trigger', '--agent', 'codex'], ['--judge-agent', 'codex', '--agent', 'codex']]) {
     const result = spawnSync(process.execPath, [CLI, ...COMMANDS[0]!, '--dry-run', '--json', '--spending-budget', file, ...flags], { cwd, env, encoding: 'utf8' });
-    assert.equal(result.status, 2); assert.match(JSON.parse(result.stdout).error.message, /paired evaluation|without a judge/);
+    assert.equal(result.status, 0, result.stderr); const preview = JSON.parse(result.stdout).plan.evaluation;
+    assert.deepEqual(preview.spendingBudget, JSON.parse(readFileSync(file, 'utf8')));
+    assert.equal(preview.plannedCalls, flags[0] === '--mode' ? 25 : 100);
   }
   assert.equal(existsSync(join(cwd, 'runs')), false);
 });

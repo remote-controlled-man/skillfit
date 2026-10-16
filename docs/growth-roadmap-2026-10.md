@@ -7,9 +7,11 @@ create a case, verify its acceptance checks, preview a small budget, then inspec
 outcomes and complete spending. Bundled benches teach the format. Repeatedly
 optimizing one external debugging Skill is not the product roadmap.
 
-The published CLI is 0.10.1, with a [verified registry installation](releases/0.10.1-verification.json)
+The 0.10.1 release has a [verified registry installation](releases/0.10.1-verification.json)
 and [installed-feature replay](releases/0.10.1-feature-smoke.json). The user-authorized
-October 16 case workflow is complete. No live model calls were added or authorized
+October 16 case workflow is complete. The October 17 source work extends the
+basic workflow across calibration, trigger and judge runs; publication and final
+verification are tracked separately. No live model calls were added or authorized
 for this delivery.
 
 ## Available foundations
@@ -30,7 +32,8 @@ of the CLI's evidence gates, not a universal Skill benchmark.
 
 ## Delivery order
 
-Work is sequential. Dates are work records, not timers or unattended execution.
+Independent implementation and verification work may run in parallel. Dates are
+work records, not timers or unattended execution.
 The code-editing starter is merged in PR #24 and JSON checks in PR #25.
 The October 16 delivery completes task selection, case management and portable
 exports, with publication tracked separately from source and CI completion. PR #26 passed 600 offline tests and Linux/macOS/Windows CI.
@@ -49,6 +52,22 @@ Items 2–5 address basic usability gaps, not missing statistical methods.
 Inspect existing APIs before implementation and avoid duplicating request preview,
 report export, failure freezing or existing budget controls.
 
+## October 17 source foundations (after npm 0.10.1)
+
+| User need | Source behavior | Boundary |
+| --- | --- | --- |
+| Avoid paying for a broken calibration case | Hard offline gates and Agent environment checks before live calibration; recheck input/environment changes | Warnings and unknown evidence remain separate; authentication is unknown offline |
+| Stop an independent case check | Ctrl+C/SIGTERM terminate verifier/oracle descendants and clean disposable copies | No artificial completed check or native run is created before dispatch |
+| Use the same controls across modes | Calibration and trigger JSON previews/confirmation, task selection, call/spending limits and executor deadline | Calibration uses `plan.planSha256`; eval uses `plan.sha256`; neither single-arm mode proves paired benefit |
+| Account for enabled judges | Per-invocation judge receipts and Agent/judge/combined costs; shared budget stops; missing API credentials fail explicitly | Historical missing usage remains unknown; no exact bill is inferred |
+| Take supported results to another machine | Shared native audit, saved-delivery replay and portable export for calibration, trigger and new judge evidence | No new model calls/detections; historical missing receipts or runtime support cannot be invented |
+
+See [planning](eval-planning.md), [interruption](evaluation-interruption.md),
+[cost accounting](eval-costs.md), [report types](evaluation-reports.md) and
+[portable packages](replay-packages.md). These are source features until a new
+release is published and its installed package is checked. The statistical
+protocol, dated evidence and automatic-upgrade prohibition are unchanged.
+
 ## Later decisions
 
 The 0.10.1 release includes interruption cleanup, offline case preflight, sealed
@@ -61,8 +80,8 @@ This reporting correction adds no live calls or npm publication.
 The same source line now shares ordinary/Agent paired plans, budget stop lines
 and executor deadlines, with ordinary JSON preview/confirmation and explicit
 no-Skill request baselines. [Shared planning](eval-planning.md) documents defaults,
-frozen limits and unchanged adoption restrictions. These additions also require
-a source build until a later npm release.
+frozen limits and unchanged adoption restrictions. Version 0.11.0 includes
+these additions, with registry delivery tracked in its release record.
 
 Source eval also performs [offline Agent environment preflight](eval-agent-preflight.md)
 in preview and before dispatch: CLI availability, matrix compatibility, existing

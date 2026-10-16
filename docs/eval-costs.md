@@ -5,12 +5,13 @@ Paired `eval` runs record descriptive agent costs in `tasks[].costs` and
 terminal summary and `report eval <manifest.json>` show the same cost tables.
 Reading a report makes no model call and does not change the manifest or verdict.
 
-Source after npm 0.10.1 exposes the same paired spending guard through ordinary
+Version 0.11.0 exposes the same paired spending guard through ordinary
 `--spending-budget <file>` and request `spendingBudget`. The five limits and
 effective primary executor deadline are visible in the shared plan and sealed
 for offline replay; the source budget file is unnecessary after execution.
-Limits stop between calls and can overshoot in flight. Judges and trigger runs
-reject this guard. These are operational limits, separate from relative
+Limits stop between calls and can overshoot in flight. Version 0.11.0 also
+applies the guard to calibration, trigger runs and both judge orders; judge
+calls count against the same run-wide limits. These are operational limits, separate from relative
 adoption ceilings or a provider invoice. See [shared planning](eval-planning.md).
 
 ## Two populations
@@ -28,6 +29,41 @@ executor, such as frozen-input guards or Git setup failures. They do not enter
 spending totals. An executor invocation does not prove that a provider accepted
 a request or billed it. These counts do not include the optional judge, earlier
 calibration cohorts or another experiment's setup spending.
+
+## All executor roles (source after npm 0.10.1)
+
+New paired manifests and JSON reports add `invocationCosts`, independently of
+the unchanged primary Agent's `overall.costs`. It contains `agent`, `judge` and
+`total` populations and `judgeUsage: recorded | unknown | not-requested`;
+see the [schema](schemas/invocation-costs.schema.json). Each population retains
+the five measures and final/partial/unknown coverage below. Judge `passes`
+counts successfully parsed grading calls, so the combined `passes` is not a task
+success rate and must not be used as the denominator of Agent cost per success.
+
+Every judge order saves a version-1 `skillfit.judge-call` receipt under
+`<task>/judge-trial-<n>/call-1.json` or `call-2.json`. It retains the anonymous
+prompt and hash, output, available raw output, executor, invocation/error state,
+token coverage and monotonic elapsed interval. Invalid grading JSON still costs
+an invocation and stops subsequent work. Failure/interruption retains partial or
+unknown usage; it never becomes a free or successfully graded call. Missing
+credentials for an explicitly enabled judge block before primary spending.
+
+Reports and offline replay verify saved primary/judge receipts and their ledger.
+Replay checks retained judge prompts/scores/usage; it never asks a judge to grade
+again. Historical missing judge receipts keep judge/combined totals unknown and
+cannot qualify for a complete native export. Legacy primary costs remain readable.
+Calibration and trigger reports expose their own single-arm `usage` population;
+they do not acquire a paired cost comparison.
+
+The spending recorder checks before each invocation and after each retained
+receipt. Execution errors or incomplete final usage stop even after the last
+scheduled call; a reached limit prevents the next call. Stopped native sessions
+preserve a controlled `stopCode` (`EXECUTION_FAILED`, `FINAL_USAGE_MISSING` or
+`SPENDING_BUDGET_REACHED`) and safe reason text. No automatic retry or replacement
+is added. Historical absence of `stopCode` is not reconstructed; a received
+SIGINT/SIGTERM retains the interruption as the primary stop reason. Generation,
+local verifier/setup work and another experiment's calls
+are outside these executor token populations; input sealing has separate costs.
 
 Each population records runs, successful tasks and five separate measures:
 input tokens, cached input tokens, uncached input tokens, output tokens and

@@ -13,6 +13,7 @@ import { EvaluationInterrupted, evaluationSignal, throwIfEvaluationInterrupted }
 import { freezeInputSnapshot, verifyInputSnapshot, type InputSnapshot, type PinnedInput } from './input-snapshot.js';
 import { loadBench } from './bench.js';
 import { globalSkillRoots } from './agent-preflight.js';
+import { spendingStopFrom, type SpendingStopCode } from './eval-budget.js';
 
 export interface ExperimentSummary {
   schemaVersion: 1;
@@ -22,6 +23,7 @@ export interface ExperimentSummary {
   callsStarted: number;
   callsFinished: number;
   stopReason: string | null;
+  stopCode?: SpendingStopCode;
   planSha256: string;
 }
 
@@ -181,6 +183,7 @@ export class ExperimentSession {
   private callsStarted = 0;
   private callsFinished = 0;
   private stopReason: string | null = null;
+  private stopCode: SpendingStopCode | undefined;
   private finished = false;
   private readonly guardFiles: NonNullable<SessionOptions['guardFiles']>;
   private readonly nativeDiffTool: boolean;
@@ -343,7 +346,7 @@ export class ExperimentSession {
           const result = error instanceof ExecutorFailure ? error.result : null;
           writeFileSync(join(this.groupDir, `_interrupted-judge-${call}.json`), JSON.stringify({
             schemaVersion: 1, call, role, error: (error as Error).message, result,
-            scope: 'Interrupted judge output and available usage only; separate judge spending is not a complete primary-agent cost total.',
+            scope: 'Supplementary interrupted judge output and available usage. Independent judge-call receipts retain invocation accounting; primary Agent comparison stays separate.',
           }, null, 2) + '\n', { flag: 'wx' });
         }
         if (this.callsFinished < call) {
@@ -358,7 +361,7 @@ export class ExperimentSession {
   summary(): ExperimentSummary {
     return { schemaVersion: 1, status: this.stopReason ? 'stopped' : this.callsFinished === this.plannedCalls ? 'completed' : 'incomplete',
       plannedCalls: this.plannedCalls, maxCalls: this.maxCalls, callsStarted: this.callsStarted, callsFinished: this.callsFinished,
-      stopReason: this.stopReason, planSha256: this.planSha256 };
+      stopReason: this.stopReason, ...(this.stopCode ? { stopCode: this.stopCode } : {}), planSha256: this.planSha256 };
   }
 
   settle(): void {
@@ -375,6 +378,11 @@ export class ExperimentSession {
         schemaVersion: 1, signal: interruption.signalName, receivedAt: interruption.receivedAt,
         exitCode: interruption.exitCode, automaticRetry: false,
       }, null, 2) + '\n', { flag: 'wx' });
+    }
+    const spendingStop = spendingStopFrom(error);
+    if (spendingStop && !(interruption instanceof EvaluationInterrupted)) {
+      this.stopCode = spendingStop.code;
+      this.stopReason ??= spendingStop.message;
     }
     if (error && !this.stopReason) this.stopReason = 'Experiment setup or execution stopped; inspect the command error and retained receipts.';
     this.settle();

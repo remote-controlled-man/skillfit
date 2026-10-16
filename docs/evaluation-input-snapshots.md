@@ -23,7 +23,8 @@ status: "pending"}`; no input archive exists yet. Its policy is part of the
 approved plan, while actual copy time is recorded only after execution starts.
 
 Sealing also applies to sessions used by trigger mode and baseline calibration.
-Their existing paired-export restrictions are unchanged. A separate global
+Version 0.11.0 exports/replays their sealed native evidence too; the original
+frozen runtime must support single-arm replay. A separate global
 configuration installation is never performed by this feature.
 
 ## What is saved

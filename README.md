@@ -65,8 +65,8 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 ## Install
 
 ```bash
-npx skillfit@0.10.1 --help
-npx skillfit@0.10.1 doctor
+npx skillfit@0.11.0 --help
+npx skillfit@0.11.0 doctor
 ```
 
 `npx skillfit` installs the published release and needs Node.js 22 or newer. The quick start below uses a source checkout so you can run the benches that ship in this repository. After `npm run build`, `node dist/cli.js` is that checkout's CLI. `skillfit` is the command installed from npm.
@@ -114,13 +114,13 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 This is a synthetic teaching case, not a Skill benchmark. Replace the fixture, prompt, verifier and oracle with your actual task before measuring benefit. The preview shows two planned calls and starts none. Omit `--kind` (or use `--kind output`) for the existing reply-grading starter. Capture an observed failure with `bench add --freeze`, or import a maintainer fix with `--from-commit`; follow the [authoring guide](docs/bench-authoring.md).
 
-Agent callers can use `bench check --json` for versioned gate identifiers, task IDs, locations, failure reasons, remediation suggestions and bounded verifier evidence. stdout is JSON only; exit codes distinguish passed checks, failed checks and errors. This interface is offline only and rejects `--calibrate`; warnings still need review. See the [JSON contract](docs/bench-check-json.md).
+Agent callers can use `bench check --json` for versioned gate identifiers, task IDs, locations, failure reasons, remediation suggestions and bounded verifier evidence. stdout is JSON only; exit codes distinguish passed checks, failed checks and errors. Without `--calibrate`, this remains an offline integrity check; warnings still need review. Version 0.11.0 also supports a separate `--calibrate --json --dry-run` plan, with explicit hash confirmation before JSON execution. See the [JSON contract](docs/bench-check-json.md).
 
-Source after npm 0.10.1 supports quoted verifier/oracle arguments, including script paths with spaces. Recognized grader load/runtime errors and explicit infrastructure-error messages block offline gates or become ungraded evaluation errors, preserving agent costs. Normal task failures and assertions remain graded failures. See [verifier commands and error reporting](docs/verifier-contract.md).
+Version 0.11.0 supports quoted verifier/oracle arguments, including script paths with spaces. Recognized grader load/runtime errors and explicit infrastructure-error messages block offline gates or become ungraded evaluation errors, preserving agent costs. Normal task failures and assertions remain graded failures. See [verifier commands and error reporting](docs/verifier-contract.md).
 
-The same source checks the Agent environment in eval previews and before dispatch: CLI file availability, matrix capability matching and global same-name Skill conflicts. Known failures block before case probes or model calls; login remains explicitly unknown offline. Checks are sealed with the run and read without probing the current machine during report/replay. See [Agent environment preflight](docs/eval-agent-preflight.md).
+The same source checks the Agent environment in eval and baseline-calibration previews and before dispatch: CLI file availability, matrix capability matching and global same-name Skill conflicts. Known failures block before case probes or model calls; login remains explicitly unknown offline. Checks are sealed with the run and read without probing the current machine during report/replay. See [Agent environment preflight](docs/eval-agent-preflight.md).
 
-List and inspect cases, then preview an edit or removal. `--yes` applies a validated manifest change with a backup; removal preserves the case files. Select a smaller eval using repeated `--task`, or `taskIds` in a JSON request. IDs and order are frozen, budgets count only selected cases, and small samples remain indicative. See [case management](docs/case-management.md).
+List and inspect cases, then preview an edit or removal. `--yes` applies a validated manifest change with a backup; removal preserves the case files. Select a smaller paired eval, trigger run or baseline calibration using repeated `--task`, or `taskIds` in a paired JSON request. IDs and order are frozen, budgets count only selected cases, and small samples remain indicative. See [case management](docs/case-management.md).
 
 ```bash
 node dist/cli.js bench list my-bench --json
@@ -169,7 +169,9 @@ Requests can also pin `executorTimeoutSeconds` (default 600) for both versions. 
 
 Available in 0.10.0: optional `spendingBudget` sets five absolute batch stop lines. Reaching a line or losing complete final usage stops subsequent calls and retains spending; an in-flight call may overshoot. See the [guard contract](docs/eval-component.md#input-and-execution).
 
-Source after npm 0.10.1 unifies ordinary paired eval and Agent request plans. Ordinary eval also accepts `--json`, `--spending-budget <file>`, `--executor-timeout-seconds`, `--pair-order`, `--runs-root` and `--run-group`; JSON execution requires the preview hash. Requests can set `baselineSkill: null` for no Skill installed by the harness in baseline, matching ordinary installed eval without `--baseline-skill`. This measures installation benefit but cannot authorize revision adoption. See [shared settings and confirmation](docs/eval-planning.md).
+Version 0.11.0 unifies ordinary paired/trigger eval planning and paired Agent request plans. Ordinary eval also accepts `--json`, `--spending-budget <file>`, `--executor-timeout-seconds`, `--runs-root` and `--run-group`, plus `--pair-order` for paired runs; JSON execution requires the preview hash. Requests can set `baselineSkill: null` for no Skill installed by the harness in baseline, matching ordinary installed eval without `--baseline-skill`. This measures installation benefit but cannot authorize revision adoption. See [shared settings and confirmation](docs/eval-planning.md).
+
+The same source gives baseline calibration and trigger runs JSON previews, frozen task selection, call/spending limits and per-call deadlines. Preview runs no verifier, oracle or agent; hard case/environment failures block live execution. JSON execution needs an explicit fresh group and the exact preview hash (`plan.planSha256` for calibration, `plan.sha256` for eval). Calibration measures baseline difficulty; trigger measures discovery. Neither establishes paired Skill benefit or authorizes adoption.
 
 Failed Codex JSON calls can retain identity-bound partial usage from local numeric counters. Private transcript bodies stay out of exports, and partial usage never satisfies the final-cost or adoption gates.
 
@@ -209,11 +211,13 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 In 0.10.1, Markdown and JSON accept the same manifest, native run directory or portable package, including stopped/incomplete batches. Both assess saved evidence and explain acceptance separately from a quality verdict. `--replay`, `--records` and `--policy` work in either format; successful rendering does not authorize an upgrade. See [report inputs and states](docs/evaluation-reports.md).
 
-Source after npm 0.10.1 also reads calibration directories/`_calibration.json` and trigger manifests in either format. Completed calibration stays completed and shows baseline difficulty; trigger reports show recall, false-trigger rate, precision, F1 and detection coverage. These separate single-arm reports cannot authorize adoption or use paired replay/policy options. See [report types](docs/evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
+Version 0.11.0 also reads calibration directories/`_calibration.json` and trigger manifests in either format. Completed calibration stays completed and shows baseline difficulty; trigger reports show recall, false-trigger rate, precision, F1 and detection coverage. New sealed single-arm runs support native audit, offline delivery replay and portable export; standalone historical summaries stay unverified. These separate reports cannot authorize adoption or use paired acceptance-policy options. See [report types](docs/evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
 
 New reports separate cached and uncached input, output, and elapsed time, with spending per successful task that includes failed runs. They show surviving pairs alongside all agent invocations, and mark partial or missing timeout usage instead of treating it as zero. Chat-completions API responses retain explicit cached-input counts, including zero; missing or invalid counts stay unknown. Older manifests identify these fields as unrecorded. See [cost accounting](docs/eval-costs.md).
 
-Export a native paired run without a judge as a portable directory with original receipts, matching inputs, pinned compiled CLI, checksums and a replay entry point. Export previews by default; missing inputs or an existing destination stop it. The whole package can move to another machine. Replay calls no model, preserves stopped/unknown costs and authorizes no upgrade. Review project data before sharing; see [portable replay packages](docs/replay-packages.md).
+Version 0.11.0 records `invocationCosts` for primary Agent, judge and total spending, preserving failed/partial/unknown usage. Optional judge spending shares the batch stop lines; an explicitly enabled API judge with missing credentials fails instead of silently turning off. Historical missing judge receipts stay unknown. See [cost accounting](docs/eval-costs.md).
+
+That source can export a supported sealed native paired, calibration or trigger run, including new paired runs with judge receipts, as a portable directory with original receipts, matching inputs, pinned compiled CLI, checksums and a replay entry point. Export previews by default; missing inputs, required receipt/runtime support or an existing destination stop it. The whole package can move to another machine. Replay calls no model, preserves stopped/unknown costs and authorizes no upgrade. Review project data before sharing; see [portable replay packages](docs/replay-packages.md).
 
 Version 0.10.1 seals input copies before dispatch: later edits/deletions of the original Skill, bench or request no longer prevent export/replay. The plan records snapshot integrity, local copy time and storage; a damaged declared snapshot is rejected. Historical runs still need matching recovered inputs. See [sealed evaluation inputs](docs/evaluation-input-snapshots.md).
 

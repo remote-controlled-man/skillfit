@@ -1,9 +1,9 @@
 # Offline Agent environment preflight
 
-Source after npm 0.10.1 checks the Agent environment in `eval` preview and before
-live dispatch. Build the current checkout; npm 0.10.1 does not include this
-addition. Ordinary paired eval, Agent requests and human trigger eval share the
-check implementation. This is separate from [offline case integrity](eval-case-preflight.md).
+Version 0.11.0 checks the Agent environment in `eval` preview and before
+live dispatch. npm 0.10.1 does not include this
+addition. Ordinary paired/trigger eval, Agent requests and baseline calibration
+share the check implementation. This is separate from [offline case integrity](eval-case-preflight.md).
 
 ## What is checked
 
@@ -51,7 +51,10 @@ It contains `status`, matrix version/date, ordered `checks`, summary counts and
 `cost: {modelCalls: 0, cliInvocations: 0}`. Each check has a stable `code`,
 `role` (`agent`/`judge`), matrix Agent ID or null, `status`, English `message`,
 `remediation` and evidence `paths`. It does not include credentials or Skill bodies.
-Human preview prints the same results. Trigger keeps its existing human preview.
+Human preview prints the same results. Trigger JSON uses the same
+`plan.evaluation.agentPreflight`; calibration JSON uses `plan.agentPreflight`
+inside its separate `skillfit.calibration-plan`. Both previews execute no
+verifier, oracle, agent or judge. See [planning and confirmation](eval-planning.md).
 
 `ready` means zero known failures **within this offline scope**. Login, installed
 CLI flag compatibility and unlisted configuration remain unverified. A planned
@@ -69,7 +72,7 @@ contamination guard remains a hard block; it is now visible earlier.
 
 After successful case probes, the environment is inspected again before native
 setup. Changed availability/conflicts require a fresh preview and block calls.
-The deterministic report is bound into the reviewed paired plan, so changed
+The deterministic report is bound into the reviewed eval/calibration plan, so changed
 binary resolution or check results also invalidate its confirmation hash.
 Authentication unknown is nonblocking and never becomes an authenticated claim;
 spending still needs the caller's authorization and working credentials.
@@ -78,8 +81,9 @@ spending still needs the caller's authorization and working credentials.
 
 Native plans seal `details.agentPreflight`. Paired JSON assessment exposes the
 recorded value as top-level `agentPreflight`; human reports show state/checks
-without local evidence paths. Trigger reports expose the saved metadata too,
-under their existing unverified single-arm report scope. Historical runs without
+without local evidence paths. Calibration and trigger reports expose the saved
+metadata too; sealed native records can be audited/replayed, while standalone
+historical summaries remain unverified. Historical runs without
 the field return null; no past environment is reconstructed.
 
 Report, export and portable replay retain the original check results. They never

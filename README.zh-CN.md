@@ -65,8 +65,8 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## 安装
 
 ```bash
-npx skillfit@0.10.1 --help
-npx skillfit@0.10.1 doctor
+npx skillfit@0.11.0 --help
+npx skillfit@0.11.0 doctor
 ```
 
 `npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。下面的快速开始用的是源码检出，这样才能跑本仓库自带的 bench。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI。`skillfit` 是从 npm 装上的命令。
@@ -114,13 +114,13 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 这是用于教格式的合成案例，不是 Skill 基准。在衡量收益前，把初始文件、任务请求、评分器和参考修复一起替换为你的真实任务。预览会显示计划调用两次，实际一次也不会启动。不传 `--kind`（或用 `--kind output`）仍生成原来的回复评分模板。已有失败可用 `bench add --freeze` 固定，维护者修复可用 `--from-commit` 导入；参见[编写指南](docs/bench-authoring.md)。
 
-Agent 可以用 `bench check --json` 读取带版本的校验标识、任务 ID、位置、失败原因、处理建议和限长的评分器证据。标准输出只有 JSON，退出码区分通过、校验失败和执行错误。这项接口仅做离线校验，拒绝与 `--calibrate` 混用；警告仍需检查。参见 [JSON 契约](docs/bench-check-json.md)。
+Agent 可以用 `bench check --json` 读取带版本的校验标识、任务 ID、位置、失败原因、处理建议和限长的评分器证据。标准输出只有 JSON，退出码区分通过、校验失败和执行错误。不加 `--calibrate` 时，它仍是离线完整性校验，警告仍需检查。0.11.0还支持独立的 `--calibrate --json --dry-run` 计划；JSON 正式执行前必须明确确认计划哈希。参见 [JSON 契约](docs/bench-check-json.md)。
 
-npm 0.10.1 之后的源码支持给校验器和参考解命令的参数加引号，包括含空格的脚本路径。已识别的评分器加载／运行异常及显式基础设施错误消息会阻止离线校验通过，或记为不参与评分的评测错误，同时保留 Agent 成本。正常任务失败和断言失败仍参与评分。详见[校验命令与错误报告](docs/verifier-contract.md)。
+0.11.0支持给校验器和参考解命令的参数加引号，包括含空格的脚本路径。已识别的评分器加载／运行异常及显式基础设施错误消息会阻止离线校验通过，或记为不参与评分的评测错误，同时保留 Agent 成本。正常任务失败和断言失败仍参与评分。详见[校验命令与错误报告](docs/verifier-contract.md)。
 
-同一份源码还会在 eval 预览和开跑前检查 Agent 环境：CLI 文件是否可用、能力是否与矩阵声明匹配，以及全局是否存在同名 Skill。已知失败会在 case 探测或模型调用前拦住；登录状态明确标为离线未知。检查结果随运行封存，报告和重放读取当时记录，不探测当前机器。详见 [Agent 环境自检](docs/eval-agent-preflight.md)。
+0.11.0 还会在 eval 和基线校准的预览及开跑前检查 Agent 环境：CLI 文件是否可用、能力是否与矩阵声明匹配，以及全局是否存在同名 Skill。已知失败会在 case 探测或模型调用前拦住；登录状态明确标为离线未知。检查结果随运行封存，报告和重放读取当时记录，不探测当前机器。详见 [Agent 环境自检](docs/eval-agent-preflight.md)。
 
-可以列出和查看 case，再预览编辑或移除操作。加 `--yes` 才会备份并应用通过校验的清单变更；移除会保留 case 文件。重复 `--task` 或在 JSON 请求中设置 `taskIds` 可以只评估部分 case。所选 ID 和顺序会固定到计划中，预算只计算所选 case，小样本仍只作参考。参见 [case 管理](docs/case-management.md)。
+可以列出和查看 case，再预览编辑或移除操作。加 `--yes` 才会备份并应用通过校验的清单变更；移除会保留 case 文件。配对评估、触发率测试和基线校准都可重复 `--task` 只选择部分 case；配对 JSON 请求用 `taskIds`。所选 ID 和顺序会固定到计划中，预算只计算所选 case，小样本仍只作参考。参见 [case 管理](docs/case-management.md)。
 
 ```bash
 node dist/cli.js bench list my-bench --json
@@ -166,7 +166,9 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 0.10.0 已包含可选 `spendingBudget`，设置五项整批预算停止线。触线或缺失完整最终用量时停止后续调用并保留花费；正在运行的一次仍可能越线。详见[预算检查契约](docs/eval-component.md#input-and-execution)。
 
-npm 0.10.1 之后的源码统一了普通配对 eval 和 Agent 请求的计划。普通 eval 也支持 `--json`、`--spending-budget <file>`、`--executor-timeout-seconds`、`--pair-order`、`--runs-root` 和 `--run-group`；JSON 执行必须确认预览指纹。请求可用 `baselineSkill: null` 表示 baseline 不由 harness 安装 Skill，与普通 installed eval 省略 `--baseline-skill` 对应。这能测量安装收益，但不能授权采用某个修订版本。详见[统一设置与确认流程](docs/eval-planning.md)。
+0.11.0统一了普通配对／触发率 eval 和配对 Agent 请求的计划生成。普通 eval 也支持 `--json`、`--spending-budget <file>`、`--executor-timeout-seconds`、`--runs-root` 和 `--run-group`，配对实验另可设置 `--pair-order`；JSON 执行必须确认预览指纹。请求可用 `baselineSkill: null` 表示 baseline 不由 harness 安装 Skill，与普通 installed eval 省略 `--baseline-skill` 对应。这能测量安装收益，但不能授权采用某个修订版本。详见[统一设置与确认流程](docs/eval-planning.md)。
+
+0.11.0 还为基线校准和触发率测试提供 JSON 预览、固定任务选择、调用／消耗上限及每次调用的超时。预览不执行评分器、参考解或 Agent；case 或环境硬失败会阻止正式开跑。JSON 执行必须指定新的批次名，并提交准确的预览哈希（校准用 `plan.planSha256`，eval 用 `plan.sha256`）。校准测基线难度，触发率测试测发现能力，两者都不能证明配对的 Skill 收益或授权采用。
 
 失败的 Codex JSON 调用可从本地数值计数器保留身份匹配的部分用量。导出不包含私有会话正文；部分用量仍不能满足最终成本覆盖或采用门槛。
 
@@ -206,11 +208,13 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 0.10.1 中，普通报告和 JSON 都接受同样的 manifest、原生运行目录或复现包，包括中止和未完成批次。两者都会核查已存证据，并把采用决定与质量判定分开解释。`--replay`、`--records` 和 `--policy` 两种格式都能用；成功生成报告不代表获准升级。参见[报告输入和状态](docs/evaluation-reports.md)。
 
-npm 0.10.1 之后的源码还支持用两种格式读取校准目录／`_calibration.json` 和触发率 manifest。已完成的校准保持完成状态，展示基线难度；触发率报告展示召回率、误触发率、精确率、F1 和检测覆盖情况。这两种单组报告不能授权采用，也不能使用配对重放或策略选项。参见[报告类型](docs/evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101)。
+0.11.0还支持用两种格式读取校准目录／`_calibration.json` 和触发率 manifest。已完成的校准保持完成状态，展示基线难度；触发率报告展示召回率、误触发率、精确率、F1 和检测覆盖情况。新封存的单组运行支持原生证据审计、离线交付结果重放和便携导出；独立的历史摘要仍未验证。这两种报告不能授权采用，也不能使用配对采用策略选项。参见[报告类型](docs/evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101)。
 
 新报告分别列出缓存输入、未缓存输入、输出和耗时，并把失败运行的消耗计入每次成功任务的成本。报告同时展示存活配对和全部 agent 调用；超时导致的用量不完整或缺失会单独标记，不会当作零。Chat completions API 明确返回的缓存输入计数（包括零）会被保留；缺失或非法值仍记为未知。旧 manifest 会显示这些字段未记录。详见[成本统计](docs/eval-costs.md)。
 
-没有 judge 的原生配对实验可导出为独立目录，包含原始记录、匹配的输入、当时的编译版 CLI、校验清单和重放入口。默认只预览；缺输入或目标目录已存在就停止。整个目录可搬到另一台机器，重放不调用模型，保留中止状态和未知成本，也不能授权升级。分享前检查项目数据，参见[可搬走的复现包](docs/replay-packages.md)。
+0.11.0用 `invocationCosts` 分别记录 Agent、裁判和合计消耗，保留失败、部分和未知用量。可选裁判的消耗计入同一批次停线；显式启用 API 裁判却缺少凭据会报错，不会静默关闭。历史缺失的裁判记录仍标未知。参见[成本统计](docs/eval-costs.md)。
+
+同一份源码可把受支持且已封存的原生配对、校准和触发率实验（包括带有新裁判记录的配对实验）导出为独立目录，包含原始记录、匹配的输入、当时的编译版 CLI、校验清单和重放入口。默认只预览；缺输入、缺少必需的调用记录／原始运行时支持或目标目录已存在就停止。整个目录可搬到另一台机器，重放不调用模型，保留中止状态和未知成本，也不能授权升级。分享前检查项目数据，参见[可搬走的复现包](docs/replay-packages.md)。
 
 0.10.1 会在调用前封存输入副本：原始 Skill、bench 或请求之后被修改、删除，也不影响导出和重放。计划会记录快照校验信息、本地复制耗时和存储量；已声明的快照损坏就拒绝使用。历史记录仍需找回匹配的原始输入。参见[评测输入封存](docs/evaluation-input-snapshots.md)。
 

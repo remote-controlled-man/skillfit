@@ -33,7 +33,7 @@ import { inspectAgentEnvironment, assertAgentEnvironment, assertAgentEnvironment
   type AgentEnvironmentPreflight, type EnvironmentRole } from '../harness/agent-preflight.js';
 
 export interface EvalPreview {
-  mode: 'inject' | 'installed';
+  mode: 'inject' | 'installed' | 'trigger';
   target: { kind: EvaluationTarget['kind']; name: string; sourceDir: string; sha256: string; files: string[] };
   baseline: { name: string; sourceDir: string; sha256: string; files: string[] } | null;
   bench: { name: string; dir: string; sha256: string; taskIds: string[] };
@@ -52,6 +52,9 @@ export interface EvalPreview {
   executorTimeoutSeconds?: number;
   nativeDiffTool?: NativeDiffDescriptor;
   spendingBudget?: SpendingBudget;
+  installedFingerprint?: { sha256: string; files: string[] };
+  competition?: { mode: 'alone' | 'installed'; skills: { name: string; sourceDir: string; sha256: string }[] };
+  detection?: 'skill-tool' | 'skill-read' | 'unrecorded';
 }
 
 export interface EvalOptions {
@@ -154,21 +157,18 @@ function assertExecutorSupportsBench(executor: Executor | null, bench: Bench): v
   );
 }
 
-function resolveJudge(judgeAgent?: string): Executor | null {
+function resolveJudge(judgeAgent?: string, timeoutSeconds?: number): Executor | null {
   const flag = process.env['SKILLFIT_JUDGE'];
   if (!judgeAgent && (!flag || flag === '0' || flag === 'false')) return null;
   if (judgeAgent) {
-    return CliExecutor.forAgent(judgeAgent);
+    return CliExecutor.forAgent(judgeAgent, timeoutSeconds === undefined ? {} : { timeoutMs: timeoutSeconds * 1000 });
   }
-  try {
-    return new ApiExecutor({
+  return new ApiExecutor({
       apiKey: process.env['SKILLFIT_JUDGE_API_KEY'] ?? process.env['SKILLFIT_API_KEY'] ?? process.env['OPENAI_API_KEY'],
       model: process.env['SKILLFIT_JUDGE_MODEL'] ?? process.env['SKILLFIT_API_MODEL'],
       baseUrl: process.env['SKILLFIT_JUDGE_BASE_URL'] ?? process.env['SKILLFIT_API_BASE_URL'],
+      ...(timeoutSeconds === undefined ? {} : { timeoutMs: timeoutSeconds * 1000 }),
     });
-  } catch {
-    return null;
-  }
 }
 
 function defaultRunGroup(now: Date = new Date()): string {
@@ -322,6 +322,9 @@ async function runEvalTrigger(
   trials: number,
   log: (msg: string) => void,
 ): Promise<TriggerManifest | null> {
+  if (options.judgeAgent || options.judgeExecutor) throw new Error('Trigger evaluation does not use a judge.');
+  const executorTimeoutSeconds = parseExecutorTimeoutSeconds(options.executorTimeoutSeconds);
+  const spendingBudget = options.spendingBudget === undefined ? undefined : parseSpendingBudget(options.spendingBudget);
   let executor = options.executor ?? null;
   let resolutionError: string | undefined;
   if (!executor) {
@@ -331,7 +334,7 @@ async function runEvalTrigger(
       );
     }
     try {
-      executor = CliExecutor.forAgent(options.agent, { triggerSkillName: skill.name });
+      executor = CliExecutor.forAgent(options.agent, { triggerSkillName: skill.name, timeoutMs: executorTimeoutSeconds * 1000 });
     } catch (error) {
       resolutionError = (error as Error).message;
       log(`Note: ${(error as Error).message}`);
@@ -357,6 +360,16 @@ async function runEvalTrigger(
   const competeLine = competitors.length === 0
     ? 'Compete  : alone (recall is an upper bound)'
     : `Compete  : ${competitors.map((entry) => entry.name).join(', ')}`;
+  const installedFingerprint = collectInstalledSkillFingerprint(skill.sourceDir);
+  const competition = { mode: competitors.length ? 'installed' as const : 'alone' as const, skills: competitors };
+  options.onPlan?.({ mode: 'trigger', target: { kind: 'skill', name: skill.name, sourceDir: skill.sourceDir,
+    sha256: skill.sha256, files: skill.files }, baseline: null,
+    bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(task => task.id) },
+    executor: executor?.describe() ?? null, judge: null, inputMode: 'workspace', installDir: installDir ?? null,
+    trials, plannedCalls, maxCalls, outputDir: join(runsRoot, runGroup),
+    agentPreflight, casePreflight: { ...CASE_PREFLIGHT_POLICY, status: 'pending' }, inputSnapshot: { ...INPUT_SNAPSHOT_POLICY },
+    executorTimeoutSeconds, ...(spendingBudget ? { spendingBudget } : {}),
+    installedFingerprint: { sha256: installedFingerprint.sha256, files: installedFingerprint.files }, competition, detection });
 
   if (options.dryRun) {
     log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir));
@@ -364,6 +377,8 @@ async function runEvalTrigger(
     log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(competeLine);
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (agent calls only)`);
+    log(`Agent deadline: ${executorTimeoutSeconds}s per invocation`);
+    if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; checked between calls, in-flight overshoot remains possible`);
     return null;
   }
   assertAgentEnvironment(agentPreflight);
@@ -380,12 +395,19 @@ async function runEvalTrigger(
     const eligible = { ...bench, tasks: bench.tasks.filter(t => t.shouldTrigger !== undefined) };
     const casePreflight = await checkEvalCases(eligible, [skill], false, log);
     assertAgentEnvironmentUnchanged(agentPreflight, inspect());
+    if (collectInstalledSkillFingerprint(skill.sourceDir).sha256 !== installedFingerprint.sha256 ||
+        competitors.some(entry => collectInstalledSkillFingerprint(entry.sourceDir).sha256 !== entry.sha256)) {
+      throw new Error('Installed Skill resources changed during case preflight; create a fresh plan. No calls started.');
+    }
     throwIfEvaluationInterrupted();
     log(renderTriggerPlan(bench, skill, executor, trials, runsRoot, runGroup, installDir).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
     log(competeLine);
     log(renderAgentEnvironment(agentPreflight));
     const session = sessionFor(options, bench, skill, trials, runsRoot, runGroup, ['installed'], plannedCalls,
-      { mode: 'trigger', trials, executor: executor.describe(), casePreflight, agentPreflight });
+      { mode: 'trigger', trials, executor: executor.describe(), casePreflight, agentPreflight,
+        skillInstallDir: installDir, executorTimeoutSeconds, competition, detection,
+        ...(options.reviewedPlan ? { reviewedPlan: options.reviewedPlan } : {}),
+        ...(spendingBudget ? { spendingBudget } : {}) });
     let manifest: TriggerManifest;
     try {
       manifest = await runTriggerExperiment({
@@ -399,6 +421,7 @@ async function runEvalTrigger(
         skillInstallDir: installDir,
         competitors,
         detection,
+        ...(spendingBudget ? { spendingBudget } : {}),
         log,
       });
       throwIfEvaluationInterrupted();
@@ -410,7 +433,6 @@ async function runEvalTrigger(
 }
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
-  if (options.spendingBudget !== undefined && options.mode === 'trigger') throw new Error('spendingBudget applies only to paired evaluations.');
   const executorTimeoutSeconds = parseExecutorTimeoutSeconds(options.executorTimeoutSeconds ??
     (!options.agent && !options.executor ? DEFAULT_API_TIMEOUT_MS / 1000 : undefined));
   const log = options.log ?? ((msg: string) => console.log(msg));
@@ -457,7 +479,6 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   }
 
   if ((options.mode ?? 'inject') === 'trigger') {
-    if (options.executorTimeoutSeconds !== undefined) throw new Error('executorTimeoutSeconds is only available for paired experiments.');
     if (options.pairOrder !== undefined) throw new Error('pairOrder is only available for paired experiments.');
     if (target.kind !== 'skill') {
       throw new Error('trigger mode is only available for Skill targets; rules and MCP targets use paired inject-mode workspaces.');
@@ -510,13 +531,12 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     }
   } catch (error) { capabilityError = (error as Error).message; }
   let judge: Executor | null = null, judgeError: string | undefined;
-  try { judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge(options.judgeAgent); }
+  try { judge = options.judgeExecutor !== undefined ? options.judgeExecutor : resolveJudge(options.judgeAgent, executorTimeoutSeconds); }
   catch (error) { judgeError = (error as Error).message; }
   const inspect = () => inspectEvalAgent(options, target, executor, judge, capabilityError, resolutionError, judgeError);
   const agentPreflight = inspect();
   if (capabilityError) assertAgentEnvironment(agentPreflight);
   const spendingBudget = options.spendingBudget === undefined ? undefined : parseSpendingBudget(options.spendingBudget);
-  if (spendingBudget && judge) throw new Error('spendingBudget requires a paired evaluation without a judge; judge usage is not covered.');
   if (options.judgeAgent && options.judgeAgent === options.agent) {
     log('Warning: judge and executor are the same agent — self-preference bias risk (docs/metrics.md L4).');
   }

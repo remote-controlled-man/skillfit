@@ -8,6 +8,8 @@ import { engagementError, gitInit, runVerifier, verifierFailure, verifierLogFor 
 import { wilson95 } from './stats.js';
 import { throwIfEvaluationInterrupted } from './interruption.js';
 import { ExecutorFailure } from './types.js';
+import { createSpendingBudgetRecorder, type SpendingBudget } from './eval-budget.js';
+import type { ExecutionTiming } from './execution-timing.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import type {
   Bench,
@@ -36,6 +38,7 @@ export interface TriggerPlan {
   /** How a fire was recognized. Codex has no Skill-invocation event. */
   detection?: 'skill-tool' | 'skill-read' | 'unrecorded';
   session?: ExperimentSession;
+  spendingBudget?: SpendingBudget;
   log?: (msg: string) => void;
 }
 
@@ -46,6 +49,9 @@ export interface TriggerTrialRecord {
   startedAt: string;
   finishedAt: string;
   durationSeconds: number;
+  wallDurationSeconds?: number;
+  executorInvoked?: boolean;
+  executionTiming?: ExecutionTiming;
   triggered: boolean | null;
   passed: boolean;
   score: number | null;
@@ -157,36 +163,45 @@ async function runTriggerTrial(
   }
 
   const started = new Date();
+  const monotonicStarted = performance.now();
   let output = '';
   let rawOutput: string | null = null;
   let error: string | null = null;
   let tokens: TokenUsage | null = null;
   let failedUsage: TriggerTrialRecord['usageStatus'];
   let triggered: boolean | null = null;
+  let executorInvoked = false;
+  let executionTiming: ExecutionTiming | undefined;
   try {
     if (!gitInitialized && task.verifierKind === 'command') {
       throw new Error('Benchmark Git initialization or reflog verification failed; trigger task was not executed.');
     }
+    executorInvoked = true;
     const result = await plan.executor.run(prompt, runDir);
     output = result.output;
     rawOutput = result.rawOutput ?? null;
     tokens = result.tokens ?? null;
     triggered = result.skillTriggered ?? null;
     error = result.guardError ?? null;
+    failedUsage = result.usageStatus ?? 'final';
+    executionTiming = result.executionTiming;
   } catch (executorError) {
     error = (executorError as Error).message;
     if (executorError instanceof ExecutorFailure) {
+      executorInvoked = executorError.executorInvoked;
       output = executorError.result.output;
       rawOutput = executorError.result.rawOutput ?? null;
       tokens = executorError.result.tokens ?? null;
       triggered = executorError.result.skillTriggered ?? null;
       failedUsage = executorError.result.usageStatus ?? 'unknown';
+      executionTiming = executorError.result.executionTiming;
     }
   }
   if (error === null) {
     error = await engagementError(output, task.verifierKind, runDir, gitInitialized);
   }
   const finished = new Date();
+  const durationSeconds = Math.round((performance.now() - monotonicStarted)) / 1000;
   writeFileSync(join(runDir, '_output.md'), output, 'utf8');
   if (rawOutput !== null) {
     writeFileSync(join(runDir, '_transcript.jsonl'), rawOutput, 'utf8');
@@ -218,7 +233,10 @@ async function runTriggerTrial(
     runDir,
     startedAt: started.toISOString(),
     finishedAt: finished.toISOString(),
-    durationSeconds: Math.round(((finished.getTime() - started.getTime()) / 1000) * 1000) / 1000,
+    durationSeconds,
+    wallDurationSeconds: Math.round(((finished.getTime() - started.getTime()) / 1000) * 1000) / 1000,
+    executorInvoked,
+    ...(executionTiming ? { executionTiming } : {}),
     triggered,
     passed,
     score,
@@ -393,12 +411,17 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
   }
 
   const taskSummaries: TriggerTaskSummary[] = [];
+  const budget = createSpendingBudgetRecorder({ budget: plan.spendingBudget, groupDir });
   for (const task of eligible) {
     const records: TriggerTrialRecord[] = [];
     for (let trial = 1; trial <= plan.trials; trial++) {
       throwIfEvaluationInterrupted();
       plan.log?.(`Running ${task.id} / installed / trial ${trial}…`);
-      records.push(await runTriggerTrial(plan, task.id, trial, installedSkill));
+      const identity = { taskId: task.id, trial, condition: 'installed' as const };
+      budget.before(identity);
+      const outcome = await runTriggerTrial(plan, task.id, trial, installedSkill);
+      records.push(outcome);
+      budget.after(identity, { ...outcome, executorInvoked: outcome.executorInvoked ?? false, usageStatus: outcome.usageStatus ?? 'unknown' });
       throwIfEvaluationInterrupted();
     }
     taskSummaries.push(summarizeTriggerTask(task.id, task.shouldTrigger ?? false, task.triggerClass, records));

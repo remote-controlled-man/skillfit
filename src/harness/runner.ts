@@ -1,11 +1,11 @@
 import { spawn } from 'node:child_process';
-import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import type { ExperimentSession } from './experiment-session.js';
 import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
 import { assertInstalledSkillFixtures, assertSkillRevisionTargets, installSkillResources, installedSkillDestination } from './installed-skill.js';
 import { collectInstalledSkillFingerprint } from './bundle.js';
-import { judgePair, type JudgeResult } from './judge.js';
+import { JudgePairFailure, judgePair, type JudgeCallReceipt, type JudgeResult } from './judge.js';
 import { killTree, treeSpawnOptions } from './kill-tree.js';
 import { evaluationSignal, throwIfEvaluationInterrupted } from './interruption.js';
 import { assertInputModeSupported, buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
@@ -29,7 +29,8 @@ import { summarizeCosts } from './costs.js';
 import { executionClock, type ExecutionClock, type ExecutionTiming } from './execution-timing.js';
 import type { ComponentMetadata } from './eval-contract.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
-import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState, type SpendingBudget } from './eval-budget.js';
+import { createSpendingBudgetRecorder, parseSpendingBudget, type SpendingBudget } from './eval-budget.js';
+import { summarizeInvocationCosts } from './invocation-costs.js';
 import { parseCommand } from './command.js';
 import { verifierRuntimeError } from './verifier-error.js';
 
@@ -524,7 +525,7 @@ function tokenDelta(
   return { input: treatment.input - baseline.input, output: treatment.output - baseline.output };
 }
 
-function summarizeJudge(judgeResults: JudgeResult[]): JudgeSummary | null {
+export function summarizeJudge(judgeResults: JudgeResult[]): JudgeSummary | null {
   if (judgeResults.length === 0) return null;
   const consistent = judgeResults.filter((r) => r.consistent);
   const mean = (values: number[]): number | null => {
@@ -544,6 +545,8 @@ async function judgeTaskTrials(
   plan: ExperimentPlan,
   taskId: string,
   outcomes: Record<Condition, TrialOutcome[]>,
+  allJudgeCalls: JudgeCallReceipt[],
+  budget: ReturnType<typeof createSpendingBudgetRecorder>,
 ): Promise<JudgeResult[]> {
   const judge = plan.judge;
   if (!judge) return [];
@@ -567,6 +570,17 @@ async function judgeTaskTrials(
         baselineOutput: baseline.output,
         treatmentOutput: treatment.output,
         seed,
+        taskId: task.id,
+        trial,
+        clock: plan.clock,
+        beforeCall: callIndex => budget.before({ role: 'judge', taskId: task.id, trial, callIndex }),
+        onCall: receipt => {
+          const path = join(taskDir, `judge-trial-${trial}`);
+          mkdirSync(path, { recursive: true });
+          writeFileSync(join(path, `call-${receipt.callIndex}.json`), JSON.stringify(receipt, null, 2) + '\n', { flag: 'wx' });
+          allJudgeCalls.push(receipt);
+          budget.after({ role: 'judge', taskId: task.id, trial, callIndex: receipt.callIndex }, receipt);
+        },
       });
       results.push(result);
       writeFileSync(
@@ -575,8 +589,11 @@ async function judgeTaskTrials(
         'utf8',
       );
     } catch (error) {
+      writeFileSync(join(taskDir, `judge-trial-${trial}-error.json`), JSON.stringify({ schemaVersion: 1, trial, seed,
+        error: (error as Error).message, calls: error instanceof JudgePairFailure ? error.calls : [], automaticRetry: false }, null, 2) + '\n', { flag: 'wx' });
       throwIfEvaluationInterrupted();
       plan.log?.(`Judge failed for ${task.id} trial ${trial}: ${(error as Error).message}`);
+      throw error;
     }
   }
   return results;
@@ -727,7 +744,6 @@ function summarizeTask(
 
 export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
   const budget = plan.spendingBudget === undefined ? undefined : parseSpendingBudget(plan.spendingBudget);
-  if (budget && plan.judge) throw new Error('spendingBudget does not cover judge calls.');
   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
   const pairOrder = plan.pairOrder ?? 'baseline-first';
   if (pairOrder !== 'baseline-first' && pairOrder !== 'balanced') throw new Error('pairOrder must be baseline-first or balanced.');
@@ -761,13 +777,8 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   const taskSummaries: TaskSummary[] = [];
   const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
   const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
-  const budgetObservations: TrialOutcome[] = [];
-  const budgetEvent = (phase: 'before-call' | 'after-call', taskId: string, condition: Condition, trial: number) => {
-    if (!budget) return null;
-    const state = spendingBudgetState(budget, budgetObservations);
-    appendFileSync(join(groupDir, '_budget.jsonl'), JSON.stringify({ phase, taskId, condition, trial, state }) + '\n', 'utf8');
-    return state;
-  };
+  const budgetRecorder = createSpendingBudgetRecorder({ budget, groupDir });
+  const allJudgeCalls: JudgeCallReceipt[] = [];
   for (const [taskIndex, task] of plan.bench.tasks.entries()) {
     const outcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
     // Interleaved: the trial loop is outermost so the two arms of a pair run adjacently. Running
@@ -776,24 +787,21 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     for (let trial = 1; trial <= plan.trials; trial++) {
       for (const condition of pairConditions(pairOrder, taskIndex, trial)) {
         throwIfEvaluationInterrupted();
-        const before = budgetEvent('before-call', task.id, condition, trial);
-        if (before) assertSpendingCanContinue(before);
+        budgetRecorder.before({ taskId: task.id, condition, trial });
         plan.log?.(`Running ${task.id} / ${condition} / trial ${trial}…`);
         const outcome = await runTrial(plan, task.id, condition, trial);
         outcomes[condition].push(outcome);
         allOutcomes[condition].push(outcome);
-        budgetObservations.push(outcome);
-        const after = budgetEvent('after-call', task.id, condition, trial);
+        budgetRecorder.after({ taskId: task.id, condition, trial }, outcome);
         throwIfEvaluationInterrupted();
         // A reached line prevents the next call; incomplete or failed evidence stops even
         // after the final scheduled call. One in-flight invocation may cross a stop line.
-        if (after && (after.incomplete.length || after.reason === 'EXECUTION_FAILED')) assertSpendingCanContinue(after);
       }
     }
     const survivors = pairedSurvivors(outcomes);
     allSurvivors.baseline.push(...survivors.baseline);
     allSurvivors.treatment.push(...survivors.treatment);
-    const judgeResults = await judgeTaskTrials(plan, task.id, outcomes);
+    const judgeResults = await judgeTaskTrials(plan, task.id, outcomes, allJudgeCalls, budgetRecorder);
     taskSummaries.push(summarizeTask(task.id, outcomes, survivors, judgeResults, !!plan.skillInstallDir));
   }
 
@@ -812,6 +820,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   plan.session?.settle();
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
     schemaVersion: 4,
+    invocationCosts: summarizeInvocationCosts([...allOutcomes.baseline, ...allOutcomes.treatment], allJudgeCalls, !!plan.judge),
     ...(plan.component ? { component: plan.component } : {}),
     ...(plan.session ? { experiment: plan.session.summary() } : {}),
     inputMode: plan.inputMode ?? 'snapshot',

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit offline calibration plan version 1",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "planSha256", "implementationSha256", "bench", "agent", "executor", "inputMode", "trials", "plannedCalls", "maxCalls", "executorTimeoutSeconds", "runGroup", "runsRoot", "outputDir", "guardFiles", "agentPreflight", "casePreflight"],
+  "properties": {
+    "schemaVersion": { "const": 1 }, "kind": { "const": "skillfit.calibration-plan" },
+    "planSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "implementationSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "bench": { "type": "object", "required": ["dir", "name", "sha256", "taskIds"] },
+    "agent": { "type": ["string", "null"] }, "executor": { "type": ["object", "null"] },
+    "inputMode": { "enum": ["snapshot", "workspace"] },
+    "trials": { "type": "integer", "minimum": 1, "maximum": 20 },
+    "plannedCalls": { "type": "integer", "minimum": 1 }, "maxCalls": { "type": "integer", "minimum": 1 },
+    "executorTimeoutSeconds": { "type": "integer", "minimum": 1, "maximum": 3600 },
+    "spendingBudget": { "type": "object", "required": ["input", "cachedInput", "uncachedInput", "output", "durationSeconds"] },
+    "runGroup": { "type": "string", "minLength": 1 }, "runsRoot": { "type": "string", "minLength": 1 }, "outputDir": { "type": "string", "minLength": 1 },
+    "guardFiles": { "type": "array" }, "agentPreflight": { "$ref": "agent-preflight.schema.json" },
+    "casePreflight": { "type": "object", "required": ["schemaVersion", "scope", "required", "status"],
+      "properties": { "schemaVersion": { "const": 1 }, "scope": { "const": "offline-case-integrity" }, "required": { "const": true }, "status": { "const": "pending" } } }
+  }
+}

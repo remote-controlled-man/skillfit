@@ -1,6 +1,8 @@
 # Portable offline evaluation packages
 
-skillfit 0.10.0 exports paired native runs without a judge to a fresh directory.
+skillfit 0.10.0 introduced paired native exports without a judge. Source after
+npm 0.10.1 also exports native calibration, trigger and paired runs with a judge
+to a fresh directory.
 The package contains unchanged receipts, original pinned inputs, the compiled
 implementation used by the experiment and a dependency-free replay entry point.
 Export and replay make zero model calls. Replay executes trusted local verifiers.
@@ -28,6 +30,12 @@ the package does not install system dependencies. `--verify-only` checks invento
 hashes and source-plan binding without executing verifiers. Default replay uses
 the copied compiled CLI, grades temporary delivery copies and returns JSON. The
 last command above uses the currently installed CLI and the packaged bench.
+`reproduce.mjs` forwards Ctrl+C/SIGINT and SIGTERM to the pinned CLI, waits for
+its local verifier processes to stop, then exits 130 or 143. Saved evidence is
+read-only during both successful and interrupted replay. The launcher uses the
+original implementation's cancellation context, including for older paired report
+dispatchers; runtimes predating that cancellation module cannot be exported by
+this source version.
 
 The source must have sealed native evidence. A completed manifest must pass the
 native evidence audit. Missing, changed or linked native artifacts reject export.
@@ -51,7 +59,8 @@ overrides do not bypass validation of a new run's declared input archive.
 
 ## Contents and machine contract
 
-- `run/`: original native receipts, indices, plan, session and optional manifest.
+- `run/`: original native receipts, indices, plan, session and optional manifest
+  or `_calibration.json`; judge runs also retain both review-call receipts.
 - `inputs/bench`, `inputs/target`, optional `inputs/baseline-skill` and
   `inputs/request.json`: matching frozen inputs.
 - `runtime/dist/`: unchanged compiled implementation. Minimal ESM package metadata
@@ -61,6 +70,9 @@ overrides do not bypass validation of a new run's declared input archive.
 The descriptor uses `schemaVersion: 1`, `kind: "skillfit.replay-package"`,
 `sourcePlanSha256`, `nativeStatus`, `hasManifest` and a relative-path-to-SHA-256
 `files` map. It inventories every payload file except itself and Git internals.
+New exports add `evaluationType: "paired" | "calibration" | "trigger"`, checked
+against the frozen native plan. Older v1 descriptors without that field remain
+readable.
 Extra, changed, missing and unsafe paths fail verification. Checksums establish
 consistency with this index, not publisher identity; retain a trusted external
 copy of the descriptor or its hash for provenance.
@@ -85,10 +97,30 @@ spending and remain stopped/incomplete and ineligible. An offline replay reprodu
 saved outcomes and accounting; it creates no new observations, independent holdout
 or upgrade authorization. Statistical and acceptance policies are unchanged.
 
-Trigger runs and runs with a judge are currently excluded: their separate
-accounting is not covered by this paired native contract. Legacy/redacted public
-archives retain their dated replay recipes and cannot be relabeled as complete
-native exports.
+Calibration and trigger exports verify the single-arm plan, session, ledger,
+receipts, task summaries and available usage. Replay regrades saved deliveries in
+temporary directories with the pinned local verifier. Trigger observations remain
+the recorded `triggered` values: replay starts no Agent and does not attempt new
+discovery detection. The report uses `evidence.scope: "single-arm-native"`;
+`verified` establishes consistency of retained observations, never a paired
+improvement or adoption decision. Standalone historical summaries without a
+sealed native run cannot be replayed or promoted into native exports.
+An older single-arm run whose pinned implementation predates replay support
+cannot produce an executable replay package; export explains that limitation
+instead of replacing the original implementation with newer code.
+
+Paired judge exports require separately sealed review-call receipts and full
+invocation accounting. Replay audits retained judge outputs, scores and costs;
+it does not call the judge again. Primary Agent costs and additional judge costs
+remain separate, with a combined invocation population. Historical judge runs
+without those receipts retain unknown judge/combined costs in reports and cannot
+claim a complete portable export.
+
+Missing invocation receipts in stopped single-arm runs remain unknown usage;
+available final and partial counters are retained as recorded. Replay cannot
+turn partial usage into a complete total or invent unfinished task metrics.
+Legacy/redacted public archives retain their dated replay recipes and cannot be
+relabeled as complete native exports.
 
 Export only writes locally. It includes project files, prompts, outputs and paths;
 review those contents before sharing. Global configuration/Skill trees are not
