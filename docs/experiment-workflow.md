@@ -9,6 +9,13 @@ See [interruption and retained records](evaluation-interruption.md). Forced
 termination/power loss may prevent sealing. The same release enforces offline
 case gates and seals project input copies before dispatch. See [sealed inputs](evaluation-input-snapshots.md).
 
+Source after npm 0.10.1 shares reviewed plans between ordinary paired eval and
+Agent requests, including [budget/deadline/output controls](eval-planning.md).
+Use `--json --dry-run` for a machine-readable ordinary plan. JSON execution
+requires its hash and an explicit fresh group. Request `baselineSkill: null`
+matches ordinary installed delivery without `--baseline-skill`; both keep
+inherited configuration and cannot authorize revision adoption.
+
 1. Prepare independent tasks from issue requirements and pinned bug/fix revisions. Keep the fix, grader and oracle outside trial workspaces. Run `bench check` offline and review its NOP, oracle and counterexample gates. The [lru-cache replay](../benches/contrib/oss-lru-cache/README.md) has three independently sourced failures; difficulty is initially unknown.
 2. Dry-run baseline calibration with the input mode you will later evaluate. For the three-task replay: `skillfit bench check benches/contrib/oss-lru-cache --calibrate --agent codex --input workspace --trials 2 --max-calls 6 --dry-run`. Run without `--dry-run` only after reviewing the fixed plan. Keep saturated tasks as regression controls; repair broken graders/environments before interpreting a floor.
 3. Declare a fresh paired run with the full Skill installed only in treatment: `skillfit eval <skill-dir> --mode installed --bench <bench-dir> --agent codex --trials 5 --max-calls <ceiling> --dry-run`. The declared count is tasks × trials × two arms, plus two judge calls per pair when enabled. The default ceiling equals the declared count. A lower ceiling rejects the entire plan; it never truncates tasks, retries errors, or adds replacement samples.

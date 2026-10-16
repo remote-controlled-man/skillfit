@@ -6,14 +6,14 @@ import { getAgent } from '../agents.js';
 import { loadBench, selectBenchTasks } from '../harness/bench.js';
 import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
-import { ApiExecutor } from '../harness/executors/api.js';
-import { CliExecutor, DEFAULT_CLI_TIMEOUT_MS } from '../harness/executors/cli.js';
+import { ApiExecutor, DEFAULT_API_TIMEOUT_MS } from '../harness/executors/api.js';
+import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
 import { assertNativeDiffFixtures, nativeDiffDescriptor, type NativeDiffDescriptor } from '../harness/native-diff.js';
 import { assertInstalledSkillFixtures, assertSkillRevisionTargets, collectInstalledSkillTarget } from '../harness/installed-skill.js';
 import { assertInputModeSupported } from '../harness/prompt.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from '../harness/report.js';
-import { runExperiment } from '../harness/runner.js';
+import { runExperiment, withSampling } from '../harness/runner.js';
 import { collectInstalledSkillFingerprint } from '../harness/bundle.js';
 import { installedUserSkills } from '../harness/receipts.js';
 import { collectEvaluationTarget } from '../harness/target.js';
@@ -23,14 +23,16 @@ import {
   type TriggerManifest,
 } from '../harness/trigger.js';
 import type { Bench, EvaluationTarget, Executor, InputMode, PairOrder, SkillBundle } from '../harness/types.js';
-import type { ComponentMetadata } from '../harness/eval-contract.js';
+import { parseExecutorTimeoutSeconds, parsePairOrder, type ComponentMetadata } from '../harness/eval-contract.js';
 import { parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget.js';
 import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import { CASE_PREFLIGHT_POLICY, checkEvalCases } from './eval-preflight.js';
 import { INPUT_SNAPSHOT_POLICY } from '../harness/input-snapshot.js';
+import type { ReviewedEvalPlan } from './eval-plan.js';
 
 export interface EvalPreview {
-  target: { name: string; sourceDir: string; sha256: string; files: string[] };
+  mode: 'inject' | 'installed';
+  target: { kind: EvaluationTarget['kind']; name: string; sourceDir: string; sha256: string; files: string[] };
   baseline: { name: string; sourceDir: string; sha256: string; files: string[] } | null;
   bench: { name: string; dir: string; sha256: string; taskIds: string[] };
   executor: ReturnType<Executor['describe']> | null;
@@ -78,6 +80,7 @@ export interface EvalOptions {
   log?: (msg: string) => void;
   onPlan?: (plan: EvalPreview) => void;
   component?: ComponentMetadata;
+  reviewedPlan?: ReviewedEvalPlan;
   guardFiles?: SessionOptions['guardFiles'];
 }
 
@@ -124,7 +127,7 @@ function resolveExecutor(agent: string | undefined, target: EvaluationTarget, in
       ...(installed && definition.headless.streamJson ? { triggerSkillName: target.name } : {}),
     });
   }
-  return ApiExecutor.fromEnv();
+  return ApiExecutor.fromEnv(process.env, executorTimeoutSeconds === undefined ? {} : { timeoutMs: executorTimeoutSeconds * 1000 });
 }
 
 /**
@@ -221,7 +224,7 @@ function renderPlan(
   if (baselineTarget) {
     lines.push(`Baseline : ${baselineTarget.name} (${baselineTarget.files.length} files, bundle sha256 ${baselineTarget.sha256.slice(0, 12)}…)`);
     lines.push('Compare  : previous Skill in baseline vs target Skill in treatment; measures revision effects, not benefit over no Skill');
-  }
+  } else if (inputMode === 'workspace' && target.kind === 'skill') lines.push('Baseline : no Skill installed by the harness (inherited configuration still applies)');
   if (target.kind !== 'skill') {
     lines.push('           applied as project files; treatment material is never injected into the prompt');
   }
@@ -388,11 +391,8 @@ async function runEvalTrigger(
 
 export async function runEval(options: EvalOptions): Promise<RunManifest | TriggerManifest | null> {
   if (options.spendingBudget !== undefined && options.mode === 'trigger') throw new Error('spendingBudget applies only to paired evaluations.');
-  const executorTimeoutSeconds = options.executorTimeoutSeconds ?? DEFAULT_CLI_TIMEOUT_MS / 1000;
-  if (!Number.isSafeInteger(executorTimeoutSeconds) || executorTimeoutSeconds < 1 || executorTimeoutSeconds > 3600) {
-    throw new Error('executorTimeoutSeconds must be an integer between 1 and 3600.');
-  }
-  if (options.executorTimeoutSeconds !== undefined && !options.agent && !options.executor) throw new Error('executorTimeoutSeconds requires a CLI agent.');
+  const executorTimeoutSeconds = parseExecutorTimeoutSeconds(options.executorTimeoutSeconds ??
+    (!options.agent && !options.executor ? DEFAULT_API_TIMEOUT_MS / 1000 : undefined));
   const log = options.log ?? ((msg: string) => console.log(msg));
   const installed = options.mode === 'installed';
   if (options.baselineSkillPath !== undefined && !installed) {
@@ -475,7 +475,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
 
   let executor: Executor | null = null;
   try {
-    executor = options.executor ?? resolveExecutor(options.agent, target, installed, options.executorTimeoutSeconds);
+    executor = options.executor ?? resolveExecutor(options.agent, target, installed, executorTimeoutSeconds);
   } catch (error) {
     if (!options.dryRun) throw error;
     log(`Note: ${(error as Error).message}`);
@@ -495,21 +495,21 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const runGroup = options.runGroup ?? defaultRunGroup();
   const plannedCalls = bench.tasks.length * trials * (judge ? 4 : 2);
   const maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
-  const pairOrder = options.pairOrder ?? 'baseline-first';
-  if (pairOrder !== 'baseline-first' && pairOrder !== 'balanced') throw new Error('pairOrder must be baseline-first or balanced.');
+  const pairOrder = parsePairOrder(options.pairOrder);
 
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   options.onPlan?.({
+    mode: installed ? 'installed' : 'inject',
     casePreflight: { ...CASE_PREFLIGHT_POLICY, status: 'pending' },
     inputSnapshot: { ...INPUT_SNAPSHOT_POLICY },
-    target: { name: target.name, sourceDir: target.sourceDir, sha256: target.sha256, files: target.files },
+    target: { kind: target.kind, name: target.name, sourceDir: target.sourceDir, sha256: target.sha256, files: target.files },
     baseline: baselineTarget ? { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, sha256: baselineTarget.sha256, files: baselineTarget.files } : null,
     bench: { name: bench.name, dir: bench.dir, sha256: bench.contentSha256, taskIds: bench.tasks.map(t => t.id) },
-    executor: executor?.describe() ?? null, judge: judge?.describe() ?? null, inputMode,
+    executor: executor ? withSampling(executor.describe()) : null, judge: judge ? withSampling(judge.describe()) : null, inputMode,
     installDir: skillInstallDir ?? null, trials, plannedCalls, maxCalls, pairOrder,
     ...(spendingBudget ? { spendingBudget } : {}),
     ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
-    ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), outputDir: join(runsRoot, runGroup),
+    executorTimeoutSeconds, outputDir: join(runsRoot, runGroup),
   });
 
   if (options.dryRun) {
@@ -518,7 +518,7 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
     log(`Pair order: ${pairOrder}; arms remain adjacent`);
     if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; checked between calls, in-flight overshoot remains possible`);
-    if (options.agent || options.executorTimeoutSeconds !== undefined) log(`Agent deadline: ${executorTimeoutSeconds}s per invocation in both arms`);
+    log(`Agent deadline: ${executorTimeoutSeconds}s per invocation in both arms`);
     if (skillInstallDir) {
       log('Tool     : native untracked-file diff helper in both arms (version 1; environment correction)');
       log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);
@@ -537,9 +537,10 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
     const session = sessionFor(options, bench, target, trials, runsRoot, runGroup, ['baseline', 'treatment'], plannedCalls,
       { mode: installed ? 'installed' : 'inject', inputMode, trials, pairOrder, casePreflight,
+        ...(options.reviewedPlan ? { reviewedPlan: options.reviewedPlan } : {}),
         ...(spendingBudget ? { spendingBudget } : {}),
         ...(installed ? { nativeDiffTool: nativeDiffDescriptor() } : {}),
-        ...(options.agent || options.executorTimeoutSeconds !== undefined ? { executorTimeoutSeconds } : {}), executor: executor.describe(), judge: judge?.describe() ?? null,
+        executorTimeoutSeconds, executor: executor.describe(), judge: judge?.describe() ?? null,
         ...(options.component ? { component: options.component } : {}),
         ...(baselineTarget ? { baselineTarget: { name: baselineTarget.name, sourceDir: baselineTarget.sourceDir, bundleSha256: baselineTarget.sha256, files: baselineTarget.files } } : {}) }, baselineTarget);
     let manifest: RunManifest;

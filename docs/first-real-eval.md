@@ -63,6 +63,15 @@ tasks require. Check any extra writable roots in your Codex configuration before
 takes its model, reasoning level, and other settings from the active CLI configuration. Record those
 settings alongside the manifest when comparing runs, and use the same configuration for both arms.
 
+Source after npm 0.10.1 supports an ordinary `--json --dry-run` plan and shared
+budget, deadline, pair-order and output-group settings. For complete Skill
+delivery use `--mode installed`; omitting `--baseline-skill` installs the Skill
+only in treatment, matching an Agent request's explicit `baselineSkill: null`.
+Use an explicit fresh `--run-group`, inspect `plan.sha256`, then pass that hash
+with `--plan-sha` to execute JSON plans. See the [two-call budget example and
+stop rules](eval-planning.md). A preview does not authorize spending, and a
+no-Skill comparison cannot authorize revision adoption.
+
 ## 3. Run, inspect, and share
 
 ```bash

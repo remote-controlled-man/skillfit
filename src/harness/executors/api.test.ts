@@ -124,3 +124,17 @@ test('ApiExecutor.fromEnv reads SKILLFIT_API_KEY first', () => {
 test('ApiExecutor.fromEnv throws without any key', () => {
   assert.throws(() => ApiExecutor.fromEnv({} as NodeJS.ProcessEnv), /API key/);
 });
+
+test('API environment construction applies an explicit deadline to fake fetch without any network call', async () => {
+  let observed = false;
+  const executor = ApiExecutor.fromEnv({ SKILLFIT_API_KEY: 'offline-only' }, { timeoutMs: 10,
+    fetchImpl: async (_url, init) => new Promise((_resolve, reject) => {
+      observed = true; const signal = init!.signal!;
+      signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+    }) });
+  // AbortSignal.timeout uses an unreferenced timer; keep only this offline test alive.
+  const timer = setTimeout(() => {}, 1000);
+  try { await assert.rejects(() => executor.run('offline'), error => error instanceof Error && error.name === 'TimeoutError'); }
+  finally { clearTimeout(timer); }
+  assert.equal(observed, true);
+});

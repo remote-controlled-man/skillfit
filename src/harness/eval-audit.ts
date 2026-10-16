@@ -6,7 +6,7 @@ import { loadBench } from './bench.js';
 import { summarizeCosts, type CostObservation } from './costs.js';
 import { policyHash, parseAcceptancePolicy, readComponentJson, record } from './eval-contract.js';
 import { costChanges, type EvidenceAudit } from './eval-acceptance.js';
-import { sha256File } from './hash.js';
+import { sha256File, sha256Text } from './hash.js';
 import { collectInstalledSkillTarget } from './installed-skill.js';
 import { runVerifier } from './runner.js';
 import { verdictFromOutput } from './verifier-summary.js';
@@ -90,6 +90,24 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     const plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
     const inputSnapshot = verifyInputSnapshot(root, plan);
     const details = record(plan.details, 'native plan details');
+    if (details.reviewedPlan !== undefined) {
+      const reviewed = record(details.reviewedPlan, 'reviewed plan'), { sha256, ...data } = reviewed;
+      assert.equal(data.schemaVersion, 1); assert.equal(data.kind, 'skillfit.eval-plan');
+      assert.equal(sha256Text(JSON.stringify(data)), sha256, 'Reviewed plan hash changed.');
+      const e = record(data.evaluation, 'reviewed evaluation');
+      assert.equal(e.mode, details.mode); assert.equal(record(e.target, 'reviewed target').kind, report.target.kind);
+      const implementation = (plan.inputs as Record<string, unknown>[]).find(input => input.label === 'implementation');
+      assert.equal(implementation?.sha256, data.implementationSha256, 'Reviewed implementation differs from native inputs.');
+      assert.equal(record(e.target, 'reviewed target').sha256, report.target.sha256);
+      assert.equal(record(e.bench, 'reviewed bench').sha256, report.bench.sha256);
+      assert.deepEqual(record(e.bench, 'reviewed bench').taskIds, report.tasks.map(task => task.id));
+      assert.equal(e.baseline === null ? null : record(e.baseline, 'reviewed baseline').sha256, report.baselineTarget?.sha256 ?? null);
+      assert.deepEqual(e.executor, raw.executor); assert.deepEqual(e.judge, raw.judge);
+      assert.equal(e.trials, report.trials); assert.equal(e.plannedCalls, report.experiment.plannedCalls); assert.equal(e.maxCalls, report.experiment.maxCalls);
+      assert.equal(e.inputMode, raw.inputMode); assert.equal(e.installDir, report.skillDelivery?.installDir ?? null);
+      assert.equal(e.pairOrder, details.pairOrder); assert.equal(e.executorTimeoutSeconds, details.executorTimeoutSeconds);
+      assert.deepEqual(e.spendingBudget, details.spendingBudget, 'Reviewed spending limits differ from the native plan.');
+    }
     let pairOrder: PairOrder | null = null;
     if (raw.pairOrder !== undefined || details.pairOrder !== undefined) {
       assert.ok(raw.pairOrder === 'baseline-first' || raw.pairOrder === 'balanced', 'Invalid recorded pair order.');
@@ -144,7 +162,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
           if (details.nativeDiffTool !== undefined && r.executorInvoked) {
             assert.equal(sha256File(member(root, `${task.id}/${arm}/trial-${trial}/${NATIVE_DIFF_PATH}`)), record(details.nativeDiffTool, 'native diff tool').sha256, 'Delivered native diff tool changed.');
           }
-          if (details.executorTimeoutSeconds !== undefined && r.executorInvoked && plan.injectedExecutor === false) {
+          if (details.executorTimeoutSeconds !== undefined && r.executorInvoked && plan.injectedExecutor === false && report.executor.kind === 'cli') {
             assert.ok(typeof details.executorTimeoutSeconds === 'number' && Number.isSafeInteger(details.executorTimeoutSeconds) && details.executorTimeoutSeconds >= 1 && details.executorTimeoutSeconds <= 3600);
             const actualTiming = record(record(r.timing, 'CLI timing').execution, 'CLI execution timing');
             assert.equal(actualTiming.timeoutMs, details.executorTimeoutSeconds * 1000, 'CLI deadline differs from the native plan.');

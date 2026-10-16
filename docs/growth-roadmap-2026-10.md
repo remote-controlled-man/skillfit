@@ -58,6 +58,12 @@ with their correct states/metrics and separate descriptive JSON kinds. See
 [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
 This reporting correction adds no live calls or npm publication.
 
+The same source line now shares ordinary/Agent paired plans, budget stop lines
+and executor deadlines, with ordinary JSON preview/confirmation and explicit
+no-Skill request baselines. [Shared planning](eval-planning.md) documents defaults,
+frozen limits and unchanged adoption restrictions. These additions also require
+a source build until a later npm release.
+
 - Improve error messages based on actual failed case-authoring attempts.
 - Verify Claude Code trigger capture when working authentication is available.
 - Add Cursor, Gemini CLI or OpenCode only with verified official paths and

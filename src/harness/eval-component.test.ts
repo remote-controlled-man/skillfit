@@ -7,7 +7,8 @@ import { test, type TestContext } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { reportEvalComponent, runEvalComponent } from '../commands/eval-component.js';
 import { exportEvaluation } from '../commands/eval-export.js';
-import { runEval } from '../commands/eval.js';
+import { runEval, type EvalOptions } from '../commands/eval.js';
+import { runEvalCli } from '../commands/eval-cli.js';
 import { assessEvaluation, type EvidenceAudit } from './eval-acceptance.js';
 import { parseAcceptancePolicy, parseEvalRequest, policyHash } from './eval-contract.js';
 import { hashFileSet, listFilesRecursive, sha256File } from './hash.js';
@@ -534,3 +535,126 @@ test('CLI request plans and errors emit one parseable JSON document without agen
   assert.equal(mixed.status, 2); assert.match(JSON.parse(mixed.stdout).error.message, /cannot be combined/);
   assert.equal(existsSync(join(f.root, 'runs')), false);
 });
+
+test('an explicit null baseline installs no Skill in baseline, preserves identical prompts and replays without originals', async t => {
+  const f = setup(t), seen: boolean[] = [], prompts: string[] = [];
+  writeFileSync(f.requestPath, JSON.stringify({ ...f.body, baselineSkill: null, taskIds: ['fix'], maxCalls: 2, executorTimeoutSeconds: 17 }));
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline-no-skill' }), run: async (prompt, workdir) => {
+    prompts.push(prompt); const installed = existsSync(join(workdir, 'project-skills/answer-skill/SKILL.md')); seen.push(installed);
+    writeFileSync(join(workdir, 'answer.txt'), installed ? '2' : '1');
+    return { output: 'done', tokens: { input: 10, cachedInput: 6, output: 2 } };
+  } };
+  const options = { ...f.options, executor }, preview = await runEvalComponent(f.requestPath, { ...options, dryRun: true });
+  assert.equal(preview.plan.request.baselineSkill, null); assert.equal(preview.plan.evaluation.baseline, null);
+  assert.equal(preview.plan.evaluation.executorTimeoutSeconds, 17); assert.equal(preview.plan.evaluation.plannedCalls, 2);
+  assert.equal(existsSync(f.runDir), false); assert.equal(seen.length, 0);
+  const result = await runEvalComponent(f.requestPath, { ...options, dryRun: false, expectedPlanSha256: preview.plan.sha256 });
+  assert.deepEqual(seen, [false, true]); assert.equal(prompts[0], prompts[1]); assert.ok('identity' in result);
+  assert.equal(result.identity.baseline, null); assert.equal(result.evidence.verified, true);
+  assert.ok(result.acceptance.reasons.some(r => r.code === 'REVISION_COMPARISON_REQUIRED')); assert.equal(result.acceptance.eligibleForUpgrade, false);
+  for (const path of [f.requestPath, join(f.root, 'bench'), join(f.root, 'old'), join(f.root, 'new')]) rmSync(path, { recursive: true });
+  const replay = await reportEvalComponent(f.runDir, { replay: true }); assert.equal(replay.evidence.verified, true);
+  const output = join(f.root, 'portable'); await exportEvaluation(f.runDir, output, { yes: true, log: () => {} });
+  assert.equal(existsSync(join(output, 'inputs/baseline-skill')), false);
+  assert.equal(JSON.parse(readFileSync(join(output, 'inputs/request.json'), 'utf8')).baselineSkill, null);
+  rmSync(f.runDir, { recursive: true });
+  const child = spawnSync(process.execPath, [join(output, 'reproduce.mjs')], { encoding: 'utf8', timeout: 30_000 });
+  assert.equal(child.status, 0, child.stderr); const portable = JSON.parse(child.stdout);
+  assert.equal(portable.identity.baseline, null); assert.equal(portable.acceptance.eligibleForUpgrade, false); assert.equal(seen.length, 2);
+});
+
+test('null is an explicit baseline choice; missing, empty or malformed paths never silently select it', t => {
+  const f = setup(t), { baselineSkill: _previous, ...missing } = f.body;
+  assert.equal(parseEvalRequest({ ...f.body, baselineSkill: null }, f.root).baselineSkill, null);
+  assert.equal(parseEvalRequest(f.body, f.root).baselineSkill, join(f.root, 'old'));
+  for (const baselineSkill of [undefined, '', false, 0, {}]) assert.throws(() => parseEvalRequest({ ...f.body, baselineSkill }, f.root), /baselineSkill/);
+  assert.throws(() => parseEvalRequest(missing, f.root), /baselineSkill/); assert.equal(f.calls(), 0);
+});
+
+function ordinaryOptions(f: ReturnType<typeof setup>, overrides: Partial<EvalOptions> = {}): EvalOptions {
+  return { skillPath: join(f.root, 'new'), baselineSkillPath: join(f.root, 'old'), bench: join(f.root, 'bench'), agent: 'codex',
+    mode: 'installed', inputMode: 'workspace', trials: 1, maxCalls: 4, runsRoot: join(f.root, 'runs'), runGroup: 'component',
+    dryRun: true, yes: true, ...f.options, log: () => {}, ...overrides };
+}
+
+test('ordinary eval and request preview share the effective plan, timeout and all spending lines', async t => {
+  const f = setup(t), spendingBudget = { input: 1000, cachedInput: 1000, uncachedInput: 1000, output: 1000, durationSeconds: 1000 };
+  writeFileSync(f.requestPath, JSON.stringify({ ...f.body, pairOrder: 'balanced', executorTimeoutSeconds: 17, spendingBudget }));
+  const request = await runEvalComponent(f.requestPath, { ...f.options, dryRun: true });
+  const ordinary = await runEvalCli(ordinaryOptions(f, { pairOrder: 'balanced', executorTimeoutSeconds: 17, spendingBudget }));
+  assert.ok('plan' in ordinary); assert.deepEqual(ordinary.plan.evaluation, request.plan.evaluation);
+  assert.equal(ordinary.plan.implementationSha256, request.plan.implementationSha256);
+  assert.equal(ordinary.status, 'planned'); assert.equal(ordinary.acceptance.eligibleForUpgrade, false);
+  assert.equal(existsSync(join(f.root, 'runs')), false); assert.equal(f.calls(), 0);
+});
+
+test('ordinary confirmed plans reject changed budget, timeout, ordering, selection and baseline before calls', async t => {
+  const f = setup(t), spendingBudget = { input: 1000, cachedInput: 1000, uncachedInput: 1000, output: 1000, durationSeconds: 1000 };
+  const base = ordinaryOptions(f, { pairOrder: 'balanced', executorTimeoutSeconds: 17, spendingBudget });
+  const preview = await runEvalCli(base); assert.ok('plan' in preview);
+  for (const change of [{ executorTimeoutSeconds: 18 }, { pairOrder: 'baseline-first' as const }, { spendingBudget: { ...spendingBudget, input: 999 } },
+    { maxCalls: 5 }, { taskIds: ['fix'] }, { baselineSkillPath: undefined }]) {
+    await assert.rejects(() => runEvalCli({ ...base, ...change, dryRun: false }, preview.plan.sha256), /--plan-sha matching/);
+  }
+  assert.equal(f.calls(), 0); assert.equal(existsSync(f.runDir), false);
+});
+
+test('ordinary execution seals the shared reviewed plan and retains replayable costs without component adoption', async t => {
+  const f = setup(t), spendingBudget = { input: 1000, cachedInput: 1000, uncachedInput: 1000, output: 1000, durationSeconds: 1000 };
+  const base = ordinaryOptions(f, { executorTimeoutSeconds: 17, pairOrder: 'balanced', spendingBudget });
+  const preview = await runEvalCli(base); assert.ok('plan' in preview);
+  const result = await runEvalCli({ ...base, dryRun: false }, preview.plan.sha256);
+  assert.equal(result.status, 'completed'); assert.ok('evidence' in result); assert.equal(result.evidence.verified, true, result.evidence.reasons.join('; '));
+  const native = JSON.parse(readFileSync(join(f.runDir, '_plan.json'), 'utf8'));
+  assert.deepEqual(native.details.reviewedPlan, preview.plan); assert.equal(native.details.executorTimeoutSeconds, 17);
+  assert.equal(native.details.component, undefined); assert.equal(result.acceptance.eligibleForUpgrade, false);
+  for (const path of ['bench', 'old', 'new']) rmSync(join(f.root, path), { recursive: true });
+  const replay = await reportEvalComponent(f.runDir, { replay: true }); assert.equal(replay.evidence.verified, true);
+  assert.deepEqual(replay.costs, result.costs); assert.deepEqual(replay.spendingBudget?.limits, spendingBudget);
+  const output = join(f.root, 'portable'); await exportEvaluation(f.runDir, output, { yes: true, log: () => {} });
+  rmSync(f.runDir, { recursive: true });
+  const child = spawnSync(process.execPath, [join(output, 'reproduce.mjs')], { encoding: 'utf8', timeout: 30_000 });
+  assert.equal(child.status, 0, child.stderr); const portable = JSON.parse(child.stdout);
+  assert.equal(portable.evidence.verified, true); assert.deepEqual(portable.costs, result.costs);
+  assert.deepEqual(portable.spendingBudget.limits, spendingBudget); assert.equal(portable.acceptance.eligibleForUpgrade, false);
+  assert.equal(f.calls(), 4);
+});
+
+test('ordinary and Agent no-Skill comparisons stop at the same budget line and keep the one invoked receipt', async t => {
+  const f = setup(t), spendingBudget = { input: 10, cachedInput: 100, uncachedInput: 100, output: 100, durationSeconds: 100 };
+  let calls = 0;
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline-common-budget' }), run: async (_prompt, workdir) => {
+    calls++; assert.equal(existsSync(join(workdir, 'project-skills/answer-skill')), false);
+    writeFileSync(join(workdir, 'answer.txt'), '1'); return { output: 'done', tokens: { input: 10, cachedInput: 6, output: 2 } };
+  } };
+  writeFileSync(f.requestPath, JSON.stringify({ ...f.body, baselineSkill: null, taskIds: ['fix'], maxCalls: 2, spendingBudget }));
+  const requestPreview = await runEvalComponent(f.requestPath, { ...f.options, executor, dryRun: true });
+  const request = await runEvalComponent(f.requestPath, { ...f.options, executor, dryRun: false, expectedPlanSha256: requestPreview.plan.sha256 });
+  const base = ordinaryOptions(f, { baselineSkillPath: undefined, taskIds: ['fix'], maxCalls: 2, spendingBudget, executor, runGroup: 'ordinary' });
+  const preview = await runEvalCli(base); assert.ok('plan' in preview);
+  const ordinary = await runEvalCli({ ...base, dryRun: false }, preview.plan.sha256);
+  for (const result of [request, ordinary]) {
+    assert.equal(result.status, 'stopped'); assert.ok('spendingBudget' in result && result.spendingBudget);
+    assert.equal(result.spendingBudget.latestState!.metrics.input.knownTotal, 10);
+    assert.ok(result.spendingBudget.latestState!.reached.includes('input'));
+    assert.equal(result.acceptance.eligibleForUpgrade, false);
+  }
+  assert.equal(calls, 2);
+  assert.equal(existsSync(join(f.runDir, 'fix/treatment/trial-1')), false);
+  assert.equal(existsSync(join(f.root, 'runs/ordinary/fix/treatment/trial-1')), false);
+});
+
+for (const [label, tokens] of [['missing cache', { input: 10, output: 2 }], ['partial', { input: 10, cachedInput: 6, output: 2 }]] as const) {
+  test(`ordinary ${label} usage cannot authorize a second budgeted invocation`, async t => {
+    const f = setup(t); let calls = 0;
+    const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline-incomplete-budget' }), run: async (_prompt, workdir) => {
+      calls++; writeFileSync(join(workdir, 'answer.txt'), '1');
+      return { output: 'done', tokens, ...(label === 'partial' ? { usageStatus: 'partial' as const } : {}) };
+    } };
+    const base = ordinaryOptions(f, { executor, spendingBudget: { input: 100, cachedInput: 100, uncachedInput: 100, output: 100, durationSeconds: 100 } });
+    const preview = await runEvalCli(base); assert.ok('plan' in preview);
+    const result = await runEvalCli({ ...base, dryRun: false }, preview.plan.sha256);
+    assert.equal(result.status, 'stopped'); assert.equal(calls, 1); assert.ok('spendingBudget' in result && result.spendingBudget);
+    assert.equal(result.spendingBudget.latestState!.reason, 'FINAL_USAGE_MISSING'); assert.equal(result.acceptance.eligibleForUpgrade, false);
+  });
+}

@@ -1,7 +1,10 @@
 # Agent evaluation component
 
 Use the existing `eval` engine through a versioned JSON request to compare a
-candidate Skill with its previous complete version. The component returns quality
+candidate Skill with its previous complete version. Source after npm 0.10.1 also
+accepts an explicit `baselineSkill: null` to compare with no Skill installed by
+the harness. See [shared planning, budgets and deadlines](eval-planning.md).
+The component returns quality
 changes, observed regressions, spending coverage and a separate adoption decision.
 It never installs, publishes or upgrades a Skill. These interfaces are included
 in [0.9.0](releases/0.9.0.md). Use npm 0.9.0 or newer, or build the current
@@ -92,8 +95,14 @@ The [request schema](schemas/eval-request.schema.json) and
 [policy schema](schemas/eval-policy.schema.json) document request version 1 and
 the versioned quality/efficiency policies. The runtime
 parser rejects unknown fields and invalid ranges. `policy` is optional and defaults
-to the conservative values above. The two complete Skills must have the same
-frontmatter name and different fingerprints. The caller must supply a fresh run
+to the conservative values above. `baselineSkill` is required: a string selects
+the previous complete Skill; explicit null selects no harness-installed Skill in
+baseline (source after npm 0.10.1). Omitted/empty/invalid values are rejected.
+When comparing revisions, the two complete Skills must have the same
+frontmatter name and different fingerprints. Inherited global configuration
+still applies in both arms. No-Skill comparisons retain measurements but cannot
+authorize revision adoption (`REVISION_COMPARISON_REQUIRED`).
+The caller must supply a fresh run
 group and an explicit call ceiling; eight tasks at five trials need 80 calls.
 
 `pairOrder` is optional and defaults to `baseline-first` for compatibility.
@@ -161,7 +170,8 @@ command. Execution requires the caller's existing authorization to spend; posses
 of a hash is not user consent. Request-based eval cannot be mixed with positional
 eval settings. It always uses installed workspace delivery and disables judges.
 
-The preview pins normalized request settings, request bytes, both Skills, the bench,
+The preview pins normalized request settings, request bytes, the candidate and
+any previous Skill, the bench,
 executor description and compiled implementation. A changed preview fails before
 calls or run-directory creation. The native session separately freezes recorded
 configuration at execution time; the preview does not isolate global configuration
@@ -185,7 +195,7 @@ callers should retain unknown/new fields for forward-compatible reporting.
 | Field | Meaning |
 |---|---|
 | `status` | `planned`, `completed`, `stopped`, `incomplete`, or `reported` for an unmanaged historical manifest |
-| `plan` | Request, fingerprints, executor, task IDs, trials, call ceiling, output directory and preview SHA; present for request execution |
+| `plan` | Fingerprints, executor, task IDs, trials, call ceiling, output directory and preview SHA; present for execution/preview through either entry; request plans also include the request and policy hashes |
 | `manifest` | Saved v4 manifest path and byte SHA-256; null when a stopped run produced no final manifest |
 | `identity` | Candidate, baseline, bench and configured executor identities; present with a final manifest |
 | `environment` | Verified native Node/CLI versions, configured settings, recorded `pairOrder`, served-model limitation and executor injection provenance; null for unverified evidence; unrecorded order stays null |

@@ -33,7 +33,7 @@ export type AcceptancePolicy = QualityPolicy | EfficiencyPolicy;
 export interface EvalRequest {
   taskIds?: string[];
   schemaVersion: 1;
-  baselineSkill: string;
+  baselineSkill: string | null;
   candidateSkill: string;
   bench: string;
   agent: string;
@@ -78,6 +78,15 @@ function numeric(value: unknown, label: string, min: number, max = Number.MAX_SA
   if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isSafeInteger(value))) {
     throw new Error(`${label} must be ${integer ? 'an integer' : 'a finite number'} between ${min} and ${max}.`);
   }
+  return value;
+}
+
+export function parseExecutorTimeoutSeconds(value: unknown = DEFAULT_CLI_TIMEOUT_MS / 1000, label = 'executorTimeoutSeconds'): number {
+  return numeric(value, label, 1, 3600, true);
+}
+
+export function parsePairOrder(value: unknown = 'baseline-first', label = 'pairOrder'): PairOrder {
+  if (value !== 'baseline-first' && value !== 'balanced') throw new Error(`${label} must be baseline-first or balanced.`);
   return value;
 }
 
@@ -129,16 +138,15 @@ export function parseEvalRequest(value: unknown, baseDir: string): EvalRequest {
   const agent = text(r.agent, 'request.agent');
   getAgent(agent);
   if (r.purpose !== 'development' && r.purpose !== 'validation') throw new Error('request.purpose must be development or validation.');
-  if (r.pairOrder !== undefined && r.pairOrder !== 'baseline-first' && r.pairOrder !== 'balanced') throw new Error('request.pairOrder must be baseline-first or balanced.');
   const runGroup = text(r.runGroup, 'request.runGroup');
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error('request.runGroup is invalid.');
   return { schemaVersion: 1,
-    baselineSkill: resolve(baseDir, text(r.baselineSkill, 'request.baselineSkill')),
+    baselineSkill: r.baselineSkill === null ? null : resolve(baseDir, text(r.baselineSkill, 'request.baselineSkill (use null for no installed Skill)')),
     candidateSkill: resolve(baseDir, text(r.candidateSkill, 'request.candidateSkill')),
     bench: resolve(baseDir, text(r.bench, 'request.bench')),
     ...(r.taskIds !== undefined ? { taskIds: parseTaskIds(r.taskIds) } : {}),
-    agent, purpose: r.purpose, pairOrder: r.pairOrder ?? 'baseline-first',
-    executorTimeoutSeconds: numeric(r.executorTimeoutSeconds ?? DEFAULT_CLI_TIMEOUT_MS / 1000, 'request.executorTimeoutSeconds', 1, 3600, true),
+    agent, purpose: r.purpose, pairOrder: parsePairOrder(r.pairOrder, 'request.pairOrder'),
+    executorTimeoutSeconds: parseExecutorTimeoutSeconds(r.executorTimeoutSeconds, 'request.executorTimeoutSeconds'),
     trials: numeric(r.trials, 'request.trials', 1, 20, true),
     maxCalls: numeric(r.maxCalls, 'request.maxCalls', 1, Number.MAX_SAFE_INTEGER, true),
     ...(r.spendingBudget !== undefined ? { spendingBudget: parseSpendingBudget(r.spendingBudget) } : {}),

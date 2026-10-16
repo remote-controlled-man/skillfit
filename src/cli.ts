@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 import { parseArgs } from 'node:util';
+import { resolve } from 'node:path';
 import { runBenchAdd, runBenchCheck, runBenchInit } from './commands/bench.js';
 import { benchCheckError, benchCheckJson } from './commands/bench-check-report.js';
 import { inspectBench, manageBench } from './commands/bench-manage.js';
 import { exportEvaluation } from './commands/eval-export.js';
 import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
-import { DEFAULT_EVAL_TRIALS, runEval } from './commands/eval.js';
+import { DEFAULT_EVAL_TRIALS, runEval, type EvalOptions } from './commands/eval.js';
+import { runEvalCli } from './commands/eval-cli.js';
+import { readComponentJson } from './harness/eval-contract.js';
+import { parseSpendingBudget } from './harness/eval-budget.js';
 import { runEvalReport } from './commands/eval-report.js';
 import { componentError, runEvalComponent } from './commands/eval-component.js';
 import { readEvaluationReport } from './commands/evaluation-report.js';
@@ -47,8 +51,13 @@ Options:
   --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
   --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target
   --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
-  --plan-sha <hash>   Confirm the current --request dry-run plan before real calls
-  --json             Machine output for bench check/list/show/edit/remove, report, and request-based eval
+  --plan-sha <hash>   Confirm an eval dry-run plan (positional eval also needs --run-group)
+  --json             Machine output for bench check/list/show/edit/remove, report, and paired eval
+  --spending-budget <file>  Paired eval: JSON with input, cachedInput, uncachedInput, output, durationSeconds stop lines
+  --executor-timeout-seconds <n>  Paired eval: agent/API deadline in both arms (integer 1–3600)
+  --pair-order <order>  Paired eval: baseline-first (default) | balanced
+  --runs-root <dir>   Eval output parent (default: ./runs)
+  --run-group <name>  Fresh eval group; reuse its name when confirming a preview
   --policy <path>    With paired report eval, assess against a policy (post-hoc changes cannot authorize adoption)
   --records <dir>    With paired report eval, use native evidence from this run directory
   --replay           With paired report eval, regrade cloned deliveries using the frozen bench
@@ -115,6 +124,11 @@ const CLI_OPTIONS = {
   'baseline-skill': { type: 'string' },
   request: { type: 'string' },
   'plan-sha': { type: 'string' },
+  'spending-budget': { type: 'string' },
+  'executor-timeout-seconds': { type: 'string' },
+  'pair-order': { type: 'string' },
+  'runs-root': { type: 'string' },
+  'run-group': { type: 'string' },
   policy: { type: 'string' },
   records: { type: 'string' },
   replay: { type: 'boolean', default: false },
@@ -214,7 +228,9 @@ async function main(): Promise<void> {
   if (values.export !== undefined && (values.replay || values.records || values.policy)) throw new Error('--export cannot be combined with --replay, --records or --policy.');
   if (command === 'bench' && positionals[1] === 'add' && values.task && values.task.length !== 1) throw new Error('bench add requires exactly one --task.');
   if (values.request !== undefined && command !== 'eval') throw new Error('--request applies only to eval.');
-  if (values['plan-sha'] !== undefined && (command !== 'eval' || values.request === undefined || values['dry-run'])) throw new Error('--plan-sha requires a non-dry-run eval --request.');
+  if (values['plan-sha'] !== undefined && (command !== 'eval' || values['dry-run'])) throw new Error('--plan-sha requires a non-dry-run eval.');
+  const evalSettings = ['spending-budget', 'executor-timeout-seconds', 'pair-order', 'runs-root', 'run-group'] as const;
+  if (command !== 'eval' && evalSettings.some(key => values[key] !== undefined)) throw new Error('Budget, timeout, pair-order and output settings apply only to eval.');
   if ((values.policy !== undefined || values.records !== undefined || values.replay) && !(command === 'report' && positionals[1] === 'eval')) {
     throw new Error('--policy, --records and --replay require report eval.');
   }
@@ -272,7 +288,7 @@ async function main(): Promise<void> {
       return;
     case 'eval': {
       if (values.request !== undefined) {
-        if (positionals.length !== 1 || ['agent', 'mode', 'baseline-skill', 'bench', 'task', 'trials', 'max-calls', 'input', 'judge-agent'].some(key => values[key as keyof typeof values] !== undefined) || values['compete-installed']) {
+        if (positionals.length !== 1 || ['agent', 'mode', 'baseline-skill', 'bench', 'task', 'trials', 'max-calls', 'input', 'judge-agent', ...evalSettings].some(key => values[key as keyof typeof values] !== undefined) || values['compete-installed']) {
           throw new Error('--request cannot be combined with a target or positional eval settings; put settings in the request.');
         }
         const result = await runEvalComponent(values.request, { dryRun: values['dry-run'], expectedPlanSha256: values['plan-sha'], log: line => console.error(line) });
@@ -280,32 +296,50 @@ async function main(): Promise<void> {
         if (result.status === 'stopped') process.exitCode = failureExitCode(2);
         return;
       }
-      if (values.json) throw new Error('eval --json requires --request.');
+      if (values['plan-sha'] !== undefined && !values['run-group']) throw new Error('Positional eval --plan-sha requires --run-group from the dry-run plan.');
+      if (values.json && !values['dry-run'] && values['plan-sha'] === undefined) throw new Error('JSON eval execution requires --plan-sha from a dry-run and --run-group; no calls started.');
       const skillPath = positionals[1];
       if (!skillPath) {
+        if (values.json) throw new Error('Usage: skillfit eval <target-path> [options]');
         console.error('Usage: skillfit eval <target-path> [--bench <path>] [--trials <n>] [--agent <id>] [--mode <mode>]');
         process.exitCode = 2;
         return;
       }
       const mode = values.mode ?? 'inject';
       if (mode !== 'inject' && mode !== 'installed' && mode !== 'trigger') {
+        if (values.json) throw new Error(`Unknown --mode: ${mode} (expected "inject", "installed" or "trigger")`);
         console.error(`Unknown --mode: ${mode} (expected "inject", "installed" or "trigger")`);
         process.exitCode = 2;
         return;
       }
-      await runEval({
+      if (values['runs-root'] !== undefined && (!values['runs-root'].trim() || values['runs-root'].includes('\0'))) throw new Error('--runs-root must be a non-empty path.');
+      const spendingBudget = values['spending-budget'] === undefined ? undefined : parseSpendingBudget(readComponentJson(resolve(values['spending-budget'])).value);
+      const options: EvalOptions = {
         ...common,
         skillPath,
         baselineSkillPath: values['baseline-skill'],
         bench: values.bench,
         taskIds: values.task,
-        mode,
+        mode: mode as 'inject' | 'installed' | 'trigger',
         inputMode,
         judgeAgent: values['judge-agent'],
         competeInstalled: values['compete-installed'],
         maxCalls,
         trials,
-      });
+        spendingBudget,
+        executorTimeoutSeconds: values['executor-timeout-seconds'] === undefined ? undefined : Number(values['executor-timeout-seconds']),
+        pairOrder: values['pair-order'] as 'baseline-first' | 'balanced' | undefined,
+        runsRoot: values['runs-root'] === undefined ? undefined : resolve(values['runs-root']),
+        runGroup: values['run-group'],
+        log: values.json ? (line: string) => console.error(line) : (line: string) => console.log(line),
+      };
+      if (mode === 'trigger' && !values.json && values['plan-sha'] === undefined) await runEval(options);
+      else {
+        const result = await runEvalCli(options, values['plan-sha']);
+        if (values.json) console.log(JSON.stringify(result, null, 2));
+        else if ('executionError' in result) console.error(result.executionError);
+        if (result.status === 'stopped') process.exitCode = failureExitCode(2);
+      }
       return;
     }
     case 'mcp': {
@@ -458,7 +492,7 @@ main().catch((err: unknown) => {
     process.exitCode = failureExitCode(2); return;
   }
   if (process.argv.some(arg => arg === '--request' || arg.startsWith('--request=')) ||
-      (process.argv.includes('--json') && process.argv.includes('report') && process.argv.includes('eval'))) {
+      (process.argv.some(arg => arg === '--json' || arg.startsWith('--json=')) && process.argv.includes('eval'))) {
     console.log(JSON.stringify(componentError(err), null, 2));
     process.exitCode = failureExitCode(2);
     return;

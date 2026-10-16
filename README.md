@@ -165,6 +165,8 @@ Requests can also pin `executorTimeoutSeconds` (default 600) for both versions. 
 
 Available in 0.10.0: optional `spendingBudget` sets five absolute batch stop lines. Reaching a line or losing complete final usage stops subsequent calls and retains spending; an in-flight call may overshoot. See the [guard contract](docs/eval-component.md#input-and-execution).
 
+Source after npm 0.10.1 unifies ordinary paired eval and Agent request plans. Ordinary eval also accepts `--json`, `--spending-budget <file>`, `--executor-timeout-seconds`, `--pair-order`, `--runs-root` and `--run-group`; JSON execution requires the preview hash. Requests can set `baselineSkill: null` for no Skill installed by the harness in baseline, matching ordinary installed eval without `--baseline-skill`. This measures installation benefit but cannot authorize revision adoption. See [shared settings and confirmation](docs/eval-planning.md).
+
 Failed Codex JSON calls can retain identity-bound partial usage from local numeric counters. Private transcript bodies stay out of exports, and partial usage never satisfies the final-cost or adoption gates.
 
 ```bash

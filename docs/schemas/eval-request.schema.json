@@ -6,7 +6,7 @@
   "required": ["schemaVersion", "baselineSkill", "candidateSkill", "bench", "agent", "purpose", "trials", "maxCalls", "runsRoot", "runGroup"],
   "properties": {
     "schemaVersion": { "const": 1 },
-    "baselineSkill": { "$ref": "#/$defs/path" },
+    "baselineSkill": { "anyOf": [{ "$ref": "#/$defs/path" }, { "type": "null" }], "description": "Previous complete Skill directory, or explicit null for no Skill installed by the harness in baseline." },
     "candidateSkill": { "$ref": "#/$defs/path" },
     "bench": { "$ref": "#/$defs/path" },
     "agent": { "enum": ["codex", "claude-code", "kimi-code"] },

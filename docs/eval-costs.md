@@ -5,6 +5,14 @@ Paired `eval` runs record descriptive agent costs in `tasks[].costs` and
 terminal summary and `report eval <manifest.json>` show the same cost tables.
 Reading a report makes no model call and does not change the manifest or verdict.
 
+Source after npm 0.10.1 exposes the same paired spending guard through ordinary
+`--spending-budget <file>` and request `spendingBudget`. The five limits and
+effective primary executor deadline are visible in the shared plan and sealed
+for offline replay; the source budget file is unnecessary after execution.
+Limits stop between calls and can overshoot in flight. Judges and trigger runs
+reject this guard. These are operational limits, separate from relative
+adoption ceilings or a provider invoice. See [shared planning](eval-planning.md).
+
 ## Two populations
 
 - **Surviving graded pairs:** the same paired observations used by the quality
