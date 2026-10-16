@@ -52,13 +52,15 @@ test('completed native calibration uses its own summary, state and difficulty me
   assert.deepEqual(report.summary?.metrics, { taskCount: 3, measuredTasks: 3, discriminativeTasks: 1, passes: 3, completed: 6, errors: 0, baselinePassRate: 0.5 });
   assert.equal(report.usage?.metrics.input.knownTotal, 60); assert.equal(report.usage?.metrics.cachedInput.knownTotal, 0);
   assert.equal(report.usage?.metrics.cachedInput.coverage.final, 6);
-  assert.equal(report.acceptance.eligibleForUpgrade, false); assert.equal(report.acceptance.automaticUpgrade, false); assert.equal(report.evidence.verified, false);
+  assert.equal(report.acceptance.eligibleForUpgrade, false); assert.equal(report.acceptance.automaticUpgrade, false); assert.equal(report.evidence.verified, true);
+  assert.equal(report.evidence.scope, 'single-arm-native');
   const human = f.cli(run), json = f.cli(run, ['--json']), file = f.cli(join(run, '_calibration.json'));
   for (const output of [human, json, file]) assert.equal(output.status, 0, output.stderr);
   assert.equal(JSON.parse(json.stdout).status, 'completed'); assert.equal(human.stdout, file.stdout);
   assert.match(human.stdout, /Baseline pass rate: 3\/6 \(50.0%\)/); assert.match(human.stdout, /discriminative tasks: 1\/3/);
   assert.match(human.stdout, /saturated/); assert.match(human.stdout, /floor/); assert.doesNotMatch(human.stdout, /Overall verdict|State: stopped|McNemar/);
-  await assert.rejects(() => exportEvaluation(run, join(f.root, 'export'), { log: () => {} }), /calibration reports do not authorize a paired export/);
+  assert.equal((await exportEvaluation(run, join(f.root, 'export'), { log: () => {} })).status, 'planned');
+  assert.equal(existsSync(join(f.root, 'export')), false);
   assert.deepEqual(observedFiles(run, '_calibration.json'), before); assert.equal(f.calls(), 6);
   rmSync(join(run, 'easy/baseline/trial-1/_result.json'));
   const missing = await readEvaluationReport(run); assert.ok('evaluationType' in missing);
@@ -146,11 +148,15 @@ test('single-arm reports reject contradictory counts, metrics, schemas, session 
     await assert.rejects(() => readEvaluationReport(run));
   }
   writeFileSync(path, original);
-  for (const flags of [['--replay'], ['--policy', 'missing.json'], ['--records', run], ['--bench', f.bench]]) {
+  for (const json of [false, true]) {
+    const replay = f.cli(run, ['--replay', ...(json ? ['--json'] : [])]); assert.equal(replay.status, 0, replay.stderr);
+    if (json) { const result = JSON.parse(replay.stdout); assert.equal(result.evidence.verified, true); assert.equal(result.evidence.replayedDeliveries, 2); assert.equal(result.acceptance.eligibleForUpgrade, false); }
+  }
+  for (const flags of [['--policy', 'missing.json'], ['--records', run], ['--bench', f.bench]]) {
     for (const json of [false, true]) {
       const result = f.cli(run, [...flags, ...(json ? ['--json'] : [])]); assert.equal(result.status, json ? 2 : 1);
       if (json) { const failure = JSON.parse(result.stdout); assert.equal(failure.status, 'error'); assert.equal(failure.acceptance.eligibleForUpgrade, false); }
-      else assert.match(result.stderr, /require a paired report/);
+      else assert.match(result.stderr, /do not support paired|only used with --replay/);
     }
   }
   copyFileSync(path, join(run, '_calibration.json')); await assert.rejects(() => readEvaluationReport(run), /Ambiguous run/);

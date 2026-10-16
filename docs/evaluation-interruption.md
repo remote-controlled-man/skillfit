@@ -9,7 +9,12 @@ handling, not the statistical or adoption protocol.
 Press **Ctrl+C** once during a live evaluation. The same path handles `SIGTERM`.
 It covers paired inject/installed evaluations, JSON request execution, trigger
 evaluations and live `bench check --calibrate`. It also stops an active harness
-verifier or judge. Previews and read-only reports install no interrupt handlers.
+verifier or judge. Read-only JSON previews and reports start no executor.
+
+Version 0.11.0 extends cancellation across standalone `bench check`,
+including its verifier and reference-repair descendants. Disposable probe copies
+are removed. Nested checks reuse the enclosing evaluation's cancellation context
+and restore handlers when finished; they do not swallow the interruption.
 
 The source also cancels [offline case preflight](eval-case-preflight.md) before
 dispatch. Its verifier/oracle trees stop with exit 130/143 and zero model calls;
@@ -45,14 +50,21 @@ The native run directory keeps:
 - `_artifacts.json`: inventory and hashes of retained files, including interruption
   metadata. A stopped prefix does not acquire a completed efficacy verdict.
 
-An interrupted judge additionally keeps `_interrupted-judge-<call>.json` with its
-available output/usage or null when unavailable. Separate judge spending remains
-outside the primary-agent cost totals; this record does not make that bill complete.
-Trigger receipts retain interrupted output/tokens with partial/unknown status;
-the existing paired JSON assessment/export contract is not extended to trigger
-or judge runs by this fix.
+Version 0.11.0 records each judge call separately and shows primary
+Agent, judge and combined invocation costs; missing/partial usage remains
+incomplete. An interrupted judge also retains the existing
+`_interrupted-judge-<call>.json` record. Neither a receipt nor a known token total
+proves an exact provider bill. See [cost accounting](eval-costs.md).
 
-Inspect a paired stopped run without another agent call:
+The same source seals stopped calibration `_calibration.json` records with the
+whole declared task set, including zero-count tasks not reached. Trigger receipts
+retain interrupted output/tokens with partial/unknown status. Supported sealed
+paired, calibration and trigger runs, including new judge receipts, can be read,
+audited and exported with the shared report entry point. Historical summaries
+without native evidence remain unverified; missing original runtime support
+cannot be silently supplied by substituting a new implementation.
+
+Inspect a stopped native run without another agent call:
 
 ```bash
 node dist/cli.js report eval ./runs/my-run --json
@@ -75,11 +87,11 @@ processes participate in cancellation; unrelated services are outside that contr
 
 ```bash
 npm test
-node --test dist/commands/eval-interruption.test.js dist/harness/interruption.test.js
+node --test dist/commands/eval-interruption.test.js dist/commands/bench-calibration.test.js dist/harness/interruption.test.js
 ```
 
 The tests inject fake Node CLI/process trees and a fake fetch implementation. They
-check interrupted primary/verifier/judge work, trigger/calibration/request execution,
+check standalone verifier/oracle descendants and interrupted primary/verifier/judge work, trigger/calibration/request execution,
 repeated signals, between-call interruption, partial and unknown costs, sealed
 inventories, stopped-package replay, exit codes and handler/context cleanup.
 POSIX integration tests deliver real OS signals to the harness. Windows tests emit

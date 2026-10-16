@@ -13,7 +13,7 @@ CLI coding runs can add `--input workspace` to work from files on disk without a
 inline repository; use the same option for baseline calibration. Snapshot input
 remains the compatible default.
 
-For a new code-editing case, a source build supports `bench init my-bench --kind command`.
+For a new code-editing case, use `bench init my-bench --kind command`.
 It creates a synthetic teaching fixture, independent verifier and reference
 repair; this template is included in npm 0.10.0 and newer. Follow the
 [starter walkthrough](bench-authoring.md#choose-a-starter), replace it with your
@@ -57,8 +57,8 @@ a controlled agent profile for the experiment and record its relevant global con
 does not automatically remove the user's configuration. `doctor` and `report` are read-only aids,
 but neither proves that an agent actually ignored a globally installed Skill during an eval.
 
-Source after npm 0.10.1 makes [Agent environment checks](eval-agent-preflight.md)
-part of preview and the live gate. CLI absence, incompatible matrix capabilities
+Version 0.11.0 makes [Agent environment checks](eval-agent-preflight.md)
+part of eval/calibration preview and the live gate. CLI absence, incompatible matrix capabilities
 and global same-name Skills are explicit failures; login stays unknown without
 network/authentication probes. Inspect the nested environment status even when a
 dry run successfully generated a plan. Reports retain the original checks.
@@ -69,7 +69,7 @@ tasks require. Check any extra writable roots in your Codex configuration before
 takes its model, reasoning level, and other settings from the active CLI configuration. Record those
 settings alongside the manifest when comparing runs, and use the same configuration for both arms.
 
-Source after npm 0.10.1 supports an ordinary `--json --dry-run` plan and shared
+Version 0.11.0 supports an ordinary `--json --dry-run` plan and shared
 budget, deadline, pair-order and output-group settings. For complete Skill
 delivery use `--mode installed`; omitting `--baseline-skill` installs the Skill
 only in treatment, matching an Agent request's explicit `baselineSkill: null`.
@@ -77,6 +77,20 @@ Use an explicit fresh `--run-group`, inspect `plan.sha256`, then pass that hash
 with `--plan-sha` to execute JSON plans. See the [two-call budget example and
 stop rules](eval-planning.md). A preview does not authorize spending, and a
 no-Skill comparison cannot authorize revision adoption.
+
+The same source supports a bounded baseline calibration before a paired study.
+It measures task difficulty, not Skill benefit. For example, preview one selected
+task with one call, without running the verifier, oracle or agent:
+
+```bash
+node dist/cli.js bench check <bench-dir> --calibrate --agent codex --task <task-id> --input workspace --trials 1 --max-calls 1 --run-group calibration-001 --json --dry-run
+```
+
+Inspect `plan.agentPreflight`, then confirm `plan.planSha256` with `--plan-sha`
+and the same settings/group only after spending is authorized. Live calibration
+runs the offline case gates first: hard failures block, unknown winnability and
+warnings remain distinct. `--spending-budget` and
+`--executor-timeout-seconds` also apply; see [shared planning](eval-planning.md).
 
 ## 3. Run, inspect, and share
 
@@ -108,6 +122,22 @@ optimistic estimate. Share paired and trigger results separately. Source after n
 0.10.1 reads both through `report eval`, with distinct JSON kinds and metrics;
 calibration directories or `_calibration.json` also work. See [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
 Single-arm reports do not enter the paired acceptance policy or authorize upgrades.
+
+In that source, trigger also supports `--json --dry-run`, repeated `--task`,
+spending lines and a per-call deadline. Confirm its ordinary `plan.sha256` and
+explicit fresh `--run-group` for JSON execution. Only selected labeled tasks
+count toward calls; retain negative controls. Trigger already presents files on
+disk, so omit `--input`. Calibration/trigger native runs can be audited through
+`report eval`, replayed with `--replay` and exported to a fresh directory. This
+reuses saved observations and trusted verifier code; it does not make the study
+independent or query an agent again. Historical summaries or runtimes without
+the required evidence/replay support cannot be upgraded by rendering them.
+
+If you enable a judge for a paired inject experiment, the source records both
+judge orders and separate Agent/judge/total invocation costs. Its calls consume
+the same whole-batch spending lines. An explicitly enabled API judge with
+missing credentials fails before calls; login validity remains unknown offline.
+Read [cost coverage](eval-costs.md) before treating a known total as complete.
 
 New trigger manifests record both the injectable-text hash and a separate full installed-file hash,
 including scripts and binary resources. Keep the Skill directory unchanged while the experiment runs;

@@ -9,6 +9,10 @@ import { spendingBudgetReport } from '../harness/eval-budget.js';
 import { verifyReplayPackage } from '../harness/replay-package.js';
 import { CasePreflightFailed } from './eval-preflight.js';
 import { AgentPreflightFailed } from '../harness/agent-preflight.js';
+import { reportSingleArmEvaluation } from './eval-single-arm-replay.js';
+import { historicalInvocationCosts, parseInvocationCosts } from '../harness/invocation-costs.js';
+import type { CostPopulation } from '../harness/costs.js';
+import { withEvaluationInterrupts } from '../harness/interruption.js';
 
 export function componentError(error: unknown, code = 'INVALID_OR_FAILED_EVALUATION') {
   return { schemaVersion: 1, kind: 'skillfit.eval-error', status: 'error',
@@ -21,16 +25,26 @@ export function componentError(error: unknown, code = 'INVALID_OR_FAILED_EVALUAT
 export interface EvalReportOptions { policyPath?: string; recordsPath?: string; replay?: boolean; benchDir?: string }
 
 export async function reportEvalComponent(path: string, options: EvalReportOptions = {}) {
+  return options.replay ? withEvaluationInterrupts(() => readSavedEvaluation(path, options)) : readSavedEvaluation(path, options);
+}
+
+async function readSavedEvaluation(path: string, options: EvalReportOptions) {
   if (statSync(resolve(path)).isDirectory() && existsSync(join(resolve(path), 'replay-package.json'))) {
     if (options.recordsPath || options.benchDir) throw new Error('Portable packages already pin their run and bench; external overrides are not allowed.');
     const metadata = verifyReplayPackage(resolve(path));
-    return { ...await reportNativeEvaluation(join(resolve(path), 'run'), { ...options, benchDir: join(resolve(path), 'inputs/bench') }),
+    return { ...await reportNativeEvaluation(join(resolve(path), 'run'), { ...options,
+      ...(options.replay ? { benchDir: join(resolve(path), 'inputs/bench') } : {}) }),
       portablePackage: { integrityVerified: true, sourcePlanSha256: metadata.sourcePlanSha256, files: Object.keys(metadata.files).length } };
   }
   return reportNativeEvaluation(path, options);
 }
 
 async function reportNativeEvaluation(path: string, options: EvalReportOptions) {
+  const single = await reportSingleArmEvaluation(path, options);
+  if (single) {
+    const spendingBudget = spendingBudgetReport(single.evidence.runDir);
+    return { ...single, ...(spendingBudget ? { spendingBudget } : {}) };
+  }
   const input = resolve(path), directory = statSync(input).isDirectory();
   const manifestPath = directory ? join(input, 'manifest.json') : input;
   const runDir = resolve(options.recordsPath ?? (directory ? input : dirname(input)));
@@ -40,11 +54,13 @@ async function reportNativeEvaluation(path: string, options: EvalReportOptions) 
     const sessionPath = join(runDir, '_session.json');
     const session = existsSync(sessionPath) ? record(readComponentJson(sessionPath).value, 'session') : null;
     const nativePlan = record(readComponentJson(join(runDir, '_plan.json')).value, 'native plan');
+    const costs = stoppedAccounting(runDir);
     return { schemaVersion: 1, kind: 'skillfit.eval-result', status: session ? 'stopped' : 'incomplete',
       agentPreflight: nativePlan.details ? record(nativePlan.details, 'native plan details').agentPreflight ?? null : null,
       casePreflight: nativePlan.details ? record(nativePlan.details, 'native plan details').casePreflight ?? null : null,
       inputSnapshot: nativePlan.inputSnapshot ?? null,
-      manifest: null, session, costs: stoppedAccounting(runDir), evidence: { verified: false, runDir, reasons: ['No final evaluation manifest; retained spending only.'] },
+      manifest: null, session, costs, invocationCosts: costs.invocationCosts,
+      evidence: { verified: false, runDir, reasons: ['No final evaluation manifest; retained spending only.'] },
       ...(spendingBudget ? { spendingBudget } : {}),
       acceptance: { decision: 'inconclusive', eligibleForUpgrade: false, automaticUpgrade: false,
         reasons: [{ code: 'EXPERIMENT_NOT_COMPLETED', message: 'No completed paired evaluation is available.' }] } };
@@ -53,8 +69,13 @@ async function reportNativeEvaluation(path: string, options: EvalReportOptions) 
   const audit = await auditEvaluation(data.value, runDir, options);
   const policy = options.policyPath ? parseAcceptancePolicy(readComponentJson(resolve(options.policyPath)).value) : undefined;
   const result = assessEvaluation(data.value, audit, policy);
+  const raw = record(data.value, 'manifest');
+  const populations = result.costs.populations?.attempts;
+  const invocationCosts = raw.invocationCosts === undefined
+    ? populations ? historicalInvocationCosts(combinePopulations(populations.baseline, populations.treatment), raw.judge != null) : null
+    : parseInvocationCosts(raw.invocationCosts);
   const nativePlan = audit.verified ? record(readComponentJson(join(runDir, '_plan.json')).value, 'native plan') : null;
-  return { ...result, manifest: { path: manifestPath, sha256: data.sha256, schemaVersion: 4 },
+  return { ...result, invocationCosts, manifest: { path: manifestPath, sha256: data.sha256, schemaVersion: 4 },
     agentPreflight: nativePlan ? record(nativePlan.details, 'native plan details').agentPreflight ?? null : null,
     casePreflight: nativePlan ? record(nativePlan.details, 'native plan details').casePreflight ?? null : null,
     inputSnapshot: nativePlan?.inputSnapshot ?? null,
@@ -69,6 +90,15 @@ async function reportNativeEvaluation(path: string, options: EvalReportOptions) 
       ledgerPath: join(runDir, '_calls.jsonl'), artifactsPath: join(runDir, '_artifacts.json') } };
 }
 
+function combinePopulations(a: CostPopulation, b: CostPopulation): CostPopulation {
+  const metrics = Object.fromEntries(Object.entries(a.metrics).map(([key, m]) => {
+    const other = b.metrics[key as keyof typeof b.metrics];
+    return [key, { knownTotal: m.knownTotal + other.knownTotal,
+      coverage: { final: m.coverage.final + other.coverage.final, partial: m.coverage.partial + other.coverage.partial, unknown: m.coverage.unknown + other.coverage.unknown } }];
+  })) as CostPopulation['metrics'];
+  return { runs: a.runs + b.runs, passes: a.passes + b.passes, metrics };
+}
+
 export interface ComponentRunOptions {
   dryRun: boolean;
   expectedPlanSha256?: string;
@@ -77,6 +107,12 @@ export interface ComponentRunOptions {
   sessionOptions?: EvalOptions['sessionOptions'];
   skillInstallDir?: string;
   log?: (line: string) => void;
+}
+
+async function pairedComponentReport(path: string) {
+  const result = await reportEvalComponent(path);
+  if ('evaluationType' in result) throw new Error('A revision request must produce paired evaluation evidence.');
+  return result;
 }
 
 /** Machine interface to the existing installed A/B engine; never installs an accepted candidate. */
@@ -104,10 +140,10 @@ export async function runEvalComponent(requestPath: string, options: ComponentRu
       onPlan: prepared.assertCurrent });
   } catch (error) {
     if (!existsSync(join(runDir, '_plan.json'))) throw error;
-    const result = await reportEvalComponent(runDir);
+    const result = await pairedComponentReport(runDir);
     return { ...result, status: 'stopped', plan, executionError: error instanceof Error ? error.message : String(error),
       acceptance: { ...result.acceptance, decision: result.acceptance.decision === 'reject' ? 'reject' : 'inconclusive', eligibleForUpgrade: false,
         reasons: [...result.acceptance.reasons, { code: 'EXECUTION_STOPPED', message: 'Request execution failed; inspect retained receipts before a fresh declaration.' }] } };
   }
-  return { ...await reportEvalComponent(runDir), plan };
+  return { ...await pairedComponentReport(runDir), plan };
 }

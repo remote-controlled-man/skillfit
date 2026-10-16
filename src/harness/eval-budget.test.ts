@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { test, type TestContext } from 'node:test';
 import { runEvalComponent, reportEvalComponent } from '../commands/eval-component.js';
 import { parseEvalRequest } from './eval-contract.js';
-import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState, type SpendingBudget } from './eval-budget.js';
+import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState, spendingStopFrom, SpendingBudgetStop, type SpendingBudget } from './eval-budget.js';
 import { COST_METRICS, type CostObservation } from './costs.js';
 import { sha256File } from './hash.js';
 import { ExecutorFailure, type Executor, type ExecutorResult } from './types.js';
@@ -32,6 +32,17 @@ test('all-invocation budgets count functional failures, partial costs and unknow
   assert.equal(state.metrics.cachedInput.knownTotal, 6); assert.equal(state.metrics.cachedInput.coverage.unknown, 1);
   assert.equal(state.metrics.uncachedInput.knownTotal, 4); assert.equal(state.metrics.uncachedInput.coverage.unknown, 1);
   assert.equal(state.metrics.input.coverage.partial, 1); assert.equal(state.reason, 'FINAL_USAGE_MISSING');
+});
+
+test('budget stop codes survive trusted cause chains without treating arbitrary error text as safe diagnostics', () => {
+  const state = spendingBudgetState({ ...limits, input: 10 }, [observation()]);
+  let stopped: unknown;
+  try { assertSpendingCanContinue(state); } catch (error) { stopped = error; }
+  assert.ok(stopped instanceof SpendingBudgetStop); assert.equal(stopped.code, 'SPENDING_BUDGET_REACHED');
+  assert.equal(spendingStopFrom(new Error('wrapper', { cause: stopped })), stopped);
+  const ordinary = new Error('SPENDING_BUDGET_REACHED: private credential text'); ordinary.name = 'SpendingBudgetStop';
+  assert.equal(spendingStopFrom(ordinary), null);
+  const cycle = new Error('cyclic cause'); cycle.cause = cycle; assert.equal(spendingStopFrom(cycle), null);
 });
 
 function setup(t: TestContext, change: Partial<SpendingBudget> = {}, result?: () => ExecutorResult, functionalFailure = false) {
@@ -69,6 +80,8 @@ for (const metric of COST_METRICS) test(`${metric} stop line blocks the second e
   const receipt = JSON.parse(readFileSync(join(f.directory, 'first/baseline/trial-1/_result.json'), 'utf8'));
   assert.deepEqual(receipt.tokens, { input: 10, cachedInput: 6, output: 3 });
   assert.equal(existsSync(join(f.directory, 'first/treatment/trial-1')), false);
+  const session = JSON.parse(readFileSync(join(f.directory, '_session.json'), 'utf8'));
+  assert.equal(session.stopCode, 'SPENDING_BUDGET_REACHED'); assert.match(session.stopReason, /SPENDING_BUDGET_REACHED/);
   assert.ok('spendingBudget' in result); assert.ok(result.spendingBudget);
   assert.ok(result.spendingBudget.latestState!.reached.includes(metric));
   assert.equal(result.spendingBudget.latestState!.metrics.input.knownTotal, 10);
@@ -86,6 +99,8 @@ for (const [label, tokens] of [['no counters', undefined], ['missing cache', { i
   test(`${label}: missing or incompatible final usage refuses another call without filling cache with zero`, async t => {
     const f = setup(t, {}, () => ({ output: 'returned', tokens })), result = await execute(f);
     assert.equal(f.calls(), 1); assert.equal(result.status, 'stopped'); assert.equal(result.acceptance.eligibleForUpgrade, false);
+    const session = JSON.parse(readFileSync(join(f.directory, '_session.json'), 'utf8'));
+    assert.equal(session.stopCode, 'FINAL_USAGE_MISSING'); assert.match(session.stopReason, /FINAL_USAGE_MISSING/);
     assert.ok('spendingBudget' in result); assert.ok(result.spendingBudget);
     assert.equal(result.spendingBudget.latestState!.reason, 'FINAL_USAGE_MISSING');
     assert.equal(result.spendingBudget.latestState!.metrics.cachedInput.coverage.unknown, 1);

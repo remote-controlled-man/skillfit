@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit calibration command response version 1",
+  "anyOf": [
+    {
+      "type": "object", "required": ["schemaVersion", "kind", "status", "plan", "acceptance"],
+      "properties": {
+        "schemaVersion": { "const": 1 }, "kind": { "const": "skillfit.calibration-result" }, "status": { "const": "planned" },
+        "plan": { "$ref": "calibration-plan.schema.json" },
+        "acceptance": { "type": "object", "required": ["decision", "eligibleForUpgrade", "automaticUpgrade"],
+          "properties": { "decision": { "const": "inconclusive" }, "eligibleForUpgrade": { "const": false }, "automaticUpgrade": { "const": false } } }
+      }
+    },
+    { "$ref": "single-arm-report.schema.json" },
+    { "allOf": [{ "$ref": "eval-result.schema.json" }, { "properties": { "kind": { "const": "skillfit.eval-error" } } }] }
+  ]
+}

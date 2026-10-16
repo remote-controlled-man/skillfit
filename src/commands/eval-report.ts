@@ -8,6 +8,7 @@ import { mcnemarExactP } from '../harness/stats.js';
 import { validateSkillInstallDir } from '../harness/installed-skill.js';
 import type { ExperimentSummary } from '../harness/experiment-session.js';
 import { assertCostTotals, COST_METRICS, renderCostLines, type CostMetric, type CostMeasure, type CostPopulation, type RunCosts } from '../harness/costs.js';
+import { parseInvocationCosts, renderInvocationCostLines, type InvocationCosts } from '../harness/invocation-costs.js';
 
 const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
 
@@ -44,6 +45,7 @@ interface ReportRow {
 }
 
 interface ReportData {
+  invocationCosts?: InvocationCosts;
   runGroup: string;
   createdAt: string;
   target: { kind: string; name: string; sha256: string };
@@ -115,6 +117,7 @@ function experiment(value: unknown): ExperimentSummary | null {
   const callsStarted = integer(item['callsStarted'], 'experiment.callsStarted');
   const callsFinished = integer(item['callsFinished'], 'experiment.callsFinished');
   const stopReason = item['stopReason'] === null ? null : string(item['stopReason'], 'experiment.stopReason');
+  if (item['stopCode'] !== undefined && !['EXECUTION_FAILED', 'FINAL_USAGE_MISSING', 'SPENDING_BUDGET_REACHED'].includes(String(item['stopCode']))) throw new Error('Invalid experiment.stopCode');
   if (![plannedCalls, maxCalls, callsStarted, callsFinished].every(Number.isSafeInteger) ||
       maxCalls < plannedCalls || callsStarted > plannedCalls || callsFinished > callsStarted ||
       (status === 'completed' && (stopReason !== null || callsFinished !== plannedCalls)) ||
@@ -123,7 +126,8 @@ function experiment(value: unknown): ExperimentSummary | null {
     throw new Error('experiment status, call counts, ceiling, and stop reason contradict each other');
   }
   return { schemaVersion: 1, status, plannedCalls, maxCalls, callsStarted, callsFinished, stopReason,
-    planSha256: hash(item['planSha256'], 'experiment.planSha256') };
+    planSha256: hash(item['planSha256'], 'experiment.planSha256'),
+    ...(item['stopCode'] === undefined ? {} : { stopCode: item['stopCode'] as NonNullable<ExperimentSummary['stopCode']> }) };
 }
 
 function counts(value: unknown, label: string): Counts {
@@ -464,6 +468,7 @@ export function parseEvalReport(value: unknown): ReportData {
   }
   return {
     runGroup: string(manifest['runGroup'], 'runGroup'),
+    ...(manifest['invocationCosts'] === undefined ? {} : { invocationCosts: parseInvocationCosts(manifest['invocationCosts']) }),
     createdAt,
     target: { kind, name: string(target['name'], 'target.name'), sha256: hash(target['bundleSha256'], 'target.bundleSha256') },
     baselineTarget,
@@ -652,6 +657,7 @@ export function renderEvalMarkdown(report: ReportData): string {
   lines.push('', '## Cost accounting', '');
   if (report.overall.costs) lines.push(...renderCostLines(report.overall.costs));
   else lines.push('Cache partitions and all-invocation costs were not recorded in this legacy manifest. Missing usage is unknown; the report does not infer it from prompt size or treat it as zero.');
+  if (report.invocationCosts) lines.push('', ...renderInvocationCostLines(report.invocationCosts));
   lines.push('', '## Warnings', '');
   if (report.warnings.length === 0) lines.push('- None');
   else lines.push(...report.warnings.map((warning) => `- ${escapeMarkdown(warning)}`));
@@ -680,6 +686,7 @@ export async function runEvalReport(inputPath: string, log: (line: string) => vo
     if ('startedAgentDispatches' in result.costs) lines.push(`- Started agent dispatches: ${result.costs.startedAgentDispatches}`,
       `- Missing or invalid invocation receipts: ${result.costs.invocationsWithUnknownReceipts}`);
     lines.push('', '## Retained costs', '', ...renderCostLines(result.costs.populations));
+    lines.push('', ...renderInvocationCostLines(result.invocationCosts));
   }
   lines.push('', '## Evidence and acceptance', '',
     `- State: ${result.status}`,

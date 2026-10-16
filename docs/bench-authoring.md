@@ -43,7 +43,8 @@ After creating a bench, use `bench list/show` to inspect registrations and
 `bench edit/remove` to preview changes. Applying with `--yes` backs up and validates
 the manifest; removal preserves task files and cannot empty a schema-1 bench.
 For a small development preview, select cases with repeated `eval --task <id>` or
-request `taskIds`. Keep independent validation tasks separate and preserve the
+request `taskIds`. Version 0.11.0 also supports repeated `--task` for
+baseline calibration and trigger plans. Keep independent validation tasks separate and preserve the
 sample-size requirements. See [case management](case-management.md).
 
 A bench is a folder of small tasks your agent has already failed at, plus a program that decides —
@@ -203,7 +204,7 @@ bench defect, never as the agent failing.
 > node runs, and *it* runs your command under a shell inside. Keep that string out of third-party
 > benches you did not read — see `SECURITY.md`.
 
-Source after npm 0.10.1 supports single/double-quoted script paths and arguments,
+Version 0.11.0 supports single/double-quoted script paths and arguments,
 including spaces, without enabling a shell. The same parser is used by loading,
 probes, live grading and replay. Grader load/runtime errors are separate from
 normal task failures and cannot satisfy the NOP gate. Use the explicit
@@ -322,16 +323,23 @@ visible offline.
 
 ### 7. Rehearse before you pay
 
-**Do this.** Four commands, in this order, each cheaper than the next:
+Start with an offline check and read-only previews. In version 0.11.0,
+the calibration preview also runs no verifier, oracle or agent:
 
 ```bash
-skillfit bench check my-bench                                  # offline, free
-skillfit bench check my-bench --calibrate --agent <id>         # real runs, one arm per task
-skillfit eval <skill-path> --bench my-bench --dry-run          # plan only, writes nothing
-skillfit eval <skill-path> --bench my-bench --agent <id> --trials 5
+node dist/cli.js bench check my-bench --json
+node dist/cli.js bench check my-bench --calibrate --agent <id> --task <task-id> --trials 1 --max-calls 1 --run-group calibration-001 --json --dry-run
+node dist/cli.js eval <skill-path> --bench my-bench --agent <id> --trials 5 --run-group comparison-001 --json --dry-run
 ```
 
-`bench check` answers "is this bench well-formed". `--calibrate` answers "is it the right
+After spending is authorized, rerun the appropriate preview command with
+`--dry-run` removed and `--plan-sha` added: calibration uses `plan.planSha256`,
+eval uses `plan.sha256`. Keep the same declared group/settings and choose actual
+registered task IDs. Both accept call ceilings, spending lines and per-call
+deadlines. See [planning](eval-planning.md); a one-task development check is not
+independent validation or evidence of general benefit.
+
+`bench check` answers "is this bench well-formed". Live `--calibrate` answers "is it the right
 difficulty": each task is banded as **too hard or broken** (baseline pass rate ≤ 10%),
 **discriminative** (in between), or **too easy / saturated** (≥ 90%). Aim for 30–70%. A saturated
 task cannot show improvement no matter how good the skill is; an impossible one cannot show anything
@@ -343,6 +351,10 @@ tokens — so spend the smallest amount that answers the question, before spendi
 
 **What the tool checks.** A calibration that completes zero runs **fails** rather than reporting a
 band it never measured. Errored runs are excluded from the rate rather than counted as failures.
+Version 0.11.0 blocks live calibration on any offline hard failure
+before creating a native run or calling an agent. Missing oracle evidence stays
+unknown; nonblocking warnings remain separate. Agent availability/capabilities
+are checked before and after case probes; login cannot be proven offline.
 
 ---
 
@@ -350,8 +362,13 @@ Agent callers can add `--json` to the offline check. It returns stable gate
 identifiers, task IDs, related paths, suggested repairs and captured verifier
 failures without human log text on stdout. Exit 0 may still contain warnings;
 exit 1 means failed integrity gates and exit 2 means validation did not complete.
-JSON mode rejects `--calibrate` before starting any verifier or agent. This is a
-source feature, not in npm 0.9.1; see the [version 1 contract](bench-check-json.md).
+The offline result remains `skillfit.bench-check`. Version 0.11.0 gives
+`--calibrate --json` its own planned/result workflow instead of the older
+rejection; it requires explicit plan confirmation before JSON execution. Read
+calibration results with `report eval <run-dir> --json`, including stopped costs
+and unmeasured tasks. Supported sealed runs can be exported and replayed without
+another model call. See the [offline JSON contract](bench-check-json.md) and
+[report types](evaluation-reports.md).
 
 ## The two gates
 

@@ -195,14 +195,12 @@ test('noisy verifier output stays inside bounded JSON evidence while named facet
   assert.ok(evidence.checks.every((c: { pass: boolean }) => c.pass));
 });
 
-test('argument errors and calibration combinations return JSON before any verifier or agent starts', async t => {
+test('argument errors return offline bench JSON before any verifier or agent starts', async t => {
   const { cwd, dir } = await scaffold(t);
   const sentinel = join(cwd, 'verifier-started');
   writeFileSync(join(dir, 'verifiers/example-task.mjs'),
     `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(sentinel)},'unexpected'); process.exit(1);`);
   const cases = [
-    ['bench', 'check', dir, '--json', '--calibrate', '--agent', 'skillfit-no-live-agent'],
-    ['bench', 'check', dir, '--json', '--calibrate', '--dry-run', '--agent', 'skillfit-no-live-agent'],
     ['--json', 'bench', 'check', dir, '--trials', 'nope'],
     ['bench', '--json', 'check', dir, '--unknown-option'],
     ['bench', 'check', dir, '--json', '--trials'],
@@ -216,6 +214,28 @@ test('argument errors and calibration combinations return JSON before any verifi
     assert.ok(data.error.message);
     assert.deepEqual(data.checks, []);
     assert.ok(!existsSync(sentinel));
+  }
+});
+
+test('JSON calibration has a distinct planned/error contract and never runs probes without confirmation', async t => {
+  const { cwd, dir } = await scaffold(t);
+  const sentinel = join(cwd, 'verifier-started');
+  writeFileSync(join(dir, 'verifiers/example-task.mjs'),
+    `import {writeFileSync} from 'node:fs';writeFileSync(${JSON.stringify(sentinel)},'unexpected');process.exit(1);`);
+  const env = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => key.toUpperCase() !== 'PATH')),
+    PATH: '', HOME: join(cwd, 'home'), USERPROFILE: join(cwd, 'home'), CODEX_HOME: join(cwd, 'home/codex') };
+  for (const dryRun of [false, true]) {
+    const result = spawnSync(process.execPath, [CLI, 'bench', 'check', dir, '--json', '--calibrate', '--agent', 'codex',
+      ...(dryRun ? ['--dry-run'] : [])], { cwd, env, encoding: 'utf8', timeout: 30_000 });
+    assert.equal(result.status, dryRun ? 0 : 2, result.stderr || result.stdout);
+    assert.equal(result.stderr, '');
+    const data = JSON.parse(result.stdout);
+    assert.equal(data.kind, dryRun ? 'skillfit.calibration-result' : 'skillfit.eval-error');
+    assert.equal(data.status, dryRun ? 'planned' : 'error');
+    assert.equal(data.acceptance.eligibleForUpgrade, false);
+    if (dryRun) assert.equal(data.plan.agentPreflight.status, 'blocked');
+    else assert.match(data.error.message, /requires --plan-sha/);
+    assert.ok(!existsSync(sentinel)); assert.ok(!existsSync(join(cwd, 'runs')));
   }
 });
 

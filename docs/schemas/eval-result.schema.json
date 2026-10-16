@@ -37,6 +37,7 @@
         }
       }
     },
+    "invocationCosts": { "anyOf": [{ "$ref": "invocation-costs.schema.json" }, { "type": "null" }] },
     "evidence": { "type": "object", "required": ["verified"] },
     "acceptance": {
       "type": "object", "required": ["decision", "eligibleForUpgrade", "automaticUpgrade"],

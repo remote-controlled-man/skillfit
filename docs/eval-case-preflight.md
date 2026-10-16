@@ -3,7 +3,7 @@
 This behavior is included in 0.10.1. The immutable npm 0.10.0 archive predates it.
 See the [release record](releases/0.10.1.md) for publication status.
 
-Source after npm 0.10.1 additionally blocks recognized grader load/runtime
+Version 0.11.0 additionally blocks recognized grader load/runtime
 exceptions and explicit infrastructure-error messages even with a numeric exit
 code, including on oracle-less cases. Quoted paths/arguments use the same parser
 in probes and execution. See [verifier commands and errors](verifier-contract.md).

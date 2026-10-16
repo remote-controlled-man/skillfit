@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit independent judge call receipt version 1",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "taskId", "trial", "callIndex", "seed", "firstCondition", "prompt", "promptSha256", "output", "rawOutput", "executor", "startedAt", "finishedAt", "timing", "scores", "error", "executorInvoked", "tokens", "usageStatus", "durationSeconds", "passed"],
+  "properties": {
+    "schemaVersion": { "const": 1 }, "kind": { "const": "skillfit.judge-call" },
+    "taskId": { "type": "string" }, "trial": { "type": "integer", "minimum": 1, "maximum": 20 },
+    "callIndex": { "enum": [1, 2] }, "firstCondition": { "enum": ["baseline", "treatment"] },
+    "seed": { "type": "string" }, "executor": { "type": "object", "required": ["kind", "model"] },
+    "startedAt": { "type": "string", "format": "date-time" }, "finishedAt": { "type": "string", "format": "date-time" },
+    "timing": { "type": "object", "required": ["clock", "wallDurationSeconds", "execution"],
+      "properties": { "clock": { "const": "performance.now" }, "wallDurationSeconds": { "type": "number" }, "execution": { "type": ["object", "null"] } } },
+    "scores": { "type": ["object", "null"], "required": ["baseline", "treatment"],
+      "properties": { "baseline": { "type": "integer", "minimum": 0, "maximum": 3 }, "treatment": { "type": "integer", "minimum": 0, "maximum": 3 } } },
+    "prompt": { "type": "string" }, "promptSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "output": { "type": "string" }, "rawOutput": { "type": ["string", "null"] },
+    "error": { "type": ["string", "null"] }, "executorInvoked": { "type": "boolean" },
+    "tokens": { "type": ["object", "null"] }, "usageStatus": { "enum": ["final", "partial", "unknown"] },
+    "durationSeconds": { "type": "number", "minimum": 0 }, "passed": { "type": "boolean" }
+  }
+}

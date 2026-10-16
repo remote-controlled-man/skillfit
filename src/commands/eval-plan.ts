@@ -14,7 +14,6 @@ export interface ReviewedEvalPlan {
 
 /** Shared read-only planning and confirmation for command-line and file requests. */
 export async function prepareEvalPlan<T extends object>(options: EvalOptions, context: T) {
-  if (options.mode === 'trigger') throw new Error('JSON/reviewed plans require a paired evaluation; trigger mode retains its existing dry-run path.');
   const implementationDir = fileURLToPath(new URL('../../dist', import.meta.url));
   const implementationSha256 = hashFileSet(implementationDir, listFilesRecursive(implementationDir));
   const lines: string[] = [];

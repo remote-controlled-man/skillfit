@@ -8,7 +8,7 @@ Insufficient, stopped, synthetic or unverified evidence cannot authorize adoptio
 the component never upgrades a Skill. Complete cost coverage is separate from
 quality significance. All formulas and legacy manifest interpretations below remain unchanged.
 
-Operational Agent preflight (source after npm 0.10.1): eval preview and dispatch
+Operational Agent preflight (version 0.11.0): eval preview and dispatch
 check executable files, declared matrix capabilities and global same-name Skill
 conflicts, keeping authentication explicitly unknown offline. Known failures
 block before case probes, native run creation and calls. Sealed checks are
@@ -85,12 +85,14 @@ may overshoot. Missing/partial/invalid final usage or an execution/guard error
 stops further calls and retains spent/unknown costs. There is no retry or
 replacement. A final predeclared call with complete evidence may finish the
 cohort at a line. Completed audits replay sealed before/after snapshots against
-the chronological receipts. Trigger mode and judges are unsupported. This is
+the chronological receipts. Current source extends these stop lines to calibration,
+trigger runs and both judge orders, retaining each role's usage and controlled
+stop codes. This is
 an operational stop rule, **not** an API hard cap, adoption threshold or new
 statistical protocol; exclusions, formulas, policies and old records remain
 unchanged. See [the component contract](eval-component.md#input-and-execution).
 
-Entry-point alignment (source after npm 0.10.1): ordinary paired eval and Agent
+Entry-point alignment (version 0.11.0): ordinary paired eval and Agent
 requests share effective plans, spending limits and primary executor deadlines.
 Ordinary JSON execution requires preview confirmation; ordinary native plans
 also seal and audit the reviewed parameters. Request `baselineSkill: null`
@@ -160,7 +162,7 @@ A bench that cannot discriminate must not produce verdicts.
   environment errors before their executor starts; inherited disabled reflog is overridden only
   in the disposable repository. This does not change the paired exclusion or verdict formulas.
 
-  Verifier correction (source after npm 0.10.1): process errors include an
+  Verifier correction (version 0.11.0): process errors include an
   unspawnable command, no exit code, timeout and output overflow. Recognized
   bench-owned Node uncaught exceptions and explicit `skillfit.verifier-error`
   messages also represent no grade, even with a numeric exit code. The same
@@ -172,7 +174,7 @@ A bench that cannot discriminate must not produce verdicts.
 
 ## L1 — trigger quality (activation)
 
-Operational reporting correction (source after npm 0.10.1): `report eval`
+Operational reporting correction (version 0.11.0): `report eval`
 dispatches paired, baseline-calibration and trigger summaries separately.
 Calibration preserves recorded session status and existing >=90%/<=10%
 difficulty bands. Trigger reports retain the existing count denominators, Wilson

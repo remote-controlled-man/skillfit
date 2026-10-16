@@ -13,10 +13,16 @@ CLI behavior. No agent executor, judge or model is started.
 Checks execute the bench's local verifier/oracle programs on disposable copies,
 under the existing offline bench contract; this is not a sandbox for untrusted code.
 
-`--json` cannot be combined with `--calibrate`, including calibration dry runs.
-That combination returns an error before loading/executing the bench. Use the
-existing human calibration command separately only after choosing a budget.
-JSON output is a format option, not spending authorization or Skill adoption.
+In published npm 0.10.1, this offline JSON mode rejects `--calibrate`. Source
+after that release adds a separate calibration JSON workflow: use
+`bench check <dir> --calibrate --agent <id> --json --dry-run` to read a
+`skillfit.calibration-result` plan without verifier/oracle/agent execution.
+Confirm `plan.planSha256` with `--plan-sha` and the same explicit `--run-group`
+only within authorized spending. Live calibration blocks hard offline case and
+Agent environment failures; unknown evidence stays separate from warnings.
+It does not return the offline `skillfit.bench-check` contract below. See
+[shared planning](eval-planning.md#baseline-calibration-and-trigger-plans).
+JSON output itself is not spending authorization or Skill adoption.
 
 ## Version 1 contract
 
@@ -54,7 +60,7 @@ oracle, or from the verifier after applying the oracle; `evidence.command`
 identifies which program actually produced it. Output, paths and diagnostics
 can contain local project data; review them before sharing.
 
-Source after npm 0.10.1 can retain a numeric `exitCode` together with a non-null
+Version 0.11.0 can retain a numeric `exitCode` together with a non-null
 `evidence.error` for recognized grader load/runtime failures or explicit error
 messages. That gate is `FAIL`, never a passing NOP probe. Normal grading failures
 retain a nonzero exit and null error. Quoted commands use the shared shell-free
@@ -118,7 +124,18 @@ as `UNKNOWN`. The version 1 JSON shape and status vocabulary are unchanged.
 
 - **0:** validation completed without failed gates; warnings may still exist.
 - **1:** validation completed with failed gates, including a missing or malformed bench.
-- **2:** invalid options, a forbidden calibration combination, or an unexpected execution error; validation did not complete.
+- **2:** invalid options or an unexpected execution error; validation did not complete.
+
+These exit meanings apply to the offline `skillfit.bench-check` result. Source
+calibration plans/results use their separate contract; missing/stale confirmation
+or preflight failure returns `skillfit.eval-error`. Ordinary offline checks still
+use `WARN` for a missing oracle. Calibration's saved case preflight classifies
+that unverified winnability as `UNKNOWN`. Neither silently promotes it to a pass.
+
+Version 0.11.0 also handles Ctrl+C/SIGTERM throughout standalone checks:
+active verifier/oracle process trees stop, disposable directories are removed,
+and the command exits 130/143. No completed check or artificial stopped run is
+created. See [interruption](evaluation-interruption.md).
 
 Agents should inspect failures first, then warnings and evidence coverage. A
 `passed` result does not prove model difficulty, Skill improvement, statistical

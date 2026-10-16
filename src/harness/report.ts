@@ -83,6 +83,7 @@ export interface OverallSummary {
 }
 
 export interface RunManifest {
+  invocationCosts?: import('./invocation-costs.js').InvocationCosts;
   nativeDiffTool?: import('./native-diff.js').NativeDiffDescriptor;
   schemaVersion: 4;
   /** Absent in older records; retain their original order interpretation. */

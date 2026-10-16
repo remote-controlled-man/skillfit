@@ -84,7 +84,7 @@ test('quoted verifier/oracle paths grade a real file repair, preserve failure/pa
   const before = read(join(run, 'example-task/baseline/trial-1/_result.json')), after = read(join(run, 'example-task/treatment/trial-1/_result.json'));
   assert.equal(before.error, null); assert.equal(before.passed, false); assert.equal(after.error, null); assert.equal(after.passed, true);
   for (const dir of [f.bench, f.skill, f.old]) rmSync(dir, { recursive: true });
-  const replay = await reportEvalComponent(run, { replay: true }); assert.equal(replay.evidence.verified, true);
+  const replay = await reportEvalComponent(run, { replay: true }); assert.equal(replay.evidence.verified, true); assert.ok('costs' in replay);
   assert.deepEqual(replay.costs, result.costs); assert.ok('replayedDeliveries' in replay.evidence); assert.equal(replay.evidence.replayedDeliveries, 2);
   const output = join(f.root, 'portable'); await exportEvaluation(run, output, { yes: true, log: () => {} });
   rmSync(run, { recursive: true });
@@ -122,9 +122,9 @@ test('offline replay refuses a new verifier infrastructure error even when its n
   try {
     await runEval({ ...f.base, executor });
     const run = join(f.base.runsRoot, f.base.runGroup), path = join(run, 'manifest.json'), original = readFileSync(path, 'utf8');
-    const saved = await reportEvalComponent(run); assert.equal(saved.evidence.verified, true);
+    const saved = await reportEvalComponent(run); assert.equal(saved.evidence.verified, true); assert.ok('costs' in saved);
     process.env[name] = '1';
-    const replay = await reportEvalComponent(run, { replay: true }); assert.equal(replay.evidence.verified, false);
+    const replay = await reportEvalComponent(run, { replay: true }); assert.equal(replay.evidence.verified, false); assert.ok('costs' in replay);
     assert.match(replay.evidence.reasons.join(' '), /Replay verifier failed: VERIFIER_RUNTIME_ERROR/);
     assert.equal(replay.acceptance.eligibleForUpgrade, false); assert.deepEqual(replay.costs, saved.costs);
     assert.equal(readFileSync(path, 'utf8'), original); assert.equal(calls, 2);

@@ -41,12 +41,18 @@ export async function exportEvaluation(input: string, output: string, options: {
   const files = packageFiles(run).filter(path => path !== '_artifacts.json');
   if (JSON.stringify(files) !== JSON.stringify(Object.keys(index.files).sort())) throw new Error('Native evidence inventory changed.');
   for (const path of files) if (sha256File(packageMember(run, path)) !== index.files[path]) throw new Error(`Native evidence hash mismatch: ${path}`);
-  if (plan.details?.mode === 'calibration') throw new Error('Portable replay currently requires paired native runs; calibration reports do not authorize a paired export.');
   const report = await reportEvalComponent(run);
   const hasManifest = existsSync(join(run, 'manifest.json'));
-  if (hasManifest && (!('evidence' in report) || !report.evidence.verified)) throw new Error(`Native evidence audit failed; cannot export a complete replay package: ${'evidence' in report ? JSON.stringify(report.evidence) : 'missing audit'}`);
-  if (plan.details?.mode === 'trigger' || plan.details?.judge != null) throw new Error('Portable replay currently requires paired native runs without a judge; separate judge spending is not fully recorded.');
+  const singleArm = plan.details?.mode === 'calibration' || plan.details?.mode === 'trigger';
+  if ((hasManifest || singleArm) && (!('evidence' in report) || !report.evidence.verified)) throw new Error(`Native evidence audit failed; cannot export a complete replay package: ${'evidence' in report ? JSON.stringify(report.evidence) : 'missing audit'}`);
   if (!Array.isArray(plan.inputs) || typeof plan.packageVersion !== 'string') throw new Error('Native input fingerprints or version are missing.');
+  const pinnedImplementation = plan.inputs.find((entry: { label: string }) => entry.label === 'implementation');
+  if (!pinnedImplementation?.files?.includes('harness/interruption.js')) throw new Error('The original pinned runtime lacks replay cancellation support. Keep the native record; exporting must not silently replace its implementation.');
+  if (singleArm) {
+    for (const path of ['commands/eval-single-arm-replay.js', 'harness/single-arm-audit.js']) {
+      if (!pinnedImplementation?.files?.includes(path)) throw new Error('The original pinned runtime lacks single-arm replay support. Keep the native record; exporting must not silently replace its implementation.');
+    }
+  }
   const snapshot = verifyInputSnapshot(run, plan);
   const copies: { source: string; target: string; sha256: string }[] = [];
   const directories = new Set<string>();
@@ -120,7 +126,7 @@ export async function exportEvaluation(input: string, output: string, options: {
     writeFileSync(join(stage, 'README.md'), '# Offline evaluation replay\n\nRun `node reproduce.mjs --verify-only` to check files, or `node reproduce.mjs` to regrade saved deliveries with the pinned implementation. No agent or model is started. Local verifiers are executable code; use trusted packages. Node.js 22+ and any external verifier toolchains are required.\n\nNative receipts are unchanged. Unknown/partial costs stay unknown/partial; a stopped run remains stopped. Checksums detect changes, not publisher identity. Review project data and paths before sharing. Runtime package metadata is reconstructed from the frozen native package version; compiled implementation bytes are copied unchanged.\n');
     const payload = packageFiles(stage);
     writeFileSync(join(stage, 'replay-package.json'), JSON.stringify({ schemaVersion: 1, kind: 'skillfit.replay-package',
-      sourcePlanSha256: planSha256, hasManifest, nativeStatus: session.status,
+      sourcePlanSha256: planSha256, hasManifest, nativeStatus: session.status, evaluationType: singleArm ? plan.details.mode : 'paired',
       files: Object.fromEntries(payload.map(path => [path, sha256File(join(stage, path))])) }, null, 2) + '\n');
     verifyReplayPackage(stage);
     // Exclusive mkdir protects even empty directories and dangling symlinks that

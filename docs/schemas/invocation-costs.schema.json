@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit complete executor invocation costs version 1",
+  "type": "object",
+  "required": ["schemaVersion", "agent", "judge", "total", "judgeUsage"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "agent": { "$ref": "#/$defs/population" },
+    "judge": { "anyOf": [{ "$ref": "#/$defs/population" }, { "type": "null" }] },
+    "total": { "anyOf": [{ "$ref": "#/$defs/population" }, { "type": "null" }] },
+    "judgeUsage": { "enum": ["recorded", "unknown", "not-requested"] }
+  },
+  "$defs": {
+    "measure": {
+      "type": "object", "required": ["knownTotal", "coverage"],
+      "properties": {
+        "knownTotal": { "type": "number", "minimum": 0 },
+        "coverage": { "type": "object", "required": ["final", "partial", "unknown"],
+          "properties": { "final": { "type": "integer", "minimum": 0 }, "partial": { "type": "integer", "minimum": 0 }, "unknown": { "type": "integer", "minimum": 0 } } }
+      }
+    },
+    "population": {
+      "type": "object", "required": ["runs", "passes", "metrics"],
+      "properties": {
+        "runs": { "type": "integer", "minimum": 0 }, "passes": { "type": "integer", "minimum": 0 },
+        "metrics": { "type": "object", "required": ["input", "cachedInput", "uncachedInput", "output", "durationSeconds"],
+          "properties": { "input": { "$ref": "#/$defs/measure" }, "cachedInput": { "$ref": "#/$defs/measure" }, "uncachedInput": { "$ref": "#/$defs/measure" }, "output": { "$ref": "#/$defs/measure" }, "durationSeconds": { "$ref": "#/$defs/measure" } } }
+      }
+    }
+  }
+}

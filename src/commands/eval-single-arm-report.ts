@@ -31,8 +31,10 @@ function experiment(value: unknown): ExperimentSummary {
   const started = count(s.callsStarted, 'experiment.callsStarted', planned), finished = count(s.callsFinished, 'experiment.callsFinished', started);
   if (!planned || (s.stopReason !== null && typeof s.stopReason !== 'string') || typeof s.planSha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(s.planSha256)) throw new Error('Invalid experiment metadata.');
   if (s.status === 'completed' && (finished !== planned || s.stopReason !== null)) throw new Error('Completed experiment has unfinished calls or a stop reason.');
+  if (s.stopCode !== undefined && !['EXECUTION_FAILED', 'FINAL_USAGE_MISSING', 'SPENDING_BUDGET_REACHED'].includes(String(s.stopCode))) throw new Error('Invalid experiment stopCode.');
   return { schemaVersion: 1, status: s.status as ExperimentSummary['status'], plannedCalls: planned, maxCalls: max,
-    callsStarted: started, callsFinished: finished, stopReason: s.stopReason as string | null, planSha256: s.planSha256 };
+    callsStarted: started, callsFinished: finished, stopReason: s.stopReason as string | null, planSha256: s.planSha256,
+    ...(s.stopCode === undefined ? {} : { stopCode: s.stopCode as NonNullable<ExperimentSummary['stopCode']> }) };
 }
 function trials(value: unknown): number {
   const n = count(value, 'trials', 20);
@@ -71,7 +73,7 @@ function trigger(value: Record<string, unknown>, complete: boolean) {
       ...(task.triggerClass ? { triggerClass: task.triggerClass as TriggerTaskSummary['triggerClass'] } : {}),
       runs, fired: count(task.fired, 'task.fired', runs), unknown, errors, passes: count(task.passes, 'task.passes', runs + unknown), tokens: tokens(task.tokens) };
   });
-  const metrics = triggerMetrics(rows), saved = record(value.metrics, 'trigger metrics');
+  const metrics = JSON.parse(JSON.stringify(triggerMetrics(rows))) as ReturnType<typeof triggerMetrics>, saved = record(value.metrics, 'trigger metrics');
   // Reuse the frozen formulas and validate recorded fields. Older v1 additions
   // may be absent; intervals can be derived from the retained counts, not new runs.
   for (const key of Object.keys(metrics) as (keyof typeof metrics)[]) {
@@ -142,7 +144,8 @@ const escape = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<',
 const percent = (value: number | null) => value === null ? 'n/a' : `${(value * 100).toFixed(1)}%`;
 export function renderSingleArmReport(report: SingleArmReport): string {
   const lines = [`# skillfit ${report.evaluationType} report: ${escape(report.runGroup)}`, '', `- State: ${report.status}`,
-    '- Evidence: saved summary only; no paired native audit or adoption decision.', '- Eligible for upgrade: no', '- Automatic upgrade: no'];
+    `- Evidence: ${report.evidence.verified ? 'verified native single-arm receipts' : 'unverified saved single-arm evidence'}; no paired efficacy or adoption decision.`, '- Eligible for upgrade: no', '- Automatic upgrade: no'];
+  for (const reason of report.evidence.reasons) lines.push(`- Audit: ${escape(reason.replaceAll(report.evidence.runDir, '[run]'))}`);
   if (report.session?.stopReason) lines.push(`- Stop reason: ${escape(report.session.stopReason.replaceAll(report.evidence.runDir, '[run]'))}`);
   lines.push(...agentEnvironmentReportLines(report.agentPreflight).map(line => `- ${escape(line)}`));
   if (report.evaluationType === 'calibration' && report.summary) {
@@ -173,8 +176,8 @@ export function renderSingleArmReport(report: SingleArmReport): string {
       '- Recorded token totals are historical aggregates, not complete final/partial/unknown costs or a bill; missing cache partitions remain unknown.');
     if (m.tokens) lines.push(`- Recorded input/output tokens: ${m.tokens.input}/${m.tokens.output}`);
   } else lines.push('', 'Final summary is missing. Metrics are unavailable; the run is not a completed comparison.');
-  if (report.evaluationType === 'calibration') {
-    lines.push('', '## Retained baseline usage', '');
+  if (report.evaluationType === 'calibration' || report.usage) {
+    lines.push('', `## Retained ${report.evaluationType === 'calibration' ? 'baseline' : 'Agent'} usage`, '');
     if (report.usage) {
       const u = report.usage;
       lines.push(`- Started agent dispatches: ${u.startedAgentDispatches}; missing or invalid receipts: ${u.invocationsWithUnknownReceipts}`,

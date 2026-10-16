@@ -1,6 +1,6 @@
 # Verifier commands and infrastructure errors
 
-Source after npm 0.10.1 fixes quoted command arguments and separates recognized
+Version 0.11.0 fixes quoted command arguments and separates recognized
 grader infrastructure errors from normal task failures. Build the current
 checkout to use these changes. The bench format remains schema version 1.
 

@@ -1,6 +1,28 @@
 # Changelog
 
-## Unreleased — offline Agent environment preflight (2026-10-16)
+## 0.11.0 — complete basic evaluation workflow (2026-10-17)
+
+- Block calibration before spending when case integrity or Agent environment
+  checks fail; preserve warnings/unknowns and recheck after local probes. Add
+  reviewed JSON calibration plans, selected tasks, deadlines and spending limits.
+- Cancel standalone bench verification/oracle work and offline delivery replay,
+  including their process trees. Reuse nested cancellation scopes and retain
+  original run evidence; no retry or extra model observations.
+- Give trigger runs the same reviewed JSON plans, deadlines and token/time stop
+  lines. Pin full installed resources and competition in plans. Retain monotonic
+  elapsed time, invocation state and final/partial/unknown usage per receipt.
+- Retain independent receipts for both judge orders, including failed parsing,
+  partial usage and interruption. Show primary/judge/combined invocation costs;
+  include all roles in spending stops. Explicit unavailable judging blocks.
+- Export and audit calibration, trigger and paired-with-judge native evidence.
+  Portable replay uses original sealed inputs/runtime and local verifiers only.
+  Historical missing judge usage remains unknown; single-arm verification never
+  becomes paired efficacy or upgrade eligibility.
+- Add cross-entrypoint, cancellation, spending, moved-package and evidence
+  tampering regressions, public machine schemas and updated workflow guidance.
+  Keep zero runtime dependencies and the existing statistical/adoption protocol.
+
+### Included: offline Agent environment preflight (2026-10-16)
 
 - Check selected primary/judge CLI executables via filesystem PATH lookup and
   match declared matrix capabilities before case probes, run creation or calls.
@@ -14,9 +36,9 @@
   checks without probing the current machine. Keep injected/synthetic evidence
   restrictions, costs, statistics, acceptance and old records unchanged.
 - Add offline regressions, schema, shared preflight guide and mirrored README
-  updates. No dependencies, real model calls or npm publication.
+  updates. No runtime dependencies or real model evaluations were added.
 
-## Unreleased — verifier errors and quoted commands (2026-10-16)
+### Included: verifier errors and quoted commands (2026-10-16)
 
 - Share a shell-free quote-aware parser across bench validation, verifier/oracle
   probes, evaluation and replay. Preserve spaced/empty arguments and Windows
@@ -29,9 +51,9 @@
 - Reject errored verifier replay even when its exit code matches the saved
   failure. Add offline regression tests, a command/error contract and mirrored
   README guidance. Existing statistics/acceptance gates and historical evidence
-  remain unchanged. No dependencies, real model calls or npm publication.
+  remain unchanged. No runtime dependencies or real model evaluations were added.
 
-## Unreleased — shared eval plans and no-Skill request baselines (2026-10-16)
+### Included: shared eval plans and no-Skill request baselines (2026-10-16)
 
 - Use one read-only plan generator for ordinary paired eval and Agent requests.
   Add ordinary `--json`, budget-file, deadline, pair-order and output-group flags;
@@ -48,7 +70,7 @@
   mirrored README guidance and the shared planning contract. No dependencies,
   statistical changes, real model calls or npm publication.
 
-## Unreleased — calibration and trigger report dispatch (2026-10-16)
+### Included: calibration and trigger report dispatch (2026-10-16)
 
 - Resolve calibration `_calibration.json` and trigger v1 manifests before the
   paired report path. Markdown/JSON show the same recorded state and type-specific
@@ -61,7 +83,7 @@
 - Keep paired requests, report contract, statistical/adoption policy and original
   receipts unchanged. Single-arm summaries remain unverified/ineligible and do
   not enable portable replay exports. Add offline regression tests and update
-  mirrored READMEs and workflow guides. No dependencies or real model calls.
+  mirrored READMEs and workflow guides. No runtime dependencies or real model evaluations were added.
 
 ## [0.10.1] — 2026-10-16
 
