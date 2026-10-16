@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "kind": "skillfit.release-case-workflow-smoke",
+  "version": "0.10.1",
+  "verifiedAt": "2026-10-16T04:30:52.798Z",
+  "modelCalls": 0,
+  "agentCliCalls": 0,
+  "syntheticExecutorCalls": 3,
+  "fakeApiResponses": 3,
+  "checks": {
+    "apiCacheZeroKnownAndUnknown": true,
+    "version": true,
+    "help": true,
+    "listShow": true,
+    "editPlanBackup": true,
+    "removePreservesFiles": true,
+    "benchCheckJson": true,
+    "selectedPreviewNoCalls": true,
+    "offlineCasePreflight": true,
+    "unifiedReportInputs": true,
+    "stoppedReportsRetainPartialCosts": true,
+    "sealedInputsWithoutOriginals": true,
+    "exportPlan": true,
+    "portableChecksums": true,
+    "movedPackageReplayWithoutOriginals": true,
+    "exactCosts": true
+  }
+}

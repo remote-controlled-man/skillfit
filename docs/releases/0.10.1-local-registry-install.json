@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-16T04:30:04.301Z",
+  "version": "0.10.1",
+  "latest": "0.10.1",
+  "integrity": "sha512-iOciQnT9uyJl7b642Ipf3Gtb60+RNmuVC50S9c5xa/8XQrdXZaX5dCP9det7TV8hrEVJpnl3N/OkO8F0vU0org==",
+  "sha256": "b8d45aa50fda31377647eb8a90133d7ee8e9096cdd756cc72d8e8a76cf79eb21",
+  "sourceCommit": "2cb80a68dfe712aa003135767cb18cdb4123e2eb",
+  "installedFilesVerified": 2627,
+  "zeroRuntimeDependencies": true,
+  "globalInstall": false,
+  "modelCalls": 0,
+  "smoke": {
+    "version": true,
+    "help": true,
+    "requestPreview": true
+  },
+  "attempts": [
+    {
+      "at": "2026-10-16T04:26:02.434Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T04:26:34.567Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T04:27:07.772Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T04:27:40.413Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T04:28:11.954Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T04:28:43.845Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T04:29:15.715Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-16T04:29:46.880Z",
+      "versionStatus": 200,
+      "latestStatus": 200
+    }
+  ]
+}

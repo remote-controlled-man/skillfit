@@ -1,0 +1,33 @@
+{
+  "observedAt": "2026-10-16T04:30:56.643Z",
+  "version": "0.10.1",
+  "latest": "0.10.1",
+  "publishedAt": "2026-10-16T04:29:29.463Z",
+  "dist": {
+    "shasum": "8a65c8172eebeab6ae6b31fa8ccc8734c2d4650e",
+    "tarball": "https://registry.npmjs.org/skillfit/-/skillfit-0.10.1.tgz",
+    "fileCount": 2627,
+    "integrity": "sha512-iOciQnT9uyJl7b642Ipf3Gtb60+RNmuVC50S9c5xa/8XQrdXZaX5dCP9det7TV8hrEVJpnl3N/OkO8F0vU0org==",
+    "signatures": [
+      {
+        "sig": "MEUCIQDZZZtxX536elcRsoLCVNCgi2FV/RB9eOf9OiGLjNdUUwIgV+0jkHeqR85oqsQ8clUDemcFmZSGVWwxyhxhmuA/Ebo=",
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      },
+      {
+        "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "sig": "MEUCIB+pODWRRARlctKd4meKFfhsEwSu/bQJjOydlZL+HH/aAiEA6D8oafIOFgXojfA3fwb/4/YxNoq6to9h3LCbEtGjmg0="
+      }
+    ],
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/skillfit@0.10.1",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    },
+    "unpackedSize": 37851792
+  },
+  "trustedPublisher": {
+    "id": "github",
+    "oidcConfigId": "ea2de82d-9a5c-4d94-b23c-a8923fffeec4"
+  }
+}
