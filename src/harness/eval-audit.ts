@@ -186,6 +186,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
             try {
               cpSync(join(root, task.id, arm, `trial-${trial}`), scratch, { recursive: true, filter: path => basename(path) !== '.git' });
               const grade = await runVerifier(bench.dir, definition.verifier, scratch), summary = verdictFromOutput(grade.output);
+              assert.equal(grade.error, null, `Replay verifier failed: ${grade.error}`);
               assert.notEqual(grade.exitCode, null); assert.equal(grade.exitCode, r.verifierExitCode); assert.equal(grade.exitCode === 0, r.passed);
               assert.equal(summary?.score ?? null, r.score);
               assert.deepEqual(summary?.checks?.map(c => ({ name: c.name, pass: c.pass })) ?? null,

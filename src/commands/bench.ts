@@ -264,22 +264,22 @@ async function runOracleGate(
   try {
     copyFixture(fixtureDir, dir);
     const oracleRun = await runVerifier(benchDir, oracle, dir);
-    if (oracleRun.exitCode !== 0) {
+    if (oracleRun.error !== null || oracleRun.exitCode !== 0) {
       return {
         kind: 'oracle-failed',
         result: oracleRun,
         command: oracle,
         exitCode: oracleRun.exitCode,
-        reason: oracleRun.exitCode === null ? verifierFailure('oracle', oracle, oracleRun.error) : null,
+        reason: oracleRun.error !== null || oracleRun.exitCode === null ? verifierFailure('oracle', oracle, oracleRun.error) : null,
       };
     }
     const graded = await runVerifier(benchDir, verifier, dir);
-    if (graded.exitCode !== 0) {
+    if (graded.error !== null || graded.exitCode !== 0) {
       return {
         kind: 'verifier-failed',
         result: graded,
         command: verifier,
-        reason: graded.exitCode === null ? verifierFailure('verifier', verifier, graded.error) : null,
+        reason: graded.error !== null || graded.exitCode === null ? verifierFailure('verifier', verifier, graded.error) : null,
       };
     }
     const score = verdictFromOutput(graded.output)?.score ?? null;
@@ -372,7 +372,7 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
         copyFixture(join(bench.dir, task.fixture), fixtureCopy);
         const pristine = await runVerifier(bench.dir, task.verifier, fixtureCopy);
         facetChecks = verdictFromOutput(pristine.output)?.checks ?? null;
-        if (pristine.exitCode === null) {
+        if (pristine.error !== null || pristine.exitCode === null) {
           // Without this branch a verifier that cannot even be spawned reads as a clean NOP gate:
           // "fails on the untouched fixture" is exactly what `exitCode !== 0` looks like.
           taskPush('UNTOUCHED_FIXTURE', 'FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, pristine.error)}`, benchCheckEvidence(pristine, task.verifier));
@@ -392,7 +392,7 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
       }
     } else {
       const missing = await probeVerifier(bench.dir, task.verifier, null);
-      if (missing.exitCode === null) {
+      if (missing.error !== null || missing.exitCode === null) {
         taskPush('MISSING_OUTPUT', 'FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, missing.error)}`, benchCheckEvidence(missing, task.verifier));
       } else if (missing.exitCode === 0) {
         taskPush('MISSING_OUTPUT', 'FAIL', `${task.id}: verifier does not reject a missing _output.md`, benchCheckEvidence(missing, task.verifier));
@@ -401,7 +401,7 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
       }
       const empty = await probeVerifier(bench.dir, task.verifier, '');
       facetChecks = empty.checks;
-      if (empty.exitCode === null) {
+      if (empty.error !== null || empty.exitCode === null) {
         taskPush('EMPTY_OUTPUT', 'FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, empty.error)}`, benchCheckEvidence(empty, task.verifier));
       } else if (empty.exitCode === 0) {
         taskPush('EMPTY_OUTPUT', 'FAIL', `${task.id}: verifier passes an empty output — it cannot tell success from silence`, benchCheckEvidence(empty, task.verifier));
@@ -444,8 +444,8 @@ export async function runBenchCheck(options: BenchCheckOptions): Promise<BenchCh
           }
           const probe = await probeVerifier(bench.dir, task.verifier, behavior.output);
           taskPush(
-            arm === 'baseline' ? 'MOCK_BASELINE' : 'MOCK_TREATMENT', probe.exitCode === null ? 'FAIL' : 'INFO',
-            `${task.id}: mock ${arm} output → ${probe.exitCode === null ? verifierFailure('verifier', task.verifier, probe.error) : `verifier ${probe.exitCode === 0 ? 'pass' : 'fail'}`}`, benchCheckEvidence(probe, task.verifier),
+            arm === 'baseline' ? 'MOCK_BASELINE' : 'MOCK_TREATMENT', probe.error !== null || probe.exitCode === null ? 'FAIL' : 'INFO',
+            `${task.id}: mock ${arm} output → ${probe.error !== null || probe.exitCode === null ? verifierFailure('verifier', task.verifier, probe.error) : `verifier ${probe.exitCode === 0 ? 'pass' : 'fail'}`}`, benchCheckEvidence(probe, task.verifier),
           );
         }
       } catch (error) {
@@ -703,11 +703,12 @@ function scrubbedEnv() {
 const result = spawnSync(${JSON.stringify(cmd)}, { cwd: runDir, shell: true, encoding: 'utf8', env: scrubbedEnv() });
 if (result.stdout) process.stdout.write(result.stdout);
 if (result.stderr) process.stderr.write(result.stderr);
-if (result.error) {
-  console.error(String(result.error));
-  process.exit(1);
+if (result.error || result.signal || result.status === null) {
+  console.log(JSON.stringify({ schemaVersion: 1, kind: 'skillfit.verifier-error',
+    message: result.error ? String(result.error) : 'Verifier command ended without a verdict: ' + (result.signal ?? 'no exit code') }));
+  process.exit(2);
 }
-process.exit(result.status ?? 1);
+process.exit(result.status);
 `;
 }
 
@@ -830,7 +831,7 @@ async function draftVerifierWithOracle(
     try {
       copyFixture(fixtureDir, nopDir);
       const nop = await runVerifier(staging, 'node verifier.mjs', nopDir);
-      if (nop.exitCode === null) {
+      if (nop.error !== null || nop.exitCode === null) {
         throw new Error(`draft rejected: ${verifierFailure('verifier', 'node verifier.mjs', nop.error)}`);
       }
       if (nop.exitCode === 0) {

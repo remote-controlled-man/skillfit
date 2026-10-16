@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — verifier errors and quoted commands (2026-10-16)
+
+- Share a shell-free quote-aware parser across bench validation, verifier/oracle
+  probes, evaluation and replay. Preserve spaced/empty arguments and Windows
+  separators; reject malformed quotes without spawning or enabling expansions.
+- Recognize bench-owned direct Node load/syntax/runtime exceptions and explicit
+  version-1 `skillfit.verifier-error` messages. Fail offline gates even without
+  an oracle; exclude errored trials/pairs instead of scoring model failures.
+  Retain actual exit codes, raw diagnostics and all invoked spending. Legacy
+  exit-only failures, assertions and candidate-code failures keep their meaning.
+- Reject errored verifier replay even when its exit code matches the saved
+  failure. Add offline regression tests, a command/error contract and mirrored
+  README guidance. Existing statistics/acceptance gates and historical evidence
+  remain unchanged. No dependencies, real model calls or npm publication.
+
 ## Unreleased — shared eval plans and no-Skill request baselines (2026-10-16)
 
 - Use one read-only plan generator for ordinary paired eval and Agent requests.

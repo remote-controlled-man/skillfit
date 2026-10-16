@@ -198,7 +198,7 @@ async function runTriggerTrial(
   if (error === null) {
     const verifier = await runVerifier(plan.bench.dir, task.verifier, runDir);
     writeFileSync(join(runDir, '_verifier.txt'), verifierLogFor(verifier), 'utf8');
-    if (verifier.exitCode === null) {
+    if (verifier.error !== null || verifier.exitCode === null) {
       error = verifierFailure('verifier', task.verifier, verifier.error);
     } else {
       passed = verifier.exitCode === 0;

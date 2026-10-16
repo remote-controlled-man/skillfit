@@ -203,6 +203,14 @@ bench defect, never as the agent failing.
 > node runs, and *it* runs your command under a shell inside. Keep that string out of third-party
 > benches you did not read — see `SECURITY.md`.
 
+Source after npm 0.10.1 supports single/double-quoted script paths and arguments,
+including spaces, without enabling a shell. The same parser is used by loading,
+probes, live grading and replay. Grader load/runtime errors are separate from
+normal task failures and cannot satisfy the NOP gate. Use the explicit
+`skillfit.verifier-error` message for custom-runtime infrastructure errors;
+ordinary assertions/nonzero verdicts remain failures. See the [complete command
+and error contract](verifier-contract.md).
+
 ### 4. Or mine it from git history
 
 **Do this.** If the failure was already fixed in a commit, you do not have to write anything:

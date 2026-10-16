@@ -54,6 +54,12 @@ oracle, or from the verifier after applying the oracle; `evidence.command`
 identifies which program actually produced it. Output, paths and diagnostics
 can contain local project data; review them before sharing.
 
+Source after npm 0.10.1 can retain a numeric `exitCode` together with a non-null
+`evidence.error` for recognized grader load/runtime failures or explicit error
+messages. That gate is `FAIL`, never a passing NOP probe. Normal grading failures
+retain a nonzero exit and null error. Quoted commands use the shared shell-free
+parser. See [verifier errors](verifier-contract.md); gate identifiers are unchanged.
+
 A failed reference repair can expose a check like this:
 
 ```json

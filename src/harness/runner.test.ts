@@ -618,6 +618,26 @@ test('runExperiment excludes a trial whose verifier could not be spawned', async
   assert.match(result.error ?? '', /spawned without a shell/);
 });
 
+test('a grader exception excludes its pair while normal graded failures and all invocation costs survive', async t => {
+  const root = tmp(t, 'skillfit-grader-errors-');
+  mkdirSync(join(root, 'fixture')); writeFileSync(join(root, 'fixture/input.txt'), 'input');
+  writeFileSync(join(root, 'prompt.md'), 'Return an answer.');
+  writeFileSync(join(root, 'verifier.mjs'), "import{readFileSync}from'node:fs';import{join}from'node:path';const text=readFileSync(join(process.argv[2],'_output.md'),'utf8');if(text==='crash')throw new Error('grader unavailable');console.log(JSON.stringify({passed:false}));process.exit(1);");
+  writeFileSync(join(root, 'bench.json'), JSON.stringify({ schemaVersion: 1, tasks: [{ id: 't', fixture: 'fixture', prompt: 'prompt.md', verifier: 'node verifier.mjs' }] }));
+  let calls = 0;
+  const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline-grader-pairs' }), run: async () => ({ output: ++calls === 1 ? 'crash' : 'normal failure', tokens: { input: 10, cachedInput: 4, output: 2 } }) };
+  const manifest = await runExperiment({ bench: loadBench(root), target: collectSkillBundle(makeSkill(t)), executor,
+    trials: 2, runsRoot: join(root, 'runs'), runGroup: 'grade' });
+  const task = manifest.tasks[0]!;
+  assert.equal(calls, 4); assert.equal(task.conditions.baseline.errors, 1); assert.equal(task.conditions.treatment.errors, 0);
+  assert.deepEqual(task.outcomes, { baseline: [false], treatment: [false] });
+  assert.equal(manifest.overall.costs!.attempts.baseline.metrics.input.knownTotal, 20);
+  assert.equal(manifest.overall.costs!.attempts.treatment.metrics.input.knownTotal, 20);
+  assert.equal(manifest.overall.costs!.paired.baseline.metrics.input.knownTotal, 10);
+  const receipt = JSON.parse(readFileSync(join(root, 'runs/grade/t/baseline/trial-1/_result.json'), 'utf8'));
+  assert.equal(receipt.verifierExitCode, 1); assert.match(receipt.error, /VERIFIER_RUNTIME_ERROR/);
+});
+
 test('runExperiment interleaves conditions within each trial and records sampling', async (t) => {
   const runsRoot = tmp(t, 'skillfit-runs-order-');
   const inner = new MockExecutor();

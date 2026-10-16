@@ -30,6 +30,8 @@ import { executionClock, type ExecutionClock, type ExecutionTiming } from './exe
 import type { ComponentMetadata } from './eval-contract.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState, type SpendingBudget } from './eval-budget.js';
+import { parseCommand } from './command.js';
+import { verifierRuntimeError } from './verifier-error.js';
 
 export interface ExperimentPlan {
   component?: ComponentMetadata;
@@ -337,7 +339,7 @@ export async function runTrial(
     const verifier = await runVerifier(bench.dir, task.verifier, runDir);
     verifierExitCode = verifier.exitCode;
     writeFileSync(join(runDir, '_verifier.txt'), verifierLogFor(verifier), 'utf8');
-    if (verifier.exitCode === null) {
+    if (verifier.error !== null || verifier.exitCode === null) {
       error = verifierFailure('verifier', task.verifier, verifier.error);
     } else {
       passed = verifier.exitCode === 0;
@@ -402,12 +404,11 @@ export async function runTrial(
 }
 
 export async function runVerifier(benchDir: string, command: string, runDir: string): Promise<ProcessResult> {
-  const tokens = command.split(/\s+/).filter(Boolean);
-  const executable = tokens[0];
-  if (!executable) {
-    return { exitCode: null, output: '', error: 'empty verifier command' };
-  }
-  return runProcess(executable, [...tokens.slice(1), runDir], benchDir, VERIFIER_TIMEOUT_MS);
+  let tokens: string[];
+  try { tokens = parseCommand(command); }
+  catch (error) { return { exitCode: null, output: '', error: `VERIFIER_COMMAND_ERROR: ${(error as Error).message}` }; }
+  const result = await runProcess(tokens[0]!, [...tokens.slice(1), runDir], benchDir, VERIFIER_TIMEOUT_MS);
+  return { ...result, error: result.error ?? verifierRuntimeError(result.output, result.exitCode, benchDir, runDir) };
 }
 
 export function verifierLogFor(result: ProcessResult): string {
@@ -423,6 +424,7 @@ const SPAWN_FAILURE = /ENOENT|EINVAL|EACCES|EPERM/i;
  */
 export function verifierFailure(label: string, command: string, reason: string | null): string {
   const why = reason ?? 'no exit code';
+  if (why.startsWith('VERIFIER_')) return `${label} failed (${why}): ${command}`;
   if (SPAWN_FAILURE.test(why)) {
     return `${label} could not be started (${why}): ${command} — it is spawned without a shell, so the first token must be an executable the OS can start directly ("node verifiers/x.mjs"); to grade with a shell command, wrap it via "bench add --freeze --verifier-cmd"`;
   }
