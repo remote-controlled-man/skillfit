@@ -84,6 +84,17 @@ function makePlan(
   };
 }
 
+test('trigger verifier exceptions are errors excluded from rates while their output and tokens stay in receipts', async t => {
+  const plan = makePlan(t, stubExecutor(() => ({ output: 'done', skillTriggered: true })), { trials: 1 });
+  writeFileSync(join(plan.bench.dir, 'verifiers/pass.mjs'), "throw new Error('trigger grader unavailable');");
+  plan.bench = loadBench(plan.bench.dir);
+  const result = await runTriggerExperiment(plan);
+  assert.equal(result.metrics.positives.runs, 0); assert.equal(result.metrics.negatives.runs, 0);
+  assert.ok(result.tasks.every(task => task.errors === 1 && task.runs === 0));
+  const receipt = JSON.parse(readFileSync(join(plan.runsRoot, plan.runGroup, 'pos-task/installed/trial-1/_result.json'), 'utf8'));
+  assert.match(receipt.error, /VERIFIER_RUNTIME_ERROR/); assert.deepEqual(receipt.tokens, { input: 10, output: 5 });
+});
+
 test('runTriggerExperiment measures recall and false-trigger rate', async (t) => {
   const executor = stubExecutor((prompt) => ({
     output: 'done',

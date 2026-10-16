@@ -140,8 +140,7 @@ A bench that cannot discriminate must not produce verdicts.
 - **Floor**: warn when baseline pass rate ≤ 10% (implemented) — the task is too hard or broken, and
   all-zero arms are equally uninformative.
 - **Engagement sanity**: if the agent never engaged with the fixture, the executor errored, or the
-  verifier produced no exit code at all (unspawnable command, killed by its timeout, or output over
-  the capture limit), the trial is excluded from rates and reported as an error, not a failure
+  verifier has a process/infrastructure error, the trial is excluded from rates and reported as an error, not a failure
   (implemented). Non-engagement means the final message is empty or whitespace. For an output task
   that message is the deliverable. For a command task the deliverable is the file edit, so an empty
   message still counts when the disposable worktree differs from the fixture commit. Exclusion is *pairwise*: since
@@ -151,6 +150,16 @@ A bench that cannot discriminate must not produce verdicts.
   Command tasks whose disposable Git initialization/reflog verification fails are likewise
   environment errors before their executor starts; inherited disabled reflog is overridden only
   in the disposable repository. This does not change the paired exclusion or verdict formulas.
+
+  Verifier correction (source after npm 0.10.1): process errors include an
+  unspawnable command, no exit code, timeout and output overflow. Recognized
+  bench-owned Node uncaught exceptions and explicit `skillfit.verifier-error`
+  messages also represent no grade, even with a numeric exit code. The same
+  classification blocks offline NOP/oracle probes and rejects an errored replay.
+  Candidate-code failures, assertions and ordinary nonzero exits retain normal
+  task-failure semantics. Costs and raw diagnostics remain recorded; existing
+  pairwise exclusions, statistical formulas and acceptance thresholds are
+  unchanged. Historical receipts are not rewritten. See [verifier contract](verifier-contract.md).
 
 ## L1 — trigger quality (activation)
 

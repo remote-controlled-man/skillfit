@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, isAbsolute, join, resolve, sep } from 'node:path';
 import { hashFileSet, listFilesRecursive } from './hash.js';
 import type { Bench, BenchTask } from './types.js';
+import { parseCommand } from './command.js';
 
 export const BENCH_SCHEMA_VERSION = 1;
 
@@ -25,7 +26,7 @@ function assertRelativeInside(benchDir: string, rel: string, label: string): str
 }
 
 function assertCommandTokensExist(benchDir: string, command: string, label: string): void {
-  for (const token of command.split(/\s+/).filter(Boolean)) {
+  for (const token of parseCommand(command)) {
     if (!token.includes('/') && !token.includes('\\')) continue;
     const tokenAbs = assertRelativeInside(benchDir, token, label);
     if (!existsSync(tokenAbs)) {

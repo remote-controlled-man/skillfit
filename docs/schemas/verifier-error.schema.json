@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit verifier infrastructure error version 1",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "message"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "skillfit.verifier-error" },
+    "message": { "type": "string", "minLength": 1, "pattern": "\\S" }
+  }
+}

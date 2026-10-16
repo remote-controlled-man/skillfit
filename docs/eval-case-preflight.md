@@ -3,6 +3,11 @@
 This behavior is included in 0.10.1. The immutable npm 0.10.0 archive predates it.
 See the [release record](releases/0.10.1.md) for publication status.
 
+Source after npm 0.10.1 additionally blocks recognized grader load/runtime
+exceptions and explicit infrastructure-error messages even with a numeric exit
+code, including on oracle-less cases. Quoted paths/arguments use the same parser
+in probes and execution. See [verifier commands and errors](verifier-contract.md).
+
 Every live `eval` runs the existing offline `bench check` probes before creating
 the native run directory or dispatching its first agent/judge call. This covers
 inject, installed Skill revisions, rules/MCP configuration experiments, trigger

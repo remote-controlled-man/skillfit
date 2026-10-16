@@ -116,6 +116,8 @@ This is a synthetic teaching case, not a Skill benchmark. Replace the fixture, p
 
 Agent callers can use `bench check --json` for versioned gate identifiers, task IDs, locations, failure reasons, remediation suggestions and bounded verifier evidence. stdout is JSON only; exit codes distinguish passed checks, failed checks and errors. This interface is offline only and rejects `--calibrate`; warnings still need review. See the [JSON contract](docs/bench-check-json.md).
 
+Source after npm 0.10.1 supports quoted verifier/oracle arguments, including script paths with spaces. Recognized grader load/runtime errors and explicit infrastructure-error messages block offline gates or become ungraded evaluation errors, preserving agent costs. Normal task failures and assertions remain graded failures. See [verifier commands and error reporting](docs/verifier-contract.md).
+
 List and inspect cases, then preview an edit or removal. `--yes` applies a validated manifest change with a backup; removal preserves the case files. Select a smaller eval using repeated `--task`, or `taskIds` in a JSON request. IDs and order are frozen, budgets count only selected cases, and small samples remain indicative. See [case management](docs/case-management.md).
 
 ```bash

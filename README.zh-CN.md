@@ -116,6 +116,8 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 Agent 可以用 `bench check --json` 读取带版本的校验标识、任务 ID、位置、失败原因、处理建议和限长的评分器证据。标准输出只有 JSON，退出码区分通过、校验失败和执行错误。这项接口仅做离线校验，拒绝与 `--calibrate` 混用；警告仍需检查。参见 [JSON 契约](docs/bench-check-json.md)。
 
+npm 0.10.1 之后的源码支持给校验器和参考解命令的参数加引号，包括含空格的脚本路径。已识别的评分器加载／运行异常及显式基础设施错误消息会阻止离线校验通过，或记为不参与评分的评测错误，同时保留 Agent 成本。正常任务失败和断言失败仍参与评分。详见[校验命令与错误报告](docs/verifier-contract.md)。
+
 可以列出和查看 case，再预览编辑或移除操作。加 `--yes` 才会备份并应用通过校验的清单变更；移除会保留 case 文件。重复 `--task` 或在 JSON 请求中设置 `taskIds` 可以只评估部分 case。所选 ID 和顺序会固定到计划中，预算只计算所选 case，小样本仍只作参考。参见 [case 管理](docs/case-management.md)。
 
 ```bash
