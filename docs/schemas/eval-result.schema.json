@@ -7,7 +7,7 @@
     "schemaVersion": { "const": 1 },
     "kind": { "enum": ["skillfit.eval-result", "skillfit.eval-error"] },
     "status": { "enum": ["planned", "completed", "stopped", "incomplete", "reported", "error"] },
-    "plan": { "type": "object", "required": ["sha256", "request", "evaluation"] },
+    "plan": { "type": "object", "required": ["sha256", "evaluation"] },
     "manifest": { "type": ["object", "null"] },
     "casePreflight": { "anyOf": [{ "$ref": "eval-preflight.schema.json" }, { "type": "null" }] },
     "inputSnapshot": {

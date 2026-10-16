@@ -162,6 +162,8 @@ node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed 
 
 0.10.0 已包含可选 `spendingBudget`，设置五项整批预算停止线。触线或缺失完整最终用量时停止后续调用并保留花费；正在运行的一次仍可能越线。详见[预算检查契约](docs/eval-component.md#input-and-execution)。
 
+npm 0.10.1 之后的源码统一了普通配对 eval 和 Agent 请求的计划。普通 eval 也支持 `--json`、`--spending-budget <file>`、`--executor-timeout-seconds`、`--pair-order`、`--runs-root` 和 `--run-group`；JSON 执行必须确认预览指纹。请求可用 `baselineSkill: null` 表示 baseline 不由 harness 安装 Skill，与普通 installed eval 省略 `--baseline-skill` 对应。这能测量安装收益，但不能授权采用某个修订版本。详见[统一设置与确认流程](docs/eval-planning.md)。
+
 失败的 Codex JSON 调用可从本地数值计数器保留身份匹配的部分用量。导出不包含私有会话正文；部分用量仍不能满足最终成本覆盖或采用门槛。
 
 ```bash

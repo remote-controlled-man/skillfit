@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased — shared eval plans and no-Skill request baselines (2026-10-16)
+
+- Use one read-only plan generator for ordinary paired eval and Agent requests.
+  Add ordinary `--json`, budget-file, deadline, pair-order and output-group flags;
+  JSON execution requires the same entry's preview hash and an explicit group.
+  Seal ordinary reviewed plans and audit their effective parameters.
+- Accept explicit `baselineSkill: null` in version-1 requests, installing the
+  complete candidate only in treatment. Existing path requests remain valid;
+  omitted/invalid baselines fail. Retain improvements, regressions and costs
+  without relaxing revision adoption gates or inherited-configuration limits.
+- Apply explicit deadlines to API calls too; expose effective defaults (CLI/
+  requests 600s, API 120s). Freeze parsed spending limits, retain incomplete costs
+  and stop without retries. Keep trigger/judge budget restrictions. Add offline
+  confirmation, delivery, stop-line and delete-original/export/replay regressions,
+  mirrored README guidance and the shared planning contract. No dependencies,
+  statistical changes, real model calls or npm publication.
+
 ## Unreleased — calibration and trigger report dispatch (2026-10-16)
 
 - Resolve calibration `_calibration.json` and trigger v1 manifests before the

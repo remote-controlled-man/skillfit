@@ -35,7 +35,7 @@ function tokenUsage(usage: ChatCompletionResponse['usage']): TokenUsage | undefi
   };
 }
 
-const DEFAULT_TIMEOUT_MS = 2 * 60 * 1000;
+export const DEFAULT_API_TIMEOUT_MS = 2 * 60 * 1000;
 
 export class ApiExecutor implements Executor {
   private readonly apiKey: string;
@@ -53,12 +53,13 @@ export class ApiExecutor implements Executor {
     this.apiKey = options.apiKey;
     this.model = options.model ?? 'gpt-4o';
     this.baseUrl = (options.baseUrl ?? 'https://api.openai.com/v1').replace(/\/+$/, '');
-    this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.timeoutMs = options.timeoutMs ?? DEFAULT_API_TIMEOUT_MS;
     this.fetchImpl = options.fetchImpl ?? fetch;
   }
 
-  static fromEnv(env: NodeJS.ProcessEnv = process.env): ApiExecutor {
+  static fromEnv(env: NodeJS.ProcessEnv = process.env, options: Pick<ApiExecutorOptions, 'timeoutMs' | 'fetchImpl'> = {}): ApiExecutor {
     return new ApiExecutor({
+      ...options,
       apiKey: env['SKILLFIT_API_KEY'] ?? env['OPENAI_API_KEY'],
       model: env['SKILLFIT_API_MODEL'],
       baseUrl: env['SKILLFIT_API_BASE_URL'],

@@ -205,10 +205,10 @@ export class ExperimentSession {
     }
     const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
     this.inputs = [pin('bench', options.bench.dir, this.groupDir), pin('target', options.target.sourceDir), pin('implementation', join(packageRoot, 'dist'))];
-    if (options.details['component'] !== undefined) {
-      const expected = (options.details['component'] as { implementationSha256?: unknown }).implementationSha256;
+    for (const metadata of [options.details['component'], options.details['reviewedPlan']]) if (metadata !== undefined) {
+      const expected = (metadata as { implementationSha256?: unknown }).implementationSha256;
       if (typeof expected !== 'string' || expected !== this.inputs.find(input => input.label === 'implementation')!.sha256) {
-        throw new Error('Component implementation differs from the approved preview; no calls allowed.');
+        throw new Error('Evaluation implementation differs from the approved preview; no calls allowed.');
       }
     }
     if (options.baselineTarget) this.inputs.push(pin('baseline Skill', options.baselineTarget.sourceDir));

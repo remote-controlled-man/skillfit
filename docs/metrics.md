@@ -81,6 +81,15 @@ an operational stop rule, **not** an API hard cap, adoption threshold or new
 statistical protocol; exclusions, formulas, policies and old records remain
 unchanged. See [the component contract](eval-component.md#input-and-execution).
 
+Entry-point alignment (source after npm 0.10.1): ordinary paired eval and Agent
+requests share effective plans, spending limits and primary executor deadlines.
+Ordinary JSON execution requires preview confirmation; ordinary native plans
+also seal and audit the reviewed parameters. Request `baselineSkill: null`
+selects no harness-installed baseline Skill, preserving installation-benefit
+measurements with `REVISION_COMPARISON_REQUIRED` and no revision adoption
+eligibility. Existing path requests, evidence, statistics, exclusions and
+acceptance policies keep their meaning. See [shared planning](eval-planning.md).
+
 Environment correction (2026-10-14): new paired installed runs deliver the same
 versioned native untracked-file diff helper and usage guidance to both arms.
 Plans, source snapshots and delivered copies bind its content; mutation stops

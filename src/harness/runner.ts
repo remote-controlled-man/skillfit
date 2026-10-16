@@ -447,7 +447,7 @@ function sumTokens(records: TrialOutcome[]): { input: number; output: number } |
  * knob reports `sampling: null`, which is a statement about the surface — not an omission that a
  * reader would have to guess at.
  */
-function withSampling(descriptor: ExecutorDescriptor): ExecutorDescriptor {
+export function withSampling(descriptor: ExecutorDescriptor): ExecutorDescriptor {
   return { ...descriptor, sampling: descriptor.sampling ?? null };
 }
 

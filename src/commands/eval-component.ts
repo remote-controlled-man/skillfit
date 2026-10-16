@@ -1,11 +1,10 @@
 import { existsSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { assessEvaluation } from '../harness/eval-acceptance.js';
 import { auditEvaluation, stoppedAccounting } from '../harness/eval-audit.js';
 import { loadEvalRequest, parseAcceptancePolicy, policyHash, readComponentJson, record, type ComponentMetadata } from '../harness/eval-contract.js';
-import { hashFileSet, listFilesRecursive, sha256Text } from '../harness/hash.js';
-import { runEval, type EvalOptions, type EvalPreview } from './eval.js';
+import { runEval, type EvalOptions } from './eval.js';
+import { prepareEvalPlan, confirmEvalPlan, plannedEvalResult } from './eval-plan.js';
 import { spendingBudgetReport } from '../harness/eval-budget.js';
 import { verifyReplayPackage } from '../harness/replay-package.js';
 import { CasePreflightFailed } from './eval-preflight.js';
@@ -81,10 +80,7 @@ export async function runEvalComponent(requestPath: string, options: ComponentRu
   const path = resolve(requestPath), { request, sha256: requestSha256 } = loadEvalRequest(path);
   const runDir = join(request.runsRoot, request.runGroup);
   if (existsSync(runDir)) throw new Error('Run group already exists; declare a fresh group without overwriting evidence.');
-  const implementationDir = fileURLToPath(new URL('../../dist', import.meta.url));
-  const implementationFiles = listFilesRecursive(implementationDir);
-  const implementationSha256 = hashFileSet(implementationDir, implementationFiles);
-  const base: EvalOptions = { skillPath: request.candidateSkill, baselineSkillPath: request.baselineSkill,
+  const base: EvalOptions = { skillPath: request.candidateSkill, baselineSkillPath: request.baselineSkill ?? undefined,
     bench: request.bench, agent: request.agent, mode: 'installed', inputMode: 'workspace', trials: request.trials,
     maxCalls: request.maxCalls, pairOrder: request.pairOrder, runsRoot: request.runsRoot, runGroup: request.runGroup, yes: true, dryRun: true,
     executorTimeoutSeconds: request.executorTimeoutSeconds,
@@ -92,24 +88,16 @@ export async function runEvalComponent(requestPath: string, options: ComponentRu
     ...(request.spendingBudget ? { spendingBudget: request.spendingBudget } : {}),
     judgeExecutor: null, executor: options.executor, sessionOptions: options.sessionOptions,
     skillInstallDir: options.skillInstallDir, log: options.log ?? (() => {}) };
-  let prepared: EvalPreview | undefined;
-  await runEval({ ...base, onPlan: preview => { prepared = preview; } });
-  if (!prepared || !prepared.baseline || prepared.judge) throw new Error('Component requires a paired installed Skill revision without a judge.');
-  const describe = (evaluation: EvalPreview) => ({ schemaVersion: 1 as const, kind: 'skillfit.eval-plan' as const,
-    request, requestSha256, policySha256: policyHash(request.policy), implementationSha256, evaluation });
-  const planData = describe(prepared), previewSha256 = sha256Text(JSON.stringify(planData));
-  const plan = { ...planData, sha256: previewSha256 };
-  if (options.dryRun) return { schemaVersion: 1, kind: 'skillfit.eval-result', status: 'planned', plan,
-    acceptance: { decision: 'inconclusive', eligibleForUpgrade: false, automaticUpgrade: false,
-      reasons: [{ code: 'PLAN_ONLY', message: 'No agent call or outcome is available.' }] } };
-  if (!options.expectedPlanSha256 || !/^[0-9a-f]{64}$/i.test(options.expectedPlanSha256) || options.expectedPlanSha256.toLowerCase() !== previewSha256) {
-    throw new Error('Execution requires --plan-sha matching the current dry-run plan; inputs, policy, executor or implementation changed.');
-  }
+  const prepared = await prepareEvalPlan(base, { request, requestSha256, policySha256: policyHash(request.policy) });
+  const { plan } = prepared, { sha256: previewSha256, implementationSha256 } = plan;
+  if (plan.evaluation.judge) throw new Error('Component requires a paired installed Skill evaluation without a judge.');
+  if (options.dryRun) return plannedEvalResult(plan);
+  confirmEvalPlan(options.expectedPlanSha256, previewSha256);
   const component: ComponentMetadata = { schemaVersion: 1, requestSha256, previewSha256, implementationSha256, policySha256: policyHash(request.policy),
     purpose: request.purpose, policy: request.policy, synthetic: options.executor !== undefined };
   try {
     await runEval({ ...base, dryRun: false, component, guardFiles: [{ label: 'component request', path, sha256: requestSha256 }],
-      onPlan: preview => { if (sha256Text(JSON.stringify(describe(preview))) !== previewSha256) throw new Error('Plan changed before execution; no calls allowed.'); } });
+      onPlan: prepared.assertCurrent });
   } catch (error) {
     if (!existsSync(join(runDir, '_plan.json'))) throw error;
     const result = await reportEvalComponent(runDir);
