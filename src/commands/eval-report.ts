@@ -1,6 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EvalReportOptions } from './eval-component.js';
+import { renderSingleArmReport } from './eval-single-arm-report.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1, verdictFor } from '../harness/report.js';
 import { mcnemarExactP } from '../harness/stats.js';
 import { validateSkillInstallDir } from '../harness/installed-skill.js';
@@ -660,8 +661,9 @@ export function renderEvalMarkdown(report: ReportData): string {
 export async function runEvalReport(inputPath: string, log: (line: string) => void = console.log, options: EvalReportOptions = {}): Promise<void> {
   // Import after module initialization: component assessment itself uses this
   // module's manifest parser. Both CLI formats must share the same assessment.
-  const { reportEvalComponent } = await import('./eval-component.js');
-  const result = await reportEvalComponent(inputPath, options);
+  const { readEvaluationReport } = await import('./evaluation-report.js');
+  const result = await readEvaluationReport(inputPath, options);
+  if ('evaluationType' in result) { log(renderSingleArmReport(result)); return; }
   const root = result.evidence.runDir;
   const safe = (message: string) => escapeMarkdown(message.replaceAll(root, '[run]'));
   const lines: string[] = [];

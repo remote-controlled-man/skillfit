@@ -301,6 +301,12 @@ and retain/share an external copy of evidence hashes for provenance.
 
 ## Offline assessment and replay
 
+The public `report eval` dispatcher in source after npm 0.10.1 also reads
+calibration/trigger summaries as distinct descriptive JSON kinds. They are not
+revision-component results and never enter its paired adoption policy. See
+[report types and option restrictions](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
+The request-based component and paired result contract below are unchanged.
+
 Version 0.10.1 seals Ctrl+C/SIGTERM interruptions with available trial
 receipts, `_interruption.json`, stopped `_session.json` and `_artifacts.json`.
 Request execution preserves exit 130/143 and returns a stopped assessment after

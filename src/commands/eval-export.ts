@@ -41,6 +41,7 @@ export async function exportEvaluation(input: string, output: string, options: {
   const files = packageFiles(run).filter(path => path !== '_artifacts.json');
   if (JSON.stringify(files) !== JSON.stringify(Object.keys(index.files).sort())) throw new Error('Native evidence inventory changed.');
   for (const path of files) if (sha256File(packageMember(run, path)) !== index.files[path]) throw new Error(`Native evidence hash mismatch: ${path}`);
+  if (plan.details?.mode === 'calibration') throw new Error('Portable replay currently requires paired native runs; calibration reports do not authorize a paired export.');
   const report = await reportEvalComponent(run);
   const hasManifest = existsSync(join(run, 'manifest.json'));
   if (hasManifest && (!('evidence' in report) || !report.evidence.verified)) throw new Error(`Native evidence audit failed; cannot export a complete replay package: ${'evidence' in report ? JSON.stringify(report.evidence) : 'missing audit'}`);

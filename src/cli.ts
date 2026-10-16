@@ -8,7 +8,8 @@ import { runBundleExport } from './commands/bundle.js';
 import { runDoctor } from './commands/doctor.js';
 import { DEFAULT_EVAL_TRIALS, runEval } from './commands/eval.js';
 import { runEvalReport } from './commands/eval-report.js';
-import { componentError, reportEvalComponent, runEvalComponent } from './commands/eval-component.js';
+import { componentError, runEvalComponent } from './commands/eval-component.js';
+import { readEvaluationReport } from './commands/evaluation-report.js';
 import { runInstall } from './commands/install.js';
 import { runMcpCheck } from './commands/mcp.js';
 import { runReport } from './commands/report.js';
@@ -20,8 +21,8 @@ const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI codi
 Usage:
   skillfit doctor [--agent <id>]            Inspect current agent configuration health
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
-  skillfit report eval <manifest-or-run-dir>  Assess saved evidence as Markdown (read-only)
-  skillfit report eval <manifest-or-run-dir> --json [--replay]  Assess saved evidence for an Agent
+  skillfit report eval <summary-or-run-dir>  Read paired, calibration or trigger reports (read-only)
+  skillfit report eval <summary-or-run-dir> --json  Return a typed saved-evidence report for an Agent
   skillfit report eval <run-dir> --export <new-dir>  Plan a portable offline replay package
   skillfit eval --request <request.json> --dry-run  Return a pinned JSON plan without calls
   skillfit eval --request <request.json> --plan-sha <sha256>  Run that plan and return JSON evidence
@@ -48,9 +49,9 @@ Options:
   --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
   --plan-sha <hash>   Confirm the current --request dry-run plan before real calls
   --json             Machine output for bench check/list/show/edit/remove, report, and request-based eval
-  --policy <path>    With report eval, assess against a policy (post-hoc changes cannot authorize adoption)
-  --records <dir>    With report eval, use native evidence from this run directory
-  --replay           With report eval, regrade cloned deliveries using the frozen bench
+  --policy <path>    With paired report eval, assess against a policy (post-hoc changes cannot authorize adoption)
+  --records <dir>    With paired report eval, use native evidence from this run directory
+  --replay           With paired report eval, regrade cloned deliveries using the frozen bench
   --export <dir>     With report eval, plan a portable package; --yes writes a fresh destination
   --input-root <label=path>  With --export, recover pinned inputs from a matching copy (repeatable)
   --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
@@ -248,8 +249,8 @@ async function main(): Promise<void> {
     case 'report':
       if (positionals[1] === 'eval') {
         if (!positionals[2]) {
-          if (values.json) throw new Error('report eval --json requires a manifest or native run directory.');
-          console.error('Usage: skillfit report eval <manifest-or-run-dir>');
+          if (values.json) throw new Error('report eval --json requires a saved summary or native run directory.');
+          console.error('Usage: skillfit report eval <summary-or-run-dir>');
           process.exitCode = 2;
           return;
         }
@@ -259,7 +260,7 @@ async function main(): Promise<void> {
           if (values.json) console.log(JSON.stringify(result, null, 2));
           return;
         }
-        if (values.json) console.log(JSON.stringify(await reportEvalComponent(positionals[2], {
+        if (values.json) console.log(JSON.stringify(await readEvaluationReport(positionals[2], {
           policyPath: values.policy, recordsPath: values.records, replay: values.replay, benchDir: values.bench,
         }), null, 2));
         else await runEvalReport(positionals[2], undefined, {
