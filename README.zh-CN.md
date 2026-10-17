@@ -218,6 +218,8 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 0.10.1 会在调用前封存输入副本：原始 Skill、bench 或请求之后被修改、删除，也不影响导出和重放。计划会记录快照校验信息、本地复制耗时和存储量；已声明的快照损坏就拒绝使用。历史记录仍需找回匹配的原始输入。参见[评测输入封存](docs/evaluation-input-snapshots.md)。
 
+npm 0.11.0 之后的源码支持把 bench 放在 Git 仓库根目录：指纹和快照统一排除 Git 元数据。预览会拦住位于 bench、Skill／配置输入、编译运行时或 Git 元数据内部的输出，目录别名也不能绕过。输入与结果应放在同级目录，例如 `--bench ./my-bench --runs-root ./runs`。
+
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --yes --json

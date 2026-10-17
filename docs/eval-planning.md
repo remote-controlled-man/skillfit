@@ -76,6 +76,13 @@ executor identity or compiled implementation invalidate confirmation. Preview
 declares offline case preflight and input snapshots pending; execution performs
 both before dispatch.
 
+Source after npm 0.11.0 checks output layout during preview and again at session
+setup. Keep `--runs-root` outside the bench, candidate/baseline Skill or config
+experiment, compiled runtime and `.git` metadata. A directory alias cannot bypass
+this check. Use sibling input/output directories; invalid layouts fail before
+verifiers, model calls or run creation. Git-root benches are supported: bench
+hashing and sealed snapshots both exclude Git metadata while retaining task bytes.
+
 Budget files are parsed into fixed numeric limits before planning. Those values,
 rather than the source file's path/format, are bound to the hash and sealed in
 the native plan. Editing the file before a new invocation changes the plan when

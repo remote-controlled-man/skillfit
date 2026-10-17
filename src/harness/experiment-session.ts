@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
@@ -14,6 +14,7 @@ import { freezeInputSnapshot, verifyInputSnapshot, type InputSnapshot, type Pinn
 import { loadBench } from './bench.js';
 import { globalSkillRoots } from './agent-preflight.js';
 import { spendingStopFrom, type SpendingStopCode } from './eval-budget.js';
+import { assertEvaluationOutputLayout, physicalPath } from './evaluation-layout.js';
 
 export interface ExperimentSummary {
   schemaVersion: 1;
@@ -72,12 +73,6 @@ function inside(root: string, path: string): boolean {
   // path.relative returns an absolute path when two Windows paths are on different drives.
   if (isAbsolute(rel)) return false;
   return !rel.startsWith(`..${sep}`) && rel !== '..' && !rel.startsWith(sep);
-}
-
-function physicalPath(path: string): string {
-  let parent = resolve(path); const parts: string[] = [];
-  while (!existsSync(parent)) { parts.unshift(basename(parent)); parent = dirname(parent); }
-  return join(realpathSync(parent), ...parts);
 }
 
 function filesUnder(root: string, exclude?: string): string[] {
@@ -204,9 +199,8 @@ export class ExperimentSession {
     this.workspaceAliases = this.workspaces.map(logical => ({ logical, physical: physicalPath(logical) }));
     this.trustWorkspaces = [...new Set([...this.workspaces, ...this.workspaceAliases.map(alias => alias.physical)])];
     if (existsSync(this.groupDir)) throw new Error(`Run group directory already exists: ${this.groupDir}`);
-    for (const input of [options.target.sourceDir, ...(options.baselineTarget ? [options.baselineTarget.sourceDir] : []), ...options.bench.tasks.map(task => join(options.bench.dir, task.fixture))]) {
-      if (inside(physicalPath(input), physicalPath(this.groupDir))) throw new Error('Experiment output must be outside the Skill/overlay and fixture inputs; run the CLI from their parent directory.');
-    }
+    assertEvaluationOutputLayout(this.groupDir, { benchDir: options.bench.dir,
+      targetDirs: [options.target.sourceDir, ...(options.baselineTarget ? [options.baselineTarget.sourceDir] : [])] });
     const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
     this.inputs = [pin('bench', options.bench.dir, this.groupDir), pin('target', options.target.sourceDir), pin('implementation', join(packageRoot, 'dist'))];
     for (const metadata of [options.details['component'], options.details['reviewedPlan']]) if (metadata !== undefined) {
@@ -271,7 +265,7 @@ export class ExperimentSession {
     mkdirSync(this.groupDir);
     try {
       this.inputSnapshot = freezeInputSnapshot(this.groupDir, this.inputs, this.guardFiles);
-      if (loadBench(join(this.groupDir, '_inputs/bench')).contentSha256 !== options.bench.contentSha256) throw new Error('Sealed bench does not match the planned content hash; keep Git metadata and run outputs outside bench inputs.');
+      if (loadBench(join(this.groupDir, '_inputs/bench')).contentSha256 !== options.bench.contentSha256) throw new Error('Sealed bench does not match the planned content hash; input bytes changed before sealing.');
       for (const input of this.inputs) if (pin(input.label, input.root, input.exclude).sha256 !== input.sha256) throw new Error(`Frozen ${input.label} input changed while sealing snapshots.`);
       for (const file of this.guardFiles) if (sha256File(file.path) !== file.sha256) throw new Error(`Frozen ${file.label} changed while sealing snapshots.`);
       throwIfEvaluationInterrupted();

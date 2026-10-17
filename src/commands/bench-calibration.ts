@@ -10,6 +10,7 @@ import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { summarizeCosts } from '../harness/costs.js';
 import { createSpendingBudgetRecorder, parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget.js';
 import { parseExecutorTimeoutSeconds } from '../harness/eval-contract.js';
+import { assertEvaluationOutputLayout } from '../harness/evaluation-layout.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { hashFileSet, listFilesRecursive, sha256File, sha256Text } from '../harness/hash.js';
@@ -109,6 +110,7 @@ function resolveCalibration(input: CalibrationInput): PreparedCalibration {
   const runGroup = options.runGroup ?? `calibrate-${new Date().toISOString().replace(/\D/g, '').slice(0, 17)}`;
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   const outputDir = join(runsRoot, runGroup);
+  assertEvaluationOutputLayout(outputDir, { benchDir: bench.dir });
   if (existsSync(outputDir)) throw new Error(`Run group directory already exists: ${outputDir}`);
   const guardFiles = (options.guardFiles ?? []).map(file => ({ ...file, path: resolve(file.path) }));
   for (const file of guardFiles) if (sha256File(file.path) !== file.sha256) throw new Error(`Frozen ${file.label} file changed before planning.`);

@@ -28,6 +28,7 @@ import { parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget
 import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import { CASE_PREFLIGHT_POLICY, checkEvalCases } from './eval-preflight.js';
 import { INPUT_SNAPSHOT_POLICY } from '../harness/input-snapshot.js';
+import { assertEvaluationOutputLayout } from '../harness/evaluation-layout.js';
 import type { ReviewedEvalPlan } from './eval-plan.js';
 import { inspectAgentEnvironment, assertAgentEnvironment, assertAgentEnvironmentUnchanged, renderAgentEnvironment,
   type AgentEnvironmentPreflight, type EnvironmentRole } from '../harness/agent-preflight.js';
@@ -351,6 +352,7 @@ async function runEvalTrigger(
   const agentPreflight = inspect();
 
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+  assertEvaluationOutputLayout(join(runsRoot, runGroup), { benchDir: bench.dir, targetDirs: [skill.sourceDir] });
   const competitors = options.competeInstalled && options.agent
     ? installedUserSkills(getAgent(options.agent), options.sessionOptions?.homeDir ?? homedir(), options.sessionOptions?.env ?? process.env)
       .filter((entry) => entry.name !== skill.name)
@@ -547,6 +549,8 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const pairOrder = parsePairOrder(options.pairOrder);
 
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+  assertEvaluationOutputLayout(join(runsRoot, runGroup), { benchDir: bench.dir,
+    targetDirs: [target.sourceDir, ...(baselineTarget ? [baselineTarget.sourceDir] : [])] });
   options.onPlan?.({
     mode: installed ? 'installed' : 'inject',
     agentPreflight,

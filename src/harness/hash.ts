@@ -10,10 +10,11 @@ export function sha256File(path: string): string {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
 
-export function listFilesRecursive(rootDir: string): string[] {
+export function listFilesRecursive(rootDir: string, options: { excludeGitMetadata?: boolean } = {}): string[] {
   const out: string[] = [];
   const walk = (rel: string): void => {
     for (const entry of readdirSync(join(rootDir, rel), { withFileTypes: true })) {
+      if (options.excludeGitMetadata && entry.name === '.git') continue;
       const childRel = rel ? `${rel}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {
         walk(childRel);

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — new-user workflow reliability
+
+- Align bench fingerprints with sealed snapshots by excluding Git metadata,
+  including worktree files; retain actual case bytes and reject metadata as a
+  declared task input. Git-root benches can complete, audit and replay.
+- Reject output inside bench/Skill/configuration/runtime inputs or Git metadata
+  during preview and again at setup, resolving aliases and uncreated descendants.
+  Preserve existing outputs and make no verifier or executor calls for bad layouts.
+
 ## 0.11.0 — complete basic evaluation workflow (2026-10-17)
 
 - Block calibration before spending when case integrity or Agent environment

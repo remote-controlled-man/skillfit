@@ -221,6 +221,8 @@ That source can export a supported sealed native paired, calibration or trigger 
 
 Version 0.10.1 seals input copies before dispatch: later edits/deletions of the original Skill, bench or request no longer prevent export/replay. The plan records snapshot integrity, local copy time and storage; a damaged declared snapshot is rejected. Historical runs still need matching recovered inputs. See [sealed evaluation inputs](docs/evaluation-input-snapshots.md).
 
+Source after npm 0.11.0 supports benches at a Git repository root: hashing and snapshots both exclude Git metadata. Previews reject output inside the bench, Skill/configuration inputs, compiled runtime or Git metadata, including directory aliases. Keep inputs and runs in sibling directories, such as `--bench ./my-bench --runs-root ./runs`.
+
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --yes --json

@@ -41,10 +41,26 @@ configuration installation is never performed by this feature.
 The manifest identifies selected tasks as before; archiving the full bench keeps
 its original content hash and all referenced files available. Empty directories
 are retained. Executable permission bits are preserved on systems that support
-them and checked on POSIX. Git metadata and the current run output are excluded;
-symbolic links and unsupported file types are rejected. The archived bench must
-load with the declared content hash before calls start. Keep Git metadata and
-run outputs out of the task's input tree rather than relying on unrecorded files.
+them and checked on POSIX. Git metadata is excluded; symbolic links and
+unsupported file types are rejected. The archived bench must load with the
+declared content hash before calls start.
+
+Source after npm 0.11.0 uses the same Git-metadata exclusion for bench content
+hashes and input snapshots, including `.git` directories and worktree metadata
+files. A bench may be the root of its own Git repository. Git bookkeeping changes
+do not alter its task fingerprint; real prompt, fixture and verifier changes do.
+Task definitions cannot reference files inside `.git`. Git-free bench hashes and
+historical receipts are unchanged; portable packages retain their original runtime.
+
+Previews and live setup reject output inside the bench, candidate/baseline Skill,
+configuration experiment or compiled runtime, and inside Git metadata. Existing
+directory aliases and not-yet-created descendants are resolved before checking.
+Use a sibling output parent, for example `--bench ./my-bench --runs-root ./runs`,
+rather than `--bench ./my-bench --runs-root ./my-bench/runs`. This prevents later
+cohorts from archiving previous outputs as case inputs. A rejected preview runs
+no verifier/oracle, creates no run directory and calls no executor. Existing old
+outputs are preserved; move or recover inputs explicitly rather than deleting
+them automatically. Recheck and preview any moved bench before running.
 
 Only the listed project inputs are copied. Global configuration and globally
 installed Skills keep their existing fingerprints/guards; their private contents
