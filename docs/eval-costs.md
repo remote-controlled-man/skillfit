@@ -30,7 +30,7 @@ spending totals. An executor invocation does not prove that a provider accepted
 a request or billed it. These counts do not include the optional judge, earlier
 calibration cohorts or another experiment's setup spending.
 
-## All executor roles (source after npm 0.10.1)
+## All executor roles (0.11.0 and newer)
 
 New paired manifests and JSON reports add `invocationCosts`, independently of
 the unchanged primary Agent's `overall.costs`. It contains `agent`, `judge` and
@@ -77,7 +77,7 @@ pair as an execution error; see [execution timing](eval-timing.md).
 
 ## Cache and coverage
 
-Source after npm 0.11.0 reads matrix-defined JSON streams in ordinary CLI eval and
+Version 0.12.0 reads matrix-defined JSON streams in ordinary CLI eval and
 CLI judging too, independently of Skill-trigger detection. Codex inject, rules and
 MCP comparisons can retain the same per-turn counters as installed/trigger mode.
 Only assistant text is graded; raw stream evidence and partial failure counters
@@ -125,7 +125,7 @@ elapsed time can still be compared when token usage is unknown. Earlier v4
 manifests without cost summaries remain readable and explicitly identify this
 missing information; the report does not silently enrich them from local files.
 
-## Failed API responses (source after npm 0.11.0)
+## Failed API responses (version 0.12.0)
 
 API response parsing retains the public response and any valid reported usage
 before rejecting a missing/non-text answer, malformed JSON or non-2xx status.

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — new-user workflow reliability
+## 0.12.0 — reliable case authoring and evaluation costs (2026-10-17)
 
 - Unify bundled/local bench resolution for eval and read-only check/list/show/
   calibration. Preserve explicit broken-path errors and local precedence; keep
@@ -22,6 +22,16 @@
 - Reject output inside bench/Skill/configuration/runtime inputs or Git metadata
   during preview and again at setup, resolving aliases and uncreated descendants.
   Preserve existing outputs and make no verifier or executor calls for bad layouts.
+- Bound frozen case imports to ordinary selected files: never fall back from an
+  empty/broken Git index, require `--include` outside Git, reject links and
+  destination-bench inputs, and cap fixtures at 200 files / 1 MiB.
+- Confirm before the single `--decompose` call. Support explicit budgets, executor
+  deadlines and record groups; retain original inputs, public outputs, reported
+  costs and gate failures. Stop process trees on interruption, preserve concurrent
+  bench edits, and never retry or upgrade automatically.
+- Add optional per-case `verifierTimeoutSeconds` (1–3600; default 120) consistently
+  across verifier/oracle checks, evaluation, calibration, trigger mode and replay.
+  Expose it through case import and manifest editing without changing old defaults.
 
 ## 0.11.0 — complete basic evaluation workflow (2026-10-17)
 

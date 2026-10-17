@@ -129,7 +129,7 @@ writes the prompt to `prompts/review-r1.md` plus a
 For a multi-paragraph prompt use `--prompt-file <path>` instead; the path is read relative to the
 current directory, and the *content* is copied into the bench.
 
-In source after npm 0.11.0, an empty index or a failed Git read is an error, never a
+In version 0.12.0, an empty index or a failed Git read is an error, never a
 fallback to ignored/untracked files. Narrow a Git fixture with repeated `--include <file-or-dir>`;
 outside Git these explicit selections are required. Git metadata and `node_modules` are excluded.
 Selected symbolic links, submodules, non-ordinary entries and files inside the destination bench
@@ -167,7 +167,7 @@ for pass, non-zero for fail. Three ways to get one, cheapest first:
 --decompose --agent <id>
 ```
 
-Source after npm 0.11.0 confirms a drafting call **before** invoking an agent. Dry runs and declined
+Version 0.12.0 confirms a drafting call **before** invoking an agent. Dry runs and declined
 confirmations make zero calls. `--yes` authorizes exactly one call, without retry or automatic
 evaluation/upgrade. Drafting supports `--max-calls`, `--spending-budget`,
 `--executor-timeout-seconds`, `--runs-root` and `--run-group`. Predictable output conflicts are
@@ -210,7 +210,7 @@ Two rules that are easy to get wrong:
 **What the tool checks.** For an `output`-kind task, that the verifier rejects a missing `_output.md`
 and rejects an empty one — both FAIL, and together they are the NOP gate for tasks that grade text.
 Also that the check count is in range (WARN), and that the exit code and the JSON `passed` flag agree
-(WARN). Each verifier/oracle gets a default 2-minute timeout. Source after npm 0.11.0 accepts
+(WARN). Each verifier/oracle gets a default 2-minute timeout. Version 0.12.0 accepts
 `verifierTimeoutSeconds` (integer 1–3600) per task; set it with
 `bench add --verifier-timeout-seconds 600` or
 `bench edit <dir> <task-id> --set verifierTimeoutSeconds=600 --yes`. This is separate from the model

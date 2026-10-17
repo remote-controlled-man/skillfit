@@ -6,7 +6,7 @@ the task's winnability is unverified. It does not measure an agent. A paired `ev
 and records what actually happened. This guide applies to macOS, Linux, and Windows; use the native
 `node dist/cli.js` commands from a built source checkout in either Bash or PowerShell.
 For the installed release, replace that command prefix with
-`npx skillfit@0.11.0`; no source checkout is required for your own cases.
+`npx skillfit@0.12.0`; no source checkout is required for your own cases.
 
 ## Start with the installed CLI
 
@@ -14,10 +14,10 @@ From your project directory, create and check a fresh teaching case, then previe
 your own Skill directory (replace `./my-skill` with an existing `SKILL.md` parent):
 
 ```bash
-npx skillfit@0.11.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.11.0 bench init my-bench --kind command --yes
-npx skillfit@0.11.0 bench check ./my-bench --json
-npx skillfit@0.11.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.12.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.12.0 bench init my-bench --kind command --yes
+npx skillfit@0.12.0 bench check ./my-bench --json
+npx skillfit@0.12.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 These commands make zero model calls; `--yes` creates only the fresh bench.
@@ -26,7 +26,7 @@ interpreting Skill benefit. Read the environment checks even if preview exits 0.
 Keep inputs and runs as siblings. Continue below to declare the claim, inspect the
 plan and authorize execution; do not remove `--dry-run` just to try the example.
 
-Source after npm 0.11.0 also resolves bundled names such as `code-review` and
+Version 0.12.0 also resolves bundled names such as `code-review` and
 `debugging` consistently in eval, `bench check/list/show` and calibration preview.
 A local bench wins; explicit or existing local paths never silently fall back to
 a bundled example. Write operations still require your own local directory.
@@ -144,12 +144,11 @@ that into a broad efficacy claim. The [metrics protocol](metrics.md) defines the
 When the paired result is useful, run `--mode trigger` separately to ask whether the agent would
 load the Skill on its own. Trigger mode has one arm and uses 5 trials per task by default. It does
 not yet reproduce competition from the user's whole installed Skill set, so its recall is an
-optimistic estimate. Share paired and trigger results separately. Source after npm
-0.10.1 reads both through `report eval`, with distinct JSON kinds and metrics;
+optimistic estimate. Share paired and trigger results separately. Version 0.11.0 reads both through `report eval`, with distinct JSON kinds and metrics;
 calibration directories or `_calibration.json` also work. See [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
 Single-arm reports do not enter the paired acceptance policy or authorize upgrades.
 
-In that source, trigger also supports `--json --dry-run`, repeated `--task`,
+Version 0.11.0 also supports `--json --dry-run`, repeated `--task`,
 spending lines and a per-call deadline. Confirm its ordinary `plan.sha256` and
 explicit fresh `--run-group` for JSON execution. Only selected labeled tasks
 count toward calls; retain negative controls. Trigger already presents files on

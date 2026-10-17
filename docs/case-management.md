@@ -6,7 +6,7 @@ registration; use your editor to change the referenced file contents.
 
 ## Inspect and select
 
-Source after npm 0.11.0 accepts bundled names (for example `code-review`) in
+Version 0.12.0 accepts bundled names (for example `code-review`) in
 read-only `bench check/list/show`, calibration planning and ordinary eval. These
 share one resolver: a local manifest wins; an explicit or existing broken local
 path fails instead of selecting a different bundled case. JSON includes the
@@ -56,7 +56,7 @@ Edits/removals default to a read-only before/after plan. `--yes` applies it;
 are rejected. Manifest writes validate the result and roll back on failure.
 
 Repeat `--set field=value` to edit `fixture`, `prompt`, `promptTrigger`, `verifier`,
-`verifierKind`, `oracle`, `rubric` or `shouldTrigger`. Source after npm 0.11.0 also allows
+`verifierKind`, `oracle`, `rubric` or `shouldTrigger`. Version 0.12.0 also allows
 `verifierTimeoutSeconds` (integer 1–3600, default 120), including `--unset` to restore the default.
 It applies to each verifier/oracle process, separately from model execution. Values may contain `=`;
 `shouldTrigger` accepts only literal `true` or `false`. Repeat `--unset field` for

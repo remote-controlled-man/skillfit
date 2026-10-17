@@ -45,7 +45,7 @@ them and checked on POSIX. Git metadata is excluded; symbolic links and
 unsupported file types are rejected. The archived bench must load with the
 declared content hash before calls start.
 
-Source after npm 0.11.0 uses the same Git-metadata exclusion for bench content
+Version 0.12.0 uses the same Git-metadata exclusion for bench content
 hashes and input snapshots, including `.git` directories and worktree metadata
 files. A bench may be the root of its own Git repository. Git bookkeeping changes
 do not alter its task fingerprint; real prompt, fixture and verifier changes do.

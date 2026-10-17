@@ -11,7 +11,7 @@ share the check implementation. This is separate from [offline case integrity](e
 | --- | --- |
 | `CLI_AVAILABLE` | Checks the selected matrix command's executable on PATH using filesystem access; no `which`, `where`, agent invocation or version probe runs as part of this check. Missing/non-executable files are `FAIL`. API execution needs no CLI (`INFO`). |
 | `MATRIX_CAPABILITY` | Matches headless/streaming/Skill delivery declarations and existing executor/input/task compatibility rules. An incompatible choice is `FAIL`; a matrix match does not prove installed-version flag support. |
-| `USAGE_CAPABILITY` | Source after npm 0.11.0 checks the adapter's known token counters. A strict whole-batch budget with unavailable required counters is `FAIL` for either primary or judge, before case probes or spending. API/injected coverage stays `UNKNOWN`; runtime final-usage checks still apply. |
+| `USAGE_CAPABILITY` | Version 0.12.0 checks the adapter's known token counters. A strict whole-batch budget with unavailable required counters is `FAIL` for either primary or judge, before case probes or spending. API/injected coverage stays `UNKNOWN`; runtime final-usage checks still apply. |
 | `EXECUTOR_INJECTED` | `UNKNOWN` for a test/programmatic injected executor; it cannot attest an actual CLI installation. Existing synthetic-evidence restrictions still apply. |
 | `AUTHENTICATION` | Always `UNKNOWN`: no login command, credential file or network request is used to infer authentication. Existing keys/config files do not prove valid credentials. |
 | `GLOBAL_SKILL_CONFLICT` | For the primary CLI Agent evaluating a Skill, checks readable direct Skill entries in matrix-listed user/global roots. A matching directory name or frontmatter name is `FAIL` because baseline may already load the Skill. |
@@ -32,7 +32,7 @@ disposable trial directory. Use a normal installed executable on an absolute PAT
 The existing native runtime version capture can still probe a CLI during an
 authorized real run; it is separate from this read-only preflight.
 
-Streaming is required for native trigger detection. Source after npm 0.11.0 also
+Streaming is required for native trigger detection. Version 0.12.0 also
 uses a matrix-defined structured command for ordinary paired, calibration and
 judge invocations whenever available, without implying a Skill trigger event.
 Other CLI surfaces keep their existing text fallback. The optional judge's CLI is

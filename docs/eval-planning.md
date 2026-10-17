@@ -76,7 +76,7 @@ executor identity or compiled implementation invalidate confirmation. Preview
 declares offline case preflight and input snapshots pending; execution performs
 both before dispatch.
 
-Source after npm 0.11.0 checks output layout during preview and again at session
+Version 0.12.0 checks output layout during preview and again at session
 setup. Keep `--runs-root` outside the bench, candidate/baseline Skill or config
 experiment, compiled runtime and `.git` metadata. A directory alias cannot bypass
 this check. Use sibling input/output directories; invalid layouts fail before
@@ -146,7 +146,7 @@ combined `invocationCosts`. Historical missing judge costs remain unknown, never
 zero. An enabled API judge without credentials is an error before spending;
 login validity still cannot be confirmed offline. See [cost accounting](eval-costs.md).
 
-Source after npm 0.11.0 adds a preflight `USAGE_CAPABILITY` check: a CLI adapter
+Version 0.12.0 adds a preflight `USAGE_CAPABILITY` check: a CLI adapter
 known to lack one of the required token counters cannot start a budgeted batch,
 whether it is the primary executor, a judge or baseline calibration. Normal Codex
 eval/judge commands use the existing matrix JSON surface to retain these counters.

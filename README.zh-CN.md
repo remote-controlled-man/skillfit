@@ -65,8 +65,8 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## 安装
 
 ```bash
-npx skillfit@0.11.0 --help
-npx skillfit@0.11.0 doctor
+npx skillfit@0.12.0 --help
+npx skillfit@0.12.0 doctor
 ```
 
 `npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。不克隆仓库也能创建和校验 case。npm 可能先下载包；之后下面的 case 校验与预览不调用模型。`skillfit` 是从 npm 装上的命令。
@@ -76,17 +76,17 @@ npx skillfit@0.11.0 doctor
 在自己的项目目录运行这些命令。预览前，把 `./my-skill` 换成包含你自己的 `SKILL.md` 的目录：
 
 ```bash
-npx skillfit@0.11.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.11.0 bench init my-bench --kind command --yes
-npx skillfit@0.11.0 bench check ./my-bench --json
-npx skillfit@0.11.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.12.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.12.0 bench init my-bench --kind command --yes
+npx skillfit@0.12.0 bench check ./my-bench --json
+npx skillfit@0.12.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 脚手架是教学 case；衡量收益前，要把初始文件、任务、校验器和参考解换成自己的真实任务。预览声明两次调用，但不会执行。检查 `plan.evaluation.agentPreflight.status`：能生成计划不代表 CLI 已就绪或登录有效。bench 与运行结果放在不同目录。后续的确认执行、报告和分享见[第一次真实评估指南](docs/first-real-eval.md)。
 
 ## 从源码运行
 
-源码检出可以运行内置示例和未发布的修复。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI：
+源码检出可以在本地构建和开发 CLI。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI：
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
@@ -133,7 +133,7 @@ Agent 可以用 `bench check --json` 读取带版本的校验标识、任务 ID�
 
 0.11.0支持给校验器和参考解命令的参数加引号，包括含空格的脚本路径。已识别的评分器加载／运行异常及显式基础设施错误消息会阻止离线校验通过，或记为不参与评分的评测错误，同时保留 Agent 成本。正常任务失败和断言失败仍参与评分。详见[校验命令与错误报告](docs/verifier-contract.md)。
 
-npm 0.11.0 之后的源码收紧了 `bench add --freeze`：Git 导入不会回退读取被忽略的文件，非 Git 导入必须用 `--include` 选择，选中的链接或目标 bench 文件会被拒绝。`--decompose` 在唯一一次生成调用前确认，并保留成本和失败记录；参见[生成记录](docs/bench-drafting.md)。每个 case 可用 `verifierTimeoutSeconds` 设置 verifier/oracle 的超时，开跑前校验和离线重放也使用该值；默认仍为 120 秒。
+0.12.0收紧了 `bench add --freeze`：Git 导入不会回退读取被忽略的文件，非 Git 导入必须用 `--include` 选择，选中的链接或目标 bench 文件会被拒绝。`--decompose` 在唯一一次生成调用前确认，并保留成本和失败记录；参见[生成记录](docs/bench-drafting.md)。每个 case 可用 `verifierTimeoutSeconds` 设置 verifier/oracle 的超时，开跑前校验和离线重放也使用该值；默认仍为 120 秒。
 
 0.11.0 还会在 eval 和基线校准的预览及开跑前检查 Agent 环境：CLI 文件是否可用、能力是否与矩阵声明匹配，以及全局是否存在同名 Skill。已知失败会在 case 探测或模型调用前拦住；登录状态明确标为离线未知。检查结果随运行封存，报告和重放读取当时记录，不探测当前机器。详见 [Agent 环境自检](docs/eval-agent-preflight.md)。
 
@@ -231,7 +231,7 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 0.11.0用 `invocationCosts` 分别记录 Agent、裁判和合计消耗，保留失败、部分和未知用量。可选裁判的消耗计入同一批次停线；显式启用 API 裁判却缺少凭据会报错，不会静默关闭。历史缺失的裁判记录仍标未知。参见[成本统计](docs/eval-costs.md)。
 
-npm 0.11.0 之后的源码也会读取普通 Codex 评测和 CLI 裁判的 JSON 用量，不再要求启用触发检测。离线 `USAGE_CAPABILITY` 检查会在花费前拒绝已知缺少必要计数的 Agent／裁判严格预算组合。API／注入执行器的覆盖情况仍标未知，需要运行时检查；缺失成本不会补成零。
+0.12.0也会读取普通 Codex 评测和 CLI 裁判的 JSON 用量，不再要求启用触发检测。离线 `USAGE_CAPABILITY` 检查会在花费前拒绝已知缺少必要计数的 Agent／裁判严格预算组合。API／注入执行器的覆盖情况仍标未知，需要运行时检查；缺失成本不会补成零。
 
 这份源码也会在 API 回答格式或 HTTP 状态异常时保留接口已报告的用量。可用计数与原始响应一起保存；缺失字段仍标未知。调用仍属于执行异常并停止后续调用，不会因此丢掉已有成本证据。
 
@@ -239,7 +239,7 @@ npm 0.11.0 之后的源码也会读取普通 Codex 评测和 CLI 裁判的 JSON 
 
 0.10.1 会在调用前封存输入副本：原始 Skill、bench 或请求之后被修改、删除，也不影响导出和重放。计划会记录快照校验信息、本地复制耗时和存储量；已声明的快照损坏就拒绝使用。历史记录仍需找回匹配的原始输入。参见[评测输入封存](docs/evaluation-input-snapshots.md)。
 
-npm 0.11.0 之后的源码支持把 bench 放在 Git 仓库根目录：指纹和快照统一排除 Git 元数据。预览会拦住位于 bench、Skill／配置输入、编译运行时或 Git 元数据内部的输出，目录别名也不能绕过。输入与结果应放在同级目录，例如 `--bench ./my-bench --runs-root ./runs`。
+0.12.0支持把 bench 放在 Git 仓库根目录：指纹和快照统一排除 Git 元数据。预览会拦住位于 bench、Skill／配置输入、编译运行时或 Git 元数据内部的输出，目录别名也不能绕过。输入与结果应放在同级目录，例如 `--bench ./my-bench --runs-root ./runs`。
 
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
@@ -332,7 +332,7 @@ node ./personal-codex/setup.mjs --yes
 - [x] 正例任务可选 `triggerClass`（`explicit`、`implicit`、`contextual`）。没标类别的任务仍只进汇总召回率。
 - [x] `--compete-installed` 把其他用户级 Skill 复制进 trigger 试验。矩阵目录之外的系统 Skill 和插件不会被复制。`installed` 把「读了长正文」和任务结果分开报告；这次读取不是 trigger 召回率。
 - [ ] 安装建议。2026 年 7 月的 8 个 Skill 实验没有可靠的任务质量增益。67 个 Skill 目录和 13 个入门套装都没有作为一组被评过。
-- [x] 已发布到 npm（`skillfit@0.11.0`），并通过 [CLI/OIDC 发布与注册表安装验收](docs/releases/0.11.0-verification.json)。`npx skillfit` 安装的是这个版本。克隆后 `npm ci` 再 `npm run build` 仍然可用。
+- [x] 通过 [CLI/OIDC 流程](docs/releases/trusted-publishing.md)分发 npm 包。发布状态和验收结果见 [0.12.0 发布记录](docs/releases/0.12.0.md)。克隆后 `npm ci` 再 `npm run build` 仍然可用。
 - [x] 社区 bench 与 evidence 提交。bench 放在 `benches/contrib`；证据用 Evidence submission issue 模板。CI 只跑离线检查，不调用 agent。
 - [ ] Cursor / Gemini CLI / OpenCode 适配器
 - [x] Streamable HTTP MCP 预检（`mcp check` 的 `http` 传输）。不会调用工具。
