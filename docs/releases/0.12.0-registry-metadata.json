@@ -1,0 +1,96 @@
+{
+  "version": {
+    "bin": {
+      "skillfit": "dist/cli.js"
+    },
+    "bugs": {
+      "url": "https://github.com/remote-controlled-man/skillfit/issues"
+    },
+    "dist": {
+      "shasum": "7aa8594fa5a84216be54f5cdf544f913240952ca",
+      "tarball": "https://registry.npmjs.org/skillfit/-/skillfit-0.12.0.tgz",
+      "fileCount": 2691,
+      "integrity": "sha512-d24OGf2kv8EhD+2WOag5+8oyYki1TzGPgLgRtJ0tPonw/4CgxU8HEa3ik/VY/vI/03sXoMsz56qy3tG5Kzsdow==",
+      "signatures": [
+        {
+          "sig": "MEYCIQDxhdKjlNfbHfPCp/PdwDcX1PrEADnJ3GNO449a0AENBAIhAO/jklylpCeXC15nVCN6Be02kpeBsSGAxu5ArkHB8bWZ",
+          "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+        },
+        {
+          "sig": "MEYCIQCYhajRcSCg1OO5pH80hgVqpdMpgJcW19+9AfNJv7ofkQIhAJ4nmLtAuYwvx4ikW82PAbYGqWVc4X/w8RkXuWWqokz/",
+          "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+        }
+      ],
+      "attestations": {
+        "url": "https://registry.npmjs.org/-/npm/v1/attestations/skillfit@0.12.0",
+        "provenance": {
+          "predicateType": "https://slsa.dev/provenance/v1"
+        }
+      },
+      "unpackedSize": 38405424
+    },
+    "name": "skillfit",
+    "type": "module",
+    "_from": "file:/home/runner/work/_temp/skillfit-release/skillfit-0.12.0.tgz",
+    "engines": {
+      "node": ">=22"
+    },
+    "license": "MIT",
+    "scripts": {
+      "test": "npm run build && node --test \"dist/**/*.test.js\" \"scripts/*.test.mjs\"",
+      "build": "tsc -p tsconfig.json",
+      "check": "npm run build && node --test \"dist/**/*.test.js\" \"scripts/*.test.mjs\"",
+      "doctor": "npm run build && node dist/cli.js doctor",
+      "prepublishOnly": "npm test"
+    },
+    "_npmUser": {
+      "name": "GitHub Actions",
+      "email": "npm-oidc-no-reply@github.com",
+      "trustedPublisher": {
+        "id": "github",
+        "oidcConfigId": "ea2de82d-9a5c-4d94-b23c-a8923fffeec4"
+      }
+    },
+    "homepage": "https://github.com/remote-controlled-man/skillfit#readme",
+    "keywords": [
+      "ai-coding-agent",
+      "agent-skills",
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "mcp",
+      "agents-md",
+      "eval",
+      "benchmark"
+    ],
+    "_resolved": "/home/runner/work/_temp/skillfit-release/skillfit-0.12.0.tgz",
+    "_integrity": "sha512-d24OGf2kv8EhD+2WOag5+8oyYki1TzGPgLgRtJ0tPonw/4CgxU8HEa3ik/VY/vI/03sXoMsz56qy3tG5Kzsdow==",
+    "repository": {
+      "url": "git+https://github.com/remote-controlled-man/skillfit.git",
+      "type": "git"
+    },
+    "_npmVersion": "11.19.0",
+    "description": "Evidence-driven configuration for AI coding agents: measure which skills, rules and MCP servers actually help \u2014 then install only those.",
+    "directories": {},
+    "maintainers": [
+      {
+        "name": "remote_controlled_man",
+        "email": "huangshuaidi666@gmail.com"
+      }
+    ],
+    "_nodeVersion": "24.21.0",
+    "_hasShrinkwrap": false,
+    "devDependencies": {
+      "typescript": "^5.6.0",
+      "@types/node": "^22.0.0"
+    },
+    "_npmOperationalInternal": {
+      "tmp": "tmp/skillfit_0.12.0_1792213173962_0.6871580955615921",
+      "host": "s3://npm-registry-packages-npm-production"
+    },
+    "_id": "skillfit@0.12.0",
+    "version": "0.12.0"
+  },
+  "latest": "0.12.0",
+  "publishedAt": "2026-10-17T04:59:34.418Z"
+}

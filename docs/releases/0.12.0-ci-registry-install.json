@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-17T04:59:53.728Z",
+  "version": "0.12.0",
+  "latest": "0.12.0",
+  "integrity": "sha512-d24OGf2kv8EhD+2WOag5+8oyYki1TzGPgLgRtJ0tPonw/4CgxU8HEa3ik/VY/vI/03sXoMsz56qy3tG5Kzsdow==",
+  "sha256": "7a95b59d4e18f479d0f4b3a562942c110e10a3f9c4b6ca3d4daf4849892cf50f",
+  "sourceCommit": "e1abbc8d398d64fcc94fcc7ed4d728372616341f",
+  "installedFilesVerified": 2691,
+  "zeroRuntimeDependencies": true,
+  "globalInstall": false,
+  "modelCalls": 0,
+  "smoke": {
+    "version": true,
+    "help": true,
+    "requestPreview": true
+  },
+  "attempts": [
+    {
+      "at": "2026-10-17T04:53:19.030Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:53:49.201Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:54:19.679Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:54:49.852Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:55:20.032Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:55:50.210Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:56:20.376Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:56:50.535Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:57:20.684Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:57:50.873Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:58:21.039Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:58:51.232Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:59:21.394Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-17T04:59:51.553Z",
+      "versionStatus": 200,
+      "latestStatus": 200
+    }
+  ]
+}

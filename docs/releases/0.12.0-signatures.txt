@@ -1,0 +1,6 @@
+audited 1 package in 3s
+
+1 package has a verified registry signature
+
+1 package has a verified attestation
+(use --json --include-attestations to view attestation details)
