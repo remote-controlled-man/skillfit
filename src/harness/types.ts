@@ -75,6 +75,8 @@ export interface BenchTask {
   promptTrigger?: string;
   verifier: string;
   verifierKind?: 'output' | 'command';
+  /** Deadline for each verifier/oracle subprocess; absent means the historical 120 seconds. */
+  verifierTimeoutSeconds?: number;
   oracle?: string;
   rubric?: string;
   shouldTrigger?: boolean;

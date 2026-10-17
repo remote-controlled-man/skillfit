@@ -84,6 +84,10 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 | `tasks[].rubric` | no | Markdown file injected into the optional LLM judge prompt (never shown to the agent under test). |
 | `tasks[].shouldTrigger` | no | Whether an in-scope skill *should* fire on this task. Required for `--mode trigger` (unlabeled tasks are skipped there). Include negative controls (`false`) — aim for ≥30% of tasks; `bench check` reports the fraction and warns below that target, because false-trigger rate is the metric a thin negative sample undermines first. |
 
+Source after npm 0.11.0 also accepts optional `tasks[].verifierTimeoutSeconds` (integer 1–3600,
+default 120). It bounds each verifier/oracle process during checks, evaluation, calibration,
+triggering and replay, separately from model execution. See [the command contract](../docs/verifier-contract.md).
+
 All paths must stay inside the bench directory.
 
 ## Verifier contract

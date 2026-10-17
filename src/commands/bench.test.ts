@@ -830,6 +830,7 @@ test('runBenchAdd --freeze --decompose installs a gated draft with its oracle', 
     freeze: true,
     sourceDir: source,
     decompose: true,
+    runsRoot: tmp(t, 'skillfit-draft-records-'),
     verifierKind: 'command',
     executor: stubDrafter(DRAFTED_COMMAND_VERIFIER, DRAFTED_ORACLE),
     yes: true,
@@ -861,6 +862,7 @@ test('runBenchAdd --decompose needs an agent or injected executor', async (t) =>
         freeze: true,
         sourceDir: source,
         decompose: true,
+    runsRoot: tmp(t, 'skillfit-draft-records-'),
         yes: true,
         log: () => {},
       }),
@@ -881,6 +883,7 @@ test('runBenchAdd --decompose rejects a draft that passes the untouched fixture'
         freeze: true,
         sourceDir: source,
         decompose: true,
+    runsRoot: tmp(t, 'skillfit-draft-records-'),
         executor: stubDrafter(laxVerifier, DRAFTED_ORACLE),
         yes: true,
         log: () => {},
@@ -904,6 +907,7 @@ test('runBenchAdd --decompose rejects a draft whose oracle does not solve the ta
         freeze: true,
         sourceDir: source,
         decompose: true,
+    runsRoot: tmp(t, 'skillfit-draft-records-'),
         verifierKind: 'command',
         executor: stubDrafter(DRAFTED_COMMAND_VERIFIER, idleOracle),
         yes: true,
@@ -957,6 +961,7 @@ test('runBenchAdd --decompose dry-run skips the agent and writes nothing', async
     freeze: true,
     sourceDir: source,
     decompose: true,
+    runsRoot: tmp(t, 'skillfit-draft-records-'),
     executor: spy,
     dryRun: true,
     log: () => {},
@@ -1047,13 +1052,11 @@ test('runBenchAdd backs up an existing file and rolls back a failed write', asyn
   assert.notEqual(readFileSync(leftover, 'utf8'), 'original verifier\n');
 });
 
-test('runBenchAdd works in a non-git source directory (filtered copy)', async (t) => {
+test('runBenchAdd works in a non-git source directory with explicit file selection', async (t) => {
   const source = tmp(t, 'skillfit-freeze-plain-');
   writeFileSync(join(source, 'main.js'), 'console.log(1);\n');
   mkdirSync(join(source, 'node_modules', 'junk'), { recursive: true });
   writeFileSync(join(source, 'node_modules', 'junk', 'x.js'), 'x');
-  mkdirSync(join(source, '.git'));
-  writeFileSync(join(source, '.git', 'config'), 'x');
   const benchDir = await freezeBench(t);
   await runBenchAdd({
     benchDir,
@@ -1061,6 +1064,7 @@ test('runBenchAdd works in a non-git source directory (filtered copy)', async (t
     prompt: 'p',
     freeze: true,
     sourceDir: source,
+    include: ['main.js'],
     verifierCmd: 'node main.js',
     yes: true,
     log: () => {},

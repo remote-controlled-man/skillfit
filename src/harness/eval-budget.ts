@@ -56,7 +56,7 @@ export function assertSpendingCanContinue(state: ReturnType<typeof spendingBudge
 }
 
 export type BudgetCallIdentity = { taskId: string; trial: number } &
-  ({ condition: 'baseline' | 'treatment' | 'installed' } | { role: 'judge'; callIndex: 1 | 2 });
+  ({ condition: 'baseline' | 'treatment' | 'installed' } | { role: 'judge'; callIndex: 1 | 2 } | { role: 'drafter' });
 
 /** One serial stop-line recorder for every executor role and evaluation mode. */
 export function createSpendingBudgetRecorder(options: { budget?: SpendingBudget; groupDir: string }) {

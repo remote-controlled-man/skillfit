@@ -3,10 +3,9 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSyn
 import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
-import { loadBench, selectBenchTasks } from '../harness/bench.js';
+import { BENCH_SCHEMA_VERSION, loadBench, selectBenchTasks, validateBenchTask } from '../harness/bench.js';
 import { resolveBenchDir } from '../harness/bench-location.js';
-import { CliExecutor } from '../harness/executors/cli.js';
-import { listFilesRecursive } from '../harness/hash.js';
+import { listFilesRecursive, sha256File, sha256Text } from '../harness/hash.js';
 import { runVerifier, verifierFailure } from '../harness/runner.js';
 import { MOCK_MARKER_FILE } from '../harness/constants.js';
 import { verdictFromOutput } from '../harness/verifier-summary.js';
@@ -22,6 +21,10 @@ import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harne
 import type { Check } from './doctor.js';
 import { assertAgentEnvironment, renderAgentEnvironment } from '../harness/agent-preflight.js';
 import { calibrationCasePreflight, executeCalibration, prepareCalibration, type BenchCheckCalibrateOptions } from './bench-calibration.js';
+import { freezeSourceFiles } from './bench-source.js';
+import { BenchDraftSession, type BenchDraftOptions } from './bench-draft.js';
+import { parseVerifierTimeoutSeconds } from '../harness/verifier-timeout.js';
+export { captureSourceFiles } from './bench-source.js';
 export { prepareBenchCalibration } from './bench-calibration.js';
 export type { BenchCheckCalibrateOptions, BenchCalibrationPreview } from './bench-calibration.js';
 
@@ -193,13 +196,14 @@ async function probeVerifier(
   benchDir: string,
   verifier: string,
   output: string | null,
+  timeoutSeconds?: number,
 ): Promise<{ exitCode: number | null; error: string | null; output: string; checks: readonly VerifierCheck[] | null }> {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
   try {
     if (output !== null) {
       writeFileSync(join(dir, '_output.md'), output, 'utf8');
     }
-    const result = await runVerifier(benchDir, verifier, dir);
+    const result = await runVerifier(benchDir, verifier, dir, timeoutSeconds);
     return {
       exitCode: result.exitCode,
       error: result.error,
@@ -249,11 +253,14 @@ async function runOracleGate(
   fixtureDir: string,
   oracle: string,
   verifier: string,
+  timeoutSeconds?: number,
+  record?: (name: string, result: Awaited<ReturnType<typeof runVerifier>>) => void,
 ): Promise<OracleGateOutcome> {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
   try {
     copyFixture(fixtureDir, dir);
-    const oracleRun = await runVerifier(benchDir, oracle, dir);
+    const oracleRun = await runVerifier(benchDir, oracle, dir, timeoutSeconds);
+    record?.('oracle', oracleRun);
     if (oracleRun.error !== null || oracleRun.exitCode !== 0) {
       return {
         kind: 'oracle-failed',
@@ -263,7 +270,8 @@ async function runOracleGate(
         reason: oracleRun.error !== null || oracleRun.exitCode === null ? verifierFailure('oracle', oracle, oracleRun.error) : null,
       };
     }
-    const graded = await runVerifier(benchDir, verifier, dir);
+    const graded = await runVerifier(benchDir, verifier, dir, timeoutSeconds);
+    record?.('oracle-verifier', graded);
     if (graded.error !== null || graded.exitCode !== 0) {
       return {
         kind: 'verifier-failed',
@@ -287,8 +295,9 @@ async function probeOracle(
   fixture: string,
   oracle: string,
   verifier: string,
+  timeoutSeconds?: number,
 ): Promise<{ status: Check['status']; message: string; evidence: BenchCheckEvidence }> {
-  const gate = await runOracleGate(benchDir, join(benchDir, fixture), oracle, verifier);
+  const gate = await runOracleGate(benchDir, join(benchDir, fixture), oracle, verifier, timeoutSeconds);
   switch (gate.kind) {
     case 'oracle-failed':
       return {
@@ -381,7 +390,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
       const fixtureCopy = mkdtempSync(join(tmpdir(), 'skillfit-check-'));
       try {
         copyFixture(join(bench.dir, task.fixture), fixtureCopy);
-        const pristine = await runVerifier(bench.dir, task.verifier, fixtureCopy);
+        const pristine = await runVerifier(bench.dir, task.verifier, fixtureCopy, task.verifierTimeoutSeconds);
         facetChecks = verdictFromOutput(pristine.output)?.checks ?? null;
         if (pristine.error !== null || pristine.exitCode === null) {
           // Without this branch a verifier that cannot even be spawned reads as a clean NOP gate:
@@ -402,7 +411,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
         rmSync(fixtureCopy, { recursive: true, force: true });
       }
     } else {
-      const missing = await probeVerifier(bench.dir, task.verifier, null);
+      const missing = await probeVerifier(bench.dir, task.verifier, null, task.verifierTimeoutSeconds);
       if (missing.error !== null || missing.exitCode === null) {
         taskPush('MISSING_OUTPUT', 'FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, missing.error)}`, benchCheckEvidence(missing, task.verifier));
       } else if (missing.exitCode === 0) {
@@ -410,7 +419,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
       } else {
         taskPush('MISSING_OUTPUT', 'PASS', `${task.id}: verifier rejects missing output`, benchCheckEvidence(missing, task.verifier));
       }
-      const empty = await probeVerifier(bench.dir, task.verifier, '');
+      const empty = await probeVerifier(bench.dir, task.verifier, '', task.verifierTimeoutSeconds);
       facetChecks = empty.checks;
       if (empty.error !== null || empty.exitCode === null) {
         taskPush('EMPTY_OUTPUT', 'FAIL', `${task.id}: ${verifierFailure('verifier', task.verifier, empty.error)}`, benchCheckEvidence(empty, task.verifier));
@@ -425,7 +434,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
     if (facetGate) taskPush('FACET_COUNT', facetGate.status, facetGate.message);
 
     if (task.oracle) {
-      const oracleResult = await probeOracle(bench.dir, task.fixture, task.oracle, task.verifier);
+      const oracleResult = await probeOracle(bench.dir, task.fixture, task.oracle, task.verifier, task.verifierTimeoutSeconds);
       taskPush('ORACLE', oracleResult.status, `${task.id}: ${oracleResult.message}`, oracleResult.evidence);
     } else {
       taskPush(
@@ -453,7 +462,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
             taskPush(arm === 'baseline' ? 'MOCK_BASELINE' : 'MOCK_TREATMENT', 'INFO', `${task.id}: no mock ${arm} output — this arm was not probed`);
             continue;
           }
-          const probe = await probeVerifier(bench.dir, task.verifier, behavior.output);
+          const probe = await probeVerifier(bench.dir, task.verifier, behavior.output, task.verifierTimeoutSeconds);
           taskPush(
             arm === 'baseline' ? 'MOCK_BASELINE' : 'MOCK_TREATMENT', probe.error !== null || probe.exitCode === null ? 'FAIL' : 'INFO',
             `${task.id}: mock ${arm} output → ${probe.error !== null || probe.exitCode === null ? verifierFailure('verifier', task.verifier, probe.error) : `verifier ${probe.exitCode === 0 ? 'pass' : 'fail'}`}`, benchCheckEvidence(probe, task.verifier),
@@ -552,7 +561,7 @@ function finish(
 
 const TASK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
-export interface BenchAddOptions {
+export interface BenchAddOptions extends BenchDraftOptions {
   benchDir?: string;
   cwd?: string;
   task?: string;
@@ -574,16 +583,6 @@ export interface BenchAddOptions {
   yes?: boolean;
   confirm?: (question: string) => Promise<boolean>;
   log?: (msg: string) => void;
-}
-
-export function captureSourceFiles(sourceDir: string): string[] {
-  const git = spawnSync('git', ['ls-files', '-z'], { cwd: sourceDir, encoding: 'utf8' });
-  if (git.status === 0 && git.stdout.trim() !== '') {
-    return git.stdout.split('\0').filter(Boolean);
-  }
-  return listFilesRecursive(sourceDir).filter(
-    (rel) => !rel.split(/[\\/]/).some((part) => part === '.git' || part === 'node_modules'),
-  );
 }
 
 function verifierForCmd(cmd: string): string {
@@ -697,78 +696,62 @@ fixture and pass the oracle-solved one, so test both directions before you finis
 }
 
 async function draftVerifierWithOracle(
-  options: BenchAddOptions,
-  prepared: PreparedAdd,
+  session: BenchDraftSession,
   log: (msg: string) => void,
 ): Promise<{ verifierSource: string; oracleSource: string }> {
-  const executor =
-    options.executor ?? (options.agent ? CliExecutor.forAgent(options.agent) : undefined);
-  if (!executor) {
-    throw new Error('bench add --decompose needs an agent to draft with: --agent <id>.');
-  }
-  const staging = mkdtempSync(join(tmpdir(), 'skillfit-decompose-'));
-  try {
-    const fixtureDir = join(staging, 'fixture');
-    for (const file of prepared.fixtureFiles) {
-      const target = join(fixtureDir, file.rel);
-      mkdirSync(dirname(target), { recursive: true });
-      writeFileSync(target, file.content);
-    }
-    log(`Drafting verifier + oracle with ${executor.describe().kind} (${executor.describe().model})…`);
-    await executor.run(
-      buildDecomposePrompt(prepared.promptText, prepared.fixtureFiles.map((f) => f.rel), prepared.verifierKind),
-      staging,
+  const staging = session.workspace;
+  const fixtureDir = join(staging, 'fixture');
+  log(`Drafting verifier + oracle; at most 1 call. Records: ${session.dir}`);
+  await session.run();
+  const verifierPath = join(staging, 'verifier.mjs');
+  const oraclePath = join(staging, 'oracle.mjs');
+  if (!existsSync(verifierPath) || !existsSync(oraclePath)) {
+    throw new Error(
+      'the drafting agent did not write verifier.mjs and oracle.mjs into its working directory — nothing was added',
     );
-    const verifierPath = join(staging, 'verifier.mjs');
-    const oraclePath = join(staging, 'oracle.mjs');
-    if (!existsSync(verifierPath) || !existsSync(oraclePath)) {
-      throw new Error(
-        'the drafting agent did not write verifier.mjs and oracle.mjs into its working directory — nothing was added',
-      );
-    }
-
-    const nopDir = mkdtempSync(join(tmpdir(), 'skillfit-decompose-nop-'));
-    try {
-      copyFixture(fixtureDir, nopDir);
-      const nop = await runVerifier(staging, 'node verifier.mjs', nopDir);
-      if (nop.error !== null || nop.exitCode === null) {
-        throw new Error(`draft rejected: ${verifierFailure('verifier', 'node verifier.mjs', nop.error)}`);
-      }
-      if (nop.exitCode === 0) {
-        throw new Error(
-          'draft rejected: the verifier passes the untouched fixture — the task would start solved (NOP gate)',
-        );
-      }
-    } finally {
-      rmSync(nopDir, { recursive: true, force: true });
-    }
-
-    const solvedGate = await runOracleGate(staging, fixtureDir, 'node oracle.mjs', 'node verifier.mjs');
-    if (solvedGate.kind === 'oracle-failed') {
-      throw new Error(
-        `draft rejected: ${solvedGate.reason ?? 'the oracle command failed on a fresh fixture copy'}`,
-      );
-    }
-    if (solvedGate.kind === 'verifier-failed') {
-      throw new Error(
-        `draft rejected: ${
-          solvedGate.reason ?? 'the verifier fails even after the oracle solved the task (oracle gate)'
-        }`,
-      );
-    }
-    if (solvedGate.kind === 'low-score') {
-      throw new Error(
-        `draft rejected: the oracle scores ${solvedGate.score.toFixed(2)} on the drafted checks — checks are stricter than the oracle`,
-      );
-    }
-
-    return {
-      verifierSource: readFileSync(verifierPath, 'utf8'),
-      oracleSource: readFileSync(oraclePath, 'utf8'),
-    };
-  } finally {
-    rmSync(staging, { recursive: true, force: true });
   }
+
+  const nopDir = mkdtempSync(join(tmpdir(), 'skillfit-decompose-nop-'));
+  try {
+    copyFixture(fixtureDir, nopDir);
+    const nop = await runVerifier(staging, 'node verifier.mjs', nopDir, session.plan.verifierTimeoutSeconds);
+    session.gate('untouched-fixture', nop);
+    if (nop.error !== null || nop.exitCode === null) {
+      throw new Error(`draft rejected: ${verifierFailure('verifier', 'node verifier.mjs', nop.error)}`);
+    }
+    if (nop.exitCode === 0) {
+      throw new Error(
+        'draft rejected: the verifier passes the untouched fixture — the task would start solved (NOP gate)',
+      );
+    }
+  } finally {
+    rmSync(nopDir, { recursive: true, force: true });
+  }
+
+  const solvedGate = await runOracleGate(staging, fixtureDir, 'node oracle.mjs', 'node verifier.mjs', session.plan.verifierTimeoutSeconds,
+    (name, result) => session.gate(name, result));
+  if (solvedGate.kind === 'oracle-failed') {
+    throw new Error(
+      `draft rejected: ${solvedGate.reason ?? 'the oracle command failed on a fresh fixture copy'}`,
+    );
+  }
+  if (solvedGate.kind === 'verifier-failed') {
+    throw new Error(
+      `draft rejected: ${
+        solvedGate.reason ?? 'the verifier fails even after the oracle solved the task (oracle gate)'
+      }`,
+    );
+  }
+  if (solvedGate.kind === 'low-score') {
+    throw new Error(
+      `draft rejected: the oracle scores ${solvedGate.score.toFixed(2)} on the drafted checks — checks are stricter than the oracle`,
+    );
+  }
+
+  return {
+    verifierSource: readFileSync(verifierPath, 'utf8'),
+    oracleSource: readFileSync(oraclePath, 'utf8'),
+  };
 }
 
 function assertInsideBench(benchDir: string, target: string): void {
@@ -778,7 +761,28 @@ function assertInsideBench(benchDir: string, target: string): void {
   }
 }
 
+function assertBenchWrites(benchDir: string, targets: readonly string[]): void {
+  for (const target of targets) {
+    assertInsideBench(benchDir, target);
+    const parts = relative(benchDir, target).split(/[\\/]/);
+    let path = benchDir;
+    for (let index = 0; index < parts.length; index++) {
+      path = join(path, parts[index]!);
+      try {
+        const stat = lstatSync(path);
+        if (stat.isSymbolicLink()) throw new Error(`Refusing a symlink in bench output: ${path}`);
+        if (index < parts.length - 1 ? !stat.isDirectory() : !stat.isFile()) throw new Error(`Refusing to overwrite a non-file or traverse a non-directory: ${path}`);
+      } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+    }
+    try {
+      const stat = lstatSync(target + BACKUP_SUFFIX);
+      if (stat.isSymbolicLink() || !stat.isFile()) throw new Error(`Refusing an unsafe backup target: ${target + BACKUP_SUFFIX}`);
+    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+  }
+}
+
 export function applyBenchWrites(benchDir: string, writes: Array<{ target: string; content: Buffer | string }>): void {
+  assertBenchWrites(benchDir, writes.map(write => write.target));
   const applied: Array<{ target: string; previous: Buffer | null }> = [];
   try {
     for (const write of writes) {
@@ -817,7 +821,12 @@ export function applyBenchWrites(benchDir: string, writes: Array<{ target: strin
 export async function runBenchAdd(
   options: BenchAddOptions,
 ): Promise<{ dir: string; taskId: string; files: string[] } | null> {
+  return options.dryRun ? runBenchAddWithinInterrupts(options) : withEvaluationInterrupts(() => runBenchAddWithinInterrupts(options));
+}
+
+async function runBenchAddWithinInterrupts(options: BenchAddOptions): Promise<{ dir: string; taskId: string; files: string[] } | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
+  const timeout = options.verifierTimeoutSeconds === undefined ? {} : { verifierTimeoutSeconds: parseVerifierTimeoutSeconds(options.verifierTimeoutSeconds) };
   if (!options.freeze && !options.fromCommit) {
     throw new Error('bench add needs an importer: --freeze (current directory) or --from-commit <sha> (git history).');
   }
@@ -839,10 +848,14 @@ export async function runBenchAdd(
   if (!existsSync(benchJsonPath)) {
     throw new Error(`Not a bench directory (missing bench.json): ${benchDir} — run \`skillfit bench init\` first.`);
   }
-  const benchJson = JSON.parse(readFileSync(benchJsonPath, 'utf8')) as {
+  const originalManifest = readFileSync(benchJsonPath, 'utf8');
+  const benchJson = JSON.parse(originalManifest) as {
     tasks?: Array<{ id?: unknown }>;
   } & Record<string, unknown>;
   const tasks = Array.isArray(benchJson.tasks) ? benchJson.tasks : [];
+  if (benchJson.schemaVersion !== BENCH_SCHEMA_VERSION || !Array.isArray(benchJson.tasks)) throw new Error('Invalid bench.json schema or task list; fix the bench before adding a task.');
+  for (const [index, task] of tasks.entries()) validateBenchTask(benchDir, task, index);
+  if (new Set(tasks.map(task => task.id)).size !== tasks.length) throw new Error('Duplicate task IDs in bench.json; fix the bench before adding a task.');
 
   const prepared = options.fromCommit
     ? prepareFromCommit(options, cwd)
@@ -855,11 +868,8 @@ export async function runBenchAdd(
     throw new Error(`Task "${taskId}" already exists in ${benchJsonPath}.`);
   }
 
-  if (options.decompose && !options.dryRun) {
-    const drafted = await draftVerifierWithOracle(options, prepared, log);
-    prepared.verifierSource = drafted.verifierSource;
-    prepared.oracleSource = drafted.oracleSource;
-  }
+  const draft = options.decompose ? new BenchDraftSession(options, taskId, benchDir, cwd, prepared.fixtureFiles,
+    buildDecomposePrompt(prepared.promptText, prepared.fixtureFiles.map(file => file.rel), prepared.verifierKind)) : undefined;
 
   const generated: Record<string, string> = {
     [`prompts/${taskId}.md`]: `${prepared.promptText.trimEnd()}\n`,
@@ -867,8 +877,8 @@ export async function runBenchAdd(
     [`verifiers/${taskId}.mjs`]: prepared.verifierSource,
     [`ground-truth/${taskId}.md`]: prepared.groundTruth,
   };
-  if (prepared.oracleSource) {
-    generated[`ground-truth/oracle-${taskId}.mjs`] = prepared.oracleSource;
+  if (prepared.oracleSource || options.decompose) {
+    generated[`ground-truth/oracle-${taskId}.mjs`] = prepared.oracleSource ?? '';
   }
   const taskEntry = {
     id: taskId,
@@ -877,12 +887,28 @@ export async function runBenchAdd(
     promptTrigger: `prompts/${taskId}.trigger.md`,
     verifier: `node verifiers/${taskId}.mjs`,
     verifierKind: prepared.verifierKind,
+    ...timeout,
     rubric: `ground-truth/${taskId}.md`,
-    ...(prepared.oracleSource ? { oracle: `node ground-truth/oracle-${taskId}.mjs` } : {}),
+    ...(prepared.oracleSource || options.decompose ? { oracle: `node ground-truth/oracle-${taskId}.mjs` } : {}),
     ...(options.oracle ? { oracle: options.oracle } : {}),
     ...(options.shouldTrigger !== undefined ? { shouldTrigger: options.shouldTrigger } : {}),
   };
 
+  const targets = [...prepared.fixtureFiles.map(file => join(benchDir, 'fixtures', taskId, file.rel)),
+    ...Object.keys(generated).map(rel => join(benchDir, rel)), benchJsonPath];
+  assertBenchWrites(benchDir, targets);
+  if (sha256File(benchJsonPath) !== sha256Text(originalManifest)) throw new Error('Bench manifest changed while preparing the task; nothing was written.');
+  const writeState = () => targets.flatMap(target => [target, target + BACKUP_SUFFIX]).map(path => existsSync(path) ? sha256File(path) : null);
+  const expectedWrites = JSON.stringify(writeState());
+  const assertOutputsUnchanged = () => {
+    assertBenchWrites(benchDir, targets);
+    if (JSON.stringify(writeState()) !== expectedWrites) throw new Error('Bench outputs changed while preparing the task; nothing was written. Review a fresh plan.');
+  };
+  if (draft) {
+    log(`Draft plan: 1 call; ceiling ${draft.plan.maxCalls}; executor deadline ${draft.plan.executorTimeoutSeconds}s; no automatic retry.`);
+    log(`Draft records: ${draft.dir}`);
+    log(`Spending limits: ${draft.plan.spendingBudget ? JSON.stringify(draft.plan.spendingBudget) : 'not set; token/cache usage may remain unknown'}. Authentication: unknown offline.`);
+  }
   if (options.verifierCmd) {
     // The string is not used once and discarded: it is written into a generated .mjs and re-executed
     // with a shell on every later `bench check` and `eval`. Disclose it before writing, in both the
@@ -907,7 +933,7 @@ export async function runBenchAdd(
   if (!options.yes) {
     const confirm = options.confirm ?? confirmPrompt;
     const ok = await confirm(
-      `Add ${prepared.fixtureFiles.length} fixture file(s) + ${Object.keys(generated).length} generated file(s) into ${benchDir}? [y/N] `,
+      `${draft ? 'Authorize 1 drafting call, retain its costs, then ' : ''}Add ${prepared.fixtureFiles.length} fixture file(s) + ${Object.keys(generated).length} generated file(s) into ${benchDir}? [y/N] `,
     );
     if (!ok) {
       log('Aborted — nothing was written.');
@@ -915,33 +941,46 @@ export async function runBenchAdd(
     }
   }
 
-  const writes: Array<{ target: string; content: Buffer | string }> = [];
-  for (const file of prepared.fixtureFiles) {
-    if (file.rel.split(/[\\/]/).includes('..') || isAbsolute(file.rel)) {
-      throw new Error(`Fixture path escapes the task directory: ${file.rel}`);
+  let failure: unknown;
+  try {
+    throwIfEvaluationInterrupted();
+    assertOutputsUnchanged();
+    if (draft) {
+      const drafted = await draftVerifierWithOracle(draft, log);
+      generated[`verifiers/${taskId}.mjs`] = drafted.verifierSource;
+      generated[`ground-truth/oracle-${taskId}.mjs`] = drafted.oracleSource;
     }
-    writes.push({ target: join(benchDir, 'fixtures', taskId, file.rel), content: file.content });
-  }
-  for (const [rel, content] of Object.entries(generated)) {
-    writes.push({ target: join(benchDir, rel), content });
-  }
-  benchJson.tasks = [...tasks, taskEntry];
-  writes.push({ target: benchJsonPath, content: `${JSON.stringify(benchJson, null, 2)}\n` });
-  applyBenchWrites(benchDir, writes);
+    const writes: Array<{ target: string; content: Buffer | string }> = [];
+    for (const file of prepared.fixtureFiles) {
+      if (file.rel.split(/[\\/]/).includes('..') || isAbsolute(file.rel)) {
+        throw new Error(`Fixture path escapes the task directory: ${file.rel}`);
+      }
+      writes.push({ target: join(benchDir, 'fixtures', taskId, file.rel), content: file.content });
+    }
+    for (const [rel, content] of Object.entries(generated)) {
+      writes.push({ target: join(benchDir, rel), content });
+    }
+    benchJson.tasks = [...tasks, taskEntry];
+    writes.push({ target: benchJsonPath, content: `${JSON.stringify(benchJson, null, 2)}\n` });
+    throwIfEvaluationInterrupted();
+    assertOutputsUnchanged();
+    applyBenchWrites(benchDir, writes);
 
-  log(`Task "${taskId}" added to ${benchDir} (${prepared.fixtureFiles.length} fixture file(s), verifier: ${prepared.verifierKind}).`);
-  log('Next:');
-  log(`  skillfit bench check ${benchDir}`);
-  log(`  skillfit eval <skill-path> --bench ${benchDir} --agent <id> --trials 5`);
-  return {
-    dir: benchDir,
-    taskId,
-    files: [
-      ...prepared.fixtureFiles.map((file) => `fixtures/${taskId}/${file.rel}`),
-      ...Object.keys(generated),
-      'bench.json',
-    ],
-  };
+    log(`Task "${taskId}" added to ${benchDir} (${prepared.fixtureFiles.length} fixture file(s), verifier: ${prepared.verifierKind}).`);
+    log('Next:');
+    log(`  skillfit bench check ${benchDir}`);
+    log(`  skillfit eval <skill-path> --bench ${benchDir} --agent <id> --trials 5`);
+    return {
+      dir: benchDir,
+      taskId,
+      files: [
+        ...prepared.fixtureFiles.map((file) => `fixtures/${taskId}/${file.rel}`),
+        ...Object.keys(generated),
+        'bench.json',
+      ],
+    };
+  } catch (error) { failure = error; throw error; }
+  finally { draft?.finish(failure); }
 }
 
 function prepareFreeze(options: BenchAddOptions, cwd: string): PreparedAdd {
@@ -968,7 +1007,7 @@ function prepareFreeze(options: BenchAddOptions, cwd: string): PreparedAdd {
   if (!existsSync(sourceDir)) {
     throw new Error(`--source-dir does not exist: ${sourceDir}`);
   }
-  const captured = captureSourceFiles(sourceDir);
+  const captured = freezeSourceFiles(sourceDir, resolve(cwd, options.benchDir ?? '.'), options.include);
   if (captured.length === 0) {
     throw new Error(`No capturable files in ${sourceDir} (empty git index or directory).`);
   }
@@ -986,7 +1025,7 @@ function prepareFreeze(options: BenchAddOptions, cwd: string): PreparedAdd {
       : options.verifierCmd
         ? 'command'
         : 'output',
-    fixtureFiles: captured.map((rel) => ({ rel, content: readFileSync(join(sourceDir, rel)) })),
+    fixtureFiles: captured,
     groundTruth: `# Ground truth — frozen task
 
 Frozen from a real failure on ${new Date().toISOString().slice(0, 10)}.

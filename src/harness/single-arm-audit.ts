@@ -246,7 +246,7 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
         const scratch = mkdtempSync(join(tmpdir(), 'skillfit-single-replay-'));
         try {
           cpSync(join(root, path), scratch, { recursive: true, filter: file => basename(file) !== '.git' });
-          const grade = await runVerifier(bench.dir, task.verifier, scratch), verdict = verdictFromOutput(grade.output);
+          const grade = await runVerifier(bench.dir, task.verifier, scratch, task.verifierTimeoutSeconds), verdict = verdictFromOutput(grade.output);
           assert.equal(grade.error, null, `Replay verifier failed: ${grade.error}`); assert.notEqual(grade.exitCode, null);
           assert.equal(grade.exitCode === 0, r.passed, 'Replay task verdict differs from retained delivery.');
           if (r.verifierExitCode !== undefined) assert.equal(grade.exitCode, r.verifierExitCode);
