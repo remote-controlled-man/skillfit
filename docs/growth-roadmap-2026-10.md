@@ -14,6 +14,14 @@ and judge runs are complete. The [completion audit](plans/2026-10-17-workflow-fo
 links the required outcomes to their evidence. No live model calls were added or
 authorized for this delivery.
 
+Source after npm 0.11.0 addresses the subsequent new-user audit: Git-root bench
+hashes match input snapshots, invalid output layouts fail in preview, ordinary
+CLI usage is collected with budget-capability checks, and failed API responses
+retain known spending. Read-only bench commands share bundled/local resolution,
+and the [first-run guide](first-real-eval.md#start-with-the-installed-cli) now starts
+from npm without a clone. These fixes are not a new registry release or efficacy
+claim; historical receipts and the statistical/adoption protocol remain unchanged.
+
 ## Available foundations
 
 | User need | Existing path | Boundary |

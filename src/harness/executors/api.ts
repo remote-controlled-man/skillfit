@@ -1,4 +1,5 @@
 import type { Executor, ExecutorDescriptor, ExecutorResult, TokenUsage } from '../types.js';
+import { ExecutorFailure } from '../types.js';
 import { evaluationSignal } from '../interruption.js';
 
 export interface ApiExecutorOptions {
@@ -85,16 +86,23 @@ export class ApiExecutor implements Executor {
       }),
       signal: interrupted ? AbortSignal.any([interrupted, AbortSignal.timeout(this.timeoutMs)]) : AbortSignal.timeout(this.timeoutMs),
     });
-    if (!response.ok) {
-      const body = (await response.text()).slice(0, 300);
-      throw new Error(`API request failed with status ${response.status}: ${body}`);
-    }
-    const data = (await response.json()) as ChatCompletionResponse;
-    const content = data.choices?.[0]?.message?.content;
+    const body = await response.text();
+    let data: ChatCompletionResponse | undefined, parsed = false;
+    try {
+      const value: unknown = JSON.parse(body); parsed = true;
+      if (value && typeof value === 'object' && !Array.isArray(value)) data = value as ChatCompletionResponse;
+    } catch { /* Retain the public body; malformed JSON cannot establish usage. */ }
+    const content = data?.choices?.[0]?.message?.content;
+    const tokens = tokenUsage(data?.usage);
+    const failure = (message: string) => new ExecutorFailure(message, {
+      output: typeof content === 'string' ? content : '', rawOutput: body,
+      ...(tokens ? { tokens, usageStatus: 'final' as const } : {}),
+    });
+    if (!response.ok) throw failure(`API request failed with status ${response.status}: ${body.slice(0, 300)}`);
+    if (!parsed) throw failure('API response was not valid JSON');
     if (typeof content !== 'string') {
-      throw new Error('API response did not contain choices[0].message.content');
+      throw failure('API response did not contain choices[0].message.content');
     }
-    const tokens = tokenUsage(data.usage);
     return tokens ? { output: content, tokens } : { output: content };
   }
 }

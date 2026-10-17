@@ -6,10 +6,12 @@ import { getAgent } from '../agents.js';
 import { assertAgentEnvironment, assertAgentEnvironmentUnchanged, inspectAgentEnvironment, renderAgentEnvironment,
   type AgentEnvironmentPreflight } from '../harness/agent-preflight.js';
 import { loadBench, selectBenchTasks } from '../harness/bench.js';
+import { resolveBenchDir } from '../harness/bench-location.js';
 import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { summarizeCosts } from '../harness/costs.js';
 import { createSpendingBudgetRecorder, parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget.js';
 import { parseExecutorTimeoutSeconds } from '../harness/eval-contract.js';
+import { assertEvaluationOutputLayout } from '../harness/evaluation-layout.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { hashFileSet, listFilesRecursive, sha256File, sha256Text } from '../harness/hash.js';
@@ -75,7 +77,7 @@ function emptySkill(sourceDir: string): SkillBundle {
 
 function resolveCalibration(input: CalibrationInput): PreparedCalibration {
   const options = input.calibrate;
-  const bench = selectBenchTasks(loadBench(resolve(input.dir ?? '.')), input.taskIds ?? options.taskIds);
+  const bench = selectBenchTasks(loadBench(resolveBenchDir(input.dir ?? '.')), input.taskIds ?? options.taskIds);
   const trials = options.trials ?? 2;
   if (!Number.isInteger(trials) || trials < 1 || trials > 20) throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
   const plannedCalls = bench.tasks.length * trials, maxCalls = validateCallBudget(plannedCalls, options.maxCalls);
@@ -103,12 +105,14 @@ function resolveCalibration(input: CalibrationInput): PreparedCalibration {
   const inspect = () => inspectAgentEnvironment({ roles: [{ role: 'agent', definition, executor: executor?.describe() ?? null,
     injected: options.executor !== undefined, resolutionError: resolutionError ?? (!executor ? '--calibrate needs --agent (a CLI executor for real runs)' : undefined) }],
     mode: 'inject', target: emptySkill(bench.dir), capabilityError,
+    spendingBudget: spendingBudget !== undefined,
     homeDir: options.sessionOptions?.homeDir, env: options.sessionOptions?.env });
   const agentPreflight = inspect();
   const runsRoot = resolve(options.runsRoot ?? 'runs');
   const runGroup = options.runGroup ?? `calibrate-${new Date().toISOString().replace(/\D/g, '').slice(0, 17)}`;
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   const outputDir = join(runsRoot, runGroup);
+  assertEvaluationOutputLayout(outputDir, { benchDir: bench.dir });
   if (existsSync(outputDir)) throw new Error(`Run group directory already exists: ${outputDir}`);
   const guardFiles = (options.guardFiles ?? []).map(file => ({ ...file, path: resolve(file.path) }));
   for (const file of guardFiles) if (sha256File(file.path) !== file.sha256) throw new Error(`Frozen ${file.label} file changed before planning.`);

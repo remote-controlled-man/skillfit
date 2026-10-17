@@ -87,12 +87,12 @@ test('CliExecutor rejects when the command cannot be started', async () => {
   await assert.rejects(() => executor.run('x', process.cwd()), /Failed to start/);
 });
 
-test('CliExecutor.forAgent uses the headless template from the agent matrix', () => {
+test('CliExecutor.forAgent prefers the structured matrix template even without Skill detection', () => {
   for (const agentId of agentIds()) {
     const headless = getAgent(agentId).headless;
     assert.ok(headless.argv.length > 0, `${agentId} has no headless argv`);
     const executor = CliExecutor.forAgent(agentId);
-    assert.equal(executor.describe().detail, `${agentId}: ${headless.argv.join(' ')}`);
+    assert.equal(executor.describe().detail, `${agentId}: ${(headless.streamJson?.argv ?? headless.argv).join(' ')}`);
   }
 });
 
@@ -107,7 +107,35 @@ test('Codex paired and trigger runs both use a writable disposable workspace', (
     assert.equal(argv[sandboxIndex + 1], 'workspace-write');
   }
   assert.match(paired ?? '', /--sandbox workspace-write/);
+  assert.match(paired ?? '', /--json/);
   assert.match(trigger ?? '', /--sandbox workspace-write/);
+});
+
+test('ordinary structured output retains counters without inventing a Skill detection', async () => {
+  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT], shell: false, streamJson: true });
+  const transcript = toNdjson([
+    { type: 'item.completed', item: { type: 'agent_message', text: 'A normal answer.' } },
+    { type: 'turn.completed', usage: { input_tokens: 123, cached_input_tokens: 23, output_tokens: 17 } },
+    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 0, output_tokens: 2 } },
+  ]);
+  const result = await executor.run(transcript, process.cwd());
+  assert.equal(result.output, 'A normal answer.'); assert.equal(result.rawOutput, transcript);
+  assert.deepEqual(result.tokens, { input: 133, cachedInput: 23, output: 19 });
+  assert.equal(result.usageStatus, 'final'); assert.equal(result.skillTriggered, undefined);
+});
+
+test('ordinary structured failure retains public counters and diagnostics without a trigger target', async () => {
+  const transcript = toNdjson([
+    { type: 'turn.completed', usage: { input_tokens: 123, cached_input_tokens: 23, output_tokens: 17 } },
+    { type: 'turn.failed', error: { message: 'synthetic stream failure' } },
+  ]);
+  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT + ';process.on("beforeExit",()=>process.exitCode=1)'], shell: false, streamJson: true });
+  await assert.rejects(executor.run(transcript, process.cwd()), error => {
+    assert.ok(error instanceof ExecutorFailure); assert.match(error.message, /synthetic stream failure/);
+    assert.deepEqual(error.result.tokens, { input: 123, cachedInput: 23, output: 17 });
+    assert.equal(error.result.usageStatus, 'partial'); assert.equal(error.result.rawOutput, transcript);
+    assert.equal(error.result.skillTriggered, undefined); return true;
+  });
 });
 
 test('CliExecutor.forAgent kimi-code passes the prompt as a -p file reference', () => {

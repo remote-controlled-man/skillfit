@@ -76,6 +76,13 @@ executor identity or compiled implementation invalidate confirmation. Preview
 declares offline case preflight and input snapshots pending; execution performs
 both before dispatch.
 
+Source after npm 0.11.0 checks output layout during preview and again at session
+setup. Keep `--runs-root` outside the bench, candidate/baseline Skill or config
+experiment, compiled runtime and `.git` metadata. A directory alias cannot bypass
+this check. Use sibling input/output directories; invalid layouts fail before
+verifiers, model calls or run creation. Git-root benches are supported: bench
+hashing and sealed snapshots both exclude Git metadata while retaining task bytes.
+
 Budget files are parsed into fixed numeric limits before planning. Those values,
 rather than the source file's path/format, are bound to the hash and sealed in
 the native plan. Editing the file before a new invocation changes the plan when
@@ -138,6 +145,13 @@ both scoring orders and their usage; reports separate primary Agent, judge and
 combined `invocationCosts`. Historical missing judge costs remain unknown, never
 zero. An enabled API judge without credentials is an error before spending;
 login validity still cannot be confirmed offline. See [cost accounting](eval-costs.md).
+
+Source after npm 0.11.0 adds a preflight `USAGE_CAPABILITY` check: a CLI adapter
+known to lack one of the required token counters cannot start a budgeted batch,
+whether it is the primary executor, a judge or baseline calibration. Normal Codex
+eval/judge commands use the existing matrix JSON surface to retain these counters.
+API/injected coverage remains unknown until a response; the runtime guards remain
+necessary and never replace missing cache evidence with zero.
 
 Ordinary `--json` returns the same `skillfit.eval-result` envelope and English
 error reasons as requests, with diagnostics on stderr. Ordinary native runs seal

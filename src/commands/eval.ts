@@ -1,9 +1,9 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { getAgent } from '../agents.js';
 import { loadBench, selectBenchTasks } from '../harness/bench.js';
+import { resolveBenchDir } from '../harness/bench-location.js';
 import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { ExperimentSession, validateCallBudget, type SessionOptions } from '../harness/experiment-session.js';
 import { ApiExecutor, DEFAULT_API_TIMEOUT_MS } from '../harness/executors/api.js';
@@ -28,6 +28,7 @@ import { parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget
 import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import { CASE_PREFLIGHT_POLICY, checkEvalCases } from './eval-preflight.js';
 import { INPUT_SNAPSHOT_POLICY } from '../harness/input-snapshot.js';
+import { assertEvaluationOutputLayout } from '../harness/evaluation-layout.js';
 import type { ReviewedEvalPlan } from './eval-plan.js';
 import { inspectAgentEnvironment, assertAgentEnvironment, assertAgentEnvironmentUnchanged, renderAgentEnvironment,
   type AgentEnvironmentPreflight, type EnvironmentRole } from '../harness/agent-preflight.js';
@@ -92,38 +93,6 @@ export interface EvalOptions {
 
 export const DEFAULT_EVAL_TRIALS = 5;
 
-function bundledBenchesRoot(): string {
-  return fileURLToPath(new URL('../../benches', import.meta.url));
-}
-
-function resolveBenchDir(bench: string | undefined): string {
-  const root = bundledBenchesRoot();
-  const candidates = existsSync(root)
-    ? readdirSync(root)
-        .map((entry) => join(root, entry))
-        .filter((dir) => statSync(dir).isDirectory() && existsSync(join(dir, 'bench.json')))
-    : [];
-  if (bench) {
-    const dir = resolve(bench);
-    if (existsSync(join(dir, 'bench.json'))) {
-      return dir;
-    }
-    const byName = candidates.find((candidate) => candidate.split(/[\\/]/).pop() === bench);
-    if (byName) {
-      return byName;
-    }
-    throw new Error(`Not a bench directory (missing bench.json): ${dir}`);
-  }
-  if (candidates.length === 1 && candidates[0]) {
-    return candidates[0];
-  }
-  if (candidates.length === 0) {
-    throw new Error(`No bundled benches found under ${root}; pass --bench <path>`);
-  }
-  const names = candidates.map((dir) => `  --bench ${dir.split(/[\\/]/).pop() ?? dir}`).join('\n');
-  throw new Error(`More than one bundled bench is available; pick one explicitly:\n${names}`);
-}
-
 function resolveExecutor(agent: string | undefined, target: EvaluationTarget, installed = false, executorTimeoutSeconds?: number): Executor {
   if (agent) {
     const definition = getAgent(agent);
@@ -185,6 +154,7 @@ function inspectEvalAgent(options: EvalOptions, target: EvaluationTarget, execut
   if (judge || judgeError) roles.push({ role: 'judge', definition: options.judgeAgent ? getAgent(options.judgeAgent) : undefined,
     executor: judge?.describe() ?? null, injected: options.judgeExecutor != null, resolutionError: judgeError });
   return inspectAgentEnvironment({ roles, mode: options.mode ?? 'inject', target, capabilityError,
+    spendingBudget: options.spendingBudget !== undefined,
     homeDir: options.sessionOptions?.homeDir, env: options.sessionOptions?.env });
 }
 
@@ -351,6 +321,7 @@ async function runEvalTrigger(
   const agentPreflight = inspect();
 
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+  assertEvaluationOutputLayout(join(runsRoot, runGroup), { benchDir: bench.dir, targetDirs: [skill.sourceDir] });
   const competitors = options.competeInstalled && options.agent
     ? installedUserSkills(getAgent(options.agent), options.sessionOptions?.homeDir ?? homedir(), options.sessionOptions?.env ?? process.env)
       .filter((entry) => entry.name !== skill.name)
@@ -547,6 +518,8 @@ export async function runEval(options: EvalOptions): Promise<RunManifest | Trigg
   const pairOrder = parsePairOrder(options.pairOrder);
 
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
+  assertEvaluationOutputLayout(join(runsRoot, runGroup), { benchDir: bench.dir,
+    targetDirs: [target.sourceDir, ...(baselineTarget ? [baselineTarget.sourceDir] : [])] });
   options.onPlan?.({
     mode: installed ? 'installed' : 'inject',
     agentPreflight,

@@ -44,7 +44,7 @@ Every judge order saves a version-1 `skillfit.judge-call` receipt under
 `<task>/judge-trial-<n>/call-1.json` or `call-2.json`. It retains the anonymous
 prompt and hash, output, available raw output, executor, invocation/error state,
 token coverage and monotonic elapsed interval. Invalid grading JSON still costs
-an invocation and stops subsequent work. Failure/interruption retains partial or
+an invocation and stops subsequent work. Failure/interruption retains final, partial or
 unknown usage; it never becomes a free or successfully graded call. Missing
 credentials for an explicitly enabled judge block before primary spending.
 
@@ -76,6 +76,17 @@ receipts remain unchanged. CLI timing anomalies retain spending and exclude the
 pair as an execution error; see [execution timing](eval-timing.md).
 
 ## Cache and coverage
+
+Source after npm 0.11.0 reads matrix-defined JSON streams in ordinary CLI eval and
+CLI judging too, independently of Skill-trigger detection. Codex inject, rules and
+MCP comparisons can retain the same per-turn counters as installed/trigger mode.
+Only assistant text is graded; raw stream evidence and partial failure counters
+are retained separately. Ordinary parsing does not fabricate a trigger flag.
+Offline `USAGE_CAPABILITY` checks block strict spending budgets when an adapter is
+known to lack required counters, including an enabled judge. API and injected
+executors retain unknown offline coverage; actual missing counters still stop
+after an invocation, with no retry or guessed cache zeros. Historical receipts
+remain unchanged; this does not recover token counts from old plain-text runs.
 
 Cached input is the cache-read subset already included in input; adding it to
 input would double-count. `uncachedInput = input - cachedInput` only when both
@@ -113,6 +124,21 @@ recorded, it is displayed as `unrecorded`, rather than an exact zero. Complete
 elapsed time can still be compared when token usage is unknown. Earlier v4
 manifests without cost summaries remain readable and explicitly identify this
 missing information; the report does not silently enrich them from local files.
+
+## Failed API responses (source after npm 0.11.0)
+
+API response parsing retains the public response and any valid reported usage
+before rejecting a missing/non-text answer, malformed JSON or non-2xx status.
+A complete response's supplied counters remain final for those fields even when
+its answer cannot be graded. Missing fields stay unknown; malformed JSON cannot
+establish usage. Neither a format failure nor an HTTP error proves the call was
+free. Connection failures without a readable response still have unknown usage.
+
+These errors remain ungraded execution failures and stop subsequent calls. Agent
+responses are retained in `_transcript.jsonl`; failed API judge responses are in
+their independent judge receipts. Request authorization headers/keys are not
+added to the evidence. Reports/export/replay preserve the original counters,
+with no API retry or new observation. Earlier unknown costs are not backfilled.
 
 ## Spending per success
 

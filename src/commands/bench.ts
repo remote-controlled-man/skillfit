@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
 import { loadBench, selectBenchTasks } from '../harness/bench.js';
+import { resolveBenchDir } from '../harness/bench-location.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { listFilesRecursive } from '../harness/hash.js';
 import { runVerifier, verifierFailure } from '../harness/runner.js';
@@ -333,7 +334,7 @@ export async function runBenchCalibration(options: BenchCheckOptions & { calibra
 
 async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictCalibration = false): Promise<BenchCheckReport> {
   const log = options.log ?? ((msg: string) => console.log(msg));
-  const dir = resolve(options.dir ?? '.');
+  let dir = resolve(options.dir ?? '.');
   const checks: BenchDiagnostic[] = [];
   let identity: BenchCheckReport['bench'] = null;
   const push = (code: BenchCheckCode, status: Check['status'], message: string, task?: BenchTask, evidence?: BenchCheckEvidence): void => {
@@ -344,6 +345,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
 
   let bench;
   try {
+    dir = resolveBenchDir(options.dir ?? '.');
     bench = selectBenchTasks(loadBench(dir), options.taskIds ?? (options.calibrate ? options.calibrate.taskIds : undefined));
   } catch (error) {
     push('BENCH_LOAD', 'FAIL', `bench does not load: ${(error as Error).message}`);

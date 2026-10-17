@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased — new-user workflow reliability
+
+- Unify bundled/local bench resolution for eval and read-only check/list/show/
+  calibration. Preserve explicit broken-path errors and local precedence; keep
+  bench writers on local paths. Add an npm-only offline first-run walkthrough,
+  packaged-command regressions, current driver guidance and mirrored README steps.
+- Preserve API-reported counters and raw response evidence before rejecting bad
+  answer formats, malformed JSON or HTTP failures. Keep supplied final fields,
+  unknown missing fields, ungraded errors and stop-without-retry behavior through
+  primary/judge receipts and stopped reports. Do not backfill historical usage.
+- Read structured CLI output/usage in ordinary paired runs and CLI judges,
+  separately from optional Skill detection. Prefer existing matrix streaming
+  templates; retain normal text, raw evidence and partial failure counters.
+- Add offline `USAGE_CAPABILITY` checks for strict budget compatibility across
+  primary/judge/calibration roles. Known missing counters block before spending;
+  API/injected coverage stays unknown and existing runtime guards remain strict.
+- Align bench fingerprints with sealed snapshots by excluding Git metadata,
+  including worktree files; retain actual case bytes and reject metadata as a
+  declared task input. Git-root benches can complete, audit and replay.
+- Reject output inside bench/Skill/configuration/runtime inputs or Git metadata
+  during preview and again at setup, resolving aliases and uncreated descendants.
+  Preserve existing outputs and make no verifier or executor calls for bad layouts.
+
 ## 0.11.0 — complete basic evaluation workflow (2026-10-17)
 
 - Block calibration before spending when case integrity or Agent environment

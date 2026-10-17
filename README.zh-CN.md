@@ -69,9 +69,24 @@ npx skillfit@0.11.0 --help
 npx skillfit@0.11.0 doctor
 ```
 
-`npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。下面的快速开始用的是源码检出，这样才能跑本仓库自带的 bench。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI。`skillfit` 是从 npm 装上的命令。
+`npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。不克隆仓库也能创建和校验 case。npm 可能先下载包；之后下面的 case 校验与预览不调用模型。`skillfit` 是从 npm 装上的命令。
 
-## 快速开始
+## 用 npm 开始
+
+在自己的项目目录运行这些命令。预览前，把 `./my-skill` 换成包含你自己的 `SKILL.md` 的目录：
+
+```bash
+npx skillfit@0.11.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.11.0 bench init my-bench --kind command --yes
+npx skillfit@0.11.0 bench check ./my-bench --json
+npx skillfit@0.11.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+```
+
+脚手架是教学 case；衡量收益前，要把初始文件、任务、校验器和参考解换成自己的真实任务。预览声明两次调用，但不会执行。检查 `plan.evaluation.agentPreflight.status`：能生成计划不代表 CLI 已就绪或登录有效。bench 与运行结果放在不同目录。后续的确认执行、报告和分享见[第一次真实评估指南](docs/first-real-eval.md)。
+
+## 从源码运行
+
+源码检出可以运行内置示例和未发布的修复。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI：
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
@@ -214,9 +229,15 @@ node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 
 0.11.0用 `invocationCosts` 分别记录 Agent、裁判和合计消耗，保留失败、部分和未知用量。可选裁判的消耗计入同一批次停线；显式启用 API 裁判却缺少凭据会报错，不会静默关闭。历史缺失的裁判记录仍标未知。参见[成本统计](docs/eval-costs.md)。
 
+npm 0.11.0 之后的源码也会读取普通 Codex 评测和 CLI 裁判的 JSON 用量，不再要求启用触发检测。离线 `USAGE_CAPABILITY` 检查会在花费前拒绝已知缺少必要计数的 Agent／裁判严格预算组合。API／注入执行器的覆盖情况仍标未知，需要运行时检查；缺失成本不会补成零。
+
+这份源码也会在 API 回答格式或 HTTP 状态异常时保留接口已报告的用量。可用计数与原始响应一起保存；缺失字段仍标未知。调用仍属于执行异常并停止后续调用，不会因此丢掉已有成本证据。
+
 同一份源码可把受支持且已封存的原生配对、校准和触发率实验（包括带有新裁判记录的配对实验）导出为独立目录，包含原始记录、匹配的输入、当时的编译版 CLI、校验清单和重放入口。默认只预览；缺输入、缺少必需的调用记录／原始运行时支持或目标目录已存在就停止。整个目录可搬到另一台机器，重放不调用模型，保留中止状态和未知成本，也不能授权升级。分享前检查项目数据，参见[可搬走的复现包](docs/replay-packages.md)。
 
 0.10.1 会在调用前封存输入副本：原始 Skill、bench 或请求之后被修改、删除，也不影响导出和重放。计划会记录快照校验信息、本地复制耗时和存储量；已声明的快照损坏就拒绝使用。历史记录仍需找回匹配的原始输入。参见[评测输入封存](docs/evaluation-input-snapshots.md)。
+
+npm 0.11.0 之后的源码支持把 bench 放在 Git 仓库根目录：指纹和快照统一排除 Git 元数据。预览会拦住位于 bench、Skill／配置输入、编译运行时或 Git 元数据内部的输出，目录别名也不能绕过。输入与结果应放在同级目录，例如 `--bench ./my-bench --runs-root ./runs`。
 
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json

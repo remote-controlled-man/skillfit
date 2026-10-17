@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { ApiExecutor } from './api.js';
 import { summarizeCosts } from '../costs.js';
 import { spendingBudgetState } from '../eval-budget.js';
+import { ExecutorFailure } from '../types.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -104,6 +105,38 @@ test('ApiExecutor throws when the payload has no message content', async () => {
   const fetchImpl: typeof fetch = (async () => jsonResponse({ choices: [] })) as typeof fetch;
   const executor = new ApiExecutor({ apiKey: 'k', fetchImpl });
   await assert.rejects(() => executor.run('hi', '/tmp'), /choices\[0\]/);
+});
+
+test('API invalid content and HTTP errors retain reported final counters and public response', async () => {
+  for (const [content, status] of [[null, 200], [undefined, 200], [{ text: 'unsupported' }, 200], ['retained failed output', 500]] as const) {
+    let calls = 0;
+    const payload = { choices: [{ message: { content, refusal: 'synthetic refusal' } }],
+      usage: { prompt_tokens: 123, completion_tokens: 17, prompt_tokens_details: { cached_tokens: 23 } } };
+    const executor = new ApiExecutor({ apiKey: 'synthetic-key-not-in-evidence', fetchImpl: async () => { calls++; return jsonResponse(payload, status); } });
+    await assert.rejects(executor.run('offline'), error => {
+      assert.ok(error instanceof ExecutorFailure); assert.equal(error.executorInvoked, true);
+      assert.deepEqual(error.result.tokens, { input: 123, cachedInput: 23, output: 17 });
+      assert.equal(error.result.usageStatus, 'final'); assert.equal(error.result.rawOutput, JSON.stringify(payload));
+      assert.equal(error.result.output, typeof content === 'string' ? content : '');
+      assert.equal(JSON.stringify(error.result).includes('synthetic-key-not-in-evidence'), false); return true;
+    });
+    assert.equal(calls, 1);
+  }
+});
+
+test('malformed API payloads retain raw evidence without guessing missing usage', async () => {
+  for (const body of ['{broken JSON', 'null', '[]', '{"choices":[]}']) {
+    const executor = new ApiExecutor({ apiKey: 'offline-only', fetchImpl: async () => new Response(body) });
+    await assert.rejects(executor.run('offline'), error => {
+      assert.ok(error instanceof ExecutorFailure); assert.equal(error.result.rawOutput, body);
+      assert.equal(error.result.tokens, undefined); assert.equal(error.result.usageStatus, undefined); return true;
+    });
+  }
+  const executor = new ApiExecutor({ apiKey: 'offline-only', fetchImpl: async () => jsonResponse({ choices: [], usage: { prompt_tokens: 12 } }) });
+  await assert.rejects(executor.run('offline'), error => {
+    assert.ok(error instanceof ExecutorFailure); assert.deepEqual(error.result.tokens, { input: 12 });
+    assert.equal(error.result.usageStatus, 'final'); return true;
+  });
 });
 
 test('ApiExecutor requires an API key', () => {

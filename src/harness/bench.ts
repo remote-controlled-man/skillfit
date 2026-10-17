@@ -15,6 +15,7 @@ interface RawBenchFile {
 }
 
 function assertRelativeInside(benchDir: string, rel: string, label: string): string {
+  if (rel.split(/[\\/]/).includes('.git')) throw new Error(`${label} cannot reference Git metadata: ${rel}`);
   if (isAbsolute(rel) || rel.split(/[\\/]/).includes('..')) {
     throw new Error(`${label} must be a relative path inside the bench directory: ${rel}`);
   }
@@ -147,7 +148,7 @@ export function loadBench(benchDir: string): Bench {
     seen.add(task.id);
   }
   const name = typeof raw.name === 'string' && raw.name.trim() !== '' ? raw.name : basename(dir);
-  const contentSha256 = hashFileSet(dir, listFilesRecursive(dir));
+  const contentSha256 = hashFileSet(dir, listFilesRecursive(dir, { excludeGitMetadata: true }));
   return { dir, name, schemaVersion: BENCH_SCHEMA_VERSION, tasks, contentSha256 };
 }
 

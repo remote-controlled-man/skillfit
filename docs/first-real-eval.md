@@ -5,6 +5,32 @@ oracle is registered, it also checks that the reference solution passes; without
 the task's winnability is unverified. It does not measure an agent. A paired `eval` calls your agent on both arms
 and records what actually happened. This guide applies to macOS, Linux, and Windows; use the native
 `node dist/cli.js` commands from a built source checkout in either Bash or PowerShell.
+For the installed release, replace that command prefix with
+`npx skillfit@0.11.0`; no source checkout is required for your own cases.
+
+## Start with the installed CLI
+
+From your project directory, create and check a fresh teaching case, then preview
+your own Skill directory (replace `./my-skill` with an existing `SKILL.md` parent):
+
+```bash
+npx skillfit@0.11.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.11.0 bench init my-bench --kind command --yes
+npx skillfit@0.11.0 bench check ./my-bench --json
+npx skillfit@0.11.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+```
+
+These commands make zero model calls; `--yes` creates only the fresh bench.
+Replace its teaching files with an independent real task and rerun checking before
+interpreting Skill benefit. Read the environment checks even if preview exits 0.
+Keep inputs and runs as siblings. Continue below to declare the claim, inspect the
+plan and authorize execution; do not remove `--dry-run` just to try the example.
+
+Source after npm 0.11.0 also resolves bundled names such as `code-review` and
+`debugging` consistently in eval, `bench check/list/show` and calibration preview.
+A local bench wins; explicit or existing local paths never silently fall back to
+a bundled example. Write operations still require your own local directory.
+Those source fixes are not present in the immutable 0.11.0 package.
 
 ## 1. Choose a claim and a bench
 

@@ -69,9 +69,24 @@ npx skillfit@0.11.0 --help
 npx skillfit@0.11.0 doctor
 ```
 
-`npx skillfit` installs the published release and needs Node.js 22 or newer. The quick start below uses a source checkout so you can run the benches that ship in this repository. After `npm run build`, `node dist/cli.js` is that checkout's CLI. `skillfit` is the command installed from npm.
+`npx skillfit` installs the published release and needs Node.js 22 or newer. You can create and check cases without cloning this repository. npm may download the package first; the case checks and previews below then make no model calls. `skillfit` is the command installed from npm.
 
-## Quick start
+## First run with npm
+
+Run these commands in your project directory. Replace `./my-skill` with the directory containing your own `SKILL.md` before previewing:
+
+```bash
+npx skillfit@0.11.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.11.0 bench init my-bench --kind command --yes
+npx skillfit@0.11.0 bench check ./my-bench --json
+npx skillfit@0.11.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+```
+
+The scaffold is a teaching case; replace its fixture, prompt, verifier and oracle with your real task before measuring benefit. The preview declares two calls and makes none. Read `plan.evaluation.agentPreflight.status`: generating a plan does not establish a ready CLI or valid login. Keep your bench and runs in separate directories. Continue with [your first real evaluation](docs/first-real-eval.md) for reviewed execution, reports and sharing.
+
+## Run from source
+
+A source checkout gives you the bundled examples and unreleased fixes. After `npm run build`, `node dist/cli.js` is that checkout's CLI:
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
@@ -217,9 +232,15 @@ New reports separate cached and uncached input, output, and elapsed time, with s
 
 Version 0.11.0 records `invocationCosts` for primary Agent, judge and total spending, preserving failed/partial/unknown usage. Optional judge spending shares the batch stop lines; an explicitly enabled API judge with missing credentials fails instead of silently turning off. Historical missing judge receipts stay unknown. See [cost accounting](docs/eval-costs.md).
 
+Source after npm 0.11.0 also reads ordinary Codex eval and CLI judge JSON usage without requiring trigger detection. Offline `USAGE_CAPABILITY` checks reject strict budgets when a primary/judge adapter is known to lack required token counters, before spending. Unknown API/injected coverage still needs runtime checks; missing costs never become zero.
+
+That source also preserves API-reported usage when an answer has an invalid format or HTTP status. Available response counters stay recorded alongside the raw response; missing fields remain unknown. The call remains an execution error and stops further dispatches, rather than losing its cost evidence.
+
 That source can export a supported sealed native paired, calibration or trigger run, including new paired runs with judge receipts, as a portable directory with original receipts, matching inputs, pinned compiled CLI, checksums and a replay entry point. Export previews by default; missing inputs, required receipt/runtime support or an existing destination stop it. The whole package can move to another machine. Replay calls no model, preserves stopped/unknown costs and authorizes no upgrade. Review project data before sharing; see [portable replay packages](docs/replay-packages.md).
 
 Version 0.10.1 seals input copies before dispatch: later edits/deletions of the original Skill, bench or request no longer prevent export/replay. The plan records snapshot integrity, local copy time and storage; a damaged declared snapshot is rejected. Historical runs still need matching recovered inputs. See [sealed evaluation inputs](docs/evaluation-input-snapshots.md).
+
+Source after npm 0.11.0 supports benches at a Git repository root: hashing and snapshots both exclude Git metadata. Previews reject output inside the bench, Skill/configuration inputs, compiled runtime or Git metadata, including directory aliases. Keep inputs and runs in sibling directories, such as `--bench ./my-bench --runs-root ./runs`.
 
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
