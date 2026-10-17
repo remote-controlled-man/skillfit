@@ -33,12 +33,12 @@ Usage:
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
   skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
   skillfit bench init [dir] [--kind output|command]  Scaffold a text-output or code-editing case
-  skillfit bench check [dir] [--json]       Validate a bench offline (verifier self-tests, hygiene)
-  skillfit bench check [dir] --calibrate    Plus real baseline-difficulty runs (needs --agent)
+  skillfit bench check [path-or-name] [--json]  Validate a local/bundled bench offline
+  skillfit bench check [path-or-name] --calibrate  Plus real baseline-difficulty runs (needs --agent)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
-  skillfit bench list <dir> [--json]        List registered cases without running verifiers
-  skillfit bench show <dir> <task-id> [--json]  Inspect one registered case
+  skillfit bench list <path-or-name> [--json]  List local/bundled cases without running verifiers
+  skillfit bench show <path-or-name> <task-id> [--json]  Inspect one registered case
   skillfit bench edit <dir> <task-id> --set <field=value>  Plan a manifest edit (apply with --yes)
   skillfit bench remove <dir> <task-id>     Plan to unregister a case, preserving its files
   skillfit install [options]                Inspect or apply a managed configuration profile

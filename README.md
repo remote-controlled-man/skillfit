@@ -69,9 +69,24 @@ npx skillfit@0.11.0 --help
 npx skillfit@0.11.0 doctor
 ```
 
-`npx skillfit` installs the published release and needs Node.js 22 or newer. The quick start below uses a source checkout so you can run the benches that ship in this repository. After `npm run build`, `node dist/cli.js` is that checkout's CLI. `skillfit` is the command installed from npm.
+`npx skillfit` installs the published release and needs Node.js 22 or newer. You can create and check cases without cloning this repository. npm may download the package first; the case checks and previews below then make no model calls. `skillfit` is the command installed from npm.
 
-## Quick start
+## First run with npm
+
+Run these commands in your project directory. Replace `./my-skill` with the directory containing your own `SKILL.md` before previewing:
+
+```bash
+npx skillfit@0.11.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.11.0 bench init my-bench --kind command --yes
+npx skillfit@0.11.0 bench check ./my-bench --json
+npx skillfit@0.11.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+```
+
+The scaffold is a teaching case; replace its fixture, prompt, verifier and oracle with your real task before measuring benefit. The preview declares two calls and makes none. Read `plan.evaluation.agentPreflight.status`: generating a plan does not establish a ready CLI or valid login. Keep your bench and runs in separate directories. Continue with [your first real evaluation](docs/first-real-eval.md) for reviewed execution, reports and sharing.
+
+## Run from source
+
+A source checkout gives you the bundled examples and unreleased fixes. After `npm run build`, `node dist/cli.js` is that checkout's CLI:
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git

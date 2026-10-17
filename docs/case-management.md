@@ -6,6 +6,15 @@ registration; use your editor to change the referenced file contents.
 
 ## Inspect and select
 
+Source after npm 0.11.0 accepts bundled names (for example `code-review`) in
+read-only `bench check/list/show`, calibration planning and ordinary eval. These
+share one resolver: a local manifest wins; an explicit or existing broken local
+path fails instead of selecting a different bundled case. JSON includes the
+resolved directory and its original content hash. With no path, `bench check`
+still checks the current directory; eval retains its explicit-choice requirement
+when several bundled benches exist. `init/add/edit/remove` continue to use local
+directories; a bare bundled name cannot modify the installed package.
+
 ```bash
 skillfit bench list ./my-bench --json
 skillfit bench show ./my-bench fix-cache --json

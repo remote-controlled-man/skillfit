@@ -2,6 +2,10 @@
 
 ## Unreleased — new-user workflow reliability
 
+- Unify bundled/local bench resolution for eval and read-only check/list/show/
+  calibration. Preserve explicit broken-path errors and local precedence; keep
+  bench writers on local paths. Add an npm-only offline first-run walkthrough,
+  packaged-command regressions, current driver guidance and mirrored README steps.
 - Preserve API-reported counters and raw response evidence before rejecting bad
   answer formats, malformed JSON or HTTP failures. Keep supplied final fields,
   unknown missing fields, ungraded errors and stop-without-retry behavior through

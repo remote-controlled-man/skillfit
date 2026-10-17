@@ -6,6 +6,7 @@ import { getAgent } from '../agents.js';
 import { assertAgentEnvironment, assertAgentEnvironmentUnchanged, inspectAgentEnvironment, renderAgentEnvironment,
   type AgentEnvironmentPreflight } from '../harness/agent-preflight.js';
 import { loadBench, selectBenchTasks } from '../harness/bench.js';
+import { resolveBenchDir } from '../harness/bench-location.js';
 import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { summarizeCosts } from '../harness/costs.js';
 import { createSpendingBudgetRecorder, parseSpendingBudget, type SpendingBudget } from '../harness/eval-budget.js';
@@ -76,7 +77,7 @@ function emptySkill(sourceDir: string): SkillBundle {
 
 function resolveCalibration(input: CalibrationInput): PreparedCalibration {
   const options = input.calibrate;
-  const bench = selectBenchTasks(loadBench(resolve(input.dir ?? '.')), input.taskIds ?? options.taskIds);
+  const bench = selectBenchTasks(loadBench(resolveBenchDir(input.dir ?? '.')), input.taskIds ?? options.taskIds);
   const trials = options.trials ?? 2;
   if (!Number.isInteger(trials) || trials < 1 || trials > 20) throw new Error(`calibration trials must be an integer between 1 and 20, got ${trials}`);
   const plannedCalls = bench.tasks.length * trials, maxCalls = validateCallBudget(plannedCalls, options.maxCalls);

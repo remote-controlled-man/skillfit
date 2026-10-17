@@ -13,8 +13,9 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 Check availability with `npx skillfit@0.11.0 --version`, or `node dist/cli.js --version` inside a clone.
 If neither works, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
 The complete planning, calibration, judge-cost and replay workflow below requires
-0.11.0 or newer. Use a built checkout while that version awaits registry availability;
-the immutable npm 0.10.1 package does not contain these additions.
+0.11.0 or newer, which is published. Later Git-bench/layout, ordinary CLI cost,
+API-failure cost and bundled-name fixes described below require a current built
+checkout until the next release; do not attribute them to the immutable 0.11.0 package.
 
 ## Which command for which question
 
@@ -22,7 +23,7 @@ the immutable npm 0.10.1 package does not contain these additions.
 |---|---|
 | "我的 skill 有没有被用到 / are my skills used at all" | `skillfit report` — read-only, free, instant; start here |
 | "这个配置健不健康" | `skillfit doctor` — read-only |
-| "这个 skill 值不值得装 / does this skill help" | Preview `skillfit eval <skill-path> --bench <bench> --agent <id> --trials 3 --dry-run`, then run within authorized spending |
+| "这个 skill 值不值得装 / does this skill help" | Preview `skillfit eval <skill-path> --mode installed --bench <bench> --agent <id> --trials 3 --dry-run`, then run within authorized spending |
 | "新版 Skill 是否值得采用 / evaluate a candidate for a Skill evolution workflow" | With npm 0.9.0 or a current checkout, use `eval --request <request.json> --dry-run`; read the [component contract](https://github.com/remote-controlled-man/skillfit/blob/main/docs/eval-component.md) for inputs and acceptance policy |
 | "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger`. Add `--compete-installed` to copy other user Skills; otherwise recall is an upper bound. Codex counts a `SKILL.md` read |
 | "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
@@ -41,6 +42,14 @@ Executor choice: `--agent kimi-code` or `--agent codex` drives the local CLI (no
 It uses that CLI's authentication; offline preflight cannot confirm login.
 Without `--agent`, paired eval needs `SKILLFIT_API_KEY`/`OPENAI_API_KEY`. Trigger mode currently verified for
 kimi-code and codex only.
+
+Installed mode delivers the complete Skill; default inject mode measures injected
+text. Source after 0.11.0 shares bundled-name resolution for read-only bench
+commands and eval; local paths win. Editing still needs an owned local directory.
+Git-root benches are supported in that source, with metadata excluded consistently.
+Keep `--runs-root` outside the bench/Skill/runtime and Git metadata; bad layouts
+are rejected at preview, including aliases. See the
+[first-run guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/first-real-eval.md).
 
 ## Spend discipline
 
@@ -92,6 +101,12 @@ judge receipts remain unknown. An explicitly enabled API judge without
 credentials fails instead of silently disabling judging. Ctrl+C/SIGTERM stop
 managed work and retain records; do not retry, replace or expand stopped calls
 without a fresh authorized plan.
+
+In source after 0.11.0, ordinary CLI usage parsing is independent of trigger
+detection. Inspect `USAGE_CAPABILITY`: known missing adapter counters block a
+strict budget before calls; API/injected coverage remains unknown. API response
+format/HTTP failures retain reported counters and raw evidence while stopping
+the batch. Missing fields remain unknown, not zero or permission to retry.
 
 - Read the verdict line, the discordant-pair counts, and the CI — not just the delta. `inconclusive` means
   the run cannot tell, not that the skill is useless.

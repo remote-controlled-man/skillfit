@@ -69,9 +69,24 @@ npx skillfit@0.11.0 --help
 npx skillfit@0.11.0 doctor
 ```
 
-`npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。下面的快速开始用的是源码检出，这样才能跑本仓库自带的 bench。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI。`skillfit` 是从 npm 装上的命令。
+`npx skillfit` 安装的是已发布的版本，需要 Node.js 22 或更新。不克隆仓库也能创建和校验 case。npm 可能先下载包；之后下面的 case 校验与预览不调用模型。`skillfit` 是从 npm 装上的命令。
 
-## 快速开始
+## 用 npm 开始
+
+在自己的项目目录运行这些命令。预览前，把 `./my-skill` 换成包含你自己的 `SKILL.md` 的目录：
+
+```bash
+npx skillfit@0.11.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.11.0 bench init my-bench --kind command --yes
+npx skillfit@0.11.0 bench check ./my-bench --json
+npx skillfit@0.11.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+```
+
+脚手架是教学 case；衡量收益前，要把初始文件、任务、校验器和参考解换成自己的真实任务。预览声明两次调用，但不会执行。检查 `plan.evaluation.agentPreflight.status`：能生成计划不代表 CLI 已就绪或登录有效。bench 与运行结果放在不同目录。后续的确认执行、报告和分享见[第一次真实评估指南](docs/first-real-eval.md)。
+
+## 从源码运行
+
+源码检出可以运行内置示例和未发布的修复。`npm run build` 之后，`node dist/cli.js` 是这份检出的 CLI：
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git

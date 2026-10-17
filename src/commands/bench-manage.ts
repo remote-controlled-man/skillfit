@@ -1,6 +1,7 @@
 import { lstatSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadBench, validateBenchTask } from '../harness/bench.js';
+import { resolveBenchDir } from '../harness/bench-location.js';
 import { applyBenchWrites } from './bench.js';
 import { BACKUP_SUFFIX } from './install.js';
 
@@ -8,7 +9,7 @@ const EDITABLE = ['fixture', 'prompt', 'promptTrigger', 'verifier', 'verifierKin
 const OPTIONAL = ['promptTrigger', 'oracle', 'rubric', 'shouldTrigger'] as const;
 
 export function inspectBench(dir: string, taskId?: string) {
-  const bench = loadBench(dir);
+  const bench = loadBench(resolveBenchDir(dir));
   const tasks = taskId === undefined ? bench.tasks : bench.tasks.filter(task => task.id === taskId);
   if (!tasks.length) throw new Error(`Unknown task: ${taskId}`);
   return { schemaVersion: 1, kind: taskId === undefined ? 'skillfit.bench-list' : 'skillfit.bench-task',
