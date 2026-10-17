@@ -33,6 +33,7 @@ import { createSpendingBudgetRecorder, parseSpendingBudget, type SpendingBudget 
 import { summarizeInvocationCosts } from './invocation-costs.js';
 import { parseCommand } from './command.js';
 import { verifierRuntimeError } from './verifier-error.js';
+import { parseVerifierTimeoutSeconds } from './verifier-timeout.js';
 
 export interface ExperimentPlan {
   component?: ComponentMetadata;
@@ -93,7 +94,6 @@ export interface ProcessResult {
   error: string | null;
 }
 
-const VERIFIER_TIMEOUT_MS = 2 * 60 * 1000;
 const MAX_PROCESS_OUTPUT_BYTES = 8 * 1024 * 1024;
 
 function runProcess(
@@ -337,7 +337,7 @@ export async function runTrial(
   let score: number | null = null;
   let checks: VerifierCheck[] | null = null;
   if (error === null) {
-    const verifier = await runVerifier(bench.dir, task.verifier, runDir);
+    const verifier = await runVerifier(bench.dir, task.verifier, runDir, task.verifierTimeoutSeconds);
     verifierExitCode = verifier.exitCode;
     writeFileSync(join(runDir, '_verifier.txt'), verifierLogFor(verifier), 'utf8');
     if (verifier.error !== null || verifier.exitCode === null) {
@@ -404,11 +404,12 @@ export async function runTrial(
   return record;
 }
 
-export async function runVerifier(benchDir: string, command: string, runDir: string): Promise<ProcessResult> {
+export async function runVerifier(benchDir: string, command: string, runDir: string, timeoutSeconds?: number): Promise<ProcessResult> {
+  const timeoutMs = parseVerifierTimeoutSeconds(timeoutSeconds) * 1000;
   let tokens: string[];
   try { tokens = parseCommand(command); }
   catch (error) { return { exitCode: null, output: '', error: `VERIFIER_COMMAND_ERROR: ${(error as Error).message}` }; }
-  const result = await runProcess(tokens[0]!, [...tokens.slice(1), runDir], benchDir, VERIFIER_TIMEOUT_MS);
+  const result = await runProcess(tokens[0]!, [...tokens.slice(1), runDir], benchDir, timeoutMs);
   return { ...result, error: result.error ?? verifierRuntimeError(result.output, result.exitCode, benchDir, runDir) };
 }
 

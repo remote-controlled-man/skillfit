@@ -72,6 +72,11 @@ function report(checks: AgentEnvironmentCheck[]): AgentEnvironmentPreflight {
     cost: { modelCalls: 0, cliInvocations: 0 } };
 }
 
+export function agentTokenCounters(agent: AgentDef): string[] {
+  return agent.headless.streamJson?.wireShape === 'codex-items'
+    ? ['input', 'cachedInput', 'output'] : agent.headless.usageFromSessionLog ? ['input', 'output'] : [];
+}
+
 export function inspectAgentEnvironment(options: { roles: EnvironmentRole[]; mode: 'inject' | 'installed' | 'trigger';
   target: EvaluationTarget; capabilityError?: string; spendingBudget?: boolean; homeDir?: string; env?: NodeJS.ProcessEnv }): AgentEnvironmentPreflight {
   const checks: AgentEnvironmentCheck[] = [], env = options.env ?? process.env;
@@ -109,8 +114,7 @@ export function inspectAgentEnvironment(options: { roles: EnvironmentRole[]; mod
     if (agent && !role.injected) {
       // These are adapter capabilities declared by matrix wire shape, not a probe
       // or a guarantee that this installed CLI/provider will return final counters.
-      const metrics = agent.headless.streamJson?.wireShape === 'codex-items'
-        ? ['input', 'cachedInput', 'output'] : agent.headless.usageFromSessionLog ? ['input', 'output'] : [];
+      const metrics = agentTokenCounters(agent);
       const missing = ['input', 'cachedInput', 'output'].filter(metric => !metrics.includes(metric));
       const blocked = options.spendingBudget && missing.length > 0;
       add('USAGE_CAPABILITY', blocked ? 'FAIL' : options.spendingBudget ? 'PASS' : 'INFO',

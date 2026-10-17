@@ -35,6 +35,15 @@ before executing it. This parser does not make untrusted verifiers safe.
 
 ## A failure is a grade; an infrastructure error is not
 
+Source after npm 0.11.0 supports optional task field `verifierTimeoutSeconds` (integer 1–3600,
+default 120). It bounds each verifier/oracle command in checks, preflight, evaluation, calibration,
+trigger mode and offline regrading, using the frozen bench's value during replay. Set it with
+`bench add --verifier-timeout-seconds <n>` or
+`bench edit <dir> <id> --set verifierTimeoutSeconds=<n> --yes`; use
+`--unset verifierTimeoutSeconds` to restore the default. This does not change the model's
+`--executor-timeout-seconds`. A timed-out grader remains an infrastructure error with retained
+agent usage, not a failed model answer. Old benches keep their previous limit.
+
 For a functioning verifier, exit 0 means pass and a nonzero exit means task
 failure. JSON `passed`/named checks remain informational/graded signals; they do
 not override that exit-code authority. Legacy exit-only graders and assertion/

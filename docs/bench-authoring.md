@@ -119,14 +119,23 @@ skillfit bench init my-bench
 cd /path/to/where/it/broke
 skillfit bench add ../my-bench --freeze --task review-r1 \
   --prompt "Review CHANGES.diff against SPEC.md. Report only concrete defects: severity, exact file:line, one sentence on which clause of the spec it violates." \
+  --expect "INVALID_QUANTITY" \
   --should-trigger yes
 ```
 
-This snapshots the **git-tracked** files of the current directory into `fixtures/review-r1/`, so
-`node_modules`, build output and secrets stay out, writes the prompt to `prompts/review-r1.md` plus a
+This snapshots the **git-tracked ordinary files** of the current directory into `fixtures/review-r1/`,
+writes the prompt to `prompts/review-r1.md` plus a
 `prompts/review-r1.trigger.md` stub you will fix in step 5, and registers the task in `bench.json`.
 For a multi-paragraph prompt use `--prompt-file <path>` instead; the path is read relative to the
 current directory, and the *content* is copied into the bench.
+
+In source after npm 0.11.0, an empty index or a failed Git read is an error, never a
+fallback to ignored/untracked files. Narrow a Git fixture with repeated `--include <file-or-dir>`;
+outside Git these explicit selections are required. Git metadata and `node_modules` are excluded.
+Selected symbolic links, submodules, non-ordinary entries and files inside the destination bench
+are rejected before copying. Freeze imports are capped at 200 files / 1 MiB; narrow the selection
+when it exceeds either limit. A tracked secret or a secret inside an explicitly selected non-Git
+directory can still be included: review the selected files before sharing or authorizing a draft.
 
 Then shrink the fixture by hand. Keep the trap, delete the rest. `review-r1`'s is six small files —
 `SPEC.md`, `CHANGES.diff`, three source files and one test — totalling 4 KB.
@@ -157,6 +166,13 @@ for pass, non-zero for fail. Three ways to get one, cheapest first:
 # (c) an agent drafts verifier.mjs + oracle.mjs from the frozen fixture
 --decompose --agent <id>
 ```
+
+Source after npm 0.11.0 confirms a drafting call **before** invoking an agent. Dry runs and declined
+confirmations make zero calls. `--yes` authorizes exactly one call, without retry or automatic
+evaluation/upgrade. Drafting supports `--max-calls`, `--spending-budget`,
+`--executor-timeout-seconds`, `--runs-root` and `--run-group`. Predictable output conflicts are
+checked before dispatch. Failed/interrupted drafts retain their available inputs, outputs, costs
+and gate results. See [draft records and offline replay](bench-drafting.md).
 
 For anything you care about, write `verifiers/<task-id>.mjs` by hand. `review-r1`'s is
 `verifiers/seeded-bugs.mjs`, and it does two things:
@@ -194,7 +210,11 @@ Two rules that are easy to get wrong:
 **What the tool checks.** For an `output`-kind task, that the verifier rejects a missing `_output.md`
 and rejects an empty one — both FAIL, and together they are the NOP gate for tasks that grade text.
 Also that the check count is in range (WARN), and that the exit code and the JSON `passed` flag agree
-(WARN). It gets a 2-minute timeout, and a verifier that produces no exit code at all is reported as a
+(WARN). Each verifier/oracle gets a default 2-minute timeout. Source after npm 0.11.0 accepts
+`verifierTimeoutSeconds` (integer 1–3600) per task; set it with
+`bench add --verifier-timeout-seconds 600` or
+`bench edit <dir> <task-id> --set verifierTimeoutSeconds=600 --yes`. This is separate from the model
+executor deadline and also applies during preflight and offline replay. A verifier with no exit code is reported as a
 bench defect, never as the agent failing.
 
 > **The command in `bench.json` is spawned without a shell.** Its first token must be an executable the

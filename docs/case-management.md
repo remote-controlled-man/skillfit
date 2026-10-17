@@ -56,7 +56,9 @@ Edits/removals default to a read-only before/after plan. `--yes` applies it;
 are rejected. Manifest writes validate the result and roll back on failure.
 
 Repeat `--set field=value` to edit `fixture`, `prompt`, `promptTrigger`, `verifier`,
-`verifierKind`, `oracle`, `rubric` or `shouldTrigger`. Values may contain `=`;
+`verifierKind`, `oracle`, `rubric` or `shouldTrigger`. Source after npm 0.11.0 also allows
+`verifierTimeoutSeconds` (integer 1–3600, default 120), including `--unset` to restore the default.
+It applies to each verifier/oracle process, separately from model execution. Values may contain `=`;
 `shouldTrigger` accepts only literal `true` or `false`. Repeat `--unset field` for
 `promptTrigger`, `oracle`, `rubric` or `shouldTrigger`. Required fields, task IDs,
 unknown fields and duplicate field operations are rejected. Referenced paths and

@@ -3,6 +3,7 @@ import { basename, isAbsolute, join, resolve, sep } from 'node:path';
 import { hashFileSet, listFilesRecursive } from './hash.js';
 import type { Bench, BenchTask } from './types.js';
 import { parseCommand } from './command.js';
+import { parseVerifierTimeoutSeconds } from './verifier-timeout.js';
 
 export const BENCH_SCHEMA_VERSION = 1;
 
@@ -64,6 +65,8 @@ export function validateBenchTask(benchDir: string, raw: unknown, index: number)
   }
   const verifierKindField: { verifierKind?: 'output' | 'command' } =
     verifierKind === undefined ? {} : { verifierKind: verifierKind as 'output' | 'command' };
+  const timeoutField = task['verifierTimeoutSeconds'] === undefined ? {} :
+    { verifierTimeoutSeconds: parseVerifierTimeoutSeconds(task['verifierTimeoutSeconds']) };
   if (shouldTrigger !== undefined && typeof shouldTrigger !== 'boolean') {
     throw new Error(`bench.json task "${id}" has an invalid "shouldTrigger" field`);
   }
@@ -114,9 +117,9 @@ export function validateBenchTask(benchDir: string, raw: unknown, index: number)
     if (!existsSync(rubricAbs) || !statSync(rubricAbs).isFile()) {
       throw new Error(`task "${id}" rubric file not found: ${rubric}`);
     }
-    return { id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField, ...verifierKindField, ...oracleField };
+    return { id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField, ...verifierKindField, ...timeoutField, ...oracleField };
   }
-  return { id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField, ...verifierKindField, ...oracleField };
+  return { id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField, ...verifierKindField, ...timeoutField, ...oracleField };
 }
 
 export function loadBench(benchDir: string): Bench {

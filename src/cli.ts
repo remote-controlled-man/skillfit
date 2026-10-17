@@ -53,11 +53,11 @@ Options:
   --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
   --plan-sha <hash>   Confirm an eval/calibration dry-run plan (also needs --run-group)
   --json             Machine output for bench check/list/show/edit/remove, report, eval and calibration
-  --spending-budget <file>  Eval/calibration: input, cachedInput, uncachedInput, output, durationSeconds stop lines
-  --executor-timeout-seconds <n>  Eval/calibration: executor deadline (integer 1–3600)
+  --spending-budget <file>  Eval/calibration/drafting: input, cachedInput, uncachedInput, output, durationSeconds stop lines
+  --executor-timeout-seconds <n>  Eval/calibration/drafting: executor deadline (integer 1–3600)
   --pair-order <order>  Paired eval: baseline-first (default) | balanced
-  --runs-root <dir>   Eval/calibration output parent (default: ./runs)
-  --run-group <name>  Fresh eval group; reuse its name when confirming a preview
+  --runs-root <dir>   Eval/calibration/drafting output parent (default: ./runs)
+  --run-group <name>  Fresh record group; reuse its name when confirming an eval preview
   --policy <path>    With paired report eval, assess against a policy (post-hoc changes cannot authorize adoption)
   --records <dir>    With paired report eval, use native evidence from this run directory
   --replay           With report eval, audit receipts and regrade cloned deliveries; never call a model
@@ -68,7 +68,7 @@ Options:
   --bench <path>      Bench directory for eval (default: bundled benches)
   --task <id>        With eval/calibration, select cases (repeatable, manifest order); requests use taskIds
   --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})
-  --max-calls <n>     Call ceiling for eval / bench check --calibrate (includes enabled judges)
+  --max-calls <n>     Call ceiling for eval / bench check --calibrate / bench add --decompose
                      Also controls baseline calibration repetitions
   --profile <name>    Profile for install (default: "recommended")
   --profile-path <dir>  Install a portable profile from a local directory
@@ -91,9 +91,9 @@ bench init options:
   --kind <kind>         output (default, grades a reply) | command (grades file edits)
 
 bench edit options:
-  --set <field=value>   Change fixture, prompt, promptTrigger, verifier, verifierKind,
+  --set <field=value>   Change fixture, prompt, promptTrigger, verifier, verifierKind, verifierTimeoutSeconds,
                        oracle, rubric or shouldTrigger (repeatable)
-  --unset <field>       Remove promptTrigger, oracle, rubric or shouldTrigger (repeatable)
+  --unset <field>       Remove promptTrigger, verifierTimeoutSeconds, oracle, rubric or shouldTrigger (repeatable)
                        Edits/removals default to a plan; --yes backs up bench.json and applies
 
 bench add --freeze options:
@@ -104,7 +104,9 @@ bench add --freeze options:
   --decompose            Draft verifier.mjs + oracle.mjs with an agent (--agent <id>), gated by NOP + oracle checks
   --verifier-kind <k>    With --decompose: output (default, grades _output.md) | command (grades file state)
   --oracle <cmd>         Register an oracle (reference-solution) command for the new task
+  --verifier-timeout-seconds <n>  Each verifier/oracle deadline (integer 1–3600; default: 120)
   --source-dir <dir>     Directory to snapshot as the fixture (default: cwd; git-tracked files only when inside a git repo)
+  --include <path>       Select a file/subdirectory (repeatable; required outside Git; no symlinks)
   --should-trigger <yes|no>  Label for trigger-mode evaluation
 
 bench add --from-commit options:
@@ -162,6 +164,7 @@ const CLI_OPTIONS = {
   oracle: { type: 'string' },
   decompose: { type: 'boolean', default: false },
   'verifier-kind': { type: 'string' },
+  'verifier-timeout-seconds': { type: 'string' },
   kind: { type: 'string' },
   'should-trigger': { type: 'string' },
   calibrate: { type: 'boolean', default: false },
@@ -231,8 +234,10 @@ async function main(): Promise<void> {
   if (values.request !== undefined && command !== 'eval') throw new Error('--request applies only to eval.');
   if (values['plan-sha'] !== undefined && ((command !== 'eval' && !calibrationCommand) || values['dry-run'])) throw new Error('--plan-sha requires a non-dry-run eval or calibration.');
   const evalSettings = ['spending-budget', 'executor-timeout-seconds', 'pair-order', 'runs-root', 'run-group'] as const;
-  if (command !== 'eval' && !calibrationCommand && evalSettings.some(key => values[key] !== undefined)) throw new Error('Budget, timeout and output settings apply only to eval or calibration.');
-  if (calibrationCommand && values['pair-order'] !== undefined) throw new Error('--pair-order requires a paired eval.');
+  const draftingCommand = command === 'bench' && positionals[1] === 'add' && values.decompose;
+  if (command !== 'eval' && !calibrationCommand && !draftingCommand && evalSettings.some(key => values[key] !== undefined)) throw new Error('Budget, timeout and output settings apply only to eval, calibration or bench add --decompose.');
+  if ((calibrationCommand || draftingCommand) && values['pair-order'] !== undefined) throw new Error('--pair-order requires a paired eval.');
+  if (values['verifier-timeout-seconds'] !== undefined && !(command === 'bench' && positionals[1] === 'add')) throw new Error('--verifier-timeout-seconds applies only to bench add; edit an existing case with --set verifierTimeoutSeconds=<n>.');
   if (calibrationCommand && (values.mode !== undefined || values['judge-agent'] !== undefined || values['baseline-skill'] !== undefined || values['compete-installed'] || values.bench !== undefined)) {
     throw new Error('Calibration is single-arm: --mode, --judge-agent, --baseline-skill, --compete-installed and --bench do not apply; supply the bench directory after check.');
   }
@@ -257,8 +262,8 @@ async function main(): Promise<void> {
   const trials = values.trials === undefined ? undefined : Number(values.trials);
   const maxCalls = values['max-calls'] === undefined ? undefined : Number(values['max-calls']);
   if (maxCalls !== undefined && (!Number.isSafeInteger(maxCalls) || maxCalls < 1)) throw new Error('--max-calls must be a positive safe integer.');
-  if (maxCalls !== undefined && command !== 'eval' && !(command === 'bench' && positionals[1] === 'check' && values.calibrate)) {
-    throw new Error('--max-calls applies only to eval or bench check --calibrate.');
+  if (maxCalls !== undefined && command !== 'eval' && !draftingCommand && !(command === 'bench' && positionals[1] === 'check' && values.calibrate)) {
+    throw new Error('--max-calls applies only to eval, bench check --calibrate or bench add --decompose.');
   }
   if (trials !== undefined && (!Number.isInteger(trials) || trials < 1 || trials > 20)) {
     throw new Error(`--trials must be an integer between 1 and 20, got ${JSON.stringify(values.trials)}`);
@@ -509,6 +514,12 @@ async function main(): Promise<void> {
           oracle: values.oracle,
           decompose: values.decompose ?? false,
           verifierKind,
+          verifierTimeoutSeconds: values['verifier-timeout-seconds'] === undefined ? undefined : Number(values['verifier-timeout-seconds']),
+          maxCalls,
+          runsRoot: values['runs-root'],
+          runGroup: values['run-group'],
+          spendingBudget: values['spending-budget'] === undefined ? undefined : parseSpendingBudget(readComponentJson(resolve(values['spending-budget'])).value),
+          executorTimeoutSeconds: values['executor-timeout-seconds'] === undefined ? undefined : Number(values['executor-timeout-seconds']),
           shouldTrigger: shouldTrigger === undefined ? undefined : shouldTrigger === 'yes',
         });
         return;

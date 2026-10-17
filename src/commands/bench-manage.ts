@@ -5,8 +5,8 @@ import { resolveBenchDir } from '../harness/bench-location.js';
 import { applyBenchWrites } from './bench.js';
 import { BACKUP_SUFFIX } from './install.js';
 
-const EDITABLE = ['fixture', 'prompt', 'promptTrigger', 'verifier', 'verifierKind', 'oracle', 'rubric', 'shouldTrigger'] as const;
-const OPTIONAL = ['promptTrigger', 'oracle', 'rubric', 'shouldTrigger'] as const;
+const EDITABLE = ['fixture', 'prompt', 'promptTrigger', 'verifier', 'verifierKind', 'verifierTimeoutSeconds', 'oracle', 'rubric', 'shouldTrigger'] as const;
+const OPTIONAL = ['promptTrigger', 'verifierTimeoutSeconds', 'oracle', 'rubric', 'shouldTrigger'] as const;
 
 export function inspectBench(dir: string, taskId?: string) {
   const bench = loadBench(resolveBenchDir(dir));
@@ -55,7 +55,7 @@ export function manageBench(options: BenchManageOptions) {
       if (field === 'shouldTrigger') {
         if (value !== 'true' && value !== 'false') throw new Error('shouldTrigger must be true or false.');
         next[field] = value === 'true';
-      } else next[field] = value;
+      } else next[field] = field === 'verifierTimeoutSeconds' ? Number(value) : value;
     }
     for (const field of options.unset ?? []) {
       if (!(OPTIONAL as readonly string[]).includes(field)) throw new Error(`Field cannot be unset: ${field}`);

@@ -133,6 +133,8 @@ Agent 可以用 `bench check --json` 读取带版本的校验标识、任务 ID�
 
 0.11.0支持给校验器和参考解命令的参数加引号，包括含空格的脚本路径。已识别的评分器加载／运行异常及显式基础设施错误消息会阻止离线校验通过，或记为不参与评分的评测错误，同时保留 Agent 成本。正常任务失败和断言失败仍参与评分。详见[校验命令与错误报告](docs/verifier-contract.md)。
 
+npm 0.11.0 之后的源码收紧了 `bench add --freeze`：Git 导入不会回退读取被忽略的文件，非 Git 导入必须用 `--include` 选择，选中的链接或目标 bench 文件会被拒绝。`--decompose` 在唯一一次生成调用前确认，并保留成本和失败记录；参见[生成记录](docs/bench-drafting.md)。每个 case 可用 `verifierTimeoutSeconds` 设置 verifier/oracle 的超时，开跑前校验和离线重放也使用该值；默认仍为 120 秒。
+
 0.11.0 还会在 eval 和基线校准的预览及开跑前检查 Agent 环境：CLI 文件是否可用、能力是否与矩阵声明匹配，以及全局是否存在同名 Skill。已知失败会在 case 探测或模型调用前拦住；登录状态明确标为离线未知。检查结果随运行封存，报告和重放读取当时记录，不探测当前机器。详见 [Agent 环境自检](docs/eval-agent-preflight.md)。
 
 可以列出和查看 case，再预览编辑或移除操作。加 `--yes` 才会备份并应用通过校验的清单变更；移除会保留 case 文件。配对评估、触发率测试和基线校准都可重复 `--task` 只选择部分 case；配对 JSON 请求用 `taskIds`。所选 ID 和顺序会固定到计划中，预算只计算所选 case，小样本仍只作参考。参见 [case 管理](docs/case-management.md)。
