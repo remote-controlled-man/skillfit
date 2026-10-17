@@ -2,6 +2,10 @@
 
 ## Unreleased — new-user workflow reliability
 
+- Preserve API-reported counters and raw response evidence before rejecting bad
+  answer formats, malformed JSON or HTTP failures. Keep supplied final fields,
+  unknown missing fields, ungraded errors and stop-without-retry behavior through
+  primary/judge receipts and stopped reports. Do not backfill historical usage.
 - Read structured CLI output/usage in ordinary paired runs and CLI judges,
   separately from optional Skill detection. Prefer existing matrix streaming
   templates; retain normal text, raw evidence and partial failure counters.
