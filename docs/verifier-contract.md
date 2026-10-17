@@ -35,7 +35,7 @@ before executing it. This parser does not make untrusted verifiers safe.
 
 ## A failure is a grade; an infrastructure error is not
 
-Source after npm 0.11.0 supports optional task field `verifierTimeoutSeconds` (integer 1–3600,
+Version 0.12.0 supports optional task field `verifierTimeoutSeconds` (integer 1–3600,
 default 120). It bounds each verifier/oracle command in checks, preflight, evaluation, calibration,
 trigger mode and offline regrading, using the frozen bench's value during replay. Set it with
 `bench add --verifier-timeout-seconds <n>` or

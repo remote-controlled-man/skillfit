@@ -1,6 +1,6 @@
 # Author a verifier with one recorded drafting call
 
-Available in source after npm 0.11.0. Drafting helps author a case; it is not evidence that a Skill
+Available in skillfit 0.12.0. Drafting helps author a case; it is not evidence that a Skill
 improves results. It does not run a comparison or authorize an upgrade.
 
 ## Preview, then authorize

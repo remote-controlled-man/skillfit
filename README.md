@@ -65,8 +65,8 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 ## Install
 
 ```bash
-npx skillfit@0.11.0 --help
-npx skillfit@0.11.0 doctor
+npx skillfit@0.12.0 --help
+npx skillfit@0.12.0 doctor
 ```
 
 `npx skillfit` installs the published release and needs Node.js 22 or newer. You can create and check cases without cloning this repository. npm may download the package first; the case checks and previews below then make no model calls. `skillfit` is the command installed from npm.
@@ -76,17 +76,17 @@ npx skillfit@0.11.0 doctor
 Run these commands in your project directory. Replace `./my-skill` with the directory containing your own `SKILL.md` before previewing:
 
 ```bash
-npx skillfit@0.11.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.11.0 bench init my-bench --kind command --yes
-npx skillfit@0.11.0 bench check ./my-bench --json
-npx skillfit@0.11.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.12.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.12.0 bench init my-bench --kind command --yes
+npx skillfit@0.12.0 bench check ./my-bench --json
+npx skillfit@0.12.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 The scaffold is a teaching case; replace its fixture, prompt, verifier and oracle with your real task before measuring benefit. The preview declares two calls and makes none. Read `plan.evaluation.agentPreflight.status`: generating a plan does not establish a ready CLI or valid login. Keep your bench and runs in separate directories. Continue with [your first real evaluation](docs/first-real-eval.md) for reviewed execution, reports and sharing.
 
 ## Run from source
 
-A source checkout gives you the bundled examples and unreleased fixes. After `npm run build`, `node dist/cli.js` is that checkout's CLI:
+A source checkout lets you build and develop the CLI locally. After `npm run build`, `node dist/cli.js` is that checkout's CLI:
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
@@ -133,7 +133,7 @@ Agent callers can use `bench check --json` for versioned gate identifiers, task 
 
 Version 0.11.0 supports quoted verifier/oracle arguments, including script paths with spaces. Recognized grader load/runtime errors and explicit infrastructure-error messages block offline gates or become ungraded evaluation errors, preserving agent costs. Normal task failures and assertions remain graded failures. See [verifier commands and error reporting](docs/verifier-contract.md).
 
-Source after npm 0.11.0 tightens `bench add --freeze`: Git imports never fall back to ignored files, non-Git imports require `--include`, and selected links or destination-bench files are rejected. `--decompose` confirms before its single drafting call and retains costs and failures; see [drafting records](docs/bench-drafting.md). Each case can set `verifierTimeoutSeconds` for verifier/oracle checks, including preflight and replay; the default stays 120 seconds.
+Version 0.12.0 tightens `bench add --freeze`: Git imports never fall back to ignored files, non-Git imports require `--include`, and selected links or destination-bench files are rejected. `--decompose` confirms before its single drafting call and retains costs and failures; see [drafting records](docs/bench-drafting.md). Each case can set `verifierTimeoutSeconds` for verifier/oracle checks, including preflight and replay; the default stays 120 seconds.
 
 The same source checks the Agent environment in eval and baseline-calibration previews and before dispatch: CLI file availability, matrix capability matching and global same-name Skill conflicts. Known failures block before case probes or model calls; login remains explicitly unknown offline. Checks are sealed with the run and read without probing the current machine during report/replay. See [Agent environment preflight](docs/eval-agent-preflight.md).
 
@@ -234,7 +234,7 @@ New reports separate cached and uncached input, output, and elapsed time, with s
 
 Version 0.11.0 records `invocationCosts` for primary Agent, judge and total spending, preserving failed/partial/unknown usage. Optional judge spending shares the batch stop lines; an explicitly enabled API judge with missing credentials fails instead of silently turning off. Historical missing judge receipts stay unknown. See [cost accounting](docs/eval-costs.md).
 
-Source after npm 0.11.0 also reads ordinary Codex eval and CLI judge JSON usage without requiring trigger detection. Offline `USAGE_CAPABILITY` checks reject strict budgets when a primary/judge adapter is known to lack required token counters, before spending. Unknown API/injected coverage still needs runtime checks; missing costs never become zero.
+Version 0.12.0 also reads ordinary Codex eval and CLI judge JSON usage without requiring trigger detection. Offline `USAGE_CAPABILITY` checks reject strict budgets when a primary/judge adapter is known to lack required token counters, before spending. Unknown API/injected coverage still needs runtime checks; missing costs never become zero.
 
 That source also preserves API-reported usage when an answer has an invalid format or HTTP status. Available response counters stay recorded alongside the raw response; missing fields remain unknown. The call remains an execution error and stops further dispatches, rather than losing its cost evidence.
 
@@ -242,7 +242,7 @@ That source can export a supported sealed native paired, calibration or trigger 
 
 Version 0.10.1 seals input copies before dispatch: later edits/deletions of the original Skill, bench or request no longer prevent export/replay. The plan records snapshot integrity, local copy time and storage; a damaged declared snapshot is rejected. Historical runs still need matching recovered inputs. See [sealed evaluation inputs](docs/evaluation-input-snapshots.md).
 
-Source after npm 0.11.0 supports benches at a Git repository root: hashing and snapshots both exclude Git metadata. Previews reject output inside the bench, Skill/configuration inputs, compiled runtime or Git metadata, including directory aliases. Keep inputs and runs in sibling directories, such as `--bench ./my-bench --runs-root ./runs`.
+Version 0.12.0 supports benches at a Git repository root: hashing and snapshots both exclude Git metadata. Previews reject output inside the bench, Skill/configuration inputs, compiled runtime or Git metadata, including directory aliases. Keep inputs and runs in sibling directories, such as `--bench ./my-bench --runs-root ./runs`.
 
 ```bash
 node dist/cli.js report eval ./runs/my-run --export ./exports/my-run --json
@@ -335,7 +335,7 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 - [x] Optional `triggerClass` (`explicit`, `implicit`, `contextual`) on positive tasks. Unlabeled tasks stay in the pooled recall.
 - [x] `--compete-installed` copies other user-level Skills into a trigger trial. System Skills and plugins outside the matrix directories are not copied. `installed` reports a long-body read separately from the task result; that read is not trigger recall.
 - [ ] An installation recommendation. The July 2026 eight-skill study found no robust task-quality gain. The 67-Skill catalog and the 13-Skill starter set are not evaluated as sets.
-- [x] npm publication (`skillfit@0.11.0`), with [verified CLI/OIDC publication and registry installation](docs/releases/0.11.0-verification.json). `npx skillfit` installs that release. Clone, `npm ci`, and `npm run build` remain valid.
+- [x] npm distribution through [CLI/OIDC releases](docs/releases/trusted-publishing.md). See the [0.12.0 release record](docs/releases/0.12.0.md) for publication status and verification. Clone, `npm ci`, and `npm run build` remain valid.
 - [x] Community bench and evidence submissions. Benches go in `benches/contrib`; evidence uses the Evidence submission issue template. CI runs the offline gates and does not call an agent.
 - [ ] Cursor / Gemini CLI / OpenCode adapters
 - [x] Streamable HTTP MCP preflight (`mcp check` transport `http`). It does not call a tool.
