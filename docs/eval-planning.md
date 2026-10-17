@@ -146,6 +146,13 @@ combined `invocationCosts`. Historical missing judge costs remain unknown, never
 zero. An enabled API judge without credentials is an error before spending;
 login validity still cannot be confirmed offline. See [cost accounting](eval-costs.md).
 
+Source after npm 0.11.0 adds a preflight `USAGE_CAPABILITY` check: a CLI adapter
+known to lack one of the required token counters cannot start a budgeted batch,
+whether it is the primary executor, a judge or baseline calibration. Normal Codex
+eval/judge commands use the existing matrix JSON surface to retain these counters.
+API/injected coverage remains unknown until a response; the runtime guards remain
+necessary and never replace missing cache evidence with zero.
+
 Ordinary `--json` returns the same `skillfit.eval-result` envelope and English
 error reasons as requests, with diagnostics on stderr. Ordinary native runs seal
 the reviewed plan and audit it against actual parameters; both entries retain

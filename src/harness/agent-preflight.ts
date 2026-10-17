@@ -7,7 +7,7 @@ import type { EvaluationTarget, ExecutorDescriptor } from './types.js';
 
 export interface AgentEnvironmentCheck {
   code: 'CLI_AVAILABLE' | 'MATRIX_CAPABILITY' | 'EXECUTOR_INJECTED' | 'AUTHENTICATION' |
-    'GLOBAL_SKILL_CONFLICT' | 'GLOBAL_SKILL_SCAN' | 'ENVIRONMENT_CHANGED';
+    'GLOBAL_SKILL_CONFLICT' | 'GLOBAL_SKILL_SCAN' | 'ENVIRONMENT_CHANGED' | 'USAGE_CAPABILITY';
   role: 'agent' | 'judge';
   agent: string | null;
   status: 'PASS' | 'FAIL' | 'UNKNOWN' | 'INFO';
@@ -73,7 +73,7 @@ function report(checks: AgentEnvironmentCheck[]): AgentEnvironmentPreflight {
 }
 
 export function inspectAgentEnvironment(options: { roles: EnvironmentRole[]; mode: 'inject' | 'installed' | 'trigger';
-  target: EvaluationTarget; capabilityError?: string; homeDir?: string; env?: NodeJS.ProcessEnv }): AgentEnvironmentPreflight {
+  target: EvaluationTarget; capabilityError?: string; spendingBudget?: boolean; homeDir?: string; env?: NodeJS.ProcessEnv }): AgentEnvironmentPreflight {
   const checks: AgentEnvironmentCheck[] = [], env = options.env ?? process.env;
   const home = options.homeDir ?? homedir();
   const names = new Set([options.target.name]);
@@ -85,8 +85,8 @@ export function inspectAgentEnvironment(options: { roles: EnvironmentRole[]; mod
     const agent = role.definition;
     const add = (code: AgentEnvironmentCheck['code'], status: AgentEnvironmentCheck['status'], message: string,
       remediation: string | null = null, paths: string[] = []) => checks.push({ code, status, message, remediation, paths, role: role.role, agent: agent?.id ?? null });
-    const streamed = role.role === 'agent' && (options.mode === 'trigger' || (options.mode === 'installed' && agent?.headless.streamJson));
-    const argv = streamed ? agent?.headless.streamJson?.argv : agent?.headless.argv;
+    const trigger = role.role === 'agent' && options.mode === 'trigger';
+    const argv = trigger ? agent?.headless.streamJson?.argv : agent?.headless.streamJson?.argv ?? agent?.headless.argv;
     const binary = argv?.[0] ?? agent?.headless.argv[0] ?? agent?.detect.binaries[0];
     if (role.injected) add('EXECUTOR_INJECTED', 'UNKNOWN', 'Injected executor: installed CLI availability and runtime capabilities are not attested.');
     else if (agent && binary) {
@@ -106,6 +106,19 @@ export function inspectAgentEnvironment(options: { roles: EnvironmentRole[]; mod
     add('MATRIX_CAPABILITY', error ? 'FAIL' : role.injected && !agent ? 'UNKNOWN' : 'PASS', error ??
       (agent ? 'Declared matrix capabilities match this evaluation; installed CLI flag compatibility was not probed.' : 'Executor supports the declared evaluation surface.'),
       error ? 'Select a compatible agent/input/mode or correct its configuration, then create a fresh preview.' : null);
+    if (agent && !role.injected) {
+      // These are adapter capabilities declared by matrix wire shape, not a probe
+      // or a guarantee that this installed CLI/provider will return final counters.
+      const metrics = agent.headless.streamJson?.wireShape === 'codex-items'
+        ? ['input', 'cachedInput', 'output'] : agent.headless.usageFromSessionLog ? ['input', 'output'] : [];
+      const missing = ['input', 'cachedInput', 'output'].filter(metric => !metrics.includes(metric));
+      const blocked = options.spendingBudget && missing.length > 0;
+      add('USAGE_CAPABILITY', blocked ? 'FAIL' : options.spendingBudget ? 'PASS' : 'INFO',
+        `CLI adapter token counters: ${metrics.join(', ') || 'none'}. ${blocked
+          ? `Whole-batch spending limits require unavailable counters: ${missing.join(', ')}; no calls may start.`
+          : 'Actual missing/partial final counters remain unknown and stop a budgeted batch.'}`,
+        blocked ? 'Choose an adapter/provider with all required counters or explicitly review a new plan without token spending limits; unknown usage cannot be treated as zero.' : null);
+    } else add('USAGE_CAPABILITY', 'UNKNOWN', 'Final token/cache coverage cannot be confirmed offline for this API or injected executor; runtime spending guards still require complete final counters.');
     add('AUTHENTICATION', 'UNKNOWN', 'Login and credential validity cannot be confirmed offline; no authentication command, credential file or network probe was used.',
       'Confirm authentication separately before authorizing a live run.');
 

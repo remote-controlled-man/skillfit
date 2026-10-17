@@ -186,6 +186,7 @@ function inspectEvalAgent(options: EvalOptions, target: EvaluationTarget, execut
   if (judge || judgeError) roles.push({ role: 'judge', definition: options.judgeAgent ? getAgent(options.judgeAgent) : undefined,
     executor: judge?.describe() ?? null, injected: options.judgeExecutor != null, resolutionError: judgeError });
   return inspectAgentEnvironment({ roles, mode: options.mode ?? 'inject', target, capabilityError,
+    spendingBudget: options.spendingBudget !== undefined,
     homeDir: options.sessionOptions?.homeDir, env: options.sessionOptions?.env });
 }
 

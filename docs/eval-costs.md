@@ -77,6 +77,17 @@ pair as an execution error; see [execution timing](eval-timing.md).
 
 ## Cache and coverage
 
+Source after npm 0.11.0 reads matrix-defined JSON streams in ordinary CLI eval and
+CLI judging too, independently of Skill-trigger detection. Codex inject, rules and
+MCP comparisons can retain the same per-turn counters as installed/trigger mode.
+Only assistant text is graded; raw stream evidence and partial failure counters
+are retained separately. Ordinary parsing does not fabricate a trigger flag.
+Offline `USAGE_CAPABILITY` checks block strict spending budgets when an adapter is
+known to lack required counters, including an enabled judge. API and injected
+executors retain unknown offline coverage; actual missing counters still stop
+after an invocation, with no retry or guessed cache zeros. Historical receipts
+remain unchanged; this does not recover token counts from old plain-text runs.
+
 Cached input is the cache-read subset already included in input; adding it to
 input would double-count. `uncachedInput = input - cachedInput` only when both
 counts are present and `0 <= cachedInput <= input`. Uncached tokens can include

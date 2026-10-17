@@ -84,9 +84,29 @@ test('capability checks use matrix declarations and cover trigger support, insta
   const installed = inspectAgentEnvironment({ roles: [{ ...f.role, definition: missingDirs }], target: f.target, mode: 'installed', homeDir: f.home, env: f.env });
   assert.match(installed.checks.find(c => c.code === 'MATRIX_CAPABILITY')!.message, /project Skill directory/);
   const judge = structuredClone(f.role.definition!); judge.headless.argv = ['missing-offline-judge'];
+  if (judge.headless.streamJson) judge.headless.streamJson.argv = ['missing-offline-judge'];
   const judged = f.inspect([f.role, { ...f.role, role: 'judge', definition: judge }]);
   assert.equal(judged.status, 'blocked'); assert.equal(judged.checks.find(c => c.role === 'judge' && c.code === 'CLI_AVAILABLE')!.status, 'FAIL');
   assert.equal(judged.checks.filter(c => c.code === 'AUTHENTICATION').length, 2);
+});
+
+test('budget preflight distinguishes supported, unavailable and unknown token counters for every role', t => {
+  const f = setup(t);
+  for (const [id, status] of [['codex', 'PASS'], ['kimi-code', 'FAIL'], ['claude-code', 'FAIL']] as const) {
+    const checked = inspectAgentEnvironment({ roles: [{ ...f.role, definition: getAgent(id) }], target: f.target,
+      mode: 'inject', spendingBudget: true, homeDir: f.home, env: f.env });
+    const check = checked.checks.find(c => c.code === 'USAGE_CAPABILITY')!;
+    assert.equal(check.status, status, id);
+    if (status === 'FAIL') { assert.match(check.message, /unavailable counters/); assert.ok(check.remediation); }
+  }
+  const checked = inspectAgentEnvironment({ roles: [f.role, { ...f.role, role: 'judge', definition: getAgent('claude-code') }],
+    target: f.target, mode: 'inject', spendingBudget: true, homeDir: f.home, env: f.env });
+  assert.equal(checked.checks.find(c => c.code === 'USAGE_CAPABILITY' && c.role === 'judge')!.status, 'FAIL');
+  for (const role of [{ ...f.role, injected: true }, { role: 'agent' as const, injected: false, executor: { kind: 'api', model: 'not-called' } }]) {
+    const unknown = inspectAgentEnvironment({ roles: [role], target: f.target, mode: 'inject', spendingBudget: true, homeDir: f.home, env: f.env });
+    assert.equal(unknown.checks.find(c => c.code === 'USAGE_CAPABILITY')!.status, 'UNKNOWN');
+    assert.equal(unknown.status, 'ready'); assert.deepEqual(unknown.cost, { modelCalls: 0, cliInvocations: 0 });
+  }
 });
 
 test('global conflicts include frontmatter aliases and configured home overrides without exposing Skill bodies', t => {

@@ -25,6 +25,8 @@ export interface CliExecutorOptions {
   /** Test fixture root; never lets process environment redirect offline tests. */
   homeDir?: string;
   triggerSkillName?: string;
+  /** Parse structured output/usage independently of optional Skill detection. */
+  streamJson?: boolean;
   triggerToolName?: string;
   projectTrustConfigArg?: string;
   /** Injectable clocks for offline timing regression tests. */
@@ -85,6 +87,7 @@ export class CliExecutor implements Executor {
   private readonly sessions?: AgentSessions;
   private readonly homeDir?: string;
   private readonly triggerSkillName?: string;
+  private readonly streamJson: boolean;
   private readonly triggerToolName: string;
   private readonly projectTrustConfigArg?: string;
   private readonly clock?: ExecutionClock;
@@ -108,6 +111,7 @@ export class CliExecutor implements Executor {
     this.sessions = options.sessions;
     this.homeDir = options.homeDir;
     this.triggerSkillName = options.triggerSkillName;
+    this.streamJson = options.streamJson ?? (options.triggerSkillName !== undefined);
     this.triggerToolName = options.triggerToolName ?? DEFAULT_TRIGGER_TOOL_NAME;
     this.projectTrustConfigArg = options.projectTrustConfigArg;
     this.clock = options.clock;
@@ -121,32 +125,16 @@ export class CliExecutor implements Executor {
     if (opts?.trustProjectConfig && !projectTrustConfigArg) {
       throw new Error(`Agent "${agent.id}" has no project trust override in the matrix`);
     }
-    if (opts?.triggerSkillName !== undefined) {
-      const streamJson = headless.streamJson;
-      if (!streamJson || streamJson.argv.length === 0) {
-        throw new Error(
-          `Agent "${agent.id}" has no headless streamJson command template; trigger detection is unavailable for it`,
-        );
-      }
-      return new CliExecutor({
-        argv: streamJson.argv,
-        label: agent.id,
-        timeoutMs: opts.timeoutMs,
-        promptVia: headless.promptVia,
-        promptFile: headless.promptFile,
-        usageFromSessionLog: headless.usageFromSessionLog ?? false,
-        partialUsageFromSessionLog: headless.partialUsageFromSessionLog ?? false,
-        sessions: agent.sessions,
-        triggerSkillName: opts.triggerSkillName,
-        triggerToolName: streamJson.triggerToolName,
-        projectTrustConfigArg,
-      });
+    const streamJson = headless.streamJson;
+    if (opts?.triggerSkillName !== undefined && !streamJson?.argv.length) {
+      throw new Error(`Agent "${agent.id}" has no headless streamJson command template; trigger detection is unavailable for it`);
     }
     if (!headless || headless.argv.length === 0) {
       throw new Error(`No default headless command template for agent "${agent.id}"`);
     }
     return new CliExecutor({
-      argv: headless.argv,
+      argv: streamJson?.argv ?? headless.argv,
+      streamJson: streamJson !== undefined,
       label: agent.id,
       timeoutMs: opts?.timeoutMs,
       promptVia: headless.promptVia,
@@ -154,6 +142,8 @@ export class CliExecutor implements Executor {
       usageFromSessionLog: headless.usageFromSessionLog ?? false,
       partialUsageFromSessionLog: headless.partialUsageFromSessionLog ?? false,
       sessions: agent.sessions,
+      triggerSkillName: opts?.triggerSkillName,
+      triggerToolName: streamJson?.triggerToolName,
       projectTrustConfigArg,
     });
   }
@@ -212,7 +202,7 @@ export class CliExecutor implements Executor {
       let stopping = false;
       let drainTimer: NodeJS.Timeout | undefined;
       const parseResult = (): ExecutorResult => ({
-        ...(this.triggerSkillName !== undefined
+        ...(this.streamJson
           ? parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName)
           : { output: stdout }), executionTiming: deadline.snapshot(),
       });
@@ -299,7 +289,7 @@ export class CliExecutor implements Executor {
           return;
         }
         if (code !== 0) {
-          const detail = (this.triggerSkillName !== undefined ? terminalStreamError(stdout) : null)
+          const detail = (this.streamJson ? terminalStreamError(stdout) : null)
             ?? stderr.trim().slice(0, 500);
           rejectPromise(
             failure(`"${command}" exited with code ${code ?? 'null'}${detail ? `: ${detail}` : ''}`),
@@ -371,7 +361,7 @@ interface StreamJsonTranscript {
 function parseStreamJsonTranscript(
   stdout: string,
   triggerToolName: string,
-  skillName: string,
+  skillName: string | undefined,
 ): StreamJsonTranscript {
   const textParts: string[] = [];
   let parsedAny = false;
@@ -415,7 +405,7 @@ function parseStreamJsonTranscript(
           }
           const args = fnRecord.arguments;
           const argsText = typeof args === 'string' ? args : JSON.stringify(args ?? null);
-          if (argsText.includes(skillName)) {
+          if (skillName !== undefined && argsText.includes(skillName)) {
             triggered = true;
           }
         }
@@ -443,7 +433,7 @@ function parseStreamJsonTranscript(
           if (
             blockRecord.type === 'tool_use' &&
             blockRecord.name === triggerToolName &&
-            JSON.stringify(blockRecord.input ?? null).includes(skillName)
+            skillName !== undefined && JSON.stringify(blockRecord.input ?? null).includes(skillName)
           ) {
             triggered = true;
           }
@@ -485,7 +475,7 @@ function parseStreamJsonTranscript(
         }
         if (itemRecord.type === 'command_execution' && typeof itemRecord.command === 'string') {
           const normalized = itemRecord.command.replace(/\\+/g, '/');
-          if (normalized.includes(`skills/${skillName}/SKILL.md`)) {
+          if (skillName !== undefined && normalized.includes(`skills/${skillName}/SKILL.md`)) {
             triggered = true;
           }
         }
@@ -504,5 +494,5 @@ function parseStreamJsonTranscript(
     if (Object.keys(tokens).length === 0) tokens = undefined;
     usageStatus = coverage.input === usageTurns && coverage.output === usageTurns ? 'final' : 'partial';
   }
-  return { output: textParts.join('\n'), skillTriggered: triggered, rawOutput: stdout, tokens, usageStatus };
+  return { output: textParts.join('\n'), ...(skillName === undefined ? {} : { skillTriggered: triggered }), rawOutput: stdout, tokens, usageStatus };
 }

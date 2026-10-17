@@ -104,6 +104,7 @@ function resolveCalibration(input: CalibrationInput): PreparedCalibration {
   const inspect = () => inspectAgentEnvironment({ roles: [{ role: 'agent', definition, executor: executor?.describe() ?? null,
     injected: options.executor !== undefined, resolutionError: resolutionError ?? (!executor ? '--calibrate needs --agent (a CLI executor for real runs)' : undefined) }],
     mode: 'inject', target: emptySkill(bench.dir), capabilityError,
+    spendingBudget: spendingBudget !== undefined,
     homeDir: options.sessionOptions?.homeDir, env: options.sessionOptions?.env });
   const agentPreflight = inspect();
   const runsRoot = resolve(options.runsRoot ?? 'runs');

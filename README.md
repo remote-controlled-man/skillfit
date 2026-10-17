@@ -217,6 +217,8 @@ New reports separate cached and uncached input, output, and elapsed time, with s
 
 Version 0.11.0 records `invocationCosts` for primary Agent, judge and total spending, preserving failed/partial/unknown usage. Optional judge spending shares the batch stop lines; an explicitly enabled API judge with missing credentials fails instead of silently turning off. Historical missing judge receipts stay unknown. See [cost accounting](docs/eval-costs.md).
 
+Source after npm 0.11.0 also reads ordinary Codex eval and CLI judge JSON usage without requiring trigger detection. Offline `USAGE_CAPABILITY` checks reject strict budgets when a primary/judge adapter is known to lack required token counters, before spending. Unknown API/injected coverage still needs runtime checks; missing costs never become zero.
+
 That source can export a supported sealed native paired, calibration or trigger run, including new paired runs with judge receipts, as a portable directory with original receipts, matching inputs, pinned compiled CLI, checksums and a replay entry point. Export previews by default; missing inputs, required receipt/runtime support or an existing destination stop it. The whole package can move to another machine. Replay calls no model, preserves stopped/unknown costs and authorizes no upgrade. Review project data before sharing; see [portable replay packages](docs/replay-packages.md).
 
 Version 0.10.1 seals input copies before dispatch: later edits/deletions of the original Skill, bench or request no longer prevent export/replay. The plan records snapshot integrity, local copy time and storage; a damaged declared snapshot is rejected. Historical runs still need matching recovered inputs. See [sealed evaluation inputs](docs/evaluation-input-snapshots.md).

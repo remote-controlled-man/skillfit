@@ -2,6 +2,12 @@
 
 ## Unreleased — new-user workflow reliability
 
+- Read structured CLI output/usage in ordinary paired runs and CLI judges,
+  separately from optional Skill detection. Prefer existing matrix streaming
+  templates; retain normal text, raw evidence and partial failure counters.
+- Add offline `USAGE_CAPABILITY` checks for strict budget compatibility across
+  primary/judge/calibration roles. Known missing counters block before spending;
+  API/injected coverage stays unknown and existing runtime guards remain strict.
 - Align bench fingerprints with sealed snapshots by excluding Git metadata,
   including worktree files; retain actual case bytes and reject metadata as a
   declared task input. Git-root benches can complete, audit and replay.
