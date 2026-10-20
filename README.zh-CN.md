@@ -204,6 +204,8 @@ node ./exports/my-run/reproduce.mjs
 
 [可迁移回放](docs/replay-packages.md)验证保存的观察并执行可信本地 verifier，不调用模型。[固定输入](docs/evaluation-input-snapshots.md)保留原 case 与目标。[中断处理](docs/evaluation-interruption.md)保留可用花费，未知用量仍为未知。
 
+下一次分发增加显式的[归档恢复工具](docs/archive-delivery.md)获取：按固定版本下载一次，之后离线回放历史研究记录。Git 原件和冻结报告继续保留；正常安装和 CLI 命令不会下载归档。
+
 ## 可选择的 Codex 配置
 
 先查看 67 个可安装源，再选择与任务相关的 Skill。`--starter` 选择尚未作为集合评测的 13 个 Skill，`--all` 选择全部 67 个。源哈希验证安装完整性，不代表收益。选择上游源需要网络，只有 `--yes` 安装：

@@ -3,8 +3,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compiledModules } from './check-architecture.mjs';
+import { validateCatalog } from '../evidence/fetch-archives.mjs';
 
 export const PACKAGE_POLICY = JSON.parse(readFileSync(new URL('package-policy.json', import.meta.url), 'utf8'));
+
+export const ARCHIVE_CATALOG = validateCatalog(JSON.parse(readFileSync(new URL('../evidence/archive-catalog.v1.json', import.meta.url), 'utf8')));
+const supportFiles = ARCHIVE_CATALOG.supportFiles.filter(row => row.inlineBase64 === undefined).map(row => row.path);
 
 export function validatePackageContents(pack, runtimeFiles = []) {
   assert.ok(Array.isArray(pack.files) && pack.files.length, 'An inspected package inventory is required');
@@ -21,10 +25,11 @@ export function validatePackageContents(pack, runtimeFiles = []) {
       assert.ok(PACKAGE_POLICY.retainedTests.includes(name), `Unreviewed active test in package: ${name}`);
     }
     if (/\.(?:tar\.gz|tgz|zip)$/.test(name)) {
+      assert.ok(!PACKAGE_POLICY.externalArchives.includes(name), `External archive must not ship in npm: ${name}`);
       assert.ok(PACKAGE_POLICY.archives.includes(name), `Unreviewed archive in package: ${name}`);
     }
   }
-  for (const name of [...PACKAGE_POLICY.requiredFiles, ...PACKAGE_POLICY.retainedTests, ...PACKAGE_POLICY.archives, ...runtimeFiles]) {
+  for (const name of [...PACKAGE_POLICY.requiredFiles, ...PACKAGE_POLICY.retainedTests, ...PACKAGE_POLICY.archives, ...supportFiles, ...runtimeFiles]) {
     assert.ok(files.has(name), `Required package file is missing: ${name}`);
   }
   for (const [field, max] of [['size', PACKAGE_POLICY.maxArchiveBytes], ['unpackedSize', PACKAGE_POLICY.maxUnpackedBytes]]) {

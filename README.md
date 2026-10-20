@@ -204,6 +204,8 @@ node ./exports/my-run/reproduce.mjs
 
 [Portable replay](docs/replay-packages.md) verifies saved observations and runs trusted local verifiers, with zero model calls. [Sealed inputs](docs/evaluation-input-snapshots.md) preserve the original case and target. [Interruption](docs/evaluation-interruption.md) retains available spending; unknown usage stays unknown.
 
+The next distribution adds an explicit [restore tool](docs/archive-delivery.md): fetch pinned bytes once, then replay historical study archives offline. Git originals and frozen reports stay available; normal installation and CLI commands do not fetch archives.
+
 ## Selectable Codex setup
 
 Inspect 67 installable sources, then choose Skills relevant to your tasks. `--starter` selects 13 unvalidated-as-a-set Skills; `--all` selects all 67. Source hashes verify installation integrity, not efficacy. Selection needs network access; only `--yes` installs:
