@@ -79,5 +79,68 @@
     "modelCalls": 0,
     "realUserConfigurationWrites": 0
   },
-  "npmPublished": false
+  "npmPublished": false,
+  "delivery": {
+    "implementationCommits": [
+      "6a387335035266588a86817bceff53758a49843a",
+      "e1a86467fe02978b259abf2319814fd59ac4b6af"
+    ],
+    "pullRequest": "https://github.com/remote-controlled-man/skillfit/pull/45",
+    "mergeCommit": "0a75cfc7d1c03316e428911d5cbe8b19bfb868f5",
+    "pullRequestCI": {
+      "url": "https://github.com/remote-controlled-man/skillfit/actions/runs/39463437876",
+      "conclusion": "success",
+      "jobs": {
+        "test (macos-latest)": {
+          "tests": 877,
+          "pass": 877,
+          "fail": 0,
+          "skipped": 0
+        },
+        "test (windows-latest)": {
+          "tests": 877,
+          "pass": 876,
+          "fail": 0,
+          "skipped": 1
+        },
+        "test (ubuntu-latest)": {
+          "tests": 877,
+          "pass": 877,
+          "fail": 0,
+          "skipped": 0
+        }
+      }
+    },
+    "mainCI": {
+      "url": "https://github.com/remote-controlled-man/skillfit/actions/runs/39464612461",
+      "status": "completed",
+      "conclusion": "success",
+      "nodeMajor": 22,
+      "jobs": {
+        "test (ubuntu-latest)": {
+          "tests": 877,
+          "pass": 877,
+          "fail": 0,
+          "skipped": 0
+        },
+        "test (macos-latest)": {
+          "tests": 877,
+          "pass": 877,
+          "fail": 0,
+          "skipped": 0
+        },
+        "test (windows-latest)": {
+          "tests": 877,
+          "pass": 876,
+          "fail": 0,
+          "skipped": 1
+        }
+      }
+    },
+    "preexistingWindowsSkip": "CLI timeout also bounds draining when an escaped descendant retains stdout",
+    "ciPlatformNotices": [
+      "Actions checkout/setup-node v4 runtime deprecation notice (actions forced to Node 24; project checks use setup-node 22).",
+      "Hosted Ubuntu label migration and macOS arm64 capacity notices; jobs succeeded."
+    ]
+  }
 }
