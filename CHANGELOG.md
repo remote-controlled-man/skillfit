@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Separate installation file transactions from command planning. Preserve CLI
+  behavior and backups; prevent first-backup overwrite races and retain primary,
+  rollback and cleanup errors with recovery copies.
+- Move 19 historical compressed archives out of future npm packages. Add an
+  explicit pinned, hash-checked restore tool with previews and offline local
+  sources; keep Git originals, frozen replay support and published releases.
+  See [archive restoration](docs/archive-delivery.md). A new version and separate
+  publication authorization are required before publishing this distribution.
+
 ## 0.12.0 — reliable case authoring and evaluation costs (2026-10-17)
 
 - Unify bundled/local bench resolution for eval and read-only check/list/show/

@@ -415,6 +415,86 @@ test('a second update preserves the first backup instead of clobbering it', asyn
   );
 });
 
+test('an inaccessible existing backup is never overwritten', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const target = path.join(home, '.codex', 'AGENTS.md');
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target, 'personal rules\n');
+  await fs.writeFile(target + BACKUP_SUFFIX, 'earliest original\n');
+  const realAccess = fs.access.bind(fs);
+  t.mock.method(fs, 'access', async (file: string, mode?: number) => {
+    if (file === target + BACKUP_SUFFIX) throw Object.assign(new Error('backup inaccessible'), { code: 'EACCES' });
+    return realAccess(file, mode);
+  });
+  await runInstall(makeOpts(home, project, { agent: 'codex' }));
+  assert.equal(await fs.readFile(target + BACKUP_SUFFIX, 'utf8'), 'earliest original\n');
+});
+
+test('a backup created concurrently is preserved', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const target = path.join(home, '.codex', 'AGENTS.md');
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target, 'personal rules\n');
+  const realCopy = fs.copyFile.bind(fs);
+  t.mock.method(fs, 'copyFile', async (source: string, dest: string, mode?: number) => {
+    if (dest === target + BACKUP_SUFFIX) await fs.writeFile(dest, 'concurrent original\n');
+    return realCopy(source, dest, mode);
+  });
+  await runInstall(makeOpts(home, project, { agent: 'codex' }));
+  assert.equal(await fs.readFile(target + BACKUP_SUFFIX, 'utf8'), 'concurrent original\n');
+});
+
+test('post-write validation failure rolls back content and lockfile without success logs', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const target = path.join(home, '.codex', 'AGENTS.md');
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target, 'personal rules\n');
+  const { lines, log } = captureLogs();
+  const realRename = fs.rename.bind(fs);
+  t.mock.method(fs, 'rename', async (source: string, dest: string) => {
+    await realRename(source, dest);
+    if (dest === path.join(home, LOCKFILE_NAME)) await fs.writeFile(dest, '{}');
+  });
+  await assert.rejects(runInstall(makeOpts(home, project, { agent: 'codex', log })), /lockfile|Lockfile/);
+  assert.equal(await fs.readFile(target, 'utf8'), 'personal rules\n');
+  assert.equal(await exists(path.join(home, LOCKFILE_NAME)), false);
+  assert.equal(await exists(path.join(home, '.agents', 'skills', 'commit-message', 'SKILL.md')), false);
+  assert.ok(!lines.some(line => /Install complete|Validation passed|^  wrote /.test(line)));
+});
+
+test('rollback and cleanup errors retain the primary failure and recovery copy', async (t) => {
+  const { home, project } = await tempDirs(t);
+  const rules = path.join(home, '.codex', 'AGENTS.md');
+  const skill = path.join(home, '.agents', 'skills', 'commit-message', 'SKILL.md');
+  await fs.mkdir(path.dirname(rules), { recursive: true });
+  await fs.writeFile(rules, 'personal rules\n');
+  const realRename = fs.rename.bind(fs), realCopy = fs.copyFile.bind(fs), realRm = fs.rm.bind(fs);
+  t.mock.method(fs, 'rename', async (source: string, dest: string) => {
+    if (dest === skill) throw new Error('primary rename failure');
+    return realRename(source, dest);
+  });
+  t.mock.method(fs, 'copyFile', async (source: string, dest: string, mode?: number) => {
+    if (source.endsWith('.skillfit-restore') && dest === rules) throw new Error('restore denied');
+    return realCopy(source, dest, mode);
+  });
+  t.mock.method(fs, 'rm', async (file: string, opts: Parameters<typeof fs.rm>[1]) => {
+    if (file.startsWith(rules) && file.endsWith('.skillfit-staged')) throw new Error('cleanup denied');
+    return realRm(file, opts);
+  });
+  await assert.rejects(runInstall(makeOpts(home, project, { agent: 'codex' })), (error: unknown) => {
+    assert.match((error as Error).message, /primary rename failure/);
+    assert.match((error as Error).message, /restore denied/);
+    assert.match((error as Error).message, /cleanup denied/);
+    return true;
+  });
+  const files = await snapshot(home);
+  const restores = Object.keys(files).filter(file => file.endsWith('.skillfit-restore'));
+  assert.equal(restores.length, 1);
+  assert.equal(files[restores[0]!], 'personal rules\n');
+  assert.ok(!Object.keys(files).some(file => file.includes('SKILL.md.') && file.endsWith('.skillfit-staged')),
+    'cleanup must continue after an earlier cleanup failure');
+});
+
 test('a staging failure applies nothing, not even the items staged before it', async (t) => {
   const { home, project } = await tempDirs(t);
   const profilesCopy = path.join(project, 'profiles-copy');

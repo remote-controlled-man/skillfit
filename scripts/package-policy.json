@@ -1,7 +1,7 @@
 {
-  "reviewedAt": "2026-10-20",
-  "maxArchiveBytes": 24117248,
-  "maxUnpackedBytes": 38797312,
+  "reviewedAt": "2026-10-21",
+  "maxArchiveBytes": 4194304,
+  "maxUnpackedBytes": 19922944,
   "requiredFiles": [
     "dist/cli.js",
     "dist/matrix/agents.json",
@@ -23,7 +23,12 @@
     "docs/releases/0.11.0-feature-smoke.mjs",
     "docs/releases/0.12.0-feature-smoke.mjs",
     "evidence/inputs/diagnosing-bugs/SKILL.md",
-    "evidence/inputs/diagnosing-bugs-compact-v4/SKILL.md"
+    "evidence/inputs/diagnosing-bugs-compact-v4/SKILL.md",
+    "evidence/archive-catalog.v1.json",
+    "evidence/fetch-archives.mjs",
+    "docs/archive-inventory.md",
+    "docs/archive-delivery.md",
+    "docs/releases/archive-delivery-smoke.mjs"
   ],
   "retainedTests": [
     "dist/commands/bench-source.test.js",
@@ -33,7 +38,8 @@
     "dist/harness/verifier-timeout.test.js",
     "dist/harness/bench-location.test.js"
   ],
-  "archives": [
+  "archives": [],
+  "externalArchives": [
     "evidence/artifacts/2026-10-12-diagnosing-revision/calibration-records.tar.gz",
     "evidence/artifacts/2026-10-12-diagnosing-revision/interrupted-records.tar.gz",
     "evidence/artifacts/2026-10-12-diagnosing-revision/validation-records.tar.gz",

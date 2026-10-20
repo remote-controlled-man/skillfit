@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import * as os from 'node:os';
@@ -6,11 +6,13 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAgent, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
+import { BACKUP_SUFFIX } from '../install/constants.js';
+import { executeTransaction, type FileWrite } from '../install/transaction.js';
 import { confirm as confirmPrompt } from './confirm.js';
 
 export const MARKER_START = '<!-- SKILLFIT_START -->';
 export const MARKER_END = '<!-- SKILLFIT_END -->';
-export const BACKUP_SUFFIX = '.skillfit-bak';
+export { BACKUP_SUFFIX } from '../install/constants.js';
 export const LOCKFILE_NAME = 'skillfit.lock.json';
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
@@ -152,7 +154,12 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
 
   recordEntries(lock, items, manifest, now().toISOString());
   const lockContent = `${JSON.stringify(lock, null, 2)}\n`;
-  await executeWrites(writes, lockPath, lockContent, async () => {
+  const files: FileWrite[] = writes.flatMap(item => item.files.map(file => ({
+    path: file.path, content: file.content, backup: file.backup ? 'first' as const : 'none' as const,
+  })));
+  // Metadata is committed last and backs up its immediately previous version.
+  files.push({ path: lockPath, content: lockContent, backup: existsSync(lockPath) ? 'previous' : 'none' });
+  const written = await executeTransaction(files, async () => {
     const problems = await validateWrites(writes);
     if (problems.length > 0) {
       throw new Error(`Post-install validation failed:\n  ${problems.join('\n  ')}`);
@@ -160,7 +167,10 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
     if (await fs.readFile(lockPath, 'utf8') !== lockContent) {
       throw new Error(`Post-install validation failed: lockfile content differs from the plan at ${lockPath}`);
     }
-  }, log);
+  });
+  for (const entry of written.slice(0, -1)) {
+    log(`  wrote ${entry.target}${entry.backedUp ? ` (backup: ${entry.backedUp})` : ''}`);
+  }
   log(`Post-install validation passed (${writes.length} item(s) checked).`);
   log(`Lockfile updated: ${lockPath}`);
   log('Install complete.');
@@ -578,112 +588,6 @@ function printPlan(log: (line: string) => void, manifest: ProfileManifest, scope
   for (const item of items) counts[item.action] += 1;
   log('');
   log(`Summary: ${counts.create} create, ${counts.update} update, ${counts.skip} skipped (unchanged), ${counts.conflict} conflict`);
-}
-
-interface StagedWrite {
-  target: string;
-  tmp: string;
-  restore: string | null;
-  backedUp: string | null;
-  isLockfile: boolean;
-}
-
-async function executeWrites(
-  writes: PlanItem[],
-  lockPath: string,
-  lockContent: string,
-  validate: () => Promise<void>,
-  log: (line: string) => void,
-): Promise<void> {
-  // Every target gets a temporary copy of its immediately previous state for rollback. The
-  // user-facing .skillfit-bak has a different purpose: it preserves the earliest original.
-  // Include the lockfile in this batch so its write and post-write validation can also roll back.
-  const files = writes.flatMap((item) => item.files.map((file) => ({ ...file, isLockfile: false })));
-  files.push({ path: lockPath, content: lockContent, backup: existsSync(lockPath), isLockfile: true });
-  const staged: StagedWrite[] = [];
-  try {
-    for (const file of files) {
-      await fs.mkdir(path.dirname(file.path), { recursive: true });
-      const suffix = `${process.pid}.${randomUUID()}`;
-      const tmp = `${file.path}.${suffix}.skillfit-staged`;
-      const restore = existsSync(file.path) ? `${file.path}.${suffix}.skillfit-restore` : null;
-      const entry: StagedWrite = { target: file.path, tmp, restore, backedUp: null, isLockfile: file.isLockfile };
-      staged.push(entry);
-      if (restore) await fs.copyFile(file.path, restore);
-      if (file.backup) {
-        // The lockfile backup tracks the previous version; user-content backups keep the first.
-        if (file.isLockfile) {
-          await fs.copyFile(file.path, file.path + BACKUP_SUFFIX);
-          entry.backedUp = file.path + BACKUP_SUFFIX;
-        } else {
-          entry.backedUp = await backupOnce(file.path);
-        }
-      }
-      await fs.writeFile(tmp, file.content);
-    }
-  } catch (error) {
-    await cleanupStaged(staged);
-    throw error;
-  }
-
-  const applied: StagedWrite[] = [];
-  try {
-    for (const entry of staged) {
-      await fs.rename(entry.tmp, entry.target);
-      applied.push(entry);
-    }
-    await validate();
-  } catch (error) {
-    const rollbackFailures: string[] = [];
-    const preserveRestores = new Set<string>();
-    for (const entry of applied.reverse()) {
-      try {
-        if (entry.restore) await fs.copyFile(entry.restore, entry.target);
-        else await fs.rm(entry.target, { force: true });
-      } catch (rollbackError) {
-        rollbackFailures.push(`${entry.target}: ${(rollbackError as Error).message}`);
-        preserveRestores.add(entry.target);
-      }
-    }
-    await cleanupStaged(staged, preserveRestores);
-    if (rollbackFailures.length > 0) {
-      throw new Error(
-        `Install failed (${(error as Error).message}) and rollback failed for ${rollbackFailures.join('; ')}. ` +
-          `Recovery copies with the .skillfit-restore suffix were kept beside those targets.`,
-        { cause: error },
-      );
-    }
-    throw error;
-  }
-
-  await cleanupStaged(staged);
-  for (const entry of staged) {
-    if (!entry.isLockfile) log(`  wrote ${entry.target}${entry.backedUp ? ` (backup: ${entry.backedUp})` : ''}`);
-  }
-}
-
-async function cleanupStaged(staged: StagedWrite[], preserveRestores: Set<string> = new Set()): Promise<void> {
-  for (const entry of staged) {
-    await fs.rm(entry.tmp, { force: true });
-    if (entry.restore && !preserveRestores.has(entry.target)) await fs.rm(entry.restore, { force: true });
-  }
-}
-
-/**
- * Back up a file at most once. `.skillfit-bak` is a single slot, and the copy worth keeping is the
- * user's pre-skillfit original: overwriting it on a later update would destroy the only copy of the
- * content the suffix exists to protect. Returns the backup path when one was created, else null.
- */
-async function backupOnce(target: string): Promise<string | null> {
-  const backup = target + BACKUP_SUFFIX;
-  try {
-    await fs.access(backup);
-    return null;
-  } catch {
-    // absent — take the backup
-  }
-  await fs.copyFile(target, backup);
-  return backup;
 }
 
 async function validateWrites(writes: PlanItem[]): Promise<string[]> {

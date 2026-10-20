@@ -33,6 +33,7 @@ then read and share its saved evidence. The bundled cases teach the format.
 - [Cost accounting](eval-costs.md): invocation populations, cache partitions and unknown usage.
 - [Metrics protocol](metrics.md): statistical verdicts and limits of claims.
 - [Sharing results](sharing-results.md) and [portable replay](replay-packages.md): saved evidence, integrity and offline reproduction.
+- [Historical archive restoration](archive-delivery.md) and [exact inventory](archive-inventory.md): explicit pinned downloads and offline workspaces.
 - [Evidence index](../evidence/README.md): all dated public reports and their limits.
 - [Debugging Skill study](skill-evaluation-evidence.md): current study status and cumulative accounting.
 
@@ -48,10 +49,11 @@ then read and share its saved evidence. The bundled cases teach the format.
 - [Contributing](../CONTRIBUTING.md): development checks, bench submissions and evidence requirements.
 - [Roadmap](growth-roadmap-2026-10.md): current product work and later decisions.
 - [Changelog](../CHANGELOG.md) and [release records](releases/): versioned behavior and publication evidence.
-- [Package contents](package-contents.md): retained offline inputs, compatible trimming and package checks.
+- [Package contents](package-contents.md): retained offline inputs, external archives and package checks.
 - [Trusted publishing](releases/trusted-publishing.md): release preparation and verification.
 - [Experiment script navigation](../scripts/README.md): active utilities and fixed historical procedures.
-- [Current cleanup plan](plans/2026-10-20-docs-architecture-cleanup.md): ordered tasks, actual progress and verification.
+- [Installation and archive delivery plan](plans/2026-10-20-install-transactions-and-archive-delivery.md): ordered tasks, actual progress and verification.
+- [Previous cleanup plan](plans/2026-10-20-docs-architecture-cleanup.md): the preceding documentation and architecture work.
 
 ## Historical work records
 

@@ -1,0 +1,20 @@
+# External archives: original Git bytes stay pinned in archive-catalog.v1.json.
+/2026-10-12-diagnosing-revision/calibration-records.tar.gz
+/2026-10-12-diagnosing-revision/interrupted-records.tar.gz
+/2026-10-12-diagnosing-revision/validation-records.tar.gz
+/2026-10-12-diagnosing-v2/regression-records.tar.gz
+/2026-10-12-diagnosing-v2/transfer-records.tar.gz
+/2026-10-12-normalize-url-v2-available/readiness-records.tar.gz
+/2026-10-12-normalize-url-v2-comparison/records.tar.gz
+/2026-10-12-normalize-url-v2-recovery/records.tar.gz
+/2026-10-12-normalize-url-v2-validated/records.tar.gz
+/2026-10-13-debugging-completed-development/package.tar.gz
+/2026-10-13-debugging-controls-and-sleep-stop/package.tar.gz
+/2026-10-13-debugging-development-stops/package.tar.gz
+/2026-10-14-debugging-followup-routing-stop/package.tar.gz
+/2026-10-14-debugging-independent-validation/package.tar.gz
+/2026-10-14-debugging-reading-pilot-and-cost-review/package.tar.gz
+/2026-10-14-debugging-spending-stop/package.tar.gz
+/2026-10-15-independent-comparison-regression-stop/package.tar.gz
+/2026-10-15-native-diff-mechanism/package.tar.gz
+/2026-10-15-receiver-mechanism-stop/package.tar.gz

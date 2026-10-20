@@ -15,6 +15,7 @@ measurement core owns evidence and interpretation. Runtime code uses Node built-
 | Case authoring | Scaffold, capture, draft and check cases; manage manifest registrations | [bench commands](../src/commands/bench.ts), [offline checks](../src/harness/bench-check.ts), [diagnostics](../src/harness/bench-diagnostics.ts), [source capture](../src/commands/bench-source.ts), [drafting](../src/commands/bench-draft.ts), [management](../src/commands/bench-manage.ts) |
 | Agent integration | Resolve matrix capabilities and execute via CLI/API/injected adapters | [matrix](../src/matrix/agents.json), [definitions](../src/agents.ts), [executors](../src/harness/executors/) |
 | Configuration | Inspect local configuration; plan and apply selected profiles or portable bundles | [doctor](../src/commands/doctor.ts), [install](../src/commands/install.ts), [setup](../src/commands/setup.ts), [bundle export](../src/commands/bundle.ts) |
+| Installation transaction | Stage ordered file writes, preserve backups, commit, validate and roll back failures | [transaction](../src/install/transaction.ts), [shared constants](../src/install/constants.ts) |
 | MCP discovery | Handshake and inspect the tool catalog without invoking a tool | [probe](../src/mcp/probe.ts) |
 
 ## Evaluation lifecycle
@@ -41,7 +42,7 @@ come from the matrix; no new command-local vendor path constants are needed.
 Saved-manifest parsing lives in the core; audit and adoption policy use the same
 parser as report adapters. `node scripts/check-architecture.mjs` verifies the
 compiled runtime, including literal dynamic imports, for cycles and core-to-command
-dependencies. This development check uses the existing TypeScript compiler and
+dependencies in both `harness/` and `install/`. This development check uses the existing TypeScript compiler and
 adds no runtime dependency.
 
 Offline case gates and their diagnostic model also live in the core. Eval
@@ -54,7 +55,17 @@ remain standalone programs rather than importing command modules.
 
 Actual user-configuration changes go through dry-run/planning, confirmation,
 backup, write/validation and rollback on failure. Setup reuses the installer.
-This transaction boundary stays intact during the cleanup.
+The command prepares ordered writes and validates profile content and lockfile
+bytes. The independent `install/` transaction stages all files before committing,
+then runs that validation callback. User backups retain the first original;
+lockfile backups retain the previous version. Temporary restore copies retain
+the immediately previous target for rollback. Cleanup attempts every file and
+reports its failures alongside the initial error; failed rollbacks retain their
+restore copies. This is best-effort rollback, not multi-file crash atomicity.
+
+Setup delegates to the same command. Bundle export copies all active compiled
+runtime modules, including `install/`, so relocated bundles use this transaction
+without referring to the source checkout.
 
 New benches, evaluation runs and replay exports instead use fresh destinations
 and preserve collision checks. Verifiers execute against disposable fixture

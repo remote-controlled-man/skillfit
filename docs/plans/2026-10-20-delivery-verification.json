@@ -1,0 +1,83 @@
+{
+  "verifiedAt": "2026-10-21",
+  "baselineCommit": "56b4dc68e115475e197c6510c9cb2235a5ad2c62",
+  "environment": {
+    "node": "v24.21.0",
+    "npm": "11.19.0",
+    "platform": "darwin"
+  },
+  "offlineTests": {
+    "passed": 877,
+    "failed": 0,
+    "skipped": 0
+  },
+  "documentation": {
+    "files": 45,
+    "brokenLinks": 0
+  },
+  "architecture": {
+    "modules": 79,
+    "violations": 0
+  },
+  "benches": {
+    "codeReviewPassed": 27,
+    "debuggingPassed": 36,
+    "contribFailures": 0,
+    "preexistingContribWarnings": 13
+  },
+  "sameSnapshotPackageComparison": {
+    "full": {
+      "files": 2657,
+      "size": 22473981,
+      "unpackedSize": 38223360
+    },
+    "candidate": {
+      "files": 2638,
+      "size": 2811158,
+      "unpackedSize": 18339542
+    },
+    "removedArchives": 19,
+    "addedFiles": 0,
+    "compressedReductionPercent": 87.49
+  },
+  "deliveryPackageSnapshot": {
+    "files": 2640,
+    "compressedBytes": 2815152,
+    "unpackedBytes": 18352277,
+    "note": "Measured actual tarball before adding final task bookkeeping; not a published npm release."
+  },
+  "remoteArchivesVerified": 19,
+  "historicalProcedures": {
+    "sourceRestorationPassed": 19,
+    "candidateRestorationPassed": 19,
+    "scope": "18 frozen replay entries plus one readiness export-index verification; original Node/platform limits retained."
+  },
+  "installedFeatureRecipe": {
+    "regressionsPassed": 29,
+    "workflowGroups": 7,
+    "portableReplays": 5
+  },
+  "archiveSmoke": {
+    "kind": "skillfit.archive-delivery-smoke",
+    "version": "0.12.0",
+    "nodeVersion": "v24.21.0",
+    "sourceCommit": "56b4dc68e115475e197c6510c9cb2235a5ad2c62",
+    "archivesRestored": 19,
+    "supportFilesRestored": 1583,
+    "inlineSupportFiles": 4,
+    "previewWrites": 0,
+    "networkAttempts": 0,
+    "modelCalls": 0,
+    "collisionPreserved": true
+  },
+  "configurationSmoke": {
+    "installedPreview": true,
+    "firstBackupPreserved": true,
+    "reinstallLockUnchanged": true,
+    "movedBundlePreviewInstallReinstall": true,
+    "bundleWorksWithoutSourcePackage": true,
+    "modelCalls": 0,
+    "realUserConfigurationWrites": 0
+  },
+  "npmPublished": false
+}

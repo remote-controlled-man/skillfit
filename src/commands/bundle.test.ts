@@ -51,9 +51,20 @@ test('exports a portable Codex profile and installs it into a fresh home', async
   });
   assert.deepEqual(await fs.readFile(path.join(targetHome, '.agents', 'skills', 'example', 'icon.png')), icon);
   assert.match(await fs.readFile(path.join(targetHome, '.codex', 'AGENTS.md'), 'utf8'), /My global rules/);
+  const moved = path.join(root, 'relocated', 'personal-codex');
+  await fs.mkdir(path.dirname(moved));
+  await fs.rename(outputDir, moved);
+  await fs.stat(path.join(moved, 'runtime', 'install', 'transaction.js'));
   const standaloneHome = path.join(root, 'standalone-home');
   await fs.mkdir(standaloneHome);
-  const result = spawnSync(process.execPath, [path.join(outputDir, 'setup.mjs'), '--yes'], {
+  const preview = spawnSync(process.execPath, [path.join(moved, 'setup.mjs'), '--dry-run'], {
+    cwd: path.dirname(moved),
+    env: { ...process.env, HOME: standaloneHome, USERPROFILE: standaloneHome, CODEX_HOME: path.join(standaloneHome, 'codex-home') },
+    encoding: 'utf8',
+  });
+  assert.equal(preview.status, 0, preview.stderr);
+  assert.deepEqual(await fs.readdir(standaloneHome), []);
+  const result = spawnSync(process.execPath, [path.join(moved, 'setup.mjs'), '--yes'], {
     cwd: root,
     env: { ...process.env, HOME: standaloneHome, USERPROFILE: standaloneHome, CODEX_HOME: path.join(standaloneHome, 'codex-home') },
     encoding: 'utf8',
@@ -61,8 +72,18 @@ test('exports a portable Codex profile and installs it into a fresh home', async
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(await fs.readFile(path.join(standaloneHome, '.agents', 'skills', 'example', 'icon.png')), icon);
   assert.match(await fs.readFile(path.join(standaloneHome, 'codex-home', 'AGENTS.md'), 'utf8'), /My global rules/);
+  const lockPath = path.join(standaloneHome, 'skillfit.lock.json');
+  const priorLock = await fs.readFile(lockPath);
+  const reinstall = spawnSync(process.execPath, [path.join(moved, 'setup.mjs'), '--yes'], {
+    cwd: path.dirname(moved),
+    env: { ...process.env, HOME: standaloneHome, USERPROFILE: standaloneHome, CODEX_HOME: path.join(standaloneHome, 'codex-home') },
+    encoding: 'utf8',
+  });
+  assert.equal(reinstall.status, 0, reinstall.stderr);
+  assert.match(reinstall.stdout, /Everything is up to date/);
+  assert.deepEqual(await fs.readFile(lockPath), priorLock);
   await assert.rejects(runInstall({
-    profile: 'ignored', profilePath: outputDir, agent: 'codex', homeDir: targetHome,
+    profile: 'ignored', profilePath: moved, agent: 'codex', homeDir: targetHome,
     projectDir: root, env: { PATH: '' }, project: true, yes: true, log: () => {},
   }), /user scope/);
 });

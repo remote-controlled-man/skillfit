@@ -39,3 +39,10 @@ test('active compiled runtime is acyclic and its core does not depend on command
   assert.ok([...files.keys()].every(file => !file.endsWith('.test.js')));
   assert.deepEqual(architectureErrors(files), []);
 });
+
+test('installation transactions cannot depend on command adapters', () => {
+  assert.deepEqual(architectureErrors(new Map([
+    ['install/transaction.js', "export { runInstall } from '../commands/install.js'"],
+    ['commands/install.js', 'export const runInstall = () => {}'],
+  ])), ['install/transaction.js imports command adapter commands/install.js']);
+});
