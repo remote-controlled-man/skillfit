@@ -7,7 +7,30 @@ Two rules:
 1. **Evidence expires.** Results are pinned to a model, a harness version, and a bench. A model upgrade can invalidate yesterday's conclusion — re-run before re-recommending.
 2. **Negative results are results.** "No measurable gain" is a publishable answer. It is what keeps configs lean.
 
-## Index
+<a id="index"></a>
+
+## Debugging study followups
+
+The [maintained study index](../docs/skill-evaluation-evidence.md) owns the current
+status, cumulative accounting and adoption limits. These later dated reports
+retain each cohort separately; their results are not pooled here.
+
+| Date | Report |
+| --- | --- |
+| 2026-10-15 | [Receiver mechanism probe: candidate failed, stopped after one call](2026-10-15-receiver-mechanism-stop.md) |
+| 2026-10-15 | [Native diff mechanism: four authorized development calls](2026-10-15-native-diff-mechanism.md) |
+| 2026-10-15 | [Eight-task offline readiness and spending-stop verification](2026-10-15-independent-offline-readiness.md) |
+| 2026-10-15 | [Independent original/v4 comparison: stopped on a correctness regression](2026-10-15-independent-comparison-regression-stop.md) |
+| 2026-10-15 | [Receiver correction: offline development after the v4 rejection](2026-10-15-diagnosing-receiver-correction.md) |
+| 2026-10-14 | [Debugging evaluation stopped for a spending review](2026-10-14-debugging-spending-stop.md) |
+| 2026-10-14 | [Rejected reading pilot and post-hoc cost review](2026-10-14-debugging-reading-pilot-and-cost-review.md) |
+| 2026-10-14 | [Independent debugging Skill validation](2026-10-14-debugging-independent-validation.md) |
+| 2026-10-14 | [Debugging followup interrupted by workspace routing failure](2026-10-14-debugging-followup-routing-stop.md) |
+| 2026-10-13 | [Debugging Skill development stops and recorded costs](2026-10-13-debugging-development-stops.md) |
+| 2026-10-13 | [Debugging v4 controls: mixed costs and an interrupted validation batch](2026-10-13-debugging-controls-and-sleep-stop.md) |
+| 2026-10-13 | [Completed debugging Skill development: v3 rejected, v4 still experimental](2026-10-13-debugging-completed-development.md) |
+
+## Earlier reports
 
 | Date | Experiment | Agents | Headline |
 |---|---|---|---|

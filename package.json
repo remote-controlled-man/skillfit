@@ -10,7 +10,14 @@
     "node": ">=22"
   },
   "files": [
-    "dist",
+    "dist/**/!(*.test).js",
+    "dist/**/*.json",
+    "dist/commands/bench-source.test.js",
+    "dist/commands/bench-draft.test.js",
+    "dist/commands/eval-layout.test.js",
+    "dist/commands/eval-api-failure.test.js",
+    "dist/harness/verifier-timeout.test.js",
+    "dist/harness/bench-location.test.js",
     "benches",
     "docs",
     "evidence",

@@ -2,7 +2,7 @@
 
 This example checks the two benches bundled with skillfit. It uses deterministic Node verifiers and
 reference solutions, with no agent CLI or model API call. After cloning, installing dev dependencies,
-and building as shown in the [quick start](../README.md#quick-start), run:
+and building as shown in the [quick start](../README.md#run-from-source), run:
 
 ```bash
 node dist/cli.js bench check benches/code-review

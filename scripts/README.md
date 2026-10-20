@@ -6,6 +6,20 @@ keep them stable. General repository utilities are `check-contrib-benches.mjs` a
 `setup-codex.sh`. The [experiment handoff](../docs/plans/2026-10-13-skill-experiment-cleanup.md)
 maps the corresponding product changes and the current conclusions.
 
+`node scripts/check-docs.mjs` checks local links and heading anchors in maintained
+entry points and guides. Its offline regression checks run as part of `npm test`;
+fixed historical evidence and private lab directories are outside its scan.
+
+After building, `node scripts/check-architecture.mjs` checks emitted runtime imports
+for cycles and core-to-command dependencies. It uses the existing development
+TypeScript compiler to distinguish imports from comments, strings and types; its
+regressions are also part of `npm test`.
+
+`node scripts/check-package.mjs <pack.json>` validates an npm-pack inventory
+against `package-policy.json`, including runtime modules, offline inputs, retained
+recipe tests, archives and size limits. `npm test` checks a real offline package;
+release preparation reuses the same policy. See [package contents](../docs/package-contents.md).
+
 ## Saved experiment stages
 
 | Script suffix | Evidence package | Purpose |

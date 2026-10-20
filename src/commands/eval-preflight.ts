@@ -1,10 +1,12 @@
+import { CasePreflightFailed } from './eval-preflight-error.js';
+export { CasePreflightFailed } from './eval-preflight-error.js';
 import { loadBench } from '../harness/bench.js';
 import { collectInstalledSkillTarget } from '../harness/installed-skill.js';
 import { throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import { collectEvaluationTarget } from '../harness/target.js';
 import type { Bench, EvaluationTarget } from '../harness/types.js';
-import { runBenchCheck } from './bench.js';
-import type { BenchDiagnostic } from './bench-check-report.js';
+import { runOfflineBenchCheck } from '../harness/bench-check.js';
+import type { BenchDiagnostic } from '../harness/bench-diagnostics.js';
 
 export const CASE_PREFLIGHT_POLICY = { schemaVersion: 1, scope: 'offline-case-integrity', required: true } as const;
 
@@ -24,15 +26,6 @@ export interface CasePreflight {
   cost: { modelCalls: 0; durationMs: number };
 }
 
-export class CasePreflightFailed extends Error {
-  constructor(readonly preflight: CasePreflight) {
-    super('Offline case preflight blocked evaluation; no agent or judge calls were made.\n' +
-      preflight.checks.filter(c => c.status === 'FAIL').map(c =>
-        `[FAIL] ${c.code}${c.taskId ? ` (${c.taskId})` : ''}: ${c.message}${c.remediation ? ` Remedy: ${c.remediation}` : ''}`).join('\n'));
-    this.name = 'CasePreflightFailed';
-  }
-}
-
 function globalCheck(code: CaseDiagnostic['code'], status: CaseDiagnostic['status'], message: string): CaseDiagnostic {
   return { code, status, message, taskId: null, location: { path: 'bench.json', field: null },
     remediation: status === 'FAIL' ? 'Fix the inputs or check error and run a fresh preview before executing.' : null, evidence: null };
@@ -44,7 +37,7 @@ export async function checkEvalCases(bench: Bench, targets: readonly EvaluationT
   const started = performance.now();
   let checks: CaseDiagnostic[];
   try {
-    const result = await runBenchCheck({ dir: bench.dir, taskIds: bench.tasks.map(t => t.id), calibrate: false, log: () => {} });
+    const result = await runOfflineBenchCheck({ dir: bench.dir, taskIds: bench.tasks.map(t => t.id), log: () => {} });
     checks = result.checks.map(check => {
       const unknown = (check.code === 'ORACLE' && check.status === 'WARN') ||
         ((check.code === 'MOCK_BASELINE' || check.code === 'MOCK_TREATMENT') && check.status === 'INFO' && check.evidence === null) ||

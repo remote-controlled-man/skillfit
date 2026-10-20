@@ -759,7 +759,7 @@ test('runBenchAdd --freeze captures only git-tracked files and registers the tas
     cwd: benchDir,
     encoding: 'utf8',
   });
-  assert.equal(passing.status, 0, 'verifier passes once the fix is in place');
+  assert.equal(passing.status, 0, `verifier passes once the fix is in place: ${passing.error ?? ''}\n${passing.stderr}\n${passing.stdout}`);
 
   const report = await runBenchCheck({ dir: benchDir, log: () => {} });
   assert.equal(report.failures, 0);
@@ -1151,7 +1151,7 @@ test('runBenchAdd --from-commit mines parent fixture + embedded FAIL_TO_PASS ver
     cwd: benchDir,
     encoding: 'utf8',
   });
-  assert.equal(fixed.status, 0, 'embedded fix tests pass once the fix is implemented');
+  assert.equal(fixed.status, 0, `embedded fix tests pass once the fix is implemented: ${fixed.error ?? ''}\n${fixed.stderr}\n${fixed.stdout}`);
 
   const report = await runBenchCheck({ dir: benchDir, log: () => {} });
   assert.equal(report.failures, 0);

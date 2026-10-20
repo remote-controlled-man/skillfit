@@ -10,7 +10,7 @@ import { sha256File, sha256Text } from './hash.js';
 import { collectInstalledSkillTarget } from './installed-skill.js';
 import { runVerifier, summarizeJudge } from './runner.js';
 import { verdictFromOutput } from './verifier-summary.js';
-import { parseEvalReport } from '../commands/eval-report.js';
+import { parseEvalReport } from './eval-manifest.js';
 import { pairConditions, type PairOrder } from './types.js';
 import { NATIVE_DIFF_PATH, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
 import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } from './eval-budget.js';
