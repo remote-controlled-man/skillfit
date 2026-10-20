@@ -132,7 +132,7 @@ Paired Markdown and JSON additionally show `invocationCosts`: separate primary,
 judge and combined populations. The original Agent A/B quality and cost tables
 remain unchanged. Successful, failed and interrupted judge orders have independent
 receipts and final/partial/unknown usage. Missing historical judge usage stays
-unknown. See [all executor roles](eval-costs.md#all-executor-roles-source-after-npm-0101).
+unknown. See [all executor roles](eval-costs.md#all-executor-roles-0110-and-newer).
 
 Budget stops retain `session.stopCode` and safe reason text. Single-arm reports
 show the same frozen `spendingBudget` limits/latest state as paired reports.

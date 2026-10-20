@@ -134,7 +134,7 @@ test('bench-authoring.md carries all seven steps and both gates', () => {
 // the source: changing a constant now breaks the doc's test instead of silently making the doc wrong.
 test('bench-authoring.md quotes the thresholds the code enforces', () => {
   const guide = read(GUIDE);
-  const benchSrc = read('src/commands/bench.ts');
+  const benchSrc = read('src/harness/bench-check.ts');
   const reportSrc = read('src/harness/report.ts');
   const statsSrc = read('src/harness/stats.ts');
 

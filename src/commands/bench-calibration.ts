@@ -20,7 +20,7 @@ import { assertInputModeSupported } from '../harness/prompt.js';
 import { runTrial, type ExperimentPlan, type TrialOutcome } from '../harness/runner.js';
 import type { Bench, Executor, ExecutorDescriptor, InputMode, SkillBundle } from '../harness/types.js';
 import type { Check } from './doctor.js';
-import type { BenchCheckReport } from './bench-check-report.js';
+import type { BenchCheckReport } from '../harness/bench-diagnostics.js';
 import type { CasePreflight } from './eval-preflight.js';
 
 export interface BenchCheckCalibrateOptions {

@@ -7,20 +7,16 @@ create a case, verify its acceptance checks, preview a small budget, then inspec
 outcomes and complete spending. Bundled benches teach the format. Repeatedly
 optimizing one external debugging Skill is not the product roadmap.
 
-The 0.11.0 release has a [verified registry installation](releases/0.11.0-verification.json)
-and [installed-feature replay](releases/0.11.0-feature-smoke.json). The user-authorized
-October 16 case workflow and October 17 extensions across calibration, trigger
-and judge runs are complete. The [completion audit](plans/2026-10-17-workflow-foundations.md#completion-audit)
-links the required outcomes to their evidence. No live model calls were added or
-authorized for this delivery.
+Version **0.12.0** is published and verified in the [release record](releases/0.12.0.md).
+It includes the October 16–17 workflow foundations and the subsequent case-authoring,
+input-layout and usage-accounting fixes. Publication status and archive verification
+belong to that record; [CHANGELOG](../CHANGELOG.md) describes versioned behavior.
 
-Source after npm 0.11.0 addresses the subsequent new-user audit: Git-root bench
-hashes match input snapshots, invalid output layouts fail in preview, ordinary
-CLI usage is collected with budget-capability checks, and failed API responses
-retain known spending. Read-only bench commands share bundled/local resolution,
-and the [first-run guide](first-real-eval.md#start-with-the-installed-cli) now starts
-from npm without a clone. These fixes are not a new registry release or efficacy
-claim; historical receipts and the statistical/adoption protocol remain unchanged.
+Current local maintenance follows the [documentation and architecture cleanup
+plan](plans/2026-10-20-docs-architecture-cleanup.md). Its execution progress and
+checks are recorded there; it adds no live model evaluations or efficacy claims.
+The completed [workflow foundations audit](plans/2026-10-17-workflow-foundations.md#completion-audit)
+remains a historical delivery record.
 
 ## Available foundations
 
@@ -33,10 +29,10 @@ claim; historical receipts and the statistical/adoption protocol remain unchange
 | Share or contribute | [Report guide](sharing-results.md), [offline CI example](examples/bench-check.yml), [bench guide](bench-authoring.md), contribution/issue templates | CI stays offline and never calls a model |
 | First run across operating systems | Native Node CLI, mirrored READMEs, macOS/Linux/Windows CI | Local agents and credentials are needed only for live evaluation |
 
-The [evidence index](skill-evaluation-evidence.md) retains 195 study calls,
-including failed and interrupted runs. Seven historical final usages remain
-unknown, and no tested revision has qualified for adoption. These are examples
-of the CLI's evidence gates, not a universal Skill benchmark.
+The [study index](skill-evaluation-evidence.md) owns current debugging-study status,
+cumulative spending and unknown usage. The [public evidence index](../evidence/README.md)
+navigates all dated reports. These are examples of the CLI's evidence gates, not a
+universal Skill benchmark.
 
 ## Delivery order
 

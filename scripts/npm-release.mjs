@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inspectBuiltPackage } from './check-package.mjs';
 
 export function validateRelease(pkg, lock, pack) {
   assert.equal(pkg.name, 'skillfit');
@@ -67,6 +68,7 @@ async function main(mode, packFile) {
   assert.equal(entries.length, 1);
   const pack = entries[0], pkg = json('package.json');
   validateRelease(pkg, json('package-lock.json'), pack);
+  inspectBuiltPackage(pack);
   assert.equal(pack.filename, basename(pack.filename));
   assert.ok(pack.filename.endsWith('.tgz'));
   const archive = readFileSync(join(dirname(packFile), pack.filename));

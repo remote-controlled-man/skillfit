@@ -1,4 +1,4 @@
-import { parseEvalReport } from '../commands/eval-report.js';
+import { parseEvalReport } from './eval-manifest.js';
 import { completeCost, COST_METRICS, type CostMetric, type CostObservation, type RunCosts } from './costs.js';
 import { parseAcceptancePolicy, policyHash, record, type AcceptancePolicy, type ComponentMetadata } from './eval-contract.js';
 import { efficiencyEvidence } from './eval-efficiency.js';
