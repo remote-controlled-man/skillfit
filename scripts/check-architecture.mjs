@@ -26,7 +26,7 @@ export function architectureErrors(files) {
     const edges = runtimeImports(source).map(target => posix.normalize(posix.join(posix.dirname(file), target)))
       .filter(target => files.has(target));
     graph.set(file, edges);
-    for (const target of edges) if (file.startsWith('harness/') && target.startsWith('commands/')) {
+    for (const target of edges) if ((file.startsWith('harness/') || file.startsWith('install/')) && target.startsWith('commands/')) {
       errors.push(`${file} imports command adapter ${target}`);
     }
   }
