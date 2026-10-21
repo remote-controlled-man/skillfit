@@ -1,15 +1,16 @@
 # Restore historical evidence archives
 
-The current development package keeps the frozen replay support files and a versioned catalog,
+Starting with 0.13.0, the npm package keeps the frozen replay support files and a versioned catalog,
 while the 19 compressed archives are fetched explicitly from a fixed Git
 commit. Git checkouts still retain the original archives. Ordinary npm install,
 CLI commands and evaluations never download them automatically.
 
-These commands apply to a package built from this development tree. Published
-0.12.0 still carries its archives and does not include the new restore entry.
-Run from your project after installing the development tarball locally:
+These commands apply to 0.13.0. Published 0.12.0 still carries its archives
+and does not include the new restore entry. From your project, install the
+versioned package and invoke its restore tool:
 
 ```bash
+npm install --save-exact skillfit@0.13.0
 node ./node_modules/skillfit/evidence/fetch-archives.mjs --list
 node ./node_modules/skillfit/evidence/fetch-archives.mjs --all --output ./historical-evidence
 node ./node_modules/skillfit/evidence/fetch-archives.mjs --all --output ./historical-evidence --yes
@@ -70,10 +71,9 @@ Historical recipes keep their recorded requirements: several require Node
 are not a new Windows compatibility claim. Saved failures must reproduce their
 original grades; restoration does not promote a rejected or inconclusive Skill.
 
-This is a future distribution change. Published 0.12.0 archives, dated reports,
-release receipts and recipes are unchanged. A local snapshot retaining version
-0.12.0 is not the registry's published 0.12.0 tarball; publishing the lean package
-requires a new version and separate publication authorization.
+This distribution change starts with 0.13.0. Published 0.12.0 archives, dated
+reports, release receipts and recipes are unchanged. See the
+[0.13.0 release record](releases/0.13.0.md) for publication and verification status.
 
 The independent installed-package check is
 [archive-delivery-smoke.mjs](releases/archive-delivery-smoke.mjs). Run it with

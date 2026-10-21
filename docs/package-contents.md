@@ -11,7 +11,7 @@ execution has zero runtime dependencies.
 - `evidence/inputs/` used by request examples and pinned historical replay support.
 - The [versioned archive catalog](../evidence/archive-catalog.v1.json), independent
   `evidence/fetch-archives.mjs` and [restoration guide](archive-delivery.md).
-- Six compiled test files required by the unchanged 0.12.0 installed-feature recipe.
+- Six compiled test files required by the 0.12.0 and 0.13.0 installed-feature recipes.
 
 Other active `dist/**/*.test.js` files stay in source development and `npm test`.
 The package's explicit file patterns exclude them; nested historical replay tests
@@ -38,7 +38,8 @@ A same-snapshot full/candidate comparison removed exactly the 19 archives and
 nothing else: 22,473,981 to 2,811,158 compressed bytes (87.49% less), before final
 documentation additions. These are development measurements, not sizes of the
 published 0.12.0 tarball. Published releases and their receipts/recipes are
-unchanged; this distribution requires a new version before publication.
+unchanged. This distribution starts with 0.13.0; its
+[release record](releases/0.13.0.md) tracks actual publication and verification.
 
 ## Package checks
 
