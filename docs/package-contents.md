@@ -11,7 +11,7 @@ execution has zero runtime dependencies.
 - `evidence/inputs/` used by request examples and pinned historical replay support.
 - The [versioned archive catalog](../evidence/archive-catalog.v1.json), independent
   `evidence/fetch-archives.mjs` and [restoration guide](archive-delivery.md).
-- Six compiled test files required by the 0.12.0 and 0.13.0 installed-feature recipes.
+- Six compiled test files required by the 0.12.0, 0.13.0 and 0.13.1 installed-feature recipes.
 
 Other active `dist/**/*.test.js` files stay in source development and `npm test`.
 The package's explicit file patterns exclude them; nested historical replay tests
@@ -39,7 +39,7 @@ nothing else: 22,473,981 to 2,811,158 compressed bytes (87.49% less), before fin
 documentation additions. These are development measurements, not sizes of the
 published 0.12.0 tarball. Published releases and their receipts/recipes are
 unchanged. This distribution starts with 0.13.0; its
-[release record](releases/0.13.0.md) tracks actual publication and verification.
+[current release record](releases/0.13.1.md) tracks actual publication and verification.
 
 ## Package checks
 
@@ -71,3 +71,10 @@ offline npm package, extracts it and runs its shipped
 restored bytes, preview purity and collision protection with zero network/model
 calls. The release preparation check applies the same inventory policy; the
 versioned installed-feature recipe remains the separate CLI workflow check.
+
+Current fixed-version commands in both READMEs, the driver Skill, first-run guide
+and archive guide must match the package version. The shipped
+[document check](releases/release-docs-smoke.mjs) runs against extracted/installed
+files, while historical feature minimums and frozen release records remain valid.
+Source release preparation applies the same check; the 0.13.1 installed feature
+recipe records each checked document digest and its fixed-version references.

@@ -7,14 +7,17 @@ create a case, verify its acceptance checks, preview a small budget, then inspec
 outcomes and complete spending. Bundled benches teach the format. Repeatedly
 optimizing one external debugging Skill is not the product roadmap.
 
-Version **0.12.0** is published and verified in the [release record](releases/0.12.0.md).
-It includes the October 16–17 workflow foundations and the subsequent case-authoring,
-input-layout and usage-accounting fixes. Publication status and archive verification
-belong to that record; [CHANGELOG](../CHANGELOG.md) describes versioned behavior.
+Version **0.13.1** synchronizes the driver Skill and current installed examples;
+its [release record](releases/0.13.1.md) owns publication and verification status.
+It retains the protected installation transactions and explicit pinned archive
+restoration introduced in [0.13.0](releases/0.13.0.md), alongside the earlier
+case-authoring and usage-accounting fixes. [CHANGELOG](../CHANGELOG.md) describes
+versioned behavior; old release evidence remains unchanged.
 
-Current local maintenance follows the [documentation and architecture cleanup
-plan](plans/2026-10-20-docs-architecture-cleanup.md). Its execution progress and
-checks are recorded there; it adds no live model evaluations or efficacy claims.
+Current release maintenance follows the [0.13.1 release
+plan](plans/2026-10-21-npm-0.13.1-release.md). The earlier [documentation and
+architecture cleanup](plans/2026-10-20-docs-architecture-cleanup.md) remains a
+completed work record. Neither adds live model evaluations or efficacy claims.
 The completed [workflow foundations audit](plans/2026-10-17-workflow-foundations.md#completion-audit)
 remains a historical delivery record.
 

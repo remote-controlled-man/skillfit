@@ -10,11 +10,12 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 
 ## Prerequisites
 
-Check availability with `npx skillfit@0.12.0 --version`, or `node dist/cli.js --version` inside a clone.
+Check availability with `npx skillfit@0.13.1 --version`, or `node dist/cli.js --version` inside a clone.
 If neither works, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
-Use 0.12.0 or newer for the complete workflow below, including Git-bench/layout,
+The evaluation workflow requires 0.12.0 or newer for Git-bench/layout,
 ordinary CLI costs, API-failure evidence, bundled names and recorded case drafting.
 Earlier versions lack some of these fixes; inspect the installed version before using new flags.
+The historical archive restore entry point requires 0.13.0 or newer.
 
 ## Which command for which question
 
@@ -43,18 +44,31 @@ Without `--agent`, paired eval needs `SKILLFIT_API_KEY`/`OPENAI_API_KEY`. Trigge
 kimi-code and codex only.
 
 Installed mode delivers the complete Skill; default inject mode measures injected
-text. Version 0.12.0 shares bundled-name resolution for read-only bench
+text. Since 0.12.0, bundled-name resolution is shared by read-only bench
 commands and eval; local paths win. Editing still needs an owned local directory.
-Git-root benches are supported in 0.12.0, with metadata excluded consistently.
+Git-root benches are supported since 0.12.0, with metadata excluded consistently.
 Keep `--runs-root` outside the bench/Skill/runtime and Git metadata; bad layouts
 are rejected at preview, including aliases. See the
 [first-run guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/first-real-eval.md).
 
-In 0.12.0, `--freeze` selects tracked ordinary files inside Git; outside Git,
+Since 0.12.0, `--freeze` selects tracked ordinary files inside Git; outside Git,
 explicit `--include <file-or-dir>` selections are required. Narrow large fixtures
 before importing. For `--decompose`, preview and authorize its single call within
 existing spending permission. Failed/interrupted drafts retain costs and inputs;
 never retry implicitly. See [drafting records](https://github.com/remote-controlled-man/skillfit/blob/main/docs/bench-drafting.md).
+
+## Historical study archives
+
+In 0.13.0 and newer, npm excludes the historical compressed archives; ordinary
+installation and CLI commands never fetch them automatically. For archived study
+replay, locate the installed package and follow the
+[restore guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/archive-delivery.md).
+Use `node <package-dir>/evidence/fetch-archives.mjs --list`, then preview
+`--all --output <new-dir>` before applying with `--yes` within existing authorization.
+The output must be fresh; `--from <archive-root> --offline` restores from a local
+source without network. Restoration prepares verified files, without extracting
+or executing them. Retain each historical recipe's original Node/platform limits
+and saved outcomes; do not start its old live experiments to replay evidence.
 
 ## Spend discipline
 
@@ -107,7 +121,7 @@ credentials fails instead of silently disabling judging. Ctrl+C/SIGTERM stop
 managed work and retain records; do not retry, replace or expand stopped calls
 without a fresh authorized plan.
 
-In version 0.12.0, ordinary CLI usage parsing is independent of trigger
+Since 0.12.0, ordinary CLI usage parsing is independent of trigger
 detection. Inspect `USAGE_CAPABILITY`: known missing adapter counters block a
 strict budget before calls; API/injected coverage remains unknown. API response
 format/HTTP failures retain reported counters and raw evidence while stopping
