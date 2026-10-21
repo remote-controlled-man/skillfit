@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inspectBuiltPackage } from './check-package.mjs';
@@ -47,7 +47,28 @@ export async function waitForPublished(expected, {
       }
     }
     assert.ok(now() - started < timeoutMs, 'Registry availability deadline exceeded; retain the failed release');
-    await sleep(intervalMs);
+    await sleep(Math.min(intervalMs * 2 ** Math.min(attempts.length - 1, 2), 60_000, timeoutMs - (now() - started)));
+  }
+}
+
+export async function retryRegistryInstall(install, {
+  deadline, now = Date.now, sleep = ms => new Promise(r => setTimeout(r, ms)), onAttempt = () => {},
+}) {
+  const attempts = [];
+  while (true) {
+    assert.ok(now() < deadline, 'Registry installation deadline exceeded; do not republish');
+    try {
+      const installed = await install(Math.min(5 * 60_000, deadline - now()));
+      attempts.push({ at: new Date(now()).toISOString(), status: 'passed' }); onAttempt(attempts.at(-1));
+      return { installed, attempts };
+    } catch (error) {
+      const detail = String(error.stderr ?? error.message);
+      const code = /npm error code (\w+)/.exec(detail)?.[1] ?? null;
+      attempts.push({ at: new Date(now()).toISOString(), status: 'failed', code }); onAttempt(attempts.at(-1), error);
+      if (!['ETARGET', 'E404', 'E502', 'E503', 'EAI_AGAIN', 'ECONNRESET', 'ETIMEDOUT'].includes(code)) throw error;
+      assert.ok(now() < deadline, 'Registry installation deadline exceeded; do not republish');
+      await sleep(Math.min(60_000, deadline - now()));
+    }
   }
 }
 
@@ -82,8 +103,10 @@ async function main(mode, packFile) {
     console.log(`${pkg.name}@${pkg.version}: ${mode} passed; no publication`);
     return;
   }
+  const deadline = Date.now() + 20 * 60_000;
   let readCount = 0;
   const result = await waitForPublished({ version: pkg.version, integrity: pack.integrity }, {
+    timeoutMs: deadline - Date.now(),
     onAttempt: attempt => {
       const file = join(dirname(packFile), `registry-read-${++readCount}.json`);
       writeFileSync(file, JSON.stringify(attempt, null, 2) + '\n', { flag: 'wx' });
@@ -94,17 +117,27 @@ async function main(mode, packFile) {
       return { version, latest };
     },
   });
-  const prefix = mkdtempSync(join(dirname(packFile), 'registry-install-'));
-  writeFileSync(join(prefix, 'package.json'), JSON.stringify({ name: 'skillfit-release-smoke', version: '0.0.0', private: true }), { flag: 'wx' });
-  execFileSync('npm', ['install', '--prefix', prefix, '--cache', join(prefix, 'cache'),
-    '--ignore-scripts', '--omit=dev', '--no-audit', '--no-fund', '--package-lock', `${pkg.name}@${pkg.version}`],
-  { stdio: ['ignore', 'pipe', 'pipe'], timeout: 5 * 60_000 });
+  let installCount = 0;
+  const install = await retryRegistryInstall(timeout => {
+    const prefix = mkdtempSync(join(dirname(packFile), 'registry-install-'));
+    writeFileSync(join(prefix, 'package.json'), JSON.stringify({ name: 'skillfit-release-smoke', version: '0.0.0', private: true }), { flag: 'wx' });
+    execFileSync('npm', ['install', '--prefix', prefix, '--cache', join(prefix, 'cache'), '--registry', registry,
+      '--ignore-scripts', '--omit=dev', '--no-audit', '--no-fund', '--package-lock', '--fetch-retries=0', `${pkg.name}@${pkg.version}`],
+    { stdio: ['ignore', 'pipe', 'pipe'], timeout });
+    return prefix;
+  }, { deadline, onAttempt: (attempt, error) => {
+    const file = join(dirname(packFile), `registry-install-attempt-${++installCount}`);
+    writeFileSync(file + '.json', JSON.stringify(attempt, null, 2) + '\n', { flag: 'wx' });
+    if (error) writeFileSync(file + '.log', String(error.stderr ?? error.message), { flag: 'wx' });
+  } });
+  const prefix = install.installed;
   const installedLock = json(join(prefix, 'package-lock.json'));
   assert.equal(Object.keys(installedLock.packages).length, 2);
   assert.equal(installedLock.packages['node_modules/skillfit'].integrity, pack.integrity);
   const installed = join(prefix, 'node_modules/skillfit');
+  const comparison = resolve(process.env.SKILLFIT_RELEASE_COMPARE_ROOT ?? process.cwd());
   for (const file of pack.files) {
-    assert.equal(digest(readFileSync(join(installed, file.path))), digest(readFileSync(file.path)), file.path);
+    assert.equal(digest(readFileSync(join(installed, file.path))), digest(readFileSync(join(comparison, file.path))), file.path);
   }
   const cli = args => execFileSync(process.execPath, [join(installed, 'dist/cli.js'), ...args], {
     cwd: prefix, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 8 * 1024 * 1024,
@@ -120,11 +153,12 @@ async function main(mode, packFile) {
     sourceCommit: process.env.GITHUB_SHA ?? null, installedFilesVerified: pack.files.length,
     zeroRuntimeDependencies: true, globalInstall: false, modelCalls: 0,
     smoke: { version: true, help: true, requestPreview: true }, attempts: result.attempts,
+    installAttempts: install.attempts, installPrefix: prefix, installedPackage: installed,
   };
   writeFileSync(join(dirname(packFile), 'verified-registry-install.json'), JSON.stringify(receipt, null, 2) + '\n', { flag: 'wx' });
   console.log(JSON.stringify(receipt));
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   await main(process.argv[2], process.argv[3]);
 }

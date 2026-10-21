@@ -25,6 +25,8 @@
     "docs/releases/0.13.0-feature-smoke.mjs",
     "docs/releases/0.13.1-feature-smoke.mjs",
     "docs/releases/release-docs-smoke.mjs",
+    "docs/releases/release-feature-smoke.mjs",
+    "docs/releases/release-historical-smoke.mjs",
     "evidence/inputs/diagnosing-bugs/SKILL.md",
     "evidence/inputs/diagnosing-bugs-compact-v4/SKILL.md",
     "evidence/archive-catalog.v1.json",

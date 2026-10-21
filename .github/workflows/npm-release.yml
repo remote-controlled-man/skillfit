@@ -8,9 +8,20 @@ on:
         type: boolean
         required: true
         default: true
+      preview_run_id:
+        description: 'Successful reviewed preview run ID (required for publication)'
+        type: string
+        required: false
+        default: ''
+      preview_run_attempt:
+        description: 'Reviewed preview attempt (never silently use a later rerun)'
+        type: string
+        required: false
+        default: '1'
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: npm-release
@@ -24,44 +35,68 @@ jobs:
     environment: npm-release
     permissions:
       contents: read
+      actions: read
       id-token: write
     steps:
+      - name: Set release result location
+        run: printf 'RELEASE_ROOT=%s/skillfit-release\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          node-version: '24'
+          node-version: '24.21.0'
           registry-url: 'https://registry.npmjs.org'
           package-manager-cache: false
-      - name: Install and test offline
+          cache: npm
+      - name: Require complete full CI for this exact main source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-source.mjs ci "$RELEASE_ROOT"
+      - name: Install build tools and compile (source tests already passed)
         run: |
           npm ci
-          npm test
-      - name: Prepare the exact package
+          npm run build
+      - name: Prepare once or retrieve the approved original archive
+        id: package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PREVIEW_RUN_ID: ${{ inputs.preview_run_id }}
+          PREVIEW_RUN_ATTEMPT: ${{ inputs.preview_run_attempt }}
         run: |
-          mkdir "$RUNNER_TEMP/skillfit-release"
-          npm pack --json --pack-destination "$RUNNER_TEMP/skillfit-release" > "$RUNNER_TEMP/skillfit-release/pack.json"
-          node scripts/npm-release.mjs check "$RUNNER_TEMP/skillfit-release/pack.json"
-      - name: Preview publication
-        if: inputs.dry_run
-        run: |
-          node --input-type=module <<'NODE'
-          import {readFileSync,writeFileSync} from 'node:fs';
-          const root=process.env.RUNNER_TEMP+'/skillfit-release';
-          const pack=JSON.parse(readFileSync(root+'/pack.json'))[0];
-          const preview={name:pack.name,version:pack.version,integrity:pack.integrity,sourceCommit:process.env.GITHUB_SHA,dryRun:true,modelCalls:0};
-          writeFileSync(root+'/preview.json',JSON.stringify(preview,null,2)+'\n',{flag:'wx'});
-          console.log(JSON.stringify(preview));
-          NODE
+          if [ "$DRY_RUN" = true ]; then
+            npm pack --json --pack-destination "$RELEASE_ROOT" > "$RELEASE_ROOT/pack.json"
+            node scripts/npm-release.mjs check "$RELEASE_ROOT/pack.json"
+            node scripts/release-source.mjs preview "$RELEASE_ROOT"
+          else
+            node scripts/release-source.mjs promote "$RELEASE_ROOT" "$PREVIEW_RUN_ID" "$PREVIEW_RUN_ATTEMPT"
+            node scripts/npm-release.mjs guard "$RELEASE_ROOT/pack.json"
+            node scripts/release-source.mjs claim "$RELEASE_ROOT"
+          fi
+      - name: Persist publication intent before upload
+        if: '!inputs.dry_run'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-publication-intent-${{ steps.package.outputs.version }}
+          path: ${{ runner.temp }}/skillfit-release/publication-intent.json
+          if-no-files-found: error
+          retention-days: 90
       - name: Publish with npm trusted publishing
         if: '!inputs.dry_run'
         run: |
-          node scripts/npm-release.mjs guard "$RUNNER_TEMP/skillfit-release/pack.json"
-          archive=$(node -p "JSON.parse(require('node:fs').readFileSync(process.env.RUNNER_TEMP + '/skillfit-release/pack.json'))[0].filename")
-          npm publish "$RUNNER_TEMP/skillfit-release/$archive" --access public --tag latest --fetch-retries=0 --fetch-timeout=600000
-      - name: Verify registry availability and isolated install
+          node scripts/npm-release.mjs guard "$RELEASE_ROOT/pack.json"
+          archive=$(node -p "JSON.parse(require('node:fs').readFileSync(process.env.RELEASE_ROOT + '/pack.json'))[0].filename")
+          npm publish "$RELEASE_ROOT/$archive" --access public --tag latest --fetch-retries=0 --fetch-timeout=600000
+          node scripts/release-acceptance.mjs uploaded "$RELEASE_ROOT"
+      - name: Verify installation, Skill, examples, archives and provenance once
         if: '!inputs.dry_run'
         run: |
-          node scripts/npm-release.mjs verify "$RUNNER_TEMP/skillfit-release/pack.json"
+          node scripts/release-acceptance.mjs verify "$RELEASE_ROOT"
+      - name: Summarize actual state including failures
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node scripts/release-acceptance.mjs summary "$RELEASE_ROOT" "$JOB_STATUS" "$DRY_RUN"
       - name: Retain reviewed archive and verification receipts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -70,6 +105,10 @@ jobs:
           path: |
             ${{ runner.temp }}/skillfit-release/*.tgz
             ${{ runner.temp }}/skillfit-release/*.json
+            ${{ runner.temp }}/skillfit-release/*.md
+            ${{ runner.temp }}/skillfit-release/*.log
+            ${{ runner.temp }}/skillfit-release/logs/
+            ${{ runner.temp }}/skillfit-release/records/
           if-no-files-found: warn
           compression-level: 0
-          retention-days: 14
+          retention-days: 90

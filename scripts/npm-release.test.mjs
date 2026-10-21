@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { assertUnused, validateRelease, waitForPublished } from './npm-release.mjs';
+import { assertUnused, validateRelease, waitForPublished, retryRegistryInstall } from './npm-release.mjs';
 
 const version = '0.9.1', integrity = 'sha512-reviewed';
 const pkg = { name: 'skillfit', version, repository: { url: 'git+https://github.com/remote-controlled-man/skillfit.git' } };
@@ -65,4 +65,26 @@ test('authentication errors and network failures cannot be treated as pending su
     lookup: async () => ({ version: { status: 401 }, latest: missing() }),
   }), /Unexpected registry response/);
   await assert.rejects(waitForPublished(expected, { lookup: async () => { throw new Error('network failed'); } }), /network failed/);
+});
+
+test('metadata visibility followed by npm ETARGET retries installation only, with retained observations', async () => {
+  let time = 0, calls = 0; const observations = [];
+  const result = await retryRegistryInstall(() => {
+    if (++calls === 1) throw Object.assign(Error('pending'), { stderr: 'npm error code ETARGET' });
+    return 'new-isolated-prefix';
+  }, { deadline: 100_000, now: () => time, sleep: async ms => { time += ms; }, onAttempt: row => observations.push(row) });
+  assert.equal(calls, 2); assert.equal(result.installed, 'new-isolated-prefix');
+  assert.deepEqual(observations.map(row => row.status), ['failed', 'passed']);
+  assert.equal(observations[0].code, 'ETARGET');
+});
+test('install auth/integrity errors never retry and pending installs share a bounded deadline', async () => {
+  for (const code of ['E401', 'EINTEGRITY']) {
+    let calls = 0;
+    await assert.rejects(retryRegistryInstall(() => { calls++; throw Object.assign(Error(code), { stderr: `npm error code ${code}` }); }, { deadline: 100, now: () => 0 }));
+    assert.equal(calls, 1);
+  }
+  let time = 0, calls = 0;
+  await assert.rejects(retryRegistryInstall(() => { calls++; throw Object.assign(Error('pending'), { stderr: 'npm error code ETARGET' }); },
+    { deadline: 10, now: () => time, sleep: async ms => { time += ms; } }), /deadline exceeded/);
+  assert.equal(calls, 1);
 });

@@ -20,6 +20,27 @@ against `package-policy.json`, including runtime modules, offline inputs, retain
 recipe tests, archives and size limits. `npm test` checks a real offline package;
 release preparation reuses the same policy. See [package contents](../docs/package-contents.md).
 
+## Release automation
+
+`ci-scope.mjs` classifies only release bookkeeping for targeted checks, falls back
+to full CI for unknown inputs, and records actual scope/test counts. Required job
+names stay stable. `release-source.mjs` verifies exact-source full main CI,
+promotes one explicit reviewed preview attempt and guards publication intent.
+
+`release-acceptance.mjs` runs installed-package checks once, checkpoints failure
+state and renders a compact summary. `release-checks.mjs` supplies registry,
+Skill/examples, general installed feature, online/offline archive, frozen history,
+source proof and signature checks. These repository tools use Node built-ins;
+normal tests inject data/adapters and remain offline. The two general smoke
+recipes ship with npm; older versioned recipes remain immutable.
+
+`release-records.mjs <records-bundle> <repo> [--plan <path>]` previews validated
+receipt/status import; `--yes` applies it with collision protection. It does not
+commit or publish. See [trusted publishing](../docs/releases/trusted-publishing.md)
+for source gates, bounded read-only recovery, artifact retention and one-command
+watching. A failed run needs its logs; successful runs normally need only the
+structured summary and generated record bundle.
+
 ## Saved experiment stages
 
 | Script suffix | Evidence package | Purpose |

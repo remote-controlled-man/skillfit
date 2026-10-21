@@ -78,3 +78,14 @@ and archive guide must match the package version. The shipped
 files, while historical feature minimums and frozen release records remain valid.
 Source release preparation applies the same check; the 0.13.1 installed feature
 recipe records each checked document digest and its fixed-version references.
+
+
+The general `release-feature-smoke.mjs` uses the supplied stable package version,
+retaining the pinned foundation checks without copying a versioned recipe for
+future patches. `release-historical-smoke.mjs` verifies all archived inputs before
+executing their explicitly mapped frozen replay/export recipes; unknown recipes
+fail closed. Historical execution retains Node 24.21.0/POSIX requirements. These
+recipes complement source CI and do not call a real agent or measure new efficacy.
+Release orchestration/receipt import remain repository development tools under
+`scripts/`; they are not new public CLI commands. See
+[release automation](releases/trusted-publishing.md).
