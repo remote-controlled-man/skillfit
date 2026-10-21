@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "version": "0.13.1",
+  "publicationRepeated": false,
+  "registryInstallAttempt1": {
+    "registryObservations": [
+      {
+        "at": "2026-10-21T08:45:05.030Z",
+        "versionStatus": 200,
+        "latestStatus": 200
+      }
+    ],
+    "exitCode": 1,
+    "npmErrorCode": "ETARGET",
+    "npmErrorMessage": "No matching version found for skillfit@0.13.1.",
+    "originalLogSha256": "961b2a6ec3983f2a576b6733853ebb1b579c813969d5daf7868490db9197194e",
+    "originalLogRetainedAt": "/private/tmp/skillfit-0131-registry-attempt-1/independent-verify.log",
+    "resolution": "A second independent verification, with a new temporary prefix/cache and the official registry, passed after publication became visible. No release upload was repeated."
+  },
+  "archiveProbeAttempt1": {
+    "exitCode": 1,
+    "errorCode": "ENOENT",
+    "reason": "Incorrect temporary installed-package directory was supplied by the operator.",
+    "archiveRestoreStarted": false,
+    "outputDirectoryPreserved": "/private/tmp/skillfit-0131-registry/archive-check",
+    "resolution": "Read the package location from the successful install receipt and use a fresh output directory. All restoration and replay checks passed."
+  }
+}

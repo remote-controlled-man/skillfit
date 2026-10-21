@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-21T08:45:22.977Z",
+  "version": "0.13.1",
+  "latest": "0.13.1",
+  "integrity": "sha512-ur0rDVIwfZaC++VvEWnEnp7Ptz1zR6byxtz5/vc+hRHfnxDnlvYPNAnUSd1147d59T+kdzRvL2zrSOUtmlBgbQ==",
+  "sha256": "ec8c8bba4f2142f1c2d1393c4b5eba1e4f0a1d83feb6aa623e06a225a913acf6",
+  "sourceCommit": "4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6",
+  "installedFilesVerified": 2663,
+  "zeroRuntimeDependencies": true,
+  "globalInstall": false,
+  "modelCalls": 0,
+  "smoke": {
+    "version": true,
+    "help": true,
+    "requestPreview": true
+  },
+  "attempts": [
+    {
+      "at": "2026-10-21T08:43:19.708Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-21T08:43:49.870Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-21T08:44:20.026Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-21T08:44:50.204Z",
+      "versionStatus": 404,
+      "latestStatus": 200
+    },
+    {
+      "at": "2026-10-21T08:45:20.352Z",
+      "versionStatus": 200,
+      "latestStatus": 200
+    }
+  ]
+}

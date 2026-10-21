@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-21T08:52:31.894089+00:00",
+  "version": "0.13.1",
+  "latest": "0.13.1",
+  "publishedAt": "2026-10-21T08:44:56.371Z",
+  "releaseDate": "2026-10-21",
+  "releaseTimeZone": "Asia/Shanghai",
+  "registry": "https://registry.npmjs.org/",
+  "tarball": "https://registry.npmjs.org/skillfit/-/skillfit-0.13.1.tgz",
+  "sourceCommit": "4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6",
+  "integrity": "sha512-ur0rDVIwfZaC++VvEWnEnp7Ptz1zR6byxtz5/vc+hRHfnxDnlvYPNAnUSd1147d59T+kdzRvL2zrSOUtmlBgbQ==",
+  "sha256": "ec8c8bba4f2142f1c2d1393c4b5eba1e4f0a1d83feb6aa623e06a225a913acf6",
+  "packageBytes": 2849512,
+  "unpackedBytes": 18506880,
+  "installedFilesVerified": 2663,
+  "zeroRuntimeDependencies": true,
+  "globalInstall": false,
+  "npmBinExecutableVerified": true,
+  "modelCalls": 0,
+  "agentCliCalls": 0,
+  "realUserConfigurationWrites": 0,
+  "automaticUpgrade": false,
+  "fullOfflineTestsPassed": 882,
+  "platformCI": {
+    "runUrl": "https://github.com/remote-controlled-man/skillfit/actions/runs/39569950671",
+    "results": {
+      "ubuntu-latest": {
+        "tests": 882,
+        "pass": 882,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "macos-latest": {
+        "tests": 882,
+        "pass": 882,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "windows-latest": {
+        "tests": 882,
+        "pass": 881,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1
+      }
+    },
+    "existingWindowsSkip": "CLI timeout also bounds draining when an escaped descendant retains stdout"
+  },
+  "publication": {
+    "authentication": "GitHub Actions OIDC trusted publishing",
+    "repository": "remote-controlled-man/skillfit",
+    "workflow": "npm-release.yml",
+    "environment": "npm-release",
+    "preparationPR": "https://github.com/remote-controlled-man/skillfit/pull/50",
+    "previewRunUrl": "https://github.com/remote-controlled-man/skillfit/actions/runs/39569968816",
+    "runUrl": "https://github.com/remote-controlled-man/skillfit/actions/runs/39571125220",
+    "uploadCount": 1,
+    "workflowConclusion": "success",
+    "previewMatchesPublishedArchive": true,
+    "previewAndPublicationOfflineTestsPassed": 882,
+    "ciRegistryAttempts": 5,
+    "ciUnavailableReadsRetained": 4,
+    "independentRegistryVerificationRuns": 2,
+    "independentFirstInstallError": "ETARGET",
+    "independentSuccessfulRegistryAttempts": 1,
+    "observations": {
+      "path": "0.13.1-postpublication-observations.json",
+      "sha256": "4b17e2f1198cc7ba45c01e439a7623b54e7fc108313f59fbea7f50f15398bac0"
+    }
+  },
+  "ciRegistryReceipt": {
+    "path": "0.13.1-ci-registry-install.json",
+    "sha256": "104cd1e7bfee8fc53d43f5a470092a95ebad39d1af817c15c0fc88689abd151d"
+  },
+  "localRegistryReceipt": {
+    "path": "0.13.1-local-registry-install.json",
+    "sha256": "f58855b3408f6c7ac03b8cbf74ebfa35678aa5ededef27731ca52bbc1b49417e"
+  },
+  "registryMetadata": {
+    "path": "0.13.1-registry-metadata.json",
+    "sha256": "102f1c7834e58c0156cfb3e9b4b1854d5669c23cd7c3faef95a385443fd24ffd"
+  },
+  "previewReview": {
+    "path": "0.13.1-preview-review.json",
+    "sha256": "36337a7648f40101e9d476e3eac04afa17107859c639c262e307cdebadaa39e3"
+  },
+  "featureSmoke": {
+    "path": "0.13.1-feature-smoke.json",
+    "sha256": "235ba5cedce7b9f7dfa487cc2bfa6888f5f186cf4f5c3a8626d2e9b1d29a6777",
+    "recipe": "0.13.1-feature-smoke.mjs",
+    "recipeSha256": "9e56794bdc145fa4af6da667e9bea3e7b49095d7e2d931a9c8b1a1aeeef96dc8",
+    "regressionsPassed": 29,
+    "foundationGroupsPassed": 7,
+    "portableReplays": 5,
+    "installedConfigurationAndMovedBundle": true
+  },
+  "foundationsSmoke": {
+    "path": "0.13.1-foundations-smoke.json",
+    "sha256": "301784bdf98acad7524fac8d36e120a0b3170ec97e450d019cd2c676313c8651"
+  },
+  "installedDocuments": {
+    "path": "0.13.1-skill-documents.json",
+    "sha256": "6d32afbf16e170eae2b365d5a64c03afeea5c5580405b61b123a67f74f4573f2",
+    "documents": 5,
+    "currentPinnedReferences": 19,
+    "officialSkillFormatValid": true,
+    "recipe": "release-docs-smoke.mjs",
+    "recipeSha256": "fff787854d8b09189c7908f5a5ee9b7486098648e63391cde99948893d250d13"
+  },
+  "installedExamples": {
+    "path": "0.13.1-installed-examples.json",
+    "sha256": "3e0ab85da783df62689d9880f6b9f7bdb27a49a24e9d81a6451bb957c47e7c56"
+  },
+  "archives": {
+    "path": "0.13.1-archive-restoration.json",
+    "sha256": "a98803b62866ff1e79ace76ff17731c99f4d74bc7cfcb3c2304c8b4a172e9dd6",
+    "archivesRestored": 19,
+    "supportFilesRestored": 1583,
+    "defaultFixedHttpsSourceVerified": true,
+    "offlineCopyFromDownloadedWorkspace": true,
+    "offlineNetworkAttempts": 0,
+    "previewWrites": 0,
+    "collisionPreserved": true,
+    "procedures": {
+      "path": "0.13.1-archive-replays.json",
+      "sha256": "91d75d0ccd4083af6ba585a438795a2a558e7a9799f5a238b72829c673fbe203"
+    },
+    "frozenReplaysPassed": 18,
+    "exportIndexChecksPassed": 1
+  },
+  "registryAudit": {
+    "exitCode": 0,
+    "packages": 1,
+    "verifiedRegistrySignatures": 1,
+    "verifiedAttestations": 1,
+    "log": {
+      "path": "0.13.1-signatures.txt",
+      "sha256": "3b97405a999e36c26c6932136f670846e563bbed889007ad76b3740e1f6e39c6"
+    },
+    "sourceProof": {
+      "path": "0.13.1-attestation-check.json",
+      "sha256": "8d93a3b72021fe15bf07b7b848a220dda78154302b65b6a997eea7527c8a9882"
+    },
+    "attestations": {
+      "path": "0.13.1-attestations.json",
+      "sha256": "3984f478b567b5b2531b63b2b100f80017e6f12c7339100a77602df33f96c625"
+    }
+  },
+  "preparation": {
+    "path": "0.13.1-preparation.json",
+    "sha256": "93b19a08cf76fedb974cf19221fee697bdd411d7cce9f15f613acdd8caa091d4"
+  },
+  "initialPreparationFailure": {
+    "path": "0.13.1-preparation-failure-1.json",
+    "sha256": "c502b55aa944bb964b40be6edf0c2848ef6eee0ed3021c32e700d017fd16a2ac"
+  },
+  "verificationKind": "CI and independent registry installation, installed Skill and current examples, feature/configuration checks, online/offline archive restoration, original historical procedures, registry signature and exact source provenance",
+  "comparisonSource": "Extracted original CI preview archive, byte-identical to the accepted CI archive; no local rebuild",
+  "historicalReplayEnvironment": {
+    "node": "v24.21.0",
+    "platform": "macOS",
+    "originalRequirementsRetained": true
+  },
+  "scope": "CLI reliability, documentation, distribution and reproducibility; no new real Skill efficacy observations or upgrade eligibility"
+}
