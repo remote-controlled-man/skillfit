@@ -1,0 +1,280 @@
+{
+  "workspace": "/private/tmp/skillfit-0131-registry/archive-check-2/online",
+  "out": "/var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH",
+  "node": "v24.21.0",
+  "results": [
+    {
+      "id": "2026-10-12-diagnosing-revision-calibration-records",
+      "verified": true,
+      "command": "evidence/artifacts/2026-10-12-diagnosing-revision/replay/scripts/regrade-diagnosing-revision.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-12-diagnosing-revision-interrupted-records",
+      "verified": true,
+      "command": "evidence/artifacts/2026-10-12-diagnosing-revision/replay/scripts/regrade-diagnosing-revision.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-12-diagnosing-revision-validation-records",
+      "verified": true,
+      "command": "evidence/artifacts/2026-10-12-diagnosing-revision/replay/scripts/regrade-diagnosing-revision.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-12-diagnosing-v2-regression-records",
+      "verified": true,
+      "command": "evidence/artifacts/2026-10-12-diagnosing-v2/replay/scripts/replay-diagnosing-v2.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-12-diagnosing-v2-transfer-records",
+      "verified": true,
+      "command": "evidence/artifacts/2026-10-12-diagnosing-v2/replay/scripts/replay-diagnosing-v2.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-12-normalize-url-v2-available-readiness-records",
+      "verified": true,
+      "kind": "export-hashes"
+    },
+    {
+      "id": "2026-10-12-normalize-url-v2-comparison-records",
+      "verified": true,
+      "command": "evidence/artifacts/2026-10-12-normalize-url-v2-comparison/replay/scripts/replay-normalize-url-v2-comparison.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-12-normalize-url-v2-recovery-records",
+      "verified": true,
+      "command": "evidence/artifacts/2026-10-12-normalize-url-v2-recovery/replay/scripts/replay-normalize-url-v2-recovery.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-12-normalize-url-v2-validated-records",
+      "verified": true,
+      "command": "evidence/artifacts/2026-10-12-normalize-url-v2-validated/replay/scripts/replay-normalize-url-v2-validated.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-13-debugging-completed-development-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-13-debugging-completed-development-package/replay/scripts/replay-completed-development.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-13-debugging-controls-and-sleep-stop-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-13-debugging-controls-and-sleep-stop-package/replay-all.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-13-debugging-development-stops-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-13-debugging-development-stops-package/replay/scripts/replay-development-stops.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-14-debugging-followup-routing-stop-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-14-debugging-followup-routing-stop-package/replay-routing-stop.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-14-debugging-independent-validation-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-14-debugging-independent-validation-package/replay-validation.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-14-debugging-reading-pilot-and-cost-review-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-14-debugging-reading-pilot-and-cost-review-package/replay.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-14-debugging-spending-stop-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-14-debugging-spending-stop-package/replay-spending-stop.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-15-independent-comparison-regression-stop-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-15-independent-comparison-regression-stop-package/replay.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-15-native-diff-mechanism-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-15-native-diff-mechanism-package/replay.mjs",
+      "kind": "frozen-replay"
+    },
+    {
+      "id": "2026-10-15-receiver-mechanism-stop-package",
+      "verified": true,
+      "command": "../../../../../var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-historical-replays-OQtqRH/2026-10-15-receiver-mechanism-stop-package/replay.mjs",
+      "kind": "frozen-replay"
+    }
+  ],
+  "logs": [
+    {
+      "name": "2026-10-12-diagnosing-revision-calibration-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-diagnosing-revision-calibration-records-replay.log",
+      "sha256": "a9915043126151d64c1d83f0c312f90c768ea7059ff158f82605fe019e6d98be"
+    },
+    {
+      "name": "2026-10-12-diagnosing-revision-interrupted-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-diagnosing-revision-interrupted-records-replay.log",
+      "sha256": "14f104572f4399eff90bf4f2a7e8076408901e0be603cb1c39594929b3c2ee70"
+    },
+    {
+      "name": "2026-10-12-diagnosing-revision-validation-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-diagnosing-revision-validation-records-replay.log",
+      "sha256": "8de4a7b9eb18f0c9b35aa1605a24c5037b97d5298e350815d4a747f22d11e97f"
+    },
+    {
+      "name": "2026-10-12-diagnosing-v2-regression-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-diagnosing-v2-regression-records-replay.log",
+      "sha256": "e68af35c1ea63231f40704867e143564a4cb4cd62b873b2a573d2c0d8a389421"
+    },
+    {
+      "name": "2026-10-12-diagnosing-v2-transfer-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-diagnosing-v2-transfer-records-replay.log",
+      "sha256": "88a1a80743ead96d9f12cdda68e60637cee8cd89ba5e4aa0708cec5ebb41efe9"
+    },
+    {
+      "name": "2026-10-12-normalize-url-v2-available-readiness-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-normalize-url-v2-comparison-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-normalize-url-v2-comparison-records-replay.log",
+      "sha256": "ca767bb2eba055dce9bc624208149b4b013c768fa0ffc3aae6963e7fd24a7cc2"
+    },
+    {
+      "name": "2026-10-12-normalize-url-v2-recovery-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-normalize-url-v2-recovery-records-replay.log",
+      "sha256": "453d8c4025547247594e2356964bc16cbe9c5d77afaf1e6abe80e21fb08d950c"
+    },
+    {
+      "name": "2026-10-12-normalize-url-v2-validated-records-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-12-normalize-url-v2-validated-records-replay.log",
+      "sha256": "34eb2611e05d0593d5359170e5089eadaa300d7e05be95257b9c9d95a9b73414"
+    },
+    {
+      "name": "2026-10-13-debugging-completed-development-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-13-debugging-completed-development-package-replay.log",
+      "sha256": "3d6f49ae0f64fa224bb7e80c2ac9a52abab421fc74fa40428a1dc8404219f07e"
+    },
+    {
+      "name": "2026-10-13-debugging-controls-and-sleep-stop-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-13-debugging-controls-and-sleep-stop-package-replay.log",
+      "sha256": "13d3a1f198b4ae5f67dbab06ab9e54a0c39b7ae8bfb1e4c49e6681ae5a5d5591"
+    },
+    {
+      "name": "2026-10-13-debugging-development-stops-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-13-debugging-development-stops-package-nested.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-13-debugging-development-stops-package-replay.log",
+      "sha256": "abd2551b19918abb0fa35af3b5a27044b929c1ba8c543b440a7234e010cf3212"
+    },
+    {
+      "name": "2026-10-14-debugging-followup-routing-stop-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-14-debugging-followup-routing-stop-package-replay.log",
+      "sha256": "fc3ce7e28a29a308aad3e5d33ed01dc160ea09c30eb4799cad4e10d0080f5c2c"
+    },
+    {
+      "name": "2026-10-14-debugging-independent-validation-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-14-debugging-independent-validation-package-replay.log",
+      "sha256": "ca7df45722f49007cb673ba0af22efd5b812632d69fcb720f19806708548e83b"
+    },
+    {
+      "name": "2026-10-14-debugging-reading-pilot-and-cost-review-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-14-debugging-reading-pilot-and-cost-review-package-replay.log",
+      "sha256": "b07632795d586247cd37ef3a76293dae216d69316735dcc4764259a999d2f58b"
+    },
+    {
+      "name": "2026-10-14-debugging-spending-stop-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-14-debugging-spending-stop-package-replay.log",
+      "sha256": "ebdc1f996a514e7c77aaa816c53976923af44555f3cb8ccb2735af5c3bf206d5"
+    },
+    {
+      "name": "2026-10-15-independent-comparison-regression-stop-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-15-independent-comparison-regression-stop-package-replay.log",
+      "sha256": "d6f29e46f7f7bceedcde24e7b372cd40121b0d7d27a08d2ae3b09742cf1c5c95"
+    },
+    {
+      "name": "2026-10-15-native-diff-mechanism-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-15-native-diff-mechanism-package-replay.log",
+      "sha256": "7818b4d752a59f86f21952b299990ffa2a5ab659dcaf651629d6edcaa4f56e89"
+    },
+    {
+      "name": "2026-10-15-receiver-mechanism-stop-package-extract.log",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "2026-10-15-receiver-mechanism-stop-package-replay.log",
+      "sha256": "833aa3885910bdad4b7f2d8fbaac588975b45f5694ac8b37a522d04f79047c02"
+    }
+  ],
+  "schemaVersion": 1,
+  "version": "0.13.1",
+  "verifiedAt": "2026-10-21T08:52:31.855628+00:00",
+  "modelCalls": 0,
+  "agentCliCalls": 0,
+  "originalRequirementsRetained": true
+}
