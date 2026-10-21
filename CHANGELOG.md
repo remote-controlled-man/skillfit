@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.13.0 — protected installation and lean archive delivery (2026-10-21)
 
 - Separate installation file transactions from command planning. Preserve CLI
   behavior and backups; prevent first-backup overwrite races and retain primary,
   rollback and cleanup errors with recovery copies.
-- Move 19 historical compressed archives out of future npm packages. Add an
+- Move 19 historical compressed archives out of npm packages starting with 0.13.0. Add an
   explicit pinned, hash-checked restore tool with previews and offline local
   sources; keep Git originals, frozen replay support and published releases.
-  See [archive restoration](docs/archive-delivery.md). A new version and separate
-  publication authorization are required before publishing this distribution.
+  See [archive restoration](docs/archive-delivery.md) and the
+  [0.13.0 release record](docs/releases/0.13.0.md).
 
 ## 0.12.0 — reliable case authoring and evaluation costs (2026-10-17)
 

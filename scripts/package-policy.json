@@ -22,6 +22,7 @@
     "docs/examples/eval-request.diagnosing-v4-efficiency.json",
     "docs/releases/0.11.0-feature-smoke.mjs",
     "docs/releases/0.12.0-feature-smoke.mjs",
+    "docs/releases/0.13.0-feature-smoke.mjs",
     "evidence/inputs/diagnosing-bugs/SKILL.md",
     "evidence/inputs/diagnosing-bugs-compact-v4/SKILL.md",
     "evidence/archive-catalog.v1.json",

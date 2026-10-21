@@ -65,8 +65,8 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ## 安装
 
 ```bash
-npx skillfit@0.12.0 --help
-npx skillfit@0.12.0 doctor
+npx skillfit@0.13.0 --help
+npx skillfit@0.13.0 doctor
 ```
 
 需要 Node.js 22+。npm 可能先下载包；下面的 case 校验和预览不调用模型。
@@ -76,10 +76,10 @@ npx skillfit@0.12.0 doctor
 在项目目录执行，将 `./my-skill` 替换为包含自己 `SKILL.md` 的目录：
 
 ```bash
-npx skillfit@0.12.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.12.0 bench init my-bench --kind command --yes
-npx skillfit@0.12.0 bench check ./my-bench --json
-npx skillfit@0.12.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.13.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.13.0 bench init my-bench --kind command --yes
+npx skillfit@0.13.0 bench check ./my-bench --json
+npx skillfit@0.13.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 测收益前先把教学用 fixture、prompt、verifier 和 oracle 换成真实任务。预览声明两次调用，实际不调用。检查 `plan.evaluation.agentPreflight.status`；离线登录状态仍未知。case 与运行记录分开放。继续阅读[第一次真实评测](docs/first-real-eval.md)。
@@ -204,7 +204,7 @@ node ./exports/my-run/reproduce.mjs
 
 [可迁移回放](docs/replay-packages.md)验证保存的观察并执行可信本地 verifier，不调用模型。[固定输入](docs/evaluation-input-snapshots.md)保留原 case 与目标。[中断处理](docs/evaluation-interruption.md)保留可用花费，未知用量仍为未知。
 
-下一次分发增加显式的[归档恢复工具](docs/archive-delivery.md)获取：按固定版本下载一次，之后离线回放历史研究记录。Git 原件和冻结报告继续保留；正常安装和 CLI 命令不会下载归档。
+0.13.0 增加显式的[归档恢复工具](docs/archive-delivery.md)：按固定版本下载一次，之后离线回放历史研究记录。Git 原件和冻结报告继续保留；正常安装和 CLI 命令不会下载归档。
 
 ## 可选择的 Codex 配置
 
@@ -277,7 +277,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[七步编写
 
 ## Roadmap
 
-参见[十月交付路线图](docs/growth-roadmap-2026-10.md)、[更新记录](CHANGELOG.md)和[0.12.0 发布记录](docs/releases/0.12.0.md)。
+参见[十月交付路线图](docs/growth-roadmap-2026-10.md)、[更新记录](CHANGELOG.md)和[0.13.0 发布记录](docs/releases/0.13.0.md)。
 
 后续工作包括验证 Claude Code trigger 捕获和增加 Agent 适配器。[证据总索引](evidence/README.md)与[调试研究状态](docs/skill-evaluation-evidence.md)保留当前结论的限制。67 个 Skill 的目录和 13 个 Skill 的入门集均未作为集合评测。
 

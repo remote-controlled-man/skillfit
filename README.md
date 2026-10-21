@@ -65,8 +65,8 @@ The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without 
 ## Install
 
 ```bash
-npx skillfit@0.12.0 --help
-npx skillfit@0.12.0 doctor
+npx skillfit@0.13.0 --help
+npx skillfit@0.13.0 doctor
 ```
 
 Requires Node.js 22+. npm may download the package; the case checks and previews below make no model calls.
@@ -76,10 +76,10 @@ Requires Node.js 22+. npm may download the package; the case checks and previews
 In your project directory, replace `./my-skill` with a directory containing your `SKILL.md`:
 
 ```bash
-npx skillfit@0.12.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.12.0 bench init my-bench --kind command --yes
-npx skillfit@0.12.0 bench check ./my-bench --json
-npx skillfit@0.12.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.13.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.13.0 bench init my-bench --kind command --yes
+npx skillfit@0.13.0 bench check ./my-bench --json
+npx skillfit@0.13.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/first-real-eval.md).
@@ -204,7 +204,7 @@ node ./exports/my-run/reproduce.mjs
 
 [Portable replay](docs/replay-packages.md) verifies saved observations and runs trusted local verifiers, with zero model calls. [Sealed inputs](docs/evaluation-input-snapshots.md) preserve the original case and target. [Interruption](docs/evaluation-interruption.md) retains available spending; unknown usage stays unknown.
 
-The next distribution adds an explicit [restore tool](docs/archive-delivery.md): fetch pinned bytes once, then replay historical study archives offline. Git originals and frozen reports stay available; normal installation and CLI commands do not fetch archives.
+Version 0.13.0 adds an explicit [restore tool](docs/archive-delivery.md): fetch pinned bytes once, then replay historical study archives offline. Git originals and frozen reports stay available; normal installation and CLI commands do not fetch archives.
 
 ## Selectable Codex setup
 
@@ -277,7 +277,7 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 ## Roadmap
 
-See the [October delivery roadmap](docs/growth-roadmap-2026-10.md), [changelog](CHANGELOG.md) and [0.12.0 release record](docs/releases/0.12.0.md).
+See the [October delivery roadmap](docs/growth-roadmap-2026-10.md), [changelog](CHANGELOG.md) and [0.13.0 release record](docs/releases/0.13.0.md).
 
 Later work includes verified Claude Code trigger capture and additional agent adapters. The [evidence index](evidence/README.md) and [debugging study status](docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
 
