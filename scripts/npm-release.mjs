@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inspectBuiltPackage } from './check-package.mjs';
+import { validateReleaseDocuments } from '../docs/releases/release-docs-smoke.mjs';
 
 export function validateRelease(pkg, lock, pack) {
   assert.equal(pkg.name, 'skillfit');
@@ -68,6 +69,7 @@ async function main(mode, packFile) {
   assert.equal(entries.length, 1);
   const pack = entries[0], pkg = json('package.json');
   validateRelease(pkg, json('package-lock.json'), pack);
+  validateReleaseDocuments(process.cwd());
   inspectBuiltPackage(pack);
   assert.equal(pack.filename, basename(pack.filename));
   assert.ok(pack.filename.endsWith('.tgz'));

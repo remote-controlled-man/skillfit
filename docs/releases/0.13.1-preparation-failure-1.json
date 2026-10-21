@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "version": "0.13.1",
+  "kind": "local-preparation-failure",
+  "tests": 881,
+  "passed": 880,
+  "failed": 1,
+  "skipped": 0,
+  "failingTest": "actual offline npm package matches the reviewed inventory and active runtime",
+  "error": "Unexpected end of JSON input: document-check CLI skipped execution through a temporary-directory alias",
+  "fixedBy": "Use canonical script path for CLI entry detection; add directory-alias execution/output regression",
+  "originalLog": "/private/tmp/skillfit-0131-preparation-tests.log",
+  "originalCandidate": {
+    "root": "/private/tmp/skillfit-0131-preparation-e6t0f2r5",
+    "installed": "/private/tmp/skillfit-0131-preparation-e6t0f2r5/prefix/node_modules/skillfit",
+    "packFile": "/private/tmp/skillfit-0131-preparation-e6t0f2r5/pack.json",
+    "size": 2847828,
+    "unpackedSize": 18498814,
+    "files": 2661,
+    "featureReceipt": "/private/tmp/skillfit-0131-preparation-e6t0f2r5/features/feature-smoke.json",
+    "archiveReceipt": "/private/tmp/skillfit-0131-preparation-e6t0f2r5/archives/archive-delivery-smoke.json",
+    "installedFilesVerified": 2661
+  },
+  "publicationAttempted": false
+}

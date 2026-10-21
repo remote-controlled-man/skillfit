@@ -5,12 +5,12 @@ while the 19 compressed archives are fetched explicitly from a fixed Git
 commit. Git checkouts still retain the original archives. Ordinary npm install,
 CLI commands and evaluations never download them automatically.
 
-These commands apply to 0.13.0. Published 0.12.0 still carries its archives
+These commands apply to 0.13.0 and newer. Published 0.12.0 still carries its archives
 and does not include the new restore entry. From your project, install the
 versioned package and invoke its restore tool:
 
 ```bash
-npm install --save-exact skillfit@0.13.0
+npm install --save-exact skillfit@0.13.1
 node ./node_modules/skillfit/evidence/fetch-archives.mjs --list
 node ./node_modules/skillfit/evidence/fetch-archives.mjs --all --output ./historical-evidence
 node ./node_modules/skillfit/evidence/fetch-archives.mjs --all --output ./historical-evidence --yes
@@ -73,7 +73,7 @@ original grades; restoration does not promote a rejected or inconclusive Skill.
 
 This distribution change starts with 0.13.0. Published 0.12.0 archives, dated
 reports, release receipts and recipes are unchanged. See the
-[0.13.0 release record](releases/0.13.0.md) for publication and verification status.
+[current release record](releases/0.13.1.md) for publication and verification status.
 
 The independent installed-package check is
 [archive-delivery-smoke.mjs](releases/archive-delivery-smoke.mjs). Run it with

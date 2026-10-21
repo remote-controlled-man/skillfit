@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.1 — current driver guidance and release document checks (2026-10-21)
+
+- Correct stale fixed-version commands in the driver Skill and first-run guide;
+  synchronize current installed examples and release links. Preserve historical
+  feature minimums and immutable release evidence.
+- Explain explicit pinned archive restoration and the existing
+  `--compete-installed` scope. Add package/install-time checks for current
+  documentation versions so stale Skill commands block release validation.
+  See the [0.13.1 release record](docs/releases/0.13.1.md).
+
 ## 0.13.0 — protected installation and lean archive delivery (2026-10-21)
 
 - Separate installation file transactions from command planning. Preserve CLI

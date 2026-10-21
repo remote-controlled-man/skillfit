@@ -53,6 +53,11 @@ test('actual offline npm package matches the reviewed inventory and active runti
   });
   assert.equal(extracted.status, 0, `${extracted.error ?? ''}\n${extracted.stderr}`);
   const installed = join(cache, 'package');
+  const documents = spawnSync(process.execPath, [join(installed, 'docs/releases/release-docs-smoke.mjs'), installed], {
+    encoding: 'utf8', timeout: 30_000,
+  });
+  assert.equal(documents.status, 0, `${documents.error ?? ''}\n${documents.stderr}`);
+  assert.equal(JSON.parse(documents.stdout).documents.length, 5);
   const alias = join(cache, 'package-alias');
   symlinkSync(installed, alias, 'junction');
   const blocked = spawnSync(process.execPath, [join(installed, 'docs/releases/archive-delivery-smoke.mjs'), installed,
