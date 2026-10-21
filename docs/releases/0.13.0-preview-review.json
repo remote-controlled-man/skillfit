@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "version": "0.13.0",
+  "sourceCommit": "830e9c41ef89ffe5b024b8a2137c061dd2cab933",
+  "dryRun": true,
+  "size": 2821770,
+  "unpackedSize": 18378490,
+  "files": 2645,
+  "integrity": "sha512-KGf00E7hUY/bB+4D4U0/FIcvt+MvqH+ls6zOHtQsbQvt39ZG9qMrPN6YmwofCJR8q4zWi3IvwnX1iBl36EZOrw==",
+  "sha256": "197053d0b5aeb7769c66b58db9f5117dd0dd66795f23a84deef40db9a1d5adb8",
+  "installedFilesVerified": 2645,
+  "featureReceipt": "/private/tmp/skillfit-013-preview/features/feature-smoke.json",
+  "archiveReceipt": "/private/tmp/skillfit-013-preview/archives/archive-delivery-smoke.json",
+  "reviewBlockingFindings": [],
+  "npmPublished": false
+}

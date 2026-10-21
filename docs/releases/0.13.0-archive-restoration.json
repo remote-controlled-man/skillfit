@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-21T04:16:15.158Z",
+  "version": "0.13.0",
+  "nodeVersion": "v24.21.0",
+  "packagePath": "/private/tmp/skillfit-013-registry/registry-install-KVwWVG/node_modules/skillfit",
+  "archiveSource": {
+    "repository": "remote-controlled-man/skillfit",
+    "commit": "56b4dc68e115475e197c6510c9cb2235a5ad2c62"
+  },
+  "sourceMode": "installed CLI default fixed HTTPS source; offline copy uses only the downloaded workspace",
+  "archivesRestored": 19,
+  "supportFilesRestored": 1583,
+  "archiveBytes": 19883818,
+  "listEntries": 19,
+  "previewWrites": 0,
+  "offline": {
+    "kind": "skillfit.archive-delivery-smoke",
+    "version": "0.13.0",
+    "nodeVersion": "v24.21.0",
+    "sourceCommit": "56b4dc68e115475e197c6510c9cb2235a5ad2c62",
+    "archivesRestored": 19,
+    "supportFilesRestored": 1583,
+    "inlineSupportFiles": 4,
+    "previewWrites": 0,
+    "networkAttempts": 0,
+    "modelCalls": 0,
+    "collisionPreserved": true
+  },
+  "archives": [
+    {
+      "id": "2026-10-12-diagnosing-revision-calibration-records",
+      "path": "evidence/artifacts/2026-10-12-diagnosing-revision/calibration-records.tar.gz",
+      "bytes": 197977,
+      "sha256": "dcb85c9f345e73c8e3777d8ce7421a17d974806e0ebe770400a93b262fce6d47",
+      "verified": true
+    },
+    {
+      "id": "2026-10-12-diagnosing-revision-interrupted-records",
+      "path": "evidence/artifacts/2026-10-12-diagnosing-revision/interrupted-records.tar.gz",
+      "bytes": 646293,
+      "sha256": "15d53b45e2ef814767e56aa755ad7ecf64617af80e00d5ab3e4c17f8d9126078",
+      "verified": true
+    },
+    {
+      "id": "2026-10-12-diagnosing-revision-validation-records",
+      "path": "evidence/artifacts/2026-10-12-diagnosing-revision/validation-records.tar.gz",
+      "bytes": 1129096,
+      "sha256": "031efa9d44293f4b70b8c9d3c1f363d7529585e4639c4c464285f22e5f53d9a5",
+      "verified": true
+    },
+    {
+      "id": "2026-10-12-diagnosing-v2-regression-records",
+      "path": "evidence/artifacts/2026-10-12-diagnosing-v2/regression-records.tar.gz",
+      "bytes": 253786,
+      "sha256": "e2fc25da07dad3dbabf34d8067ce659972615353665f61208fbc8c34b755acba",
+      "verified": true
+    },
+    {
+      "id": "2026-10-12-diagnosing-v2-transfer-records",
+      "path": "evidence/artifacts/2026-10-12-diagnosing-v2/transfer-records.tar.gz",
+      "bytes": 111515,
+      "sha256": "508ffd7b9ac8b9bcc438202a4c352f3bb7a31df91a9f27867568a31d42d10158",
+      "verified": true
+    },
+    {
+      "id": "2026-10-12-normalize-url-v2-available-readiness-records",
+      "path": "evidence/artifacts/2026-10-12-normalize-url-v2-available/readiness-records.tar.gz",
+      "bytes": 1082,
+      "sha256": "74fc0f675ddb111fef493a52cc7f4971bc12e7f5d5ffa2053d705f7afb71a57c",
+      "verified": true
+    },
+    {
+      "id": "2026-10-12-normalize-url-v2-comparison-records",
+      "path": "evidence/artifacts/2026-10-12-normalize-url-v2-comparison/records.tar.gz",
+      "bytes": 69855,
+      "sha256": "29ce6dc3f14da6b4bfe7a1ac65c1965d38bae9e40dc83352fab685c510363e43",
+      "verified": true
+    },
+    {
+      "id": "2026-10-12-normalize-url-v2-recovery-records",
+      "path": "evidence/artifacts/2026-10-12-normalize-url-v2-recovery/records.tar.gz",
+      "bytes": 86844,
+      "sha256": "e27b441c4605134076bb6674b1712bbb23c46bd4d28b643120be950a0c50543e",
+      "verified": true
+    },
+    {
+      "id": "2026-10-12-normalize-url-v2-validated-records",
+      "path": "evidence/artifacts/2026-10-12-normalize-url-v2-validated/records.tar.gz",
+      "bytes": 129523,
+      "sha256": "86ed1f03513e4e7342d3e1e5849cb5007344d16ff11e2d612ae4073c8e5ba907",
+      "verified": true
+    },
+    {
+      "id": "2026-10-13-debugging-completed-development-package",
+      "path": "evidence/artifacts/2026-10-13-debugging-completed-development/package.tar.gz",
+      "bytes": 1282702,
+      "sha256": "84c5be909da00037634106e292be9424f435b309f48876859d2f0d63bae2de36",
+      "verified": true
+    },
+    {
+      "id": "2026-10-13-debugging-controls-and-sleep-stop-package",
+      "path": "evidence/artifacts/2026-10-13-debugging-controls-and-sleep-stop/package.tar.gz",
+      "bytes": 3563737,
+      "sha256": "8d2939ee8f1c25a5d8230e54a9faf024e71a5918e1e507144a82426bb15340c7",
+      "verified": true
+    },
+    {
+      "id": "2026-10-13-debugging-development-stops-package",
+      "path": "evidence/artifacts/2026-10-13-debugging-development-stops/package.tar.gz",
+      "bytes": 1538623,
+      "sha256": "1ca51e483eb9e71116c0a7519c5334cdd58f13f571e84c723f4502e7b0becef7",
+      "verified": true
+    },
+    {
+      "id": "2026-10-14-debugging-followup-routing-stop-package",
+      "path": "evidence/artifacts/2026-10-14-debugging-followup-routing-stop/package.tar.gz",
+      "bytes": 2495332,
+      "sha256": "f03479742b5a86738ea8dc470a911d5392c7893bf15aa2b4c33ae6de78970343",
+      "verified": true
+    },
+    {
+      "id": "2026-10-14-debugging-independent-validation-package",
+      "path": "evidence/artifacts/2026-10-14-debugging-independent-validation/package.tar.gz",
+      "bytes": 2900849,
+      "sha256": "1a4b136b87b2f3288896b6a48416710551bd149529f118b0e02e7740fd5286f1",
+      "verified": true
+    },
+    {
+      "id": "2026-10-14-debugging-reading-pilot-and-cost-review-package",
+      "path": "evidence/artifacts/2026-10-14-debugging-reading-pilot-and-cost-review/package.tar.gz",
+      "bytes": 985095,
+      "sha256": "61c48885f2b91d79f55fb0bc6edd5dc8302ad32465ddf0d3ca7ccf164a4e8aa6",
+      "verified": true
+    },
+    {
+      "id": "2026-10-14-debugging-spending-stop-package",
+      "path": "evidence/artifacts/2026-10-14-debugging-spending-stop/package.tar.gz",
+      "bytes": 1815660,
+      "sha256": "3665e15042c3df6f94ca5554f8a63120f943d97028ac4965d2e175d969d3b2a2",
+      "verified": true
+    },
+    {
+      "id": "2026-10-15-independent-comparison-regression-stop-package",
+      "path": "evidence/artifacts/2026-10-15-independent-comparison-regression-stop/package.tar.gz",
+      "bytes": 1214300,
+      "sha256": "6a4d29e55a1b48b7e8cd4e790eb057341b08e92ede7e6fe903a015a6edfe3ed6",
+      "verified": true
+    },
+    {
+      "id": "2026-10-15-native-diff-mechanism-package",
+      "path": "evidence/artifacts/2026-10-15-native-diff-mechanism/package.tar.gz",
+      "bytes": 830563,
+      "sha256": "0662db8ba95ab7a440098a10a48d6ba95a7cf900ee98cc7733aab2d3192c201f",
+      "verified": true
+    },
+    {
+      "id": "2026-10-15-receiver-mechanism-stop-package",
+      "path": "evidence/artifacts/2026-10-15-receiver-mechanism-stop/package.tar.gz",
+      "bytes": 630986,
+      "sha256": "b520022e2c6250bfa2b20c864e2f63d9436647a05d69b16b312ec636d36a0a43",
+      "verified": true
+    }
+  ],
+  "modelCalls": 0,
+  "agentCliCalls": 0,
+  "workspace": "/private/tmp/skillfit-013-registry/archive-check/online"
+}
