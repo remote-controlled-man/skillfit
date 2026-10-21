@@ -36,72 +36,131 @@ running a dry run does not verify OIDC publication. See
 
 ## Release procedure
 
-1. Prepare and review a new stable version; keep both lockfile version fields
-   aligned. An existing version, including 0.9.0, cannot be published again.
-2. In Actions, open `npm release`, choose `main`, and run with `dry_run: true`.
-   Tests, package inspection and the exact archive preview must pass. The
-   archive and pack manifest are retained as workflow artifacts for 14 days.
-3. Run with `dry_run: false` for the approved source. This rebuilds and verifies
-   the archive, checks that the version is unused and publishes with OIDC.
-4. Allow for npm's publication scan. The workflow requires matching version,
-   latest and archive integrity, then verifies an isolated registry install,
-   every packaged file and CLI version/help/request preview. A failed lookup,
-   changed archive or unavailable installation never becomes a successful
-   release receipt. Inspect the retained artifact and failure logs.
-
-The same manual workflow can be triggered from the GitHub CLI. After preparing
-the reviewed new version on `main`, start the preview:
+1. Prepare and review a new stable version, matching both lockfile version fields
+   and current command documents. Existing versions cannot be uploaded again.
+2. Merge through the normal PR checks and wait for the exact main commit's full
+   three-system CI. The release gate reads its structured results, job conclusions,
+   repository, source and attempt. Missing evidence, record-only CI or an unfinished
+   run blocks preparation with the source run link. It does not repeatedly poll CI.
+3. Start the default preview. It compiles and packs once, applies the package and
+   current-document policy, and records the exact archive SHA-256/integrity, source
+   and CI evidence. Source tests already ran in CI and are not repeated here.
 
 ```bash
 gh workflow run npm-release.yml --repo remote-controlled-man/skillfit --ref main -f dry_run=true
-gh run list --repo remote-controlled-man/skillfit --workflow npm-release.yml --limit 5
 ```
 
-Inspect that run's checks, source commit and archive preview. Only after the
-preview passes and publication is authorized, start the real run:
+Use the run ID from Actions/the dispatch result. One command can wait without
+repeated agent queries; the final exit code is significant:
 
 ```bash
-gh workflow run npm-release.yml --repo remote-controlled-man/skillfit --ref main -f dry_run=false
+gh run watch <run-id> --repo remote-controlled-man/skillfit --interval 60 --exit-status
 ```
 
-This uses the existing GitHub CLI login; npm authentication comes from the
-workflow's OIDC binding. It does not require browser automation for each release.
-
-## Upload accepted but verification timed out
-
-The upload and registry verification are separate workflow steps. A successful
-upload does not establish availability: npm can still show the version as
-`Validating`. The verification step retains its 20-minute deadline and fails
-without a success receipt if the version is unavailable. See
-[npm's publication scanning notice](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/).
-
-Do not rerun publication after npm accepts the upload. Preserve the original
-logs, `pack.json`, archive and `registry-read-*.json` files. Inspect the package's
-Version History for its review status. A pending scan is not a staged release
-that needs promotion, and a deadline failure does not authorize another upload.
-
-For an independent, read-only recovery, download the original workflow artifact
-into an isolated directory. Copy its `pack.json` and archive to a **new** attempt
-directory; verification receipts use exclusive creation and must not overwrite
-the failed attempt. Check out the original run's source commit, build with the
-same toolchain and run the helper against that attempt's `pack.json`:
+The preview summary provides the exact run/attempt, archive digest and next
+command. Review that artifact before authorizing publication. Main must still
+have the same source; a later preview rerun must not silently replace the reviewed
+attempt. A formal run requires both explicit values:
 
 ```bash
-node scripts/npm-release.mjs verify /absolute/path/to/new-attempt/pack.json
+gh workflow run npm-release.yml --repo remote-controlled-man/skillfit --ref main -f dry_run=false -f preview_run_id=<reviewed-run-id> -f preview_run_attempt=<reviewed-attempt>
 ```
 
-The helper does not publish. It requires the original archive integrity, matching
-version/latest, an isolated install and exact file comparisons. For a local
-cross-platform check, use a disposable directory extracted from the original CI
-archive as the comparison source, plus the original commit's package lock; this
-checks installed bytes against the accepted archive without rebuilding its
-generated files. Record this as independent verification, not a successful rerun
-of the original workflow. Retain the first failure even if later verification
-succeeds. Keep availability, provenance and installation evidence separate from
-any Skill quality claim.
+4. Formal publication retrieves the reviewed tar, without repacking. It verifies
+   the same repository/workflow/main source, successful preview attempt, version,
+   original bytes and full CI evidence. The run must be attempt 1. Before upload,
+   it checks the version is unused and persists an immutable version-named
+   publication-intent artifact. An earlier intent or failure to persist the new
+   intent blocks uploading. Publication remains serialized and uses the existing
+   OIDC environment. No new token, bot or direct-main write permission is added.
+5. After the single upload, one automated acceptance command checks registry
+   version/latest/integrity, a fresh isolated registry installation and every
+   installed file against the original tar. It checks bundled driver fields and
+   the five current documents, executable examples, the general feature recipe,
+   default HTTPS restoration, zero-network offline restoration and all original
+   historical replay/export procedures, followed by exact source proof and npm
+   registry signature/attestation verification. Historical recipes retain Node
+   **24.21.0/POSIX** requirements; the workflow pins that environment. No model or
+   agent CLI calls or actual user configuration writes are part of acceptance.
+6. Read `workflow-summary.json`/Actions Summary once after the run. Each check has
+   pending/running/passed/failed state, immutable individual receipts and timestamped
+   events. Failures retain observations/logs and stop dependent checks. A successful
+   verification cannot disguise a later receipt-delivery failure. Inspect detailed
+   logs only for a failure, uncertain result or requested investigation.
 
-This workflow does not change the evaluation acceptance policy or upgrade a
-Skill. Package publication success establishes package availability only.
+Preview and publication artifacts are named `npm-release-<run-id>-<attempt>` and
+retained for **90 days**. They contain the original tar/pack, source/CI evidence,
+state/summary, failure logs and a `records/` bundle. This is temporary retention;
+permanent Git records still need normal repository delivery.
+
+## Generated receipts and plan state
+
+The workflow generates all receipt files, their digest references, the release
+page status and an optional plan status block. It does not create a privileged
+receipt PR or recursively create a second PR to record the first PR's own CI.
+Download the exact completed run and preview the import:
+
+```bash
+gh run download <publication-run-id> --repo remote-controlled-man/skillfit --name npm-release-<publication-run-id>-<attempt> --dir /tmp/skillfit-release-results
+node scripts/release-records.mjs /tmp/skillfit-release-results/records /absolute/path/to/skillfit --plan docs/plans/<release-plan>.md
+```
+
+Apply the same import with `--yes` after reviewing its paths. It validates the
+manifest, every file digest, successful checks and all receipt references before
+writing. Existing receipt files/status blocks, symlinks, escaping paths or altered
+files are rejected. New data receipts are copied exclusively; release/plan status
+is added to the requested Markdown files. It neither commits nor publishes. Review
+and deliver the generated diff through normal Git/PR checks. Successful publication
+and permanent receipt delivery are separate outcomes.
+
+Only tightly scoped release bookkeeping uses targeted three-system CI: plan
+Markdown, version release pages and newly added versioned JSON/text receipts.
+It still builds and validates the real package, driver/current-document versions,
+links, receipt JSON and referenced digests. Executable, package/lock, ordinary
+public guide, configuration, bench, archive, mixed, deleted/renamed or unknown
+changes run full CI. The same three required job names remain present; old PR
+runs may be canceled by a new PR push, while running main/release workflows are
+not canceled. Local pre-commit requirements in `AGENTS.md` still apply.
+
+## Upload accepted or outcome unknown; verification failed
+
+Never rerun publication. A registry 404 during scanning does not establish that
+an earlier upload was rejected. Publication intent and the attempt-1 restriction
+conservatively block a second upload, including when the original command's
+outcome is unknown. An authentication failure before upload can leave an intent;
+review the original evidence and prepare a new version rather than deleting the
+record to retry silently.
+
+Availability and transient npm installation failures share one **20-minute**
+deadline. Metadata reads back off to 60 seconds; an ETARGET/E404 or selected
+transient install failure uses a fresh prefix/cache and retains the failed
+attempt. Authentication/integrity failures stop immediately. Only read/install
+operations retry, never `npm publish`.
+
+Download the original formal artifact and check out its exact source with build
+tools available (`npm ci` and `npm run build`). Use a fresh attempt directory:
+
+```bash
+node scripts/release-acceptance.mjs recover /absolute/path/to/original-artifact /absolute/path/to/new-attempt
+```
+
+This command copies only the original reviewed inputs, preserving the original
+failed state/observations. It never publishes. If the upload-success marker is
+missing, it requires public registry metadata and exact source/run provenance
+before treating the original intent as an accepted upload; crypto signature
+verification remains a required acceptance stage. Unknown acceptance fails closed.
+The successful second attempt retains a reference to the first failure. Recovery
+still requires matching current latest and the original archive; it is not an
+unrestricted audit mode for superseded npm versions.
+
+The older `node scripts/npm-release.mjs verify <pack.json>` remains a read-only
+installation check. It alone does not establish that all acceptance stages passed.
+
+The optimized workflow requires its new structured source-CI receipts and a
+schema-2 preview. Old 0.13.1 artifacts remain historical and cannot authorize this
+new publication path. Tests/fixtures and local candidate checks do not establish
+that the changed workflow has already performed a real new npm publication.
+The workflow does not change evaluation acceptance policy or upgrade a Skill.
 
 ## First verified OIDC publication
 

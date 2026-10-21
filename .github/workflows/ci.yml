@@ -5,31 +5,63 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      SKILLFIT_CI_OS: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
+          cache: npm
+      - name: Classify changed files (unknown changes use full CI)
+        id: scope
+        run: node scripts/ci-scope.mjs classify
       - run: npm ci
-      - run: npm test
+      - run: node scripts/ci-scope.mjs test
       - name: First-run plan (offline, no agent CLI)
+        if: steps.scope.outputs.scope == 'full'
         run: |
           node dist/cli.js --help
           node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
           node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
           node dist/cli.js install --agent codex --dry-run
       - name: Smoke doctor (read-only)
+        if: steps.scope.outputs.scope == 'full'
         run: node dist/cli.js doctor
       - name: Bench integrity (offline verifier self-tests)
+        if: steps.scope.outputs.scope == 'full'
         run: |
           node dist/cli.js bench check benches/code-review
           node dist/cli.js bench check benches/debugging
           node scripts/check-contrib-benches.mjs
       - name: Smoke report (no session history on runners)
+        if: steps.scope.outputs.scope == 'full'
         run: node dist/cli.js report --json
+      - name: Record actual CI scope, status and test counts
+        if: always()
+        env:
+          SKILLFIT_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-scope.mjs record
+      - name: Retain CI evidence and failure logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-result-${{ github.run_attempt }}-${{ matrix.os }}
+          path: ${{ runner.temp }}/skillfit-ci/
+          if-no-files-found: warn
+          retention-days: 90
