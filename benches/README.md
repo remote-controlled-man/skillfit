@@ -2,6 +2,10 @@
 
 A **bench** is a portable, deterministic test suite for measuring whether a skill (or rules file, or MCP configuration) actually improves an AI coding agent on tasks that resemble your real work. Skills markets tell you what is popular; benches tell you what works.
 
+Choose a retained case from the [contributed bench catalog](contrib/README.md).
+The built-in `code-review` and `debugging` benches teach the format;
+`_self-test` contains synthetic pipeline controls, not efficacy evidence.
+
 > **This file is the reference** — layout, schema, the verifier contract, fixture rules. If you are
 > about to write a bench, read [docs/bench-authoring.md](../docs/bench-authoring.md) first: it walks the
 > seven steps end to end on one real task and explains why each one is non-optional.
@@ -73,9 +77,10 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `schemaVersion` | yes | Must be `1`. |
+| `schemaVersion` | yes | `1` retains legacy behavior; current source supports explicit `2` with required task claims. See [claims and scope](../docs/bench-claims.md). |
 | `name` | no | Display name; defaults to the directory name. |
 | `tasks` | yes | Non-empty array. Task `id`s must be unique and match `^[A-Za-z0-9][A-Za-z0-9._-]*$`. |
+| `tasks[].claims` | schema 2 only | Nonempty, distinct `quality`, `efficiency` and/or `activation` design support; activation requires `shouldTrigger`. Schema 1 remains unrecorded. See [claims and scope](../docs/bench-claims.md). |
 | `tasks[].fixture` | yes | Directory (relative to the bench root) with the synthetic repository. Convention: `fixtures/<task-id>/`. |
 | `tasks[].prompt` | yes | Markdown file with the task instructions. Convention: `prompts/<task-id>.md`. |
 | `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Spawned without a shell, so the first token must be a real executable. Convention: `node verifiers/<task-id>.mjs`. |

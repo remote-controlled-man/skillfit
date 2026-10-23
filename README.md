@@ -4,10 +4,10 @@
 
 # skillfit
 
-**Skill registries tell you what's popular. skillfit tells you what actually works.**
+**Measure configuration outcomes, costs and activation on your own tasks.**
 
-Measure whether a skill, rules file, or MCP setup improves *your* agent on *your* tasks —<br/>
-then install only what survives the experiment.
+Compare a skill, rules file, or MCP setup with a baseline for *your* agent —<br/>
+then use the recorded evidence and its limits to decide what to enable.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
@@ -41,7 +41,15 @@ Build cases around your own tasks: pin the starting files, write the request, an
 
 ## What you get
 
-A real run, measuring whether an agent even *bothers to load* a skill when it is installed but not mentioned:
+Choose the question before spending; these outputs support different conclusions:
+
+| Question | Measurement | Limit |
+| --- | --- | --- |
+| Does task quality change? | Paired outcomes, McNemar verdict and task-bootstrap intervals | `inconclusive` is not proof of no effect; small samples may remain unresolved |
+| Can a revision reduce cost? | Predeclared efficiency policy: all-invocation uncached-input tokens per success | Requires complete usage, independent validation and no observed regression; does not estimate dollars or prove equivalence |
+| Is the installed Skill observed activating? | Single-arm trigger recall, false-trigger rate and unknown coverage | Cannot establish paired quality/cost benefit or causation |
+
+This historical trigger run observes activation when the Skill is installed but not mentioned:
 
 ```console
 $ node dist/cli.js eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
@@ -58,7 +66,7 @@ Precision           : 1/1 (100%) [95% CI 21%–100%]
 F1                  : 0.20 (no CI: a harmonic mean of two proportions has no closed-form binomial interval)
 ```
 
-The skill fired once in nine in-domain tasks — and the tasks pass 3/3 without it. That is a verdict no registry can give you.
+The run recorded one activation in nine in-domain trials. The table's pass counts belong to that same installed arm; they are not a no-Skill baseline. This single-arm observation cannot show whether loading the Skill improves outcomes.
 
 <sub>Captured 2026-09-22 on Kimi Code against the four-task `code-review` bench. The bench has since gained a fifth task; the four metric lines above are re-rendered from that run's recorded per-task counts, so the run is real and the formatting is current.</sub>
 
@@ -101,9 +109,15 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-The checks are offline; `doctor` is read-only and both previews only print plans. Supported agents: **Claude Code**, **OpenAI Codex CLI**, **Kimi Code** ([capability matrix](src/matrix/agents.json)).
+The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/eval-agent-preflight.md#current-source-capability-table) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
 
-Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/experiment-workflow.md).
+The current checkout adds unpublished measurement features and corrections; build it to use additions marked **current source** in the documentation.
+
+This includes [offline self-test protocol 1](docs/bench-self-test.md) and explicit [bench schema 2 / frozen measurementScope 1](docs/bench-claims.md). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
+
+The npm 0.13.1 commands above retain their released behavior. The [capability table](docs/eval-agent-preflight.md#current-source-capability-table) describes adapter support; [metrics](docs/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+
+Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/experiment-workflow.md).
 
 ## Build your own cases
 
@@ -118,6 +132,8 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 ```
 
 Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. Read the [case authoring guide](docs/bench-authoring.md), [JSON check contract](docs/bench-check-json.md), [verifier contract](docs/verifier-contract.md) and [drafting records](docs/bench-drafting.md).
+
+Before live spending, a current source build can run [bench self-test](docs/bench-self-test.md) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
 
 List and inspect cases, or preview an edit. `--yes` applies a validated change with a backup; removal keeps case files. Select a smaller run with repeated `--task`:
 
@@ -163,7 +179,7 @@ node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
 
 The [component contract](docs/eval-component.md) defines quality and efficiency policies; `accept`, `reject` and `inconclusive` remain separate from the statistical verdict. Adoption requires complete, independent validation; nothing upgrades automatically.
 
-[Shared planning](docs/eval-planning.md) covers ordinary/request plans, `--json`, task selection, balanced pair order, five-field spending stops, deadlines and plan-hash confirmation. Calibration measures baseline difficulty; trigger mode measures discovery. Neither proves paired benefit. Installed evaluations provide the same pinned native diff helper to both arms.
+[Shared planning](docs/eval-planning.md) covers ordinary/request plans, `--json`, task selection, balanced pair order, deadlines and plan-hash confirmation. `spendingBudget` / `--spending-budget` is optional as a whole; when supplied, **all five fields are mandatory**. Among current CLI readers, only Codex has all required token/cache counters; Kimi/Claude block this budget before calls, and API coverage remains unknown until responses. Reaching a line prevents the next call; an in-flight call can overshoot, and missing/partial final usage stops further calls. Calibration measures baseline difficulty; trigger mode measures discovery. Neither proves paired benefit. Installed evaluations provide the same pinned native diff helper to both arms.
 
 ### Test rules and MCP setups
 
@@ -255,14 +271,16 @@ We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pa
 
 | Skill | Quality Δ | Input tokens | Verdict |
 |---|---:|---:|---|
-| `diagnosing-bugs` | +66.7pp test-asset gain (2/3 runs); task quality unchanged | +11.7% | Limited historical process signal |
+| `diagnosing-bugs` | +66.7pp test-asset gain (2/3 runs); task quality unchanged | +11.7% | Limited historical artifact signal |
 | `code-review` | +3.3pp (unstable) | +9.1% | Not enough evidence |
 | `tdd` | 0.00pp | +9.2% | No measurable gain |
 | `doubt-driven-development` | 0.00pp | +20.7% | No measurable gain |
 | `security-and-hardening` | 0.00pp | +27.4% | No measurable gain, highest cost |
 | 3 more | 0.00pp | +14.7~17.0% | No measurable gain |
 
-See the [evidence index](evidence/README.md) and [current debugging study](docs/skill-evaluation-evidence.md) for dated scope and available records.
+These are observed outcomes on the recorded tasks, not tests of every workflow claim. Regression-test artifacts do not establish process order, and 0.00pp cannot exclude an unmeasured process effect. A saturated baseline limits observed quality headroom; it does not automatically discard a task for an efficiency comparison with complete costs and no observed regression.
+
+See the [evidence index](evidence/README.md) and [current debugging study](docs/skill-evaluation-evidence.md) for dated scope and available records. These author-run records do not establish independent third-party live reproduction; offline replay verifies saved observations.
 
 ## Design principles
 
@@ -279,11 +297,13 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 See the [October delivery roadmap](docs/growth-roadmap-2026-10.md), [changelog](CHANGELOG.md) and [0.13.1 release record](docs/releases/0.13.1.md).
 
-Later work includes verified Claude Code trigger capture and additional agent adapters. The [evidence index](evidence/README.md) and [debugging study status](docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
+See the [capability table](docs/eval-agent-preflight.md#current-source-capability-table) for current adapter and trigger verification limits, and the roadmap's linked active plans for pending implementation. Later work includes live validation and additional agent adapters. The [evidence index](evidence/README.md) and [debugging study status](docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
 
 ## Contributing
 
 Follow [CONTRIBUTING.md](CONTRIBUTING.md). Useful contributions include real-workflow cases, reproducible evidence and matrix corrections. [Security reports](SECURITY.md) have a separate channel.
+
+For development handoff, use [documentation governance](docs/documentation-governance.md), the [architecture entry](docs/architecture.md) and [ADR index](docs/decisions/README.md). The [governance plan](docs/plans/2026-10-22-documentation-governance-and-architecture.md#当前执行状态) owns its migration progress; the [measurement plan](docs/plans/2026-10-21-measurement-contract-and-capability-remediation.md#当前执行状态) owns F1–F8/R1–R4.
 
 ### License
 

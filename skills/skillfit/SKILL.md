@@ -16,6 +16,13 @@ The evaluation workflow requires 0.12.0 or newer for Git-bench/layout,
 ordinary CLI costs, API-failure evidence, bundled names and recorded case drafting.
 Earlier versions lack some of these fixes; inspect the installed version before using new flags.
 The historical archive restore entry point requires 0.13.0 or newer.
+Current-source numerical, trigger-observation and per-call model-identity corrections,
+self-test protocol 1 and bench schema 2 / measurementScope 1 are not yet published
+in npm 0.13.1. These feature protocols require the implementing build; no minimum
+published release is assigned for the additions. Build the checkout for these additions; read the
+[capability table](https://github.com/remote-controlled-man/skillfit/blob/main/docs/eval-agent-preflight.md#current-source-capability-table)
+before promising a mode, strict budget or model provenance. A package version
+string does not prove the checkout's new behavior is released.
 
 ## Which command for which question
 
@@ -28,7 +35,8 @@ The historical archive restore entry point requires 0.13.0 or newer.
 | "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger`. Add `--compete-installed` to copy other user Skills; otherwise recall is an upper bound. Codex counts a `SKILL.md` read |
 | "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
 | "这个 MCP / AGENTS.md 真的有帮助吗" | Preview `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3 --dry-run`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/config-experiments.md) |
-| "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]` |
+| "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]`; default schema 1 stays unrecorded; source supports explicit `--schema-version 2` with [claims](https://github.com/remote-controlled-man/skillfit/blob/main/docs/bench-claims.md) |
+| "花钱前确认流水线能测到预期对照" | Current source: preview `node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs --run-group controls-001 --json --dry-run`, then confirm with `--plan-sha <plan.sha256>`; read [self-test](https://github.com/remote-controlled-man/skillfit/blob/main/docs/bench-self-test.md) for controls, limits and fresh output rules |
 | "做代码修改 case" | `bench init <dir> --kind command --dry-run`, then apply within the authorized scope; replace the teaching case with the real fixture, prompt, verifier and oracle |
 | "给 Agent 看 case 校验失败原因" | `bench check <dir> --json` — offline gate IDs, evidence and remediation; this is the integrity result, not calibration |
 | "先测 case 难度" | Version 0.11.0: `bench check <dir> --calibrate --agent <id> --task <id> --trials 1 --max-calls 1 --run-group <fresh-name> --json --dry-run`; calibrate only within authorized spending |
@@ -38,10 +46,13 @@ The historical archive restore entry point requires 0.13.0 or newer.
 | "把这次翻车存成任务" | `skillfit bench add <bench> --freeze --task <id> --prompt "..." --verifier-cmd "<cmd>"` |
 | "帮我起草 verifier" | same but `--decompose --agent <id>` — an agent drafts verifier + oracle; admitted only if the NOP + oracle gates pass |
 
-Executor choice: `--agent kimi-code` or `--agent codex` drives the local CLI (no API key needed).
+Executor choice: `--agent kimi-code`, `--agent codex` or `--agent claude-code` drives the local CLI (no API key needed).
 It uses that CLI's authentication; offline preflight cannot confirm login.
-Without `--agent`, paired eval needs `SKILLFIT_API_KEY`/`OPENAI_API_KEY`. Trigger mode currently verified for
-kimi-code and codex only.
+Without `--agent`, paired eval needs `SKILLFIT_API_KEY`/`OPENAI_API_KEY`. Current-source
+trigger adapters for all three are exercised offline. Claude's stream-json entry
+is connected with fake-subprocess coverage; this is not live CLI/authentication
+verification. Codex observes literal registered-file read commands rather than a
+native Skill event. Missing/incomplete observation remains unknown, not false.
 
 Installed mode delivers the complete Skill; default inject mode measures injected
 text. Since 0.12.0, bundled-name resolution is shared by read-only bench
@@ -56,6 +67,21 @@ explicit `--include <file-or-dir>` selections are required. Narrow large fixture
 before importing. For `--decompose`, preview and authorize its single call within
 existing spending permission. Failed/interrupted drafts retain costs and inputs;
 never retry implicitly. See [drafting records](https://github.com/remote-controlled-man/skillfit/blob/main/docs/bench-drafting.md).
+
+Current-source schema 2 requires explicit `--claim` values for add/freeze/from-commit;
+claims edits use a JSON array and never upgrade schema 1 implicitly. Preview and
+inspect every selected task's `measurementScope`: unsupported schema 2 targets
+refuse before verifier/oracle/executor calls. Derivation comes from mode/policy;
+never add an `objective` field to request schema 1. Calibration and fixed self-test
+controls have null diagnostic targets. Claims are design declarations, not proof
+of validity, power, workflow-process measurement or adoption eligibility.
+
+The self-test uses fixed mock-only paired inject/installed controls, no Agent/API/
+judge/drafter calls. It executes trusted local verifier/oracle programs; keep them
+offline. Missing controls mean not-configured, never permission for live fallback.
+Read/export an individual native suite rather than the wrapper parent; replay
+preserves synthetic identity, unknown provider usage and ineligibility. It does
+not test native activation.
 
 ## Historical study archives
 
@@ -111,8 +137,11 @@ The default policy needs a positive quality gain. Explicit policy version 2 with
 observed pass/score/check regression. Declare the objective before calls and read
 `costs.efficiency`; a tied quality result stays inconclusive and is not equivalence.
 Missing usage or an incomplete batch cannot authorize adoption under either objective.
-Optional request `spendingBudget` (0.10.0+) sets five whole-batch stop lines;
-reaching a line or losing complete final usage stops subsequent calls. An in-flight
+Optional request `spendingBudget` (0.10.0+) sets whole-batch stop lines. The object
+is optional; once supplied, **all five fields are mandatory**: input, cachedInput,
+uncachedInput, output and durationSeconds. Token limits must be positive safe
+integers; seconds must be positive finite numbers within the parser's safe-number bound.
+Reaching a line or losing complete final usage stops subsequent calls. An in-flight
 call can overshoot; do not treat it as a provider hard cap or retry permission.
 In version 0.11.0, those stops include optional ordinary-eval judge calls.
 Read separate Agent/judge/total `invocationCosts` and coverage; older missing
@@ -126,14 +155,34 @@ detection. Inspect `USAGE_CAPABILITY`: known missing adapter counters block a
 strict budget before calls; API/injected coverage remains unknown. API response
 format/HTTP failures retain reported counters and raw evidence while stopping
 the batch. Missing fields remain unknown, not zero or permission to retry.
+Among current CLI adapters, Codex has all required token/cache readers. Kimi lacks
+cachedInput and Claude has no token reader, so either blocks the strict five-field
+budget before calls, including when selected as judge. Removing the budget requires
+a fresh spending review; it does not recover missing costs.
+
+Current-source receipts separate configured/requested models from public response
+IDs with source locations. Inspect role/call coverage in reports; Codex/Kimi's
+reported models and missing legacy identities remain unrecorded. A CLI version,
+configuration alias or assistant's prose cannot prove which model served a call.
+Portable replay retains saved declarations without querying today's configuration.
+For new records also inspect frozen `measurementScope` and goal-specific
+diagnostics. Report policy overrides cannot rewrite that target or grant an
+undeclared claim. Legacy missing scope remains unrecorded, without a new
+historical adoption requirement; a declaration mismatch is an integrity error.
 
 - Read the verdict line, the discordant-pair counts, and the CI — not just the delta. `inconclusive` means
   the run cannot tell, not that the skill is useless.
 - Anything printed as `indicative` (small benches, few trials) must be reported as indicative.
-- A baseline pass rate ≥ 90% warning means the bench cannot discriminate — say so instead of reporting a
-  0pp delta as a finding.
-- Trigger mode: report recall and false-trigger rate separately, with their CIs. A skill that never fires
-  has zero realized value regardless of content quality.
+- A baseline pass rate ≥ 90% warning limits observed quality headroom; it does not
+  automatically discard a task for efficiency. Complete costs, successes in both
+  arms and no observed pass/score/check regression are still required. Calibration
+  alone cannot establish savings or quality equivalence.
+- Trigger mode: report recall, false-trigger rate, CIs and unknown/error coverage.
+  Its single installed arm cannot establish a no-Skill comparison or loading benefit.
+- The 8-task/5-pair scale/adoption floor is not a power guarantee or a minimum for
+  every within-bench exact-test verdict. No validated MDE planner or trajectory
+  scoring exists. A test artifact or zero outcome delta cannot settle unmeasured
+  process claims; distinguish saved replay from independent third-party live runs.
 - Cite the actual native run and summary path: paired/trigger `manifest.json`,
   calibration `_calibration.json`, or retained session/receipts for a stopped run.
 - Source supports native audit, offline delivery replay and portable export for

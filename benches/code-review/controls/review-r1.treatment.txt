@@ -1,0 +1,5 @@
+Findings:
+
+- high: src/order.js:25 throws a bare `Error` with no `code`; SPEC §1 requires `AppError` and SPEC §5 mandates `INVALID_QUANTITY` for negative quantities.
+- high: src/order.js:30 `item.qty > 10` should be `>= 10`: SPEC §4 grants the 5% bulk discount at quantity 10, but with the strict comparison a line with qty = 10 pays full price.
+- medium: `applyBulkDiscount` is a new exported function with new branches, yet the PR adds nothing under `tests/`; SPEC §2 requires unit tests for it.

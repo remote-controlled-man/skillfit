@@ -1,0 +1,3 @@
+- Orders of 10 items or more now get the 5% bulk discount; the threshold used to be 13.
+- Invalid quantities now fail with a stable INVALID_QUANTITY error code instead of a bare message.
+- Line prices are rounded once at the end, so totals no longer drift on multi-item orders.

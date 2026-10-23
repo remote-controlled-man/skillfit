@@ -4,6 +4,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { changedFiles, classifyChanges } from './ci-scope.mjs';
 
 test('real Git diff identifies bookkeeping and mixed/delete changes without a path filter bypass', t => {
@@ -14,6 +15,16 @@ test('real Git diff identifies bookkeeping and mixed/delete changes without a pa
   git(['add', '.']); git(['commit', '-m', 'baseline']); const base = git(['rev-parse', 'HEAD']).trim();
   writeFileSync(join(root, 'docs/plans/release.md'), '# Complete\n'); git(['add', '.']); git(['commit', '-m', 'records']); const head = git(['rev-parse', 'HEAD']).trim();
   assert.equal(classifyChanges(changedFiles(base, head, git)), 'records');
+  const event = join(root, 'event.json'); writeFileSync(event, JSON.stringify({ before: base }));
+  const resultDir = join(root, 'compat-ci');
+  const classified = spawnSync(process.execPath, [fileURLToPath(new URL('./ci-scope.mjs', import.meta.url)), 'classify'], {
+    cwd: root, encoding: 'utf8', env: { ...process.env, SKILLFIT_CI_DIR: resultDir, SKILLFIT_CI_FORCE_FULL: '1',
+      GITHUB_EVENT_NAME: 'push', GITHUB_EVENT_PATH: event, GITHUB_SHA: head, GITHUB_OUTPUT: '' },
+  });
+  assert.equal(classified.status, 0, classified.stderr);
+  const scope = JSON.parse(readFileSync(join(resultDir, 'scope.json'), 'utf8'));
+  assert.equal(scope.scope, 'full', 'compatibility jobs must not shrink record-only changes to targeted tests');
+  assert.match(scope.reason, /Node compatibility/);
   writeFileSync(join(root, 'package.json'), '{}'); git(['add', '.']); git(['commit', '-m', 'mixed']);
   assert.equal(classifyChanges(changedFiles(base, git(['rev-parse', 'HEAD']).trim(), git)), 'full');
   git(['rm', 'docs/plans/release.md']); git(['commit', '-m', 'deleted']);
@@ -41,4 +52,16 @@ test('workflow enforces source gate, explicit preview attempt and persisted inte
   const ci = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   assert.match(ci, /os: \[windows-latest, ubuntu-latest, macos-latest\]/); assert.match(ci, /\n  test:/);
   assert.doesNotMatch(ci, /paths-ignore:|\n    if:.*scope/); assert.match(ci, /cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}/);
+  const compatible = ci.slice(ci.indexOf('\n  node-compat:'), ci.indexOf('\n  node-minimum:'));
+  assert.match(compatible, /node: \['22\.13\.0', '22\.14\.0', '24', '26'\]/);
+  assert.match(compatible, /SKILLFIT_CI_FORCE_FULL: '1'/);
+  assert.match(compatible, /node scripts\/ci-scope.mjs test/);
+  assert.match(compatible, /node scripts\/check-contrib-benches.mjs/);
+  const minimum = ci.slice(ci.indexOf('\n  node-minimum:'));
+  assert.match(minimum, /node-version: '22\.0\.0'/);
+  assert.match(minimum, /node scripts\/ci-scope.mjs minimum/);
+  assert.match(ci, /name: ci-result-\$\{\{ github.run_attempt \}\}-test-\$\{\{ matrix.os \}\}-node-22/);
+  assert.match(compatible, /name: ci-result-\$\{\{ github.run_attempt \}\}-node-compat-ubuntu-latest-node-\$\{\{ matrix.node \}\}/);
+  assert.match(minimum, /name: ci-result-\$\{\{ github.run_attempt \}\}-node-minimum-ubuntu-latest-node-22\.0\.0/);
+  assert.doesNotMatch(ci, /continue-on-error/);
 });

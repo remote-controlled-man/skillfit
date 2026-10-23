@@ -77,9 +77,14 @@ test('local readiness never claims login even with credentials/config files pres
 });
 
 test('capability checks use matrix declarations and cover trigger support, installation paths and the judge CLI', t => {
-  const f = setup(t), claude = getAgent('claude-code');
+  const f = setup(t), claude = structuredClone(getAgent('claude-code'));
+  delete claude.headless.streamJson;
   const trigger = inspectAgentEnvironment({ roles: [{ ...f.role, definition: claude }], target: f.target, mode: 'trigger', homeDir: f.home, env: f.env });
   assert.equal(trigger.status, 'blocked'); assert.match(trigger.checks.find(c => c.code === 'MATRIX_CAPABILITY')!.message, /streamJson/);
+  const supported = inspectAgentEnvironment({ roles: [{ ...f.role, definition: getAgent('claude-code') }], target: f.target, mode: 'trigger', homeDir: f.home, env: f.env });
+  assert.equal(supported.checks.find(c => c.code === 'MATRIX_CAPABILITY')!.status, 'PASS');
+  assert.equal(supported.checks.find(c => c.code === 'CLI_AVAILABLE')!.status, 'FAIL', 'offline tests must not claim a real Claude installation');
+  assert.equal(supported.checks.find(c => c.code === 'AUTHENTICATION')!.status, 'UNKNOWN');
   const missingDirs = structuredClone(f.role.definition!); missingDirs.skills.projectDirs = [];
   const installed = inspectAgentEnvironment({ roles: [{ ...f.role, definition: missingDirs }], target: f.target, mode: 'installed', homeDir: f.home, env: f.env });
   assert.match(installed.checks.find(c => c.code === 'MATRIX_CAPABILITY')!.message, /project Skill directory/);

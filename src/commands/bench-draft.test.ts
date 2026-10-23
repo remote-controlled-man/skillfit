@@ -1,3 +1,4 @@
+import { observedModelIdentity, parseModelIdentities, assertModelIdentity } from '../harness/model-identity.js';
 import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -147,4 +148,24 @@ test('CLI drafting previews accept budget/output controls without executing the 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /1 call; ceiling 1; executor deadline 13s/);
   assert.equal(existsSync(marker), false); assert.equal(existsSync(join(f.options.runsRoot, 'cli-preview')), false);
+});
+
+
+test('drafting retains response identity, relative provenance and matrix version preparation without upgrading a Skill', async t => {
+  const f = await fixture(t), base = f.executor();
+  const intent = { schemaVersion: 1 as const, configured: null, requested: null };
+  const rawOutput = JSON.stringify({ type: 'assistant', message: { model: 'draft-served', content: [] } });
+  const descriptor = { kind: 'cli', model: 'cli-configured', modelIntent: intent, modelIdentitySurface: 'claude-assistant' as const };
+  let probes = 0;
+  const executor: Executor = { describe: () => descriptor, run: async (prompt, cwd) => ({ ...await base.run(prompt, cwd), rawOutput,
+    modelIdentity: observedModelIdentity(rawOutput, intent, 'claude-assistant') }) };
+  await runBenchAdd({ ...f.options, agent: 'claude-code', executor, yes: true,
+    versionProbe: argv => { probes++; assert.deepEqual(argv, ['claude', '--version']); return 'offline-cli 1.0'; } });
+  assert.equal(probes, 1); assert.equal(f.calls(), 1);
+  const summary = json(join(f.records, '_summary.json')), receipt = json(join(f.records, '_result.json'));
+  assert.equal(parseModelIdentities(summary.modelIdentities).drafter?.reported, 1);
+  assert.equal(summary.modelIdentities.drafter.calls[0].receipt, '_result.json');
+  assertModelIdentity(receipt.modelIdentity, readFileSync(join(f.records, '_transcript.jsonl'), 'utf8'), descriptor);
+  assert.equal(json(join(f.records, '_runtime.json')).cliVersion, 'offline-cli 1.0');
+  assert.equal(summary.automaticUpgrade, false); assert.equal(summary.costs.metrics.input.knownTotal, 123);
 });

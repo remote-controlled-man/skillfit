@@ -3,7 +3,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'nod
 import { loadBench } from '../harness/bench.js';
 import { hashFileSet, sha256File } from '../harness/hash.js';
 import { packageFiles, packageMember, portableReproducer, verifyReplayPackage } from '../harness/replay-package.js';
-import { reportEvalComponent } from './eval-component.js';
+import { readEvaluation } from '../harness/eval-read-service.js';
 import { verifyInputSnapshot } from '../harness/input-snapshot.js';
 
 function overlaps(root: string, path: string): boolean {
@@ -41,7 +41,7 @@ export async function exportEvaluation(input: string, output: string, options: {
   const files = packageFiles(run).filter(path => path !== '_artifacts.json');
   if (JSON.stringify(files) !== JSON.stringify(Object.keys(index.files).sort())) throw new Error('Native evidence inventory changed.');
   for (const path of files) if (sha256File(packageMember(run, path)) !== index.files[path]) throw new Error(`Native evidence hash mismatch: ${path}`);
-  const report = await reportEvalComponent(run);
+  const report = await readEvaluation(run);
   const hasManifest = existsSync(join(run, 'manifest.json'));
   const singleArm = plan.details?.mode === 'calibration' || plan.details?.mode === 'trigger';
   if ((hasManifest || singleArm) && (!('evidence' in report) || !report.evidence.verified)) throw new Error(`Native evidence audit failed; cannot export a complete replay package: ${'evidence' in report ? JSON.stringify(report.evidence) : 'missing audit'}`);

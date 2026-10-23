@@ -5,14 +5,14 @@ Paired `eval` runs record descriptive agent costs in `tasks[].costs` and
 terminal summary and `report eval <manifest.json>` show the same cost tables.
 Reading a report makes no model call and does not change the manifest or verdict.
 
-Version 0.11.0 exposes the same paired spending guard through ordinary
-`--spending-budget <file>` and request `spendingBudget`. The five limits and
-effective primary executor deadline are visible in the shared plan and sealed
-for offline replay; the source budget file is unnecessary after execution.
-Limits stop between calls and can overshoot in flight. Version 0.11.0 also
-applies the guard to calibration, trigger runs and both judge orders; judge
-calls count against the same run-wide limits. These are operational limits, separate from relative
-adoption ceilings or a provider invoice. See [shared planning](eval-planning.md).
+This page owns invocation populations, denominators and final/partial/unknown
+coverage. [Planning](eval-planning.md#preview-and-confirm) owns the optional,
+five-field spending-budget format and deadline settings;
+[metrics](metrics.md#costs-budgets-and-stopping) owns stopping semantics across
+paired, calibration, trigger and judge calls. Version 0.11.0 exposes these
+shared controls; absolute stop lines are separate from relative adoption caps
+and provider invoices. Current adapter readers and strict-budget limitations
+belong to the [capability table](eval-agent-preflight.md#current-source-capability-table).
 
 ## Two populations
 
@@ -85,7 +85,10 @@ are retained separately. Ordinary parsing does not fabricate a trigger flag.
 Offline `USAGE_CAPABILITY` checks block strict spending budgets when an adapter is
 known to lack required counters, including an enabled judge. API and injected
 executors retain unknown offline coverage; actual missing counters still stop
-after an invocation, with no retry or guessed cache zeros. Historical receipts
+after an invocation, with no retry or guessed cache zeros. The
+[capability table](eval-agent-preflight.md#current-source-capability-table) distinguishes
+Codex's complete reader set from Kimi's missing cache partition and Claude's
+missing token reader. Historical receipts
 remain unchanged; this does not recover token counts from old plain-text runs.
 
 Cached input is the cache-read subset already included in input; adding it to

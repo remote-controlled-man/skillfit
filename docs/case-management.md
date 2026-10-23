@@ -24,7 +24,11 @@ skillfit eval ./my-skill --bench ./my-bench --agent codex --task fix-cache --tas
 List/show read the validated manifest without running verifiers or an agent. Their
 version-1 JSON envelopes have `kind: "skillfit.bench-list"` or
 `"skillfit.bench-task"`, bench identity/hash and `tasks`. Unspecified verifier kind
-is reported as `output`; unlabeled `shouldTrigger` is null.
+is reported as `output`; unlabeled `shouldTrigger` is null. Current-source
+list/show also expose `benchSchemaVersion`, each task's `claims` and
+`claimsStatus`. Schema 1 shows null / legacy-unrecorded rather than inferring
+claims. Explicit [schema 2](bench-claims.md) declarations are source-only, not a
+feature of the earlier releases described above.
 
 Repeat `--task` for positional eval, or set `"taskIds": ["fix-cache", "fix-order"]`
 inside a JSON request. Omit the selection to evaluate every task. Explicit empty,
@@ -65,8 +69,14 @@ unknown fields and duplicate field operations are rejected. Referenced paths and
 task structure are validated before writing; run `bench check` afterwards to test
 the verifier and oracle behavior. No agent is called by these operations.
 
+In current-source schema 2, `--set 'claims=["quality","efficiency"]'` edits a
+validated JSON array; required claims cannot be unset. Schema 1 refuses claims
+edits rather than upgrading automatically. Removing `shouldTrigger` from a task
+that declares activation fails validation. [Claims and compatibility](bench-claims.md#authoring-and-compatibility)
+own the full rules. The same preview/backup/rollback protection applies.
+
 Remove unregisters the task and **keeps all files**, including shared fixtures,
-prompts and verifiers. Schema 1 requires a nonempty bench: add a real case before
+prompts and verifiers. Both supported bench schemas require a nonempty bench: add a real case before
 removing the final starter. Unknown manifest/provenance fields are preserved.
 
 JSON changes return `schemaVersion: 1`, `kind: "skillfit.bench-change"`, status

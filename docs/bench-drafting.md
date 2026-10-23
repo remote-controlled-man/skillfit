@@ -33,7 +33,9 @@ Optional `--spending-budget budget.json` uses the existing five-field spending c
 }
 ```
 
-All fields must be positive; token limits are integers. Known unsupported CLI counters block before
+The object is optional, but all five fields are mandatory when supplied. Token limits
+are positive safe integers; seconds are positive finite numbers within the parser's
+safe-number bound. Known unsupported CLI counters block before
 dispatch. Missing/partial final counters or executor errors stop a budgeted draft after retaining
 available usage, without adding a task. These are observed stop lines, not provider-side prepaid
 caps: one in-flight call can exceed a line. Reaching a line with complete final usage prevents more
@@ -73,3 +75,24 @@ per-command deadline. Compare output and exit codes with `_gates.jsonl`. Preserv
 This reproduces the case checks and accounting from retained counters, not unreported provider
 usage, undisclosed settings or an identical future generation. Authoring records have their own
 kind; `report eval` remains for evaluation records.
+
+
+## Model identity in authoring records
+
+This section describes current-source additions, not published npm 0.13.1 behavior.
+See [capabilities and verification scope](eval-agent-preflight.md#current-source-capability-table).
+
+New `_result.json` receipts include `modelIdentity` v1 and `_summary.json` includes
+`modelIdentities` v1 under the drafter role. The call's configured/requested intent
+is separate from public response model IDs; source locations resolve in the
+retained `_transcript.jsonl`, while unsupported/absent identity remains unrecorded.
+`_runtime.json` records the matrix-defined CLI version probe at actual preparation
+time; previews do not probe a CLI. Tests inject the version result. No private
+configuration or credentials are scanned for model identity.
+
+The shared [identity](schemas/model-identity.schema.json) and
+[coverage](schemas/model-identities.schema.json) parsers validate these machine
+records. They preserve failed and interrupted invocation evidence without a
+retry or upgrade. Authoring records keep their existing distinct kind and local
+case-recheck procedure; evaluation report/export/replay commands still operate on
+evaluation records, rather than claiming that a draft is a paired evaluation.

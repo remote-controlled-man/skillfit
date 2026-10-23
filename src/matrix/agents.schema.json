@@ -130,6 +130,7 @@
         "wireShape": { "enum": ["flat-tool-call", "content-blocks", "codex-rollout"] },
         "skillToolName": { "type": "string" },
         "skillKey": { "type": "string" },
+        "skillNameAliases": { "enum": ["directory-and-frontmatter"] },
         "docs": { "type": ["string", "null"] }
       }
     },
@@ -145,7 +146,15 @@
         "projectTrustConfigArg": { "type": "string" },
         "usageFromSessionLog": { "type": "boolean" },
         "partialUsageFromSessionLog": { "type": "boolean" },
-        "streamJson": { "type": "object" },
+        "streamJson": {
+          "type": "object", "required": ["argv", "wireShape"],
+          "properties": {
+            "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "wireShape": { "enum": ["flat-tool-call", "content-blocks", "codex-items"] },
+            "modelIdentitySurface": { "enum": ["claude-assistant"] },
+            "triggerToolName": { "type": "string" }, "docs": { "type": "string" }
+          }
+        },
         "docs": { "type": "string" }
       }
     }

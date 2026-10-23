@@ -6,6 +6,7 @@
   "additionalProperties": false,
   "required": ["schemaVersion", "kind", "scope", "status", "dir", "bench", "checks", "summary", "error"],
   "properties": {
+    "measurementScope": { "$ref": "measurement-scope.schema.json" },
     "schemaVersion": {"const": 1},
     "kind": {"const": "skillfit.bench-check"},
     "scope": {"const": "offline-integrity"},

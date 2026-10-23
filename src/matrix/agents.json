@@ -1,7 +1,7 @@
 {
   "$schema": "./agents.schema.json",
   "schemaVersion": 1,
-  "verifiedAt": "2026-10-13T08:39:24Z",
+  "verifiedAt": "2026-10-22T02:31:00Z",
   "agents": [
     {
       "id": "claude-code",
@@ -48,11 +48,20 @@
         "wireShape": "content-blocks",
         "skillToolName": "Skill",
         "skillKey": "skill",
+        "skillNameAliases": "directory-and-frontmatter",
         "docs": null
       },
       "headless": {
+        "runtime": { "versionArgv": ["claude", "--version"], "docs": "https://code.claude.com/docs/en/cli-reference" },
         "argv": ["claude", "-p"],
         "promptVia": "stdin",
+        "streamJson": {
+          "argv": ["claude", "-p", "--output-format", "stream-json", "--verbose"],
+          "triggerToolName": "Skill",
+          "modelIdentitySurface": "claude-assistant",
+          "wireShape": "content-blocks",
+          "docs": "https://code.claude.com/docs/en/cli-reference"
+        },
         "docs": "https://code.claude.com/docs/en/headless"
       },
       "docs": {
@@ -179,6 +188,7 @@
         "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html"
       },
       "headless": {
+        "runtime": { "versionArgv": ["kimi", "--version"], "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html" },
         "argv": ["kimi", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
         "promptVia": "file",
         "promptFile": "_prompt.txt",

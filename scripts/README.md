@@ -6,9 +6,13 @@ keep them stable. General repository utilities are `check-contrib-benches.mjs` a
 `setup-codex.sh`. The [experiment handoff](../docs/plans/2026-10-13-skill-experiment-cleanup.md)
 maps the corresponding product changes and the current conclusions.
 
-`node scripts/check-docs.mjs` checks local links and heading anchors in maintained
-entry points and guides. Its offline regression checks run as part of `npm test`;
-fixed historical evidence and private lab directories are outside its scan.
+`node scripts/check-docs.mjs` validates the document registry and untracked-guide
+coverage, then checks all maintained pages/plans, bilingual README structure and
+current-release commands. `--json` returns the gate result; `--base <exact-commit-SHA>`
+also compares old paths/fragments and reports affected topics/guides/checks.
+Review hints do not prove prose or execute registry-supplied commands. Its offline
+regressions run in `npm test`. See [documentation governance](../docs/documentation-governance.md#executable-checks-and-ci)
+for exclusions, baseline limits and historical protection.
 
 After building, `node scripts/check-architecture.mjs` checks emitted runtime imports
 for cycles and core-to-command dependencies. It uses the existing development
@@ -23,8 +27,24 @@ release preparation reuses the same policy. See [package contents](../docs/packa
 ## Release automation
 
 `ci-scope.mjs` classifies only release bookkeeping for targeted checks, falls back
-to full CI for unknown inputs, and records actual scope/test counts. Required job
-names stay stable. `release-source.mjs` verifies exact-source full main CI,
+to full CI for unknown inputs, and records actual scope/test counts plus job,
+OS, requested Node target and actual Node version. Required three-system Node 22
+job names stay stable. Full/records runs first save `documentation.json` from the
+shared gate; changed historical records remain explicit body/link inputs.
+Unknown Git baselines retain unverified anchor comparison while still using full CI.
+Linux Node 22.13, 22.14, 24 and 26 compatibility jobs always run
+the complete offline suite and bench checks. The Node 22.0 job runs only built
+CLI help/saved-report checks, CJS replay loading, and explicit refusal of the
+unavailable TS replay API; its receipt scope is `minimum`, never `full`.
+`node --test scripts/node-minimum.test.mjs` runs those checks after building;
+on newer Node it checks successful TS loading instead of the capability refusal.
+The CLI keeps its Node >=22 core requirement; the LRU TypeScript case requires
+Node >=22.13, while frozen historical recipes keep Node 24.21.0/POSIX.
+
+CI artifact names include attempt, job, OS and Node target. `release-source.mjs`
+accepts the new required-job names and historical names, rejects missing,
+ambiguous or expired artifacts, and prevents compatibility/minimum receipts
+from replacing required full Node 22 results. It verifies exact-source full main CI,
 promotes one explicit reviewed preview attempt and guards publication intent.
 
 `release-acceptance.mjs` runs installed-package checks once, checkpoints failure

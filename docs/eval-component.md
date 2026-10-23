@@ -6,9 +6,18 @@ accepts an explicit `baselineSkill: null` to compare with no Skill installed by
 the harness. See [shared planning, budgets and deadlines](eval-planning.md).
 The component returns quality
 changes, observed regressions, spending coverage and a separate adoption decision.
-It never installs, publishes or upgrades a Skill. These interfaces are included
-in [0.9.0](releases/0.9.0.md). Use npm 0.9.0 or newer, or build the current
-checkout; npm 0.8.0 does not include them.
+It never installs, publishes or upgrades a Skill. The original revision component
+shipped in [0.9.0](releases/0.9.0.md); later additions are labeled here.
+For the installed entry use the [0.13.1 release record](releases/0.13.1.md).
+Current-source additions require a build of this checkout, regardless of its
+package version string.
+
+This page owns machine request/result fields, policy configuration and error
+envelopes. [Planning](eval-planning.md) owns shared defaults and confirmation;
+[metrics](metrics.md) owns statistical and adoption semantics;
+[cost accounting](eval-costs.md) owns populations and coverage. Reports and
+portable replay have their own [reader](evaluation-reports.md) and
+[package](replay-packages.md) contracts.
 
 Build the bench around the task being evaluated, with deterministic acceptance
 checks and an independent reference repair. Bundled and contributed benches are
@@ -38,18 +47,11 @@ after originals change or disappear; a damaged archive cannot be overridden.
 Historical runs return null and retain matching-root recovery. Snapshot copies
 make zero model calls and do not change acceptance or incomplete-cost semantics.
 
-The [maintained evidence index](skill-evaluation-evidence.md) links all development
-and independent cohorts, their exact costs and offline replay packages. As of
-October 15, the debugging study totals 195 actual calls with seven historical
-final usages unknown. No candidate qualifies for adoption: favorable point
-estimates, incomplete costs and observed regressions remain distinct outcomes.
-
-The latest [receiver mechanism probe](../evidence/2026-10-15-receiver-mechanism-stop.md)
-stops after one failed v4.1 call; its control never runs. The preceding
-[independent comparison](../evidence/2026-10-15-independent-comparison-regression-stop.md)
-stops at 12/80 after an observed correctness regression. Both are closed; unused
-slots authorize no retry, replacement or expansion. The eight-task offline
-readiness record establishes task integrity, not Skill efficacy.
+The [maintained study index](skill-evaluation-evidence.md) owns debugging-study
+status, cumulative accounting, closed cohorts and links to dated observations.
+This interface guide does not maintain a second study total or execution log.
+Offline readiness and replay establish retained task/evidence properties,
+not new efficacy or permission to continue a closed cohort.
 
 The [concrete request example](examples/eval-request.diagnosing-v2.json) compares
 the two complete public debugging Skill versions on eight pinned real defects.
@@ -112,45 +114,24 @@ authorize revision adoption (`REVISION_COMPARISON_REQUIRED`).
 The caller must supply a fresh run
 group and an explicit call ceiling; eight tasks at five trials need 80 calls.
 
-`pairOrder` is optional and defaults to `baseline-first` for compatibility.
-Use `balanced` for a new comparison when cache warming and elapsed time matter:
-the first arm alternates by task position and trial number, while both arms of
-every pair remain adjacent. Eight tasks with five trials have 20 pairs starting
-with each arm; each task has two or three starts per arm. The preview and native
-plan freeze this choice, the manifest records it, and offline assessment verifies
-the actual invocation ledger against the declared order. Older records without
-order metadata retain their original interpretation. Balancing order does not
-isolate provider cache state, pin sampling or guarantee a latency effect.
+`pairOrder` is optional, default `baseline-first`; `balanced` alternates the
+first arm while keeping each pair adjacent. [Shared planning](eval-planning.md#settings-and-baselines)
+defines the settings; [analysis units and sampling](metrics.md#unit-of-analysis)
+define their interpretation. Plans freeze the choice and native audit checks
+the ledger; historical absence stays unrecorded.
 
-Requests may declare `executorTimeoutSeconds` (integer 1–3600, default 600) for
-the real agent deadline in **both** arms. The preview and native plan bind it;
-offline audit checks each real invocation's recorded deadline. Older plans without
-the field report it as unrecorded. A changed deadline requires a new preview and
-fresh batch, and must not replace timed-out observations in an earlier batch.
-Timeouts retain their measured duration and available partial usage. A larger
-deadline increases the maximum elapsed budget without changing the call ceiling;
-it neither guarantees completion nor repairs provider availability.
+`executorTimeoutSeconds` is optional (integer 1–3600, request default 600), bound
+into the preview/native plan for both arms and checked against receipts.
+See [planning](eval-planning.md#settings-and-baselines) for defaults and fresh-batch
+requirements, and [timing](eval-timing.md) for retained timeout evidence.
 
-Available in 0.10.0: optional `spendingBudget` freezes five whole-batch
-stop lines in the request, preview and native plan. All five fields are required
-when supplied: `input`, `cachedInput`, `uncachedInput`, `output` (positive safe
-integer token counts), and `durationSeconds` (positive finite seconds). For
-example, the independent proposal uses 40000000, 36000000, 5000000, 1250000 and
-43200 respectively. These absolute spending lines are separate from the
-adoption policy's relative cost ceilings and the `maxCalls` ceiling. Old requests
-that omit the field retain their previous interpretation.
-
-Before every call, the engine checks accumulated spending from **all actual
-agent invocations**, including functional failures and excluded partners. Reaching
-any line prevents the next invocation. A currently running call may overshoot;
-this is a between-call guard, not a provider token cap. Missing, partial or invalid
-final usage, an execution error, or a configuration guard error stops further
-calls immediately. There is no retry, replacement or automatic expansion. If the
-last predeclared call reaches a line with complete evidence, the completed cohort
-is retained; exceeding a line is never hidden or clamped. A stopped prefix cannot
-authorize adoption. The request component still runs without a judge. Current
-source also supports these limits in ordinary paired evaluations with a judge,
-trigger runs and calibration; each role consumes the same run-wide budget.
+Available in 0.10.0: optional `spendingBudget` freezes whole-batch stop lines
+in the request, preview and native plan. When present, **all five fields are
+required**; use the [complete format and example](eval-planning.md#preview-and-confirm).
+The [stop contract](metrics.md#costs-budgets-and-stopping) covers accumulated
+spending, overshoot, incomplete usage and errors without retries/replacements.
+The request component has no judge. Absolute stop lines, `maxCalls` and relative
+policy cost caps remain distinct; omitting the budget retains old behavior.
 
 The native `_budget.jsonl` records before/after snapshots. Completed receipt audit
 recomputes every snapshot in declared execution order and checks its sealed
@@ -184,8 +165,10 @@ executor description and compiled implementation. A changed preview fails before
 calls or run-directory creation. The native session separately freezes recorded
 configuration at execution time; the preview does not isolate global configuration
 or pin server-side model sampling. CLI model/settings continue to come from the
-existing agent configuration. Served model identity remains unrecorded where the
-executor cannot attest it.
+existing agent configuration. Current source retains public response model IDs
+where observable, separately from configured/requested intent; absent legacy
+identity remains unrecorded. These declarations are not backend attestation.
+See the [model-identity contract](metrics.md#public-model-identity-per-invocation).
 
 The request file is guarded before and after each call, including its inline policy.
 The native `_plan.json` and manifest retain the policy and its SHA-256. Changing
@@ -207,7 +190,9 @@ callers should retain unknown/new fields for forward-compatible reporting.
 | `manifest` | Saved v4 manifest path and byte SHA-256; null when a stopped run produced no final manifest |
 | `identity` | Candidate, baseline, bench and configured executor identities; present with a final manifest |
 | `environment` | Verified native Node/CLI versions, configured settings, recorded `pairOrder`, served-model limitation and executor injection provenance; null for unverified evidence; unrecorded order stays null |
-| `quality` | Existing statistical verdict, uncertainty, improved/regressed pairs and per-task outcomes, scores and named-check changes |
+| `measurementScope` | Current-source optional frozen scope v1; [claims contract](bench-claims.md) owns declarations, target derivation/refusal and legacy interpretation |
+| `diagnostics` | Current-source paired task diagnostics for baseline band, quality headroom, efficiency eligibility and activation coverage; not qualification or power estimates |
+| `quality` | Existing statistical verdict, uncertainty, improved/regressed pairs and per-task outcomes, scores and named-check changes; observations do not expand the declared scope |
 | `costs.populations` | Surviving paired costs and all agent invocations, including graded failures, errored calls and excluded successful partners |
 | `costs.changes` | Descriptive total and per-success changes; null when coverage or the baseline denominator cannot support the comparison |
 | `costs.efficiency` | Explicit policy version 2 only: all-invocation uncached-input point, task-block interval, per-task changes and fixed protocol |
@@ -215,6 +200,14 @@ callers should retain unknown/new fields for forward-compatible reporting.
 | `spendingBudget` | Optional frozen absolute stop lines and retained event state; completed native audit verifies snapshots against receipts |
 | `evidence` | Native file/receipt integrity, policy binding, replay coverage and evidence locations; `pairs` retains each pair's outcomes, named-check changes and full cost observations |
 | `acceptance` | `decision`, `eligibleForUpgrade`, policy, reason codes and scope; `automaticUpgrade` is always false |
+
+Current-source previews expose scope in `plan.evaluation.measurementScope` and
+new native summaries retain it. Request schema 1 is unchanged: policy 1 derives
+quality, policy 2 efficiency. Schema 2 unsupported targets execute no probes/calls
+and return `error.code: "BENCH_CLAIM_UNSUPPORTED"`. An unsupported preview can
+still be `planned`; inspect scope as well as environment readiness. Old missing
+scope stays absent/unrecorded. A report policy override cannot rewrite the frozen
+target or grant an undeclared claim. See [frozen scope](bench-claims.md#frozen-scope-and-evidence).
 
 New installed-eval previews include `evaluation.nativeDiffTool` (ID, version,
 workspace path and SHA-256). `environment.nativeDiffTool` reports the verified
@@ -249,8 +242,10 @@ it does **not** mean adoption was accepted. Callers must inspect acceptance fiel
 
 ## Adoption policy
 
-This policy is separate from the frozen [statistical verdict](metrics.md). It does
-not introduce an equivalence or non-inferiority test. It returns:
+The [measurement protocol](metrics.md#shared-adoption-gates) owns the shared
+eligibility/rejection gates and their scope. This section owns policy fields and
+configuration. Adoption is separate from the statistical verdict and introduces
+no equivalence or non-inferiority test. The result returns:
 
 - `reject` when observed pass, score or named-check regressions exist, the overall
   verdict is negative, or measured per-success costs exceed a declared limit.
@@ -261,16 +256,12 @@ not introduce an equivalence or non-inferiority test. It returns:
 - `accept` only when all requirements below pass. This is advisory eligibility on
   the recorded tasks and environment, with `automaticUpgrade: false`.
 
-The default version-1 quality policy requires a positive `effective` verdict meeting the declared minimum
-gain, at least eight tasks with at least five graded pairs **for every task**,
-a completed native revision experiment without excluded errors, no observed
-regressions, a predeclared validation purpose and policy, verified native receipts,
-and final coverage of input, cached/uncached input, output and elapsed time for
-every invocation. Both arms need successes for the per-success cost comparison.
-Policies can raise the scale/gain requirements and set explicit permitted cost
-increases; they cannot lower the eight-task/five-pair floor or waive missing evidence.
-Injected executors always record `synthetic: true` and cannot authorize adoption,
-even when their descriptor claims to be a CLI.
+Policy version 1 defaults to `minTasks: 8`, `minTrialsPerTask: 5`,
+`minDeltaPassRate: 0` and zero permitted increases for `uncachedInput`, `output`
+and `durationSeconds`. Scale/gain requirements may be raised; the scale floor and
+evidence gates cannot be waived. A positive `effective` verdict is still required
+when the minimum gain is zero. Injected executors record `synthetic: true` and
+remain ineligible even if their descriptor claims to be a CLI.
 
 `maxCostIncreaseFraction` checks **all spending per successful task**, including
 failures, for uncached input, output and elapsed time. A value of `0.2` allows a
@@ -292,15 +283,11 @@ and additionally requires `pairOrder: "balanced"`. It can accept an all-pass tie
 only when the separate cost criteria pass; `quality.statisticalVerdict` still
 reports `inconclusive`. It never asserts equivalence or a correctness increase.
 
-`minUncachedInputReductionFraction` defaults to `0.1` (minimum `0.01`), and
-`minImprovedTaskFraction` defaults to `0.75` (minimum `0.75`). The upper 95%
-task-block bootstrap bound must support the declared minimum reduction in all
-invocation uncached input per success, and the declared fraction of tasks must
-individually improve. `costs.efficiency` records the point, interval, per-task
-changes, fixed seed `20261013`, 10,000 resamples and unavailable-evidence reason.
-Every task needs final primary usage and successes in both arms; no tasks are
-discarded. The [exact protocol and its scope](metrics.md#explicit-efficiency-acceptance-policy-version-2-unreleased)
-are frozen separately from the quality test.
+`minUncachedInputReductionFraction` defaults to `0.1` (range 0.01–1), and
+`minImprovedTaskFraction` defaults to `0.75` (range 0.75–1). `costs.efficiency`
+records the point, interval, per-task changes, fixed protocol and unavailable-evidence
+reason. The [exact endpoint, bootstrap and acceptance rules](metrics.md#explicit-efficiency-acceptance-policy-version-2-since-090)
+belong to the measurement contract; no task is discarded to improve the estimate.
 
 Version 2 extends `maxCostIncreaseFraction` with `input` and `cachedInput`;
 all five defaults permit no per-success increase. Declare any allowed tradeoffs

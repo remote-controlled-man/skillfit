@@ -6,6 +6,24 @@ to a fresh directory.
 The package contains unchanged receipts, original pinned inputs, the compiled
 implementation used by the experiment and a dependency-free replay entry point.
 Export and replay make zero model calls. Replay executes trusted local verifiers.
+Current-source model-identity additions retain per-call public IDs, source locations
+and unknown coverage after relocation. They do not backfill legacy data or prove
+the backend's identity; see [report fields](evaluation-reports.md). These additions
+are not yet published in npm 0.13.1. Frozen historical packages keep their own
+runtime and detection/identity interpretation.
+
+Current-source [measurementScope 1](bench-claims.md#frozen-scope-and-evidence)
+is retained across paired, trigger and calibration exports. New scope is checked
+against the original sealed bench, selected task order and native/reviewed plans.
+Today's external bench cannot fill or broaden it; new scope without its required
+sealed declarations fails rather than taking the historical recovery route.
+Legacy missing metadata stays unrecorded. Current-reader audit and the package's
+pinned `reproduce.mjs` each interpret saved evidence with their own runtime.
+
+For [self-test controls](bench-self-test.md#results-costs-and-replay), export a native
+suite directory, not its wrapper. It retains a null requested claim, mock identity,
+unknown provider usage and ineligibility; replay executes saved verifiers, not
+control actions or an executor. These source contracts are not npm 0.13.1 features.
 
 ## Preview, export and move
 

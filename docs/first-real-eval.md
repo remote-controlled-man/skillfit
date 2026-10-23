@@ -5,8 +5,14 @@ oracle is registered, it also checks that the reference solution passes; without
 the task's winnability is unverified. It does not measure an agent. A paired `eval` calls your agent on both arms
 and records what actually happened. This guide applies to macOS, Linux, and Windows; use the native
 `node dist/cli.js` commands from a built source checkout in either Bash or PowerShell.
-For the installed release, replace that command prefix with
+For features included in the installed release, replace that command prefix with
 `npx skillfit@0.13.1`; no source checkout is required for your own cases.
+The [current source capability table](eval-agent-preflight.md#current-source-capability-table)
+separates released behavior from unpublished trigger/model-identity corrections,
+and lists adapter-specific budget limits. Use a built checkout for those source additions.
+The [source-only bench self-test](bench-self-test.md) and [schema 2 claims](bench-claims.md)
+require builds implementing self-test protocol 1 and bench schema 2 / measurementScope 1
+respectively; replacing their prefix with npm 0.13.1 will not add these features.
 
 ## Start with the installed CLI
 
@@ -51,12 +57,26 @@ frozen from failures you actually encountered. For a Skill, use the directory th
 [config-experiments.md](config-experiments.md). Do not select or write tasks by reading the Skill
 under test: that can make the result look good because the test matches its wording.
 
+Default bench schema 1 remains compatible and has no recorded supported claims.
+Current source offers explicit [schema 2 claims](bench-claims.md#authoring-and-compatibility);
+select it when authoring a new bench, rather than silently upgrading old inputs.
+For schema 2, every selected task must support the requested quality, efficiency
+or activation target; execution refuses unsupported targets before any probes
+or calls. Preview may still describe an unsupported plan. Calibration and fixed
+self-test controls have no efficacy target. Neither a declaration nor the request's
+policy proves validity, power or workflow-process measurement; see the
+[measurement limits](metrics.md#non-goals-and-known-limitations).
+
 The bundled `debugging` bench has 8 tasks; `code-review` has 5. They are examples, not a substitute
 for your own work. The predeclared scale bar is **8 distinct tasks × 5 trials per condition**. On an
 8-task bench, that is **80 agent executions** before any optional judge calls. Five repetitions are a
 starting point, not a guarantee of enough statistical power. More independent, representative tasks
 usually improve the scope of a claim more than repeating one narrow fixture again. A 20-task bench
 at the default would make 200 agent executions, so inspect the plan before starting.
+The 8×5 bar is an adoption/scale requirement, not the minimum for every
+within-bench exact-test verdict. It does not guarantee power; no validated MDE
+planner is available. Under a predeclared efficiency policy, tasks with little
+quality headroom may still inform costs if coverage and regression gates pass.
 Fix the task list and trial count before viewing results. If an exploratory run is too noisy, design
 a separate confirmatory run with a predeclared size; repeatedly adding trials until p < 0.05 makes
 the final p-value misleading.
@@ -75,6 +95,13 @@ Replace `<skill-dir>` and `<bench-dir>` with real paths and `codex` with your ag
 prints task count, target and bench hashes, executor, estimated prompt size, and the total execution
 count. It does not call an agent or create `runs/`. The estimate is not a price quote: replies,
 tool calls, and retries can add substantial time and tokens. An optional judge also calls a model.
+
+With a current source build and predeclared controls, follow
+[bench self-test](bench-self-test.md#preview-and-run) before live spending. It
+checks known benefit/harm/null/error arms through the full paired pipeline and
+keeps synthetic evidence ineligible. Ordinary `bench check` mock markers remain
+informational verifier probes; neither route proves that a real agent will
+discover the Skill or that your task mixture has enough statistical power.
 
 Before paying for a run, check whether the target Skill is already available globally to your
 agent, or whether global rules/MCP settings supply the same treatment in both arms. If so, the
@@ -117,6 +144,9 @@ and the same settings/group only after spending is authorized. Live calibration
 runs the offline case gates first: hard failures block, unknown winnability and
 warnings remain distinct. `--spending-budget` and
 `--executor-timeout-seconds` also apply; see [shared planning](eval-planning.md).
+The spending object is optional; once supplied, all five limits are mandatory.
+Known missing token/cache readers block it before calls; runtime unknown/partial
+usage stops subsequent calls, and one in-flight call can exceed a line.
 
 ## 3. Run, inspect, and share
 
@@ -149,6 +179,9 @@ system Skills and plugins outside those directories remain excluded. Share paire
 trigger results separately. Version 0.11.0 reads both through `report eval`, with distinct JSON kinds and metrics;
 calibration directories or `_calibration.json` also work. See [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
 Single-arm reports do not enter the paired acceptance policy or authorize upgrades.
+Trigger recall is a mechanical observation, not a paired comparison of loading
+versus not loading the Skill. The current protocol retains unknown/incomplete
+streams explicitly; historical counts keep their recorded detection protocol.
 
 Version 0.11.0 also supports `--json --dry-run`, repeated `--task`,
 spending lines and a per-call deadline. Confirm its ordinary `plan.sha256` and

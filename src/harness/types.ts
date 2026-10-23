@@ -1,4 +1,6 @@
+import type { ModelIdentity, ModelIntent } from './model-identity.js';
 import type { ExecutionTiming } from './execution-timing.js';
+import type { TriggerDetection, TriggerEvidence } from './trigger-detection.js';
 
 export type PairOrder = 'baseline-first' | 'balanced';
 
@@ -16,9 +18,12 @@ export interface TokenUsage {
 }
 
 export interface ExecutorResult {
+  modelIdentity?: ModelIdentity;
   output: string;
   tokens?: TokenUsage;
   skillTriggered?: boolean;
+  triggerDetection?: TriggerDetection;
+  triggerEvidence?: TriggerEvidence;
   rawOutput?: string;
   /** Returned output retained, but input/configuration drift makes this trial ungradable. */
   guardError?: string;
@@ -47,9 +52,12 @@ export class ExecutorFailure extends Error {
 }
 
 export interface ExecutorDescriptor {
+  modelIntent?: ModelIntent;
+  modelIdentitySurface?: 'claude-assistant';
   kind: string;
   model: string;
   detail?: string;
+  triggerDetection?: TriggerDetection;
   /**
    * Sampling controls actually sent to the model, or null when the surface exposes none. Recorded
    * explicitly so a reader can tell "seeded and reproducible" from "this surface has no knob" —
@@ -68,7 +76,11 @@ export type InputMode = 'snapshot' | 'workspace';
 
 export const CONDITIONS: readonly Condition[] = ['baseline', 'treatment'];
 
+export type BenchClaim = 'quality' | 'efficiency' | 'activation';
+
 export interface BenchTask {
+  /** Schema 2 design support; absent in legacy schema 1. */
+  claims?: BenchClaim[];
   id: string;
   fixture: string;
   prompt: string;
@@ -118,4 +130,13 @@ export interface EvaluationTarget {
   sha256: string;
   payload: string | null;
   overlays: Partial<Record<Condition, string>>;
+}
+
+/**
+ * Record sampling controls explicitly. An executor whose surface exposes no seed or temperature
+ * knob reports `sampling: null`, which is a statement about the surface — not an omission that a
+ * reader would have to guess at.
+ */
+export function withSampling(descriptor: ExecutorDescriptor): ExecutorDescriptor {
+  return { ...descriptor, sampling: descriptor.sampling ?? null };
 }

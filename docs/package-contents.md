@@ -1,30 +1,40 @@
 # npm package contents
 
-The CLI package includes runtime code and the offline inputs needed by its
-published CLI examples. Development checks use the source checkout; normal CLI
+The source candidate includes runtime code and offline inputs for normal CLI
+examples. Published npm 0.13.1 retains its original inventory; the further
+on-demand support change below is not published yet. Development checks use the source checkout; normal CLI
 execution has zero runtime dependencies.
 
 ## Retained content
 
 - Active compiled JavaScript and matrix JSON, including native report/export support.
 - Bundled cases, profiles, driver Skill, schemas and documentation.
+- Current-source self-test controls, dedicated synthetic target and paired mock executor;
+  the offline package test runs all four controls from the extracted package.
 - `evidence/inputs/` used by request examples and pinned historical replay support.
 - The [versioned archive catalog](../evidence/archive-catalog.v1.json), independent
   `evidence/fetch-archives.mjs` and [restoration guide](archive-delivery.md).
 - Six compiled test files required by the 0.12.0, 0.13.0 and 0.13.1 installed-feature recipes.
 
 Other active `dist/**/*.test.js` files stay in source development and `npm test`.
-The package's explicit file patterns exclude them; nested historical replay tests
-retain their original bytes and paths. Four historical metadata files normally
+The package's explicit file patterns exclude them; historical replay tests
+retain their original bytes and paths in Git and explicit restored workspaces. Four historical metadata files normally
 excluded by npm are encoded in the catalog so restored frozen indexes stay exact.
 
 ## Explicit historical archive restoration
 
-The 19 compressed files in [the inventory](archive-inventory.md) are excluded
-precisely by `evidence/artifacts/.npmignore`; their Git originals remain unchanged.
-The package keeps their READMEs, reports, declarations, licensed inputs and frozen
-source/runtime/scripts. Historical archive recipes need an explicit
-[restore step](archive-delivery.md) before extracting or replaying saved records.
+Released 0.13.0/0.13.1 excluded the 19 compressed archives while retaining frozen
+support. The source candidate excludes the complete `evidence/artifacts/` tree
+from future npm packages: original READMEs, receipts, licensed inputs and frozen
+runtime/source are restored explicitly with those archives. Git originals and
+the v1 catalog's paths/bytes/hashes remain unchanged. Root evidence reports,
+inputs, declarations, catalog and the restore tool still ship.
+
+Source-maintenance plans, decisions, governance/history pages and raw release
+JSON/text/log receipts stay in Git and are excluded from the candidate. Current
+usage guides, schemas, release Markdown and executable feature/history recipes
+remain packaged. No new documentation tree replaces these historical paths.
+Historical artifact links require a source checkout or the restored workspace.
 Normal npm installation and CLI commands never fetch them automatically.
 
 Downloads use a full fixed source commit and verify size/SHA-256. A local source
@@ -55,8 +65,9 @@ node scripts/npm-release.mjs check "$pack_dir/pack.json"
 ```
 
 Use a writable npm cache if the default cache is unavailable. The check verifies
-required runtime, inputs, six retained tests, catalog/tool and every directly
-shipped catalog support path. It rejects external or unknown archives, unknown
+required runtime, inputs, six retained tests, catalog/tool and every retained
+catalog support path. On-demand artifact paths and source-maintenance records
+are rejected; the separate source check still hashes all originals. It rejects external or unknown archives, unknown
 roots, known credential/private paths, extra active tests and duplicate/missing
 files. It is an inventory check rather than a general secret scanner.
 

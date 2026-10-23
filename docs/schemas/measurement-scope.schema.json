@@ -1,0 +1,328 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit frozen measurement scope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "benchSchemaVersion",
+    "taskClaims",
+    "requestedClaim",
+    "assessment"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "benchSchemaVersion": {
+      "enum": [
+        1,
+        2
+      ]
+    },
+    "taskClaims": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "taskId",
+          "claims"
+        ],
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "claims": {
+            "anyOf": [
+              {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "quality",
+                    "efficiency",
+                    "activation"
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "requestedClaim": {
+      "enum": [
+        "quality",
+        "efficiency",
+        "activation",
+        null
+      ]
+    },
+    "assessment": {
+      "enum": [
+        "supported",
+        "unsupported",
+        "legacy-unrecorded",
+        "not-applicable"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "benchSchemaVersion": {
+            "const": 1
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "taskClaims": {
+            "items": {
+              "properties": {
+                "claims": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "taskClaims": {
+            "items": {
+              "properties": {
+                "claims": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "enum": [
+                      "quality",
+                      "efficiency",
+                      "activation"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requestedClaim": {
+            "type": "null"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "assessment": {
+            "const": "not-applicable"
+          }
+        }
+      },
+      "else": {
+        "if": {
+          "properties": {
+            "benchSchemaVersion": {
+              "const": 1
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "assessment": {
+              "const": "legacy-unrecorded"
+            }
+          }
+        },
+        "else": {
+          "properties": {
+            "assessment": {
+              "enum": [
+                "supported",
+                "unsupported"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "benchSchemaVersion": {
+            "const": 2
+          },
+          "requestedClaim": {
+            "const": "quality"
+          }
+        }
+      },
+      "then": {
+        "oneOf": [
+          {
+            "properties": {
+              "assessment": {
+                "const": "supported"
+              },
+              "taskClaims": {
+                "items": {
+                  "properties": {
+                    "claims": {
+                      "contains": {
+                        "const": "quality"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessment": {
+                "const": "unsupported"
+              },
+              "taskClaims": {
+                "contains": {
+                  "properties": {
+                    "claims": {
+                      "not": {
+                        "contains": {
+                          "const": "quality"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "benchSchemaVersion": {
+            "const": 2
+          },
+          "requestedClaim": {
+            "const": "efficiency"
+          }
+        }
+      },
+      "then": {
+        "oneOf": [
+          {
+            "properties": {
+              "assessment": {
+                "const": "supported"
+              },
+              "taskClaims": {
+                "items": {
+                  "properties": {
+                    "claims": {
+                      "contains": {
+                        "const": "efficiency"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessment": {
+                "const": "unsupported"
+              },
+              "taskClaims": {
+                "contains": {
+                  "properties": {
+                    "claims": {
+                      "not": {
+                        "contains": {
+                          "const": "efficiency"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "benchSchemaVersion": {
+            "const": 2
+          },
+          "requestedClaim": {
+            "const": "activation"
+          }
+        }
+      },
+      "then": {
+        "oneOf": [
+          {
+            "properties": {
+              "assessment": {
+                "const": "supported"
+              },
+              "taskClaims": {
+                "items": {
+                  "properties": {
+                    "claims": {
+                      "contains": {
+                        "const": "activation"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessment": {
+                "const": "unsupported"
+              },
+              "taskClaims": {
+                "contains": {
+                  "properties": {
+                    "claims": {
+                      "not": {
+                        "contains": {
+                          "const": "activation"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

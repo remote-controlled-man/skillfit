@@ -5,9 +5,16 @@ This inventory pins the 19 compressed files at source commit
 It describes recorded offline procedures, not permission to run historical live
 entry points. No model calls are needed for the procedures below.
 
+Current source further separates frozen artifact support from ordinary npm
+installation. Its explicit restorer recreates the same paths/bytes from the
+catalog; the following inventory and historical procedures are unchanged.
+Published 0.13.0/0.13.1 still carry support files. Table references to shipped
+support describe that recorded delivery; use a source checkout or restored
+workspace for those files with a future lean package.
+
 ## Supporting files and compatibility
 
-The existing full npm package includes all 19 archives and the public
+The original full-package baseline included all 19 archives and the public
 `evidence/` tree: artifact READMEs/indexes, frozen source/runtime/scripts,
 licenses, declarations, reports and inputs. Restoration will copy an explicit
 file-level allowlist of that pinned public evidence tree (excluding the 19

@@ -114,6 +114,7 @@ export async function grade(id, run) {
     const result = spawnSync(process.execPath, [join(bench, 'verifiers/probe.mjs'), id, run], { encoding: 'utf8', timeout: 5000 });
     assert.equal(result.error == null && result.signal == null && result.status === 0, true, 'runtime probe did not complete');
     const summary = JSON.parse((result.stdout ?? '').trim().split('\n').at(-1));
+    assert.equal(summary.error, undefined, summary.error);
     const names = checksFor(id, undefined).map(([name]) => name);
     assert.deepEqual(summary.checks?.map(c => c.name), names, 'runtime probe omitted checks');
     assert.ok(summary.checks.every(c => typeof c.pass === 'boolean'));

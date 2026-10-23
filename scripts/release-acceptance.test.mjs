@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ACCEPTANCE_STAGES, runAcceptance, summarize, prepareRecovery } from './release-acceptance.mjs';
 import { inspectDriver, inspectProvenance, recoverUpload } from './release-checks.mjs';
 import { exportRecords, importRecords } from './release-records.mjs';
+import { classifyChanges } from './ci-scope.mjs';
 import { historicalRecipe } from '../docs/releases/release-historical-smoke.mjs';
 
 const fresh = t => { const root = mkdtempSync(join(tmpdir(), 'skillfit-acceptance-')); t.after(() => rmSync(root, { recursive: true, force: true })); return root; };
@@ -98,17 +99,57 @@ test('generated receipt bundle verifies hashes, previews without writes, imports
   for (const name of ['source-ci', 'preview', 'publication', 'publication-intent', 'registry-metadata', 'attestations']) writeFileSync(join(root, name+'.json'), JSON.stringify({ sourceCommit, url: 'https://example.test/source-ci' }));
   writeFileSync(join(root, 'published.json'), JSON.stringify({ version: info.version, latest: info.version, publishedAt: '2026-10-21T10:00:00Z' }));
   mkdirSync(join(root, 'logs')); writeFileSync(join(root, 'logs/signatures.stdout.log'), 'fixture signatures');
-  const exported = exportRecords(root, state), repo = join(root, 'repo'); mkdirSync(join(repo, 'docs/releases'), { recursive: true }); mkdirSync(join(repo, 'docs/plans'));
+  const exported = exportRecords(root, state);
+  const exportedManifest = JSON.parse(readFileSync(join(exported.bundle, 'manifest.json')));
+  assert.equal(classifyChanges(exportedManifest.files.map(file => ({ path: file.path, status: 'A', mode: '100644' }))), 'records');
+  const repo = join(root, 'repo'); mkdirSync(join(repo, 'docs/releases'), { recursive: true }); mkdirSync(join(repo, 'docs/plans'));
   writeFileSync(join(repo, 'docs/releases/0.14.0.md'), '# Prepared release\n'); writeFileSync(join(repo, 'docs/plans/release.md'), '# Human plan\n');
   assert.equal(importRecords(exported.bundle, repo, { plan: 'docs/plans/release.md' }).status, 'planned');
-  assert.equal(existsSync(join(repo, 'docs/releases/0.14.0-verification.json')), false);
+  assert.equal(existsSync(join(repo, 'docs/releases/records/0.14.0')), false);
+  assert.ok(existsSync(join(exported.bundle, 'docs/releases/records/0.14.0/verification.json')));
   assert.equal(importRecords(exported.bundle, repo, { yes: true, plan: 'docs/plans/release.md' }).status, 'imported');
   assert.ok(readFileSync(join(repo, 'docs/plans/release.md'), 'utf8').startsWith('<!-- skillfit-release:0.14.0:start -->'));
   assert.match(readFileSync(join(repo, 'docs/plans/release.md'), 'utf8'), /# Human plan/);
-  assert.match(readFileSync(join(repo, 'docs/plans/release.md'), 'utf8'), /\.\.\/releases\/0\.14\.0-verification\.json/);
+  assert.match(readFileSync(join(repo, 'docs/plans/release.md'), 'utf8'), /\.\.\/releases\/records\/0\.14\.0\/verification\.json/);
   assert.throws(() => importRecords(exported.bundle, repo, { yes: true }), /Preserve existing receipt/);
   const second = join(root, 'second'); mkdirSync(join(second, 'docs/releases'), { recursive: true });
-  writeFileSync(join(exported.bundle, 'docs/releases/0.14.0-documents.json'), '{"tampered":true}');
+  writeFileSync(join(exported.bundle, 'docs/releases/records/0.14.0/documents.json'), '{"tampered":true}');
   assert.throws(() => importRecords(exported.bundle, second, { yes: true }), /digest mismatch/);
-  assert.equal(existsSync(join(second, 'docs/releases/0.14.0-verification.json')), false);
+  assert.equal(existsSync(join(second, 'docs/releases/records/0.14.0/verification.json')), false);
+});
+
+function receiptBundle(t, schemaVersion) {
+  const root = fresh(t), bundle = join(root, 'bundle'), repo = join(root, 'repo');
+  const directory = schemaVersion === 1 ? 'docs/releases' : 'docs/releases/records/0.14.0';
+  const prefix = schemaVersion === 1 ? '0.14.0-' : '';
+  mkdirSync(join(bundle, directory), { recursive: true }); mkdirSync(join(repo, 'docs/releases'), { recursive: true });
+  const featurePath = `${directory}/${prefix}features.json`, verificationPath = `${directory}/${prefix}verification.json`;
+  const digest = file => createHash('sha256').update(readFileSync(join(bundle, file))).digest('hex');
+  writeFileSync(join(bundle, featurePath), '{"verified":true}');
+  writeFileSync(join(bundle, verificationPath), JSON.stringify({ version: '0.14.0', sourceCommit,
+    checks: ACCEPTANCE_STAGES.map(id => ({ id, status: 'passed' })), receipts: { features: { path: prefix + 'features.json', sha256: digest(featurePath) } } }));
+  const manifest = { schemaVersion, version: '0.14.0', sourceCommit,
+    files: [featurePath, verificationPath].map(path => ({ path, sha256: digest(path) })), releaseMarkdown: '# Verified\n', planMarkdown: '# Verified\n' };
+  writeFileSync(join(bundle, 'manifest.json'), JSON.stringify(manifest));
+  return { root, bundle, repo, manifest, featurePath };
+}
+
+test('legacy flat manifest 1 receipts still preview, import and preserve existing files', t => {
+  const f = receiptBundle(t, 1);
+  assert.equal(importRecords(f.bundle, f.repo).status, 'planned');
+  assert.equal(existsSync(join(f.repo, f.featurePath)), false);
+  assert.equal(importRecords(f.bundle, f.repo, { yes: true }).status, 'imported');
+  assert.equal(readFileSync(join(f.repo, f.featurePath), 'utf8'), '{"verified":true}');
+  assert.throws(() => importRecords(f.bundle, f.repo, { yes: true }), /Preserve existing receipt/);
+});
+
+test('grouped receipt import refuses directory aliases and traversal before writing', t => {
+  const f = receiptBundle(t, 2), outside = join(f.root, 'outside'); mkdirSync(outside);
+  symlinkSync(outside, join(f.repo, 'docs/releases/records'), 'junction');
+  assert.throws(() => importRecords(f.bundle, f.repo, { yes: true }), /ordinary directories/);
+  assert.equal(existsSync(join(outside, '0.14.0')), false);
+  const other = receiptBundle(t, 2); other.manifest.files[0].path = 'docs/releases/records/0.14.0/../escape.json';
+  writeFileSync(join(other.bundle, 'manifest.json'), JSON.stringify(other.manifest));
+  assert.throws(() => importRecords(other.bundle, other.repo, { yes: true }), /Unsupported/);
+  assert.equal(existsSync(join(other.repo, 'docs/releases/records')), false);
 });

@@ -1,39 +1,37 @@
-import { spawn } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { withSampling } from './types.js';
+export { withSampling } from './types.js';
+import { measurementScope, requestedClaimFor, assertBenchClaimSupported } from './measurement-scope.js';
+import { summarizeExperiment, type TrialOutcome, type TaskOutcomes } from './trial-summary.js';
+export type { TrialOutcome } from './trial-summary.js';
+export { summarizeJudge } from './judge-protocol.js';
+import { applyOverlay, createTrialWorkspace, engagementError, gitInit } from './trial-workspace.js';
+export { engagementError, gitInit } from './trial-workspace.js';
+import { runVerifier, verifierFailure, verifierLogFor } from './verifier.js';
+export { runVerifier, verifierFailure, verifierLogFor } from './verifier.js';
+export type { ProcessResult } from './process.js';
+import { unknownModelIdentity, identityForResult, modelIdentities, type ModelIdentity } from './model-identity.js';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import type { ExperimentSession } from './experiment-session.js';
-import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
+import { RUN_GROUP_PATTERN } from './constants.js';
 import { assertInstalledSkillFixtures, assertSkillRevisionTargets, installSkillResources, installedSkillDestination } from './installed-skill.js';
 import { collectInstalledSkillFingerprint } from './bundle.js';
 import { JudgePairFailure, judgePair, type JudgeCallReceipt, type JudgeResult } from './judge.js';
-import { killTree, treeSpawnOptions } from './kill-tree.js';
-import { evaluationSignal, throwIfEvaluationInterrupted } from './interruption.js';
+import { throwIfEvaluationInterrupted } from './interruption.js';
 import { assertInputModeSupported, buildTaskPrompt, snapshotRepoFiles } from './prompt.js';
 import {
   buildWarnings,
-  verdictFor,
-  type ConditionStats,
-  type FacetSummary,
-  type JudgeSummary,
   type RunManifest,
-  type TaskSummary,
 } from './report.js';
-import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from './stats.js';
-import { listFilesRecursive } from './hash.js';
 import { assertNativeDiffFixtures, assertNativeDiffWorkspace, installNativeDiffTool, nativeDiffDescriptor, NATIVE_DIFF_GUIDANCE, snapshotNativeDiffTool } from './native-diff.js';
 import type { Bench, Condition, EvaluationTarget, Executor, ExecutorDescriptor, InputMode, PairOrder, TokenUsage, UsageEvidence } from './types.js';
 import { pairConditions } from './types.js';
-import { CONDITIONS } from './types.js';
 import { ExecutorFailure } from './types.js';
-import { summarizeCosts } from './costs.js';
 import { executionClock, type ExecutionClock, type ExecutionTiming } from './execution-timing.js';
 import type { ComponentMetadata } from './eval-contract.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import { createSpendingBudgetRecorder, parseSpendingBudget, type SpendingBudget } from './eval-budget.js';
 import { summarizeInvocationCosts } from './invocation-costs.js';
-import { parseCommand } from './command.js';
-import { verifierRuntimeError } from './verifier-error.js';
-import { parseVerifierTimeoutSeconds } from './verifier-timeout.js';
 
 export interface ExperimentPlan {
   component?: ComponentMetadata;
@@ -52,172 +50,10 @@ export interface ExperimentPlan {
   runGroup: string;
   log?: (msg: string) => void;
   spendingBudget?: SpendingBudget;
+  /** Only an offline control asks to stop immediately after retaining an error. */
+  stopOnExecutionError?: true;
   /** Injectable clocks for offline duration checks. */
   clock?: ExecutionClock;
-}
-
-function applyOverlay(overlayDir: string, runDir: string): void {
-  for (const rel of listFilesRecursive(overlayDir)) {
-    const destination = join(runDir, rel);
-    mkdirSync(dirname(destination), { recursive: true });
-    cpSync(join(overlayDir, rel), destination);
-  }
-}
-
-export interface TrialOutcome {
-  taskId: string;
-  condition: Condition;
-  trial: number;
-  runDir: string;
-  startedAt: string;
-  finishedAt: string;
-  durationSeconds: number;
-  /** Wall timestamps stay available; elapsed cost uses the monotonic clock. */
-  timing?: { clock: 'performance.now'; wallDurationSeconds: number; execution: ExecutionTiming | null };
-  passed: boolean;
-  verifierExitCode: number | null;
-  verifierPassed: boolean | null;
-  score: number | null;
-  checks: VerifierCheck[] | null;
-  error: string | null;
-  output: string;
-  tokens: TokenUsage | null;
-  executorInvoked: boolean;
-  usageStatus: 'final' | 'partial' | 'unknown';
-  gitInitialized: boolean;
-  skillTriggered?: boolean | null;
-}
-
-export interface ProcessResult {
-  exitCode: number | null;
-  output: string;
-  error: string | null;
-}
-
-const MAX_PROCESS_OUTPUT_BYTES = 8 * 1024 * 1024;
-
-function runProcess(
-  command: string,
-  args: string[],
-  cwd: string,
-  timeoutMs: number,
-): Promise<ProcessResult> {
-  const signal = evaluationSignal();
-  if (signal?.aborted) return Promise.resolve({ exitCode: null, output: '', error: (signal.reason as Error).message });
-  return new Promise((resolvePromise) => {
-    let child;
-    try {
-      const env = { ...process.env };
-      delete env['NODE_TEST_CONTEXT'];
-      child = spawn(command, args, { cwd, shell: false, env, ...treeSpawnOptions() });
-    } catch (error) {
-      resolvePromise({ exitCode: null, output: '', error: (error as Error).message });
-      return;
-    }
-    let output = '';
-    let bytes = 0;
-    let timedOut = false;
-    let overflow = false;
-    let stopping = false;
-    let settled = false;
-    let drainTimer: NodeJS.Timeout | undefined;
-    const finish = (result: ProcessResult): void => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer); clearTimeout(drainTimer);
-      signal?.removeEventListener('abort', onAbort);
-      resolvePromise(result);
-    };
-    const result = (code: number | null): ProcessResult => ({
-      exitCode: signal?.aborted || timedOut || overflow ? null : code,
-      output: timedOut ? `${output}\n[timed out after ${timeoutMs}ms]` : output,
-      error: signal?.aborted ? (signal.reason as Error).message : overflow
-        ? `output exceeded ${MAX_PROCESS_OUTPUT_BYTES} bytes` : timedOut ? `timed out after ${timeoutMs}ms` : null,
-    });
-    const stop = (): void => {
-      if (stopping || settled) return;
-      stopping = true;
-      killTree(child);
-      drainTimer = setTimeout(() => {
-        child.stdin?.destroy(); child.stdout.destroy(); child.stderr.destroy(); child.unref();
-        finish(result(null));
-      }, 2000);
-    };
-    const onAbort = (): void => stop();
-    const timer = setTimeout(() => {
-      timedOut = true;
-      stop();
-    }, timeoutMs);
-    const take = (chunk: Buffer): void => {
-      bytes += chunk.length;
-      if (bytes > MAX_PROCESS_OUTPUT_BYTES) {
-        overflow = true;
-        stop();
-        return;
-      }
-      output += chunk.toString('utf8');
-    };
-    child.stdout.on('data', take);
-    child.stderr.on('data', take);
-    // Verifiers and git do not read a prompt. Leave the pipe open and a command that reads stdin
-    // waits until the timeout instead of seeing EOF.
-    child.stdin?.on('error', () => {});
-    child.stdin?.end();
-    child.on('error', (error) => {
-      finish({ exitCode: null, output, error: error.message });
-    });
-    child.on('close', (code) => {
-      finish(result(code));
-    });
-    signal?.addEventListener('abort', onAbort, { once: true });
-    if (signal?.aborted) onAbort();
-  });
-}
-
-export async function gitInit(dir: string): Promise<boolean> {
-  const steps: string[][] = [
-    ['init', '--quiet'],
-    ['config', 'user.email', 'skillfit@example.invalid'],
-    ['config', 'user.name', 'skillfit harness'],
-    ['config', 'core.logAllRefUpdates', 'true'],
-    ['add', '-A'],
-    ['commit', '--quiet', '-m', 'Initial benchmark fixture'],
-  ];
-  for (const args of steps) {
-    const result = await runProcess('git', args, dir, 30_000);
-    if (result.exitCode !== 0) return false;
-  }
-  const reflog = await runProcess('git', ['reflog', 'show', '--format=%H', 'HEAD'], dir, 30_000);
-  return reflog.exitCode === 0 && reflog.output.trim().length > 0;
-}
-
-const ENGAGEMENT_ERROR =
-  'Agent produced no output and left the fixture unchanged; excluded as an engagement error, not a graded failure.';
-
-async function worktreeChanged(dir: string): Promise<boolean> {
-  const status = await runProcess('git', ['status', '--porcelain'], dir, 30_000);
-  if (status.exitCode !== 0) return true;
-  // The harness writes _prompt.txt after the fixture commit. That file is not an agent edit.
-  return status.output.split('\n').some((line) => {
-    const path = line.slice(3).replaceAll('"', '').trim();
-    return path.length > 0 && path !== '_prompt.txt';
-  });
-}
-
-/**
- * Empty final text is not a graded miss. Output tasks deliver that text, so silence is
- * non-engagement. Command tasks deliver file edits, so silence still counts when the disposable
- * worktree differs from the fixture commit. docs/metrics.md L0.
- */
-export async function engagementError(
-  output: string,
-  verifierKind: 'output' | 'command' | undefined,
-  runDir: string,
-  gitInitialized: boolean,
-): Promise<string | null> {
-  if (output.trim() !== '') return null;
-  if ((verifierKind ?? 'output') === 'command' && gitInitialized && (await worktreeChanged(runDir))) return null;
-  return ENGAGEMENT_ERROR;
 }
 
 export async function runTrial(
@@ -248,14 +84,7 @@ export async function runTrial(
   const task = bench.tasks.find((t) => t.id === taskId);
   if (!task) throw new Error(`Unknown task: ${taskId}`);
   const runDir = join(plan.runsRoot, plan.runGroup, task.id, condition, `trial-${trial}`);
-  if (existsSync(runDir)) {
-    throw new Error(`Run directory already exists: ${runDir}`);
-  }
-  mkdirSync(runDir, { recursive: true });
-  cpSync(join(bench.dir, task.fixture), runDir, { recursive: true });
-  if (executor.describe().kind !== 'mock') {
-    rmSync(join(runDir, MOCK_MARKER_FILE), { force: true });
-  }
+  createTrialWorkspace(join(bench.dir, task.fixture), runDir, { removeMockMarker: executor.describe().kind !== 'mock' });
   // Keep the prompt byte-identical across conditions. Workspace configuration is copied only after
   // taking the fixture snapshot, so a rules or MCP treatment is discovered through the agent's real
   // project configuration loader instead of being disclosed in treatment-only prompt text.
@@ -292,6 +121,7 @@ export async function runTrial(
   let error: string | null = null;
   let tokens: TokenUsage | null = null;
   let rawOutput: string | null = null;
+  let modelIdentity: ModelIdentity | undefined;
   let skillTriggered: boolean | null = null;
   let executorInvoked = false;
   let usageStatus: TrialOutcome['usageStatus'] = 'unknown';
@@ -304,6 +134,7 @@ export async function runTrial(
     output = result.output;
     tokens = result.tokens ?? null;
     rawOutput = result.rawOutput ?? null;
+    modelIdentity = identityForResult(result, executor.describe());
     skillTriggered = result.skillTriggered ?? null;
     usageStatus = result.usageStatus ?? 'final';
     executionTiming = result.executionTiming ?? null;
@@ -317,6 +148,7 @@ export async function runTrial(
       output = executorError.result.output;
       tokens = executorError.result.tokens ?? null;
       rawOutput = executorError.result.rawOutput ?? null;
+      modelIdentity = identityForResult(executorError.result, executor.describe());
       skillTriggered = executorError.result.skillTriggered ?? null;
       usageStatus = executorError.result.usageStatus ?? (tokens ? 'partial' : 'unknown');
       executionTiming = executorError.result.executionTiming ?? null;
@@ -373,6 +205,7 @@ export async function runTrial(
     output,
     tokens,
     executorInvoked,
+    modelIdentity: modelIdentity ?? unknownModelIdentity(executor.describe().modelIntent),
     usageStatus,
     ...(usageEvidence ? { usageEvidence } : {}),
     gitInitialized,
@@ -404,143 +237,6 @@ export async function runTrial(
   return record;
 }
 
-export async function runVerifier(benchDir: string, command: string, runDir: string, timeoutSeconds?: number): Promise<ProcessResult> {
-  const timeoutMs = parseVerifierTimeoutSeconds(timeoutSeconds) * 1000;
-  let tokens: string[];
-  try { tokens = parseCommand(command); }
-  catch (error) { return { exitCode: null, output: '', error: `VERIFIER_COMMAND_ERROR: ${(error as Error).message}` }; }
-  const result = await runProcess(tokens[0]!, [...tokens.slice(1), runDir], benchDir, timeoutMs);
-  return { ...result, error: result.error ?? verifierRuntimeError(result.output, result.exitCode, benchDir, runDir) };
-}
-
-export function verifierLogFor(result: ProcessResult): string {
-  return result.error ? `${result.output}\n[${result.error}]` : result.output;
-}
-
-const SPAWN_FAILURE = /ENOENT|EINVAL|EACCES|EPERM/i;
-
-/**
- * A verifier that produced no exit code gave no verdict, so the trial says nothing about the agent.
- * Reporting it as a failure would blame the model for a broken bench — and against a command-kind
- * NOP gate it would look like the failure the gate exists to require.
- */
-export function verifierFailure(label: string, command: string, reason: string | null): string {
-  const why = reason ?? 'no exit code';
-  if (why.startsWith('VERIFIER_')) return `${label} failed (${why}): ${command}`;
-  if (SPAWN_FAILURE.test(why)) {
-    return `${label} could not be started (${why}): ${command} — it is spawned without a shell, so the first token must be an executable the OS can start directly ("node verifiers/x.mjs"); to grade with a shell command, wrap it via "bench add --freeze --verifier-cmd"`;
-  }
-  return `${label} produced no exit code (${why}): ${command}`;
-}
-
-function sumTokens(records: TrialOutcome[]): { input: number; output: number } | null {
-  let input = 0;
-  let output = 0;
-  let seen = false;
-  for (const record of records) {
-    if (!record.tokens || record.usageStatus !== 'final') continue;
-    seen = true;
-    input += record.tokens.input ?? 0;
-    output += record.tokens.output ?? 0;
-  }
-  return seen ? { input, output } : null;
-}
-
-/**
- * Record sampling controls explicitly. An executor whose surface exposes no seed or temperature
- * knob reports `sampling: null`, which is a statement about the surface — not an omission that a
- * reader would have to guess at.
- */
-export function withSampling(descriptor: ExecutorDescriptor): ExecutorDescriptor {
-  return { ...descriptor, sampling: descriptor.sampling ?? null };
-}
-
-function countErrors(records: TrialOutcome[]): number {
-  return records.filter((r) => r.error !== null).length;
-}
-
-/**
- * Trials that were graded in BOTH arms, aligned by trial number.
- *
- * A trial whose executor errored was never graded, so counting it as a failure would manufacture a
- * discordant pair out of an API timeout (docs/metrics.md L0, engagement sanity). Dropping it from one
- * arm only would misalign the pairing that McNemar and the paired bootstrap depend on, so the whole
- * (task, trial) pair goes. Filtering per arm independently is the bug this replaces.
- */
-function pairedSurvivors(
-  outcomes: Record<Condition, TrialOutcome[]>,
-): Record<Condition, TrialOutcome[]> {
-  const byTrial = new Map<number, Partial<Record<Condition, TrialOutcome>>>();
-  for (const condition of CONDITIONS) {
-    for (const record of outcomes[condition]) {
-      const entry = byTrial.get(record.trial) ?? {};
-      entry[condition] = record;
-      byTrial.set(record.trial, entry);
-    }
-  }
-  const survivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
-  for (const trial of [...byTrial.keys()].sort((a, b) => a - b)) {
-    const pair = byTrial.get(trial);
-    const baseline = pair?.baseline;
-    const treatment = pair?.treatment;
-    if (!baseline || !treatment) continue;
-    if (baseline.error !== null || treatment.error !== null) continue;
-    survivors.baseline.push(baseline);
-    survivors.treatment.push(treatment);
-  }
-  return survivors;
-}
-
-function statsFor(records: TrialOutcome[], errors: number, readObservations = false): ConditionStats {
-  const passes = records.filter((r) => r.passed).length;
-  const trials = records.length;
-  const scored = records.filter((r) => r.score !== null);
-  const meanScore =
-    scored.length === 0
-      ? null
-      : scored.reduce((sum, r) => sum + (r.score as number), 0) / scored.length;
-  return {
-    passes,
-    trials,
-    errors,
-    ...(readObservations ? { skillReads: {
-      observed: records.filter(r => r.skillTriggered === true).length,
-      unobserved: records.filter(r => r.skillTriggered === false).length,
-      unknown: records.filter(r => r.skillTriggered == null).length,
-    } } : {}),
-    passRate: trials === 0 ? 0 : passes / trials,
-    meanScore,
-    tokens: sumTokens(records),
-    tokenCoverage: {
-      input: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.input === 'number').length,
-      output: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.output === 'number').length,
-    },
-  };
-}
-
-function tokenDelta(
-  baseline: { input: number; output: number } | null,
-  treatment: { input: number; output: number } | null,
-): { input: number; output: number } | null {
-  if (!baseline || !treatment) return null;
-  return { input: treatment.input - baseline.input, output: treatment.output - baseline.output };
-}
-
-export function summarizeJudge(judgeResults: JudgeResult[]): JudgeSummary | null {
-  if (judgeResults.length === 0) return null;
-  const consistent = judgeResults.filter((r) => r.consistent);
-  const mean = (values: number[]): number | null => {
-    if (consistent.length === 0) return null;
-    const raw = values.reduce((sum, value) => sum + value, 0) / consistent.length;
-    return Math.round(raw * 100) / 100;
-  };
-  return {
-    judgedTrials: judgeResults.length,
-    consistentTrials: consistent.length,
-    baselineMean: mean(consistent.map((r) => r.baselineScore)),
-    treatmentMean: mean(consistent.map((r) => r.treatmentScore)),
-  };
-}
 
 async function judgeTaskTrials(
   plan: ExperimentPlan,
@@ -600,150 +296,10 @@ async function judgeTaskTrials(
   return results;
 }
 
-function trialFlags(records: TrialOutcome[]): boolean[] {
-  return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.passed);
-}
-
-function trialScores(records: TrialOutcome[]): (number | null)[] {
-  return [...records].sort((a, b) => a.trial - b.trial).map((r) => r.score);
-}
-
-/** Drop a trial from both arms unless both produced a score, so Δscore keeps the paired denominators. */
-function pairedScores(
-  baseline: readonly (number | null)[],
-  treatment: readonly (number | null)[],
-): { baseline: number[]; treatment: number[] } | null {
-  const left: number[] = [];
-  const right: number[] = [];
-  const count = Math.min(baseline.length, treatment.length);
-  for (let index = 0; index < count; index++) {
-    const baselineScore = baseline[index];
-    const treatmentScore = treatment[index];
-    if (typeof baselineScore !== 'number' || typeof treatmentScore !== 'number') continue;
-    left.push(baselineScore);
-    right.push(treatmentScore);
-  }
-  return left.length === 0 ? null : { baseline: left, treatment: right };
-}
-
-function mean(values: readonly number[]): number {
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
-function facetStats(outcomes: Record<Condition, TrialOutcome[]>): FacetSummary[] {
-  const names: string[] = [];
-  for (const condition of CONDITIONS) {
-    for (const record of outcomes[condition]) {
-      for (const check of record.checks ?? []) {
-        if (!names.includes(check.name)) names.push(check.name);
-      }
-    }
-  }
-  return names.map((name) => {
-    const rateFor = (records: TrialOutcome[]): { trials: number; passRate: number } => {
-      const relevant = records.filter((r) => r.checks?.some((c) => c.name === name));
-      const passes = relevant.filter(
-        (r) => r.checks?.find((c) => c.name === name)?.pass === true,
-      ).length;
-      return { trials: relevant.length, passRate: relevant.length === 0 ? 0 : passes / relevant.length };
-    };
-    const baseline = rateFor(outcomes.baseline);
-    const treatment = rateFor(outcomes.treatment);
-    return {
-      name,
-      baselinePassRate: baseline.passRate,
-      treatmentPassRate: treatment.passRate,
-      baselineTrials: baseline.trials,
-      treatmentTrials: treatment.trials,
-    };
-  });
-}
-
-function verifierConsistencyNotes(
-  taskId: string,
-  outcomes: Record<Condition, TrialOutcome[]>,
-): string[] {
-  const notes = new Set<string>();
-  for (const condition of CONDITIONS) {
-    for (const record of outcomes[condition]) {
-      if (record.verifierPassed !== null && record.verifierPassed !== record.passed) {
-        notes.add(
-          `Task "${taskId}": the verifier's JSON "passed" flag disagrees with its exit code — the exit code is authoritative, fix the summary line.`,
-        );
-      }
-      if (record.checks !== null && record.verifierExitCode !== null) {
-        const allPass = record.checks.every((c) => c.pass);
-        if (record.passed && !allPass) {
-          notes.add(
-            `Task "${taskId}": the verifier exits 0 while some checks fail — exit code and checks disagree.`,
-          );
-        }
-        if (!record.passed && allPass) {
-          notes.add(
-            `Task "${taskId}": all checks pass but the verifier exits non-zero — exit code and checks disagree.`,
-          );
-        }
-      }
-    }
-  }
-  return [...notes];
-}
-
-function discordantCounts(
-  outcomeSets: Array<{ baseline: boolean[]; treatment: boolean[] }>,
-): { improved: number; regressed: number } {
-  let improved = 0;
-  let regressed = 0;
-  for (const outcomes of outcomeSets) {
-    for (let i = 0; i < outcomes.baseline.length && i < outcomes.treatment.length; i++) {
-      const baselinePassed = outcomes.baseline[i] === true;
-      const treatmentPassed = outcomes.treatment[i] === true;
-      if (treatmentPassed && !baselinePassed) improved++;
-      else if (baselinePassed && !treatmentPassed) regressed++;
-    }
-  }
-  return { improved, regressed };
-}
-
-function summarizeTask(
-  taskId: string,
-  outcomes: Record<Condition, TrialOutcome[]>,
-  survivors: Record<Condition, TrialOutcome[]>,
-  judgeResults: JudgeResult[],
-  readObservations = false,
-): TaskSummary {
-  const baseline = statsFor(survivors.baseline, countErrors(outcomes.baseline), readObservations);
-  const treatment = statsFor(survivors.treatment, countErrors(outcomes.treatment), readObservations);
-  const flags = {
-    baseline: trialFlags(survivors.baseline),
-    treatment: trialFlags(survivors.treatment),
-  };
-  const deltaPassRate = treatment.passRate - baseline.passRate;
-  const scoreRows = {
-    baseline: trialScores(survivors.baseline),
-    treatment: trialScores(survivors.treatment),
-  };
-  const paired = pairedScores(scoreRows.baseline, scoreRows.treatment);
-  const scoreDelta = paired ? mean(paired.treatment) - mean(paired.baseline) : null;
-  const { verdict, reason } = verdictFor({ ...discordantCounts([flags]), deltaPassRate });
-  return {
-    id: taskId,
-    conditions: { baseline, treatment },
-    outcomes: flags,
-    scores: scoreRows,
-    deltaPassRate,
-    scoreDelta,
-    facets: facetStats(survivors),
-    verifierNotes: verifierConsistencyNotes(taskId, outcomes),
-    tokenDelta: tokenDelta(baseline.tokens, treatment.tokens),
-    costs: summarizeCosts(outcomes, survivors),
-    verdict,
-    verdictReason: reason,
-    judge: summarizeJudge(judgeResults),
-  };
-}
-
 export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> {
+  const scope = measurementScope(plan.bench, requestedClaimFor('paired', plan.component?.policy, !!plan.stopOnExecutionError));
+  assertBenchClaimSupported(scope);
+  if (plan.stopOnExecutionError && plan.executor.describe().kind !== 'mock') throw new Error('stopOnExecutionError requires an offline mock executor.');
   const budget = plan.spendingBudget === undefined ? undefined : parseSpendingBudget(plan.spendingBudget);
   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
   const pairOrder = plan.pairOrder ?? 'baseline-first';
@@ -775,9 +331,8 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   mkdirSync(groupDir, { recursive: true });
   if (plan.skillInstallDir) snapshotNativeDiffTool(groupDir);
 
-  const taskSummaries: TaskSummary[] = [];
+  const taskOutcomes: TaskOutcomes[] = [];
   const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
-  const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
   const budgetRecorder = createSpendingBudgetRecorder({ budget, groupDir });
   const allJudgeCalls: JudgeCallReceipt[] = [];
   for (const [taskIndex, task] of plan.bench.tasks.entries()) {
@@ -795,32 +350,23 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
         allOutcomes[condition].push(outcome);
         budgetRecorder.after({ taskId: task.id, condition, trial }, outcome);
         throwIfEvaluationInterrupted();
+        if (plan.stopOnExecutionError && outcome.error !== null) throw new Error(outcome.error);
         // A reached line prevents the next call; incomplete or failed evidence stops even
         // after the final scheduled call. One in-flight invocation may cross a stop line.
       }
     }
-    const survivors = pairedSurvivors(outcomes);
-    allSurvivors.baseline.push(...survivors.baseline);
-    allSurvivors.treatment.push(...survivors.treatment);
     const judgeResults = await judgeTaskTrials(plan, task.id, outcomes, allJudgeCalls, budgetRecorder);
-    taskSummaries.push(summarizeTask(task.id, outcomes, survivors, judgeResults, !!plan.skillInstallDir));
+    taskOutcomes.push({ id: task.id, outcomes, judgeResults });
   }
 
-  const overallBaseline = statsFor(allSurvivors.baseline, countErrors(allOutcomes.baseline), !!plan.skillInstallDir);
-  const overallTreatment = statsFor(allSurvivors.treatment, countErrors(allOutcomes.treatment), !!plan.skillInstallDir);
-  const overallDelta = overallTreatment.passRate - overallBaseline.passRate;
-  const taskOutcomes = taskSummaries.map((task) => task.outcomes);
-  const discordant = discordantCounts(taskOutcomes);
-  const overallVerdict = verdictFor({ ...discordant, deltaPassRate: overallDelta });
-  const scoreTasks = taskSummaries.flatMap((task) => {
-    const paired = pairedScores(task.scores.baseline, task.scores.treatment);
-    return paired ? [paired] : [];
-  });
-  const scoreDeltaCi = pairedScoreBootstrapCI(scoreTasks);
-  const scoreDelta = scoreDeltaCi ? scoreDeltaCi.point : null;
+  const summary = summarizeExperiment(taskOutcomes, !!plan.skillInstallDir);
   plan.session?.settle();
   const manifestWithoutWarnings: Omit<RunManifest, 'warnings'> = {
     schemaVersion: 4,
+    measurementScope: scope,
+    modelIdentities: modelIdentities(
+      [...allOutcomes.baseline, ...allOutcomes.treatment].filter(r => r.executorInvoked).map(r => ({ receipt: `${r.taskId}/${r.condition}/trial-${r.trial}/_result.json`, identity: r.modelIdentity ?? null })),
+      allJudgeCalls.filter(r => r.executorInvoked).map(r => ({ receipt: `${r.taskId}/judge-trial-${r.trial}/call-${r.callIndex}.json`, identity: r.modelIdentity ?? null }))),
     invocationCosts: summarizeInvocationCosts([...allOutcomes.baseline, ...allOutcomes.treatment], allJudgeCalls, !!plan.judge),
     ...(plan.component ? { component: plan.component } : {}),
     ...(plan.session ? { experiment: plan.session.summary() } : {}),
@@ -853,25 +399,8 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     executor: withSampling(plan.executor.describe()),
     judge: plan.judge ? withSampling(plan.judge.describe()) : null,
     trials: plan.trials,
-    tasks: taskSummaries,
-    overall: {
-      conditions: {
-        baseline: overallBaseline,
-        treatment: overallTreatment,
-      },
-      deltaPassRate: overallDelta,
-      scoreDelta,
-      tokenDelta: tokenDelta(overallBaseline.tokens, overallTreatment.tokens),
-      costs: summarizeCosts(allOutcomes, allSurvivors),
-      verdict: overallVerdict.verdict,
-      verdictReason: overallVerdict.reason,
-      stats: {
-        discordant,
-        mcnemarP: mcnemarExactP(discordant.improved, discordant.regressed),
-        deltaCi: pairedDeltaBootstrapCI(taskOutcomes),
-        scoreDeltaCi,
-      },
-    },
+    tasks: summary.tasks,
+    overall: summary.overall,
   };
   const manifest: RunManifest = {
     ...manifestWithoutWarnings,

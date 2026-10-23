@@ -1,0 +1,4 @@
+Findings:
+
+- high: src/order.js:25 throws a bare `Error` with no `code`; SPEC §1 requires every caller-facing error to be an `AppError`, and SPEC §5 mandates the code `INVALID_QUANTITY` for a negative quantity.
+- low: src/order.js:22-23 uses a C-style `for (let i = 0; ...)` loop while the rest of the file iterates with `for...of`.

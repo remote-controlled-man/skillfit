@@ -60,8 +60,8 @@ test('loadBench accepts a valid synthetic bench', (t) => {
 });
 
 test('loadBench rejects unsupported schemaVersion', (t) => {
-  const dir = makeBench(t, { schemaVersion: 2, tasks: [validTask] });
-  assert.throws(() => loadBench(dir), /Unsupported bench schemaVersion 2/);
+  const dir = makeBench(t, { schemaVersion: 3, tasks: [validTask] });
+  assert.throws(() => loadBench(dir), /Unsupported bench schemaVersion 3/);
 });
 
 test('loadBench rejects a missing bench.json', () => {

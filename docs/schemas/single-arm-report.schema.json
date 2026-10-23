@@ -4,15 +4,19 @@
   "type": "object",
   "required": ["schemaVersion", "kind", "evaluationType", "status", "runGroup", "summary", "evidence", "acceptance", "usage"],
   "properties": {
+    "measurementScope": { "$ref": "measurement-scope.schema.json" },
     "schemaVersion": { "const": 1 }, "kind": { "enum": ["skillfit.calibration-report", "skillfit.trigger-report"] },
     "evaluationType": { "enum": ["calibration", "trigger"] },
     "status": { "enum": ["completed", "stopped", "incomplete", "reported"] },
-    "runGroup": { "type": "string" }, "summary": { "type": ["object", "null"] },
+    "runGroup": { "type": "string" }, "summary": { "type": ["object", "null"], "properties": {"triggerDetection": {"anyOf": [{"$ref": "trigger-detection.schema.json"}, {"type": "null"}]}}},
     "session": { "type": ["object", "null"] }, "usage": { "type": ["object", "null"] },
     "evidence": { "type": "object", "required": ["verified", "scope", "reasons"] },
     "agentPreflight": { "anyOf": [{ "$ref": "agent-preflight.schema.json" }, { "type": "null" }] },
     "acceptance": { "type": "object", "required": ["decision", "eligibleForUpgrade", "automaticUpgrade"],
-      "properties": { "decision": { "const": "inconclusive" }, "eligibleForUpgrade": { "const": false }, "automaticUpgrade": { "const": false } } }
+      "properties": { "decision": { "const": "inconclusive" }, "eligibleForUpgrade": { "const": false }, "automaticUpgrade": { "const": false } } },
+    "modelIdentities": {
+      "$ref": "model-identities.schema.json"
+    }
   },
   "allOf": [
     { "if": { "properties": { "evaluationType": { "const": "calibration" } } }, "then": { "properties": { "kind": { "const": "skillfit.calibration-report" } } }, "else": { "properties": { "kind": { "const": "skillfit.trigger-report" } } } }

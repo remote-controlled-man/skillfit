@@ -5,16 +5,16 @@ import { resolveBenchDir } from '../harness/bench-location.js';
 import { applyBenchWrites } from './bench.js';
 import { BACKUP_SUFFIX } from './install.js';
 
-const EDITABLE = ['fixture', 'prompt', 'promptTrigger', 'verifier', 'verifierKind', 'verifierTimeoutSeconds', 'oracle', 'rubric', 'shouldTrigger'] as const;
+const EDITABLE = ['fixture', 'prompt', 'promptTrigger', 'verifier', 'verifierKind', 'verifierTimeoutSeconds', 'oracle', 'rubric', 'shouldTrigger', 'claims'] as const;
 const OPTIONAL = ['promptTrigger', 'verifierTimeoutSeconds', 'oracle', 'rubric', 'shouldTrigger'] as const;
 
 export function inspectBench(dir: string, taskId?: string) {
   const bench = loadBench(resolveBenchDir(dir));
   const tasks = taskId === undefined ? bench.tasks : bench.tasks.filter(task => task.id === taskId);
   if (!tasks.length) throw new Error(`Unknown task: ${taskId}`);
-  return { schemaVersion: 1, kind: taskId === undefined ? 'skillfit.bench-list' : 'skillfit.bench-task',
+  return { schemaVersion: 1, benchSchemaVersion: bench.schemaVersion, kind: taskId === undefined ? 'skillfit.bench-list' : 'skillfit.bench-task',
     dir: bench.dir, name: bench.name, sha256: bench.contentSha256,
-    tasks: tasks.map(task => ({ ...task, verifierKind: task.verifierKind ?? 'output', shouldTrigger: task.shouldTrigger ?? null })) };
+    tasks: tasks.map(task => ({ ...task, claims: task.claims ?? null, claimsStatus: bench.schemaVersion === 1 ? 'legacy-unrecorded' : 'declared', verifierKind: task.verifierKind ?? 'output', shouldTrigger: task.shouldTrigger ?? null })) };
 }
 
 export interface BenchManageOptions {
@@ -52,7 +52,10 @@ export function manageBench(options: BenchManageOptions) {
       if (!(EDITABLE as readonly string[]).includes(field)) throw new Error(`Field is not editable: ${field}`);
       if (touched.has(field)) throw new Error(`Repeated edit field: ${field}`);
       touched.add(field);
-      if (field === 'shouldTrigger') {
+      if (field === 'claims') {
+        if (bench.schemaVersion !== 2) throw new Error('claims editing requires explicit schema 2; no automatic upgrade.');
+        try { next[field] = JSON.parse(value); } catch { throw new Error('claims must be a JSON array.'); }
+      } else if (field === 'shouldTrigger') {
         if (value !== 'true' && value !== 'false') throw new Error('shouldTrigger must be true or false.');
         next[field] = value === 'true';
       } else next[field] = field === 'verifierTimeoutSeconds' ? Number(value) : value;
@@ -62,7 +65,7 @@ export function manageBench(options: BenchManageOptions) {
       if (touched.has(field)) throw new Error(`Repeated edit field: ${field}`);
       touched.add(field); delete next[field];
     }
-    validateBenchTask(dir, next, index);
+    validateBenchTask(dir, next, index, bench.schemaVersion);
     manifest.tasks[index] = next;
   }
   const after = options.action === 'remove' ? null : manifest.tasks[index]!;

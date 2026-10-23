@@ -4,6 +4,7 @@
   "type": "object",
   "required": ["schemaVersion", "kind", "taskId", "trial", "callIndex", "seed", "firstCondition", "prompt", "promptSha256", "output", "rawOutput", "executor", "startedAt", "finishedAt", "timing", "scores", "error", "executorInvoked", "tokens", "usageStatus", "durationSeconds", "passed"],
   "properties": {
+    "modelIdentity": { "$ref": "model-identity.schema.json" },
     "schemaVersion": { "const": 1 }, "kind": { "const": "skillfit.judge-call" },
     "taskId": { "type": "string" }, "trial": { "type": "integer", "minimum": 1, "maximum": 20 },
     "callIndex": { "enum": [1, 2] }, "firstCondition": { "enum": ["baseline", "treatment"] },

@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "suites": [
+    {
+      "id": "existing-mock-arms",
+      "purpose": "custom",
+      "mode": "inject",
+      "agent": null,
+      "taskIds": [
+        "review-r1",
+        "review-r2",
+        "review-r3",
+        "explain-x1",
+        "summarize-s1"
+      ],
+      "trials": 1,
+      "arms": {
+        "review-r1": {
+          "baseline": {
+            "kind": "output-file",
+            "path": "controls/review-r1.baseline.txt"
+          },
+          "treatment": {
+            "kind": "output-file",
+            "path": "controls/review-r1.treatment.txt"
+          }
+        },
+        "review-r2": {
+          "baseline": {
+            "kind": "output-file",
+            "path": "controls/review-r2.baseline.txt"
+          },
+          "treatment": {
+            "kind": "output-file",
+            "path": "controls/review-r2.treatment.txt"
+          }
+        },
+        "review-r3": {
+          "baseline": {
+            "kind": "output-file",
+            "path": "controls/review-r3.baseline.txt"
+          },
+          "treatment": {
+            "kind": "output-file",
+            "path": "controls/review-r3.treatment.txt"
+          }
+        },
+        "explain-x1": {
+          "baseline": {
+            "kind": "output-file",
+            "path": "controls/explain-x1.baseline.txt"
+          },
+          "treatment": {
+            "kind": "output-file",
+            "path": "controls/explain-x1.treatment.txt"
+          }
+        },
+        "summarize-s1": {
+          "baseline": {
+            "kind": "output-file",
+            "path": "controls/summarize-s1.baseline.txt"
+          },
+          "treatment": {
+            "kind": "output-file",
+            "path": "controls/summarize-s1.treatment.txt"
+          }
+        }
+      },
+      "expected": {
+        "status": "completed",
+        "statisticalVerdict": "inconclusive",
+        "mcnemarPRange": {
+          "minInclusive": 0.625,
+          "maxExclusive": 0.626
+        },
+        "tasks": [
+          {
+            "taskId": "review-r1",
+            "baseline": {
+              "graded": 1,
+              "passes": 0,
+              "errors": 0
+            },
+            "treatment": {
+              "graded": 1,
+              "passes": 1,
+              "errors": 0
+            }
+          },
+          {
+            "taskId": "review-r2",
+            "baseline": {
+              "graded": 1,
+              "passes": 0,
+              "errors": 0
+            },
+            "treatment": {
+              "graded": 1,
+              "passes": 1,
+              "errors": 0
+            }
+          },
+          {
+            "taskId": "review-r3",
+            "baseline": {
+              "graded": 1,
+              "passes": 0,
+              "errors": 0
+            },
+            "treatment": {
+              "graded": 1,
+              "passes": 1,
+              "errors": 0
+            }
+          },
+          {
+            "taskId": "explain-x1",
+            "baseline": {
+              "graded": 1,
+              "passes": 1,
+              "errors": 0
+            },
+            "treatment": {
+              "graded": 1,
+              "passes": 1,
+              "errors": 0
+            }
+          },
+          {
+            "taskId": "summarize-s1",
+            "baseline": {
+              "graded": 1,
+              "passes": 1,
+              "errors": 0
+            },
+            "treatment": {
+              "graded": 1,
+              "passes": 0,
+              "errors": 0
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

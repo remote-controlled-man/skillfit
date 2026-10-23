@@ -8,7 +8,7 @@ import { validateCatalog } from '../evidence/fetch-archives.mjs';
 export const PACKAGE_POLICY = JSON.parse(readFileSync(new URL('package-policy.json', import.meta.url), 'utf8'));
 
 export const ARCHIVE_CATALOG = validateCatalog(JSON.parse(readFileSync(new URL('../evidence/archive-catalog.v1.json', import.meta.url), 'utf8')));
-const supportFiles = ARCHIVE_CATALOG.supportFiles.filter(row => row.inlineBase64 === undefined).map(row => row.path);
+const supportFiles = ARCHIVE_CATALOG.supportFiles.filter(row => row.inlineBase64 === undefined && !row.path.startsWith('evidence/artifacts/')).map(row => row.path);
 
 export function validatePackageContents(pack, runtimeFiles = []) {
   assert.ok(Array.isArray(pack.files) && pack.files.length, 'An inspected package inventory is required');
@@ -19,6 +19,7 @@ export function validatePackageContents(pack, runtimeFiles = []) {
     assert.equal(typeof name, 'string');
     assert.ok(!name.includes('\\') && !name.startsWith('/') && !name.split('/').some(part => part === '..' || part === '.'), `Unsafe package path: ${name}`);
     assert.ok(roots.has(name.split('/')[0]), `Unreviewed package root: ${name}`);
+    assert.ok(!PACKAGE_POLICY.sourceOnlyPrefixes.some(prefix => name.startsWith(prefix)) && !PACKAGE_POLICY.sourceOnlyFiles.includes(name) && !/^docs\/releases\/[^/]+\.(json|txt|log)$/.test(name), `Source-only record/artifact in package: ${name}`);
     assert.ok(!/(?:^|\/)(?:workspace4skills|runs|node_modules|\.git)(?:\/|$)/.test(name), `Private/generated path in package: ${name}`);
     assert.ok(!/(?:^|\/)(?:\.env|auth\.json|credentials|id_rsa|id_ed25519)$/.test(name), `Credential path in package: ${name}`);
     if (name.startsWith('dist/') && name.endsWith('.test.js')) {

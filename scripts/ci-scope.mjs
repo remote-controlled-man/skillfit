@@ -2,15 +2,16 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { documentationFiles, inspectDocumentation } from './check-docs.mjs';
-import { validateReleaseDocuments } from '../docs/releases/release-docs-smoke.mjs';
+import { checkDocumentation, readDocumentationBaseline } from './check-docs.mjs';
+import { RELEASE_DOCUMENTS } from '../docs/releases/release-docs-smoke.mjs';
 
 const sha = value => /^[a-f0-9]{40}$/.test(value ?? '') && !/^0+$/.test(value);
 const digest = file => createHash('sha256').update(readFileSync(file)).digest('hex');
 const json = file => JSON.parse(readFileSync(file, 'utf8'));
 const save = (file, value) => writeFileSync(file, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
+const UNKNOWN_DIFF_REASON = 'Unknown or unavailable diff baseline';
 
 export function classifyChanges(changes) {
   if (!changes.length || changes.length > 256) return 'full';
@@ -18,6 +19,8 @@ export function classifyChanges(changes) {
     if (!['A', 'M'].includes(status) || mode !== '100644') return false;
     if (/^docs\/plans\/[a-zA-Z0-9._-]+\.md$/.test(path)) return true;
     if (/^docs\/releases\/\d+\.\d+\.\d+\.md$/.test(path)) return true;
+    if (status === 'A' && /^docs\/releases\/records\/\d+\.\d+\.\d+\/(?:registry-install|documents|examples|features|archives|history|provenance|signatures|source-ci|preview|publication|publication-intent|registry-metadata|attestations|published|prior-attempt|registry-observations|verification)\.json$/.test(path)) return true;
+    if (status === 'A' && /^docs\/releases\/records\/\d+\.\d+\.\d+\/(?:signatures|registry-install-attempt-\d+)\.txt$/.test(path)) return true;
     return status === 'A' && /^docs\/releases\/\d+\.\d+\.\d+-[a-z0-9][a-z0-9-]*\.(json|txt)$/.test(path);
   }) ? 'records' : 'full';
 }
@@ -39,9 +42,9 @@ export function scopeForEvent(eventName, event, head, git) {
   const base = eventName === 'pull_request' ? event.pull_request?.base?.sha : eventName === 'push' ? event.before : null;
   try {
     const changes = changedFiles(base, head, git);
-    return { scope: classifyChanges(changes), base, head, changes };
+    return { scope: classifyChanges(changes), base, head, changes, diffAvailable: true };
   } catch {
-    return { scope: 'full', base: base ?? null, head, changes: [], reason: 'Unknown or unavailable diff baseline' };
+    return { scope: 'full', base: base ?? null, head, changes: [], diffAvailable: false, reason: UNKNOWN_DIFF_REASON };
   }
 }
 
@@ -55,21 +58,20 @@ function localFile(root, file) {
 export function inspectRecordChanges(root, changes) {
   assert.equal(classifyChanges(changes), 'records', 'Only classified records can use targeted validation');
   const files = changes.map(row => row.path);
-  const links = inspectDocumentation(root, [...new Set([...documentationFiles(root), ...files.filter(file => file.endsWith('.md'))])]);
-  assert.deepEqual(links, [], links.join('\n'));
-  validateReleaseDocuments(root);
+  const documentation = checkDocumentation(root, { changes });
+  assert.deepEqual(documentation.errors, [], documentation.errors.join('\n'));
   let references = 0;
   for (const file of files) {
     const source = localFile(root, file);
     if (!file.endsWith('.json')) continue;
     const value = json(source);
-    if (!file.endsWith('-verification.json')) continue;
+    if (!file.endsWith('-verification.json') && !/^docs\/releases\/records\/\d+\.\d+\.\d+\/verification\.json$/.test(file)) continue;
     const check = entry => {
       if (!entry || typeof entry !== 'object') return;
       if (typeof entry.path === 'string' && typeof entry.sha256 === 'string') {
         assert.equal(entry.path, basename(entry.path), 'Receipt references must stay in the release directory');
         assert.match(entry.sha256, /^[a-f0-9]{64}$/);
-        const target = localFile(join(root, 'docs/releases'), entry.path);
+        const target = localFile(dirname(source), entry.path);
         assert.equal(digest(target), entry.sha256, `Receipt digest mismatch: ${entry.path}`);
         references++;
       }
@@ -77,7 +79,24 @@ export function inspectRecordChanges(root, changes) {
     };
     check(value);
   }
-  return { files: files.length, references, currentDocuments: 5 };
+  return { files: files.length, references, currentDocuments: RELEASE_DOCUMENTS.length };
+}
+
+function documentationForScope(root, scope) {
+  try {
+    // Retain the legacy reason interpretation for older local scope records.
+    const knownBaseline = sha(scope.base) && scope.diffAvailable !== false && scope.reason !== UNKNOWN_DIFF_REASON;
+    const context = knownBaseline ? readDocumentationBaseline(root, scope.base, scope.changes) : { changes: scope.changes ?? [] };
+    const result = checkDocumentation(root, context);
+    if (!knownBaseline) {
+      result.anchorBaseline = 'unavailable';
+      result.manualReviews.push({ path: 'Git baseline', responsibility: 'Compare old paths/fragments when the exact baseline is available.', status: 'not-machine-verified' });
+    }
+    return result;
+  } catch (error) {
+    return { schemaVersion: 1, kind: 'skillfit.documentation-check', baseline: scope.base ?? null, anchorBaseline: 'not-compared',
+      files: [], errors: [error.message], impacts: [], manualReviews: [] };
+  }
 }
 
 export function testCounts(output) {
@@ -88,48 +107,65 @@ export function testCounts(output) {
   return counts;
 }
 
+export function ciReceipt(env, scope, test, nodeVersion = process.version) {
+  return { schemaVersion: 1, kind: 'skillfit.ci-result', repository: env.GITHUB_REPOSITORY,
+    sourceCommit: env.GITHUB_SHA, runId: env.GITHUB_RUN_ID, runAttempt: env.GITHUB_RUN_ATTEMPT,
+    job: env.SKILLFIT_CI_JOB, os: env.SKILLFIT_CI_OS, nodeTarget: env.SKILLFIT_CI_NODE_TARGET, nodeVersion,
+    scope, status: env.SKILLFIT_JOB_STATUS === 'success' && test?.exitCode === 0 && test?.counts?.fail === 0 &&
+      test?.counts?.cancelled === 0 ? 'passed' : 'failed', counts: test?.counts ?? null };
+}
+
 function main(mode) {
   const root = process.cwd(), dir = process.env.SKILLFIT_CI_DIR ?? (process.env.RUNNER_TEMP ? join(process.env.RUNNER_TEMP, 'skillfit-ci') : null);
   assert.ok(dir, 'Set SKILLFIT_CI_DIR to a fresh result directory');
   if (mode === 'classify') {
     mkdirSync(dir);
     const result = scopeForEvent(process.env.GITHUB_EVENT_NAME, json(process.env.GITHUB_EVENT_PATH), process.env.GITHUB_SHA);
+    if (process.env.SKILLFIT_CI_FORCE_FULL === '1') {
+      result.scope = 'full'; result.reason = 'Full offline Node compatibility validation required';
+    }
     save(join(dir, 'scope.json'), result);
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `scope=${result.scope}\n`);
     console.log(`CI scope: ${result.scope}${result.reason ? ` (${result.reason})` : ''}`);
-  } else if (mode === 'test') {
+  } else if (mode === 'documentation' || mode === 'test' || mode === 'minimum') {
     const scope = json(join(dir, 'scope.json'));
+    if (mode !== 'minimum') {
+      const documentation = documentationForScope(root, scope);
+      save(join(dir, 'documentation.json'), documentation);
+      assert.deepEqual(documentation.errors, [], 'Documentation gate failed; see documentation.json\n' + documentation.errors.join('\n'));
+      console.log(`Documentation gate: ${documentation.files.length} files; anchors ${documentation.anchorBaseline}; ${documentation.impacts.length} topics require manual review.`);
+      if (mode === 'documentation') return;
+    }
     const run = (command, args) => spawnSync(command, args, { encoding: 'utf8', shell: process.platform === 'win32' && command === 'npm',
       timeout: 20 * 60_000, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: '0', NODE_DISABLE_COLORS: '1' } });
     let built;
-    if (scope.scope === 'records') {
+    if (scope.scope === 'records' || mode === 'minimum') {
       built = run('npm', ['run', 'build']);
       writeFileSync(join(dir, 'build.log'), (built.stdout ?? '') + (built.stderr ?? ''), { flag: 'wx' });
       assert.equal(built.status, 0, 'Targeted CI build failed; see build.log');
     }
-    const result = scope.scope === 'full' ? run('npm', ['test']) : run(process.execPath,
-      ['--test', '--test-reporter=tap', 'scripts/check-package.test.mjs', 'scripts/check-docs.test.mjs', 'scripts/check-release-docs.test.mjs', 'scripts/ci-scope.test.mjs']);
+    const result = mode === 'minimum' ? run(process.execPath,
+      ['--test', '--test-reporter=tap', 'scripts/node-minimum.test.mjs']) : scope.scope === 'full' ? run('npm', ['test']) : run(process.execPath,
+      ['--test', '--test-reporter=tap', 'scripts/check-package.test.mjs', 'scripts/check-docs.test.mjs', 'scripts/documentation-registry.test.mjs', 'scripts/check-release-docs.test.mjs', 'scripts/ci-scope.test.mjs']);
     const output = (result.stdout ?? '') + (result.stderr ?? '');
     writeFileSync(join(dir, 'tests.log'), output, { flag: 'wx' });
     let counts = null;
     try { counts = testCounts(output); } catch { /* Retain the failed run without inventing counts. */ }
-    save(join(dir, 'test-result.json'), { scope: scope.scope, exitCode: result.status, counts });
+    const testedScope = mode === 'minimum' ? 'minimum' : scope.scope;
+    save(join(dir, 'test-result.json'), { scope: testedScope, exitCode: result.status, counts });
     assert.equal(result.status, 0, `CI tests failed; see tests.log\n${output.slice(-2000)}`);
     assert.ok(counts && counts.fail === 0 && counts.cancelled === 0, 'Successful test counts are required');
-    if (scope.scope === 'records') save(join(dir, 'records.json'), inspectRecordChanges(root, scope.changes));
-    console.log(`CI ${scope.scope}: ${counts.pass}/${counts.tests} passed, ${counts.skipped} skipped.`);
+    if (mode !== 'minimum' && scope.scope === 'records') save(join(dir, 'records.json'), inspectRecordChanges(root, scope.changes));
+    console.log(`CI ${testedScope}: ${counts.pass}/${counts.tests} passed, ${counts.skipped} skipped.`);
   } else if (mode === 'record') {
     const scope = existsSync(join(dir, 'scope.json')) ? json(join(dir, 'scope.json')).scope : 'unknown';
     const test = existsSync(join(dir, 'test-result.json')) ? json(join(dir, 'test-result.json')) : null;
-    const result = { schemaVersion: 1, kind: 'skillfit.ci-result', repository: process.env.GITHUB_REPOSITORY,
-      sourceCommit: process.env.GITHUB_SHA, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT,
-      os: process.env.SKILLFIT_CI_OS, scope, status: process.env.SKILLFIT_JOB_STATUS === 'success' && test?.exitCode === 0 && test?.counts?.fail === 0 ? 'passed' : 'failed',
-      counts: test?.counts ?? null };
+    const result = ciReceipt(process.env, test?.scope ?? scope, test);
     save(join(dir, 'ci-result.json'), result);
     if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-      `### ${result.os}: ${result.status}\n\nScope: **${scope}**; actual test counts: ${JSON.stringify(result.counts)}.\n`);
+      `### ${result.job} / ${result.os} / ${result.nodeVersion}: ${result.status}\n\nScope: **${result.scope}**; actual test counts: ${JSON.stringify(result.counts)}.\n`);
     console.log(JSON.stringify(result));
-  } else throw new Error('Use classify, test or record');
+  } else throw new Error('Use classify, documentation, test, minimum or record');
 }
 
 if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) main(process.argv[2]);

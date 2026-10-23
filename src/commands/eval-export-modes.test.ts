@@ -159,7 +159,7 @@ test('single-arm budget replay includes setup attempts that never invoked an Age
   const budget = createSpendingBudgetRecorder({ budget: limits, groupDir: run }), identity = { taskId: 'example-task', condition: 'baseline' as const, trial: 1 };
   budget.before(identity); let failure: unknown; try { budget.after(identity, observation); } catch (error) { failure = error; }
   assert.ok(failure);
-  const summary = { schemaVersion: 1, runGroup: 'calibration', inputMode: 'snapshot', trials: 1,
+  const summary = { schemaVersion: 1, measurementScope: JSON.parse(readFileSync(join(run, '_plan.json'), 'utf8')).details.measurementScope, runGroup: 'calibration', inputMode: 'snapshot', trials: 1,
     tasks: [{ id: 'example-task', passes: 0, completed: 0, errors: 1 }], costs: summarizeCosts({ baseline: [observation], treatment: [] }, { baseline: [], treatment: [] }), experiment: session.summary() };
   writeFileSync(join(run, '_calibration.json'), JSON.stringify(summary)); session.finish(failure, summary, '_calibration.json');
   const before = await readEvaluationReport(run); assert.ok('evaluationType' in before); assert.equal(before.evidence.verified, true, JSON.stringify(before.evidence));

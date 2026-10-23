@@ -14,12 +14,21 @@ restoration introduced in [0.13.0](releases/0.13.0.md), alongside the earlier
 case-authoring and usage-accounting fixes. [CHANGELOG](../CHANGELOG.md) describes
 versioned behavior; old release evidence remains unchanged.
 
-Current release maintenance follows the [0.13.1 release
-plan](plans/2026-10-21-npm-0.13.1-release.md). The earlier [documentation and
-architecture cleanup](plans/2026-10-20-docs-architecture-cleanup.md) remains a
-completed work record. Neither adds live model evaluations or efficacy claims.
-The completed [workflow foundations audit](plans/2026-10-17-workflow-foundations.md#completion-audit)
-remains a historical delivery record.
+Current source work follows the [measurement remediation plan](plans/2026-10-21-measurement-contract-and-capability-remediation.md):
+consult its checklist for implementation, local acceptance and remote CI status.
+The [documentation and architecture plan](plans/2026-10-22-documentation-governance-and-architecture.md)
+owns document migration and internal boundary work, including its dependencies
+on the measurement plan. This roadmap owns product direction, not copies of
+either plan's progress. The [capability table](eval-agent-preflight.md#current-source-capability-table)
+describes implemented source behavior; the [documentation index](README.md)
+routes readers to current contracts. Unpublished checkout changes do not amend
+the immutable 0.13.1 release record.
+
+The [0.13.1 release plan](plans/2026-10-21-npm-0.13.1-release.md), earlier
+[documentation and architecture cleanup](plans/2026-10-20-docs-architecture-cleanup.md)
+and [workflow foundations audit](plans/2026-10-17-workflow-foundations.md#completion-audit)
+are historical work records. Their [lifecycle classification](documentation-governance.md#plans-and-lifecycle)
+does not infer acceptance of unchecked remote work or authorize live evaluation.
 
 ## Available foundations
 
@@ -41,6 +50,9 @@ universal Skill benchmark.
 
 Independent implementation and verification work may run in parallel. Dates are
 work records, not timers or unattended execution.
+The table below retains the historical October delivery sequence. Its dated
+test counts and PR observations are not current task status; current work belongs
+to the linked active plans and publication to each release record.
 The code-editing starter is merged in PR #24 and JSON checks in PR #25.
 The October 16 delivery completes task selection, case management and portable
 exports, with publication tracked separately from source and CI completion. PR #26 passed 600 offline tests and Linux/macOS/Windows CI.
@@ -77,6 +89,10 @@ passing. The statistical protocol, dated evidence and automatic-upgrade
 prohibition are unchanged.
 
 ## Later decisions
+
+The release context below explains the product's foundations. Current support
+and verification limits belong to the capability table, and implementation
+priorities/acceptance belong to the active plans linked above.
 
 The 0.10.1 release includes interruption cleanup, offline case preflight, sealed
 inputs, API cache counts and shared paired report inputs. Version 0.11.0 also

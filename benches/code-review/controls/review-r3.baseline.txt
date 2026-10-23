@@ -1,0 +1,3 @@
+Findings:
+
+- low: src/pricing.js:34 `formatOrder` returns a string, so callers expecting a numeric total may break.

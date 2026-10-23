@@ -1,0 +1,3 @@
+- Orders of 10 items or more now get the 5% bulk discount.
+- Reviewing the diff, src/discount.js:14 violates SPEC §3: roundCents is applied to the unit price before multiplying by qty, which is intermediate rounding and should be moved to lineTotal.
+- INVALID_QUANTITY is now a stable code.

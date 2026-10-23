@@ -13,6 +13,7 @@ Thanks for helping make agent configuration evidence-driven.
 - **Zero runtime dependencies** is a hard rule. Discuss in an issue before proposing one.
 - `npm test` must be green. Tests are `node:test`, offline, and never call a real model API or agent CLI — use `MockExecutor`, injected executors, or injected fs roots.
 - Verdict semantics and the statistical protocol are frozen in [docs/metrics.md](docs/metrics.md); change the doc and the code together.
+- Follow [documentation governance](docs/documentation-governance.md) for document responsibilities, topic authority, registration and version scope. Update the canonical contract and review its dependent guides; preserve old paths/anchors, bilingual README blocks and frozen evidence. [Architecture](docs/architecture.md) and the [ADR index](docs/decisions/README.md) distinguish current implementation from proposed changes. Documentation-only changes need facts, links and diff review; code/build changes require the offline suite.
 - PRs must describe *observable* changes: what the CLI printed/did before and after.
 - AI-generated PRs are welcome, but say so, and you are responsible for having run the code. Unverifiable PRs will be closed without review.
 - **Never run `git clean -fdx` in your clone** if you keep a local `workspace4skills/` lab directory — it deletes ignored directories.

@@ -1,58 +1,20 @@
-import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync, readdirSync, lstatSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
+import { DOCUMENTATION_CHECKS, documentationExcluded, inspectDocumentationRegistry, publicMarkdownPath } from './documentation-registry.mjs';
+import { validateReleaseDocuments } from '../docs/releases/release-docs-smoke.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-/** Preserve line numbers while excluding examples from link/heading checks. */
-function withoutFences(markdown) {
-  let fence = null;
-  return markdown.split('\n').map(line => {
-    const match = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
-    if (fence) {
-      if (match && match[1][0] === fence[0] && match[1].length >= fence.length && !match[2].trim()) fence = null;
-      return '';
-    }
-    if (match) { fence = match[1]; return ''; }
-    return line;
-  }).join('\n');
-}
+import { markdownAnchors, markdownFencedBlocks, markdownLinks, withoutFences } from './documentation-markdown.mjs';
+export { markdownAnchors, markdownLinks } from './documentation-markdown.mjs';
 
-export function markdownAnchors(markdown) {
-  const text = withoutFences(markdown), used = new Set(), anchors = new Set();
-  for (const tag of text.matchAll(/<(?:a|h[1-6])\b[^>]*>/gi)) {
-    for (const match of tag[0].matchAll(/\b(?:id|name)=["']([^"']+)["']/gi)) anchors.add(match[1]);
-  }
-  for (const match of text.matchAll(/^ {0,3}#{1,6}\s+(.+?)\s*#*$/gm)) {
-    const base = match[1].replace(/<[^>]*>/g, '').replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
-      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-      .toLowerCase().replace(/[^\p{L}\p{N}\p{M}_\-\s]/gu, '').replace(/\s/g, '-');
-    let slug = base, suffix = 0;
-    while (used.has(slug)) slug = `${base}-${++suffix}`;
-    used.add(slug); anchors.add(slug);
-  }
-  return anchors;
-}
-
-export function markdownLinks(markdown) {
-  const text = withoutFences(markdown).replace(/(`+)([^\n]*?)\1/g, match => ' '.repeat(match.length));
-  const links = [];
-  const patterns = [/\]\(\s*(?:<([^>\n]+)>|([^\s)]+))/g, /^ {0,3}\[[^\]]+\]:\s*(?:<([^>\n]+)>|(\S+))/gm];
-  for (const pattern of patterns) for (const match of text.matchAll(pattern)) {
-    links.push({ target: match[1] ?? match[2], line: text.slice(0, match.index).split('\n').length });
-  }
-  return links;
-}
-
-/** Only mutable entry points/guides; never recurse into labs or pinned copies. */
+/** Registered maintained pages, including nested guides and active plans. */
 export function documentationFiles(root = ROOT) {
-  return [
-    'README.md', 'README.zh-CN.md', 'AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md',
-    'benches/README.md', 'benches/contrib/README.md', 'scripts/README.md', 'skills/skillfit/SKILL.md', 'evidence/README.md',
-    ...readdirSync(join(root, 'docs'), { withFileTypes: true })
-      .filter(entry => entry.isFile() && entry.name.endsWith('.md') && !entry.name.startsWith('audit-'))
-      .map(entry => `docs/${entry.name}`),
-  ];
+  const result = inspectDocumentationRegistry(root);
+  if (result.errors.length) throw Error(result.errors.join('\n'));
+  return result.files;
 }
 
 export function inspectDocumentation(root = ROOT, files = documentationFiles(root)) {
@@ -99,9 +61,131 @@ export function inspectDocumentation(root = ROOT, files = documentationFiles(roo
   return errors;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const files = documentationFiles(), errors = inspectDocumentation(ROOT, files);
-  for (const error of errors) console.error(error);
-  console.log(`Documentation: ${files.length} files, ${errors.length} broken local links/anchors.`);
-  if (errors.length) process.exitCode = 1;
+/** Only public contrib manifests define catalog membership; fixture Markdown is data. */
+export function inspectBenchCatalog(root = ROOT) {
+  const directory = join(root, 'benches/contrib');
+  if (!existsSync(directory)) return [];
+  if (lstatSync(join(root, 'benches')).isSymbolicLink() || lstatSync(directory).isSymbolicLink()) return ['benches/contrib: unsafe catalog directory alias'];
+  const errors = [], actual = new Set();
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) { errors.push(`benches/contrib: unsafe catalog alias: ${entry.name}`); continue; }
+    if (entry.isDirectory() && existsSync(join(directory, entry.name, 'bench.json'))) actual.add(entry.name);
+  }
+  const index = join(directory, 'README.md');
+  if (!existsSync(index) || lstatSync(index).isSymbolicLink()) return [...errors, 'benches/contrib/README.md: missing or unsafe catalog'];
+  const listed = new Set();
+  for (const { target } of markdownLinks(readFileSync(index, 'utf8'))) {
+    const match = /^([a-zA-Z0-9][a-zA-Z0-9_-]*)\/README\.md$/.exec(target);
+    if (!match) continue;
+    const name = match[1];
+    if (!actual.has(name)) errors.push(`benches/contrib/README.md: unknown bench: ${name}`);
+    if (listed.has(name)) errors.push(`benches/contrib/README.md: duplicate bench: ${name}`);
+    listed.add(name);
+  }
+  for (const name of actual) if (!listed.has(name)) errors.push(`benches/contrib/README.md: missing bench: ${name}`);
+  const entry = join(root, 'benches/README.md');
+  if (actual.size && (!existsSync(entry) || lstatSync(entry).isSymbolicLink() || !markdownLinks(readFileSync(entry, 'utf8')).some(link => link.target === 'contrib/README.md'))) errors.push('benches/README.md: link the contrib catalog');
+  return errors;
+}
+
+/** Shared developer/CI gate; registration is checked before reading prose. */
+export function checkDocumentation(root = ROOT, { changes = [], previousDocuments = new Map(), baseline = null } = {}) {
+  const registry = inspectDocumentationRegistry(root), files = new Set(registry.files);
+  const result = { schemaVersion: 1, kind: 'skillfit.documentation-check', errors: [...registry.errors], files: [],
+    registeredDocuments: registry.policy?.documents.length ?? 0, topics: Object.keys(registry.policy?.topics ?? {}).length,
+    manualReviews: registry.manualExclusions.map(e => ({ path: e.path, responsibility: e.verification, status: 'not-machine-verified' })),
+    baseline, anchorBaseline: 'not-compared', anchorMigrations: [], impacts: [], unmappedChanges: [] };
+  if (result.errors.length) return result;
+  result.anchorBaseline = baseline || previousDocuments.size ? 'compared' : 'not-provided';
+  if (!Array.isArray(changes) || changes.some(row => typeof row?.path !== 'string' || isAbsolute(row.path) || /[\\\0]/.test(row.path) || row.path.split('/').some(p => !p || p === '.' || p === '..'))) {
+    result.errors.push('changes: use repository-relative file paths from the diff; do not pass aliases or traversal.'); return result;
+  }
+  for (const { path } of changes) if (registry.policy.documents.some(d => d.path === path)) files.add(path);
+  result.files = [...files].sort();
+  result.errors.push(...inspectDocumentation(root, result.files), ...inspectBenchCatalog(root));
+  try {
+    const [english, chinese] = ['README.md', 'README.zh-CN.md'].map(file => readFileSync(join(root, file), 'utf8'));
+    const levels = text => [...withoutFences(text).matchAll(/^(#{1,6}) /gm)].map(m => m[1].length);
+    const badges = text => text.split(/\r?\n/).filter(line => line.includes('shields.io'));
+    for (const [label, read] of [['section levels', levels], ['command/demo blocks', markdownFencedBlocks], ['badges', badges]]) {
+      if (JSON.stringify(read(english)) !== JSON.stringify(read(chinese))) result.errors.push(`README.md / README.zh-CN.md: ${label} differ; restore bilingual parity.`);
+    }
+    validateReleaseDocuments(root);
+  } catch (error) { result.errors.push(error.message); }
+  for (const [path, previous] of previousDocuments) {
+    if (!publicMarkdownPath(path)) { result.errors.push(`${path}: baseline leaves public documentation scope; use a public Markdown path.`); continue; }
+    if (documentationExcluded(path, registry.policy.exclusions)) continue;
+    const exists = existsSync(join(root, path));
+    if (!exists) {
+      const oldAnchors = [...markdownAnchors(previous)];
+      for (const from of oldAnchors.length ? oldAnchors.map(fragment => `${path}#${fragment}`) : [path]) result.anchorMigrations.push({ from, to: null, status: 'missing' });
+      result.errors.push(`${path}: old path removed; restore a compatibility page.`); continue;
+    }
+    // Discovery/registration above validated public realpaths before any body read.
+    const current = markdownAnchors(readFileSync(join(root, path), 'utf8'));
+    for (const fragment of markdownAnchors(previous)) {
+      const from = `${path}#${fragment}`, retained = current.has(fragment);
+      result.anchorMigrations.push({ from, to: retained ? from : null, status: retained ? 'retained' : 'missing' });
+      if (!retained) result.errors.push(`${from}: old fragment removed; restore the heading or an explicit alias.`);
+    }
+  }
+  const matched = new Set(), changedPaths = [...new Set(changes.map(row => row.path))].sort();
+  for (const [id, topic] of Object.entries(registry.policy.topics).sort(([a], [b]) => a.localeCompare(b))) {
+    const related = [topic.canonical.split('#')[0], ...topic.sources, ...topic.schemas, ...topic.dependents,
+      ...topic.checks.flatMap(check => DOCUMENTATION_CHECKS[check].files)];
+    const changed = changedPaths.filter(path => related.includes(path));
+    if (!changed.length) continue;
+    changed.forEach(path => matched.add(path));
+    result.impacts.push({ topic: id, canonical: topic.canonical,
+      owner: registry.policy.documents.find(d => d.path === topic.canonical.split('#')[0]).owner,
+      changed, dependents: topic.dependents, checks: topic.checks.map(id => ({ id, ...DOCUMENTATION_CHECKS[id] })), status: 'review-required' });
+  }
+  result.unmappedChanges = changedPaths.filter(path => !matched.has(path));
+  return result;
+}
+
+/** Read-only Git adapter. Never request task inputs, private paths or model output. */
+export function readDocumentationBaseline(root, base, changes, git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 })) {
+  if (!/^[a-f0-9]{40}$/.test(base) || /^0+$/.test(base)) throw Error('Documentation baseline requires an exact nonzero commit SHA.');
+  const registry = inspectDocumentationRegistry(root);
+  if (registry.errors.length) throw Error(registry.errors.join('\n'));
+  git(['cat-file', '-e', `${base}^{commit}`]);
+  if (changes === undefined) {
+    const parts = git(['diff', '--name-status', '--no-renames', '-z', base, '--']).split('\0');
+    changes = [];
+    while (parts[0]) {
+      const status = parts.shift(), path = parts.shift();
+      if (!/^[AMDT]$/.test(status) || !path) throw Error('Unsupported documentation diff; inspect the exact file changes.');
+      changes.push({ status, path });
+    }
+    for (const path of git(['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)) changes.push({ path, status: 'A' });
+  }
+  const previousDocuments = new Map();
+  for (const { path, status } of changes) {
+    if (status === 'A' || !publicMarkdownPath(path) || documentationExcluded(path, registry.policy.exclusions)) continue;
+    previousDocuments.set(path, git(['show', `${base}:${path}`]));
+  }
+  return { changes, previousDocuments, baseline: base };
+}
+
+if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    const args = process.argv.slice(2);
+    let base, asJson = false;
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--json' && !asJson) asJson = true;
+      else if (args[i] === '--base' && base === undefined && args[i + 1]) base = args[++i];
+      else throw Error('Use node scripts/check-docs.mjs [--base <exact commit SHA>] [--json].');
+    }
+    const result = checkDocumentation(ROOT, base ? readDocumentationBaseline(ROOT, base) : {});
+    if (asJson) console.log(JSON.stringify(result));
+    else {
+      for (const error of result.errors) console.error(error);
+      console.log(`Documentation: ${result.files.length} files, ${result.registeredDocuments} registered, ${result.errors.length} errors; anchors ${result.anchorBaseline}.`);
+      for (const impact of result.impacts) console.log(`REVIEW ${impact.topic} (${impact.owner}): ${impact.canonical}; dependents: ${impact.dependents.join(', ') || 'none'}; checks: ${impact.checks.map(c => c.id).join(', ')}. Not automatically verified.`);
+      for (const item of result.manualReviews) console.log(`MANUAL ${item.path}: ${item.responsibility}; ${item.status}.`);
+      if (result.unmappedChanges.length) console.log(`REVIEW unmapped changes: ${result.unmappedChanges.join(', ')}; inspect topic coverage.`);
+    }
+    if (result.errors.length) process.exitCode = 1;
+  } catch (error) { console.error(error.message); process.exitCode = 2; }
 }

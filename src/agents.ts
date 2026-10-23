@@ -50,9 +50,11 @@ export interface AgentSubagents {
 }
 
 export interface AgentHeadlessStreamJson {
+  modelIdentitySurface?: 'claude-assistant';
   argv: string[];
   triggerToolName?: string;
   wireShape?: 'flat-tool-call' | 'content-blocks' | 'codex-items';
+  docs?: string;
 }
 
 export interface AgentHeadless {
@@ -84,6 +86,7 @@ export interface AgentSessions {
   wireShape: 'flat-tool-call' | 'content-blocks' | 'codex-rollout';
   skillToolName?: string;
   skillKey?: string;
+  skillNameAliases?: 'directory-and-frontmatter';
   docs: string | null;
 }
 

@@ -4,10 +4,11 @@
   "type": "object",
   "required": ["schemaVersion", "kind", "status", "acceptance"],
   "properties": {
+    "measurementScope": { "$ref": "measurement-scope.schema.json" },
     "schemaVersion": { "const": 1 },
     "kind": { "enum": ["skillfit.eval-result", "skillfit.eval-error"] },
     "status": { "enum": ["planned", "completed", "stopped", "incomplete", "reported", "error"] },
-    "plan": { "type": "object", "required": ["sha256", "evaluation"] },
+    "plan": { "type": "object", "required": ["sha256", "evaluation"], "properties": { "evaluation": { "type": "object", "properties": { "measurementScope": { "$ref": "measurement-scope.schema.json" } } } } },
     "manifest": { "type": ["object", "null"] },
     "casePreflight": { "anyOf": [{ "$ref": "eval-preflight.schema.json" }, { "type": "null" }] },
     "agentPreflight": { "anyOf": [{ "$ref": "agent-preflight.schema.json" }, { "type": "null" }] },
@@ -22,6 +23,7 @@
       }
     },
     "identity": { "type": "object" },
+    "diagnostics": { "type": "array", "items": { "type": "object", "required": ["taskId", "baselineBand", "qualityHeadroom", "efficiencyEligibility", "activationCoverage"] } },
     "quality": { "type": "object", "required": ["statisticalVerdict", "improvedPairs", "regressedPairs", "tasks"] },
     "costs": {
       "type": "object", "required": ["populations", "scope"],
@@ -50,11 +52,70 @@
         { "if": { "properties": { "decision": { "const": "accept" } } }, "then": { "properties": { "eligibleForUpgrade": { "const": true } } }, "else": { "properties": { "eligibleForUpgrade": { "const": false } } } }
       ]
     },
-    "error": { "type": "object", "required": ["code", "message"] }
+    "error": { "type": "object", "required": ["code", "message"], "properties": {"code": {"type": "string"}, "message": {"type": "string"}}, "allOf": [{"if": {"properties": {"code": {"const": "RECORDED_STATISTICS_NUMERIC_ERROR"}}}, "then": {"required": ["details"], "properties": {"details": {"$ref": "#/$defs/mcnemarNumericErrorDetails"}}}}]},
+    "modelIdentities": {
+      "$ref": "model-identities.schema.json"
+    }
   },
   "allOf": [
     { "if": { "properties": { "status": { "const": "planned" } } }, "then": { "required": ["plan"] } },
     { "if": { "properties": { "status": { "enum": ["completed", "reported"] } } }, "then": { "required": ["manifest", "identity", "quality", "costs", "evidence"] } },
     { "if": { "properties": { "kind": { "const": "skillfit.eval-error" } } }, "then": { "required": ["error"], "properties": { "status": { "const": "error" } } } }
-  ]
+  ],
+  "$defs": {
+    "mcnemarNumericErrorDetails": {
+      "type": "object",
+      "required": [
+        "discordant",
+        "recorded",
+        "computed"
+      ],
+      "properties": {
+        "discordant": {
+          "type": "object",
+          "required": [
+            "improved",
+            "regressed"
+          ],
+          "properties": {
+            "improved": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "regressed": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "recorded": {
+          "$ref": "#/$defs/mcnemarResult"
+        },
+        "computed": {
+          "$ref": "#/$defs/mcnemarResult"
+        }
+      }
+    },
+    "mcnemarResult": {
+      "type": "object",
+      "required": [
+        "mcnemarP",
+        "verdict"
+      ],
+      "properties": {
+        "mcnemarP": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "verdict": {
+          "enum": [
+            "effective",
+            "ineffective",
+            "inconclusive"
+          ]
+        }
+      }
+    }
+  }
 }

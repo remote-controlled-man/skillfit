@@ -1,3 +1,5 @@
+import { probeVersion, validateCallBudget } from '../harness/experiment-session.js';
+import { modelIdentities, identityForResult, type ModelCall } from '../harness/model-identity.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -9,18 +11,18 @@ import { createSpendingBudgetRecorder, parseSpendingBudget, spendingBudgetState,
 import { parseExecutorTimeoutSeconds } from '../harness/eval-contract.js';
 import { assertEvaluationOutputLayout } from '../harness/evaluation-layout.js';
 import { executionClock, type ExecutionClock } from '../harness/execution-timing.js';
-import { validateCallBudget } from '../harness/experiment-session.js';
 import { CliExecutor } from '../harness/executors/cli.js';
 import { hashFileSet, sha256Text } from '../harness/hash.js';
 import { EvaluationInterrupted, evaluationSignal, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import { RUN_GROUP_PATTERN } from '../harness/constants.js';
 import { ExecutorFailure, type Executor, type ExecutorResult } from '../harness/types.js';
-import type { ProcessResult } from '../harness/runner.js';
+import type { ProcessResult } from '../harness/process.js';
 import { parseVerifierTimeoutSeconds } from '../harness/verifier-timeout.js';
 
 export interface BenchDraftOptions {
   agent?: string;
   executor?: Executor;
+  versionProbe?: (argv: string[]) => string | null;
   maxCalls?: number;
   spendingBudget?: SpendingBudget;
   executorTimeoutSeconds?: number;
@@ -35,6 +37,8 @@ export class BenchDraftSession {
   readonly dir: string;
   readonly workspace: string;
   readonly plan;
+  private readonly options: BenchDraftOptions;
+  private readonly modelCalls: ModelCall[] = [];
   private readonly executor: Executor;
   private readonly clock: ExecutionClock;
   private readonly budget;
@@ -46,6 +50,7 @@ export class BenchDraftSession {
 
   constructor(options: BenchDraftOptions, readonly taskId: string, benchDir: string, cwd: string,
     private readonly files: readonly { rel: string; content: Buffer }[], readonly prompt: string) {
+    this.options = { ...options };
     const timeout = parseExecutorTimeoutSeconds(options.executorTimeoutSeconds);
     const budget = options.spendingBudget === undefined ? undefined : parseSpendingBudget(options.spendingBudget);
     const maxCalls = validateCallBudget(1, options.maxCalls);
@@ -86,6 +91,9 @@ export class BenchDraftSession {
     mkdirSync(this.dir); // Exclusive claim; never replace an earlier draft, including a failed one.
     this.started = true;
     this.write('_plan.json', JSON.stringify(this.plan, null, 2) + '\n');
+    const versionArgv = this.options.agent ? getAgent(this.options.agent).headless.runtime?.versionArgv : undefined;
+    this.write('_runtime.json', JSON.stringify({ cliVersion: this.executor.describe().kind === 'cli' && versionArgv && (!this.options.executor || this.options.versionProbe)
+      ? (this.options.versionProbe ?? probeVersion)(versionArgv) : null, scope: 'Actual execution preparation only; never a served-model claim.' }, null, 2) + '\n');
     this.write('prompt.md', this.prompt);
     for (const file of this.files) {
       this.write(join('_inputs/fixture', file.rel), file.content);
@@ -107,7 +115,9 @@ export class BenchDraftSession {
       error: failure || result.guardError ? 'Draft executor failed.' : evaluationSignal()?.aborted ? 'Draft interrupted.' : null,
       durationSeconds, tokens: result.tokens ?? null, usageStatus: result.usageStatus ?? (result.tokens ? 'final' : 'unknown') };
     this.observations.push(observation);
-    this.write('_result.json', JSON.stringify({ schemaVersion: 1, ...identity, ...observation,
+    const modelIdentity = identityForResult(result, this.executor.describe());
+    if (invoked) this.modelCalls.push({ receipt: '_result.json', identity: modelIdentity });
+    this.write('_result.json', JSON.stringify({ schemaVersion: 1, ...identity, ...observation, modelIdentity,
       startedAt: new Date(startedAt).toISOString(), executionTiming: result.executionTiming ?? null, usageEvidence: result.usageEvidence ?? null }, null, 2) + '\n');
     this.write('_output.md', result.output);
     if (result.rawOutput !== undefined) this.write('_transcript.jsonl', result.rawOutput);
@@ -152,6 +162,7 @@ export class BenchDraftSession {
       plannedCalls: 1, maxCalls: this.plan.maxCalls, callsStarted: this.callsStarted, callsFinished: this.callsFinished,
       reason: interrupted ? 'Interrupted; no automatic retry.' : error instanceof Error ? error.message : error ? 'Draft stopped.' : null,
       interruption: interrupt instanceof EvaluationInterrupted ? { signal: interrupt.signalName, receivedAt: interrupt.receivedAt } : null,
+      modelIdentities: modelIdentities(null, null, this.modelCalls),
       costs: { invocations: population.runs, metrics: population.metrics },
       spendingBudget: this.plan.spendingBudget ? spendingBudgetState(this.plan.spendingBudget, this.observations) : null,
       automaticRetry: false, automaticUpgrade: false }, null, 2) + '\n');

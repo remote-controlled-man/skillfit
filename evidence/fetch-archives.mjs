@@ -60,18 +60,48 @@ async function localBytes(root, row) {
   return verify(row, await fs.readFile(target));
 }
 
+// Only genuine absence permits remote fallback. An existing corrupt file or
+// directory alias is an error, including a dangling symlink with no realpath.
+async function optionalSupportBytes(root, row) {
+  const parts = row.path.split('/'); let target = root;
+  for (let i = 0; i < parts.length; i++) {
+    target = path.join(target, parts[i]); let stat;
+    try { stat = await fs.lstat(target); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+    if (stat.isSymbolicLink() || (i < parts.length - 1 ? !stat.isDirectory() : !stat.isFile())) throw new Error(`Unsafe source file: ${row.path}`);
+  }
+  return localBytes(root, row);
+}
+
+async function restoreSupport(rows, read, staging) {
+  let next = 0, failure;
+  // Drain every worker before removing staging on any error.
+  await Promise.all(Array.from({ length: Math.min(6, rows.length) }, async () => {
+    while (!failure && next < rows.length) {
+      const row = rows[next++];
+      try {
+        const bytes = verify(row, await read(row)), target = path.join(staging, row.path);
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        await fs.writeFile(target, bytes, { flag: 'wx' });
+      } catch (error) { failure ??= new Error(`Could not restore ${row.path}: ${message(error)}`, { cause: error }); }
+    }
+  }));
+  if (failure) throw failure;
+}
+
 export function archiveUrl(catalog, row) {
   return `https://raw.githubusercontent.com/${catalog.source.repository}/${catalog.source.commit}/${row.path}`;
 }
 
 async function remoteBytes(catalog, row, fetchImpl, timeoutMs) {
   const response = await fetchImpl(archiveUrl(catalog, row), { redirect: 'error', signal: AbortSignal.timeout(timeoutMs) });
-  if (!response.ok) throw new Error(`Archive download failed: ${row.id} (HTTP ${response.status})`);
-  if (response.headers.has('content-length') && Number(response.headers.get('content-length')) !== row.bytes) {
+  if (!response.ok) throw new Error(`Evidence download failed: ${row.id ?? row.path} (HTTP ${response.status})`);
+  // fetch decodes HTTP content-encoding but retains the encoded length header.
+  const encoding = response.headers.get('content-encoding')?.trim().toLowerCase();
+  if ((!encoding || encoding === 'identity') && response.headers.has('content-length') && Number(response.headers.get('content-length')) !== row.bytes) {
     await response.body?.cancel();
     throw new Error(`Integrity mismatch: ${row.path} (download size)`);
   }
-  if (!response.body) throw new Error(`Empty archive response: ${row.id}`);
+  if (!response.body) throw new Error(`Empty evidence response: ${row.id ?? row.path}`);
   const reader = response.body.getReader(), chunks = [];
   let size = 0;
   try {
@@ -79,7 +109,7 @@ async function remoteBytes(catalog, row, fetchImpl, timeoutMs) {
       const { done, value } = await reader.read();
       if (done) break;
       size += value.length;
-      if (size > row.bytes) throw new Error(`Archive exceeds catalog size: ${row.id}`);
+      if (size > row.bytes) throw new Error(`Archive exceeds catalog size: ${row.id ?? row.path}`);
       chunks.push(value);
     }
   } catch (error) {
@@ -161,14 +191,20 @@ export async function restoreArchives({ all = false, ids = [], output, yes = fal
   const staging = await fs.mkdtemp(path.join(parent, '.skillfit-archives-'));
   let failure;
   try {
-    for (const row of catalog.supportFiles) {
-      const bytes = row.inlineBase64 === undefined ? await localBytes(packagePath, row) : verify(row, Buffer.from(row.inlineBase64, 'base64'));
-      const target = path.join(staging, row.path);
-      await fs.mkdir(path.dirname(target), { recursive: true });
-      await fs.writeFile(target, bytes, { flag: 'wx' });
-    }
+    const downloads = new Map();
+    await restoreSupport(catalog.supportFiles, async row => {
+      if (row.inlineBase64 !== undefined) return Buffer.from(row.inlineBase64, 'base64');
+      const local = await optionalSupportBytes(packagePath, row);
+      if (local !== null) return local;
+      if (sourcePath) return localBytes(sourcePath, row);
+      const key = `${row.bytes}:${row.sha256}`;
+      if (!downloads.has(key)) downloads.set(key, remoteBytes(catalog, row, fetchImpl, timeoutMs));
+      return downloads.get(key);
+    }, staging);
     for (const row of selected) {
-      const bytes = sourcePath ? await localBytes(sourcePath, row) : await remoteBytes(catalog, row, fetchImpl, timeoutMs);
+      let bytes;
+      try { bytes = sourcePath ? await localBytes(sourcePath, row) : await remoteBytes(catalog, row, fetchImpl, timeoutMs); }
+      catch (error) { throw new Error(`Could not restore ${row.path}: ${message(error)}`, { cause: error }); }
       const target = path.join(staging, row.path);
       await fs.mkdir(path.dirname(target), { recursive: true });
       await fs.writeFile(target, bytes, { flag: 'wx' });

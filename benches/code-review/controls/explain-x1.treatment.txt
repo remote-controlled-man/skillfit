@@ -1,0 +1,1 @@
+This repository is a tiny utility that compacts an object by stripping null, undefined, and empty-string values while keeping meaningful falsy values like 0 and false. The tests cover the removal rule, falsy retention, input purity, and the countDropped helper.
