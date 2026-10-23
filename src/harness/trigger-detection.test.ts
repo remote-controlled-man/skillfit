@@ -93,6 +93,15 @@ test('Shell expressions and unsupported reads stay unknown instead of being eval
   if (process.platform !== 'win32') assert.equal(observesSkillRead('cat .agents\\skills\\review\\SKILL.md', ['.agents/skills/review/SKILL.md'], '/repo'), null);
 });
 
+test('Windows absolute short-name paths are literal reads, while home expansion remains unknown', () => {
+  const root = 'C:/Users/RUNNER~1/AppData/Local/Temp/work';
+  const path = `${root}/.agents/skills/review/SKILL.md`;
+  const command = `powershell -Command "Get-Content -LiteralPath '${path}'"`;
+  assert.equal(observesSkillRead(command, ['.agents/skills/review/SKILL.md'], root), path);
+  assert.equal(observesSkillRead(command, ['.agents/skills/review/SKILL.md'], `${root}-other`), false);
+  assert.equal(observesSkillRead("powershell -Command \"Get-Content '~/.agents/skills/review/SKILL.md'\"", ['.agents/skills/review/SKILL.md'], root), null);
+});
+
 test('Registered reads resolve the disposable workdir alias without accepting a different directory', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-trigger-path-')); t.after(() => rmSync(root, { recursive: true, force: true }));
   const actual = join(root, 'actual'), alias = join(root, 'alias'); mkdirSync(actual); symlinkSync(actual, alias, 'junction');

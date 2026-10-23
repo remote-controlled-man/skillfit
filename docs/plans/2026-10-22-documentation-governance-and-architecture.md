@@ -12,7 +12,7 @@
 >
 > **本轮授权：** 2026-10-23 用户追加要求 review 当前全部相关改动，确认历史证据/回放后提交、推送、检查 CI 并修复问题。交付包含当前相互依赖的 F 阶段本地实现、D/A 已完成阶段及 L1–L4；不启动 A4/A5/V1 或 R 研究项，不发布 npm、不执行真实模型/Agent、不修改实际用户配置。遵循主分支 PR 与 required checks 规则。
 >
-> **下一步：** 按 C1→C4 完成整合 review、最终输入验收、提交推送与远端 CI。F3/F5 仅在原远端条件实际满足后更新其所属计划；A4/A5/V1 保持待办，C 阶段不代替它们。C1/C2 已完成，C3 提交推送进行中；C4 远端 CI 待执行。
+> **下一步：** 按 C1→C4 完成整合 review、最终输入验收、提交推送与远端 CI。F3/F5 仅在原远端条件实际满足后更新其所属计划；A4/A5/V1 保持待办，C 阶段不代替它们。C1–C3 已完成；C4 初轮 Windows 失败的修复已通过本地回归，待提交推送并重新检查源代码 CI；F3/F5 保持未完成，未发布 npm。
 >
 > **最近更新：** 2026-10-23，Asia/Shanghai。
 
@@ -100,13 +100,13 @@
 ### 本次 review 与提交交付（2026-10-23）
 
 - [x] C1 冻结并整合 review 全部 200 项相关改动。（2026-10-23；109 默认可审查项及 91 过滤项全部按适用内容核对，无跳过项；修复两份计划的过时摘要，并将两份 ADR 的阶段状态改为引用唯一计划；另修正暂存检查发现的新文件 EOF 空行；生产逻辑/冻结数据不变）
-- [x] C2 最终输入验收。（2026-10-23；Node 24.21.0/macOS npm test 1060/1060，0 fail/skip/cancel；文档 71 页、203 旧锚点保留，22 JSON/引用及 101 模块检查通过；两核心 bench 与全部 contrib 门禁通过；历史及独立包结果见下表）
-- [ ] C3 将通过 review/验收的相关改动提交到独立分支、推送并建立 PR；记录提交和 PR，保留无关/私有资料，不绕过主分支规则。
+- [x] C2 首个源提交及 C4 修复后的输入均已验收；修复后 npm test 1063/1063、实际包/5文档/离线恢复与安装后短路径检查通过。初轮记录保持：（2026-10-23；Node 24.21.0/macOS npm test 1060/1060，0 fail/skip/cancel；文档 71 页、203 旧锚点保留，22 JSON/引用及 101 模块检查通过；两核心 bench 与全部 contrib 门禁通过；历史及独立包结果见下表）
+- [x] C3 已提交并推送 `04ee9b6e945ea58f9ba2c930c36f8bfd26863b57` 到 `origin/codex/docs-evidence-delivery`，建立 [PR #53](https://github.com/remote-controlled-man/skillfit/pull/53)。（2026-10-23；200 项相关文件，提交后工作区干净；遵循主分支 PR/required checks，没有触及私有资料）
 - [ ] C4 检查三系统 required jobs、Node 22.13/22.14/24/26 全量兼容及 Node 22.0 核心下限检查；发现失败则修复、验证并推送。把实际状态/链接写回本计划，并按原条件更新 F 计划，未实施阶段继续待办。
 
 C1 的输入为 HEAD `8087e05173d673610d05090a52dd548e00c17517` 上的全部相关工作区内容；已保存完整补丁、未跟踪文件副本和 SHA-256 清单。OpenCodeReview 预览 200 项（109 个默认可审查项、91 个过滤项），由同一次审查按适用规则人工覆盖关键非代码内容。审查与验证日志存于系统临时目录，长期结论、环境、数量和远端链接在此记录，不另建 Markdown。
 
-C1/C2 实测收据（2026-10-23，Node 24.21.0/macOS）：
+C1/C2 首个源提交 `04ee9b6` 实测收据（2026-10-23，Node 24.21.0/macOS；保留原记录，C4 修复后结果另记）：
 
 | 验收 | 实际输入与结果 | 边界 |
 | --- | --- | --- |
@@ -117,6 +117,25 @@ C1/C2 实测收据（2026-10-23，Node 24.21.0/macOS）：
 | 最终离线检查 | npm test 1060/1060（最终 67.896s；EOF 格式修正后全量复验）；docs 链接/旧锚点/双语/发布文档、实际 npm 清单/大小、JSON 引用、架构及 diff 检查通过 | 本地结果不代替尚未发生的远端 CI；A4/A5/V1 和 F 计划未满足的项继续待办 |
 
 临时完整输出为 `/private/tmp/skillfit-delivery-{npm-test-final.log,docs.json,package.log,historical.log}`；历史逐项结果及日志摘要在 `/private/tmp/skillfit-delivery-historical/historical-smoke.json`。本表保存长期输入、环境、数量及结论；远端提交/CI 链接在 C3/C4 完成后补充。
+
+### C4 初轮失败与修复范围（先记录后实施）
+
+[CI 39903578726](https://github.com/remote-controlled-man/skillfit/actions/runs/39903578726) 的其余 7 jobs 成功，Windows Node 22.23.3 全量为 1,059 tests、1,054 pass、4 fail、1 skip（原 POSIX-only 检查），因此 F3/F5 继续未完成。失败日志及八份真实收据已保留。
+
+| 失败面 | 待验证的原因与最小修复 | 验收保持 |
+| --- | --- | --- |
+| SIGINT/SIGTERM 两项 | 测试 bootstrap 导入异步 CLI 后立即 disconnect，使 Windows 信号桥接通道先于评测结束关闭；让桥接等到 CLI 完成才关闭，并在 POSIX 也执行 IPC 路径以防再漏 | 两种信号均须保留 exit 130/143、stopped receipt、完整哈希及 verifier 后代清理断言，不跳过 Windows |
+| 目标路径读取 | 将 Windows `RUNNER~1` 绝对短路径中的 tilde 误当作 home expansion；仅对 Windows shell 的显式盘符绝对路径允许字面 tilde | 相同注册路径才为正信号；`~` home、展开/父目录/无关路径仍 unknown/negative；公共 matcher 先红后绿 |
+| 实际包四组自检 | 外层 30 秒限制不足以完成 Windows 的 27 次 mock/本地 verifier/git 调度；只增加该整组测试外壳的有界等待 | 仍须完成全部四组、27 次模拟、0 model calls、期望 verdict 和不可采用；不改生产 deadline、样本或断言 |
+
+修复后只 review 受影响输入，执行相关离线检查、npm test、实际候选包/文档/恢复验证并推送。新的源代码 CI 必须按原 8-job 要求全部通过；不把初轮失败改成通过，也不改冻结输入/回放程序。
+
+C4 修复的本地结果（2026-10-23）：
+
+- 短路径公共 matcher 红测 0/1→路径回归 11/11；IPC 通道两项均先复现 `ERR_IPC_CHANNEL_CLOSED`，修复后两种信号×OS/IPC 四项 4/4，完整退出码/后代/收据断言保留。最终 npm test 1,063/1,063、0 fail/skip/cancel，64.423s；已包含实际 npm 包四组 27 次模拟及新/旧 portable replay 回归。
+- 原固定源、catalog、下载器、历史 recipes、恢复输入均未改；历史 18+1 的被测依赖与成功执行时逐字节相同，复用首次源提交的历史执行证据。未用新 matcher 重新判定旧 fired counts。
+- 修复后实际包仍 1,168 files，压缩 1,224,182 B / 展开 5,722,492 B，SHA-256 `7d13ceb5b7f4a57846b8c7f44ea09e7c8c0bc25633ca04c22a758f8b68f48d69`；与首次包仅 `dist/harness/trigger-detection.js`、`docs/metrics.md` 不同。离线隔离安装、CLI version、5文档、19 archives +1,583 support、零网络/碰撞保护，以及安装后短路径正例/无关路径/home expansion 反例通过。
+- 仅复核 6 个受影响路径，沿用原 OCR 规则与合同；修复不改统计阈值、生产 timeout、四组样本或断言。docs/旧锚点/JSON 与 diff 门禁通过。完整本地输出 `/private/tmp/skillfit-delivery-{shortpath-red.log,shortpath-green.log,ipc-red.log,ipc-green.log,ci-fix-npm-test.log,ci-fix-package.log}`；平台修复仍须新的远端结果，不能在本机代为勾选。
 
 ## L1–L4：目录、记录与按需交付补充
 

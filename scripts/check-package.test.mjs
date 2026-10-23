@@ -64,8 +64,10 @@ test('actual offline npm package matches the reviewed inventory and active runti
     encoding: 'utf8', timeout: 30_000,
   });
   assert.equal(preview.status, 0, `${preview.error ?? ''}\n${preview.stderr}`);
+  // Four complete suites dispatch 27 mocks plus local verifier/git processes on Windows.
+  // This is the package-test envelope, not an executor or verifier deadline.
   const checked = spawnSync(process.execPath, [join(installed, 'dist/cli.js'), ...controls, '--plan-sha', JSON.parse(preview.stdout).plan.sha256], {
-    encoding: 'utf8', timeout: 30_000, env: { ...process.env, HOME: cache, USERPROFILE: cache, SKILLFIT_JUDGE: '1' },
+    encoding: 'utf8', timeout: 120_000, env: { ...process.env, HOME: cache, USERPROFILE: cache, SKILLFIT_JUDGE: '1' },
   });
   assert.equal(checked.status, 0, `${checked.error ?? ''}\n${checked.stderr}`);
   const selfTest = JSON.parse(checked.stdout);

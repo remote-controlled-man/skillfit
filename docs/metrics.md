@@ -167,7 +167,8 @@ authentication have not been machine-verified. Codex observes a literal `SKILL.m
   exclude it from rates and retain partial usage. A public Claude failure result rejects even at exit 0.
 - **Read-command scope**: Codex recognizes literal cat, numeric-range sed -n, Get-Content/Windows type and
   supported shell wrappers against registered paths in the disposable workdir (including its physical
-  directory alias). This is a read-command observation, not proof of successful loading or use. Echo,
+  directory alias). Drive-qualified Windows paths may contain literal 8.3 names such as `RUNNER~1`;
+  home expansion remains unsupported. This is a read-command observation, not proof of successful loading or use. Echo,
   comments and search mentions do not count as positive observations. Unsupported shell expressions,
   expansions, parent traversal through potentially aliased directories, pipelines and ambiguous reads
   remain unknown. Unknown coverage is not silently zero.

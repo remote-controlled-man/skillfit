@@ -86,7 +86,10 @@ function readPaths(command: string, depth = 0, windowsShell = process.platform =
   } else if (executable === 'cat') {
     args = args.filter(arg => arg !== '--' && !/^-[AbenstuvET]+$/.test(arg));
   } else if (executable !== 'type') return null;
-  return args.length && args.every(arg => !arg.startsWith('-') && !/[*?\[\]{},()~%]/.test(arg) &&
+  // Windows temp roots commonly contain literal 8.3 names such as RUNNER~1.
+  // Only a drive-qualified Windows path makes that tilde unambiguously literal.
+  return args.length && args.every(arg => !arg.startsWith('-') && !/[*?\[\]{},()%]/.test(arg) &&
+    (!arg.includes('~') || (windowsShell && /^[A-Za-z]:[\\/]/.test(arg))) &&
     !/(?:^|[\\/])\.\.(?:[\\/]|$)/.test(arg) &&
     !(!windowsShell && ['cat', 'sed'].includes(executable) && arg.includes('\\'))) ? args : null;
 }

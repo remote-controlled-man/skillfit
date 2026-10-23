@@ -17,7 +17,8 @@ function running(pid: number): boolean {
     return true;
   } catch { return false; }
 }
-for (const signal of ['SIGINT', 'SIGTERM'] as const) test(`self-test ${signal} terminates verifier descendants and cannot pass an error control`, { timeout: 30_000 }, async t => {
+const transports: ('os' | 'ipc')[] = process.platform === 'win32' ? ['ipc'] : ['os', 'ipc'];
+for (const signal of ['SIGINT', 'SIGTERM'] as const) for (const transport of transports) test(`self-test ${signal} (${transport}) terminates verifier descendants and cannot pass an error control`, { timeout: 30_000 }, async t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-self-cancel-')), bench = join(root, 'bench'), ready = join(root, 'ready.json'), heartbeat = join(root, 'heartbeat');
   cpSync(join(rootDir, 'benches/_self-test/example'), bench, { recursive: true });
   let child: ChildProcess | undefined;
@@ -34,7 +35,9 @@ const leaf=spawn(process.execPath,[${JSON.stringify(join(bench, 'verifiers/leaf.
 const timer=setInterval(()=>{if(existsSync(${JSON.stringify(heartbeat)})){clearInterval(timer);writeFileSync(${JSON.stringify(ready)},JSON.stringify({pids:[process.pid,leaf.pid]}));}},20);
 }else{const passed=readFileSync(join(process.argv[2],'state.txt'),'utf8')==='fixed\\n';console.log(JSON.stringify({passed,checks:[{name:'fixed',pass:passed},{name:'bytes',pass:passed}]}));process.exitCode=passed?0:1;}`);
   const bootstrap = join(root, 'start.mjs');
-  writeFileSync(bootstrap, `process.on('message',message=>process.emit(message.signal));await import(${JSON.stringify(pathToFileURL(join(rootDir, 'dist/cli.js')).href)});if(process.connected)process.disconnect();`);
+  writeFileSync(bootstrap, `process.on('message',message=>process.emit(message.signal));await import(${JSON.stringify(pathToFileURL(join(rootDir, 'dist/cli.js')).href)});
+// Importing the CLI starts async work; wait for its exit status and signal cleanup.
+const timer=setInterval(()=>{if(process.exitCode!==undefined&&process.listenerCount('SIGINT')===0){clearInterval(timer);if(process.connected)process.disconnect();}},20);`);
   child = spawn(process.execPath, [bootstrap, 'bench', 'self-test', bench, '--runs-root', join(root, 'runs'), '--run-group', 'cancel', '--suite', 'known-benefit', '--yes'], {
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'], env: { ...process.env, HOME: root, USERPROFILE: root, SKILLFIT_JUDGE: '1' },
   });
@@ -42,7 +45,8 @@ const timer=setInterval(()=>{if(existsSync(${JSON.stringify(heartbeat)})){clearI
   const closed = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(resolve => child!.on('exit', (code, signal) => resolve({ code, signal })));
   for (let i = 0; i < 300 && !existsSync(ready) && child.exitCode === null; i++) await delay(50);
   assert.ok(existsSync(ready), stderr);
-  if (process.platform === 'win32') child.send({ signal }); else child.kill(signal);
+  if (transport === 'ipc') await new Promise<void>((resolve, reject) => child!.send({ signal }, error => error ? reject(error) : resolve()));
+  else child.kill(signal);
   let timer: NodeJS.Timeout | undefined;
   const exit = await Promise.race([closed, new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error(stderr || 'Self-test interruption did not settle.')), 10_000); })]).finally(() => clearTimeout(timer));
   assert.deepEqual(exit, { code: signal === 'SIGINT' ? 130 : 143, signal: null }, stderr);
