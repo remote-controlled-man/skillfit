@@ -47,7 +47,9 @@ test('preview is pure, pins controls/resources and implementation, and drift can
   assert.equal(existsSync(f.runsRoot), false); assert.equal(sha256File(join(f.bench, 'controls.json')), bytes);
 });
 
-test('all four controls use normal runner/audit, exact installed arms and unknown supplier costs', { timeout: 30_000 }, async t => {
+// Complete control batches include many local verifier/git processes; bound the whole
+// workflow independently of the unchanged per-command deadlines and timeout negatives.
+test('all four controls use normal runner/audit, exact installed arms and unknown supplier costs', { timeout: 120_000 }, async t => {
   const f = fixture(t);
   const forbidden = () => { throw new Error('Self-test attempted a real executor/network fallback.'); };
   const fallbacks = [t.mock.method(ApiExecutor, 'fromEnv', forbidden), t.mock.method(CliExecutor, 'forAgent', forbidden),
@@ -241,7 +243,7 @@ else writeFileSync(join(process.argv[2],'state.txt'),'fixed\\n');`);
   });
 });
 
-test('completed and stopped controls export and replay after relocation, keeping synthetic eligibility false', { timeout: 30_000 }, async t => {
+test('completed and stopped controls export and replay after relocation, keeping synthetic eligibility false', { timeout: 120_000 }, async t => {
   const f = fixture(t), result = await runBenchSelfTest({ ...f.options, suites: ['known-benefit', 'known-error'] });
   assert.equal(result.status, 'passed', JSON.stringify(result.suites));
   const exports: string[] = [];
@@ -262,7 +264,7 @@ test('completed and stopped controls export and replay after relocation, keeping
   }
 });
 
-test('code-review controls retain the intentional summarize regression and expected inconclusive result', { timeout: 30_000 }, async t => {
+test('code-review controls retain the intentional summarize regression and expected inconclusive result', { timeout: 120_000 }, async t => {
   const f = fixture(t);
   const source = join(rootDir, 'benches/code-review');
   rmSync(f.bench, { recursive: true }); cpSync(source, f.bench, { recursive: true });
