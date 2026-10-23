@@ -6,13 +6,13 @@
 
 > **基线：** `8087e05173d673610d05090a52dd548e00c17517`，package `0.13.1`，调查环境 Node `24.21.0`。
 >
-> **当前做到：** F1、F2、F4、F6、F7 本地实施与验收完成；F3 本地交付完成、远端 CI 继续待验收；F5 首次及最终内容同步均已交付，D2 文档收尾完成；F5 整项仍受 F3 远端验收约束。
+> **当前做到：** F1–F7 已按原条件完成；F3 的三系统、四个 Linux Node 兼容版本及 Node 22.0 下限验收已实际通过，F5 首次/最终内容同步与远端条件均满足。F8、R1–R4 保持待办。
 >
-> **进度：** 计划准备 P1–P3 为 3/3；实施阶段 F1–F8 为 5/8（F1/F2/F4/F6/F7），F5 内容同步已交付但远端条件未满足，不计整项完成；后续设计 R1–R4 为 0/4。
+> **进度：** 计划准备 P1–P3 为 3/3；实施 F1–F8 为 7/8，F8 未完成；后续设计 R1–R4 为 0/4。
 >
 > **本轮授权：** 2026-10-23 用户追加授权 review 全部相关工作区改动，确认历史证据及回放后提交、推送并检查/修复 CI。F3 远端验收及 F5 整项仅按原条件判定；交付顺序与状态统一记录在[治理计划 C1–C4](2026-10-22-documentation-governance-and-architecture.md#本次-review-与提交交付2026-10-23)。不做真实 Agent/model 调用、实际用户配置修改或 npm 发布。
 >
-> **下一步：** F5 内容同步和 D2 收尾已交付；本轮等待实际远端 CI 后判定 F3/F5。A3 已在治理计划完成，A4/A5/V1 仍待办；F8、R1–R4 的原条件不变，不因提交交付自动勾选。
+> **下一步：** 本轮源代码 review、提交推送及 CI 已交付，详见治理计划 C1–C4。F8 的逐项问题→最终交付覆盖收尾、R1–R4 及治理计划 A4/A5/V1 的原条件保持；不因 CI 通过自动勾选。
 >
 > **最近更新：** 2026-10-23，Asia/Shanghai。
 
@@ -70,9 +70,9 @@ F1–F5 修复计算、检测、兼容、身份记录和当前契约。F6–F7 �
 
 - [x] F1 修复统计数值实现及受影响旧报告的诊断，保持冻结公式。（2026-10-21 完成；63/63 相关测试、913/913 全量测试及 1,200 对离线链路验证通过）
 - [x] F2 修复 trigger 身份识别与可观测性，验证后接通 Claude Code 入口。（2026-10-21 完成；117/117 相关测试、934/934 全量测试、skillfit CLI dry-run 入口及冻结包 reproduce 入口通过离线验收）
-- [ ] F3 修复活动 LRU loader，补 Node 兼容检查和 CI 证据标识（本地实现及全部本地验收已完成；远端 CI 待验收）。
+- [x] F3 修复活动 LRU loader，补 Node 兼容检查和 CI 证据标识。（2026-10-23 远端验收完成；[CI 39906699174](https://github.com/remote-controlled-man/skillfit/actions/runs/39906699174) 8 jobs 通过；原本地、最低能力诊断及冻结历史结果保持，完整计数与 Windows 原有 skip 见补记）
 - [x] F4 贯通逐调用模型身份、覆盖情况、报告与 portable replay。（2026-10-22 本地完成；198/198 相关测试、950/950 全量测试，Node 22.13/26 专项各 12/12；无真实模型调用）
-- [ ] F5 整理当前契约、能力表与双语入口，最终同步 F6/F7 的接口。（2026-10-22 首次与最终内容同步已交付并 review；F3 远端 CI 仍待验收，保留原条件，整项不勾选）
+- [x] F5 整理当前契约、能力表与双语入口，最终同步 F6/F7 接口。（2026-10-23 整项完成；此前内容同步及 review 已交付，F3 远端条件由 [CI 39906699174](https://github.com/remote-controlled-man/skillfit/actions/runs/39906699174) 实际满足；未推定真实 CLI/模型认证）
 - [x] F6 增加明确预期的离线完整对照，保持 synthetic 隔离。（2026-10-22 本地完成；245/245 相关测试、1003/1003 全量测试，实际 npm 包内四类对照与迁移 replay 通过）
 - [x] F7 增加版本化 bench 结论范围及按目标区分的诊断。（2026-10-22 本地完成；相关回归及最终范围专项 35/35、npm test 1041/1041；schema 1 兼容，schema 2 原生与 portable 声明冻结/拒答通过）
 - [ ] F8 对实际实施范围完成回归、独立包验证、最终 review 和交付说明。
@@ -98,7 +98,7 @@ F1–F5 修复计算、检测、兼容、身份记录和当前契约。F6–F7 �
 
 ## 接口与兼容方案总表
 
-以下为已接受的实施方案；F1/F2/F4/F6/F7 已本地落地，F3 本地交付但远端 CI 待验收，F5 首次及最终内容同步均已交付、整项待 F3 远端条件。新增接口均未在调查基线中实现；具体当前完成状态以上方唯一清单为准。版本变化只作用于其所属对象，不把 bench schema、统计协议、观测协议和 policy 版本混为同一个版本。
+以下为已接受的实施方案。新增接口均未在调查基线中实现；当前完成状态以上方唯一清单为准，实际本地及远端结果在各阶段记录中保留。版本变化只作用于其所属对象，不把 bench schema、统计协议、观测协议和 policy 版本混为同一个版本。
 
 | 对象 | 新方案 | 旧数据/调用方式 | 不允许的兼容捷径 |
 | --- | --- | --- | --- |
@@ -183,6 +183,25 @@ Codex 继续是机械代理信号：识别指向目标 SKILL.md 的读命令观�
 | 文档 / review | LRU README/provenance 和 scripts 导航同步兼容边界；本计划先补兼容方案再实施；活动文档、计划与 LRU README 共 47 文件链接/锚点检查零错误，diff 无空白错误 | 最终 diff review 未发现剩余本地阻断项；80 runtime 模块架构检查零违规；尚无远端 CI attestation |
 
 本地日志位于 `/private/tmp/skillfit-f3-*`，最终逐版本收据为 `/private/tmp/skillfit-f3-final-results.json`；这些是开发验证记录，不是新的发布证据。当前 F3 保持未勾选，F1–F8 进度仍为 2/8，仅等待远端 CI 验收；F4–F8 未实施。
+
+### F3/F5 远端验收补记（2026-10-23）
+
+以上 F3 本地交付记录保留其当时状态。追加授权后，[PR #53](https://github.com/remote-controlled-man/skillfit/pull/53) 的源提交 `5078262b37c2c5c5ffde2cb88aff09e3bf0b891d` 通过 [CI 39906699174 / attempt 1](https://github.com/remote-controlled-man/skillfit/actions/runs/39906699174) 全部 8 jobs。收据共同记录被测 PR merge `a822bc0ce72c4a81da6ac4c63773f468d90c5248`，与源 head 区分；这是 PR 验证，不冒充 main push 的发布门禁。
+
+| Job / OS / target | 实际 Node | scope | pass/tests | skipped |
+| --- | --- | --- | --- | --- |
+| node-compat / ubuntu-latest / target 22.13.0 | v22.13.0 | full | 1063/1063 | 0 |
+| node-compat / ubuntu-latest / target 22.14.0 | v22.14.0 | full | 1063/1063 | 0 |
+| node-compat / ubuntu-latest / target 24 | v24.21.0 | full | 1063/1063 | 0 |
+| node-compat / ubuntu-latest / target 26 | v26.12.1 | full | 1063/1063 | 0 |
+| node-minimum / ubuntu-latest / target 22.0.0 | v22.0.0 | minimum | 3/3 | 0 |
+| test / macos-latest / target 22 | v22.23.3 | full | 1063/1063 | 0 |
+| test / ubuntu-latest / target 22 | v22.23.3 | full | 1063/1063 | 0 |
+| test / windows-latest / target 22 | v22.23.4 | full | 1059/1060 | 1 |
+
+八份实际收据全部为 passed、0 fail、0 cancelled；Windows 唯一 skip 是原有的 POSIX escaped-descendant pipe 测试，不计为通过；Windows 的 IPC 两信号、进程树及新路径检查实际执行。Minimum 的 3/3 只证明所列核心/能力拒绝，不算全量 TS replay。两个先前失败运行、根因、修复及包/历史兼容结果在[治理计划 C4](2026-10-22-documentation-governance-and-architecture.md#本次-review-与提交交付2026-10-23)保存，没有重写旧结果或放宽断言。
+
+F3 的剩余远端条件现已满足；F1/F2/F4/F6/F7、F5 的内容同步/review 与相应验收均已记录，故 F5 整项完成。F8 尚需其原定逐项交付覆盖收尾，继续未勾选；R1–R4 及真实第三方/模型运行没有因此完成。后续仅同步这两份活动计划，最终记录提交的检查由 [PR checks](https://github.com/remote-controlled-man/skillfit/pull/53/checks)直接显示；不为记录自己的提交再次生成递归收据。完整下载收据暂存 `/private/tmp/skillfit-delivery-ci-final-source/`，本节保存长期版本、scope、计数和远端身份。
 
 ## F4：逐调用模型身份
 

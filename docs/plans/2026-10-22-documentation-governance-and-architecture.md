@@ -8,11 +8,11 @@
 >
 > **当前做到：** D1、A1、D2、D3、A2、A3 已完成并 review；D2 在 F7 本地交付和 F5 最终内容同步后完成权威映射、导航与兼容收尾。旧接口、measurementScope、测量语义和历史证据保持；评测规划/执行/读取已下沉，A4 authoring、A5 门禁和 V1 仍待实施。本轮新增 L1–L4 已完成并整合 review，目录、说明合并、按需恢复与收据布局均通过本地验收。
 >
-> **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 6/9；本次新增 L1–L4 为 4/4，合计 10/13。A4/A5/V1 的原验收与授权不变，继续待办；本轮 L 项已完成。
+> **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 6/9；本次新增 L1–L4 为 4/4，合计 10/13。A4/A5/V1 的原验收与授权不变，继续待办；本轮 L 项已完成；本次提交交付 C1–C4 为 4/4；F3/F5 的远端条件已在所属计划验收。
 >
 > **本轮授权：** 2026-10-23 用户追加要求 review 当前全部相关改动，确认历史证据/回放后提交、推送、检查 CI 并修复问题。交付包含当前相互依赖的 F 阶段本地实现、D/A 已完成阶段及 L1–L4；不启动 A4/A5/V1 或 R 研究项，不发布 npm、不执行真实模型/Agent、不修改实际用户配置。遵循主分支 PR 与 required checks 规则。
 >
-> **下一步：** 按 C1→C4 完成整合 review、最终输入验收、提交推送与远端 CI。F3/F5 仅在原远端条件实际满足后更新其所属计划；A4/A5/V1 保持待办，C 阶段不代替它们。C1–C3 已完成；C4 初轮 Windows 失败的修复已通过本地回归并推送 `d773276`，第二轮 Windows 仍有整组测试限时取消，正在补正；F3/F5 保持未完成，未发布 npm。
+> **下一步：** C1–C4 已完成，源提交 `5078262` 的 CI 8/8 通过；F3/F5 已按原条件更新所属计划。原 A4/A5/V1 与 F8/R1–R4 保持待办。交付位于 `origin/codex/docs-evidence-delivery` / PR #53，最终状态记录的检查由 PR checks 自动呈现。
 >
 > **最近更新：** 2026-10-23，Asia/Shanghai。
 
@@ -102,7 +102,7 @@
 - [x] C1 冻结并整合 review 全部 200 项相关改动。（2026-10-23；109 默认可审查项及 91 过滤项全部按适用内容核对，无跳过项；修复两份计划的过时摘要，并将两份 ADR 的阶段状态改为引用唯一计划；另修正暂存检查发现的新文件 EOF 空行；生产逻辑/冻结数据不变）
 - [x] C2 首个源提交及 C4 修复后的输入均已验收；修复后 npm test 1063/1063、实际包/5文档/离线恢复与安装后短路径检查通过。初轮记录保持：（2026-10-23；Node 24.21.0/macOS npm test 1060/1060，0 fail/skip/cancel；文档 71 页、203 旧锚点保留，22 JSON/引用及 101 模块检查通过；两核心 bench 与全部 contrib 门禁通过；历史及独立包结果见下表）
 - [x] C3 已提交并推送 `04ee9b6e945ea58f9ba2c930c36f8bfd26863b57` 到 `origin/codex/docs-evidence-delivery`，建立 [PR #53](https://github.com/remote-controlled-man/skillfit/pull/53)。（2026-10-23；200 项相关文件，提交后工作区干净；遵循主分支 PR/required checks，没有触及私有资料；后续 Windows 修复 `d773276c376c44492ff0e14a42624bd2e0bd8c85` 亦已推送）
-- [ ] C4 检查三系统 required jobs、Node 22.13/22.14/24/26 全量兼容及 Node 22.0 核心下限检查；发现失败则修复、验证并推送。把实际状态/链接写回本计划，并按原条件更新 F 计划，未实施阶段继续待办。
+- [x] C4 三系统 required、Node 22.13/22.14/24/26 全量及 Node 22.0 minimum 全部通过。（2026-10-23；源 `5078262`，[CI 39906699174](https://github.com/remote-controlled-man/skillfit/actions/runs/39906699174) 8/8；已修复初轮 Windows 四项失败与第二轮批次限时取消；实际计数见 F3/F5 补记，两份计划同步，原待办不变）
 
 C1 的输入为 HEAD `8087e05173d673610d05090a52dd548e00c17517` 上的全部相关工作区内容；已保存完整补丁、未跟踪文件副本和 SHA-256 清单。OpenCodeReview 预览 200 项（109 个默认可审查项、91 个过滤项），由同一次审查按适用规则人工覆盖关键非代码内容。审查与验证日志存于系统临时目录，长期结论、环境、数量和远端链接在此记录，不另建 Markdown。
 
@@ -143,7 +143,11 @@ C4 第二轮结果与补正范围（先记录后实施）：[CI 39905332215](htt
 
 本补正只统一这三项完整批次/多流程自检的测试外壳到有界 120 秒；单次异常/oracle timeout 的负例限制及所有生产 deadline、样本、verdict/receipt/成本/不可采用断言不变。CLI fixture 的执行均选单 suite，保留原 30 秒界限。修正后相关检查与 npm test 必须通过，并在新源提交上重验远端 CI；不靠重跑旧提交争取偶然通过。该测试文件不随 npm 发货，候选包应保持 SHA-256 `7d13ceb5b7f4a57846b8c7f44ea09e7c8c0bc25633ca04c22a758f8b68f48d69`，以最终文件逐项比对确认。
 
-补正后的 `npm test` 为 1,063/1,063、0 fail/cancel/skip，64.091s；docs/旧锚点/diff 通过。最终 1,168 个打包条目逐文件与上述隔离安装包比对，0 差异；因此包、文档、恢复和历史回放的既有相同输入验收仍有效。仅 review 此测试文件的 3 个外壳 timeout 和说明，原 callback/断言均未改；本地完整输出 `/private/tmp/skillfit-delivery-ci-envelope-npm-test.log`。新的远端验收仍待完成。
+补正后的 `npm test` 为 1,063/1,063、0 fail/cancel/skip，64.091s；docs/旧锚点/diff 通过。最终 1,168 个打包条目逐文件与上述隔离安装包比对，0 差异；因此包、文档、恢复和历史回放的既有相同输入验收仍有效。仅 review 此测试文件的 3 个外壳 timeout 和说明，原 callback/断言均未改；本地完整输出 `/private/tmp/skillfit-delivery-ci-envelope-npm-test.log`。补正已提交并推送 `5078262b37c2c5c5ffde2cb88aff09e3bf0b891d`，待 [CI 39906699174](https://github.com/remote-controlled-man/skillfit/actions/runs/39906699174) 实际验收。
+
+C4 最终远端验收：源提交 `5078262b37c2c5c5ffde2cb88aff09e3bf0b891d` 的 [CI 39906699174](https://github.com/remote-controlled-man/skillfit/actions/runs/39906699174) 为 completed/success，8/8 jobs；Linux 四兼容版本和 Ubuntu/macOS required 均 1,063/1,063、0 fail/cancel/skip；Windows Node 22.23.4 为 1,059 pass /1,060 tests、1 原有 POSIX-only skip、0 fail/cancel；Node 22.0 minimum 为 3/3。八份收据的 run/attempt、scope、实际 Node 和被测 merge 身份均核对；详见[唯一 F3/F5 验收记录](2026-10-21-measurement-contract-and-capability-remediation.md#f3f5-远端验收补记2026-10-23)。
+
+这次最终状态提交只改两份活动计划，不改变已验收包、执行代码或历史输入；[PR #53 的检查页](https://github.com/remote-controlled-man/skillfit/pull/53/checks)直接保留最新记录提交的 CI 状态。源验收与记录提交分别标识，避免为写入自己的提交哈希再制造一轮记录。F8/A4/A5/V1/R1–R4 不因本次提交交付自动完成。
 
 ## L1–L4：目录、记录与按需交付补充
 
