@@ -6,7 +6,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSyn
 import { dirname, join, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parseFrontmatter } from '../frontmatter.js';
-import { parseTriggerDetection, parseTriggerEvidence, type TriggerDetection, type TriggerEvidence } from './trigger-detection.js';
+import { parseTriggerDetection, parseTriggerEvidence, type TriggerDetection, type TriggerEvidence } from './trigger-contract.js';
 import type { ExperimentSession, ExperimentSummary } from './experiment-session.js';
 import { RUN_GROUP_PATTERN } from './constants.js';
 import { collectInstalledSkillFingerprint, collectSkillBundle, type InstalledSkillFingerprint } from './bundle.js';

@@ -7,18 +7,18 @@ measurement core owns evidence and interpretation. Runtime code uses Node built-
 This entry describes the current source checkout, including unpublished changes;
 the package version string alone does not identify the installed behavior. Use
 the [capability table](eval-agent-preflight.md#current-source-capability-table)
-and [versioned release record](releases/0.13.1.md) for that distinction. A3 now separates evaluation planning, execution and saved reads from command adapters; authoring and general role enforcement remain pending.
+and [versioned release record](releases/0.13.1.md) for that distinction. A3/A4 separate evaluation and authoring from command adapters; A5 enforces registered runtime/type directions and bounded effect checks. Final stage evidence belongs to the existing plan.
 
 Read by question:
 
 - [System/module boundaries](architecture-boundaries.md): current import view,
-  proposed dependency roles and owned migration/debt map.
+  enforced dependency roles and owned migration/debt map.
 - [Runtime scenarios](architecture-runtime.md): paired, trigger, calibration,
   self-test, saved report/replay, failure evidence and package/write boundaries.
 - [Interfaces](architecture-interfaces.md): existing ports and entry-specific
-  confirmation, current resolve/build/execute and proposed authoring services.
-- [Architecture decisions](decisions/README.md): three proposed ADRs, alternatives,
-  consequences and verification; design publication is not implementation.
+  confirmation, current resolve/build/execute and prepare/draft/apply authoring interfaces.
+- [Architecture decisions](decisions/README.md): the existing ADRs, alternatives,
+  consequences and verification; accepted decisions retain their stated limits.
 
 ## Entry points and modules
 
@@ -29,7 +29,7 @@ Read by question:
 | Evaluation application | Resolve/build plans, gate/dispatch paired and trigger runs, read/assess saved evidence; calibration has a separate baseline contract | [planning](../src/harness/eval-planning.ts), [service](../src/harness/eval-service.ts), [read service](../src/harness/eval-read-service.ts), [calibration](../src/harness/calibration-service.ts) |
 | Measurement core | Load cases, run disposable workspaces, verify outcomes and retain costs/session evidence | [bench loader](../src/harness/bench.ts), [runner](../src/harness/runner.ts), [session](../src/harness/experiment-session.ts), [trigger](../src/harness/trigger.ts) |
 | Reports and policy | Parse saved observations, audit receipts, render reports and assess adoption separately | [manifest parser](../src/harness/eval-manifest.ts), [report adapter](../src/commands/eval-report.ts), [audit](../src/harness/eval-audit.ts), [acceptance](../src/harness/eval-acceptance.ts) |
-| Case authoring | Scaffold, capture, draft and check cases; manage manifest registrations | [bench commands](../src/commands/bench.ts), [offline checks](../src/harness/bench-check.ts), [diagnostics](../src/harness/bench-diagnostics.ts), [source capture](../src/commands/bench-source.ts), [drafting](../src/commands/bench-draft.ts), [management](../src/commands/bench-manage.ts) |
+| Case authoring | Scaffold, capture, draft and check cases; manage manifest registrations | [bench commands](../src/commands/bench.ts), [offline checks](../src/harness/bench-check.ts), [diagnostics](../src/harness/bench-diagnostics.ts), [authoring](../src/harness/bench-authoring.ts), [source capture](../src/harness/bench-source.ts), [drafting](../src/harness/bench-draft.ts), [management adapter](../src/commands/bench-manage.ts) |
 | Agent integration | Resolve matrix capabilities and execute via CLI/API/injected adapters | [matrix](../src/matrix/agents.json), [definitions](../src/agents.ts), [executors](../src/harness/executors/) |
 | Configuration | Inspect local configuration; plan and apply selected profiles or portable bundles | [doctor](../src/commands/doctor.ts), [install](../src/commands/install.ts), [setup](../src/commands/setup.ts), [bundle export](../src/commands/bundle.ts) |
 | Installation transaction | Stage ordered file writes, preserve backups, commit, validate and roll back failures | [transaction](../src/install/transaction.ts), [shared constants](../src/install/constants.ts) |
@@ -62,17 +62,15 @@ with their domain rather than a renderer. Agent-specific paths and capabilities
 come from the matrix; no new command-local vendor path constants are needed.
 
 Saved-manifest parsing lives in the core; audit and adoption policy use the same
-parser as report adapters. `node scripts/check-architecture.mjs` verifies the
-compiled runtime, including literal dynamic imports, for cycles and core-to-command
-dependencies in both `harness/` and `install/`. This development check uses the existing TypeScript compiler and
-adds no runtime dependency.
-
-That check does not enforce the [target role table](architecture-boundaries.md#target-dependency-roles-proposed)
-or source type/effect constraints. Shared process/verifier/workspace mechanisms
-and pure judge/paired/trigger summaries now serve audits and controls directly;
-old runner exports remain compatible. A2 adds a focused dependency regression,
-extended by A3 for planning/read dependencies. A4 authoring extraction and A5 general enforcement remain pending in the
-[stage plan](plans/2026-10-22-documentation-governance-and-architecture.md).
+parser as report adapters. After building, `node scripts/check-architecture.mjs`
+checks runtime cycles, registered dependency roles, source type directions and
+bounded pure/application effects against [the policy](../scripts/architecture-policy.json).
+It uses the existing development compiler and adds no runtime dependency.
+The [boundary view](architecture-boundaries.md#enforcement-today) records exact
+coverage, alias limits and the single owned legacy matrix-validation edge.
+Shared mechanisms, summaries and authoring implementations preserve compatible
+exports. `npm test` and full CI execute the same real policy after building;
+see the [stage plan](plans/2026-10-22-documentation-governance-and-architecture.md).
 
 Offline case gates and their diagnostic model also live in the core. Eval
 preflight calls that shared offline entry directly. The bench command keeps

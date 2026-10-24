@@ -53,6 +53,16 @@ test('runBenchInit dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /\+ verifiers\/example-task\.mjs/);
 });
 
+test('bench init preserves a target created while confirmation is pending', async t => {
+  const cwd = tmp(t, 'skillfit-init-confirm-drift-');
+  const dir = join(cwd, 'skillfit-bench');
+  await assert.rejects(runBenchInit({ cwd, log: () => {}, confirm: async () => {
+    mkdirSync(dir); writeFileSync(join(dir, 'bench.json'), 'concurrent content'); return true;
+  } }), /not empty|changed/);
+  assert.equal(readFileSync(join(dir, 'bench.json'), 'utf8'), 'concurrent content');
+  assert.ok(!existsSync(join(dir, 'verifiers')));
+});
+
 test('runBenchInit scaffolds a bench that loads and passes bench check', async (t) => {
   const cwd = tmp(t, 'skillfit-bench-init-');
   const { log } = collector();
@@ -1473,4 +1483,21 @@ test('runBenchCheck --calibrate fails loudly when no task produced a completed r
   assert.ok(
     !report.checks.some((c) => c.status === 'PASS' && c.message.includes('discriminative band')),
   );
+});
+
+
+test('bench add refuses source changes during confirmation without writing a task', async t => {
+  const cwd = tmp(t, 'skillfit-add-source-drift-');
+  await runBenchInit({ cwd, yes: true, log: () => {} });
+  const source = join(cwd, 'source'); mkdirSync(source);
+  writeFileSync(join(source, 'answer.txt'), 'before');
+  const dir = join(cwd, 'skillfit-bench');
+  const before = readFileSync(join(dir, 'bench.json'), 'utf8');
+  await assert.rejects(runBenchAdd({ cwd, benchDir: dir, sourceDir: source,
+    freeze: true, include: ['answer.txt'], prompt: 'Return answer', expect: 'before',
+    task: 'captured', log: () => {}, confirm: async () => {
+      writeFileSync(join(source, 'answer.txt'), 'after'); return true;
+    } }), /source.*changed/i);
+  assert.equal(readFileSync(join(dir, 'bench.json'), 'utf8'), before);
+  assert.ok(!existsSync(join(dir, 'fixtures/captured')));
 });

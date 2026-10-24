@@ -4,17 +4,25 @@
 
 ## 当前执行状态
 
-> **基线：** HEAD `8087e05173d673610d05090a52dd548e00c17517`，package `0.13.1`，Node `24.21.0`；实际设计输入是含 F1–F6 已交付改动的当前工作区，不能只检出 HEAD 就声称复现了本计划的基线。
+> **原始设计基线：** HEAD `8087e05173d673610d05090a52dd548e00c17517`，package `0.13.1`，Node `24.21.0`；实际设计输入是当时含 F1–F6 已交付改动的工作区，不能只检出 HEAD 就声称复现了本计划的基线。
 >
-> **当前做到：** D1、A1、D2、D3、A2、A3 已完成并 review；D2 在 F7 本地交付和 F5 最终内容同步后完成权威映射、导航与兼容收尾。旧接口、measurementScope、测量语义和历史证据保持；评测规划/执行/读取已下沉，A4 authoring、A5 门禁和 V1 仍待实施。本轮新增 L1–L4 已完成并整合 review，目录、说明合并、按需恢复与收据布局均通过本地验收。
+> **当前做到：** D1–D3、A1–A5、V1 已完成本地实施及综合验收；A4 保留原 authoring/确认合同，A5 门禁接入既有 npm test/full CI。实际包、原始历史回放与保护哈希通过，所属测量计划 F8 的 21 项覆盖收尾也已完成；此前 L/C/M 交付保持。
 >
-> **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 6/9；本次新增 L1–L4 为 4/4，合计 10/13。A4/A5/V1 的原验收与授权不变，继续待办；本轮 L 项已完成；本次提交交付 C1–C4 为 4/4；F3/F5 的远端条件已在所属计划验收。
+> **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 9/9；L1–L4 为 4/4，合计 13/13。C1–C4、M1–M3 已交付；F8 由所属计划判定，R 研究不计入本计划完成数。
 >
-> **本轮授权：** 2026-10-24 用户要求合并 PR #53 到 main，检查合并后 CI、修复问题并同步本计划。此前 2026-10-23 的 review、提交、推送及 CI 已完成；本轮按 M1→M2→M3 交付，沿用未变输入的验收。A4/A5/V1、F8/R 研究项保持原范围；遵循主分支 PR 与 required checks 规则。
+> **本轮授权：** 2026-10-24 用户在 A4、A5、V1 和 F8 本地完成后，追加授权复核全部改动、确认历史证据和回放、提交推送、创建 PR 并检查/修复 CI。按下方 N1→N2→N3 交付；不合并新 PR、不发布、不执行真实模型或 R1–R4，不修改冻结历史原件。
 >
-> **下一步：** C1–C4 已完成，PR #53 已合并为 main `117352d`，[main CI 40061140632](https://github.com/remote-controlled-man/skillfit/actions/runs/40061140632) 8/8 通过且八份实际收据核验通过；本轮 M1–M3 的合并、源 CI 验收及记录内容为 3/3，记录自身的远端集成结果由下方动态 PR/main 检查呈现。F3/F5 已满足原条件；A4/A5/V1 与 F8/R1–R4 保持待办。
+> **下一步：** 本轮基线为 main `496ad13077a9dc5beb1b3aa25a26b115849868c1`，初始工作区干净；A4/A5/V1/F8 本地验收保持完成。N1 最终复核及保护验证通过；N2 正在提交、推送并创建 PR，之后 N3 验收实际 PR CI。当前尚未提交，不能用此前 CI 追认本轮改动。
 >
 > **最近更新：** 2026-10-24，Asia/Shanghai。
+
+### A4/A5/V1/F8 提交与 PR 验收（2026-10-24）
+
+本轮只在此维护交付进度；测量计划引用本节。顺序为 N1 → N2 → N3。计划 review 已确认授权、依赖和验收方式明确，保留先前失败记录与 R1–R4 待办。
+
+- [x] N1 复核最终改动和保护证据。（2026-10-24；46/46 文件统一 review，0 skip，无新阻断；35 个迁移声明重新比对 AST 一致。提交前 npm test 1079/1079，0 fail/skip/cancel，69.186s；70 页/122 旧锚点与 diff 检查通过。1,685 原件 SHA 保持；当前 1,174 个包文件逐字节匹配已验收候选，19 归档/1,583 支撑及 catalog/fetcher/recipe 与原 18+1 成功回放的输入一致，复用同输入实际执行结果；原未定位偶发失败记录保持）
+- [ ] N2 提交、推送并创建 PR。（进行中，N1 已通过；在 codex/ 分支提交全部本轮改动，提交前核对最终 diff 和范围；PR 写明可观察变化、实际验证、AI 协助和限制；记录固定源提交及 PR 链接，不直接改 main）
+- [ ] N3 验收实际 PR CI 并更新记录。（依赖 N2；八个 jobs 全部成功，核对实际测试 SHA、Node、full/minimum 范围及计数；失败时定位、最小修复、重验并推送。以固定源 CI 收据和动态 PR 检查链接记录，避免为记录自身 SHA 循环提交；最终推送的 head 仍须通过实际 CI）
 
 ## 目标、范围与完成含义
 
@@ -89,9 +97,9 @@
 - [x] D3 接通文档登记、变更影响和 CI 门禁。（2026-10-22 完成；32/32 相关测试、最终 npm test 1019/1019；独立检查覆盖 69 maintained 页，Git 基线另显式纳入变更历史记录并保留 168 个旧锚点；两轴 review 修复后均无剩余问题）
 - [x] A2 拆出共享执行机制与独立汇总。（2026-10-22 完成；相关执行回归 222/222、review 修复后报告/依赖回归 65/65、最终 npm test 1028/1028；旧出口与错误类身份、实际包/replay、信号/后代清理通过；两轴复查无剩余问题）
 - [x] A3 建立独立规划/执行应用接口并迁移所有入口。（2026-10-22；六类 eval/calibration/四 suite 固定指纹对照通过；修复相关 39/39、npm test 1047/1047、最终文档/架构/实际包门禁 31/31；旧导出、scope/旧数据、synthetic 和 replay 保持；一次整合 review 后无剩余问题）
-- [ ] A4 收拢 bench authoring 服务并保留写入保护。
-- [ ] A5 将目标模块边界接入可执行检查。
-- [ ] V1 完成最终工作树、实际包、replay 和文档的综合验收与 review。
+- [x] A4 收拢 bench authoring 服务并保留写入保护。（2026-10-24；92/92 authoring/claims/source/draft/manage 回归，初次迁移发现的 drafting 汇总遗漏已修复；实际离线 npm 包独立 init/schema 2/command starter 门禁/freeze/edit/remove/首份备份验证通过；最终整合 review 与全量在 V1 执行）
+- [x] A5 将目标模块边界接入可执行检查。（2026-10-24；107/107 runtime/source 唯一归属，0 违规，迁移范围 0 例外；1 条具体遗留矩阵校验边有 owner/解除任务。170/170 相关回归及最终 15/15 架构正反例通过，已复用 npm test/full CI 的真实门禁；活动架构/ADR 同步，旧锚点保留）
+- [x] V1 完成最终工作树、实际包、replay 和文档的综合验收与 review。（2026-10-24；最终 npm test 1079/1079，三 Node 专项及架构门禁、Node 22.0 minimum、10 个实际 bench 门禁通过；实际包/5 文档/30 回归/7 基础组/5 replay、19+1,583 恢复及历史 18+1 通过；1,685 保护原件不变；46 文件整合 review 修复后无剩余问题，完整边界与输入见下文）
 - [x] L1 固定保护基线，补齐 bench 目录与覆盖检查。（2026-10-22；8/8 实际 bench check 全通过，文档/登记 22/22，遗漏/虚构/重复目录回归通过；数据原件未改）
 - [x] L2 收敛读者说明和维护记录，保留旧路径/锚点。（2026-10-22；分享指南 72→12 行兼容入口，原内容并入报告指南；旧锚点/原代码块全保留，文档/登记/发布文档检查通过；未新增 Markdown）
 - [x] L3 将冻结 artifact 支撑改为显式按需恢复，验证后切换未来 npm 清单。（2026-10-22；隔离安装/5 文档/离线恢复通过，默认固定 HTTPS 完整恢复 19+1,583，483 请求、0 缓存命中、105.793 秒；逐字节验证通过，原30秒单文件 deadline 未变）
@@ -351,15 +359,31 @@ paired、installed、revision、rules/MCP、trigger、calibration、request 和 
 
 ### A4：bench authoring 应用接口
 
+**2026-10-24 计划复核与执行细化（验收不缩减）：** 顺序为 A4→A5→V1→F8；F3/F5 已在 main 实际验收，原“待验收”叙述只保留于历史记录，活动架构说明同步纠正。A4 将现有模板/source/draft 实现迁入中立归属并保留原导出；prepare 返回操作、路径/内容、源和目标指纹、展示/确认所需信息，显式 drafting 在确认后单独调用，apply 不做交互。编辑/移除继续只改注册。补充源/目标在确认期间漂移与 init 碰撞的离线反例，不改变公开 flag/输出 schema、200 文件/1 MiB 等限制。
+
+A5 在完整模块归属上分别检查 emitted runtime 和源码类型图；遗留混合模块按真实职责登记，不伪称纯计算。只允许逐边、带 owner/reason/removal task 的遗留例外，A2–A4 迁移范围零例外；直接语法及别名效果检查有明确覆盖边界。V1 与 F8 共用最终工作树已执行的检查，不为两个计划重复跑同一全套；F8 另外逐项核对原 21 个问题的已交付/研究/限制归属。
+
+风险反推：确认后的源/目标变化会写入非预期内容，以重新指纹/碰撞检查前置拒绝；机械搬移可能丢模板/兼容导出，以原行为回归及实际包独立 authoring 验收；分层策略可能误把混合模块当纯或漏掉别名，以完整归属、逐边债务和 AST 正反例验收。公共文件与冻结原件 SHA 基线存于 `/private/tmp/skillfit-a4-f8-location.txt` 指向的临时目录；既有偶发历史失败记录保留，最终按原程序复跑并如实记录。
+
 拟新增 `src/harness/bench-authoring.ts`，复用已有 source capture、drafting、management、模板及校验实现；命令层只解析参数、展示准备结果、确认并调服务。不要再新建一个与现有 `bench-source`/`bench-manage` 重复的实现。
 
 内部接口为 `prepareBenchChange(options, dependencies) → prepared change` 和 `applyBenchChange(prepared, dependencies) → result`。prepared change 包含操作种类、任务/来源、待写路径和内容、现有目标指纹、诊断和授权所需的信息；只读 prepare 默认不写入、不调用模型。原有显式 drafting/decompose 是单独的有预算步骤，不能藏进 prepare 或普通 add。
+
+实际内部调用形状为 `prepareBenchChange(request, dependencies)` 和 `applyBenchChange(prepared)`：clock/写入适配依赖随 prepare 参数进入私有事务，apply 不再接收第二套依赖；这些是受信任的内部适配，不是新增公开 SDK 或持久化授权协议。准备结果中的写入预览是副本，不能改变私有事务字节。此实现细化保持上述只读准备、显式 drafting、复核/碰撞/备份/回滚验收，不增加公开 CLI/schema 字段。
 
 apply 在确认后复核源/目标和碰撞，再沿用现有 staging、备份、逐文件应用、验证和失败回滚。新建产物没有原内容，只保留新目标碰撞保护；已有文件按原命令规则备份/验证/回滚，不套用实际用户配置 writer 的额外流程。保留 init/add/freeze/from-commit/edit/remove/list/show 的现有参数、默认值、退出码、任务顺序与 F7 的显式 schema/claim 规则。200 文件/1 MiB、Git parent/submodule/test-only/test-less、许可证和 provenance、保护 verifier/test 的规则原样保留。
 
 验收：有输出前 preview 无写入/无模型；源变化、越界、目标碰撞、写入/验证失败可观察且原文件恢复；已有 bench 同 schema/任务/字节行为一致。F7 schema 1/2、claims 的输入拒绝和冻结传递全部保留。实际 npm 包中生成的 starter、捕获的 case 和 verifier 独立可用，不从源码 checkout 补模板。
 
 ### A5：可执行模块边界
+
+**A4 实施结果（2026-10-24）：** `harness/bench-authoring.ts` 为 prepare/apply 入口；source、draft、command template 各保留单一中立实现，原 commands 路径保留同实例 re-export/薄适配。init 确认期目标碰撞、freeze 源漂移分别先复现失败后修复；新增三项公共接口检查覆盖只读准备、预览内容不能改变实际写入、直接 apply 的源/目标复核与管理操作 fixture 漂移。drafting 的并发目标拒绝最初漏写 summary，92 项整合回归定位并修正统一收尾，付费尝试的成本/身份/停止收据断言保留。
+
+实际候选包 1,172 files / 1,226,162 B 压缩 / 5,728,398 B 展开，离线安装在 checkout 外，command/schema 2 starter、bench check、freeze、edit/remove、文件保留及原备份验证通过；临时验收脚本初次误用 CLI flags，按实际帮助纠正后复用同一包通过，未为脚本修改 CLI。后续仅删除未使用 import、整理局部缩进/变量名，最终包指纹在 V1 重建验收。记录为 `/private/tmp/skillfit-a4-{init-red.log,source-red.log,regression-final.log,package.log}`；包目录由 `/private/tmp/skillfit-a4-package-location.txt` 指向。
+
+**A5 实施结果（2026-10-24）：** 策略逐一登记 107 个模块，runtime 与 erased source type 分开检查。类型注解可指向下层 DTO 所在模块，不加载其实现；仍禁止下层反向指向 entry/application/execution。Session DTO、case preflight 数据及纯 Agent/trigger 保存元数据解析已有中立归属；旧导出与错误类身份保留。原 request parser 为读取 timeout 而导入具体 CLI executor 的边已移除，只保留 `eval-contract -> agents` 的既有矩阵 ID 校验债务；具体理由、owner、解除任务在策略及架构说明中，不允许新边借用。
+
+新反例分别先失败后通过：runtime/type 角色、直接语法/immutable alias/destructuring/lexical shadow 的效果、动态目标声明与有限性、同名动态表达式的独立作用域、失效/迁移范围例外、畸形策略。还修正 `Date(0)` 函数调用仍读取当前时钟的漏检；显式 `new Date(input)` 保持允许。最终 15/15 门禁、170/170 周边回归通过，纯模板/注释/合法类型环不误报。静态检查不承诺覆盖可变别名、反射或任意回调副作用；所列正反例及范围写入权威架构说明。1,685 个受保护历史/发布文件 SHA 全部保持；输出为 `/private/tmp/skillfit-a5-{regression.log,schema-green.log,full-baseline.json,docs.json}`，最终综合结果由 V1 记录。
 
 拟新增 `scripts/architecture-policy.json`，扩展现有 AST 检查，不引入 runtime 依赖。策略包含 schemaVersion、文件/窄前缀归属、每层允许依赖及临时 exceptions；新增活动模块必须能唯一归属，未知/重叠归属失败。计划基线的 85 个模块及此后新增的全部活动模块均登记角色；不要求为历史 replay 副本登记活动角色。
 
@@ -415,7 +439,27 @@ node scripts/check-contrib-benches.mjs
 
 最终记录包含：确切输入（提交或未提交工作区指纹）、环境、targeted/全量通过失败跳过数、命令/记录路径、独立包/replay 结果、旧数据及冻结文件保护、最终 diff review 和未执行项。关键摘要需可长期追溯，临时日志是补充，不提交私有运行资料。通过后无新改动或未解风险不重复全套测试。
 
-V1 完成仅代表本计划所列本地整改验收完成，不代表远端 CI、F8、发布或第三方复现完成。本计划任何必需项未实现/未验证时保持相应阶段及整体未完成，不能以“已有测试绿灯”或“F8 会再检查”代替本阶段证据。F3 远端验收一直由原计划保留为待办，之后授权并实际运行才更新。
+V1 完成仅代表本计划所列本地整改验收完成，不代表远端 CI、F8、发布或第三方复现完成。本计划任何必需项未实现/未验证时保持相应阶段及整体未完成，不能以“已有测试绿灯”或“F8 会再检查”代替本阶段证据。F3 已按原条件在所属计划完成；本轮新改动的远端 CI、提交/推送与发布未执行，旧 CI 不替代新源验收。
+
+### V1 最终验收记录（2026-10-24）
+
+基线 `496ad13077a9dc5beb1b3aa25a26b115849868c1`，环境 macOS/arm64、Node 24.21.0；本轮 46 个修改/新增文件，未新增 Markdown。排除两份自记录计划后的 44 文件 overlay 指纹为 `5f30a178d4fbc6cf2bcd5e13bf85aa46cfc79400ed464696780f373419a1b153`（排序 path/SHA-256 JSON 再 SHA-256；完整 manifest 在临时验证目录）。代码改变会改变实际 implementation 指纹，未省略新模块来保留旧 plan digest。
+
+| 验收面 | 当前实际结果 | 范围与复用理由 |
+| --- | --- | --- |
+| 全量/架构 | 最终 npm test **1079/1079**，0 fail/skip/cancel，64.099s；107 source/runtime 唯一归属、0 违规；最终架构正反例 16/16 | full CI 通过既有 npm test 入口执行真实策略；本轮只验证本地接线，不声称新源远端 CI 已跑 |
+| Node 能力 | 本地 22.13.0、22.14.0、26.0.0 的 authoring/环境/trigger 周边各 **172/172**，各自 LRU bench check 成功；最后策略收紧后三版本各另通过 **16/16** 架构检查；22.0.0 minimum **3/3** | 每个进程使用对应真实 Node 和 PATH，全部 darwin/arm64；不将 targeted/minimum 写成全量或 Linux/Windows 认证。原 F3 跨 OS 结果仍只属于其原提交 |
+| 用户入口/合同 | 两核心 bench 加八个 contrib，**10/10** 实际 CLI check 成功；原公开 flags、schema 1/2、claims、错误/预算/信号/成本等由最终全量覆盖 | AST 对照 35 个迁移声明与原实现相同；12 个旧出口直接引用同一函数/类/常量，错误类身份保持 |
+| 实际独立包 | **1,174 files / 1,227,266 B 压缩 / 5,731,706 B 展开**；SHA-256 `1645bb01394703b112e9646fdced1bef889fcea84004a4f8fff80f9efe347040`；实际离线安装、starter/schema 2/freeze/edit/remove、半写入故障回滚通过 | package/npm release check、5 文档、30 retained regressions、7 foundation groups、5 个迁移/移走原输入 portable replay 通过；版本字段仍 0.13.1，是未发布候选；包上限未改 |
+| 冻结恢复/历史 | 当前包 preview 0 写入、offline networkAttempts=0，**19 archives +1,583 support** 路径/大小/SHA 全验证，碰撞拒绝；本轮原 18 replay +1 export-index **19/19** 成功 | 首份 V1 包已执行全部原程序；最终包仅 authoring JS 和架构 owner 文字不同，catalog/fetcher/历史 recipe、全部 19+1,583 输入逐字节相同，因此复用同输入的历史执行，未重复 18 程序或 HTTPS 下载；原偶发失败的未定位记录保留，不声称其根因已解决 |
+| 文档/原件 | 70 页/122 旧锚点检查通过，README/Skill 等 5 个实际包文档通过；**1,685** 受保护 evidence/release 文件 0 字节差异，catalog 固定源 `56b4dc68e115475e197c6510c9cb2235a5ad2c62` 保持 | ADR 按实际交付改 accepted，旧路径/anchors 保留；无新增计划、无冻结修订、无私有实验室读取 |
+| 整合 review | OCR 34 默认项及 12 过滤项全部纳入，**46/46**，0 skip；两项发现修复后无剩余阻断 | init 首个写入抛错时需先记录文件所有权，改为 wx fd 后半写入故障注入及实际包负例通过；策略移除 execution/application→安装事务的过宽允许，真实反例先红后绿；例外 owner 复用现有 evaluation 角色 |
+
+初轮全量 1077/1077、首项修复后 1078/1078 的结果保留；最终 1079/1079 才是当前输入。首次 fault hook 尚未接线的红测只证明 hook 未使用，另以旧写入顺序负向对照实际复现“partial 文件遗留”，最终 fd 所有权策略通过同一断言。三个 EOF 空行清理后重新构建，所有 dist 文件与全量受测字节完全相同；未为纯格式变化重跑全套。
+
+最终包相对首份 V1 包只改变 `dist/harness/bench-authoring.js` 和 `docs/architecture-boundaries.md`，已重新执行当前包的所有受影响独立入口和 feature/document/archive 验收；未把前一候选 SHA 冒充最终包。原 feature/history recipes 保持原字节。
+
+临时收据位置：`/private/tmp/skillfit-v1-npm-test-delivery.log`、`/private/tmp/skillfit-v1-node-results-final.json`、`/private/tmp/skillfit-v1-final-policy-nodes.json`、`/private/tmp/skillfit-v1-{docs.json,architecture-final.log,extraction-proof.json,package-final.log}`；包目录由 `/private/tmp/skillfit-v1-package-location.txt` 指向，完整基线/review/manifest 由 `/private/tmp/skillfit-a4-f8-location.txt` 指向。长期必要输入、环境、计数、SHA 和限制均在本表，无需依赖临时目录才能理解结论。
 
 ## Review、风险与执行边界
 

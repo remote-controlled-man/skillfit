@@ -1,6 +1,7 @@
+import type { SpendingStopCode } from './eval-budget.js';
 import type { ModelIdentity, ModelIntent } from './model-identity.js';
 import type { ExecutionTiming } from './execution-timing.js';
-import type { TriggerDetection, TriggerEvidence } from './trigger-detection.js';
+import type { TriggerDetection, TriggerEvidence } from './trigger-contract.js';
 
 export type PairOrder = 'baseline-first' | 'balanced';
 
@@ -139,4 +140,33 @@ export interface EvaluationTarget {
  */
 export function withSampling(descriptor: ExecutorDescriptor): ExecutorDescriptor {
   return { ...descriptor, sampling: descriptor.sampling ?? null };
+}
+
+export interface ExperimentSummary {
+  schemaVersion: 1;
+  status: 'completed' | 'stopped' | 'incomplete';
+  plannedCalls: number;
+  maxCalls: number;
+  callsStarted: number;
+  callsFinished: number;
+  stopReason: string | null;
+  stopCode?: SpendingStopCode;
+  planSha256: string;
+}
+
+export interface SessionOptions {
+  bench: Bench;
+  target: EvaluationTarget;
+  baselineTarget?: EvaluationTarget;
+  groupDir: string;
+  workspaces: string[];
+  plannedCalls: number;
+  maxCalls?: number;
+  agent?: string;
+  injected?: boolean;
+  homeDir?: string;
+  env?: NodeJS.ProcessEnv;
+  versionProbe?: (argv: string[]) => string | null;
+  details: Record<string, unknown>;
+  guardFiles?: { label: string; path: string; sha256: string }[];
 }

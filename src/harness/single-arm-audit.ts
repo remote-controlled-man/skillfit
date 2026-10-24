@@ -11,13 +11,13 @@ import { readComponentJson, record } from './eval-contract.js';
 import { hashFileSet, sha256File, sha256Text } from './hash.js';
 import { packageFiles, packageMember } from './replay-package.js';
 import { verifyInputSnapshot } from './input-snapshot.js';
-import { assertRecordedAgentEnvironment } from './agent-preflight.js';
+import { assertRecordedAgentEnvironment } from './agent-preflight-contract.js';
 import { runVerifier } from './verifier.js';
 import { verdictFromOutput } from './verifier-summary.js';
 import { triggerMetrics, type TriggerTaskSummary } from './trigger-summary.js';
 import { collectInstalledSkillFingerprint } from './bundle.js';
 import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } from './eval-budget.js';
-import { parseTriggerDetection, parseTriggerEvidence } from './trigger-detection.js';
+import { parseTriggerDetection, parseTriggerEvidence } from './trigger-contract.js';
 
 function integer(value: unknown, label: string): number {
   assert.ok(typeof value === 'number' && Number.isSafeInteger(value) && value >= 0, `Invalid ${label}.`);

@@ -2,7 +2,7 @@
 
 This page distinguishes the current source implementation from the target
 design in the [governance plan](plans/2026-10-22-documentation-governance-and-architecture.md).
-A2 has extracted the shared mechanisms and pure summaries described below; A3 adds evaluation/read application services; A4/A5 remain proposed. The
+A2 extracted shared mechanisms and pure summaries; A3/A4 add evaluation/read and authoring interfaces; A5 enforces the registered runtime/type/effect rules. The
 [architecture entry](architecture.md), [runtime scenarios](architecture-runtime.md)
 and [interfaces](architecture-interfaces.md) cover complementary views.
 
@@ -43,7 +43,7 @@ and [capability table](eval-agent-preflight.md#current-source-capability-table).
 
 The following is a selected **runtime import** view, not the desired layering
 or a full call graph. Arrows mean the source module imports the destination.
-This view selects the modules relevant to A2/A3; the compiled graph check covers
+This view selects the modules relevant to A2–A4; the compiled graph check covers
 all active modules, excluding tests and frozen historical runtimes.
 
 ```mermaid
@@ -59,6 +59,10 @@ flowchart TD
     Read --> Single["harness/single-arm-read"]
     Plan --> Integration["matrix, targets and executor descriptors"]
     Bench["commands/bench"] --> Calibration["harness/calibration-service"]
+    Bench --> Authoring["harness/bench-authoring"]
+    Authoring --> Source["harness/bench-source"]
+    Authoring --> Draft["harness/bench-draft"]
+    Authoring --> Template["harness/bench-command-template"]
     Calibration --> Runner
     SelfTest["commands/bench-self-test"] --> Plan
     SelfTest --> Service
@@ -94,15 +98,20 @@ now provide the shared mechanisms used by trigger, bench checks, controls and re
 [trigger summary](../src/harness/trigger-summary.ts) perform calculation without
 execution. Audits use these directly. Runner/judge/trigger preserve their old
 exports; the judge prompt wrapper alone supplies the historical random nonce default.
-Evaluation planning/dispatch/read have moved in A3; authoring remains command-owned until A4.
+Evaluation planning/dispatch/read moved in A3. A4 now routes init/add/edit/remove through [authoring preparation/application](../src/harness/bench-authoring.ts); commands retain rendering/confirmation, and drafting remains an explicit bounded step.
 
-## Target dependency roles: proposed
+<a id="target-dependency-roles-proposed"></a>
+
+## Enforced dependency roles
 
 The target is responsibility-based separation within the existing CLI. It does
 not require a new runtime framework, package split or moving every file.
-“Allowed” below defines the target, not an A1-enforced rule. A5 owns executable
-classification and enforcement; mixed modules require extraction before being
-declared pure.
+The [A5 policy](../scripts/architecture-policy.json) assigns every active module
+one role and lists runtime/type directions separately. The table describes
+runtime ownership. Erased type annotations may reference lower-role DTOs without
+loading their implementation; they still cannot point back to command, application
+or execution owners from lower roles. Shared session/preflight DTOs now have
+neutral owners. Mixed modules are not declared pure.
 
 | Role | Intended responsibility and examples | May depend on | Must not depend on |
 | --- | --- | --- | --- |
@@ -128,25 +137,48 @@ it. Some current files contain both; filenames alone do not establish a layer.
 | B1 / A2 | Delivered: process/verifier/workspace extracted from runner | Shared lower-level modules now serve execution, checks, controls and audit; old runner exports re-export the same implementation | Preserve argv/cwd/env, timeout/output/error classification and descendant cleanup; existing [verifier](../src/harness/verifier.test.ts), [timeout](../src/harness/verifier-timeout.test.ts) and [self-test](../src/commands/bench-self-test.test.ts) cases |
 | B2 / A2 | Delivered: judge protocol and paired/trigger summaries extracted | Saved audit imports pure helpers directly; old exports preserve class identity and formulas | Evidence no longer needs execution modules for helpers; [judge accounting](../src/harness/judge-accounting.test.ts) and [report](../src/commands/eval-report.test.ts) behavior unchanged |
 | B3 / A3 | Delivered: planning, run dispatch and saved report orchestration extracted | Resolve/build/execute and saved-read application interfaces; neutral types and compatible command exports | Preserve all entry-specific confirmation, serialized plan/context and stopped-result rules; [CLI usage](../src/commands/eval-cli-usage.test.ts), [component](../src/harness/eval-component.test.ts), [self-test](../src/commands/bench-self-test.test.ts) |
-| B4 / A4 | bench command templates, Git capture, draft coordination and apply logic | Reuse existing source/draft/manage implementations behind prepare/apply service | No hidden drafting call; collision, provenance, backup/rollback and F7 schema rules preserved; [source](../src/commands/bench-source.test.ts), [draft](../src/commands/bench-draft.test.ts), [management](../src/commands/bench-manage.test.ts) |
-| B5 / A5 | Only top-level runtime cycles/core direction are checked today | Register every active module, classify runtime/type edges, allow only narrow temporary exceptions | Migrated scope has no remaining exceptions; [architecture regression tests](../scripts/check-architecture.test.mjs) must gain the proposed counterexamples |
-| B6 / D2/D3 | D3 registry/impact/CI gate and D2 content consolidation delivered; F5 whole-phase/F3 acceptance pending | Preserve canonical topics/anchors and consume the D1 registry in real checks | New/unregistered docs, authority conflicts and unsafe aliases rejected; historical pages stay historical |
+| B4 / A4 | Delivered: neutral authoring, source capture, templates and explicit drafting | Reuse existing source/draft/manage implementations behind prepare/apply service | No hidden drafting call; collision, provenance, backup/rollback and F7 schema rules preserved; [source](../src/commands/bench-source.test.ts), [draft](../src/commands/bench-draft.test.ts), [management](../src/commands/bench-manage.test.ts) |
+| B5 / A5 | Delivered: 107 module registrations, runtime/type/effect checks | The real policy runs through the existing offline test/CI surface | Migrated scope has zero exceptions; the one unmigrated legacy edge is listed below and fails when stale |
+| B6 / D2/D3 | D3 registry/impact/CI gate and D2 content consolidation delivered; F5/F3 accepted on their recorded source CI | Preserve canonical topics/anchors and consume the D1 registry in real checks | New/unregistered docs, authority conflicts and unsafe aliases rejected; historical pages stay historical |
 
-A3 follows F7 local implementation and F5 content synchronization. A4/A5 remain
-open as defined in the [dependency plan](plans/2026-10-22-documentation-governance-and-architecture.md#与-f1f8-的衔接与依赖).
-F3 remote CI and F5 whole-phase acceptance remain pending; source extraction
-does not complete those tasks.
+A3/A4 followed F7 local delivery and F5 synchronization. F3/F5 acceptance is
+recorded in the measurement plan; new changes do not inherit old CI results.
+V1/F8 completion and current inputs belong to the [dependency plan](plans/2026-10-22-documentation-governance-and-architecture.md#与-f1f8-的衔接与依赖).
 
 ## Enforcement today
 
-[check-architecture](../scripts/check-architecture.mjs) reads emitted JavaScript
-and rejects runtime cycles plus `harness/` or `install/` imports of `commands/`,
-including literal dynamic imports. It does not enforce this target role table,
-classify all source type edges, or prove side-effect freedom. A passing result
-supports only those existing rules. A2 adds a focused regression proving the shared
-mechanisms, controls and audits cannot transitively load runner/judge/trigger;
-A3 extends this regression to planning and saved-read services. This is not the A5 role/type/effect gate. Source/import evidence is reviewed separately.
+[check-architecture](../scripts/check-architecture.mjs) checks emitted runtime
+imports/re-exports/literal dynamic imports and cycles, plus the separate source
+type graph. Unknown/overlapping roles, unresolved modules and stale exceptions
+fail. Nonliteral imports require an exact declared target set verified from
+literals, immutable local aliases or conditional branches; unbounded expressions
+fail even with a declaration. Type-only cycles are not runtime cycles.
 
-[ADR 0002](decisions/0002-layering-and-shared-execution.md) records the proposed
+Pure-role checks cover Node I/O imports and direct environment/clock/random
+reads; application checks cover console output, process exit and interactive
+module dependencies. The AST follows immutable local aliases, destructuring,
+constant member access and imported aliases with lexical shadowing. It ignores
+strings/comments, including generated verifier programs, and permits explicit
+date parsing. Computed reflection, arbitrary callback effects, mutation-based
+aliases and arbitrary interprocedural behavior are outside this static check;
+it is not a proof of universal effect freedom.
+
+The one legacy runtime exception is `harness/eval-contract.js -> agents.js`:
+the mixed request parser validates Agent IDs through the matrix reader. Owner:
+`evaluation`; removal: extract matrix-only Agent-ID validation. This
+module no longer imports a concrete executor merely for a timeout constant.
+Saved Agent/trigger metadata parsing has separate pure owners, so audits do not
+need live discovery for those operations. No exception originates in the
+registered A2–A4 migrated modules; new edges cannot borrow the legacy entry.
+Exceptions require exact from/to/kind/reason/owner/removal task and fail when
+unused or attached to a migrated module.
+
+`npm test` builds first and executes the actual policy; full CI already invokes
+that test surface. Keep the focused transitive regression preventing shared
+mechanisms, controls, audits, planners and saved readers from loading experiment
+orchestration. Build before invoking the standalone checker; frozen runtimes
+and the private lab are outside its inventory.
+
+[ADR 0002](decisions/0002-layering-and-shared-execution.md) records the accepted
 tradeoff and alternatives. The [quality scenarios](architecture-runtime.md#quality-scenarios)
 connect each architectural requirement to a verification location.

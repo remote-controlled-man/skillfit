@@ -1,9 +1,9 @@
 # Architecture interfaces
 
-**Current** below means an existing source interface. **Proposed** means a
-remaining A4 target, not a callable API or installed npm feature. Public command,
+**Current** below means an existing source interface, including unpublished
+A4 authoring changes; it does not imply an installed npm feature. Public command,
 request/result, statistical and evidence semantics remain in their existing
-canonical contracts. A2/A3 change internal ownership without new CLI flags or persistent fields; current source is not proof of a released package.
+canonical contracts. A2–A4 change internal ownership without new CLI flags or persistent fields; current source is not proof of a released package.
 
 ## Current entry contracts
 
@@ -14,7 +14,7 @@ canonical contracts. A2/A3 change internal ownership without new CLI flags or pe
 | Calibration | `prepareCalibration` / `prepareBenchCalibration` → `executeCalibration` after shared offline gates | Separate typed plan with `planSha256`, not paired plan's `sha256`; JSON execution requires a preview digest/run group. Human entry can omit a supplied digest and still rechecks its prepared plan |
 | Bench self-test | `prepareBenchSelfTest` → fixed controls → application `runEvaluation` for each paired suite | JSON execution requires group/digest; human execution uses existing confirmation unless `yes`. Context binds suite/control digest and stop strategy; model calls remain zero |
 | Saved reports | `readEvaluationReport` / `reportEvalComponent` re-export application `readEvaluation` and its mode-specific audit/read | JSON/Markdown interpret the same saved evidence. Ordinary reading calls no model; explicit replay can execute retained local verifier commands |
-| Bench authoring | Existing init/add/source/draft/manage functions | Keep each command's existing preview/write/confirmation contract; explicit draft/decompose has a separate call budget and is not a hidden prepare step |
+| Bench authoring | init/add/edit/remove adapters → prepare; explicit draft when requested; apply after the entry authorization | Keep each command's existing preview/write/confirmation contract; explicit draft/decompose has a separate call budget and is not a hidden prepare step |
 
 Sources: [CLI](../src/cli.ts), [eval CLI](../src/commands/eval-cli.ts),
 [component](../src/commands/eval-component.ts), [calibration](../src/commands/bench-calibration.ts),
@@ -62,10 +62,11 @@ for these operations; this does not create a public SDK.
 
 <a id="target-application-interfaces-proposed"></a>
 
-## Application interfaces and remaining target
+<a id="application-interfaces-and-remaining-target"></a>
 
-A3 implements the evaluation/read operations below. Only bench authoring
-prepare/apply remains proposed for A4. These internal interfaces are not a public
+## Application interfaces
+
+A3/A4 implement the evaluation/read and authoring operations below. These internal interfaces are not a public
 SDK or new serialized schema. Old command paths/signatures delegate to the same
 implementation.
 
@@ -75,8 +76,9 @@ implementation.
 | Current `buildEvalPlan` | Resolved data + explicit implementation digest + context → existing reviewed plan/preview shape | Deterministic construction; no filesystem, clock, environment, console or process exit. Context retains request/policy/self-test bindings |
 | Current `executeEvalPlan` | Rechecked plan + resolved input + executor/session dependencies → existing mode-specific result or stopped failure | Recheck content/environment/implementation/context, run required gates, create fresh session and dispatch. Does not choose a new task subset or bypass confirmation |
 | Current `readEvaluation` | Saved path + existing report options → current report/assessment | Parse/audit/assess without model invocation; explicit replay uses retained local verification. Command renderer only adapts the returned result |
-| Proposed `prepareBenchChange` | Existing authoring options + explicit source dependencies → proposed writes/source fingerprints/diagnostics | Default preparation is read-only. Drafting stays an explicit separate bounded operation |
-| Proposed `applyBenchChange` | Approved prepared change + write dependencies → existing authoring result | Recheck source/target/collision, apply current validation and applicable rollback; new artifacts have no old content to back up |
+| Current `prepareBenchChange` | Discriminated init/add/edit/remove request + optional clock dependency → writes/source and target fingerprints, preview/confirmation information | Read-only preparation; no rendering, confirmation, verifier or model call. Private transaction bytes are separate from public previews |
+| Current `draftBenchChange` | Prepared decompose request + output callback → one bounded draft with retained attempts/gates | Explicitly called after entry authorization; failed attempts keep cost/identity/summary, with no retry |
+| Current `applyBenchChange` | Approved prepared change → existing authoring result | Recheck source/target/collision inside transaction finalization, apply validation and rollback; no UI. A drafted request cannot apply before its separate draft step completes |
 
 Current owners are [eval planning](../src/harness/eval-planning.ts),
 [execution/application service](../src/harness/eval-service.ts),
@@ -95,8 +97,7 @@ baseline plan: `resolveCalibrationInputs` → pure `buildCalibrationPlan` →
 `prepareCalibration`/`executeCalibration`. Its wire uses `planSha256` and preserves
 baseline ordering. Self-test keeps controls/confirmation in the entry adapter,
 while each suite calls the application interface. Case preflight and its error
-class now live in harness with same-instance legacy re-exports. Authoring's
-proposed location remains `harness/bench-authoring.ts`; A4 is unimplemented.
+class now live in harness with same-instance legacy re-exports. [Authoring](../src/harness/bench-authoring.ts) owns preparation/application; source/draft/template implementations live below the adapters and preserve old paths. Session DTOs live in `types.ts`, and saved environment/trigger parsers have pure owners; old exports remain available.
 
 The existing plain/JSON/request confirmation differences remain intact. A
 stronger universal confirmation rule would change public behavior and needs a
@@ -115,9 +116,8 @@ entry check today.
 | Move installed or portable package | Include new runtime dependencies and compatibility exports; the installed CLI uses its shipped implementation, and the portable standalone reproducer uses its retained implementation, without source checkout |
 | New mode or entry is introduced | Keep matrix/adapter, plan, session, report/schema and checks coherent; don't create a second planner, parser or verdict policy |
 
-A3 follows A2, F7 local delivery and F5 content synchronization. F3 remote CI
-and the whole F5 acceptance remain independently pending; A4/A5 and V1 remain
-open. The [plan](plans/2026-10-22-documentation-governance-and-architecture.md),
+A3/A4 followed A2, F7 local delivery and F5 synchronization. F3/F5 have
+recorded acceptance; V1/F8 and new-source validation remain separately tracked. The [plan](plans/2026-10-22-documentation-governance-and-architecture.md),
 [ADR 0003](decisions/0003-plan-confirm-execute-separation.md) and
 [quality scenarios](architecture-runtime.md#quality-scenarios) own migration
 order, rationale and verification references respectively.

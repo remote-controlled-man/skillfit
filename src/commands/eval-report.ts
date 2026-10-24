@@ -4,7 +4,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { readEvaluationReport } from './evaluation-report.js';
 import type { EvalReportOptions } from './eval-component.js';
-import { agentEnvironmentReportLines } from '../harness/agent-preflight.js';
+import { agentEnvironmentReportLines } from '../harness/agent-preflight-contract.js';
 import { renderSingleArmReport } from './eval-single-arm-report.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, formatP, formatPp1 } from '../harness/report.js';
 import { renderCostLines } from '../harness/costs.js';

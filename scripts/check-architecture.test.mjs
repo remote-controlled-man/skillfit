@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { posix } from 'node:path';
-import { architectureErrors, compiledModules, runtimeImports } from './check-architecture.mjs';
+import { architectureErrors, compiledModules, runtimeImports, sourceModules, readArchitecturePolicy } from './check-architecture.mjs';
 
 test('runtime edges include static, re-export and literal dynamic imports, excluding text and types', () => {
   assert.deepEqual(runtimeImports(`
@@ -38,7 +38,7 @@ test('active compiled runtime is acyclic and its core does not depend on command
   const files = compiledModules();
   assert.ok(files.has('harness/eval-manifest.js'));
   assert.ok([...files.keys()].every(file => !file.endsWith('.test.js')));
-  assert.deepEqual(architectureErrors(files), []);
+  assert.deepEqual(architectureErrors(files, { sources: sourceModules(), policy: readArchitecturePolicy() }), []);
 });
 
 test('installation transactions cannot depend on command adapters', () => {
@@ -68,5 +68,118 @@ test('shared mechanisms, controls and saved audits do not load experiment orches
       }
     };
     visit(entry, []);
+  }
+});
+
+test('declared dependency roles reject executor-to-runner and source-only command types', () => {
+  const policy = { schemaVersion: 1,
+    roles: { integration: { runtime: ['integration'], type: ['integration'] },
+      execution: { runtime: ['integration', 'execution'], type: ['integration', 'execution'] },
+      entry: { runtime: ['integration', 'execution', 'entry'], type: ['integration', 'execution', 'entry'] } },
+    modules: [{ files: ['harness/executors/cli.js'], role: 'integration' },
+      { files: ['harness/runner.js'], role: 'execution' }, { prefix: 'commands/', role: 'entry' }],
+    exceptions: [], dynamicImports: [] };
+  const files = new Map([['harness/executors/cli.js', "import '../runner.js'"], ['harness/runner.js', ''], ['commands/types.js', '']]);
+  const sources = new Map([['harness/executors/cli.ts', "import type { Options } from '../../commands/types.js'"],
+    ['harness/runner.ts', ''], ['commands/types.ts', '']]);
+  const errors = architectureErrors(files, { policy, sources });
+  assert.ok(errors.some(error => /integration.*execution|executor.*runner/.test(error)), errors.join('\n'));
+  assert.ok(errors.some(error => /type.*commands\/types/.test(error)), errors.join('\n'));
+});
+
+test('effect rules follow immutable aliases and destructuring while respecting lexical shadows', () => {
+  const policy = { schemaVersion: 1,
+    roles: { calculation: { runtime: ['calculation'], type: ['calculation'], effects: 'pure' },
+      application: { runtime: ['calculation'], type: ['calculation'], effects: 'application' } },
+    modules: [{ prefix: 'calc/', role: 'calculation' }, { prefix: 'app/', role: 'application' }], exceptions: [], dynamicImports: [] };
+  const files = new Map([
+    ['calc/env.js', 'const { env: settings } = process; export const mode = settings.MODE;'],
+    ['calc/time.js', 'const { now: clock } = Date; export const value = clock();'],
+    ['calc/io.js', "import { readFileSync as read } from 'node:fs'; read('x');"],
+    ['app/exit.js', 'const p = globalThis.process; const stop = p["exit"]; stop(1);'],
+    ['app/console.js', "import { log as print } from 'node:console'; print('hidden');"],
+  ]);
+  const errors = architectureErrors(files, { policy });
+  for (const name of files.keys()) assert.ok(errors.some(e => e.includes(name) && /effect|I\/O/.test(e)), `${name}: ${errors}`);
+  assert.deepEqual(architectureErrors(new Map([
+    ['calc/legal.js', 'export function parse(process, Date) { return process.env + Date.now(); } const text = "process.env console.log Math.random()";'],
+    ['app/legal.js', 'export function view(console) { console.log("user supplied renderer"); }'],
+  ]), { policy }), []);
+});
+
+test('computed imports need a declared, statically finite set which still obeys roles', () => {
+  const policy = { schemaVersion: 1, roles: { core: { runtime: ['core'], type: ['core'] } },
+    modules: [{ prefix: 'core/', role: 'core' }], exceptions: [], dynamicImports: [] };
+  const files = new Map([['core/a.js', "const target = choose ? './b.js' : './c.js'; await import(target);"], ['core/b.js', ''], ['core/c.js', '']]);
+  assert.ok(architectureErrors(files, { policy }).some(e => /dynamic import.*declar/i.test(e)));
+  const declared = { ...policy, dynamicImports: [{ from: 'core/a.js', expression: 'target', targets: ['./b.js', './c.js'] }] };
+  assert.deepEqual(architectureErrors(files, { policy: declared }), []);
+  files.set('core/a.js', 'export async function load(target) { return import(target); }');
+  assert.ok(architectureErrors(files, { policy: declared }).some(e => /finite/i.test(e)));
+});
+
+test('narrow legacy exceptions expire and cannot cover a migrated module', () => {
+  const files = new Map([['legacy/a.js', "import '../app/b.js'"], ['app/b.js', '']]);
+  const policy = { schemaVersion: 1, roles: { low: { runtime: ['low'], type: ['low'] }, high: { runtime: ['low', 'high'], type: ['low', 'high'] } },
+    modules: [{ prefix: 'legacy/', role: 'low' }, { prefix: 'app/', role: 'high' }], dynamicImports: [],
+    exceptions: [{ from: 'legacy/a.js', to: 'app/b.js', kind: 'runtime', reason: 'Existing mixed parser; split before removing', owner: 'development', removalTask: 'split-legacy-parser' }] };
+  assert.deepEqual(architectureErrors(files, { policy }), []);
+  files.set('legacy/a.js', '');
+  assert.ok(architectureErrors(files, { policy }).some(e => /stale exception/i.test(e)));
+  files.set('legacy/a.js', "import '../app/b.js'");
+  assert.ok(architectureErrors(files, { policy: { ...policy, migratedFiles: ['legacy/a.js'] } }).some(e => /migrated.*exception|exception.*migrated/i.test(e)));
+  assert.ok(architectureErrors(files, { policy: { ...policy, exceptions: [{ ...policy.exceptions[0], from: 'legacy/' }] } }).some(e => /invalid exception/i.test(e)));
+});
+
+test('identically named dynamic import expressions keep their own lexical scopes', () => {
+  const policy = { schemaVersion: 1, roles: { core: { runtime: ['core'], type: ['core'] } },
+    modules: [{ prefix: 'core/', role: 'core' }], exceptions: [],
+    dynamicImports: [{ from: 'core/a.js', expression: 'target', targets: ['./b.js'] }] };
+  const files = new Map([['core/a.js', "async function unsafe(target) { await import(target); } const target = './b.js'; await import(target);"], ['core/b.js', '']]);
+  assert.ok(architectureErrors(files, { policy }).some(e => /verified finite/.test(e)));
+});
+
+test('registration is complete and unambiguous; type-only cycles are not runtime cycles', () => {
+  const policy = { schemaVersion: 1, roles: { core: { runtime: ['core'], type: ['core'] } },
+    modules: [{ files: ['core/a.js', 'core/b.js'], role: 'core' }], exceptions: [], dynamicImports: [] };
+  const files = new Map([['core/a.js', 'export const a = 1;'], ['core/b.js', 'export const b = 2;']]);
+  const sources = new Map([['core/a.ts', "import type { B } from './b.js'"], ['core/b.ts', "type A = import('./a.js').A"]]);
+  assert.deepEqual(architectureErrors(files, { policy, sources }), []);
+  files.set('core/new.js', '');
+  assert.ok(architectureErrors(files, { policy, sources }).some(e => /core\/new.js.*one known/.test(e)));
+  files.delete('core/new.js');
+  assert.ok(architectureErrors(files, { policy: { ...policy, modules: [...policy.modules, { prefix: 'core/', role: 'core' }] }, sources }).some(e => /found 2/.test(e)));
+});
+
+test('re-exports and literal/template dynamic imports cannot bypass lower-role boundaries', () => {
+  const policy = { schemaVersion: 1, roles: { low: { runtime: ['low'], type: ['low'] }, high: { runtime: ['low', 'high'], type: ['low', 'high'] } },
+    modules: [{ prefix: 'evidence/', role: 'low' }, { prefix: 'execution/', role: 'high' }], exceptions: [], dynamicImports: [] };
+  for (const expression of ["export { run } from '../execution/runner.js'", "await import('../execution/runner.js')", 'await import(`../execution/runner.js`)']) {
+    assert.ok(architectureErrors(new Map([['evidence/read.js', expression], ['execution/runner.js', '']]), { policy }).some(e => /forbidden runtime.*execution\/runner/.test(e)));
+  }
+});
+
+test('pure effect checks allow explicit dates and verifier template text, rejecting clock/random aliases', () => {
+  const policy = { schemaVersion: 1, roles: { pure: { runtime: ['pure'], type: ['pure'], effects: 'pure' } },
+    modules: [{ prefix: 'pure/', role: 'pure' }], exceptions: [], dynamicImports: [] };
+  assert.deepEqual(architectureErrors(new Map([['pure/legal.js', 'export const source = `import fs from "node:fs"; console.log(process.env);`; export const date = new Date("2026-01-01");']]), { policy }), []);
+  for (const source of ['Date(0);', 'const random = Math.random; random();', 'const clock = globalThis.Date; new clock();', 'const { env: vars } = globalThis.process; vars.KEY;', "import { randomUUID as id } from 'node:crypto'; id();"]) {
+    assert.ok(architectureErrors(new Map([['pure/bad.js', source]]), { policy }).some(e => /effect/.test(e)), source);
+  }
+});
+
+test('malformed policy rows fail with actionable errors rather than throwing', () => {
+  const files = new Map([['a.js', '']]);
+  const valid = { schemaVersion: 1, roles: { core: { runtime: ['core'], type: ['core'] } }, modules: [{ files: ['a.js'], role: 'core' }], exceptions: [], dynamicImports: [] };
+  for (const policy of [{ ...valid, roles: { core: null } }, { ...valid, modules: [null] }, { ...valid, exceptions: [null] }, { ...valid, dynamicImports: [null] }]) {
+    assert.ok(architectureErrors(files, { policy }).length > 0);
+  }
+});
+
+test('measurement execution and application cannot reach the user-configuration transaction', () => {
+  const policy = readArchitecturePolicy();
+  for (const entry of ['harness/runner.js', 'harness/bench-authoring.js']) {
+    const files = compiledModules(); files.set(entry, files.get(entry) + "\nimport '../install/transaction.js';\n");
+    assert.ok(architectureErrors(files, { policy }).some(e => e.includes(entry) && /forbidden runtime.*install\/transaction/.test(e)));
   }
 });

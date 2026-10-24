@@ -1,6 +1,6 @@
 import { wilson95 } from './stats.js';
 import type { ModelIdentity } from './model-identity.js';
-import type { TriggerDetection, TriggerEvidence } from './trigger-detection.js';
+import type { TriggerDetection, TriggerEvidence } from './trigger-contract.js';
 import type { ExecutionTiming } from './execution-timing.js';
 import type { VerifierCheck } from './verifier-summary.js';
 import type { TokenUsage } from './types.js';

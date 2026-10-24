@@ -8,23 +8,9 @@ import type { Bench, EvaluationTarget } from './types.js';
 import { runOfflineBenchCheck } from './bench-check.js';
 import type { BenchDiagnostic } from './bench-diagnostics.js';
 
-export const CASE_PREFLIGHT_POLICY = { schemaVersion: 1, scope: 'offline-case-integrity', required: true } as const;
-
-export interface CaseDiagnostic extends Omit<BenchDiagnostic, 'code' | 'status'> {
-  code: BenchDiagnostic['code'] | 'LIVE_DIFFICULTY' | 'INPUT_CHANGED' | 'CHECK_ERROR';
-  status: BenchDiagnostic['status'] | 'UNKNOWN';
-}
-
-export interface CasePreflight {
-  schemaVersion: 1;
-  kind: 'skillfit.eval-preflight';
-  scope: 'offline-case-integrity';
-  status: 'ready' | 'blocked';
-  bench: { dir: string; sha256: string; taskIds: string[] };
-  checks: CaseDiagnostic[];
-  summary: { failures: number; warnings: number; unknown: number; passed: number; info: number };
-  cost: { modelCalls: 0; durationMs: number };
-}
+import { CASE_PREFLIGHT_POLICY, type CaseDiagnostic, type CasePreflight } from './eval-preflight-error.js';
+export { CASE_PREFLIGHT_POLICY } from './eval-preflight-error.js';
+export type { CaseDiagnostic, CasePreflight } from './eval-preflight-error.js';
 
 function globalCheck(code: CaseDiagnostic['code'], status: CaseDiagnostic['status'], message: string): CaseDiagnostic {
   return { code, status, message, taskId: null, location: { path: 'bench.json', field: null },

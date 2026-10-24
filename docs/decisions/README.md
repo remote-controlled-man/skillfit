@@ -10,16 +10,15 @@ for authorized work, dependencies and progress.
 
 | ID | Decision | Status | Delivery relationship |
 | --- | --- | --- | --- |
-| 0001 | [Document authority and historical boundaries](0001-document-authority-and-history.md) | proposed | D1 provides the existing inventory; D2/D3 own migration and continuous enforcement |
-| 0002 | [Layering and shared execution mechanisms](0002-layering-and-shared-execution.md) | proposed | A2 shared extraction delivered; A4/A5 authoring and general enforcement pending |
-| 0003 | [Plan, confirm and execute separation](0003-plan-confirm-execute-separation.md) | proposed | A3 evaluation/read delivery recorded; A4 authoring prepare/apply remains pending |
+| 0001 | [Document authority and historical boundaries](0001-document-authority-and-history.md) | accepted | D1 inventory and D2/D3 migration/continuous enforcement delivered |
+| 0002 | [Layering and shared execution mechanisms](0002-layering-and-shared-execution.md) | accepted | A2 extraction and A4/A5 authoring/runtime/type/effect enforcement delivered; one owned legacy edge retained |
+| 0003 | [Plan, confirm and execute separation](0003-plan-confirm-execute-separation.md) | accepted | A3 evaluation/read and A4 authoring prepare/draft/apply delivered |
 
-These records were written as A1 design deliverables on 2026-10-22. Proposed
-status applies to the complete design decision: it does not revoke existing
-repository safeguards or the already delivered D1 data/rules. None asserts that
-all target services/layers, A5 gates or remote CI have been implemented. F7 is delivered locally.
-D3 document gates, A2 shared extraction and A3 evaluation/read extraction are delivered in the current source;
-complete decision acceptance remains separate from those partial deliveries.
+These records were proposed as A1 design deliverables on 2026-10-22 and accepted
+on 2026-10-24 after authorized D/A delivery. Acceptance preserves the one owned
+legacy dependency and static-analysis limits; it does not imply an npm release
+or that a local implementation inherits a previous commit's remote CI. V1/F8
+validation and unfinished research remain in their existing plans.
 
 ## Record lifecycle
 

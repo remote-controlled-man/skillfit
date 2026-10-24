@@ -2,7 +2,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
 import { RUN_GROUP_PATTERN } from './constants.js';
-import { DEFAULT_CLI_TIMEOUT_MS } from './executors/cli.js';
+import { DEFAULT_CLI_TIMEOUT_MS } from './constants.js';
 import { sha256Text } from './hash.js';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS } from './report.js';
 import type { PairOrder } from './types.js';

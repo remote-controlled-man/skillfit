@@ -1,6 +1,6 @@
 # ADR 0002: Layering and shared execution mechanisms
 
-**Status:** proposed (complete layering/enforcement decision; A2 extraction delivered). **Date:** 2026-10-22.
+**Status:** accepted. **Date:** 2026-10-22. **Accepted:** 2026-10-24, authorized stage delivery.
 **Scope:** Internal responsibilities and dependency rules; public behavior retained.
 **Supersedes:** none. **Superseded by:** none.
 
@@ -12,7 +12,7 @@ judge mix reusable mechanisms with execution. Commands also hold orchestration
 and authoring responsibilities. Zero cycles alone does not prevent this coupling.
 
 The [current boundary view](../architecture-boundaries.md#current-component-dependencies)
-records actual imports; its target table is not yet an enforced policy. Frozen
+records actual imports; A5 now enforces registered runtime/type/effect rules. Frozen
 replay/source copies are historical inputs, not extra active modules to refactor.
 
 ## Decision
@@ -53,8 +53,10 @@ A2 has extracted process/verifier/workspace, judge protocol and paired/trigger
 summaries; old exports delegate or re-export the same implementation. The judge
 prompt compatibility wrapper retains its random default while audit supplies the
 retained nonce to pure construction. Focused dependency regression covers the
-shared consumers; no general role/type/effect gate is claimed. A4 handles bench authoring; A5 implements
-role/type/effect gates. Use [verifier](../../src/harness/verifier.test.ts),
+shared consumers. A4 implements prepare/draft/apply; A5 enforces complete module
+registration, runtime/type roles, bounded effects and finite dynamic targets.
+Migrated modules retain no exception. One owned legacy matrix-validation edge
+and static-analysis limits are recorded in the [boundary view](../architecture-boundaries.md#enforcement-today). Use [verifier](../../src/harness/verifier.test.ts),
 [timeout](../../src/harness/verifier-timeout.test.ts),
 [interruption](../../src/commands/eval-interruption.test.ts),
 [self-test](../../src/commands/bench-self-test.test.ts),
