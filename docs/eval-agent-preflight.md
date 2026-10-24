@@ -5,6 +5,64 @@ live dispatch. npm 0.10.1 does not include this
 addition. Ordinary paired/trigger eval, Agent requests and baseline calibration
 share the check implementation. This is separate from [offline case integrity](eval-case-preflight.md).
 
+## Current source capability table
+
+Reviewed 2026-10-22 against the [matrix](../src/matrix/agents.json),
+[preflight counter declarations](../src/harness/agent-preflight.ts),
+[CLI reader](../src/harness/executors/cli.ts), [API reader](../src/harness/executors/api.ts)
+and [model-identity reader](../src/harness/model-identity.ts). This table describes
+skillfit's adapters, not the full capabilities of vendor products. The current
+checkout includes unpublished numerical, trigger, model-identity, self-test and
+bench-claim changes; npm 0.13.1 and its immutable
+release record do not attest these additions. Commands pinned to 0.13.1 in the
+onboarding guides retain their released meaning. Build the current checkout to
+exercise the source additions below.
+
+| Executor / delivery modes | Trigger observation | Token/cache reader | Strict five-field spendingBudget | CLI version / public reported model | Verification scope |
+| --- | --- | --- | --- | --- | --- |
+| Codex CLI: paired inject/installed, rules/MCP overlays, calibration, trigger; optional judge/drafter | Literal read command against registered `SKILL.md` paths, not a native Skill event | Per-turn input, cached input, output; uncached input by subtraction; failed-call recovery stays partial | Adapter has the required readers; every actual call still needs complete final usage, including an enabled judge | Matrix `--version` probe during execution preparation; allowlisted configured model only, reported model unrecorded | Current factory, parser, guards and replay exercised offline; PATH presence/fixtures do not attest installed-version flags or login |
+| Kimi Code CLI: same modes | Exact designated `Skill` argument in flat tool-call events | Input/output from matched local session usage; no cached-input partition | Blocked before calls: cachedInput unavailable | Matrix `--version` probe; no confirmed public model reader, reported model unrecorded | Offline factory/parser fixtures; current real CLI/authentication not verified in this remediation |
+| Claude Code CLI: same modes | Exact registered directory/frontmatter Skill identity in content-block events; stream-json entrance connected | No token reader implemented | Blocked before calls: input, cachedInput and output unavailable | Matrix `--version` probe; public assistant `message.model` IDs and source lines retained | Entry point tested with Node-only fake subprocesses, including failures and portable replay; real CLI/authentication unverified |
+| Chat Completions API: paired inject/snapshot; optional judge/drafter | No native trigger or installed/workspace/config-overlay delivery | Response input/output and explicit cached tokens; absent/invalid fields remain unknown | UNKNOWN offline; permitted to start, then missing/partial final counters stop further calls | No CLI version; configured/requested model and response `/model` recorded separately | Injected HTTP responses and offline replay; no provider/network validation |
+
+Trigger is single-arm; calibration is baseline-only. Judges are optional in
+ordinary paired eval, not trigger/calibration or request-component execution.
+Drafting is its own authoring record, not an evaluation report kind. Installed
+and workspace delivery require a CLI executor. Elapsed time is measured by the
+harness for all executors and is not provider billing/compute time.
+CLI version capture covers the selected primary Agent and separate drafter;
+there is no separate judge CLI version probe. A missing/failed probe stays
+unrecorded and never substitutes for a reported model ID.
+
+An absent `spendingBudget` remains allowed. If present, **all five fields are
+mandatory**; there is no duration-only or partially specified budget. Both the
+primary and optional judge must satisfy capability checks. Codex is the only
+current CLI adapter with all required token readers; this does not guarantee
+final coverage in any particular invocation. Replanning without the strict
+budget does not make unknown costs known or authorize spending. See
+[stop rules](eval-planning.md#stop-rules-and-results).
+
+New `modelIdentity` v1 retains configured/requested intent separately from
+reported IDs. Multiple IDs and unknown coverage remain visible per role/call.
+Public response IDs are declarations, not backend attestation or a full subagent
+inventory. The frozen plan's legacy `servedModel: "unrecorded"` is not backfilled;
+portable replay uses saved bytes, never today's CLI/configuration. See
+[model identity contract](metrics.md#public-model-identity-per-invocation) and
+[report fields](evaluation-reports.md).
+All adapters leave sampling unpinned; current requests send no temperature/seed.
+
+## Bench and offline control support
+
+These current-source contracts apply across the adapters above; they do not
+change vendor capability or provide real CLI/authentication attestation. Their
+feature protocols, rather than npm 0.13.1's version string, establish availability.
+
+| Surface | Capability and limit | Authority |
+| --- | --- | --- |
+| Bench schema 1 / explicit schema 2 | Default 1 stays legacy-unrecorded. Schema 2 gates the requested claim across all selected tasks before probes/calls; no automatic task removal or upgrade | [Bench claims and measurementScope 1](bench-claims.md) |
+| Full-pipeline self-test protocol 1 | Fixed mock-only paired inject/installed controls, no Agent/API/judge/drafter calls; activation self-test unsupported; synthetic never eligible | [Self-test controls and replay](bench-self-test.md) |
+| Saved scope | Paired/trigger/calibration reports and portable replay retain frozen declarations; old missing fields stay unrecorded | [Reports](evaluation-reports.md#frozen-measurement-scope-current-source), [portable packages](replay-packages.md) |
+
 ## What is checked
 
 | Code | Result and scope |
@@ -43,7 +101,7 @@ user home is scanned for an unconfigured injected executor.
 
 The current Codex JSON adapter can retain input, cached-input and output counters.
 The current Kimi adapter can recover input/output but not cache partitioning;
-the Claude text adapter does not collect token counters. This describes skillfit's
+the Claude structured adapter does not collect token counters. This describes skillfit's
 implemented readers, not everything the vendor CLI might support. Because all
 five spending lines are required, a known missing token/cache reader blocks that
 budgeted combination before any call. A new plan without these token limits

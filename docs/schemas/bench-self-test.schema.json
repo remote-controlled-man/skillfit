@@ -1,0 +1,565 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Synthetic bench self-test result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "skillfit.bench-self-test"
+    },
+    "status": {
+      "enum": [
+        "planned",
+        "passed",
+        "failed",
+        "not-configured",
+        "interrupted",
+        "error"
+      ]
+    },
+    "synthetic": {
+      "const": true
+    },
+    "harnessModelCalls": {
+      "const": 0
+    },
+    "simulatedExecutorInvocations": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "localDurationMs": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "simulatedUsage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tokens": {
+          "type": "null"
+        },
+        "providerDurationSeconds": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "tokens",
+        "providerDurationSeconds"
+      ]
+    },
+    "supportedModes": {
+      "const": [
+        "inject",
+        "installed"
+      ]
+    },
+    "unsupported": {
+      "const": [
+        "trigger",
+        "rules",
+        "mcp",
+        "judge",
+        "drafting"
+      ]
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "const": "inconclusive"
+        },
+        "eligibleForUpgrade": {
+          "const": false
+        },
+        "automaticUpgrade": {
+          "const": false
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "code": {
+                "const": "SYNTHETIC_SELF_TEST"
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "decision",
+        "eligibleForUpgrade",
+        "automaticUpgrade",
+        "reasons"
+      ]
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": {
+              "const": 1
+            },
+            "kind": {
+              "const": "skillfit.bench-self-test-plan"
+            },
+            "bench": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "dir": {
+                  "type": "string"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "required": [
+                "name",
+                "dir",
+                "sha256"
+              ]
+            },
+            "controls": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              },
+              "required": [
+                "path",
+                "sha256"
+              ]
+            },
+            "outputDir": {
+              "type": "string"
+            },
+            "stopStrategy": {
+              "const": "stop-on-first-unexpected-error-or-mismatch"
+            },
+            "suites": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+                  },
+                  "purpose": {
+                    "enum": [
+                      "benefit",
+                      "harm",
+                      "null",
+                      "error",
+                      "custom"
+                    ]
+                  },
+                  "mode": {
+                    "enum": [
+                      "inject",
+                      "installed"
+                    ]
+                  },
+                  "agent": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "taskIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                  },
+                  "trials": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  },
+                  "arms": {
+                    "type": "object",
+                    "minProperties": 1,
+                    "additionalProperties": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "baseline": {
+                          "$ref": "bench-controls.schema.json#/$defs/action"
+                        },
+                        "treatment": {
+                          "$ref": "bench-controls.schema.json#/$defs/action"
+                        }
+                      },
+                      "required": [
+                        "baseline",
+                        "treatment"
+                      ]
+                    }
+                  },
+                  "expected": {
+                    "$ref": "bench-controls.schema.json#/$defs/expected"
+                  },
+                  "evaluation": {
+                    "type": "object",
+                    "required": [
+                      "schemaVersion",
+                      "kind",
+                      "implementationSha256",
+                      "evaluation",
+                      "sha256",
+                      "selfTest"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "purpose",
+                  "mode",
+                  "agent",
+                  "taskIds",
+                  "trials",
+                  "arms",
+                  "expected",
+                  "evaluation"
+                ],
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "mode": {
+                          "const": "inject"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "agent": {
+                          "type": "null"
+                        }
+                      }
+                    },
+                    "else": {
+                      "properties": {
+                        "agent": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "minItems": 1
+            },
+            "plannedSimulatedExecutorInvocations": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "synthetic": {
+              "const": true
+            },
+            "harnessModelCalls": {
+              "const": 0
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "schemaVersion",
+            "kind",
+            "bench",
+            "controls",
+            "outputDir",
+            "stopStrategy",
+            "suites",
+            "plannedSimulatedExecutorInvocations",
+            "synthetic",
+            "harnessModelCalls",
+            "sha256"
+          ]
+        }
+      ]
+    },
+    "bench": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "dir": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "name",
+        "dir",
+        "sha256"
+      ]
+    },
+    "suites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "purpose": {
+            "enum": [
+              "benefit",
+              "harm",
+              "null",
+              "error",
+              "custom"
+            ]
+          },
+          "mode": {
+            "enum": [
+              "inject",
+              "installed"
+            ]
+          },
+          "taskIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "status": {
+            "enum": [
+              "not-run",
+              "passed",
+              "failed",
+              "error",
+              "interrupted"
+            ]
+          },
+          "runDir": {
+            "type": "string"
+          },
+          "observed": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "completed",
+                      "stopped",
+                      "error"
+                    ]
+                  },
+                  "statisticalVerdict": {
+                    "enum": [
+                      "effective",
+                      "ineffective",
+                      "inconclusive",
+                      null
+                    ]
+                  },
+                  "mcnemarP": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "errorCode": {
+                    "enum": [
+                      "SIMULATED_EXECUTOR_FAILURE",
+                      null
+                    ]
+                  },
+                  "tasks": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "bench-controls.schema.json#/$defs/task"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "status",
+                  "statisticalVerdict",
+                  "mcnemarP",
+                  "errorCode",
+                  "tasks"
+                ]
+              }
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evaluation": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "eval-result.schema.json"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "purpose",
+          "mode",
+          "taskIds",
+          "status",
+          "runDir",
+          "observed",
+          "reasons",
+          "evaluation"
+        ]
+      }
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "code",
+            "message"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "status",
+    "synthetic",
+    "harnessModelCalls",
+    "simulatedExecutorInvocations",
+    "localDurationMs",
+    "simulatedUsage",
+    "supportedModes",
+    "unsupported",
+    "acceptance",
+    "plan",
+    "suites",
+    "error"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "passed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "suites": {
+            "minItems": 1,
+            "items": {
+              "properties": {
+                "status": {
+                  "const": "passed"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "error"
+          }
+        }
+      },
+      "then": {},
+      "else": {
+        "properties": {
+          "simulatedExecutorInvocations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "localDurationMs": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  ]
+}

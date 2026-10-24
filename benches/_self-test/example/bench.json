@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "name": "synthetic-self-test-example",
+  "description": "Teaching controls for the evaluation pipeline; never model efficacy evidence.",
+  "tasks": [
+    { "id": "output", "fixture": "fixtures/output", "prompt": "prompts/output.md", "verifier": "node verifiers/output.mjs", "oracle": "node ground-truth/output.mjs" },
+    { "id": "command", "fixture": "fixtures/command", "prompt": "prompts/command.md", "verifierKind": "command", "verifier": "node verifiers/command.mjs", "oracle": "node ground-truth/command.mjs" }
+  ]
+}

@@ -366,6 +366,29 @@ test('explicit efficiency validation accepts stable savings with no observed reg
   assert.ok(assessEvaluation(value, verified).acceptance.reasons.some(r => r.code === 'QUALITY_GAIN_UNPROVEN'));
 });
 
+test('declared saturated efficiency evidence passes cost statistics but synthetic, missing costs and regressions still block adoption', () => {
+  const source = efficientTieManifest(); source.component.synthetic = true;
+  const value = { ...source, measurementScope: { schemaVersion: 1, benchSchemaVersion: 2,
+    taskClaims: source.tasks.map(t => ({ taskId: t.id, claims: ['efficiency'] })), requestedClaim: 'efficiency', assessment: 'supported' } };
+  const result = assessEvaluation(value, verified);
+  assert.ok(result.costs.efficiency!.ci!.hi < -0.1); assert.equal(result.quality.deltaPassRate, 0);
+  assert.equal(result.acceptance.eligibleForUpgrade, false);
+  assert.ok(result.acceptance.reasons.some(r => r.code === 'SYNTHETIC_OR_UNATTESTED_RUN'));
+  const missing = structuredClone(value);
+  const rows = (treatment: boolean): CostObservation[] => Array.from({ length: 5 }, (_, i) => ({
+    executorInvoked: true, passed: true, error: null, durationSeconds: 1, usageStatus: 'final',
+    tokens: treatment && i === 0 ? { input: 70, output: 10 } : { input: treatment ? 70 : 100, cachedInput: 20, output: 10 },
+  }));
+  const incomplete = { baseline: rows(false), treatment: rows(true) };
+  for (const task of missing.tasks) task.costs = summarizeCosts(incomplete, incomplete);
+  const all = { baseline: missing.tasks.flatMap(() => incomplete.baseline), treatment: missing.tasks.flatMap(() => incomplete.treatment) };
+  missing.overall.costs = summarizeCosts(all, all);
+  assert.ok(assessEvaluation(missing, verified).acceptance.reasons.some(r => r.code === 'INCOMPLETE_COSTS'));
+  const regressed = { ...structuredClone(value), tasks: value.tasks.map((t, i) => ({ ...t,
+    facets: i === 0 ? [{ name: 'security check', baselinePassRate: 1, treatmentPassRate: 0, baselineTrials: 5, treatmentTrials: 5 }] : t.facets })) };
+  assert.ok(assessEvaluation(regressed, verified).acceptance.reasons.some(r => r.code === 'OBSERVED_REGRESSION'));
+});
+
 test('efficiency cannot waive predeclaration, independent validation, balanced order or visible regressions', () => {
   const value = efficientTieManifest();
   assert.ok(assessEvaluation(value, verified, parseAcceptancePolicy()).acceptance.reasons.some(r => r.code === 'POLICY_NOT_PREDECLARED'));

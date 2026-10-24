@@ -9,6 +9,11 @@ If you want to know what the numbers mean once you have them, that is
 [docs/metrics.md](metrics.md). This document is the part in between: **how to build a bench whose
 numbers you can trust.**
 
+Current source also supports explicit [bench claims and measurement scope](bench-claims.md).
+`bench init --schema-version 2` creates a quality-declaring starter; schema 2 add/import
+requires repeated `--claim` values. Default schema 1 and existing benches remain unchanged.
+These source interfaces are not advertised as part of the npm 0.13.1 release.
+
 ## Choose a starter
 
 Available in 0.10.0: use `--kind command` for tasks where
@@ -79,7 +84,7 @@ skipping.
 | **Real origin** | The task came from something that actually went wrong | You measure performance on a task nobody does, and the result does not transfer |
 | **Deterministic grader** | Same run directory in, same verdict out — no network, no clock, no randomness | Two runs of the same agent disagree, so any delta is noise |
 | **Winnable** | A known-correct solution passes the grader with every check green | A 0% pass rate reads as "the skill did not help" when it means "the task is impossible" |
-| **Discriminative** | The baseline neither always fails nor always passes, and some tasks should *not* trigger the skill | A saturated task cannot show improvement; a bench with no negative controls cannot show over-triggering |
+| **Discriminative for the chosen endpoint** | Quality lift needs baseline headroom; efficiency needs successes, complete costs and regression checks; activation needs negative controls | Ceiling limits quality lift, not all cost comparisons; a bench without negative labels cannot measure over-triggering |
 
 ---
 
@@ -361,9 +366,18 @@ independent validation or evidence of general benefit.
 
 `bench check` answers "is this bench well-formed". Live `--calibrate` answers "is it the right
 difficulty": each task is banded as **too hard or broken** (baseline pass rate ≤ 10%),
-**discriminative** (in between), or **too easy / saturated** (≥ 90%). Aim for 30–70%. A saturated
-task cannot show improvement no matter how good the skill is; an impossible one cannot show anything
-either, and both arms score zero.
+**discriminative** (in between), or **too easy / saturated** (≥ 90%). These are baseline
+difficulty labels. Aim for 30–70% when seeking quality lift. A saturated task has
+limited observed quality headroom but may support regression or efficiency
+comparisons with complete costs and no observed regression. Calibration has no
+treatment arm and cannot establish cost savings. An all-zero task supplies no
+successes for a per-success cost estimate. See [efficiency policy](metrics.md#explicit-efficiency-acceptance-policy-version-2-since-090).
+
+Ordinary `bench check` mock baseline/treatment markers are informational probes
+at the verifier layer. Current source adds a separate [full-pipeline self-test](bench-self-test.md)
+with declared synthetic answers and expected outcomes; ordinary check probes stay
+informational. Current source supports opt-in [schema 2 claims](bench-claims.md);
+schema 1 remains legacy-unrecorded and no declaration proves measurement validity.
 
 **Why it is not optional.** Difficulty is the one property you cannot get by reading your own bench.
 A task that looks hard to you may be trivial to a current model, and the only way to find out costs
@@ -430,7 +444,7 @@ The failure modes worth knowing before you hit them, with the symptom you will a
 | The agent edits the test suite and passes | The grader runs agent-writable files in place | Compare them against the canonical fixture first (see `feat-slug`) |
 | Two identical runs disagree | A clock, a network call, `Math.random`, or map-iteration order in the grader | Remove it. "Deterministic" is literal |
 | A great result at 3 trials × 5 tasks | Limited evidence for broader claims | Inspect `Observed Δpass CI half-width` alongside the actual interval bounds: it summarizes the bootstrap on these tasks and is not a validated minimum detectable effect. A zero-width Δpass or Δscore interval does not establish zero uncertainty. `effective` needs at least 6 discordant pairs *and* McNemar exact p < 0.05 in the right direction; below 8 tasks × 5 trials (counting completed graded pairs after exclusions) the report labels broader claims indicative |
-| Trigger recall is a perfect 1.00 | Recall in trigger mode is an **upper bound**: only your skill is installed, so nothing competes for the route | Treat it as "did not fail to fire", not as "fires better than the alternative". Marked `(Status: spec)` in `docs/metrics.md` |
+| Trigger recall is a perfect 1.00 | Default trigger runs copy no competitors; `--compete-installed` copies matrix-listed user Skills, with unlisted system Skills/plugins excluded | Report the recorded competition scope, negative-task rate and unknown coverage; a single-arm recall does not show comparative benefit |
 
 ---
 

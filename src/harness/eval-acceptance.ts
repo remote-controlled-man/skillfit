@@ -1,3 +1,4 @@
+import { requestedClaimFor, claimDiagnostics } from './measurement-scope.js';
 import { parseEvalReport } from './eval-manifest.js';
 import { completeCost, COST_METRICS, type CostMetric, type CostObservation, type RunCosts } from './costs.js';
 import { parseAcceptancePolicy, policyHash, record, type AcceptancePolicy, type ComponentMetadata } from './eval-contract.js';
@@ -44,6 +45,8 @@ export function assessEvaluation(value: unknown, audit: EvidenceAudit, override?
   const rejected: AcceptanceReason[] = [], insufficient: AcceptanceReason[] = [];
   const need = (code: string, message: string) => insufficient.push({ code, message });
   const reject = (code: string, message: string) => rejected.push({ code, message });
+  if (report.measurementScope?.requestedClaim === null) need('MEASUREMENT_NOT_APPLICABLE', 'Diagnostic-only synthetic evidence declares no requested adoption claim.');
+  if (report.measurementScope?.benchSchemaVersion === 2 && !report.measurementScope.taskClaims.every(t => t.claims?.includes(requestedClaimFor('paired', policy)!))) need('BENCH_CLAIM_UNSUPPORTED', 'Selected frozen task claims do not support the requested report policy; observed quality numbers do not expand that scope.');
   const tasks = report.tasks.map((task, i) => {
     const item = record((raw.tasks as unknown[])[i], 'task');
     let improvedPairs: number | null = null, regressedPairs: number | null = null;
@@ -117,6 +120,8 @@ export function assessEvaluation(value: unknown, audit: EvidenceAudit, override?
   const decision = rejected.length ? 'reject' as const : insufficient.length ? 'inconclusive' as const : 'accept' as const;
   return {
     schemaVersion: 1 as const, kind: 'skillfit.eval-result' as const,
+    ...(report.measurementScope ? { measurementScope: report.measurementScope } : {}),
+    ...(report.modelIdentities ? { modelIdentities: report.modelIdentities } : {}),
     status: report.experiment?.status ?? 'reported',
     identity: { candidate: report.target, baseline: report.baselineTarget, bench: report.bench, executor: report.executor },
     quality: { statisticalVerdict: report.overall.verdict, verdictReason: report.overall.verdictReason,
@@ -128,6 +133,7 @@ export function assessEvaluation(value: unknown, audit: EvidenceAudit, override?
     acceptance: { decision, eligibleForUpgrade: decision === 'accept', automaticUpgrade: false as const,
       policy, policySha256: policyHash(policy), reasons: [...rejected, ...insufficient],
       scope: 'Advisory eligibility on the declared validation tasks and recorded environment; no general non-regression or future-model guarantee.' },
+    diagnostics: report.tasks.map(t => ({ taskId: t.id, ...claimDiagnostics(t.baseline.trials ? t.baseline.passes / t.baseline.trials : null, report.measurementScope, t.id) })),
     warnings: report.warnings,
   };
 }

@@ -1,3 +1,5 @@
+import { measurementScopeText } from '../harness/measurement-scope.js';
+import { renderModelIdentityLines } from '../harness/model-identity.js';
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { readEvaluationReport } from './evaluation-report.js';
@@ -95,6 +97,7 @@ export function renderEvalMarkdown(report: ReportData): string {
     `# skillfit evaluation: ${escapeMarkdown(report.target.name)}`,
     '',
   ];
+  lines.push(measurementScopeText(report.measurementScope), '');
   if (report.executor.kind === 'mock') {
     lines.push('> **Synthetic harness run.** These numbers do not measure an agent or Skill effect.', '');
   }
@@ -170,6 +173,7 @@ export function renderEvalMarkdown(report: ReportData): string {
       `| Input | ${cell(report.overall.baseline, 'input')} | ${cell(report.overall.treatment, 'input')} |`,
       `| Output | ${cell(report.overall.baseline, 'output')} | ${cell(report.overall.treatment, 'output')} |`);
   }
+  lines.push('', ...renderModelIdentityLines(report.modelIdentities));
   lines.push('', '## Cost accounting', '');
   if (report.overall.costs) lines.push(...renderCostLines(report.overall.costs));
   else lines.push('Cache partitions and all-invocation costs were not recorded in this legacy manifest. Missing usage is unknown; the report does not infer it from prompt size or treat it as zero.');
@@ -190,7 +194,7 @@ export async function runEvalReport(inputPath: string, log: (line: string) => vo
   if (result.manifest) {
     const path = result.manifest.path;
     if (statSync(path).size > MAX_MANIFEST_BYTES) throw new Error(`Evaluation manifest exceeds ${MAX_MANIFEST_BYTES} bytes`);
-    lines.push(renderEvalMarkdown(parseEvalReport(JSON.parse(readFileSync(path, 'utf8')))));
+    lines.push(renderEvalMarkdown({ ...parseEvalReport(JSON.parse(readFileSync(path, 'utf8'))), modelIdentities: result.modelIdentities }));
   } else {
     lines.push(`# skillfit evaluation: ${result.status} run`, '',
       `- State: ${result.status}`,
@@ -201,6 +205,7 @@ export async function runEvalReport(inputPath: string, log: (line: string) => vo
     lines.push('', '## Retained costs', '', ...renderCostLines(result.costs.populations));
     lines.push('', ...renderInvocationCostLines(result.invocationCosts));
   }
+  if (!result.manifest) lines.push('', ...renderModelIdentityLines(result.modelIdentities));
   lines.push('', '## Evidence and acceptance', '',
     `- State: ${result.status}`,
     `- Native evidence: ${result.evidence.verified ? 'verified' : 'unverified'}`,

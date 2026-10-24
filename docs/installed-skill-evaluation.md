@@ -11,7 +11,7 @@ them for its own CLI. Package publication is separate from local evaluation.
 | --- | --- | --- |
 | `inject` (default) | Markdown/YAML/JSON content appended to the task prompt | Does the supplied content help when presented? |
 | `installed` | Complete Skill directory copied into the disposable treatment project | Does native discovery plus the complete Skill help this task? This does not separate a description-catalog hit from a later read of the long body. |
-| `trigger` | The Skill under test alone, in single-arm workspaces | Is that one Skill read on relevant and irrelevant requests? Recall is an upper bound. Codex counts a `SKILL.md` read, not a Skill-invocation event. |
+| `trigger` | One installed arm; target alone by default, or matrix-listed user Skills with `--compete-installed` | Mechanical activation on relevant and irrelevant requests. Default recall is optimistic; unlisted system Skills/plugins are not copied. Codex counts a `SKILL.md` read, not a Skill-invocation event. |
 
 ```sh
 skillfit bench check ./my-bench
@@ -93,6 +93,11 @@ Run the offline NOP/oracle gates and baseline difficulty calibration before a
 predeclared paired study. A saturated baseline is regression evidence, with no
 observed headroom for lift. Add representative tasks before adding repetitions.
 Inspect paired errors, facets, token coverage, activation and uncertainty together.
+A ceiling warning does not discard a task. An explicit efficiency policy can
+compare uncached-input tokens per success with complete costs and no observed
+regression; baseline calibration alone cannot establish savings or equivalence.
+See [current capabilities](eval-agent-preflight.md#current-source-capability-table)
+and [efficiency policy](metrics.md#explicit-efficiency-acceptance-policy-version-2-since-090).
 
 The bundled [Waza behavior diagnostics](../benches/contrib/waza-behavior/README.md)
 demonstrate holds and current/stale evidence checks. They derive from Waza's own

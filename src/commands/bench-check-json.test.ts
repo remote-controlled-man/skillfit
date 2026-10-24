@@ -27,7 +27,13 @@ function cli(cwd: string, args: string[], expectedExit: number, env = process.en
   assert.equal(result.stderr, '', 'JSON commands must not leak human logs to stderr');
   // Parsing the complete stdout also rejects prefixes, trailers, and multiple JSON documents.
   const data = JSON.parse(result.stdout);
-  assert.deepEqual(Object.keys(data).sort(), [...SCHEMA.required].sort(), 'result keys follow the published schema');
+  const expectedKeys = [...SCHEMA.required, ...(data.bench ? ['measurementScope'] : [])];
+  assert.deepEqual(Object.keys(data).sort(), expectedKeys.sort(), 'loaded benches include the new optional scope; failures retain the legacy envelope');
+  if (data.bench) {
+    assert.equal(data.measurementScope.schemaVersion, 1);
+    assert.equal(data.measurementScope.requestedClaim, null);
+    assert.equal(data.measurementScope.assessment, 'not-applicable');
+  }
   assert.equal(data.schemaVersion, 1);
   assert.equal(data.kind, 'skillfit.bench-check');
   assert.equal(data.scope, 'offline-integrity');
@@ -65,6 +71,9 @@ test('bench check JSON preserves human gate outcomes, task identity and input fi
   assert.equal(data.bench.taskCount, 1);
   assert.match(data.bench.sha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(data.bench, report.bench);
+  assert.deepEqual(data.measurementScope, report.measurementScope);
+  assert.equal(data.measurementScope.benchSchemaVersion, 1);
+  assert.deepEqual(data.measurementScope.taskClaims, [{ taskId: 'example-task', claims: null }]);
   assert.deepEqual(data.checks.map((c: { code: string; status: string; message: string }) => [c.code, c.status, c.message]),
     report.checks.map(c => [c.code, c.status, c.message]));
   assert.equal(human.filter(line => line.startsWith('[')).length, data.summary.total);
@@ -161,7 +170,7 @@ test('JSON exposes the actual failing verifier facets after the reference repair
   assert.ok(gate.evidence.checks.some((c: { name: string; pass: boolean }) => c.name === 'negative-numbers' && !c.pass));
   assert.ok(gate.evidence.checks.some((c: { name: string; pass: boolean }) => c.name === 'positive-and-zero' && c.pass));
   const verifier = join(dir, 'verifiers/example-task.mjs');
-  writeFileSync(verifier, readFileSync(verifier, 'utf8').replace('process.exit(passed ? 0 : 1)', 'process.exit(0)'));
+  writeFileSync(verifier, readFileSync(verifier, 'utf8').replace('process.exitCode = passed ? 0 : 1', 'process.exitCode = 0'));
   const inconsistent = cli(cwd, ['bench', 'check', dir, '--json'], 1);
   const lowScore = inconsistent.checks.find((c: { code: string }) => c.code === 'ORACLE');
   assert.equal(lowScore.status, 'FAIL', 'an oracle must pass every named check even when exit code is zero');

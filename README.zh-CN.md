@@ -4,10 +4,10 @@
 
 # skillfit
 
-**Skills 市场告诉你什么最热门，skillfit 告诉你什么真有用。**
+**在自己的任务上测量配置的结果、成本与触发情况。**
 
-在**你的** agent、**你的** 模型、**你的** 任务上实测某个 skill / 规则文件 / MCP 配置到底有没有用——<br/>
-然后只装通过实验的那些。
+为**你的** agent 比较 Skill、规则文件或 MCP 配置与基线的差异——<br/>
+再依据记录的证据及其边界决定启用什么。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
@@ -41,7 +41,15 @@ skillfit 补上缺失的测量层：配对 A/B 实验 + 确定性 verifier + 统
 
 ## 你能得到什么
 
-一次真实运行：skill 已安装但没人提醒时，agent 到底**想不想得起来用它**——
+花费前先选定问题；这些输出支持的结论不同：
+
+| 问题 | 测量 | 边界 |
+| --- | --- | --- |
+| 任务质量是否变化？ | 配对结果、McNemar verdict 与按任务 bootstrap 区间 | `inconclusive` 不证明无效；小样本可能仍无法分辨 |
+| 新版本能否降低成本？ | 预声明效率策略：所有调用的 uncached-input token / 成功任务数 | 需要完整用量、独立验证及无已观察回归；不估算美元，也不证明质量等价 |
+| 是否观察到已安装 Skill 触发？ | 单臂 trigger 召回率、误触发率与未知覆盖 | 不能建立配对质量/成本收益或因果结论 |
+
+下面这次历史 trigger 运行，在 Skill 已安装但未被点名时观察触发：
 
 ```console
 $ node dist/cli.js eval ./skills/code-review --mode trigger --bench code-review --agent kimi-code
@@ -58,7 +66,7 @@ Precision           : 1/1 (100%) [95% CI 21%–100%]
 F1                  : 0.20 (no CI: a harmonic mean of two proportions has no closed-form binomial interval)
 ```
 
-9 个该触发的任务里它只被加载了一次——而且不加载也照样全做对。这种结论，应用市场给不了你。
+9 次相关任务执行只记录到 1 次触发。表中的通过数来自同一已安装组，不是无 Skill 基线；这项单臂观测不能说明加载 Skill 是否改善结果。
 
 <sub>2026-09-22 在 Kimi Code 上针对当时的 4 任务 `code-review` bench 抓取。该 bench 之后新增了第 5 个任务；上面四行指标是用那次运行记录的每任务计数重新渲染的——运行是真实的，格式是当前的。</sub>
 
@@ -101,9 +109,15 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-校验离线执行；`doctor` 只读，两种预览都只展示计划。支持 **Claude Code**、**OpenAI Codex CLI**、**Kimi Code**（[能力矩阵](src/matrix/agents.json)）。
+校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/eval-agent-preflight.md#current-source-capability-table)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
 
-配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/experiment-workflow.md)。
+当前工作树包含尚未发布的测量功能和修正；文档中标为**当前源码**的新增能力需要构建当前工作树。
+
+其中包括[离线自检协议 1](docs/bench-self-test.md)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](docs/bench-claims.md)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益。不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。
+
+上面的 npm 0.13.1 命令保留已发布行为。[能力表](docs/eval-agent-preflight.md#current-source-capability-table)说明适配器支持范围；[测量契约](docs/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
+
+配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。8×5 是规模/采用下限，不是每项 bench 内精确检验判定的起点，也不保证统计功效。sampling 未固定，目前没有经验证的 MDE 规划器。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/experiment-workflow.md)。
 
 ## 创建自己的 case
 
@@ -118,6 +132,8 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 ```
 
 用 `bench add --freeze` 记录失败，或用 `--from-commit` 导入修复。阅读[case 编写指南](docs/bench-authoring.md)、[JSON 校验契约](docs/bench-check-json.md)、[verifier 契约](docs/verifier-contract.md)和[起草记录](docs/bench-drafting.md)。
+
+真实花费前，当前源码构建可以通过 [bench self-test](docs/bench-self-test.md) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。已发布 npm 0.13.1 尚无此入口。
 
 列出、查看 case 或预览修改。`--yes` 会备份并应用通过验证的变更；移除注册仍保留 case 文件。重复 `--task` 选择较小的运行范围：
 
@@ -163,7 +179,7 @@ node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
 
 [组件契约](docs/eval-component.md)定义质量与效率策略；`accept`、`reject`、`inconclusive` 与统计 verdict 分开。采纳需要完整的独立验证，工具不自动升级。
 
-[共享计划](docs/eval-planning.md)说明普通/请求计划、`--json`、任务选择、平衡组序、五项花费停止线、截止时间和计划哈希确认。校准测基线难度，trigger 测发现能力，两者都不能证明配对收益。installed 评测为两组提供相同且固定的 native diff 辅助工具。
+[共享计划](docs/eval-planning.md)说明普通/请求计划、`--json`、任务选择、平衡组序、截止时间和计划哈希确认。`spendingBudget` / `--spending-budget` 整体可选；一旦提供，**五个字段全部必填**。当前 CLI reader 中只有 Codex 具备全部所需 token/cache 计数；Kimi/Claude 会在调用前阻断该预算，API 覆盖在响应前未知。达到任一线后阻止下一次调用；在途调用可能超线，最终用量缺失或仅部分可知时停止后续调用。校准测基线难度，trigger 测发现能力，两者都不能证明配对收益。installed 评测为两组提供相同且固定的 native diff 辅助工具。
 
 ### 测试规则与 MCP 配置
 
@@ -255,14 +271,16 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[七步编写
 
 | Skill | 质量差值 | 输入 token | 结论 |
 |---|---:|---:|---|
-| `diagnosing-bugs` | 回归测试资产 +66.7pp（2/3 次）；任务质量不变 | +11.7% | 有限的历史流程信号 |
+| `diagnosing-bugs` | 回归测试资产 +66.7pp（2/3 次）；任务质量不变 | +11.7% | 有限的历史产物信号 |
 | `code-review` | +3.3pp（不稳定） | +9.1% | 证据不足 |
 | `tdd` | 0.00pp | +9.2% | 无可测增益 |
 | `doubt-driven-development` | 0.00pp | +20.7% | 无可测增益 |
 | `security-and-hardening` | 0.00pp | +27.4% | 无可测增益，成本最高 |
 | 其余 3 个 | 0.00pp | +14.7~17.0% | 无可测增益 |
 
-参见[证据总索引](evidence/README.md)与[当前调试研究](docs/skill-evaluation-evidence.md)，了解各日期报告的范围和可用记录。
+这些是所记录任务上的结果，不是对所有工作流声称的检验。回归测试产物不能证明过程顺序，0.00pp 也不能排除未测量的过程效应。基线饱和限制已观察到的质量提升空间，但完整成本且无已观察回归时，不会自动排除该任务的效率比较价值。
+
+参见[证据总索引](evidence/README.md)与[当前调试研究](docs/skill-evaluation-evidence.md)，了解各日期报告的范围和可用记录。这些作者运行记录不能建立第三方独立真实复现；离线 replay 验证的是已保存观测。
 
 ## 设计原则
 
@@ -279,11 +297,13 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[七步编写
 
 参见[十月交付路线图](docs/growth-roadmap-2026-10.md)、[更新记录](CHANGELOG.md)和[0.13.1 发布记录](docs/releases/0.13.1.md)。
 
-后续工作包括验证 Claude Code trigger 捕获和增加 Agent 适配器。[证据总索引](evidence/README.md)与[调试研究状态](docs/skill-evaluation-evidence.md)保留当前结论的限制。67 个 Skill 的目录和 13 个 Skill 的入门集均未作为集合评测。
+当前适配器与 trigger 的验证边界见[能力表](docs/eval-agent-preflight.md#current-source-capability-table)，实施待办见路线图链接的活动计划。后续工作包括真实环境验证和增加 Agent 适配器。[证据总索引](evidence/README.md)与[调试研究状态](docs/skill-evaluation-evidence.md)保留当前结论的限制。67 个 Skill 的目录和 13 个 Skill 的入门集均未作为集合评测。
 
 ## 贡献
 
 按 [CONTRIBUTING.md](CONTRIBUTING.md) 贡献真实工作 case、可复现证据和矩阵修正。[安全报告](SECURITY.md)有独立渠道。
+
+开发接手时，阅读[文档治理](docs/documentation-governance.md)、[架构入口](docs/architecture.md)和 [ADR 索引](docs/decisions/README.md)。[治理计划](docs/plans/2026-10-22-documentation-governance-and-architecture.md#当前执行状态)维护其迁移进度；[测量计划](docs/plans/2026-10-21-measurement-contract-and-capability-remediation.md#当前执行状态)维护 F1–F8/R1–R4。
 
 ### License
 

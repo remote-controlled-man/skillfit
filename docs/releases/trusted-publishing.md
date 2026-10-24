@@ -171,3 +171,18 @@ pins the repository, source commit, workflow and original run. The initial
 availability deadline failures remain preserved; the original run is still
 failed. This recovery did not repeat the upload. Future reviewed releases can
 use the manual CLI-triggered workflow without a local npm login or publish token.
+
+## Receipt layout and compatibility
+
+New source exports use manifest schema 2 and place machine receipts under
+`docs/releases/records/<version>/`. The version's existing Markdown release page
+links `records/<version>/verification.json`; plan status links the same receipt
+relative to the plan. Failure observations and signatures remain included.
+The importer also accepts prior schema 1 bundles with flat version-prefixed
+files. Existing published records keep their original paths and bytes.
+
+Import preview makes no directories or writes. Explicit import verifies every
+manifest/reference digest, rejects aliases/traversal and refuses existing files
+or a previously imported version marker. Added known grouped receipts can use
+targeted records CI; edits, deletion, executable or unknown paths require full
+CI. Ordinary npm packages omit these source-maintenance receipts.

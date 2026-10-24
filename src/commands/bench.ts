@@ -1,3 +1,4 @@
+import { parseBenchClaims, measurementScope, measurementScopeText, type MeasurementScope } from '../harness/measurement-scope.js';
 import { spawnSync } from 'node:child_process';
 import { inspectBenchIntegrity, copyFixture, runOracleGate } from '../harness/bench-check.js';
 import { CasePreflightFailed } from './eval-preflight-error.js';
@@ -5,10 +6,10 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSyn
 import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
-import { BENCH_SCHEMA_VERSION, loadBench, selectBenchTasks, validateBenchTask } from '../harness/bench.js';
+import { BENCH_SCHEMA_VERSIONS, loadBench, selectBenchTasks, validateBenchTask } from '../harness/bench.js';
 import { resolveBenchDir } from '../harness/bench-location.js';
 import { listFilesRecursive, sha256File, sha256Text } from '../harness/hash.js';
-import { runVerifier, verifierFailure } from '../harness/runner.js';
+import { runVerifier, verifierFailure } from '../harness/verifier.js';
 import { MOCK_MARKER_FILE } from '../harness/constants.js';
 import type { BenchTask, Executor } from '../harness/types.js';
 import { confirm as confirmPrompt } from './confirm.js';
@@ -20,15 +21,16 @@ import { BACKUP_SUFFIX } from './install.js';
 import { withEvaluationInterrupts, throwIfEvaluationInterrupted } from '../harness/interruption.js';
 import type { Check } from './doctor.js';
 import { assertAgentEnvironment, renderAgentEnvironment } from '../harness/agent-preflight.js';
-import { calibrationCasePreflight, executeCalibration, prepareCalibration, type BenchCheckCalibrateOptions } from './bench-calibration.js';
+import { calibrationCasePreflight, executeCalibration, prepareCalibration, type BenchCheckCalibrateOptions } from '../harness/calibration-service.js';
 import { freezeSourceFiles } from './bench-source.js';
 import { BenchDraftSession, type BenchDraftOptions } from './bench-draft.js';
 import { parseVerifierTimeoutSeconds } from '../harness/verifier-timeout.js';
 export { captureSourceFiles } from './bench-source.js';
-export { prepareBenchCalibration } from './bench-calibration.js';
-export type { BenchCheckCalibrateOptions, BenchCalibrationPreview } from './bench-calibration.js';
+export { prepareBenchCalibration } from '../harness/calibration-service.js';
+export type { BenchCheckCalibrateOptions, BenchCalibrationPreview } from '../harness/calibration-service.js';
 
 export interface BenchInitOptions {
+  schemaVersion?: 1 | 2;
   dir?: string;
   kind?: 'output' | 'command';
   cwd?: string;
@@ -99,7 +101,7 @@ try {
 }
 const passed = output === 'skillfit-ok';
 console.log(JSON.stringify({ passed, checks: [{ name: 'exact-answer', pass: passed }] }));
-process.exit(passed ? 0 : 1);
+process.exitCode = passed ? 0 : 1;
 `,
     'ground-truth/oracle-example-task.mjs': `import fs from 'node:fs';
 import path from 'node:path';
@@ -129,7 +131,8 @@ a real task from your own work:
    matters. Keep it deterministic: no network, no clocks, no randomness.
 4. Record the expected answer here in \`ground-truth/\` so future edits stay honest.
 5. Run \`skillfit bench check\`, then calibrate difficulty with a real agent
-   (target: baseline pass rate 30–70% — see docs/metrics.md in the skillfit repo).
+   (quality-improvement target: baseline pass rate 30–70%; efficiency requires
+   paired costs, coverage and regression checks — see docs/metrics.md).
 `,
   };
 }
@@ -139,11 +142,18 @@ export async function runBenchInit(
 ): Promise<{ dir: string; created: string[] } | null> {
   const log = options.log ?? ((msg: string) => console.log(msg));
   const kind = options.kind ?? 'output';
+  const schemaVersion = options.schemaVersion ?? 1;
+  if (!BENCH_SCHEMA_VERSIONS.includes(schemaVersion)) throw new Error('bench init schemaVersion must be 1 or 2.');
   if (kind !== 'output' && kind !== 'command') {
     throw new Error(`Unknown bench kind: ${kind} (expected "output" or "command")`);
   }
   const dir = resolve(options.cwd ?? process.cwd(), options.dir ?? 'skillfit-bench');
   const files = kind === 'command' ? commandTemplateFiles(basename(dir)) : templateFiles(basename(dir));
+  if (schemaVersion === 2) {
+    const manifest = JSON.parse(files['bench.json']!); manifest.schemaVersion = 2;
+    for (const task of manifest.tasks) task.claims = ['quality'];
+    files['bench.json'] = JSON.stringify(manifest, null, 2) + '\n';
+  }
   const created = Object.keys(files);
 
   if (options.dryRun) {
@@ -194,6 +204,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
   let dir = resolve(options.dir ?? '.');
   const checks: BenchDiagnostic[] = [];
   let identity: BenchCheckReport['bench'] = null;
+  let scope: MeasurementScope | undefined;
   const push = (code: BenchCheckCode, status: Check['status'], message: string, task?: BenchTask, evidence?: BenchCheckEvidence): void => {
     throwIfEvaluationInterrupted();
     checks.push(benchDiagnostic(code, status, message, task, evidence));
@@ -206,8 +217,9 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
     bench = selectBenchTasks(loadBench(dir), options.taskIds ?? (options.calibrate ? options.calibrate.taskIds : undefined));
   } catch (error) {
     push('BENCH_LOAD', 'FAIL', `bench does not load: ${(error as Error).message}`);
-    return finish(dir, checks, log, false, identity);
+    return finish(dir, checks, log, false, identity, scope);
   }
+  scope = measurementScope(bench, null); log(measurementScopeText(scope));
   identity = { name: bench.name, sha256: bench.contentSha256, taskCount: bench.tasks.length };
   push('BENCH_LOAD', 'PASS', `bench.json valid (${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…)`);
   const calibration = options.calibrate ? prepareCalibration({ dir, taskIds: options.taskIds, calibrate: options.calibrate }) : null;
@@ -217,13 +229,13 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
       push('CALIBRATION', 'INFO', `calibration executor: ${calibration.plan.executor?.detail ?? calibration.plan.executor?.model ?? 'unavailable'}`);
       push('CALIBRATION', 'INFO', `calibration plan: ${bench.tasks.length} task(s) × ${calibration.plan.trials} baseline run(s), input ${calibration.plan.inputMode}; ${calibration.plan.plannedCalls} calls, ceiling ${calibration.plan.maxCalls}; deadline ${calibration.plan.executorTimeoutSeconds}s; no verifier, oracle or agent started and no run directory created`);
       push('CALIBRATION', 'INFO', `Plan SHA-256: ${calibration.plan.planSha256}; fresh output ${calibration.plan.outputDir}`);
-      return finish(dir, checks, log, true, identity);
+      return finish(dir, checks, log, true, identity, scope);
     }
     try { assertAgentEnvironment(calibration.plan.agentPreflight); }
     catch (error) {
       if (strictCalibration) throw error;
       push('CALIBRATION', 'FAIL', (error as Error).message);
-      return finish(dir, checks, log, true, identity);
+      return finish(dir, checks, log, true, identity, scope);
     }
   }
   const offlineStarted = performance.now();
@@ -247,7 +259,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
     }
   }
 
-  return finish(dir, checks, log, options.calibrate !== false && options.calibrate !== undefined, identity);
+  return finish(dir, checks, log, options.calibrate !== false && options.calibrate !== undefined, identity, scope);
 }
 
 function finish(
@@ -256,6 +268,7 @@ function finish(
   log: (msg: string) => void,
   calibrated = false,
   bench: BenchCheckReport['bench'] = null,
+  scope?: MeasurementScope,
 ): BenchCheckReport {
   const failures = checks.filter((c) => c.status === 'FAIL').length;
   const warnings = checks.filter((c) => c.status === 'WARN').length;
@@ -265,14 +278,16 @@ function finish(
   if (!calibrated) {
     log('Next: calibrate difficulty against a real agent —');
     log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 5`);
-    log('  target: baseline pass rate 30–70%; --calibrate warns outside 10–90% (docs/metrics.md L0).');
+    log('  quality-improvement target: baseline pass rate 30–70%; --calibrate warns outside 10–90% (docs/metrics.md L0).');
+    log('  efficiency needs paired costs, variance, coverage and regression checks; activation needs positive/negative labels and observed detection coverage.');
   }
-  return { dir, bench, checks, failures, warnings };
+  return { dir, bench, ...(scope ? { measurementScope: scope } : {}), checks, failures, warnings };
 }
 
 const TASK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export interface BenchAddOptions extends BenchDraftOptions {
+  claims?: string[];
   benchDir?: string;
   cwd?: string;
   task?: string;
@@ -318,7 +333,7 @@ if (result.error || result.signal || result.status === null) {
     message: result.error ? String(result.error) : 'Verifier command ended without a verdict: ' + (result.signal ?? 'no exit code') }));
   process.exit(2);
 }
-process.exit(result.status);
+process.exitCode = result.status;
 `;
 }
 
@@ -341,7 +356,7 @@ try {
 }
 const passed = output.includes(${JSON.stringify(needle)});
 console.log(JSON.stringify({ passed }));
-process.exit(passed ? 0 : 1);
+process.exitCode = passed ? 0 : 1;
 `;
 }
 
@@ -564,10 +579,13 @@ async function runBenchAddWithinInterrupts(options: BenchAddOptions): Promise<{ 
     tasks?: Array<{ id?: unknown }>;
   } & Record<string, unknown>;
   const tasks = Array.isArray(benchJson.tasks) ? benchJson.tasks : [];
-  if (benchJson.schemaVersion !== BENCH_SCHEMA_VERSION || !Array.isArray(benchJson.tasks)) throw new Error('Invalid bench.json schema or task list; fix the bench before adding a task.');
-  for (const [index, task] of tasks.entries()) validateBenchTask(benchDir, task, index);
+  if (!BENCH_SCHEMA_VERSIONS.includes(benchJson.schemaVersion as 1 | 2) || !Array.isArray(benchJson.tasks)) throw new Error('Invalid bench.json schema or task list; fix the bench before adding a task.');
+  for (const [index, task] of tasks.entries()) validateBenchTask(benchDir, task, index, benchJson.schemaVersion as number);
   if (new Set(tasks.map(task => task.id)).size !== tasks.length) throw new Error('Duplicate task IDs in bench.json; fix the bench before adding a task.');
 
+  if (benchJson.schemaVersion === 1 && options.claims !== undefined) throw new Error('--claim requires explicit bench schema 2; no automatic upgrade.');
+  const claims = benchJson.schemaVersion === 2 ? parseBenchClaims(options.claims) : undefined;
+  if (claims?.includes('activation') && typeof options.shouldTrigger !== 'boolean') throw new Error('activation claims require shouldTrigger.');
   const prepared = options.fromCommit
     ? prepareFromCommit(options, cwd)
     : prepareFreeze(options, cwd);
@@ -592,6 +610,7 @@ async function runBenchAddWithinInterrupts(options: BenchAddOptions): Promise<{ 
     generated[`ground-truth/oracle-${taskId}.mjs`] = prepared.oracleSource ?? '';
   }
   const taskEntry = {
+    ...(claims ? { claims } : {}),
     id: taskId,
     fixture: `fixtures/${taskId}`,
     prompt: `prompts/${taskId}.md`,
@@ -615,6 +634,7 @@ async function runBenchAddWithinInterrupts(options: BenchAddOptions): Promise<{ 
     assertBenchWrites(benchDir, targets);
     if (JSON.stringify(writeState()) !== expectedWrites) throw new Error('Bench outputs changed while preparing the task; nothing was written. Review a fresh plan.');
   };
+  if (claims) log(`Claims: ${claims.join(', ')} (schema 2 design support; not proof of validity or efficacy).`);
   if (draft) {
     log(`Draft plan: 1 call; ceiling ${draft.plan.maxCalls}; executor deadline ${draft.plan.executorTimeoutSeconds}s; no automatic retry.`);
     log(`Draft records: ${draft.dir}`);

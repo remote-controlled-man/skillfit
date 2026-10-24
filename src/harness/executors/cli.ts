@@ -1,3 +1,4 @@
+import { observedModelIdentity } from '../model-identity.js';
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -10,8 +11,10 @@ import { ExecutorFailure, type TokenUsage } from '../types.js';
 import { ExecutionDeadline, type ExecutionClock } from '../execution-timing.js';
 import { evaluationSignal } from '../interruption.js';
 import type { Executor, ExecutorDescriptor, ExecutorResult } from '../types.js';
+import { TriggerObserver, triggerDetection, type StreamWireShape, type DetectionOptions } from '../trigger-detection.js';
 
 export interface CliExecutorOptions {
+  modelIdentitySurface?: 'claude-assistant';
   argv: string[];
   label?: string;
   timeoutMs?: number;
@@ -28,6 +31,10 @@ export interface CliExecutorOptions {
   /** Parse structured output/usage independently of optional Skill detection. */
   streamJson?: boolean;
   triggerToolName?: string;
+  wireShape?: StreamWireShape;
+  triggerSkillKey?: string;
+  triggerSkillIdentities?: string[];
+  triggerSkillPaths?: string[];
   projectTrustConfigArg?: string;
   /** Injectable clocks for offline timing regression tests. */
   clock?: ExecutionClock;
@@ -75,6 +82,7 @@ export function quoteShellArg(arg: string): string {
 }
 
 export class CliExecutor implements Executor {
+  private readonly modelIdentitySurface?: 'claude-assistant';
   private readonly argv: string[];
   private readonly label: string;
   private readonly timeoutMs: number;
@@ -89,6 +97,10 @@ export class CliExecutor implements Executor {
   private readonly triggerSkillName?: string;
   private readonly streamJson: boolean;
   private readonly triggerToolName: string;
+  private readonly wireShape?: StreamWireShape;
+  private readonly triggerSkillKey: string;
+  private readonly triggerSkillIdentities: string[];
+  private readonly triggerSkillPaths: string[];
   private readonly projectTrustConfigArg?: string;
   private readonly clock?: ExecutionClock;
 
@@ -99,7 +111,8 @@ export class CliExecutor implements Executor {
     if (options.promptVia === 'file' && options.promptFile === '') {
       throw new Error('CliExecutor promptVia "file" requires a non-empty promptFile');
     }
-    this.argv = options.argv;
+    this.modelIdentitySurface = options.modelIdentitySurface;
+    this.argv = [...options.argv];
     this.label = options.label ?? options.argv[0] ?? 'cli';
     this.timeoutMs = options.timeoutMs ?? DEFAULT_CLI_TIMEOUT_MS;
     this.shell = options.shell ?? true;
@@ -113,12 +126,16 @@ export class CliExecutor implements Executor {
     this.triggerSkillName = options.triggerSkillName;
     this.streamJson = options.streamJson ?? (options.triggerSkillName !== undefined);
     this.triggerToolName = options.triggerToolName ?? DEFAULT_TRIGGER_TOOL_NAME;
+    this.wireShape = options.wireShape;
+    this.triggerSkillKey = options.triggerSkillKey ?? 'skill';
+    this.triggerSkillIdentities = [...new Set([...(options.triggerSkillName ? [options.triggerSkillName] : []), ...(options.triggerSkillIdentities ?? [])])].sort();
+    this.triggerSkillPaths = [...new Set(options.triggerSkillPaths ?? [])].sort();
     this.projectTrustConfigArg = options.projectTrustConfigArg;
     this.clock = options.clock;
     new ExecutionDeadline(this.timeoutMs, this.clock);
   }
 
-  static forAgent(agentId: string, opts?: { triggerSkillName?: string; trustProjectConfig?: boolean; timeoutMs?: number }): CliExecutor {
+  static forAgent(agentId: string, opts?: { triggerSkillName?: string; triggerSkillIdentities?: string[]; triggerSkillPaths?: string[]; trustProjectConfig?: boolean; timeoutMs?: number }): CliExecutor {
     const agent = getAgent(agentId);
     const headless = agent.headless;
     const projectTrustConfigArg = opts?.trustProjectConfig ? headless.projectTrustConfigArg : undefined;
@@ -129,11 +146,16 @@ export class CliExecutor implements Executor {
     if (opts?.triggerSkillName !== undefined && !streamJson?.argv.length) {
       throw new Error(`Agent "${agent.id}" has no headless streamJson command template; trigger detection is unavailable for it`);
     }
+    if (opts?.triggerSkillName !== undefined && (!streamJson?.wireShape ||
+        (streamJson.wireShape !== 'codex-items' && !agent.sessions?.skillKey))) {
+      throw new Error(`Agent "${agent.id}" needs a matrix wireShape and Skill identity key for trigger detection`);
+    }
     if (!headless || headless.argv.length === 0) {
       throw new Error(`No default headless command template for agent "${agent.id}"`);
     }
     return new CliExecutor({
       argv: streamJson?.argv ?? headless.argv,
+      modelIdentitySurface: streamJson?.modelIdentitySurface,
       streamJson: streamJson !== undefined,
       label: agent.id,
       timeoutMs: opts?.timeoutMs,
@@ -144,6 +166,10 @@ export class CliExecutor implements Executor {
       sessions: agent.sessions,
       triggerSkillName: opts?.triggerSkillName,
       triggerToolName: streamJson?.triggerToolName,
+      wireShape: streamJson?.wireShape,
+      triggerSkillKey: agent.sessions?.skillKey,
+      triggerSkillIdentities: opts?.triggerSkillIdentities,
+      triggerSkillPaths: opts?.triggerSkillPaths ?? (opts?.triggerSkillName ? agent.skills.projectDirs.map(dir => `${dir}/${opts.triggerSkillName}/SKILL.md`) : []),
       projectTrustConfigArg,
     });
   }
@@ -153,8 +179,11 @@ export class CliExecutor implements Executor {
     return {
       kind: 'cli',
       model: 'cli-configured',
+      modelIntent: { schemaVersion: 1, configured: null, requested: null },
+      ...(this.modelIdentitySurface ? { modelIdentitySurface: this.modelIdentitySurface } : {}),
       detail: `${this.label}: ${this.argv.join(' ')}${this.projectTrustConfigArg ? ' (trusts each disposable project for config loading)' : ''}`,
       sampling: null,
+      ...(this.triggerSkillName && this.wireShape ? { triggerDetection: triggerDetection(this.wireShape, this.triggerSkillIdentities, this.triggerSkillPaths) } : {}),
     };
   }
 
@@ -201,10 +230,12 @@ export class CliExecutor implements Executor {
       let overflow = false;
       let stopping = false;
       let drainTimer: NodeJS.Timeout | undefined;
-      const parseResult = (): ExecutorResult => ({
+      const parseResult = (succeeded = false): ExecutorResult => ({
+        modelIdentity: observedModelIdentity(stdout, this.describe().modelIntent, this.modelIdentitySurface),
         ...(this.streamJson
-          ? parseStreamJsonTranscript(stdout, this.triggerToolName, this.triggerSkillName)
-          : { output: stdout }), executionTiming: deadline.snapshot(),
+          ? parseStreamJsonTranscript(stdout, this.triggerSkillName, { wireShape: this.wireShape, toolName: this.triggerToolName,
+            skillKey: this.triggerSkillKey, identities: this.triggerSkillIdentities, skillPaths: this.triggerSkillPaths, workdir }, succeeded)
+          : { output: stdout, rawOutput: stdout }), executionTiming: deadline.snapshot(),
       });
       const failure = (message: string): ExecutorFailure => {
         const result = parseResult();
@@ -296,7 +327,9 @@ export class CliExecutor implements Executor {
           );
           return;
         }
-        const result = parseResult();
+        const streamError = this.streamJson ? terminalStreamError(stdout, true) : null;
+        if (streamError) { rejectPromise(failure(`"${command}" ended with a stream error: ${streamError}`)); return; }
+        const result = parseResult(true);
         // Capability from the matrix, not an agent name: this surface reports no usable token counts
         // in its transcript, so they are read from its session log afterwards. probeKimiSessionUsage
         // is currently the only implementation, which is why the flag is set on exactly one agent.
@@ -325,9 +358,7 @@ export class CliExecutor implements Executor {
           clearTimers();
           deadline.observe();
           killTree(child);
-          rejectPromise(
-            new ExecutorFailure(`Failed to write the prompt to "${command}" on stdin: ${error.message}`, { output: stdout, executionTiming: deadline.snapshot(), usageStatus: 'partial' }),
-          );
+          rejectPromise(failure(`Failed to write the prompt to "${command}" on stdin: ${error.message}`));
         });
         child.stdin.write(prompt, 'utf8');
       }
@@ -337,17 +368,18 @@ export class CliExecutor implements Executor {
 }
 
 /** Public terminal stream failures are more useful than leading startup warnings. */
-function terminalStreamError(stdout: string): string | null {
+function terminalStreamError(stdout: string, terminalOnly = false): string | null {
   let lastError: string | null = null;
   let terminalError: string | null = null;
   for (const line of stdout.split(/\r?\n/)) {
     try {
-      const event = JSON.parse(line) as { type?: string; message?: unknown; error?: { message?: unknown } };
+      const event = JSON.parse(line) as { type?: string; message?: unknown; error?: { message?: unknown }; is_error?: boolean; errors?: unknown; result?: unknown };
       if (event?.type === 'turn.failed' && typeof event.error?.message === 'string') terminalError = event.error.message;
+      else if (event?.type === 'result' && event.is_error === true) terminalError = Array.isArray(event.errors) ? event.errors.join('; ') : typeof event.result === 'string' ? event.result : 'Agent reported a failed result';
       else if (event?.type === 'error' && typeof event.message === 'string') lastError = event.message;
     } catch { /* Other output remains in the retained transcript. */ }
   }
-  return (terminalError ?? lastError)?.trim().slice(0, 500) || null;
+  return (terminalError ?? (terminalOnly ? null : lastError))?.trim().slice(0, 500) || null;
 }
 
 interface StreamJsonTranscript {
@@ -356,21 +388,25 @@ interface StreamJsonTranscript {
   rawOutput?: string;
   tokens?: TokenUsage;
   usageStatus?: 'final' | 'partial';
+  triggerDetection?: ExecutorResult['triggerDetection'];
+  triggerEvidence?: ExecutorResult['triggerEvidence'];
 }
 
 function parseStreamJsonTranscript(
   stdout: string,
-  triggerToolName: string,
   skillName: string | undefined,
+  options: DetectionOptions,
+  succeeded: boolean,
 ): StreamJsonTranscript {
   const textParts: string[] = [];
-  let parsedAny = false;
-  let triggered = false;
+  const observer = skillName === undefined ? null : new TriggerObserver(options);
+  let recognizedAny = false;
+  let finalText: string | undefined;
   let tokens: TokenUsage | undefined;
   let usageTurns = 0;
   const totals = { input: 0, output: 0, cachedInput: 0 };
   const coverage = { input: 0, output: 0, cachedInput: 0 };
-  for (const rawLine of stdout.split('\n')) {
+  for (const [index, rawLine] of stdout.split('\n').entries()) {
     const line = rawLine.trim();
     if (line === '') {
       continue;
@@ -379,39 +415,26 @@ function parseStreamJsonTranscript(
     try {
       event = JSON.parse(line);
     } catch {
+      observer?.malformed();
       continue;
     }
-    parsedAny = true;
     if (typeof event !== 'object' || event === null) {
+      observer?.malformed();
       continue;
     }
     const record = event as Record<string, unknown>;
-    if (record.role === 'assistant') {
+    observer?.event(record, index + 1);
+    if ((!options.wireShape || options.wireShape === 'flat-tool-call') && record.role === 'assistant') {
+      recognizedAny = true;
       if (typeof record.content === 'string' && record.content !== '') {
         textParts.push(record.content);
       }
-      if (Array.isArray(record.tool_calls)) {
-        for (const call of record.tool_calls) {
-          if (typeof call !== 'object' || call === null) {
-            continue;
-          }
-          const fn = (call as Record<string, unknown>).function;
-          if (typeof fn !== 'object' || fn === null) {
-            continue;
-          }
-          const fnRecord = fn as Record<string, unknown>;
-          if (fnRecord.name !== triggerToolName) {
-            continue;
-          }
-          const args = fnRecord.arguments;
-          const argsText = typeof args === 'string' ? args : JSON.stringify(args ?? null);
-          if (skillName !== undefined && argsText.includes(skillName)) {
-            triggered = true;
-          }
-        }
-      }
     }
-    if (record.type === 'assistant') {
+    if ((!options.wireShape || options.wireShape === 'content-blocks') && record.type === 'result' && typeof record.result === 'string') {
+      recognizedAny = true; finalText = record.result;
+    }
+    if ((!options.wireShape || options.wireShape === 'content-blocks') && record.type === 'assistant') {
+      recognizedAny = true;
       const message = record.message;
       const content =
         typeof message === 'object' && message !== null
@@ -430,17 +453,11 @@ function parseStreamJsonTranscript(
           ) {
             textParts.push(blockRecord.text);
           }
-          if (
-            blockRecord.type === 'tool_use' &&
-            blockRecord.name === triggerToolName &&
-            skillName !== undefined && JSON.stringify(blockRecord.input ?? null).includes(skillName)
-          ) {
-            triggered = true;
-          }
         }
       }
     }
-    if (record.type === 'turn.completed') {
+    if ((!options.wireShape || options.wireShape === 'codex-items') && record.type === 'turn.completed') {
+      recognizedAny = true;
       usageTurns++;
       const usage = record.usage;
       if (typeof usage === 'object' && usage !== null) {
@@ -461,7 +478,8 @@ function parseStreamJsonTranscript(
         }
       }
     }
-    if (record.type === 'item.completed' || record.type === 'item.started') {
+    if ((!options.wireShape || options.wireShape === 'codex-items') && (record.type === 'item.completed' || record.type === 'item.started')) {
+      recognizedAny = true;
       const item = record.item;
       if (typeof item === 'object' && item !== null) {
         const itemRecord = item as Record<string, unknown>;
@@ -473,17 +491,8 @@ function parseStreamJsonTranscript(
         ) {
           textParts.push(itemRecord.text);
         }
-        if (itemRecord.type === 'command_execution' && typeof itemRecord.command === 'string') {
-          const normalized = itemRecord.command.replace(/\\+/g, '/');
-          if (skillName !== undefined && normalized.includes(`skills/${skillName}/SKILL.md`)) {
-            triggered = true;
-          }
-        }
       }
     }
-  }
-  if (!parsedAny) {
-    return { output: stdout };
   }
   let usageStatus: 'final' | 'partial' | undefined;
   if (usageTurns > 0) {
@@ -494,5 +503,9 @@ function parseStreamJsonTranscript(
     if (Object.keys(tokens).length === 0) tokens = undefined;
     usageStatus = coverage.input === usageTurns && coverage.output === usageTurns ? 'final' : 'partial';
   }
-  return { output: textParts.join('\n'), ...(skillName === undefined ? {} : { skillTriggered: triggered }), rawOutput: stdout, tokens, usageStatus };
+  const evidence = observer?.finish(succeeded);
+  return { output: recognizedAny ? textParts.length ? textParts.join('\n') : finalText ?? '' : stdout,
+    ...(evidence ? { ...(evidence.status === 'unknown' ? {} : { skillTriggered: evidence.status === 'observed' }), triggerEvidence: evidence,
+      ...(options.wireShape ? { triggerDetection: triggerDetection(options.wireShape, options.identities, options.skillPaths) } : {}) } : {}),
+    rawOutput: stdout, tokens, usageStatus };
 }

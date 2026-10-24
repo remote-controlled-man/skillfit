@@ -17,13 +17,13 @@ export function exportRecords(root, state) {
   assert.ok(state.checks.every(row => row.status === 'passed'));
   const archive = reviewedArchive(root), version = archive.pack.version;
   assert.equal(state.version, version); assert.equal(state.sha256, archive.sha256);
-  const bundle = join(root, 'records'), output = join(bundle, 'docs/releases'); mkdirSync(bundle); mkdirSync(output, { recursive: true });
+  const bundle = join(root, 'records'), recordDirectory = `docs/releases/records/${version}`, output = join(bundle, recordDirectory); mkdirSync(bundle); mkdirSync(output, { recursive: true });
   const files = [], receipts = {};
   const copy = (suffix, source) => {
-    assert.ok(lstatSync(source).isFile()); const name = `${version}-${suffix}`;
+    assert.ok(lstatSync(source).isFile()); const name = suffix;
     copyFileSync(source, join(output, name), constants.COPYFILE_EXCL);
     const row = { path: name, sha256: digest(source) }; receipts[suffix] = row;
-    files.push({ path: `docs/releases/${name}`, sha256: row.sha256 });
+    files.push({ path: `${recordDirectory}/${name}`, sha256: row.sha256 });
   };
   for (const stage of state.checks) copy(stage.id + '.json', join(root, stage.receipt));
   for (const name of ['source-ci', 'preview', 'publication', 'publication-intent', 'registry-metadata', 'attestations', 'published']) copy(name + '.json', join(root, name + '.json'));
@@ -42,37 +42,42 @@ export function exportRecords(root, state) {
     checks: state.checks.map(({ id, status }) => ({ id, status })), receipts,
     uploadCount: 1, modelCalls: 0, agentCliCalls: 0, realUserConfigurationWrites: 0, automaticUpgrade: false,
     scope: 'Package availability, installed behavior, documentation and reproducibility; no new Skill efficacy evidence.' };
-  const file = join(output, `${version}-verification.json`); save(file, verification);
-  files.push({ path: `docs/releases/${version}-verification.json`, sha256: digest(file) });
-  const markdown = acceptanceMarkdown(state) + `\n[Complete receipt](${version}-verification.json). Published: ${published.publishedAt}.\n`;
+  const file = join(output, 'verification.json'); save(file, verification);
+  files.push({ path: `${recordDirectory}/verification.json`, sha256: digest(file) });
+  const markdown = acceptanceMarkdown(state) + `\n[Complete receipt](records/${version}/verification.json). Published: ${published.publishedAt}.\n`;
   // Plan links are relative to docs/plans rather than docs/releases.
-  const planMarkdown = markdown.replace(`](${version}-verification.json)`, `](../releases/${version}-verification.json)`);
-  save(join(bundle, 'manifest.json'), { schemaVersion: 1, version, sourceCommit: state.sourceCommit, files, releaseMarkdown: markdown, planMarkdown });
+  const planMarkdown = markdown.replace(`](records/${version}/verification.json)`, `](../releases/records/${version}/verification.json)`);
+  save(join(bundle, 'manifest.json'), { schemaVersion: 2, version, sourceCommit: state.sourceCommit, files, releaseMarkdown: markdown, planMarkdown });
   return { bundle, files: files.length };
 }
 
 export function importRecords(bundle, repo, { yes = false, plan } = {}) {
-  const manifest = json(join(bundle, 'manifest.json')); assert.equal(manifest.schemaVersion, 1); assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
+  const manifest = json(join(bundle, 'manifest.json')); assert.ok([1, 2].includes(manifest.schemaVersion), 'Unsupported records manifest'); assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   assert.match(manifest.sourceCommit, /^[a-f0-9]{40}$/); assert.ok(manifest.files.length > 0);
   repo = realpathSync(repo); bundle = realpathSync(bundle);
   for (const dir of ['docs', 'docs/releases', ...(plan ? ['docs/plans'] : [])]) assert.ok(lstatSync(join(repo, dir)).isDirectory() && !lstatSync(join(repo, dir)).isSymbolicLink(), 'Import directories must be ordinary directories');
   assert.ok(below(repo, join(repo, 'docs/releases')), 'Keep imported records inside the repository');
-  const version = manifest.version, prefix = `docs/releases/${version}-`, seen = new Set();
+  const version = manifest.version, nested = manifest.schemaVersion === 2, recordDirectory = nested ? `docs/releases/records/${version}` : 'docs/releases';
+  const prefix = `${recordDirectory}/${nested ? '' : version + '-'}`, verificationPath = `${prefix}verification.json`, seen = new Set();
+  for (const directory of nested ? ['docs/releases/records', recordDirectory] : []) {
+    const target = join(repo, directory);
+    if (existsSync(target)) assert.ok(lstatSync(target).isDirectory() && !lstatSync(target).isSymbolicLink() && below(repo, target), 'Import directories must be ordinary directories');
+  }
   for (const file of manifest.files) {
-    assert.ok(file.path.startsWith(prefix) && /^docs\/releases\/\d+\.\d+\.\d+-[a-z0-9][a-z0-9-]*\.(json|txt)$/.test(file.path) && !seen.has(file.path), 'Unsupported or duplicate record path');
+    assert.ok(file.path.startsWith(prefix) && /^[a-z0-9][a-z0-9-]*\.(json|txt)$/.test(file.path.slice(prefix.length)) && !seen.has(file.path), 'Unsupported or duplicate record path');
     seen.add(file.path); const source = join(bundle, file.path);
     assert.ok(lstatSync(source).isFile() && below(bundle, source)); assert.match(file.sha256, /^[a-f0-9]{64}$/);
     assert.equal(digest(source), file.sha256, `Import digest mismatch: ${file.path}`);
     if (file.path.endsWith('.json')) json(source);
     assert.ok(!existsSync(join(repo, file.path)), `Preserve existing receipt: ${file.path}`);
   }
-  const verification = json(join(bundle, `docs/releases/${version}-verification.json`));
-  assert.ok(seen.has(`docs/releases/${version}-verification.json`), 'Complete receipt must be included in the manifest');
+  const verification = json(join(bundle, verificationPath));
+  assert.ok(seen.has(verificationPath), 'Complete receipt must be included in the manifest');
   assert.equal(verification.version, version); assert.equal(verification.sourceCommit, manifest.sourceCommit);
   assert.deepEqual(verification.checks.map(row => row.id), ACCEPTANCE_STAGES); assert.ok(verification.checks.every(row => row.status === 'passed'));
   for (const row of Object.values(verification.receipts)) {
-    assert.ok(seen.has(`docs/releases/${row.path}`), 'Every receipt reference must be included in the manifest');
-    assert.equal(row.path, basename(row.path)); const file = join(bundle, 'docs/releases', row.path);
+    assert.ok(seen.has(`${recordDirectory}/${row.path}`), 'Every receipt reference must be included in the manifest');
+    assert.equal(row.path, basename(row.path)); const file = join(bundle, recordDirectory, row.path);
     assert.ok(lstatSync(file).isFile() && below(bundle, file)); assert.equal(digest(file), row.sha256);
   }
   const marker = `<!-- skillfit-release:${version}:start -->`, documents = [{ path: `docs/releases/${version}.md`, body: manifest.releaseMarkdown }];
@@ -85,6 +90,7 @@ export function importRecords(bundle, repo, { yes = false, plan } = {}) {
     }
   }
   if (yes) {
+    mkdirSync(join(repo, recordDirectory), { recursive: true });
     for (const file of manifest.files) copyFileSync(join(bundle, file.path), join(repo, file.path), constants.COPYFILE_EXCL);
     for (const doc of documents) {
       const file = join(repo, doc.path), block = `${marker}\n${doc.body}\n<!-- skillfit-release:${version}:end -->\n`;

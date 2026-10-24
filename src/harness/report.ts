@@ -1,3 +1,5 @@
+import { measurementScopeText, type MeasurementScope } from './measurement-scope.js';
+import { renderModelIdentityLines } from './model-identity.js';
 import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
 import { CONDITIONS } from './types.js';
 import type { Condition, ExecutorDescriptor, InputMode } from './types.js';
@@ -83,6 +85,8 @@ export interface OverallSummary {
 }
 
 export interface RunManifest {
+  measurementScope?: MeasurementScope;
+  modelIdentities?: import('./model-identity.js').ModelIdentities;
   invocationCosts?: import('./invocation-costs.js').InvocationCosts;
   nativeDiffTool?: import('./native-diff.js').NativeDiffDescriptor;
   schemaVersion: 4;
@@ -184,18 +188,18 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
     const rate = task.conditions.baseline.passRate;
     if (rate >= DISCRIMINATION_BASELINE_THRESHOLD) {
       warnings.push(
-        `Task "${task.id}": baseline pass rate is ${Math.round(rate * 100)}% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power.`,
+        `Task "${task.id}": baseline pass rate is ${Math.round(rate * 100)}% (>= 90%) — this bench task may be too easy and the experiment may lack discriminative power for quality improvement; efficiency eligibility still requires paired cost variance, coverage and regression checks.`,
       );
     }
     if (task.conditions.baseline.trials > 0 && rate <= FLOOR_BASELINE_THRESHOLD) {
       warnings.push(
-        `Task "${task.id}": baseline pass rate is ${Math.round(rate * 100)}% (<= 10%) — this bench task may be too hard or broken, and all-zero arms are uninformative.`,
+        `Task "${task.id}": baseline pass rate is ${Math.round(rate * 100)}% (<= 10%) — this bench task may be too hard or broken for quality improvement, and all-zero quality arms are uninformative; efficiency and activation require separate evidence.`,
       );
     }
     for (const facet of task.facets) {
       if (facet.baselineTrials > 0 && facet.baselinePassRate >= DISCRIMINATION_BASELINE_THRESHOLD) {
         warnings.push(
-          `Task "${task.id}" facet "${facet.name}": baseline check pass rate is ${Math.round(facet.baselinePassRate * 100)}% (>= 90%) — this facet is saturated and measures no lift.`,
+          `Task "${task.id}" facet "${facet.name}": baseline check pass rate is ${Math.round(facet.baselinePassRate * 100)}% (>= 90%) — this facet is saturated and measures no quality lift; it does not disqualify a separately validated efficiency comparison.`,
         );
       }
     }
@@ -204,7 +208,7 @@ export function buildWarnings(manifest: Omit<RunManifest, 'warnings'>): string[]
   const overallRate = manifest.overall.conditions.baseline.passRate;
   if (manifest.tasks.length > 1 && overallRate >= DISCRIMINATION_BASELINE_THRESHOLD) {
     warnings.push(
-      `Overall baseline pass rate is ${Math.round(overallRate * 100)}% (>= 90%) — this bench may be too easy and the experiment may lack discriminative power.`,
+      `Overall baseline pass rate is ${Math.round(overallRate * 100)}% (>= 90%) — this bench may be too easy and the experiment may lack discriminative power for quality improvement; efficiency eligibility still requires paired cost variance, coverage and regression checks.`,
     );
   }
   const discordant =
@@ -225,6 +229,7 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
   const lines: string[] = [];
   lines.push(`Target   : ${manifest.target.name} (${manifest.target.kind}, bundle sha256 ${manifest.target.bundleSha256.slice(0, 12)}…, ${manifest.target.files.length} files)`);
   if (manifest.baselineTarget) lines.push(`Baseline : ${manifest.baselineTarget.name} (previous Skill, bundle sha256 ${manifest.baselineTarget.bundleSha256.slice(0, 12)}…, ${manifest.baselineTarget.files.length} files)`);
+  lines.push(measurementScopeText(manifest.measurementScope));
   lines.push(`Bench    : ${manifest.bench.name} (${manifest.bench.taskCount} task(s), content sha256 ${manifest.bench.contentSha256.slice(0, 12)}…)`);
   lines.push(`Input    : ${manifest.inputMode ?? 'snapshot (legacy manifest; not recorded)'}`);
   if (manifest.skillDelivery) lines.push('Delivery : installed complete Skill ' + (manifest.baselineTarget ? 'in both conditions ' : '') + 'at ' + manifest.skillDelivery.installDir + '/' + manifest.target.name);
@@ -281,6 +286,7 @@ export function renderSummary(manifest: RunManifest, manifestPath: string): stri
     lines.push('');
     lines.push(...tokenLines);
   }
+  lines.push('', ...renderModelIdentityLines(manifest.modelIdentities));
   if (manifest.overall.costs) lines.push('', 'Cost accounting:', ...renderCostLines(manifest.overall.costs));
   const facetLines = renderFacetScores(manifest);
   if (facetLines.length > 0) {

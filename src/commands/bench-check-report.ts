@@ -5,7 +5,7 @@ export type { BenchCheckCode, BenchCheckEvidence, BenchCheckReport, BenchDiagnos
 export function benchCheckJson(report: BenchCheckReport) {
   if (report.checks.some(c => c.code === 'CALIBRATION')) throw new Error('JSON bench checks must be offline; calibration results are not supported.');
   return { schemaVersion: 1, kind: 'skillfit.bench-check', status: report.failures ? 'failed' : 'passed',
-    scope: 'offline-integrity', dir: report.dir, bench: report.bench, checks: report.checks,
+    scope: 'offline-integrity', ...(report.measurementScope ? { measurementScope: report.measurementScope } : {}), dir: report.dir, bench: report.bench, checks: report.checks,
     summary: { total: report.checks.length, passed: report.checks.filter(c => c.status === 'PASS').length,
       warnings: report.warnings, failures: report.failures, info: report.checks.filter(c => c.status === 'INFO').length },
     error: null };

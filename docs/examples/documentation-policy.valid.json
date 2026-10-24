@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "documents": [
+    {
+      "path": "docs/documentation-governance.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "documentation-governance"
+      ],
+      "checks": [
+        "documentation-review"
+      ]
+    }
+  ],
+  "topics": {
+    "documentation-governance": {
+      "canonical": "docs/documentation-governance.md#document-registry",
+      "sources": [
+        "AGENTS.md"
+      ],
+      "schemas": [],
+      "dependents": [],
+      "checks": [
+        "documentation-review"
+      ]
+    }
+  },
+  "exclusions": []
+}

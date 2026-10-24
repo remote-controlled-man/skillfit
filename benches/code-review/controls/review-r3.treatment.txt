@@ -1,0 +1,4 @@
+Findings:
+
+- high: src/pricing.js:25 `orderTotal` no longer throws `AppError` with code `EMPTY_ORDER` for an empty order — SPEC §4 requires it, and the PR also deletes the covering test in `tests/pricing.test.js`, so the regression escapes CI.
+- high: src/pricing.js:13 `effectiveUnitPrice` applies the 5% bulk discount on top of the promotional price, but SPEC §3 says a promotional price replaces the list price and is never itself discounted; only lines without a `promoPrice` are bulk-eligible.

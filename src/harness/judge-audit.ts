@@ -1,6 +1,7 @@
+import { assertModelIdentity } from './model-identity.js';
 import assert from 'node:assert/strict';
 import { record } from './eval-contract.js';
-import { parseJudgeScores, type JudgeCallReceipt } from './judge.js';
+import { parseJudgeScores, type JudgeCallReceipt } from './judge-protocol.js';
 import { sha256Text } from './hash.js';
 
 /** Validate a retained judge receipt without executing a judge or reading current config. */
@@ -33,6 +34,7 @@ export function judgeCallReceipt(value: unknown): JudgeCallReceipt {
     }
     if (typeof tokens.cachedInput === 'number' && typeof tokens.input === 'number') assert.ok(tokens.cachedInput <= tokens.input);
   }
+  assertModelIdentity(r.modelIdentity, typeof r.rawOutput === 'string' ? r.rawOutput : undefined, r.executor);
   const executor = record(r.executor, 'judge executor'); assert.equal(typeof executor.kind, 'string'); assert.equal(typeof executor.model, 'string');
   if (r.error === null) {
     assert.equal(r.executorInvoked, true);

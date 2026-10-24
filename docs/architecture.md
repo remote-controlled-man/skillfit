@@ -4,12 +4,29 @@ skillfit has two main workflows: measure a configuration against task cases, and
 inspect or install agent configuration. CLI adapters choose a workflow; the
 measurement core owns evidence and interpretation. Runtime code uses Node built-ins.
 
+This entry describes the current source checkout, including unpublished changes;
+the package version string alone does not identify the installed behavior. Use
+the [capability table](eval-agent-preflight.md#current-source-capability-table)
+and [versioned release record](releases/0.13.1.md) for that distinction. A3 now separates evaluation planning, execution and saved reads from command adapters; authoring and general role enforcement remain pending.
+
+Read by question:
+
+- [System/module boundaries](architecture-boundaries.md): current import view,
+  proposed dependency roles and owned migration/debt map.
+- [Runtime scenarios](architecture-runtime.md): paired, trigger, calibration,
+  self-test, saved report/replay, failure evidence and package/write boundaries.
+- [Interfaces](architecture-interfaces.md): existing ports and entry-specific
+  confirmation, current resolve/build/execute and proposed authoring services.
+- [Architecture decisions](decisions/README.md): three proposed ADRs, alternatives,
+  consequences and verification; design publication is not implementation.
+
 ## Entry points and modules
 
 | Area | Responsibility | Starting points |
 | --- | --- | --- |
 | CLI | Parse arguments, reject unsupported combinations and select a command | [cli](../src/cli.ts) |
-| Evaluation commands | Prepare/confirm plans, preflight inputs and dispatch paired or single-arm work | [eval CLI](../src/commands/eval-cli.ts), [plans](../src/commands/eval-plan.ts), [component](../src/commands/eval-component.ts) |
+| Evaluation commands | Adapt arguments, presentation and existing confirmation; delegate evaluation to application services | [eval CLI](../src/commands/eval-cli.ts), [plans](../src/commands/eval-plan.ts), [component](../src/commands/eval-component.ts) |
+| Evaluation application | Resolve/build plans, gate/dispatch paired and trigger runs, read/assess saved evidence; calibration has a separate baseline contract | [planning](../src/harness/eval-planning.ts), [service](../src/harness/eval-service.ts), [read service](../src/harness/eval-read-service.ts), [calibration](../src/harness/calibration-service.ts) |
 | Measurement core | Load cases, run disposable workspaces, verify outcomes and retain costs/session evidence | [bench loader](../src/harness/bench.ts), [runner](../src/harness/runner.ts), [session](../src/harness/experiment-session.ts), [trigger](../src/harness/trigger.ts) |
 | Reports and policy | Parse saved observations, audit receipts, render reports and assess adoption separately | [manifest parser](../src/harness/eval-manifest.ts), [report adapter](../src/commands/eval-report.ts), [audit](../src/harness/eval-audit.ts), [acceptance](../src/harness/eval-acceptance.ts) |
 | Case authoring | Scaffold, capture, draft and check cases; manage manifest registrations | [bench commands](../src/commands/bench.ts), [offline checks](../src/harness/bench-check.ts), [diagnostics](../src/harness/bench-diagnostics.ts), [source capture](../src/commands/bench-source.ts), [drafting](../src/commands/bench-draft.ts), [management](../src/commands/bench-manage.ts) |
@@ -17,6 +34,9 @@ measurement core owns evidence and interpretation. Runtime code uses Node built-
 | Configuration | Inspect local configuration; plan and apply selected profiles or portable bundles | [doctor](../src/commands/doctor.ts), [install](../src/commands/install.ts), [setup](../src/commands/setup.ts), [bundle export](../src/commands/bundle.ts) |
 | Installation transaction | Stage ordered file writes, preserve backups, commit, validate and roll back failures | [transaction](../src/install/transaction.ts), [shared constants](../src/install/constants.ts) |
 | MCP discovery | Handshake and inspect the tool catalog without invoking a tool | [probe](../src/mcp/probe.ts) |
+
+These are current responsibility/start-point groups, not proof that every command
+is already thin or every core module belongs to one pure layer.
 
 ## Evaluation lifecycle
 
@@ -31,6 +51,8 @@ difficulty; trigger runs measure Skill discovery. Saved reports audit original
 evidence. Rendering and replay do not make a single-arm run a paired efficacy
 study or turn unknown usage into zero. [Metrics](metrics.md), [planning](eval-planning.md)
 and [cost accounting](eval-costs.md) define these contracts.
+The [runtime view](architecture-runtime.md#evidence-lifecycle-and-failure-states)
+maps actual files/statuses without adding a new persistent state machine.
 
 ## Dependency boundaries
 
@@ -45,10 +67,17 @@ compiled runtime, including literal dynamic imports, for cycles and core-to-comm
 dependencies in both `harness/` and `install/`. This development check uses the existing TypeScript compiler and
 adds no runtime dependency.
 
+That check does not enforce the [target role table](architecture-boundaries.md#target-dependency-roles-proposed)
+or source type/effect constraints. Shared process/verifier/workspace mechanisms
+and pure judge/paired/trigger summaries now serve audits and controls directly;
+old runner exports remain compatible. A2 adds a focused dependency regression,
+extended by A3 for planning/read dependencies. A4 authoring extraction and A5 general enforcement remain pending in the
+[stage plan](plans/2026-10-22-documentation-governance-and-architecture.md).
+
 Offline case gates and their diagnostic model also live in the core. Eval
 preflight calls that shared offline entry directly. The bench command keeps
-loading/selection, calibration preparation, confirmation and CLI summaries;
-calibration reuses the same gate implementation. Generated verifier templates
+loading/selection, confirmation and CLI summaries; the calibration service owns
+its preparation/execution and reuses the same gate implementation. Generated verifier templates
 remain standalone programs rather than importing command modules.
 
 ## Configuration writes and artifact writes

@@ -1,14 +1,17 @@
+import { assertScopeMatches, requestedClaimFor } from './measurement-scope.js';
+import { assertModelIdentity, modelIdentities, type ModelCall } from './model-identity.js';
 import assert from 'node:assert/strict';
 import { cpSync, existsSync, lstatSync, mkdtempSync, readFileSync, readlinkSync, readdirSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { loadBench } from './bench.js';
+import { loadBench, selectBenchTasks } from './bench.js';
 import { summarizeCosts, type CostObservation } from './costs.js';
 import { policyHash, parseAcceptancePolicy, readComponentJson, record } from './eval-contract.js';
 import { costChanges, type EvidenceAudit } from './eval-acceptance.js';
 import { sha256File, sha256Text } from './hash.js';
 import { collectInstalledSkillTarget } from './installed-skill.js';
-import { runVerifier, summarizeJudge } from './runner.js';
+import { runVerifier } from './verifier.js';
+import { summarizeJudge } from './judge-protocol.js';
 import { verdictFromOutput } from './verifier-summary.js';
 import { parseEvalReport } from './eval-manifest.js';
 import { pairConditions, type PairOrder } from './types.js';
@@ -17,7 +20,7 @@ import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } f
 import { verifyInputSnapshot } from './input-snapshot.js';
 import { assertRecordedAgentEnvironment } from './agent-preflight.js';
 import { judgeCallReceipt } from './judge-audit.js';
-import { buildJudgePrompt, judgeOrder, type JudgeCallReceipt, type JudgeResult } from './judge.js';
+import { buildJudgePrompt, judgeOrder, type JudgeCallReceipt, type JudgeResult } from './judge-protocol.js';
 import { summarizeInvocationCosts } from './invocation-costs.js';
 import type { BudgetCallIdentity } from './eval-budget.js';
 
@@ -93,14 +96,23 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     assert.equal(index.planSha256, report.experiment.planSha256);
     assert.deepEqual(readComponentJson(join(root, '_session.json')).value, report.experiment);
     const plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
+    if (plan.modelIdentityProtocol !== undefined) assert.equal(plan.modelIdentityProtocol, 1, 'Unsupported model identity protocol.');
     const inputSnapshot = verifyInputSnapshot(root, plan);
     const details = record(plan.details, 'native plan details');
+    if (raw.measurementScope !== undefined || details.measurementScope !== undefined) {
+      const frozen = inputSnapshot?.roots.get('bench'); assert.ok(frozen, 'measurementScope requires sealed bench inputs.');
+      const selected = selectBenchTasks(loadBench(frozen), report.tasks.map(t => t.id));
+      const policy = raw.component === undefined ? undefined : record(record(raw.component, 'component').policy, 'policy') as { schemaVersion: number };
+      assertScopeMatches(details.measurementScope, selected, requestedClaimFor(String(details.mode), policy, details.stopOnExecutionError === true));
+      assert.deepEqual(raw.measurementScope, details.measurementScope, 'measurementScope differs between manifest and native plan.');
+    }
     if (details.agentPreflight !== undefined) assertRecordedAgentEnvironment(details.agentPreflight);
     if (details.reviewedPlan !== undefined) {
       const reviewed = record(details.reviewedPlan, 'reviewed plan'), { sha256, ...data } = reviewed;
       assert.equal(data.schemaVersion, 1); assert.equal(data.kind, 'skillfit.eval-plan');
       assert.equal(sha256Text(JSON.stringify(data)), sha256, 'Reviewed plan hash changed.');
       const e = record(data.evaluation, 'reviewed evaluation');
+      assert.deepEqual(e.measurementScope, details.measurementScope, 'Reviewed measurementScope differs from native plan.');
       assert.equal(e.mode, details.mode); assert.equal(record(e.target, 'reviewed target').kind, report.target.kind);
       const implementation = (plan.inputs as Record<string, unknown>[]).find(input => input.label === 'implementation');
       assert.equal(implementation?.sha256, data.implementationSha256, 'Reviewed implementation differs from native inputs.');
@@ -155,6 +167,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     const budgetReceipts = new Map<string, CostObservation>();
     const expectedDispatches: { role: 'agent' | 'judge'; identity: BudgetCallIdentity; receipt: CostObservation; promptSha256?: string }[] = [];
     const judgeCalls: JudgeCallReceipt[] = [];
+    const primaryModels: ModelCall[] = [], judgeModels: ModelCall[] = [];
     const rawTasks = raw.tasks as Record<string, unknown>[];
     for (const [taskIndex, task] of report.tasks.entries()) {
       assert.ok(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(task.id), 'Unsafe task id.');
@@ -168,6 +181,11 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
           budgetReceipts.set(`${task.id}/${arm}/trial-${trial}`, r);
           assert.equal(r.condition, arm); assert.equal(r.taskId, task.id); assert.equal(r.trial, trial);
           audit.receipts++; if (r.executorInvoked) invoked++;
+          if (plan.modelIdentityProtocol === 1 && r.executorInvoked) assert.ok(r.modelIdentity !== undefined, 'New model identity receipt is missing.');
+          const transcriptPath = `${task.id}/${arm}/trial-${trial}/_transcript.jsonl`;
+          const transcript = files[transcriptPath] ? readFileSync(member(root, transcriptPath), 'utf8') : undefined;
+          assertModelIdentity(r.modelIdentity, transcript, raw.executor, typeof record(plan.configuredSettings ?? {}, 'settings').model === 'string' ? String(record(plan.configuredSettings, 'settings').model) : null);
+          if (r.executorInvoked) primaryModels.push({ receipt: `${task.id}/${arm}/trial-${trial}/_result.json`, identity: r.modelIdentity as import('./model-identity.js').ModelIdentity ?? null });
           if (details.nativeDiffTool !== undefined && r.executorInvoked) {
             assert.equal(sha256File(member(root, `${task.id}/${arm}/trial-${trial}/${NATIVE_DIFF_PATH}`)), record(details.nativeDiffTool, 'native diff tool').sha256, 'Delivered native diff tool changed.');
           }
@@ -260,6 +278,9 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
               definition.rubric ? readFileSync(join(benchSource, definition.rubric), 'utf8') : null,
               call.firstCondition === 'baseline' ? baseOutput : treatmentOutput,
               call.firstCondition === 'baseline' ? treatmentOutput : baseOutput, nonce), 'Judge prompt differs from the sealed task and anonymized answers.');
+            if (plan.modelIdentityProtocol === 1 && call.executorInvoked) assert.ok(call.modelIdentity !== undefined, 'New judge model identity is missing.');
+            assertModelIdentity(call.modelIdentity, call.rawOutput ?? undefined, call.executor);
+            judgeModels.push({ receipt: path, identity: call.modelIdentity ?? null });
             calls.push(call); judgeCalls.push(call); audit.receipts++;
             expectedDispatches.push({ role: 'judge', identity: { role: 'judge', taskId: task.id, trial, callIndex }, receipt: call, promptSha256: call.promptSha256 });
           }
@@ -315,6 +336,13 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
         assert.deepEqual(events[ordinal * 2 + 1], { phase: 'after-call', ...dispatch.identity, state: after }, 'Budget after-call state differs from receipts.');
       }
     } else assert.equal(files['_budget.jsonl'], undefined, 'Budget events were not declared in the native plan.');
+    if (raw.modelIdentities !== undefined) {
+      const sort = (calls: ModelCall[]) => calls.sort((a, b) => a.receipt.localeCompare(b.receipt));
+      const expected = modelIdentities(sort(primaryModels), sort(judgeModels));
+      const recorded = JSON.parse(JSON.stringify(raw.modelIdentities)) as typeof expected;
+      for (const role of ['primary', 'judge'] as const) if (recorded[role]) sort(recorded[role]!.calls);
+      assert.deepEqual(recorded, expected, 'Model identity summary differs from invocation receipts.');
+    } else assert.ok(plan.modelIdentityProtocol !== 1 || invoked + judgeCalls.filter(call => call.executorInvoked).length === 0, 'New model identity summary is missing.');
     audit.verified = true;
   } catch (error) { audit.reasons.push(error instanceof Error ? error.message : String(error)); audit.policyBound = false; }
   return audit;

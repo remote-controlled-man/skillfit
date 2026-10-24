@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "suites": [
+    {
+      "id": "known-benefit",
+      "purpose": "benefit",
+      "mode": "installed",
+      "agent": "codex",
+      "taskIds": [
+        "command"
+      ],
+      "trials": 6,
+      "arms": {
+        "command": {
+          "baseline": {
+            "kind": "fixture"
+          },
+          "treatment": {
+            "kind": "oracle"
+          }
+        }
+      },
+      "expected": {
+        "status": "completed",
+        "statisticalVerdict": "effective",
+        "tasks": [
+          {
+            "taskId": "command",
+            "baseline": {
+              "graded": 6,
+              "passes": 0,
+              "errors": 0
+            },
+            "treatment": {
+              "graded": 6,
+              "passes": 6,
+              "errors": 0
+            }
+          }
+        ],
+        "mcnemarPRange": {
+          "minInclusive": 0,
+          "maxExclusive": 0.05
+        }
+      }
+    },
+    {
+      "id": "known-harm",
+      "purpose": "harm",
+      "mode": "inject",
+      "agent": null,
+      "taskIds": [
+        "output"
+      ],
+      "trials": 6,
+      "arms": {
+        "output": {
+          "baseline": {
+            "kind": "output-file",
+            "path": "controls/good.txt"
+          },
+          "treatment": {
+            "kind": "output-file",
+            "path": "controls/bad.txt"
+          }
+        }
+      },
+      "expected": {
+        "status": "completed",
+        "statisticalVerdict": "ineffective",
+        "tasks": [
+          {
+            "taskId": "output",
+            "baseline": {
+              "graded": 6,
+              "passes": 6,
+              "errors": 0
+            },
+            "treatment": {
+              "graded": 6,
+              "passes": 0,
+              "errors": 0
+            }
+          }
+        ],
+        "mcnemarPRange": {
+          "minInclusive": 0,
+          "maxExclusive": 0.05
+        }
+      }
+    },
+    {
+      "id": "known-null",
+      "purpose": "null",
+      "mode": "inject",
+      "agent": null,
+      "taskIds": [
+        "output"
+      ],
+      "trials": 1,
+      "arms": {
+        "output": {
+          "baseline": {
+            "kind": "output-file",
+            "path": "controls/good.txt"
+          },
+          "treatment": {
+            "kind": "output-file",
+            "path": "controls/good.txt"
+          }
+        }
+      },
+      "expected": {
+        "status": "completed",
+        "statisticalVerdict": "inconclusive",
+        "tasks": [
+          {
+            "taskId": "output",
+            "baseline": {
+              "graded": 1,
+              "passes": 1,
+              "errors": 0
+            },
+            "treatment": {
+              "graded": 1,
+              "passes": 1,
+              "errors": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "known-error",
+      "purpose": "error",
+      "mode": "inject",
+      "agent": null,
+      "taskIds": [
+        "output"
+      ],
+      "trials": 1,
+      "arms": {
+        "output": {
+          "baseline": {
+            "kind": "error",
+            "code": "SIMULATED_EXECUTOR_FAILURE"
+          },
+          "treatment": {
+            "kind": "output-file",
+            "path": "controls/good.txt"
+          }
+        }
+      },
+      "expected": {
+        "status": "stopped",
+        "statisticalVerdict": null,
+        "tasks": [
+          {
+            "taskId": "output",
+            "baseline": {
+              "graded": 0,
+              "passes": 0,
+              "errors": 1
+            },
+            "treatment": {
+              "graded": 0,
+              "passes": 0,
+              "errors": 0
+            }
+          }
+        ],
+        "errorCode": "SIMULATED_EXECUTOR_FAILURE"
+      }
+    }
+  ]
+}

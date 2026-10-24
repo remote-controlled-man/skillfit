@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit trigger observation protocol version 2",
+  "type": "object",
+  "required": ["schemaVersion", "wireShape", "method", "identityMatch", "identities", "skillPaths"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "wireShape": { "enum": ["flat-tool-call", "content-blocks", "codex-items"] },
+    "method": { "enum": ["skill-tool-argument", "skill-file-read-command"] },
+    "identityMatch": { "const": "exact-registered-identity" },
+    "identities": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "skillPaths": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+  },
+  "allOf": [
+    { "if": { "properties": { "wireShape": { "const": "codex-items" } } }, "then": { "properties": { "method": { "const": "skill-file-read-command" } } }, "else": { "properties": { "method": { "const": "skill-tool-argument" } } } }
+  ],
+  "$defs": {
+    "evidence": {
+      "type": "object", "required": ["status", "complete", "matchedIdentity", "eventLines"],
+      "properties": {
+        "status": { "enum": ["observed", "not-observed", "unknown"] },
+        "complete": { "type": "boolean" },
+        "matchedIdentity": { "type": ["string", "null"] },
+        "eventLines": { "type": "array", "uniqueItems": true, "items": { "type": "integer", "minimum": 1 } }
+      }
+    }
+  }
+}

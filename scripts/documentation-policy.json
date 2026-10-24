@@ -1,0 +1,4548 @@
+{
+  "schemaVersion": 1,
+  "documents": [
+    {
+      "path": "AGENTS.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "development-rules"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    {
+      "path": "benches/contrib/oss-lru-cache/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract"
+      ],
+      "checks": [
+        "bench-contracts",
+        "bench-preflight",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/contrib/oss-mcp-use-utf8/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract"
+      ],
+      "checks": [
+        "bench-contracts",
+        "bench-preflight",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/contrib/oss-minipass/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract"
+      ],
+      "checks": [
+        "bench-contracts",
+        "bench-preflight",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/contrib/oss-normalize-url/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract"
+      ],
+      "checks": [
+        "bench-contracts",
+        "bench-preflight",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/contrib/oss-skill-followup/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract"
+      ],
+      "checks": [
+        "bench-contracts",
+        "bench-preflight",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/contrib/oss-skill-independent/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract"
+      ],
+      "checks": [
+        "bench-contracts",
+        "bench-preflight",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/contrib/oss-skill-validation/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract"
+      ],
+      "checks": [
+        "bench-contracts",
+        "bench-preflight",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/contrib/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "evidence-submission"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-contracts",
+        "bench-authoring",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/contrib/waza-behavior/README.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract"
+      ],
+      "checks": [
+        "bench-contracts",
+        "bench-preflight",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "benches/README.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-authoring",
+        "verifier-contract",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-contracts",
+        "bench-authoring",
+        "verifier-contract"
+      ]
+    },
+    {
+      "path": "CHANGELOG.md",
+      "kind": "record",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "released",
+          "ref": "0.13.1"
+        }
+      ],
+      "topics": [
+        "released-version"
+      ],
+      "checks": [
+        "historical-review",
+        "release-documents"
+      ]
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture",
+        "architecture-decisions",
+        "development-rules",
+        "documentation-governance",
+        "evidence-submission"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    {
+      "path": "docs/architecture-boundaries.md",
+      "kind": "explanation",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture-boundaries",
+        "architecture"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links",
+        "architecture-dependencies"
+      ]
+    },
+    {
+      "path": "docs/architecture-interfaces.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture-interfaces",
+        "architecture"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links",
+        "eval-planning"
+      ]
+    },
+    {
+      "path": "docs/architecture-runtime.md",
+      "kind": "explanation",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture-runtime",
+        "architecture"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links",
+        "eval-planning",
+        "eval-accounting",
+        "eval-reports",
+        "eval-replay"
+      ]
+    },
+    {
+      "path": "docs/architecture.md",
+      "kind": "explanation",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture",
+        "architecture-boundaries",
+        "architecture-runtime",
+        "architecture-interfaces",
+        "architecture-decisions"
+      ],
+      "checks": [
+        "docs-links",
+        "architecture-dependencies",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "docs/archive-delivery.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "released",
+          "ref": "0.13.1"
+        }
+      ],
+      "topics": [
+        "historical-archives",
+        "package-contents"
+      ],
+      "checks": [
+        "docs-links",
+        "archive-integrity",
+        "archive-restoration",
+        "release-documents",
+        "package-contents"
+      ]
+    },
+    {
+      "path": "docs/archive-inventory.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "archive-inventory",
+        "historical-archives"
+      ],
+      "checks": [
+        "docs-links",
+        "archive-integrity",
+        "archive-restoration",
+        "release-documents"
+      ]
+    },
+    {
+      "path": "docs/audit-2026-09-24-triage.md",
+      "kind": "record",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "audit-2026-09-24-triage"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/audit-2026-09-24.md",
+      "kind": "record",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "audit-2026-09-24"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/bench-authoring.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-authoring",
+        "bench-format",
+        "verifier-contract",
+        "bench-diagnostics",
+        "offline-controls",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-authoring",
+        "bench-contracts",
+        "verifier-contract",
+        "bench-preflight",
+        "bench-self-test"
+      ]
+    },
+    {
+      "path": "docs/bench-check-json.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-diagnostics",
+        "verifier-contract",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-preflight",
+        "verifier-contract",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/bench-drafting.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-drafting",
+        "cost-accounting",
+        "bench-authoring"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-authoring",
+        "eval-accounting",
+        "bench-contracts"
+      ]
+    },
+    {
+      "path": "docs/bench-self-test.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "conclusion-limits",
+        "offline-controls",
+        "portable-replay",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-self-test",
+        "eval-replay",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/case-management.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-management",
+        "bench-format",
+        "bench-authoring",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-authoring",
+        "bench-contracts",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/codex-upstream-audit.md",
+      "kind": "record",
+      "lifecycle": "historical",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "codex-portable-source-audit@2026-09-29"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/config-experiments.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "configuration-experiments",
+        "evaluation-planning"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-planning",
+        "input-snapshots"
+      ]
+    },
+    {
+      "path": "docs/decisions/0001-document-authority-and-history.md",
+      "kind": "decision",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture-decisions",
+        "documentation-governance"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    {
+      "path": "docs/decisions/0002-layering-and-shared-execution.md",
+      "kind": "decision",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture-decisions",
+        "architecture-boundaries"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    {
+      "path": "docs/decisions/0003-plan-confirm-execute-separation.md",
+      "kind": "decision",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture-decisions",
+        "architecture-interfaces"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    {
+      "path": "docs/decisions/README.md",
+      "kind": "index",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture-decisions"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    {
+      "path": "docs/documentation-governance.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture-decisions",
+        "conclusion-limits",
+        "documentation-governance",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "docs/eval-agent-preflight.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "agent-capabilities",
+        "trigger-observability",
+        "model-identities",
+        "bench-claims",
+        "offline-controls"
+      ],
+      "checks": [
+        "docs-links",
+        "executor-capabilities",
+        "trigger-observations",
+        "model-identity",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/eval-case-preflight.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "case-preflight",
+        "bench-diagnostics",
+        "verifier-contract"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-preflight",
+        "verifier-contract"
+      ]
+    },
+    {
+      "path": "docs/eval-component.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "adoption-policy",
+        "agent-capabilities",
+        "cost-accounting",
+        "debugging-study",
+        "evaluation-component",
+        "evaluation-planning",
+        "evaluation-reports",
+        "measurement-protocol",
+        "model-identities",
+        "portable-replay",
+        "spending-controls",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-planning",
+        "eval-reports",
+        "metrics-contract",
+        "eval-accounting",
+        "eval-replay",
+        "executor-capabilities",
+        "trigger-observations",
+        "model-identity",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/eval-costs.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "agent-capabilities",
+        "cost-accounting",
+        "evaluation-planning",
+        "measurement-protocol",
+        "model-identities",
+        "spending-controls"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-accounting",
+        "model-identity"
+      ]
+    },
+    {
+      "path": "docs/eval-planning.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "adoption-policy",
+        "agent-capabilities",
+        "case-preflight",
+        "cost-accounting",
+        "evaluation-component",
+        "evaluation-planning",
+        "measurement-protocol",
+        "spending-controls",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-planning",
+        "eval-accounting",
+        "bench-preflight",
+        "executor-capabilities",
+        "trigger-observations",
+        "model-identity",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/eval-timing.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "execution-timing",
+        "evaluation-interruption"
+      ],
+      "checks": [
+        "docs-links",
+        "execution-timing",
+        "interruption"
+      ]
+    },
+    {
+      "path": "docs/evaluation-input-snapshots.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "sealed-inputs",
+        "portable-replay"
+      ],
+      "checks": [
+        "docs-links",
+        "input-snapshots",
+        "eval-replay"
+      ]
+    },
+    {
+      "path": "docs/evaluation-interruption.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "evaluation-interruption",
+        "cost-accounting"
+      ],
+      "checks": [
+        "docs-links",
+        "interruption",
+        "eval-accounting"
+      ]
+    },
+    {
+      "path": "docs/evaluation-reports.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "adoption-policy",
+        "conclusion-limits",
+        "cost-accounting",
+        "evaluation-reports",
+        "measurement-protocol",
+        "model-identities",
+        "trigger-observability",
+        "bench-claims",
+        "offline-controls",
+        "sharing-results"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-reports",
+        "metrics-contract",
+        "eval-accounting",
+        "model-identity",
+        "trigger-observations",
+        "measurement-scope",
+        "eval-replay"
+      ]
+    },
+    {
+      "path": "docs/experiment-workflow.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "agent-capabilities",
+        "case-preflight",
+        "cost-accounting",
+        "evaluation-interruption",
+        "evaluation-planning",
+        "evaluation-workflow",
+        "offline-controls",
+        "portable-replay",
+        "sealed-inputs",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-planning",
+        "eval-accounting",
+        "bench-preflight",
+        "eval-replay",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/first-real-eval.md",
+      "kind": "tutorial",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "released",
+          "ref": "0.13.1"
+        }
+      ],
+      "topics": [
+        "agent-capabilities",
+        "bench-diagnostics",
+        "conclusion-limits",
+        "evaluation-planning",
+        "evaluation-reports",
+        "measurement-protocol",
+        "offline-controls",
+        "onboarding",
+        "spending-controls",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "release-documents",
+        "eval-planning",
+        "bench-preflight",
+        "executor-capabilities",
+        "trigger-observations",
+        "model-identity",
+        "eval-reports",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/growth-roadmap-2026-10.md",
+      "kind": "explanation",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "agent-capabilities",
+        "documentation-governance",
+        "governance-work",
+        "measurement-work",
+        "product-direction",
+        "released-version"
+      ],
+      "checks": [
+        "docs-links",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "docs/installed-skill-evaluation.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "installed-delivery",
+        "evaluation-planning",
+        "agent-capabilities",
+        "skill-revisions"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-planning",
+        "input-snapshots",
+        "executor-capabilities",
+        "trigger-observations",
+        "model-identity",
+        "eval-reports"
+      ]
+    },
+    {
+      "path": "docs/metrics-history.md",
+      "kind": "record",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "metrics-history"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/metrics.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "protocol",
+          "ref": "metrics-v2@2026-09-23"
+        }
+      ],
+      "topics": [
+        "adoption-policy",
+        "conclusion-limits",
+        "cost-accounting",
+        "evaluation-component",
+        "measurement-protocol",
+        "model-identities",
+        "spending-controls",
+        "trigger-observability",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-accounting",
+        "eval-reports",
+        "metrics-contract",
+        "model-identity",
+        "trigger-observations"
+      ]
+    },
+    {
+      "path": "docs/oss-task-evaluation.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "bench-authoring",
+        "installed-delivery",
+        "verifier-contract"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-authoring",
+        "bench-contracts",
+        "eval-planning",
+        "input-snapshots",
+        "verifier-contract"
+      ]
+    },
+    {
+      "path": "docs/package-contents.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "released",
+          "ref": "0.13.1"
+        }
+      ],
+      "topics": [
+        "package-contents",
+        "historical-archives",
+        "released-version"
+      ],
+      "checks": [
+        "docs-links",
+        "package-contents",
+        "archive-integrity",
+        "archive-restoration",
+        "release-documents",
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-01-oss-task-evaluation.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-01-oss-task-evaluation"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-09-experiment-workflow.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-09-experiment-workflow"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-09-grader-calibration-audit.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-09-grader-calibration-audit"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-09-waza-resource-evaluation.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-09-waza-resource-evaluation"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-13-skill-evolution.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-13-skill-evolution"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-13-skill-experiment-cleanup.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-13-skill-experiment-cleanup"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-14-evidence-and-release-sequence.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-14-evidence-and-release-sequence"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-14-skill-followup-restart.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-14-skill-followup-restart"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-14-skill-followup.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-14-skill-followup"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-15-independent-comparison-proposal.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-15-independent-comparison-proposal"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-15-native-diff-mechanism.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-15-native-diff-mechanism"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-15-receiver-mechanism-proposal.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-15-receiver-mechanism-proposal"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-16-case-workflow-and-release.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-16-case-workflow-and-release"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-17-workflow-foundations.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-17-workflow-foundations"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-20-docs-architecture-cleanup.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-20-docs-architecture-cleanup"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-20-install-transactions-and-archive-delivery.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-20-install-transactions-and-archive-delivery"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-21-measurement-contract-and-capability-remediation.md",
+      "kind": "plan",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "measurement-work"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-21-npm-0.13.0-release.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-21-npm-0.13.0-release"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-21-npm-0.13.1-release.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-21-npm-0.13.1-release"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-21-release-workflow-automation.md",
+      "kind": "plan",
+      "lifecycle": "historical",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-21-release-workflow-automation"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/plans/2026-10-22-documentation-governance-and-architecture.md",
+      "kind": "plan",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "governance-work"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    {
+      "path": "docs/portable-codex.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "portable-configuration",
+        "selectable-profiles"
+      ],
+      "checks": [
+        "docs-links",
+        "install-transactions",
+        "profile-sources"
+      ]
+    },
+    {
+      "path": "docs/README.md",
+      "kind": "index",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "agent-capabilities",
+        "architecture",
+        "architecture-decisions",
+        "debugging-study",
+        "documentation-governance",
+        "evidence-index",
+        "governance-work",
+        "measurement-work",
+        "offline-controls",
+        "product-direction",
+        "released-version",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "docs/releases/0.10.0.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "released",
+          "ref": "0.10.0"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/releases/0.10.1.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "released",
+          "ref": "0.10.1"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/releases/0.11.0.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "released",
+          "ref": "0.11.0"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/releases/0.12.0.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "released",
+          "ref": "0.12.0"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/releases/0.13.0.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "released",
+          "ref": "0.13.0"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/releases/0.13.1.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "released",
+          "ref": "0.13.1"
+        }
+      ],
+      "topics": [
+        "released-version"
+      ],
+      "checks": [
+        "release-documents",
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/releases/0.9.0.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "released",
+          "ref": "0.9.0"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/releases/0.9.1.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "released",
+          "ref": "0.9.1"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/releases/trusted-publishing.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "distribution",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "release-process",
+        "package-contents"
+      ],
+      "checks": [
+        "docs-links",
+        "release-workflow",
+        "package-contents"
+      ]
+    },
+    {
+      "path": "docs/replay-packages.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "conclusion-limits",
+        "evaluation-reports",
+        "model-identities",
+        "portable-replay",
+        "sealed-inputs",
+        "bench-claims",
+        "offline-controls"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-replay",
+        "input-snapshots",
+        "eval-reports",
+        "model-identity",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/reproducible-offline-example.md",
+      "kind": "tutorial",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "historical",
+          "ref": "offline-bench-check@2026-10-01"
+        }
+      ],
+      "topics": [
+        "bench-format",
+        "bench-diagnostics"
+      ],
+      "checks": [
+        "docs-links",
+        "bench-contracts",
+        "bench-preflight"
+      ]
+    },
+    {
+      "path": "docs/selectable-codex.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "selectable-profiles",
+        "profile-provenance",
+        "portable-configuration"
+      ],
+      "checks": [
+        "docs-links",
+        "install-transactions",
+        "profile-sources",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "docs/sharing-results.md",
+      "kind": "index",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "sharing-results",
+        "portable-replay",
+        "evidence-submission"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-reports",
+        "eval-replay",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "docs/skill-evaluation-evidence.md",
+      "kind": "index",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "debugging-study",
+        "evidence-index"
+      ],
+      "checks": [
+        "docs-links",
+        "study-review",
+        "historical-review"
+      ]
+    },
+    {
+      "path": "docs/skill-revisions.md",
+      "kind": "how-to",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "skill-revisions",
+        "installed-delivery",
+        "evaluation-planning"
+      ],
+      "checks": [
+        "docs-links",
+        "eval-planning",
+        "eval-reports",
+        "input-snapshots"
+      ]
+    },
+    {
+      "path": "docs/verifier-contract.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "bench-authoring",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "verifier-contract",
+        "bench-diagnostics"
+      ],
+      "checks": [
+        "docs-links",
+        "verifier-contract",
+        "bench-preflight"
+      ]
+    },
+    {
+      "path": "evidence/2026-07-skill-baseline.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-07-skill-baseline"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-09-22-codex-trigger-capture.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-09-22-codex-trigger-capture"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-09-bench-calibration.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-09-bench-calibration"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-09-debugging-bench-exploratory.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-09-debugging-bench-exploratory"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-09-debugging-hardening.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-09-debugging-hardening"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-09-ocr-vs-code-review.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-09-ocr-vs-code-review"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-09-trigger-snapshot-correction.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-09-trigger-snapshot-correction"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-01-codex-diagnosing-bugs-pilot.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-01-codex-diagnosing-bugs-pilot"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-01-oss-case-selection.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-01-oss-case-selection"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-01-oss-workspace-smoke.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-01-oss-workspace-smoke"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-12-diagnosing-revision.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-12-diagnosing-revision"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-12-diagnosing-v2.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-12-diagnosing-v2"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-12-normalize-url-v2-comparison.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-12-normalize-url-v2-comparison"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-12-normalize-url-v2-recovery.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-12-normalize-url-v2-recovery"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-13-debugging-completed-development.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-13-debugging-completed-development"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-13-debugging-controls-and-sleep-stop.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-13-debugging-controls-and-sleep-stop"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-13-debugging-development-stops.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-13-debugging-development-stops"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-13-normalize-url-v2-validation.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-13-normalize-url-v2-validation"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-14-debugging-followup-routing-stop.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-14-debugging-followup-routing-stop"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-14-debugging-independent-validation.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-14-debugging-independent-validation"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-14-debugging-reading-pilot-and-cost-review.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-14-debugging-reading-pilot-and-cost-review"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-14-debugging-spending-stop.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-14-debugging-spending-stop"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-15-diagnosing-receiver-correction.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-15-diagnosing-receiver-correction"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-15-independent-comparison-regression-stop.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-15-independent-comparison-regression-stop"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-15-independent-offline-readiness.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-15-independent-offline-readiness"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-15-native-diff-mechanism.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-15-native-diff-mechanism"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/2026-10-15-receiver-mechanism-stop.md",
+      "kind": "record",
+      "lifecycle": "frozen",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "historical",
+          "ref": "2026-10-15-receiver-mechanism-stop"
+        }
+      ],
+      "topics": [],
+      "checks": [
+        "historical-review"
+      ]
+    },
+    {
+      "path": "evidence/README.md",
+      "kind": "index",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evidence",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "evidence-index",
+        "debugging-study"
+      ],
+      "checks": [
+        "historical-review",
+        "docs-links",
+        "study-review"
+      ]
+    },
+    {
+      "path": "profiles/codex-curated/rules/global.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "selectable-profiles",
+        "profile-provenance"
+      ],
+      "checks": [
+        "profile-sources",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "profiles/codex-curated/skills/autonomous-iteration/SKILL.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "selectable-profiles",
+        "profile-provenance"
+      ],
+      "checks": [
+        "profile-sources",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "profiles/codex-curated/skills/vibe-coding/SKILL.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "selectable-profiles",
+        "profile-provenance"
+      ],
+      "checks": [
+        "profile-sources",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "profiles/recommended/rules/core-workflow.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "selectable-profiles",
+        "profile-provenance"
+      ],
+      "checks": [
+        "profile-sources",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "profiles/recommended/skills/commit-message/SKILL.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "selectable-profiles",
+        "profile-provenance"
+      ],
+      "checks": [
+        "profile-sources",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "README.md",
+      "kind": "index",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "released",
+          "ref": "0.13.1"
+        }
+      ],
+      "topics": [
+        "agent-capabilities",
+        "architecture",
+        "architecture-decisions",
+        "conclusion-limits",
+        "documentation-governance",
+        "driver-skill",
+        "evaluation-workflow",
+        "evidence-index",
+        "governance-work",
+        "measurement-protocol",
+        "measurement-work",
+        "model-identities",
+        "offline-controls",
+        "onboarding",
+        "product-direction",
+        "released-version",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "readme-parity",
+        "release-documents",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "README.zh-CN.md",
+      "kind": "index",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "released",
+          "ref": "0.13.1"
+        }
+      ],
+      "topics": [
+        "agent-capabilities",
+        "architecture",
+        "architecture-decisions",
+        "conclusion-limits",
+        "documentation-governance",
+        "driver-skill",
+        "evaluation-workflow",
+        "evidence-index",
+        "governance-work",
+        "measurement-protocol",
+        "measurement-work",
+        "model-identities",
+        "offline-controls",
+        "onboarding",
+        "product-direction",
+        "released-version",
+        "bench-claims"
+      ],
+      "checks": [
+        "docs-links",
+        "readme-parity",
+        "release-documents",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "scripts/README.md",
+      "kind": "index",
+      "lifecycle": "maintained",
+      "audience": [
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "architecture",
+        "debugging-study",
+        "documentation-governance",
+        "historical-archives",
+        "package-contents",
+        "release-process"
+      ],
+      "checks": [
+        "docs-links",
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "SECURITY.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "development",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        }
+      ],
+      "topics": [
+        "security-reporting"
+      ],
+      "checks": [
+        "documentation-review"
+      ]
+    },
+    {
+      "path": "skills/skillfit/SKILL.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "agent-integration",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "released",
+          "ref": "0.13.1"
+        }
+      ],
+      "topics": [
+        "driver-skill",
+        "evaluation-workflow",
+        "agent-capabilities",
+        "bench-claims",
+        "offline-controls"
+      ],
+      "checks": [
+        "release-documents",
+        "documentation-review",
+        "measurement-scope"
+      ]
+    },
+    {
+      "path": "docs/bench-claims.md",
+      "kind": "reference",
+      "lifecycle": "maintained",
+      "audience": [
+        "user",
+        "maintainer",
+        "contributor"
+      ],
+      "owner": "evaluation",
+      "scope": [
+        {
+          "kind": "source",
+          "ref": "working-tree"
+        },
+        {
+          "kind": "protocol",
+          "ref": "measurementScope-1; bench-1/2"
+        }
+      ],
+      "topics": [
+        "bench-claims"
+      ],
+      "checks": [
+        "measurement-scope",
+        "bench-authoring",
+        "eval-replay",
+        "docs-links"
+      ]
+    }
+  ],
+  "topics": {
+    "adoption-policy": {
+      "canonical": "docs/metrics.md#shared-adoption-gates",
+      "sources": [
+        "src/harness/eval-acceptance.ts",
+        "src/harness/eval-contract.ts",
+        "src/harness/eval-efficiency.ts"
+      ],
+      "schemas": [
+        "docs/schemas/eval-policy.schema.json",
+        "docs/schemas/eval-result.schema.json"
+      ],
+      "dependents": [
+        "docs/eval-component.md",
+        "docs/eval-planning.md",
+        "docs/evaluation-reports.md"
+      ],
+      "checks": [
+        "metrics-contract",
+        "eval-reports"
+      ]
+    },
+    "agent-capabilities": {
+      "canonical": "docs/eval-agent-preflight.md#current-source-capability-table",
+      "sources": [
+        "src/matrix/agents.json",
+        "src/agents.ts",
+        "src/harness/agent-preflight.ts",
+        "src/harness/executors/cli.ts",
+        "src/harness/executors/api.ts"
+      ],
+      "schemas": [
+        "src/matrix/agents.schema.json",
+        "docs/schemas/agent-preflight.schema.json"
+      ],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/eval-component.md",
+        "docs/eval-costs.md",
+        "docs/eval-planning.md",
+        "docs/experiment-workflow.md",
+        "docs/first-real-eval.md",
+        "docs/growth-roadmap-2026-10.md",
+        "docs/installed-skill-evaluation.md",
+        "skills/skillfit/SKILL.md"
+      ],
+      "checks": [
+        "executor-capabilities",
+        "trigger-observations",
+        "model-identity"
+      ]
+    },
+    "architecture": {
+      "canonical": "docs/architecture.md",
+      "sources": [
+        "src/cli.ts",
+        "src/harness/runner.ts",
+        "src/install/transaction.ts",
+        "scripts/check-architecture.mjs",
+        "src/harness/process.ts",
+        "src/harness/verifier.ts",
+        "src/harness/trial-workspace.ts",
+        "src/harness/trial-summary.ts",
+        "src/harness/judge-protocol.ts",
+        "src/harness/trigger-summary.ts",
+        "src/harness/eval-options.ts",
+        "src/harness/eval-planning.ts",
+        "src/harness/eval-service.ts",
+        "src/harness/eval-read-service.ts",
+        "src/harness/single-arm-read.ts",
+        "src/harness/eval-preflight.ts",
+        "src/harness/eval-preflight-error.ts",
+        "src/harness/calibration-service.ts",
+        "src/commands/eval-display.ts",
+        "src/harness/eval-application.test.ts",
+        "scripts/check-architecture.test.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "CONTRIBUTING.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/architecture-boundaries.md",
+        "docs/architecture-interfaces.md",
+        "docs/architecture-runtime.md",
+        "scripts/README.md"
+      ],
+      "checks": [
+        "architecture-dependencies",
+        "documentation-review"
+      ]
+    },
+    "architecture-boundaries": {
+      "canonical": "docs/architecture-boundaries.md",
+      "sources": [
+        "src/commands/eval-plan.ts",
+        "src/harness/runner.ts",
+        "src/harness/judge.ts",
+        "src/harness/eval-audit.ts",
+        "src/harness/executors/control.ts",
+        "scripts/check-architecture.mjs",
+        "src/harness/process.ts",
+        "src/harness/verifier.ts",
+        "src/harness/trial-workspace.ts",
+        "src/harness/trial-summary.ts",
+        "src/harness/judge-protocol.ts",
+        "src/harness/trigger-summary.ts",
+        "src/harness/eval-options.ts",
+        "src/harness/eval-planning.ts",
+        "src/harness/eval-service.ts",
+        "src/harness/eval-read-service.ts",
+        "src/harness/single-arm-read.ts",
+        "src/harness/eval-preflight.ts",
+        "src/harness/eval-preflight-error.ts",
+        "src/harness/calibration-service.ts",
+        "src/commands/eval-display.ts",
+        "src/harness/eval-application.test.ts",
+        "scripts/check-architecture.test.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/architecture.md",
+        "docs/decisions/0002-layering-and-shared-execution.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links",
+        "architecture-dependencies"
+      ]
+    },
+    "architecture-decisions": {
+      "canonical": "docs/decisions/README.md",
+      "sources": [
+        "docs/decisions/0001-document-authority-and-history.md",
+        "docs/decisions/0002-layering-and-shared-execution.md",
+        "docs/decisions/0003-plan-confirm-execute-separation.md"
+      ],
+      "schemas": [],
+      "dependents": [
+        "CONTRIBUTING.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/architecture.md",
+        "docs/decisions/0001-document-authority-and-history.md",
+        "docs/decisions/0002-layering-and-shared-execution.md",
+        "docs/decisions/0003-plan-confirm-execute-separation.md",
+        "docs/documentation-governance.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    "architecture-interfaces": {
+      "canonical": "docs/architecture-interfaces.md",
+      "sources": [
+        "src/harness/types.ts",
+        "src/commands/eval-plan.ts",
+        "src/commands/eval-cli.ts",
+        "src/commands/eval-component.ts",
+        "src/commands/bench-calibration.ts",
+        "src/harness/runner.ts",
+        "src/harness/process.ts",
+        "src/harness/verifier.ts",
+        "src/harness/trial-workspace.ts",
+        "src/harness/trial-summary.ts",
+        "src/harness/judge-protocol.ts",
+        "src/harness/trigger-summary.ts",
+        "src/harness/eval-options.ts",
+        "src/harness/eval-planning.ts",
+        "src/harness/eval-service.ts",
+        "src/harness/eval-read-service.ts",
+        "src/harness/single-arm-read.ts",
+        "src/harness/eval-preflight.ts",
+        "src/harness/eval-preflight-error.ts",
+        "src/harness/calibration-service.ts",
+        "src/commands/eval-display.ts",
+        "src/harness/eval-application.test.ts",
+        "scripts/check-architecture.test.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/architecture.md",
+        "docs/decisions/0003-plan-confirm-execute-separation.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links",
+        "eval-planning"
+      ]
+    },
+    "architecture-runtime": {
+      "canonical": "docs/architecture-runtime.md",
+      "sources": [
+        "src/commands/eval.ts",
+        "src/commands/bench-calibration.ts",
+        "src/harness/experiment-session.ts",
+        "src/harness/trigger.ts",
+        "src/commands/bench-self-test.ts",
+        "src/harness/replay-package.ts",
+        "src/harness/eval-options.ts",
+        "src/harness/eval-planning.ts",
+        "src/harness/eval-service.ts",
+        "src/harness/eval-read-service.ts",
+        "src/harness/single-arm-read.ts",
+        "src/harness/eval-preflight.ts",
+        "src/harness/eval-preflight-error.ts",
+        "src/harness/calibration-service.ts",
+        "src/commands/eval-display.ts",
+        "src/harness/eval-application.test.ts",
+        "scripts/check-architecture.test.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/architecture.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links",
+        "eval-planning",
+        "eval-accounting",
+        "eval-reports",
+        "eval-replay"
+      ]
+    },
+    "archive-inventory": {
+      "canonical": "docs/archive-inventory.md",
+      "sources": [
+        "evidence/archive-catalog.v1.json",
+        "scripts/check-archives.mjs"
+      ],
+      "schemas": [],
+      "dependents": [],
+      "checks": [
+        "archive-integrity"
+      ]
+    },
+    "bench-authoring": {
+      "canonical": "docs/bench-authoring.md",
+      "sources": [
+        "src/commands/bench.ts",
+        "src/commands/bench-source.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "benches/README.md",
+        "benches/contrib/README.md",
+        "benches/contrib/oss-lru-cache/README.md",
+        "benches/contrib/oss-mcp-use-utf8/README.md",
+        "benches/contrib/oss-minipass/README.md",
+        "benches/contrib/oss-normalize-url/README.md",
+        "benches/contrib/oss-skill-followup/README.md",
+        "benches/contrib/oss-skill-independent/README.md",
+        "benches/contrib/oss-skill-validation/README.md",
+        "benches/contrib/waza-behavior/README.md",
+        "docs/bench-drafting.md",
+        "docs/case-management.md",
+        "docs/oss-task-evaluation.md"
+      ],
+      "checks": [
+        "bench-authoring",
+        "bench-contracts"
+      ]
+    },
+    "bench-diagnostics": {
+      "canonical": "docs/bench-check-json.md",
+      "sources": [
+        "src/harness/bench-check.ts",
+        "src/harness/bench-diagnostics.ts",
+        "src/commands/bench-check-report.ts"
+      ],
+      "schemas": [
+        "docs/schemas/bench-check.schema.json"
+      ],
+      "dependents": [
+        "docs/bench-authoring.md",
+        "docs/eval-case-preflight.md",
+        "docs/first-real-eval.md",
+        "docs/reproducible-offline-example.md",
+        "docs/verifier-contract.md"
+      ],
+      "checks": [
+        "bench-preflight"
+      ]
+    },
+    "bench-drafting": {
+      "canonical": "docs/bench-drafting.md",
+      "sources": [
+        "src/commands/bench-draft.ts",
+        "src/harness/experiment-session.ts"
+      ],
+      "schemas": [],
+      "dependents": [],
+      "checks": [
+        "bench-authoring",
+        "eval-accounting"
+      ]
+    },
+    "bench-format": {
+      "canonical": "benches/README.md",
+      "sources": [
+        "src/harness/bench.ts",
+        "benches/code-review/bench.json",
+        "benches/debugging/bench.json"
+      ],
+      "schemas": [],
+      "dependents": [
+        "benches/contrib/README.md",
+        "benches/contrib/oss-lru-cache/README.md",
+        "benches/contrib/oss-mcp-use-utf8/README.md",
+        "benches/contrib/oss-minipass/README.md",
+        "benches/contrib/oss-normalize-url/README.md",
+        "benches/contrib/oss-skill-followup/README.md",
+        "benches/contrib/oss-skill-independent/README.md",
+        "benches/contrib/oss-skill-validation/README.md",
+        "benches/contrib/waza-behavior/README.md",
+        "docs/bench-authoring.md",
+        "docs/case-management.md",
+        "docs/reproducible-offline-example.md"
+      ],
+      "checks": [
+        "bench-contracts"
+      ]
+    },
+    "bench-management": {
+      "canonical": "docs/case-management.md",
+      "sources": [
+        "src/commands/bench-manage.ts"
+      ],
+      "schemas": [],
+      "dependents": [],
+      "checks": [
+        "bench-authoring"
+      ]
+    },
+    "case-preflight": {
+      "canonical": "docs/eval-case-preflight.md",
+      "sources": [
+        "src/commands/eval-preflight.ts",
+        "src/harness/bench-check.ts",
+        "src/harness/eval-preflight.ts",
+        "src/harness/eval-preflight-error.ts",
+        "src/commands/eval-preflight-error.ts"
+      ],
+      "schemas": [
+        "docs/schemas/eval-preflight.schema.json"
+      ],
+      "dependents": [
+        "docs/eval-planning.md",
+        "docs/experiment-workflow.md"
+      ],
+      "checks": [
+        "bench-preflight"
+      ]
+    },
+    "conclusion-limits": {
+      "canonical": "docs/metrics.md#non-goals-and-known-limitations",
+      "sources": [
+        "src/harness/bench.ts",
+        "src/commands/eval-single-arm-report.ts",
+        "src/harness/eval-acceptance.ts",
+        "src/harness/single-arm-read.ts"
+      ],
+      "schemas": [
+        "docs/schemas/eval-policy.schema.json",
+        "docs/schemas/single-arm-report.schema.json"
+      ],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/bench-self-test.md",
+        "docs/documentation-governance.md",
+        "docs/evaluation-reports.md",
+        "docs/first-real-eval.md",
+        "docs/replay-packages.md"
+      ],
+      "checks": [
+        "metrics-contract",
+        "eval-reports"
+      ]
+    },
+    "configuration-experiments": {
+      "canonical": "docs/config-experiments.md",
+      "sources": [
+        "src/harness/target.ts",
+        "src/harness/prompt.ts",
+        "src/harness/runner.ts"
+      ],
+      "schemas": [],
+      "dependents": [],
+      "checks": [
+        "eval-planning",
+        "input-snapshots"
+      ]
+    },
+    "cost-accounting": {
+      "canonical": "docs/eval-costs.md",
+      "sources": [
+        "src/harness/costs.ts",
+        "src/harness/invocation-costs.ts",
+        "src/harness/eval-budget.ts"
+      ],
+      "schemas": [
+        "docs/schemas/invocation-costs.schema.json",
+        "docs/schemas/judge-call.schema.json"
+      ],
+      "dependents": [
+        "docs/bench-drafting.md",
+        "docs/eval-component.md",
+        "docs/eval-planning.md",
+        "docs/evaluation-interruption.md",
+        "docs/evaluation-reports.md",
+        "docs/experiment-workflow.md",
+        "docs/metrics.md"
+      ],
+      "checks": [
+        "eval-accounting"
+      ]
+    },
+    "debugging-study": {
+      "canonical": "docs/skill-evaluation-evidence.md",
+      "sources": [
+        "evidence/2026-10-14-debugging-independent-validation.md",
+        "evidence/2026-10-15-independent-comparison-regression-stop.md",
+        "scripts/analyze-diagnosing-revision.mjs",
+        "scripts/analyze-normalize-url-recovery-spending.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/README.md",
+        "docs/eval-component.md",
+        "evidence/README.md",
+        "scripts/README.md"
+      ],
+      "checks": [
+        "study-review",
+        "docs-links"
+      ]
+    },
+    "development-rules": {
+      "canonical": "AGENTS.md",
+      "sources": [
+        "package.json",
+        "tsconfig.json",
+        ".github/workflows/ci.yml"
+      ],
+      "schemas": [],
+      "dependents": [
+        "CONTRIBUTING.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    "documentation-governance": {
+      "canonical": "docs/documentation-governance.md",
+      "sources": [
+        "AGENTS.md",
+        "scripts/documentation-policy.json",
+        "scripts/check-docs.mjs",
+        "scripts/documentation-registry.mjs",
+        "scripts/documentation-markdown.mjs",
+        "scripts/ci-scope.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "CONTRIBUTING.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/decisions/0001-document-authority-and-history.md",
+        "docs/growth-roadmap-2026-10.md",
+        "scripts/README.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    "driver-skill": {
+      "canonical": "skills/skillfit/SKILL.md",
+      "sources": [
+        "src/cli.ts",
+        "package.json"
+      ],
+      "schemas": [],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "checks": [
+        "release-documents",
+        "documentation-review"
+      ]
+    },
+    "evaluation-component": {
+      "canonical": "docs/eval-component.md",
+      "sources": [
+        "src/harness/eval-contract.ts",
+        "src/commands/eval-component.ts",
+        "src/harness/eval-acceptance.ts",
+        "src/harness/eval-options.ts",
+        "src/harness/eval-service.ts",
+        "src/harness/eval-read-service.ts"
+      ],
+      "schemas": [
+        "docs/schemas/eval-request.schema.json",
+        "docs/schemas/eval-result.schema.json",
+        "docs/schemas/eval-policy.schema.json"
+      ],
+      "dependents": [
+        "docs/eval-planning.md",
+        "docs/metrics.md"
+      ],
+      "checks": [
+        "eval-planning",
+        "eval-reports"
+      ]
+    },
+    "evaluation-interruption": {
+      "canonical": "docs/evaluation-interruption.md",
+      "sources": [
+        "src/harness/interruption.ts",
+        "src/harness/kill-tree.ts",
+        "src/harness/runner.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/eval-timing.md",
+        "docs/experiment-workflow.md"
+      ],
+      "checks": [
+        "interruption"
+      ]
+    },
+    "evaluation-planning": {
+      "canonical": "docs/eval-planning.md",
+      "sources": [
+        "src/commands/eval-plan.ts",
+        "src/commands/eval.ts",
+        "src/commands/bench-calibration.ts",
+        "src/harness/eval-options.ts",
+        "src/harness/eval-planning.ts",
+        "src/harness/eval-service.ts",
+        "src/harness/calibration-service.ts",
+        "src/commands/eval-display.ts",
+        "src/harness/eval-application.test.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/config-experiments.md",
+        "docs/eval-component.md",
+        "docs/eval-costs.md",
+        "docs/experiment-workflow.md",
+        "docs/first-real-eval.md",
+        "docs/installed-skill-evaluation.md",
+        "docs/skill-revisions.md"
+      ],
+      "checks": [
+        "eval-planning"
+      ]
+    },
+    "evaluation-reports": {
+      "canonical": "docs/evaluation-reports.md",
+      "sources": [
+        "src/harness/eval-manifest.ts",
+        "src/commands/evaluation-report.ts",
+        "src/commands/eval-report.ts",
+        "src/commands/eval-single-arm-report.ts",
+        "src/harness/eval-options.ts",
+        "src/harness/eval-read-service.ts",
+        "src/harness/single-arm-read.ts",
+        "src/commands/eval-single-arm-replay.ts"
+      ],
+      "schemas": [
+        "docs/schemas/single-arm-report.schema.json"
+      ],
+      "dependents": [
+        "docs/eval-component.md",
+        "docs/first-real-eval.md",
+        "docs/replay-packages.md"
+      ],
+      "checks": [
+        "eval-reports"
+      ]
+    },
+    "evaluation-workflow": {
+      "canonical": "docs/experiment-workflow.md",
+      "sources": [
+        "src/commands/eval-cli.ts",
+        "src/commands/eval-plan.ts",
+        "src/harness/experiment-session.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "skills/skillfit/SKILL.md"
+      ],
+      "checks": [
+        "eval-planning",
+        "eval-accounting"
+      ]
+    },
+    "evidence-index": {
+      "canonical": "evidence/README.md",
+      "sources": [
+        "evidence/2026-07-skill-baseline.md",
+        "evidence/2026-10-15-receiver-mechanism-stop.md"
+      ],
+      "schemas": [],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/skill-evaluation-evidence.md"
+      ],
+      "checks": [
+        "historical-review",
+        "docs-links"
+      ]
+    },
+    "evidence-submission": {
+      "canonical": "CONTRIBUTING.md#submitting-evidence",
+      "sources": [
+        ".github/ISSUE_TEMPLATE/evidence_submission.yml",
+        "evidence/README.md"
+      ],
+      "schemas": [],
+      "dependents": [
+        "benches/contrib/README.md",
+        "docs/sharing-results.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    "execution-timing": {
+      "canonical": "docs/eval-timing.md",
+      "sources": [
+        "src/harness/execution-timing.ts",
+        "src/harness/executors/cli.ts"
+      ],
+      "schemas": [],
+      "dependents": [],
+      "checks": [
+        "execution-timing"
+      ]
+    },
+    "governance-work": {
+      "canonical": "docs/plans/2026-10-22-documentation-governance-and-architecture.md#当前执行状态",
+      "sources": [
+        "docs/plans/2026-10-22-documentation-governance-and-architecture.md"
+      ],
+      "schemas": [],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/growth-roadmap-2026-10.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    "historical-archives": {
+      "canonical": "docs/archive-delivery.md",
+      "sources": [
+        "evidence/archive-catalog.v1.json",
+        "evidence/fetch-archives.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/archive-inventory.md",
+        "docs/package-contents.md",
+        "scripts/README.md"
+      ],
+      "checks": [
+        "archive-integrity",
+        "archive-restoration",
+        "release-documents"
+      ]
+    },
+    "installed-delivery": {
+      "canonical": "docs/installed-skill-evaluation.md",
+      "sources": [
+        "src/harness/installed-skill.ts",
+        "src/harness/bundle.ts",
+        "src/harness/runner.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/oss-task-evaluation.md",
+        "docs/skill-revisions.md"
+      ],
+      "checks": [
+        "eval-planning",
+        "input-snapshots"
+      ]
+    },
+    "measurement-protocol": {
+      "canonical": "docs/metrics.md",
+      "sources": [
+        "src/harness/stats.ts",
+        "src/harness/report.ts",
+        "src/harness/eval-acceptance.ts",
+        "src/harness/eval-efficiency.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/eval-component.md",
+        "docs/eval-costs.md",
+        "docs/eval-planning.md",
+        "docs/evaluation-reports.md",
+        "docs/first-real-eval.md"
+      ],
+      "checks": [
+        "metrics-contract"
+      ]
+    },
+    "measurement-work": {
+      "canonical": "docs/plans/2026-10-21-measurement-contract-and-capability-remediation.md#当前执行状态",
+      "sources": [
+        "docs/plans/2026-10-21-measurement-contract-and-capability-remediation.md"
+      ],
+      "schemas": [],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/growth-roadmap-2026-10.md"
+      ],
+      "checks": [
+        "documentation-review",
+        "docs-links"
+      ]
+    },
+    "model-identities": {
+      "canonical": "docs/metrics.md#public-model-identity-per-invocation",
+      "sources": [
+        "src/harness/model-identity.ts",
+        "src/harness/model-identity-evidence.ts",
+        "src/harness/experiment-session.ts"
+      ],
+      "schemas": [
+        "docs/schemas/model-identity.schema.json",
+        "docs/schemas/model-identities.schema.json"
+      ],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/eval-agent-preflight.md",
+        "docs/eval-component.md",
+        "docs/eval-costs.md",
+        "docs/evaluation-reports.md",
+        "docs/replay-packages.md"
+      ],
+      "checks": [
+        "model-identity"
+      ]
+    },
+    "offline-controls": {
+      "canonical": "docs/bench-self-test.md",
+      "sources": [
+        "src/commands/bench-self-test.ts",
+        "src/harness/bench-controls.ts",
+        "src/harness/executors/control.ts"
+      ],
+      "schemas": [
+        "docs/schemas/bench-controls.schema.json",
+        "docs/schemas/bench-self-test.schema.json"
+      ],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/bench-authoring.md",
+        "docs/experiment-workflow.md",
+        "docs/first-real-eval.md",
+        "skills/skillfit/SKILL.md",
+        "docs/eval-agent-preflight.md",
+        "docs/evaluation-reports.md",
+        "docs/replay-packages.md"
+      ],
+      "checks": [
+        "bench-self-test"
+      ]
+    },
+    "onboarding": {
+      "canonical": "docs/first-real-eval.md",
+      "sources": [
+        "package.json",
+        "src/cli.ts",
+        "src/commands/eval-cli.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "checks": [
+        "release-documents",
+        "eval-planning"
+      ]
+    },
+    "package-contents": {
+      "canonical": "docs/package-contents.md",
+      "sources": [
+        "package.json",
+        "scripts/package-policy.json",
+        "scripts/check-package.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/archive-delivery.md",
+        "docs/releases/trusted-publishing.md",
+        "scripts/README.md"
+      ],
+      "checks": [
+        "package-contents"
+      ]
+    },
+    "portable-configuration": {
+      "canonical": "docs/portable-codex.md",
+      "sources": [
+        "src/commands/bundle.ts",
+        "src/install/transaction.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/selectable-codex.md"
+      ],
+      "checks": [
+        "install-transactions"
+      ]
+    },
+    "portable-replay": {
+      "canonical": "docs/replay-packages.md",
+      "sources": [
+        "src/commands/eval-export.ts",
+        "src/harness/replay-package.ts",
+        "src/harness/eval-audit.ts",
+        "src/harness/single-arm-audit.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/bench-self-test.md",
+        "docs/eval-component.md",
+        "docs/evaluation-input-snapshots.md",
+        "docs/experiment-workflow.md",
+        "docs/sharing-results.md"
+      ],
+      "checks": [
+        "eval-replay"
+      ]
+    },
+    "product-direction": {
+      "canonical": "docs/growth-roadmap-2026-10.md",
+      "sources": [
+        "src/cli.ts",
+        "package.json",
+        "docs/plans/2026-10-21-measurement-contract-and-capability-remediation.md"
+      ],
+      "schemas": [],
+      "dependents": [
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md"
+      ],
+      "checks": [
+        "documentation-review"
+      ]
+    },
+    "profile-provenance": {
+      "canonical": "docs/selectable-codex.md",
+      "sources": [
+        "profiles/codex-upstream-sources.json",
+        "src/commands/upstream.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "profiles/codex-curated/rules/global.md",
+        "profiles/codex-curated/skills/autonomous-iteration/SKILL.md",
+        "profiles/codex-curated/skills/vibe-coding/SKILL.md",
+        "profiles/recommended/rules/core-workflow.md",
+        "profiles/recommended/skills/commit-message/SKILL.md"
+      ],
+      "checks": [
+        "profile-sources",
+        "documentation-review"
+      ]
+    },
+    "release-process": {
+      "canonical": "docs/releases/trusted-publishing.md",
+      "sources": [
+        ".github/workflows/npm-release.yml",
+        "scripts/npm-release.mjs",
+        "scripts/release-source.mjs",
+        "scripts/release-acceptance.mjs"
+      ],
+      "schemas": [],
+      "dependents": [
+        "scripts/README.md"
+      ],
+      "checks": [
+        "release-workflow"
+      ]
+    },
+    "released-version": {
+      "canonical": "docs/releases/0.13.1.md",
+      "sources": [
+        "package.json",
+        "docs/releases/0.13.1-verification.json",
+        "CHANGELOG.md"
+      ],
+      "schemas": [],
+      "dependents": [
+        "CHANGELOG.md",
+        "README.md",
+        "README.zh-CN.md",
+        "docs/README.md",
+        "docs/growth-roadmap-2026-10.md",
+        "docs/package-contents.md"
+      ],
+      "checks": [
+        "release-documents",
+        "historical-review"
+      ]
+    },
+    "sealed-inputs": {
+      "canonical": "docs/evaluation-input-snapshots.md",
+      "sources": [
+        "src/harness/input-snapshot.ts",
+        "src/harness/experiment-session.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/experiment-workflow.md",
+        "docs/replay-packages.md"
+      ],
+      "checks": [
+        "input-snapshots"
+      ]
+    },
+    "security-reporting": {
+      "canonical": "SECURITY.md",
+      "sources": [
+        "SECURITY.md"
+      ],
+      "schemas": [],
+      "dependents": [],
+      "checks": [
+        "documentation-review"
+      ]
+    },
+    "selectable-profiles": {
+      "canonical": "docs/selectable-codex.md",
+      "sources": [
+        "src/commands/setup.ts",
+        "profiles/codex-curated/profile.json",
+        "profiles/codex-curated/catalog.json"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/portable-codex.md",
+        "profiles/codex-curated/rules/global.md",
+        "profiles/codex-curated/skills/autonomous-iteration/SKILL.md",
+        "profiles/codex-curated/skills/vibe-coding/SKILL.md",
+        "profiles/recommended/rules/core-workflow.md",
+        "profiles/recommended/skills/commit-message/SKILL.md"
+      ],
+      "checks": [
+        "install-transactions",
+        "profile-sources"
+      ]
+    },
+    "sharing-results": {
+      "canonical": "docs/evaluation-reports.md#sharing-a-result",
+      "sources": [
+        "src/commands/eval-report.ts",
+        "src/commands/eval-export.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/sharing-results.md"
+      ],
+      "checks": [
+        "eval-reports",
+        "eval-replay"
+      ]
+    },
+    "skill-revisions": {
+      "canonical": "docs/skill-revisions.md",
+      "sources": [
+        "src/commands/eval.ts",
+        "src/harness/installed-skill.ts"
+      ],
+      "schemas": [],
+      "dependents": [
+        "docs/installed-skill-evaluation.md"
+      ],
+      "checks": [
+        "eval-planning",
+        "eval-reports"
+      ]
+    },
+    "spending-controls": {
+      "canonical": "docs/eval-planning.md#preview-and-confirm",
+      "sources": [
+        "src/harness/eval-budget.ts",
+        "src/harness/eval-contract.ts",
+        "src/commands/eval-plan.ts"
+      ],
+      "schemas": [
+        "docs/schemas/eval-request.schema.json"
+      ],
+      "dependents": [
+        "docs/eval-component.md",
+        "docs/eval-costs.md",
+        "docs/first-real-eval.md",
+        "docs/metrics.md"
+      ],
+      "checks": [
+        "eval-planning",
+        "eval-accounting"
+      ]
+    },
+    "trigger-observability": {
+      "canonical": "docs/metrics.md#l1--trigger-quality-activation",
+      "sources": [
+        "src/harness/trigger-detection.ts",
+        "src/harness/trigger.ts",
+        "src/harness/executors/cli.ts"
+      ],
+      "schemas": [
+        "docs/schemas/trigger-detection.schema.json"
+      ],
+      "dependents": [
+        "docs/eval-agent-preflight.md",
+        "docs/evaluation-reports.md"
+      ],
+      "checks": [
+        "trigger-observations"
+      ]
+    },
+    "verifier-contract": {
+      "canonical": "docs/verifier-contract.md",
+      "sources": [
+        "src/harness/verifier-error.ts",
+        "src/harness/runner.ts",
+        "src/harness/verifier-summary.ts"
+      ],
+      "schemas": [
+        "docs/schemas/verifier-error.schema.json"
+      ],
+      "dependents": [
+        "benches/README.md",
+        "benches/contrib/oss-lru-cache/README.md",
+        "benches/contrib/oss-mcp-use-utf8/README.md",
+        "benches/contrib/oss-minipass/README.md",
+        "benches/contrib/oss-normalize-url/README.md",
+        "benches/contrib/oss-skill-followup/README.md",
+        "benches/contrib/oss-skill-independent/README.md",
+        "benches/contrib/oss-skill-validation/README.md",
+        "benches/contrib/waza-behavior/README.md",
+        "docs/bench-authoring.md",
+        "docs/bench-check-json.md",
+        "docs/eval-case-preflight.md",
+        "docs/oss-task-evaluation.md"
+      ],
+      "checks": [
+        "verifier-contract"
+      ]
+    },
+    "bench-claims": {
+      "canonical": "docs/bench-claims.md",
+      "sources": [
+        "src/harness/measurement-scope.ts",
+        "src/harness/bench.ts",
+        "src/harness/eval-audit.ts",
+        "src/harness/single-arm-audit.ts",
+        "src/commands/bench-manage.ts",
+        "src/commands/eval.ts"
+      ],
+      "schemas": [
+        "docs/schemas/bench.schema.json",
+        "docs/schemas/measurement-scope.schema.json",
+        "docs/schemas/bench-check.schema.json",
+        "docs/schemas/calibration-plan.schema.json",
+        "docs/schemas/eval-result.schema.json",
+        "docs/schemas/single-arm-report.schema.json"
+      ],
+      "dependents": [
+        "docs/bench-authoring.md",
+        "benches/README.md",
+        "docs/metrics.md",
+        "docs/README.md",
+        "docs/documentation-governance.md",
+        "README.md",
+        "README.zh-CN.md",
+        "skills/skillfit/SKILL.md",
+        "docs/first-real-eval.md",
+        "docs/bench-self-test.md",
+        "docs/eval-agent-preflight.md",
+        "docs/eval-planning.md",
+        "docs/eval-component.md",
+        "docs/evaluation-reports.md",
+        "docs/replay-packages.md",
+        "docs/case-management.md",
+        "docs/bench-check-json.md",
+        "docs/experiment-workflow.md"
+      ],
+      "checks": [
+        "measurement-scope",
+        "bench-authoring",
+        "eval-replay",
+        "docs-links"
+      ]
+    }
+  },
+  "exclusions": [
+    {
+      "path": "benches/_self-test/example/prompts/",
+      "reason": "Nested self-test task prompts are synthetic evaluation inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-self-test"
+    },
+    {
+      "path": "benches/_self-test/target/",
+      "reason": "Synthetic target Skill: agent input for offline controls, not a maintained driver guide.",
+      "owner": "bench-authoring",
+      "verification": "bench-self-test"
+    },
+    {
+      "path": "benches/code-review/fixtures/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/code-review/ground-truth/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/code-review/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-lru-cache/fixtures/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-lru-cache/ground-truth/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-lru-cache/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-mcp-use-utf8/ground-truth/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-mcp-use-utf8/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-minipass/fixtures/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-minipass/ground-truth/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-minipass/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-normalize-url/fixtures/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-normalize-url/ground-truth/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-normalize-url/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-skill-followup/fixtures/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-skill-followup/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-skill-independent/fixtures/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-skill-independent/ground-truth/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-skill-independent/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-skill-validation/fixtures/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-skill-validation/ground-truth/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/oss-skill-validation/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/waza-behavior/fixtures/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/contrib/waza-behavior/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/debugging/ground-truth/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "benches/debugging/prompts/",
+      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "owner": "bench-authoring",
+      "verification": "bench-preflight"
+    },
+    {
+      "path": "evidence/artifacts/",
+      "reason": "Fixed observations and pinned replay/source copies; preserve original bytes and environment limits instead of adding document metadata.",
+      "owner": "evidence",
+      "verification": "manual: Preserve original record/input and replay bytes; archive-integrity verifies the catalog-listed subset, while package-contents checks retained distribution support. Review uncataloged records against their original declarations."
+    },
+    {
+      "path": "evidence/inputs/",
+      "reason": "Pinned study/Skill inputs used by historical requests and archive support; not maintained product guides.",
+      "owner": "evidence",
+      "verification": "manual: Preserve original record/input and replay bytes; archive-integrity verifies the catalog-listed subset, while package-contents checks retained distribution support. Review uncataloged records against their original declarations."
+    }
+  ]
+}

@@ -1,155 +1,100 @@
 # skillfit metrics (v2, frozen 2026-09-23)
 
-Additive component review 2026-10-13: the [Agent evaluation interface](eval-component.md)
-adds versioned requests, pinned previews, native receipt audits and an independent
-adoption policy. `accept`/`reject`/`inconclusive` adoption decisions do not replace
-or reinterpret the frozen `effective`/`ineffective`/`inconclusive` statistical verdict.
-Insufficient, stopped, synthetic or unverified evidence cannot authorize adoption;
-the component never upgrades a Skill. Complete cost coverage is separate from
-quality significance. All formulas and legacy manifest interpretations below remain unchanged.
+This is the current source contract for what skillfit measures and how it
+computes verdicts. The **v2 statistical protocol** is frozen at 2026-09-23;
+additive evidence/operational contracts do not change its formulas, thresholds,
+paired exclusions or historical interpretations. Current-source behavior reviewed
+2026-10-22 includes unpublished numerical, trigger, model-identity, self-test and
+bench-claim changes; a `0.13.1` version string does
+not imply those changes are in the released npm package. See the
+[capability table](eval-agent-preflight.md#current-source-capability-table) for
+implemented readers and verification scope, and [revision history](metrics-history.md)
+for the former chronological additions. Changes to this contract need a reasoned
+PR and an explicit date/protocol scope.
 
-Operational Agent preflight (version 0.11.0): eval preview and dispatch
-check executable files, declared matrix capabilities and global same-name Skill
-conflicts, keeping authentication explicitly unknown offline. Known failures
-block before case probes, native run creation and calls. Sealed checks are
-read as historical metadata during reporting/replay, not rerun on today's
-machine. This adds no observations, environment isolation or adoption authority;
-statistics, cost coverage and acceptance thresholds remain unchanged. See
-[Agent environment preflight](eval-agent-preflight.md).
+This page owns measurement meaning, statistical formulas, shared adoption gates,
+stop semantics and evidence limitations. [Planning](eval-planning.md) owns option
+defaults, confirmation and budget input format; the [component](eval-component.md)
+owns machine request/result fields and policy configuration; [cost accounting](eval-costs.md)
+owns cost populations and coverage fields. Implemented facts belong in these
+contracts; progress belongs in the linked [measurement plan](plans/2026-10-21-measurement-contract-and-capability-remediation.md#当前执行状态).
 
-This document defines what skillfit measures and how verdicts are computed. It is the contract that
-`src/harness/` implements and that bench authors design against. Changes here are deliberate: edit with a
-reasoned PR, cite sources, and bump the date.
+- [Analysis unit and sampling](#unit-of-analysis)
+- [Declared scope and offline controls](#declared-scope-and-offline-controls-current-source)
+- [Bench health](#l0--bench-health-guard-metrics), [activation](#l1--trigger-quality-activation),
+  [paired outcomes](#l2--conditional-efficacy-the-paired-ab-core),
+  [realized value](#l3--realized-value-the-should-i-install-it-answer) and [advisory judge](#l4--judge-soft-quality-optional)
+- [Statistical verdict](#verdict-protocol-what-effective-means) and [efficiency adoption](#explicit-efficiency-acceptance-policy-version-2-since-090)
+- [Costs, budgets and stopping](#costs-budgets-and-stopping)
+- [Evidence and model identity](#evidence-and-replay) and [known limitations](#non-goals-and-known-limitations)
 
-Status reviewed 2026-10-01: L1 records complete installed-resource fingerprints and distinguishes
-implemented trigger rates from task-class breakdowns and installed-skill competition that remain
-specification. The v2 verdict protocol is unchanged.
-
-Additive workflow review 2026-10-09: optional managed-session and native read metadata below
-describe execution coverage and observations. They do not change the v2 statistical formulas,
-verdict thresholds, pairwise exclusions or legal legacy manifest interpretation.
-
-Additive revision review 2026-10-12: `--baseline-skill` in installed mode compares two
-complete versions of the same Skill. Optional v4 `baselineTarget` records the previous
-version; `target` records treatment. Both inputs are frozen, and trial receipts identify
-the installed arm's version. All v2 formulas, verdict thresholds and pairwise exclusions
-remain unchanged. A revision delta is relative to the previous Skill, not to no Skill;
-it establishes neither installation benefit nor general non-regression. See
-[the revision workflow](skill-revisions.md).
-
-Additive timing correction 2026-10-12: new trial receipts use a monotonic
-`performance.now()` interval for elapsed cost and retain wall duration plus
-optional CLI deadline/observation diagnostics. A detected clock discontinuity or
-observation gap is an executor environment error, with the existing pairwise
-exclusion and spending retention. No v2 formula or threshold changes. Legacy
-wall-duration receipts keep their recorded interpretation; see [execution timing](eval-timing.md).
-Plans also pin logical/physical workspace aliases so matrix-defined pure trust
-registrations for either frozen name count as the same bookkeeping. Retargeting
-an alias or changing any other configuration still stops further calls.
-
-This is the **why**. The **how** — turning one of your own failures into a task that satisfies this
-contract — is [bench-authoring.md](bench-authoring.md).
-
-v2 (2026-09-23): adds graded facet scores (L2), the oracle gate, and floor/facet-saturation warnings.
-Motivation: binary pass/fail extracts one bit per trial, which is why quality claims stayed unprovable at
-individual-user sample sizes. [Skill2Env](https://github.com/NVlabs/Skill2Env) (Table 1) shows the
-sensitivity gap empirically: the same training moved its graded S2EBench mean 56.6→75.1 while pass@1
-moved only 33.4→37.7. Its counter-evidence shapes the design too: mixing an LLM-judged process rubric
-into the reward *reduced* task pass rates (50.1% vs 54.1% outcome-only), so facet checks must be
-programmatic and the judge stays advisory. Skill-sourced task generation (its S2EBench was built from the
-same distribution it evaluated) is rejected here for efficacy claims.
-
-Grounding: the framework synthesizes [SkillsBench](https://arxiv.org/abs/2602.12670) (paired evaluation,
-per-task pass rates), [SWE-Skills-Bench](https://www.alphaxiv.org/abs/2603.15401) (ΔP / token overhead ρ),
-the [STARS](https://arxiv.org/abs/2604.10286) capability-vs-activation split, [OpenAI's skill eval
-guidance](https://developers.openai.com/blog/eval-skills) (trigger test classes), [Anthropic's eval
-guidance](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) (bench composition),
-[Skill2Env](https://github.com/NVlabs/Skill2Env) (graded programmatic scoring, oracle/NOP acceptance
-gates), and the LLM-judge literature cited in §5.
+The **how** — turning a real failure into a task — is [bench authoring](bench-authoring.md).
+The [evaluation component](eval-component.md) separates the statistical verdict
+(`effective`/`ineffective`/`inconclusive`) from adoption
+(`accept`/`reject`/`inconclusive`). A within-bench statistical signal alone never
+authorizes installation, and no component automatically upgrades a Skill.
 
 ## Unit of analysis
 
-Operational interruption handling (2026-10-16, included in 0.10.1): SIGINT/SIGTERM
-stops subsequent dispatches and managed active processes, retaining receipts and
-sealing a stopped prefix. Interrupted execution is ungraded; available counters
-remain partial unless the invocation already settled with final usage. Missing
-usage remains unknown. No retries, replacements, new observations, efficacy
-verdict or upgrade eligibility are inferred from cancellation. Existing formulas
-and historical evidence are unchanged. See [the interruption contract](evaluation-interruption.md).
-
-Operational spending guard (2026-10-15, included in 0.10.0): paired evaluations
-may declare five absolute `spendingBudget` stop lines, pinned in their request,
-preview and native plan. All invoked agent spending counts, including failures
-and excluded partners. Reaching a line prevents the next call; one in-flight call
-may overshoot. Missing/partial/invalid final usage or an execution/guard error
-stops further calls and retains spent/unknown costs. There is no retry or
-replacement. A final predeclared call with complete evidence may finish the
-cohort at a line. Completed audits replay sealed before/after snapshots against
-the chronological receipts. Current source extends these stop lines to calibration,
-trigger runs and both judge orders, retaining each role's usage and controlled
-stop codes. This is
-an operational stop rule, **not** an API hard cap, adoption threshold or new
-statistical protocol; exclusions, formulas, policies and old records remain
-unchanged. See [the component contract](eval-component.md#input-and-execution).
-
-Entry-point alignment (version 0.11.0): ordinary paired eval and Agent
-requests share effective plans, spending limits and primary executor deadlines.
-Ordinary JSON execution requires preview confirmation; ordinary native plans
-also seal and audit the reviewed parameters. Request `baselineSkill: null`
-selects no harness-installed baseline Skill, preserving installation-benefit
-measurements with `REVISION_COMPARISON_REQUIRED` and no revision adoption
-eligibility. Existing path requests, evidence, statistics, exclusions and
-acceptance policies keep their meaning. See [shared planning](eval-planning.md).
-
-Environment correction (2026-10-14): new paired installed runs deliver the same
-versioned native untracked-file diff helper and usage guidance to both arms.
-Plans, source snapshots and delivered copies bind its content; mutation stops
-further calls while retaining spending. This is common environment tooling,
-not a Skill treatment or an efficacy claim. Its use is not attested by delivery.
-Older runs retain their original environment and cannot be pooled into a new
-validation cohort. All costs, formulas, coverage requirements and verdict gates
-remain unchanged.
-
-Additive pair ordering 2026-10-13: versioned JSON requests can declare
-`pairOrder: "balanced"`. The first arm alternates by task position and trial
-number, keeping both arms adjacent and recording the strategy in the native plan
-and manifest. Offline assessment checks actual ledger order. The compatibility
-default remains `baseline-first`; old records without order metadata keep their
-recorded interpretation. This controls a systematic first/second-arm assignment,
-without isolating cache state or changing any verdict, exclusion or resampling
-formula. See [the component contract](eval-component.md).
-
 One **run** = one (task, condition, trial). Runs are **paired** on (task, trial): baseline and treatment see
 the same fixture and the same prompt, and the two arms of a pair are executed **adjacently** — the trial loop
-is outermost, so condition is never confounded with elapsed time (provider drift, rate-limit degradation,
-a filling cache would otherwise land entirely on whichever arm ran second).
+is outermost, reducing systematic separation by elapsed time. Adjacency does not eliminate provider drift,
+cache effects or other environmental variation.
 
-Sampling is **not pinned**, and this is a deliberate weakening of an earlier claim: the headless CLI surfaces
-in the capability matrix expose no seed or temperature knob, so the harness controls order rather than
-sampling. The manifest records `executor.sampling` as `null` where the surface offers nothing, instead of
-implying a control that does not exist; a future surface that accepts a seed should populate it. Statistical
-treatment is always *paired*: per-task first, then pooled across tasks with tasks as the resampling unit.
-Never pool unpaired.
+`pairOrder` defaults to `baseline-first`; predeclared `balanced` alternates the
+first arm by task position and trial number while keeping both arms adjacent.
+Native plans/ledgers retain the actual order. Balanced order controls assignment,
+not cache state or sampling; efficiency policy 2 requires it.
+
+Sampling is **not pinned**. Current CLI and API adapters send no temperature or
+seed control and report `sampling: null`; CLI models/settings come from the active
+CLI configuration. `withSampling` preserves an injected executor's explicit
+metadata and otherwise records null. This is an adapter limitation, not a claim
+that every vendor interface lacks controls or that randomness caused an observed
+null effect. Statistical treatment is paired: per-task first, then pooled with
+tasks as the resampling unit. Never pool unpaired.
+
+Repeated `--task` / request `taskIds` selects tasks in bench order before calls.
+Empty, duplicate, unsafe or unknown IDs fail. The plan binds the selected IDs
+while retaining the full bench hash; calls and cost/task populations use the
+selected cohort. A small selected cohort does not waive scale or independence gates.
+
+## Declared scope and offline controls (current source)
+
+[Bench claims](bench-claims.md) owns schema 2 declarations, objective derivation,
+pre-call refusal and frozen measurementScope 1. Default schema 1 remains
+legacy-unrecorded; missing historical scope does not acquire today's declarations
+or a new adoption gate. A declaration identifies design support, not validity
+or statistical power. Unsupported schema 2 targets cannot be made acceptable
+by silently dropping tasks or choosing a different report policy. Quality
+observations during an efficiency run do not expand its declared conclusions.
+
+[Self-test protocol 1](bench-self-test.md) applies predeclared benefit/harm/null/error
+controls through the paired pipeline without a model. Matching expected outcomes
+checks that pipeline on those controls; it does not prove real-task discrimination,
+native Skill discovery, general efficacy or adoption eligibility. Self-test and
+calibration declare a null diagnostic target. Ordinary mock markers in bench
+check remain informational verifier probes. These source additions have no
+assigned minimum published release and do not alter the frozen statistical rules.
 
 ## L0 — bench health (guard metrics)
 
-Task selection (2026-10-16, 0.10.0): repeated CLI `--task` or request `taskIds`
-restricts the evaluated population before calls. Native plans bind selected IDs
-and manifest order while keeping the full bench hash. Planned calls, observed
-costs and task counts use only that population. Empty, duplicate, unsafe or
-unknown IDs are rejected. No statistical formula, eight-task/five-pair floor,
-independence requirement or historical verdict changes; a selected small subset
-remains indicative. See [case management](case-management.md).
+Bench-health diagnostics qualify interpretation; they do not silently delete tasks or
+suppress the exact-test verdict. A ceiling warning is not an automatic rejection
+of an efficiency comparison. Current reports separate baseline ceiling/floor,
+quality headroom, efficiency eligibility and activation coverage; see the
+[diagnostic contract](bench-claims.md#reading-difficulty-diagnostics). Calibration
+alone cannot qualify a cost comparison: paired variance, final cost coverage and
+regression checks still apply, including for a 100%-passing baseline.
 
-A bench that cannot discriminate must not produce verdicts.
-
-- **Ceiling**: warn when a task's baseline pass rate ≥ 90% (implemented). Saturated tasks "graduate" to
-  regression duty — they verify no harm, but measure no lift
+- **Ceiling**: warn when a task's baseline pass rate ≥ 90% (implemented). Saturated tasks can serve as
+  regression controls with limited observed quality headroom
   ([SWE-Skills-Bench found 24/49 skills ceiling-bound](https://www.alphaxiv.org/abs/2603.15401)).
   The same rule applies per facet: a check whose baseline pass rate ≥ 90% is flagged as saturated
   (implemented).
 - **Floor**: warn when baseline pass rate ≤ 10% (implemented) — the task is too hard or broken, and
-  all-zero arms are equally uninformative.
+  all-zero quality arms are equally uninformative for quality improvement; efficiency
+  and activation need their own evidence.
 - **Engagement sanity**: if the agent never engaged with the fixture, the executor errored, or the
   verifier has a process/infrastructure error, the trial is excluded from rates and reported as an error, not a failure
   (implemented). Non-engagement means the final message is empty or whitespace. For an output task
@@ -162,48 +107,37 @@ A bench that cannot discriminate must not produce verdicts.
   environment errors before their executor starts; inherited disabled reflog is overridden only
   in the disposable repository. This does not change the paired exclusion or verdict formulas.
 
-  Verifier correction (version 0.11.0): process errors include an
-  unspawnable command, no exit code, timeout and output overflow. Recognized
-  bench-owned Node uncaught exceptions and explicit `skillfit.verifier-error`
-  messages also represent no grade, even with a numeric exit code. The same
-  classification blocks offline NOP/oracle probes and rejects an errored replay.
-  Candidate-code failures, assertions and ordinary nonzero exits retain normal
-  task-failure semantics. Costs and raw diagnostics remain recorded; existing
-  pairwise exclusions, statistical formulas and acceptance thresholds are
-  unchanged. Historical receipts are not rewritten. See [verifier contract](verifier-contract.md).
+  Process errors include unspawnable commands, missing exit codes, timeouts, output
+  overflow, recognized bench-owned Node uncaught exceptions and explicit
+  `skillfit.verifier-error` messages. Candidate-code failures, assertions and
+  ordinary nonzero exits remain graded failures. The same distinction applies
+  to offline NOP/oracle gates and replay. See [verifier contract](verifier-contract.md).
+
+A 100% baseline does not show quality lift or prove equivalence. It can still be
+useful for an efficiency comparison if both arms have successes, complete costs,
+no observed pass/score/check regression and all policy 2 gates pass. Baseline
+calibration alone has no treatment cost comparison and cannot establish savings;
+it retains its existing >=90%/<=10% bands. Goal-specific diagnostics are not
+implemented yet. Tasks too hard for both arms also offer no successes for the
+per-success cost endpoint.
 
 ## L1 — trigger quality (activation)
 
-Operational reporting correction (version 0.11.0): `report eval`
-dispatches paired, baseline-calibration and trigger summaries separately.
-Calibration preserves recorded session status and existing >=90%/<=10%
-difficulty bands. Trigger reports retain the existing count denominators, Wilson
-intervals and unknown/error exclusions. Neither single-arm report enters paired
-quality/adoption gates; no statistical formula or historical receipt changes.
-See [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
-
-Paired installed-Skill runs may additionally record `skillReads` counts (`observed`,
-`unobserved`, `unknown`) per arm, task and overall, with the **surviving graded pair**
-denominator. These mechanical transcript observations are not trigger recall/precision and do
-not establish use, causation or benefit. Errored pairs are excluded from these counts as from
-the quality rates. Older v4 manifests without these fields remain valid.
-
-Optional `experiment` metadata records declared/planned calls, the ceiling, actual started and
-finished calls, completion state and frozen plan hash. A stopped/incomplete experiment cannot
-support an installation recommendation, regardless of the unchanged statistical verdict on its
-surviving observations. Enabled judges contribute two declared calls per pair. No replacement
-samples, retries or partial task-set truncation are added to meet a budget; see
-[the bounded workflow](experiment-workflow.md) for the fingerprint/ledger contract and limits.
-
 Whether the agent invokes the skill when it should, and only then. A skill's realized value is gated by this:
-an excellent skill that never fires — or fires everywhere — is worthless. Public benchmarks measure efficacy
-conditional on injection; trigger quality is skillfit's differentiating layer. (Status: **partial** — without `--compete-installed`, trigger mode installs one Skill alone and recall is an upper bound. That flag copies other user-level Skills from the matrix directories; system Skills and plugins outside those directories are not copied. Optional `triggerClass` values are `explicit`, `implicit`, and `contextual`; unlabeled positive tasks stay in the pooled recall. Claude Code capture is implemented against the documented shape and is not machine-verified. Codex detection counts a `SKILL.md` read.)
+an unobserved activation limits what can be claimed about realized benefit. Trigger
+measurement observes routing, while paired experiments measure task outcomes.
+It does not grade an entire workflow or prove that loading caused a benefit.
+Without `--compete-installed`, trigger mode installs one Skill alone and recall is an upper bound.
+That flag copies other user-level Skills from the matrix directories; system Skills and plugins outside
+those directories are not copied. Optional `triggerClass` values are `explicit`, `implicit`, and
+`contextual`; unlabeled positive tasks stay in the pooled recall. Claude Code's matrix entry and
+structured adapter are exercised offline with Node-only fake subprocesses; real CLI compatibility and
+authentication have not been machine-verified. Codex observes a literal `SKILL.md` read command.
 
 - **Task classes** (adopted from OpenAI's eval-skills taxonomy): `explicit` (skill named in prompt),
   `implicit` (in-domain task, skill not named), `contextual` (noisy realistic task), `negative`
   (`shouldTrigger: false` — decoy tasks measuring over-triggering). The current manifest records only
-  `shouldTrigger: true/false` and pools the positive classes; reporting explicit and implicit results
-  separately remains specification because they exercise different mechanisms.
+  `shouldTrigger: true/false` and optional positive `triggerClass`; class recall is reported when labeled.
 - **Metrics**: trigger recall (fires on should-trigger tasks), false-trigger rate (fires on negative tasks),
   and precision (positives fired / all fired) — each a proportion over its own denominator, each with a
   Wilson 95% CI. F1 is reported **bare**: it is a harmonic mean of two proportions and has no closed-form
@@ -211,9 +145,38 @@ conditional on injection; trigger quality is skillfit's differentiating layer. (
 - **Detection is mechanical, per agent** (see `src/matrix/agents.json`): Kimi Code —
   `-p --output-format=stream-json` (assistant `tool_calls` events naming the `Skill` tool); Codex CLI —
   `exec --json` (no skill event exists → detection via the `command_execution` item that reads the skill's
-  `SKILL.md`; normalize shell-escaped path separators before matching); Claude Code —
+  `SKILL.md` at a registered project path); Claude Code —
   `-p --output-format stream-json --verbose` (`--bare` forbidden: it skips skill discovery) — implemented
-  against the documented shape but not yet machine-verified.
+  in the matrix and verified with offline adapters, not a live CLI run. See the official
+  [headless output](https://code.claude.com/docs/en/headless#stream-responses) and
+  [CLI reference](https://code.claude.com/docs/en/cli-reference).
+- **Observation protocol v2 (2026-10-21)**: matrix `wireShape` and `sessions.skillKey` select the
+  format and identity field. The frozen `triggerDetection` declaration records `schemaVersion: 2`,
+  wireShape, method (`skill-tool-argument` or `skill-file-read-command`),
+  identityMatch (`exact-registered-identity`), sorted complete `identities` and registered `skillPaths`.
+  The same declaration is retained in the reviewed/native plan, executor, each trial and summary.
+  A Skill call must match the complete designated identity, never text elsewhere in its arguments.
+  [Claude's directory/frontmatter naming rule](https://code.claude.com/docs/en/skills) registers those complete names; a namespaced
+  identity must be explicitly registered in full. An arbitrary `plugin:review` cannot match `review`.
+- **Complete observations**: a negative requires a successful process, a recognized, interpretable
+  stream and its normal ending (Claude init and success result; Codex thread start and completed turn; Kimi final Assistant text
+  without pending tool calls). Malformed identity arguments, truncated/unknown formats, incomplete
+  streams or ambiguous commands remain unknown. Each `triggerEvidence` retains status
+  (`observed`, `not-observed`, `unknown`), complete, matchedIdentity or null and one-based eventLines
+  for positive observations. A positive may survive an incomplete stream; execution errors still
+  exclude it from rates and retain partial usage. A public Claude failure result rejects even at exit 0.
+- **Read-command scope**: Codex recognizes literal cat, numeric-range sed -n, Get-Content/Windows type and
+  supported shell wrappers against registered paths in the disposable workdir (including its physical
+  directory alias). Drive-qualified Windows paths may contain literal 8.3 names such as `RUNNER~1`;
+  home expansion remains unsupported. This is a read-command observation, not proof of successful loading or use. Echo,
+  comments and search mentions do not count as positive observations. Unsupported shell expressions,
+  expansions, parent traversal through potentially aliased directories, pipelines and ambiguous reads
+  remain unknown. Unknown coverage is not silently zero.
+- **Historical compatibility**: missing declarations display legacy/unversioned detection; saved
+  counts are not redetected or pooled across protocols. Unsupported declaration versions fail.
+  Legacy direct constructors may infer a recognized format, but do not claim a frozen v2 declaration
+  without a fixed wireShape. New production CLI factories declare the protocol. Existing historical
+  files and frozen replay runtimes remain unchanged; corrections require a new dated record.
 - **Environment errors**: unavailable disposable Git initialization/reflog excludes a command trigger trial
   before its executor starts. The existing error exclusion and trigger-rate formulas remain unchanged.
 - **Presentation fidelity**: trigger-mode tasks present work as files on disk with a natural request; the
@@ -232,14 +195,18 @@ conditional on injection; trigger quality is skillfit's differentiating layer. (
   directory is created because their content cannot be pinned by this file-byte contract. These are
   additive fields in trigger schema v1; older manifests lack a full installed fingerprint and must be
   labelled unrecorded, never reconstructed from their injectable hash.
-- **Environment fidelity caveats**: routing quality depends on the *whole installed skill set* (lexical
-  competition). (Status: **spec, not implemented** — the harness installs only the skill under test into an
-  otherwise empty sandboxed skills directory, so measured recall is *optimistic*: it faces no competition from
-  the user's real set. Reproducing that competition means fingerprinting and copying a user's installed skills
-  into a sandbox, which raises privacy questions this project has not settled; it is tracked as a future
-  enhancement rather than built here. Read trigger recall as an upper bound until then.) A triggered skill
-  cannot unload mid-session — one false trigger taxes the rest of the session, which is why false-trigger rate
-  is a first-class metric.
+- **Environment fidelity caveats**: `--compete-installed` copies and fingerprints other
+  user-level Skills from matrix directories. Default runs have no copied competitors,
+  so recall is optimistic. Unlisted system Skills/plugins are not copied; inherited
+  configuration is not fully isolated. Competition support is implemented, with
+  this limited scope. A false activation may add context/work, but the trigger
+  rates alone do not quantify its downstream quality or cost effect.
+
+Paired installed runs may also record `skillReads` observed/unobserved/unknown
+per arm using **surviving graded pairs**. These read observations are neither
+trigger recall/precision nor proof of use, causation or benefit. Missing legacy
+fields stay unrecorded. Single-arm trigger/calibration reports retain their own
+metrics and never enter paired quality/adoption gates; see [report types](evaluation-reports.md).
 
 ## L2 — conditional efficacy (the paired A/B core)
 
@@ -252,10 +219,17 @@ conditional on guaranteed activation. Keep these delivery surfaces distinct when
 - **ρ** = (tokens_treatment − tokens_baseline) / tokens_baseline, input and output separately.
 - **pass@1** (mean pass rate) and **pass^k** (all k trials pass — reliability the user actually pays for).
   pass@k is *not* a headline metric: it hides variance that costs real tokens in agent settings.
-- Per-task numbers are **descriptive** (a few trials can never be significant alone); inference happens only
-  at bench level (§4).
+- Per-task tables also apply the exact discordant-pair verdict rule, but a few
+  repetitions rarely support precise inference or broader claims. The headline
+  interval resamples task blocks, and adoption assesses the declared bench and
+  validation cohort. See [verdict protocol](#verdict-protocol-what-effective-means).
 
 ### Facet scores (graded outcome signal)
+
+Design motivation comes from [Skill2Env](https://github.com/NVlabs/Skill2Env):
+graded programmatic outcomes can be more sensitive than binary pass/fail, while
+mixing subjective process rewards can harm task outcomes. See the preserved
+[v2 rationale and grounding](metrics-history.md#original-v2-motivation-and-grounding).
 
 A verifier may decompose its acceptance criteria into named **checks** and report them in its JSON summary:
 `{"passed": bool, "checks": [{"name": string, "pass": bool}]}`. The trial **score** is the fraction of
@@ -281,6 +255,9 @@ replace, and a long tail lets an arbitrary subset dominate the score.
 
 ## L3 — realized value (the "should I install it" answer)
 
+This is a conceptual decomposition, not a computed adoption verdict or a validated
+utility estimate.
+
 `EV ≈ P(trigger | relevant) · ΔP · V − P(trigger) · C_body − P(false trigger) · (C_body + δ_derail · V) − C_metadata`
 
 - `V` = value of one task pass (user-set; default 1), `C_body` = tokens of the loaded skill body,
@@ -289,46 +266,43 @@ replace, and a long tail lets an arbitrary subset dominate the score.
 - **Cost-of-pass** per arm: `v = mean cost / pass rate`; report `v_treatment / v_baseline` (replaces
   ΔP/ρ, which is unstable near ρ = 0; after the [cost-of-pass](https://openreview.net/pdf?id=vC9S20zsgN)
   formulation).
-- Honest budget rule: at individual-user sample sizes, **cost claims are provable, quality claims are
-  bounded** (token deltas reach significance far more easily than pass-rate deltas — cf. the
-  [ETH AGENTS.md study](https://arxiv.org/abs/2602.11988): −3% quality not significant, +20% cost
-  significant at p<0.001). Reports say which of the two a verdict rests on.
+- Cost differences may be easier to resolve than binary pass-rate differences in
+  some task mixtures; neither is automatically provable at a personal sample size.
+  The [ETH AGENTS.md study](https://arxiv.org/abs/2602.11988) is motivation, not a
+  power guarantee for another bench. Descriptive cost tables have no significance
+  verdict; explicit policy 2 adds a scoped interval for uncached input per success.
+  Report that endpoint and its coverage, not dollar savings or a significant
+  latency effect. Quality `inconclusive` does not prove no benefit or equivalence.
 
 ## L4 — judge (soft quality, optional)
 
-The deterministic verifier is the sole pass/fail authority; the judge never flips a verdict. This is not
-just conservatism: Skill2Env's rubric arm (LLM-judged process score mixed into the reward at fixed
-weight) *reduced* task pass rates relative to outcome-only training — process-signal contamination of
-outcome optimization is a measured failure mode, not a hypothetical one.
+The deterministic verifier is the sole pass/fail authority; the optional judge
+never flips the statistical verdict or supplies programmatic facet checks. This
+keeps outcome grading separate from an advisory model's preferences.
 
-- Blind pairwise comparison, **AB/BA position-swapped** double call; winner only on consistent verdicts,
-  else tie ([Zheng et al.](https://arxiv.org/abs/2306.05685)).
-- k=3 samples per side; ties conservative ([Markham 2026](https://arxiv.org/html/2604.13717v3)).
-- Judge model must come from a **different family** than the agent under test
-  ([self-preference bias](https://arxiv.org/abs/2404.13076)).
-- **Binary rubric checklists**, not 1–10 Likert scales ([Husain](https://hamel.dev/blog/posts/llm-judge/index.html)).
-- Calibration gate: a bench's rubric needs ≥30 human-labeled examples; report Cohen's κ, warn below 0.6
-  ([Thakur et al.](https://arxiv.org/abs/2406.12624)).
-- Agent output is **fenced**, not merely quoted: each answer sits between nonce-delimited
-  `<<<BEGIN ANSWER A …>>>` / `<<<END ANSWER A …>>>` markers (fresh random nonce per judge call, so an
-  answer cannot reproduce them), and the prompt states that the blocks are untrusted data whose embedded
-  instructions and JSON must be disregarded. The checklist is parsed from the **last** JSON object in the
-  judge's reply rather than the first match anywhere, so an answer that gets echoed while the judge reasons
-  cannot take the verdict. Judge input remains a prompt-injection surface: this closes the accidental
-  collision and raises the cost of a deliberate one, and it does not make an untrusted judge trustworthy.
+Implemented behavior:
 
-Implementation status (2026-09-22): blind pairwise with **AB/BA position-swapped double calls and
-winner-only-if-unanimous aggregation** is implemented (`--judge-agent` drives any matrix agent CLI, or
-`SKILLFIT_JUDGE=1` + API key; means are computed over unanimous trials only and `consistentTrials` is
-reported per task). Blinding is enforced on the filesystem, not just in the prompt (2026-09-25): a CLI
-judge has file tools, so it runs in a fresh temporary directory containing only `answerA.md` and
-`answerB.md`, never in the run group where both arms' `_output.md` and `_result.json` (which names the
-condition and the evaluation-target hash) are reachable. The directory is removed after the pair is judged;
-`judge-trial-N.json` is written to the task directory afterwards. The judge scores answers with a **binary checklist** (`correct` / `complete` /
-`grounded`, 0–3 per answer) instead of a Likert scale. The k=3 majority-ensemble recommendation was
-**considered and rejected**: a position-biased judge can still win a 2-of-3 majority by order luck,
-which hides the bias inside the vote instead of surfacing it; the unanimous AB/BA gate is stricter and
-reports `consistentTrials` as the bias signal. The κ calibration gate remains open.
+- Blind pairwise **AB/BA position-swapped double calls**, winner only when both
+  agree; otherwise tie. Means use unanimous trials and `consistentTrials` exposes
+  agreement. There is no k=3 majority ensemble: order luck can hide position bias.
+- Binary `correct` / `complete` / `grounded` checklist, 0–3 per answer, rather than
+  a 1–10 Likert score.
+- CLI judges run in a fresh temporary directory with only anonymous `answerA.md`
+  and `answerB.md`, outside the run group. The temporary directory is removed
+  after judging; retained call receipts and `judge-trial-N.json` preserve evidence.
+- Answers are fenced with fresh nonce-delimited BEGIN/END markers and explicitly
+  labeled untrusted; the checklist is parsed from the **last** JSON object. This
+  reduces accidental collisions, without eliminating prompt injection or making
+  an untrusted judge authoritative.
+
+Using a judge from a different model family and calibrating its rubric against
+>=30 human-labeled examples (reporting Cohen's κ and investigating κ<0.6) remain
+recommendations, not enforced gates or completed calibration. Public model
+identity is recorded where observable; it does not attest model-family separation.
+The κ calibration gate remains unimplemented. Background: [position bias](https://arxiv.org/abs/2306.05685),
+[self-preference](https://arxiv.org/abs/2404.13076),
+[binary rubric design](https://hamel.dev/blog/posts/llm-judge/index.html), and
+[calibration](https://arxiv.org/abs/2406.12624).
 
 ## Verdict protocol (what "effective" means)
 
@@ -362,118 +336,61 @@ reports `consistentTrials` as the bias signal. The κ calibration gate remains o
   Each condition also reports `errors` alongside `trials`, and the per-trial `_result.json` files remain
   the authoritative record of which trial was dropped and why.
 
-## Bench composition guidance (for authors and the upcoming scaffolding tooling)
+Current quality/score bootstrap defaults are 2,000 resamples with Mulberry32 seed
+`20260919`, alpha 0.05, drawing N surviving task blocks with replacement and
+recomputing pooled arm means each time. Tasks with no graded/scored pairs are
+omitted from that respective resample pool to avoid undefined means. Sorted
+percentile indices use `floor(q * resamples)` (clamped to the array bounds).
+These implementation details preserve the >=1,000 seeded-resample contract;
+efficiency policy 2 has its distinct frozen 10,000-resample procedure below.
 
-Operational correction in 0.10.1: the API executor retains explicitly reported
-Chat Completions cache counts, preserving absent/invalid values as unknown.
-Markdown and JSON reports share native audit, cost coverage and acceptance
-assessment for files, run directories and portable packages. These changes do
-not alter cost populations, statistical formulas, acceptance policy or historical
-receipts. See [report inputs and statuses](evaluation-reports.md).
+### Shared adoption gates
 
-Operational gate (included in 0.10.1): live `eval` reuses offline bench
-integrity checks before dispatch, scoped to selected tasks (labelled tasks in
-trigger mode). Hard failures block all agent/judge calls. Missing oracles and
-other unmeasured coverage are explicit `UNKNOWN` diagnostics; observed concerns
-remain `WARN`. Neither blocks calls nor counts as passed evidence. The native
-plan retains probes and separate offline elapsed time; previews mark checks
-pending. This changes no statistical verdict, cost population or adoption rule.
-See [the preflight contract](eval-case-preflight.md).
+Adoption is separate from the statistical verdict. Both policies require two
+complete installed versions of the same Skill, a completed native revision
+experiment without excluded errors, per-task paired outcomes, verified native
+receipts and a policy bound before execution. Every declared task needs at least
+five surviving graded pairs and there must be at least eight tasks; a policy may
+raise these floors. Both arms need successful tasks and final input, cache
+partition, output and elapsed coverage for every invocation. Injected/synthetic
+or unattested component runs cannot authorize adoption.
 
-New native sessions also [seal input copies](evaluation-input-snapshots.md) before
-dispatch. The archive's index/fingerprints bind to the frozen plan; offline replay
-uses its bench and portable export uses its Skill/implementation/request copies.
-Local copy time and apparent storage are separate from primary-agent token and
-duration populations. Missing historical copies remain unrecorded; snapshots do
-not create new observations, complete partial usage or change adoption gates.
+Observed paired pass, score or named-check regressions reject, including pair-level
+regressions concealed by an aggregate gain. A negative overall verdict or an
+exceeded declared all-invocation per-success cost cap also rejects. Rejection
+reasons take precedence over missing-evidence reasons; otherwise unmet gates
+give `inconclusive`. `accept` is advisory eligibility only, scoped to recorded
+tasks/environment, with `automaticUpgrade: false`.
 
-These are the targets. [bench-authoring.md](bench-authoring.md) is the walkthrough that gets a bench to
-them, step by step, on one real task.
+The default quality policy additionally requires a positive `effective` verdict
+meeting its declared minimum gain. Policy 2 changes the primary endpoint to cost
+under the additional rules below, preserving the quality verdict. Validation
+purpose must be declared before calls; the declaration does not prove that tasks
+were held independently from development or repeated candidate selection.
+Neither significance nor the scale floor proves generalization or equivalence.
+See [policy fields and defaults](eval-component.md#adoption-policy).
 
-- 20–50 tasks drawn from real failures is a healthy personal bench
-  ([Anthropic](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)); grow from observed
-  failures, stop at theoretical saturation.
-- ≥30% negative-trigger tasks once L1 lands; difficulty mix roughly 50% easy / 30% medium / 20% hard.
-- Adopt [SkillsBench's contribution gates](https://arxiv.org/html/2602.12670v1): human-authored prompts
-  (LLM-written tasks under-measure the model), oracle solution passes the verifier at 100% (**enforced
-  when registered**: `bench check` fails a task whose oracle-solved fixture does not exit 0 with every
-  check passing, and *warns* on a task that registers no oracle at all, since winnability is then
-  unverified — a warning rather than a failure because `bench add --freeze` legitimately produces
-  oracle-less tasks mid-authoring; the NOP half, verifier must fail the untouched fixture, is enforced
-  unconditionally), minimal deterministic assertions, realistic data, anti-cheat layout (tests and ground truth
-  never enter the fixture), grade the outcome not the path. An agent may *draft* the verifier + oracle
-  (`bench add --freeze --decompose`), but the draft is admitted only after both gates pass locally, and a
-  bench generated from the skill under test is inadmissible for efficacy claims (same-distribution
-  contamination — the S2EBench lesson).
-- Layout stays [Harbor](https://github.com/harbor-framework/benchmark-template)-compatible so personal
-  benches can graduate into shared benchmark tooling.
+### Numerical integrity correction (2026-10-21)
 
-## Workspace configuration experiments
+The exact test above is unchanged. `mcnemarExactP` requires nonnegative safe
+integer counts and a safe integer sum. One-direction discordance uses the exact
+identity `p = 2^(1-b-c)`. Otherwise, `b+c <= 1022` retains the existing
+small-sample recurrence. Larger samples sum decreasing weights starting
+at the binomial mode and normalize by symmetry, avoiding the old `2^-(b+c)`
+starting mass that became subnormal after 1022 and zero at 1075. Computation uses constant
+auxiliary space and at most O(b+c) iterations; binary64 rounding still applies,
+and a genuinely tiny tail may round to zero. Independent integer-binomial
+references test accuracy and decisions near 0.05; the formula, six-pair gate,
+bootstrap and adoption policy are unchanged.
 
-Paired runs can select `--input workspace` to present task files on disk without
-an inline snapshot. CLI executors only; the compatible default remains
-`snapshot`. Calibration must use the same selection. New v4 manifests and trial
-receipts record `inputMode`; its absence in an older manifest is reported as
-legacy/not recorded. Skill content remains force-injected in the treatment, so
-this changes task presentation, not L1/L2 or the statistical verdict protocol.
-The initial workspace prompt estimate excludes subsequent tool reads and replies.
-
-Paired `--mode installed` is a separate, opt-in delivery surface for Skill/CLI experiments and
-requires workspace input. Prompts remain identical; only treatment receives the complete Skill at
-the matrix-defined project directory. Compatible v4 `skillDelivery` metadata records the selection
-and directory. Here `target.bundleSha256/files` fingerprint all regular resources (sorted relative
-paths and bytes, including scripts and binary assets; excluding permissions and empty directories).
-Per-run receipts retain nullable mechanical activation observations and available raw transcripts.
-Source drift, unsafe paths, symlinks and fixture collisions fail before the affected agent call.
-Inherited agent configuration is not isolated, and installation does not guarantee activation.
-Old v4 manifests and inject mode retain their existing interpretation. Paired tests, scale labels,
-error exclusions, CI calculations and verdict semantics above are unchanged. See
-[installed-skill-evaluation.md](installed-skill-evaluation.md) for usage and limits.
-
-New condition summaries also record `tokenCoverage.input/output`: the number of
-graded surviving runs that supplied each field. Existing `tokens` totals and
-verdict semantics are unchanged. Missing or partial coverage cannot establish a
-complete overhead claim; legacy totals without coverage are shown as unrecorded.
-
-Optional `tasks[].costs` and `overall.costs` (cost schema 1) add descriptive
-accounting for surviving graded pairs and all invoked agent runs separately.
-They partition input into recorded cache-read and uncached tokens, retain
-failed/excluded invocations' spending, and report each measure per successful
-task (total spending / successes, including graded failures). Each measure's
-`final/partial/unknown` coverage sums to its population's run count. Incomplete
-usage is a known lower bound and suppresses percentage comparisons; missing
-cache counts are unknown, never zero. Timeouts retain measured elapsed time and
-available public-transcript usage as partial receipts. Pre-call guard/setup
-refusals are counted separately and do not enter spending totals. Judge and
-other cohorts' spending are excluded. These observations introduce no cost
-significance, monetary estimate or change to the quality protocol. See
-[evaluation cost accounting](eval-costs.md) for field and denominator rules.
-
-Failed JSON CLI invocations may add an identity/time-bound local numeric usage
-snapshot when the matrix capability permits it. This is partial cumulative usage,
-never final coverage or an accepted outcome; receipt `usageEvidence` preserves
-the counter provenance without private transcript bodies. Unknown/ambiguous
-metadata remains unknown, and original frozen failures are not rewritten.
-Quality exclusions, verdicts and every completeness/adoption gate stay unchanged.
-
-Rules and MCP targets use the same paired statistics as Skill targets but a different treatment
-mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The
-baseline/treatment project overlays are applied only after that snapshot, so the local CLI must load
-the configuration through its real project path. API executors are inadmissible because they cannot
-observe workspace configuration. See [config-experiments.md](config-experiments.md).
-
-`mcp check` is a protocol and catalog preflight, not an efficacy result. It proves that a compatible
-stdio server initializes and exposes structurally usable tool definitions without calling a tool.
-Only a paired task experiment can support a claim that the MCP setup improves outcomes.
-
-## Non-goals (v1)
-
-No cross-model leaderboards, no hosted dashboards, no trajectory-level scoring. skillfit answers one
-question per user: *is this configuration worth enabling for my agent on my tasks?*
-
-Release availability reviewed 2026-10-14: policy version 2 ships in 0.9.0.
-This availability update changes no formula, evidence gate or acceptance threshold.
-The legacy section anchor remains available for existing links.
+Current readers reject saved zero-p records consistent with the old zero-mass
+pattern when stable recomputation is nonzero or changes the verdict. They return
+`RECORDED_STATISTICS_NUMERIC_ERROR` with recorded and computed statistics, rather
+than silently replacing the saved p-value or verdict. This diagnoses a numerical
+pattern, not the record's provenance. Correct historical records retain the
+existing validation rules, including genuinely unrepresentable tiny tails.
+Preserve erroneous originals and pinned runtimes; publish any correction as a
+separate dated record linked to the original. See [report diagnostics](evaluation-reports.md#numerical-integrity-errors).
 
 <a id="explicit-efficiency-acceptance-policy-version-2-unreleased"></a>
 
@@ -513,3 +430,224 @@ provider drift and cache reuse limit generalization; it is not a repository-leve
 or future-model guarantee. It estimates neither dollars nor provider-internal
 retry costs. Policy normalization/hashes remain versioned, and a policy chosen
 after execution cannot authorize adoption. See [the component contract](eval-component.md).
+
+<a id="bench-composition-guidance-for-authors-and-the-upcoming-scaffolding-tooling"></a>
+
+## Bench composition guidance
+
+These are the targets. [bench-authoring.md](bench-authoring.md) is the walkthrough that gets a bench to
+them, step by step, on one real task.
+
+- 20–50 tasks drawn from real failures is a healthy personal bench
+  ([Anthropic](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)); grow from observed
+  failures, stop at theoretical saturation.
+- ≥30% negative-trigger tasks when measuring activation; difficulty mix roughly 50% easy / 30% medium / 20% hard.
+- Adopt [SkillsBench's contribution gates](https://arxiv.org/html/2602.12670v1): human-authored prompts
+  (LLM-written tasks under-measure the model), oracle solution passes the verifier at 100% (**enforced
+  when registered**: `bench check` fails a task whose oracle-solved fixture does not exit 0 with every
+  check passing, and emits `WARN` for a task that registers no oracle at all, since winnability is then
+  unverified — live case preflight classifies that missing evidence as `UNKNOWN`,
+  still nonblocking, because `bench add --freeze` legitimately produces
+  oracle-less tasks mid-authoring; the NOP half, verifier must fail the untouched fixture, is enforced
+  unconditionally), minimal deterministic assertions, realistic data, anti-cheat layout (tests and ground truth
+  never enter the fixture), grade the outcome not the path. An agent may *draft* the verifier + oracle
+  (`bench add --freeze --decompose`), but the draft is admitted only after both gates pass locally, and a
+  bench generated from the skill under test is inadmissible for efficacy claims (same-distribution
+  contamination — the S2EBench lesson).
+- Layout stays [Harbor](https://github.com/harbor-framework/benchmark-template)-compatible so personal
+  benches can graduate into shared benchmark tooling.
+
+## Workspace configuration experiments
+
+Paired runs can select `--input workspace` to present task files on disk without
+an inline snapshot. CLI executors only; the compatible default remains
+`snapshot`. Calibration must use the same selection. New v4 manifests and trial
+receipts record `inputMode`; its absence in an older manifest is reported as
+legacy/not recorded. Skill content remains force-injected in the treatment, so
+this changes task presentation, not L1/L2 or the statistical verdict protocol.
+The initial workspace prompt estimate excludes subsequent tool reads and replies.
+
+Paired `--mode installed` is a separate, opt-in delivery surface for Skill/CLI experiments and
+requires workspace input. Prompts remain identical; only treatment receives the complete Skill at
+the matrix-defined project directory. Compatible v4 `skillDelivery` metadata records the selection
+and directory. Here `target.bundleSha256/files` fingerprint all regular resources (sorted relative
+paths and bytes, including scripts and binary assets; excluding permissions and empty directories).
+Per-run receipts retain nullable mechanical activation observations and available raw transcripts.
+Source drift, unsafe paths, symlinks and fixture collisions fail before the affected agent call.
+Inherited agent configuration is not isolated, and installation does not guarantee activation.
+Old v4 manifests and inject mode retain their existing interpretation. Paired tests, scale labels,
+error exclusions, CI calculations and verdict semantics above are unchanged. See
+[installed-skill-evaluation.md](installed-skill-evaluation.md) for usage and limits.
+
+In installed mode, `--baseline-skill` selects a previous complete Skill with the
+same frontmatter name and a different fingerprint. Both versions are frozen;
+`baselineTarget` identifies baseline and `target` treatment, with per-trial arm
+identity. A revision delta is relative to that previous Skill, not to no Skill,
+and establishes neither installation benefit nor general non-regression. Without
+it, baseline receives no harness-installed Skill; inherited configuration still
+applies. See [revision comparisons](skill-revisions.md).
+
+Rules and MCP targets use the same paired statistics as Skill targets but a different treatment
+mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The
+baseline/treatment project overlays are applied only after that snapshot, so the local CLI must load
+the configuration through its real project path. API executors are inadmissible because they cannot
+observe workspace configuration. See [config-experiments.md](config-experiments.md).
+
+`mcp check` is a protocol and catalog preflight, not an efficacy result. It proves that a compatible
+stdio server initializes and exposes structurally usable tool definitions without calling a tool.
+Only a paired task experiment can support a claim that the MCP setup improves outcomes.
+
+## Costs, budgets and stopping
+
+`spendingBudget` / `--spending-budget` is **optional as a whole**; once supplied,
+**all five fields are required**. [Planning](eval-planning.md#preview-and-confirm)
+owns their names, numeric ranges, complete example and hash binding. These are
+absolute whole-batch stop lines, distinct from call counts and relative adoption
+cost caps. A duration-only guard is unsupported.
+
+The same guard applies to paired eval, trigger, calibration and both optional
+judge orders. All invoked primary/judge spending counts, including failures and
+excluded partners. Reaching any line prevents the **next** call; one in-flight
+call can overshoot. Missing/partial/invalid final usage or an execution/guard error
+stops further calls and retains known/unknown costs. No retries, replacement
+samples or automatic expansion follow. A final predeclared call may complete the
+cohort at a line with complete evidence. Completed audits replay chronological
+before/after snapshots; elapsed limits are operational guards, not API hard caps,
+adoption thresholds or provider invoices.
+
+Known missing token/cache readers block a strict budget before calls for either
+primary or judge. Among current CLI adapters, Codex has all required counters;
+Kimi lacks cached-input partitioning and Claude collects no token counters.
+API coverage is unknown offline and requires complete response counters at
+runtime. This is skillfit reader support, not a claim about vendor capabilities.
+See [capabilities](eval-agent-preflight.md#current-source-capability-table).
+
+SIGINT/SIGTERM stops subsequent dispatches and managed active processes, retaining
+receipts and sealing the stopped prefix. Interrupted execution is ungraded;
+available counters remain partial unless already final. Missing usage stays
+unknown. Stopped/incomplete runs cannot authorize adoption. Read [interruption](evaluation-interruption.md)
+and [execution timing](eval-timing.md) for monotonic elapsed intervals, wall timing,
+CLI deadlines and clock/observation-gap errors.
+
+New condition summaries also record `tokenCoverage.input/output`: the number of
+graded surviving runs that supplied each field. Existing `tokens` totals and
+verdict semantics are unchanged. Missing or partial coverage cannot establish a
+complete overhead claim; legacy totals without coverage are shown as unrecorded.
+
+Optional `tasks[].costs` and `overall.costs` (cost schema 1) add descriptive
+accounting for surviving graded pairs and all invoked agent runs separately.
+They partition input into recorded cache-read and uncached tokens, retain
+failed/excluded invocations' spending, and report each measure per successful
+task (total spending / successes, including graded failures). Each measure's
+`final/partial/unknown` coverage sums to its population's run count. Incomplete
+usage is a known lower bound and suppresses percentage comparisons; missing
+cache counts are unknown, never zero. Timeouts retain measured elapsed time and
+available public-transcript usage as partial receipts. Pre-call guard/setup
+refusals are counted separately and do not enter spending totals. Judge and
+other cohorts' spending are excluded. These observations introduce no cost
+significance, monetary estimate or change to the quality protocol. See
+[evaluation cost accounting](eval-costs.md) for field and denominator rules.
+
+`invocationCosts` separately records primary Agent, judge and combined spending;
+judge successes are parsed grading calls and are not task successes for Agent
+cost per success. Both judge orders retain prompt/output/usage receipts even on
+failure. Historical missing judge costs remain unknown. API/cache readers retain
+only explicit compatible counters; a malformed/failed response is not evidence
+of a free invocation. Missing cache counts never become zero.
+
+Failed JSON CLI invocations may add an identity/time-bound local numeric usage
+snapshot when the matrix capability permits it. This is partial cumulative usage,
+never final coverage or an accepted outcome; receipt `usageEvidence` preserves
+the counter provenance without private transcript bodies. Unknown/ambiguous
+metadata remains unknown, and original frozen failures are not rewritten.
+Quality exclusions, verdicts and every completeness/adoption gate stay unchanged.
+
+## Evidence and replay
+
+Native plans freeze inputs, implementation, selected tasks, order, effective
+deadlines and allowed configuration. Sealed input copies retain the original
+bench/Skill/request/runtime; local copy time and storage are separate from
+executor costs. Input/configuration mutation stops further calls. Paired
+installed runs deliver the same pinned native diff helper to both arms; its
+presence is not proof of use. Logical/physical workspace aliases in the plan may
+share matrix-defined pure trust bookkeeping, but retargeting them or changing
+other configuration still stops calls. Inherited configuration is not isolated.
+
+Optional `experiment` metadata records declared/planned, started and finished
+calls, the ceiling, completion state and plan hash. Judges add two declared calls
+per pair. Native audit checks receipts/ledger against the plan; offline replay
+regrades saved delivery with trusted verifier code. Portable packages use the
+retained runtime/inputs; they make no model calls, new trigger observations or
+claims of independent validation. Authentication always remains unknown offline.
+
+Historical absence remains unrecorded; new readers do not infer old usage,
+activation protocols or model identity from today's configuration. Unsupported
+sub-object versions fail explicitly. Statistical formulas, policy 1/2 thresholds
+and hash normalization remain unchanged. Fixed reports/replay inputs and release
+records are not rewritten; any evidence correction is a separate dated entry.
+See [input snapshots](evaluation-input-snapshots.md), [bounded workflow](experiment-workflow.md),
+[report states](evaluation-reports.md), [preflight](eval-agent-preflight.md) and
+[portable packages](replay-packages.md).
+
+## Public model identity per invocation
+
+New executor receipts carry optional `modelIdentity` version 1, separate from
+usage and statistical populations. `configured` records an already permitted
+setting, `requested` records the model explicitly sent in that invocation, and
+`reportedModels` retains public response IDs with source locations. Neither
+configured/requested names nor an assistant's textual self-description establish
+a reported model. API success and failure retain the public response body; request
+headers and API credentials are not recorded. Invalid or interrupted JSON stays
+unrecorded unless a complete public model-bearing event was already received.
+
+API observations use the response's `/model`. The matrix currently enables
+Claude assistant-message observations at `jsonl:<one-based original line>:/message/model`.
+Codex/Kimi surfaces without a confirmed public response field remain unrecorded;
+startup model configuration is not substituted. Multiple observed IDs are retained.
+These are provider/CLI declarations, not attestation of backend routing or a
+complete inventory of internal/subagent models.
+
+`modelIdentities` version 1 aggregates primary, judge and drafter invocation
+coverage independently: invoked, reported, unrecorded, model IDs, and relative
+receipt paths with each call's identity sources. A guard refusal that never
+invoked the executor is excluded. Historical absence remains unrecorded, and
+unknown/invalid receipts cannot establish positive model coverage. This does not
+change token final/partial/unknown coverage, costs, quality verdicts, policy
+thresholds/hashes or automatic upgrade behavior.
+
+Frozen executor `modelIntent`, preview metadata and `_plan.json` are not rewritten
+when a response arrives. The historical `servedModel: "unrecorded"` plan field is
+retained; current identity is disclosed through call receipts and summaries.
+Native audits bind new claims to sealed response bytes, frozen intent and the
+invocation ledger; portable evaluation replay uses these saved observations and
+never probes today's CLI/configuration or calls a model. Legacy receipts remain
+readable without being reinterpreted. See [reading reports](evaluation-reports.md)
+and [drafting records](bench-drafting.md).
+
+<a id="non-goals-v1"></a>
+
+## Non-goals and known limitations
+
+- No cross-model leaderboards, hosted dashboards or trajectory-level scoring.
+  Deterministic checks can observe artifacts such as a regression test, but do
+  not prove TDD order, review discipline or another workflow's internal process.
+  A zero outcome delta cannot exclude a process effect that was not measured.
+- No validated MDE or power planner. A bootstrap half-width is not an MDE;
+  inconclusive results require a new predeclared design, not post-hoc sampling
+  until significant. Task heterogeneity, repeat correlation, provider drift and
+  cache reuse limit generalization. Sampling remains unpinned.
+- Current source supports opt-in [bench schema 2 claims and frozen measurementScope](bench-claims.md). Schema 1 remains legacy-unrecorded; declarations do not prove validity, power or process improvements.
+  Existing `bench check` mock markers remain verifier-level informational probes.
+  Current source adds [bench self-test](bench-self-test.md), a separate full-pipeline
+  synthetic control that cannot authorize efficacy/adoption or validate real Agent
+  discovery. It uses the unchanged statistics and actual retained receipts;
+  a matched stopped error is a self-test success, never a completed eval verdict.
+- CLI presence, offline fixtures and exported replay are distinct from live
+  installed-version/authentication validation and third-party live reproduction.
+  Current repository evidence does not establish an independent third-party live
+  reproduction; author runs and offline replay must be labeled accordingly.
+
+skillfit reports observations on a pinned task mixture and available model
+identity. Whether to enable a configuration also requires representative tasks,
+independent validation, complete costs and the chosen policy's gates. It cannot
+promise a conclusive quality verdict for every budget or workflow claim.

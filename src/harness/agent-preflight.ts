@@ -104,6 +104,10 @@ export function inspectAgentEnvironment(options: { roles: EnvironmentRole[]; mod
     if (agent && !argv?.[0]) error ??= options.mode === 'trigger' && role.role === 'agent'
       ? `Agent "${agent.id}" has no headless streamJson command template; trigger detection is unavailable for it.`
       : `Agent "${agent.id}" has no usable headless command template.`;
+    if (trigger && agent && (!agent.headless.streamJson?.wireShape ||
+        (agent.headless.streamJson.wireShape !== 'codex-items' && !agent.sessions?.skillKey))) {
+      error ??= `Agent "${agent.id}" needs a matrix wireShape and Skill identity key for trigger detection.`;
+    }
     if (agent && role.role === 'agent' && ['installed', 'trigger'].includes(options.mode) && !agent.skills.projectDirs.length) {
       error ??= `Agent "${agent.id}" has no matrix-defined project Skill directory for ${options.mode} mode.`;
     }

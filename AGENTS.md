@@ -12,6 +12,11 @@ Evidence-driven configuration CLI for Claude Code, Codex CLI, and Kimi Code. Use
 - `profiles/` — deny-by-default install manifests; `codex-curated` is the public selectable source profile.
 - `evidence/` — dated, pinned published reports; `runs/` — gitignored local eval output.
 
+## Skill routing
+
+- When using skillfit for Skill/MCP selection, installation, usage analysis, trigger checks, or effectiveness comparisons, read [the skillfit driver](skills/skillfit/SKILL.md) immediately after the applicable project instructions, before browsing source, historical evidence, or run output, or invoking the CLI. Complete that read before choosing further commands; follow its command-selection, spending, and interpretation rules within the current authorization. For these usage tasks, the driver route takes precedence over the generic coding-skill suite.
+- For development of skillfit itself, use applicable global coding skills together with this file's development and offline-test requirements. Editing evaluation code or researching evaluation options does not authorize real model evaluations.
+
 ## Commands and completion
 
 ```bash

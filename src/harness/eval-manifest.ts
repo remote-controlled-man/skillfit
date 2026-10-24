@@ -1,3 +1,5 @@
+import { parseMeasurementScope, requestedClaimFor, assertBenchClaimSupported, type MeasurementScope } from './measurement-scope.js';
+import { parseModelIdentities, type ModelIdentities } from './model-identity.js';
 import { verdictFor } from './report.js';
 import { mcnemarExactP } from './stats.js';
 import { validateSkillInstallDir } from './installed-skill.js';
@@ -7,6 +9,20 @@ import { parseInvocationCosts, type InvocationCosts } from './invocation-costs.j
 
 type RecordValue = Record<string, unknown>;
 type Verdict = 'effective' | 'ineffective' | 'inconclusive';
+
+/** A diagnostic for the legacy zero-mass pattern, not proof of a record's provenance. */
+export class RecordedStatisticsNumericError extends Error {
+  readonly code = 'RECORDED_STATISTICS_NUMERIC_ERROR';
+
+  constructor(readonly details: {
+    discordant: { improved: number; regressed: number };
+    recorded: { mcnemarP: number; verdict: Verdict };
+    computed: { mcnemarP: number; verdict: Verdict };
+  }) {
+    super(`RECORDED_STATISTICS_NUMERIC_ERROR: recorded McNemar p=${details.recorded.mcnemarP} (${details.recorded.verdict}) is consistent with legacy numerical underflow, but stable recomputation gives p=${details.computed.mcnemarP} (${details.computed.verdict}). Preserve the original record and pinned runtime; save corrections separately. No adoption is authorized.`);
+    this.name = 'RecordedStatisticsNumericError';
+  }
+}
 
 export interface Counts {
   passes: number;
@@ -38,6 +54,8 @@ export interface ReportRow {
 }
 
 export interface ReportData {
+  measurementScope?: MeasurementScope;
+  modelIdentities?: ModelIdentities;
   invocationCosts?: InvocationCosts;
   runGroup: string;
   createdAt: string;
@@ -450,16 +468,37 @@ export function parseEvalReport(value: unknown): ReportData {
     throw new Error('overall.stats.discordant implies a negative shared failure count');
   }
   const mcnemarP = number(stats['mcnemarP'], 'overall.stats.mcnemarP', 0, 1);
-  if (Math.abs(mcnemarP - mcnemarExactP(improved, regressed)) > 1e-9) {
+  const computedP = mcnemarExactP(improved, regressed);
+  const expectedVerdict = verdictFor({ improved, regressed, deltaPassRate: overallRow.deltaPassRate }).verdict;
+  const pMismatch = Math.abs(mcnemarP - computedP) > 1e-9;
+  const verdictMismatch = overallRow.verdict !== expectedVerdict;
+  // Binary64 rounds 2^-n to zero starting at 1075. Keep the ordinary validation
+  // errors for other inconsistencies; this pattern never grants legacy validity.
+  const legacyVerdict = overallRow.deltaPassRate === 0 ? 'inconclusive'
+    : overallRow.deltaPassRate > 0 ? 'effective' : 'ineffective';
+  if (improved + regressed >= 1075 && mcnemarP === 0 && overallRow.verdict === legacyVerdict && (computedP !== 0 || verdictMismatch)) {
+    throw new RecordedStatisticsNumericError({ discordant: { improved, regressed },
+      recorded: { mcnemarP, verdict: overallRow.verdict }, computed: { mcnemarP: computedP, verdict: expectedVerdict } });
+  }
+  if (pMismatch) {
     throw new Error('overall.stats.mcnemarP disagrees with discordant counts');
   }
-  const expectedVerdict = verdictFor({ improved, regressed, deltaPassRate: overallRow.deltaPassRate }).verdict;
-  if (overallRow.verdict !== expectedVerdict) throw new Error('overall.verdict disagrees with the metrics protocol');
+  if (verdictMismatch) throw new Error('overall.verdict disagrees with the metrics protocol');
+  const scope = parseMeasurementScope(manifest.measurementScope);
+  if (scope) {
+    if (JSON.stringify(scope.taskClaims.map(t => t.taskId)) !== JSON.stringify(tasks.map(t => t.id))) throw new Error('measurementScope task IDs/order differ from the selected tasks.');
+    const policy = (manifest.component as { policy?: { schemaVersion: number } } | undefined)?.policy;
+    if (scope.requestedClaim !== null && scope.requestedClaim !== requestedClaimFor('paired', policy)) throw new Error('measurementScope requestedClaim contradicts the paired mode/policy.');
+    if (scope.requestedClaim === null && executor.kind !== 'mock') throw new Error('measurementScope diagnostic-only paired summaries require a mock executor.');
+    assertBenchClaimSupported(scope);
+  }
   const managed = experiment(manifest['experiment']);
   if (managed && managed.plannedCalls !== taskCount * integer(manifest['trials'], 'trials', 1) * (manifest['judge'] == null ? 2 : 4)) {
     throw new Error('experiment.plannedCalls contradicts the declared tasks, trials, conditions, and judge');
   }
   return {
+    ...(scope ? { measurementScope: scope } : {}),
+    ...(manifest['modelIdentities'] === undefined ? {} : { modelIdentities: parseModelIdentities(manifest['modelIdentities']) }),
     runGroup: string(manifest['runGroup'], 'runGroup'),
     ...(manifest['invocationCosts'] === undefined ? {} : { invocationCosts: parseInvocationCosts(manifest['invocationCosts']) }),
     createdAt,

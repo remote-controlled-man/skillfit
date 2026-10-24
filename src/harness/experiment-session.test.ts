@@ -162,6 +162,21 @@ test('temporary profile config is pinned, planned trust additions are allowed, m
   assert.throws(() => session.check(), /Agent configuration changed/); session.finish();
 });
 
+test('recorded CLI configuration stays intent only and does not mutate the frozen descriptor or plan', async t => {
+  const s = setup(t), profile = join(s.root, 'profile'); mkdirSync(profile);
+  writeFileSync(join(profile, 'config.toml'), 'model = "configured-alias"\napi_key = "PRIVATE_IDENTITY_SECRET"\n');
+  const session = new ExperimentSession({ ...s.options, agent: 'codex', homeDir: join(s.root, 'home'),
+    env: { CODEX_HOME: profile }, versionProbe: () => 'offline 1.0' });
+  const before = readFileSync(join(s.groupDir, '_plan.json'), 'utf8');
+  const executor = { describe: () => ({ kind: 'cli', model: 'cli-configured' }), run: async () => ({ output: 'offline answer' }) };
+  const descriptor = JSON.stringify(executor.describe());
+  const result = await session.wrap(executor, 'agent').run('offline prompt', s.options.workspaces[0]!);
+  assert.equal(result.modelIdentity?.configured, 'configured-alias'); assert.equal(result.modelIdentity?.requested, null);
+  assert.equal(result.modelIdentity?.status, 'unrecorded'); assert.deepEqual(result.modelIdentity.reportedModels, []);
+  assert.equal(JSON.stringify(executor.describe()), descriptor); assert.equal(readFileSync(join(s.groupDir, '_plan.json'), 'utf8'), before);
+  assert.equal(JSON.stringify(result).includes('PRIVATE_IDENTITY_SECRET'), false); session.finish();
+});
+
 test('canonical trust names for frozen workspace aliases are allowed, unrelated names and overrides are not', t => {
   const s = setup(t); const profile = join(s.root, 'profile'); mkdirSync(profile);
   const real = join(s.root, 'physical'); mkdirSync(real);

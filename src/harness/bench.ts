@@ -1,3 +1,4 @@
+import { parseBenchClaims } from './measurement-scope.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { basename, isAbsolute, join, resolve, sep } from 'node:path';
 import { hashFileSet, listFilesRecursive } from './hash.js';
@@ -6,6 +7,7 @@ import { parseCommand } from './command.js';
 import { parseVerifierTimeoutSeconds } from './verifier-timeout.js';
 
 export const BENCH_SCHEMA_VERSION = 1;
+export const BENCH_SCHEMA_VERSIONS = [1, 2] as const;
 
 const TASK_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
@@ -37,7 +39,7 @@ function assertCommandTokensExist(benchDir: string, command: string, label: stri
   }
 }
 
-export function validateBenchTask(benchDir: string, raw: unknown, index: number): BenchTask {
+export function validateBenchTask(benchDir: string, raw: unknown, index: number, schemaVersion = 1): BenchTask {
   if (typeof raw !== 'object' || raw === null) {
     throw new Error(`bench.json task #${index + 1} must be an object`);
   }
@@ -51,6 +53,9 @@ export function validateBenchTask(benchDir: string, raw: unknown, index: number)
       throw new Error(`bench.json task "${id}" is missing a non-empty "${field}" field`);
     }
   }
+  const claims = schemaVersion === 2 ? parseBenchClaims(task['claims'], `task "${id}" claims`) : undefined;
+  if (claims?.includes('activation') && typeof task.shouldTrigger !== 'boolean') throw new Error(`task "${id}" activation claims require a shouldTrigger boolean.`);
+  const claimField = claims ? { claims } : {};
   const fixture = task['fixture'] as string;
   const prompt = task['prompt'] as string;
   const verifier = task['verifier'] as string;
@@ -117,9 +122,9 @@ export function validateBenchTask(benchDir: string, raw: unknown, index: number)
     if (!existsSync(rubricAbs) || !statSync(rubricAbs).isFile()) {
       throw new Error(`task "${id}" rubric file not found: ${rubric}`);
     }
-    return { id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField, ...verifierKindField, ...timeoutField, ...oracleField };
+    return { ...claimField, id, fixture, prompt, verifier, rubric, ...triggerField, ...promptTriggerField, ...verifierKindField, ...timeoutField, ...oracleField };
   }
-  return { id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField, ...verifierKindField, ...timeoutField, ...oracleField };
+  return { ...claimField, id, fixture, prompt, verifier, ...triggerField, ...promptTriggerField, ...verifierKindField, ...timeoutField, ...oracleField };
 }
 
 export function loadBench(benchDir: string): Bench {
@@ -134,15 +139,15 @@ export function loadBench(benchDir: string): Bench {
   } catch (error) {
     throw new Error(`Invalid bench.json in ${dir}: ${(error as Error).message}`);
   }
-  if (raw.schemaVersion !== BENCH_SCHEMA_VERSION) {
+  if (!BENCH_SCHEMA_VERSIONS.includes(raw.schemaVersion as 1 | 2)) {
     throw new Error(
-      `Unsupported bench schemaVersion ${String(raw.schemaVersion)} in ${dir} (expected ${BENCH_SCHEMA_VERSION})`,
+      `Unsupported bench schemaVersion ${String(raw.schemaVersion)} in ${dir} (expected 1 or 2)`,
     );
   }
   if (!Array.isArray(raw.tasks) || raw.tasks.length === 0) {
     throw new Error(`bench.json in ${dir} must list at least one task`);
   }
-  const tasks = raw.tasks.map((task, index) => validateBenchTask(dir, task, index));
+  const tasks = raw.tasks.map((task, index) => validateBenchTask(dir, task, index, raw.schemaVersion as number));
   const seen = new Set<string>();
   for (const task of tasks) {
     if (seen.has(task.id)) {
@@ -152,7 +157,7 @@ export function loadBench(benchDir: string): Bench {
   }
   const name = typeof raw.name === 'string' && raw.name.trim() !== '' ? raw.name : basename(dir);
   const contentSha256 = hashFileSet(dir, listFilesRecursive(dir, { excludeGitMetadata: true }));
-  return { dir, name, schemaVersion: BENCH_SCHEMA_VERSION, tasks, contentSha256 };
+  return { dir, name, schemaVersion: raw.schemaVersion as number, tasks, contentSha256 };
 }
 
 /** Keep manifest order so selecting IDs cannot silently change balanced pair order. */

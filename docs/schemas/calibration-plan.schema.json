@@ -4,6 +4,7 @@
   "type": "object",
   "required": ["schemaVersion", "kind", "planSha256", "implementationSha256", "bench", "agent", "executor", "inputMode", "trials", "plannedCalls", "maxCalls", "executorTimeoutSeconds", "runGroup", "runsRoot", "outputDir", "guardFiles", "agentPreflight", "casePreflight"],
   "properties": {
+    "measurementScope": { "$ref": "measurement-scope.schema.json" },
     "schemaVersion": { "const": 1 }, "kind": { "const": "skillfit.calibration-plan" },
     "planSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "implementationSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },

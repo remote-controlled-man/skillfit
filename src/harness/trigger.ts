@@ -1,11 +1,18 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { measurementScope, assertBenchClaimSupported, type MeasurementScope } from './measurement-scope.js';
+import { summarizeTriggerTask, triggerMetrics, type TriggerMetrics, type TriggerTaskSummary, type TriggerTrialRecord } from './trigger-summary.js';
+export { triggerMetrics, type TriggerMetrics, type TriggerTaskSummary, type TriggerTrialRecord } from './trigger-summary.js';
+import { unknownModelIdentity, identityForResult, modelIdentities, type ModelIdentity } from './model-identity.js';
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
+import { parseFrontmatter } from '../frontmatter.js';
+import { parseTriggerDetection, parseTriggerEvidence, type TriggerDetection, type TriggerEvidence } from './trigger-detection.js';
 import type { ExperimentSession, ExperimentSummary } from './experiment-session.js';
-import { MOCK_MARKER_FILE, RUN_GROUP_PATTERN } from './constants.js';
+import { RUN_GROUP_PATTERN } from './constants.js';
 import { collectInstalledSkillFingerprint, collectSkillBundle, type InstalledSkillFingerprint } from './bundle.js';
 import { OUTPUT_CONTRACT } from './prompt.js';
-import { engagementError, gitInit, runVerifier, verifierFailure, verifierLogFor } from './runner.js';
-import { wilson95 } from './stats.js';
+import { createTrialWorkspace, engagementError, gitInit } from './trial-workspace.js';
+import { runVerifier, verifierFailure, verifierLogFor } from './verifier.js';
 import { throwIfEvaluationInterrupted } from './interruption.js';
 import { ExecutorFailure } from './types.js';
 import { createSpendingBudgetRecorder, type SpendingBudget } from './eval-budget.js';
@@ -37,62 +44,15 @@ export interface TriggerPlan {
   competitors?: TriggerCompetitor[];
   /** How a fire was recognized. Codex has no Skill-invocation event. */
   detection?: 'skill-tool' | 'skill-read' | 'unrecorded';
+  triggerDetection?: TriggerDetection;
   session?: ExperimentSession;
   spendingBudget?: SpendingBudget;
   log?: (msg: string) => void;
 }
 
-export interface TriggerTrialRecord {
-  taskId: string;
-  trial: number;
-  runDir: string;
-  startedAt: string;
-  finishedAt: string;
-  durationSeconds: number;
-  wallDurationSeconds?: number;
-  executorInvoked?: boolean;
-  executionTiming?: ExecutionTiming;
-  triggered: boolean | null;
-  passed: boolean;
-  score: number | null;
-  checks: VerifierCheck[] | null;
-  error: string | null;
-  tokens: TokenUsage | null;
-  usageStatus?: 'final' | 'partial' | 'unknown';
-}
-
-export interface TriggerTaskSummary {
-  id: string;
-  shouldTrigger: boolean;
-  triggerClass?: 'explicit' | 'implicit' | 'contextual';
-  runs: number;
-  fired: number;
-  unknown: number;
-  errors: number;
-  passes: number;
-  tokens: { input: number; output: number } | null;
-}
-
-export interface TriggerMetrics {
-  recall: number | null;
-  recallCi95: { lo: number; hi: number } | null;
-  falseTriggerRate: number | null;
-  falseTriggerRateCi95: { lo: number; hi: number } | null;
-  precision: number | null;
-  /**
-   * Wilson interval over the fired runs (precision is a proportion: positives fired / all fired).
-   * `f1` deliberately has none — it is a harmonic mean of two proportions and has no closed-form
-   * binomial interval, so printing one would be invented precision. See docs/metrics.md L1.
-   */
-  precisionCi95: { lo: number; hi: number } | null;
-  f1: number | null;
-  positives: { fired: number; runs: number };
-  negatives: { fired: number; runs: number };
-  classRecall?: Partial<Record<'explicit' | 'implicit' | 'contextual', { fired: number; runs: number; recall: number | null; recallCi95: { lo: number; hi: number } | null }>>;
-  tokens: { input: number; output: number } | null;
-}
-
 export interface TriggerManifest {
+  measurementScope?: MeasurementScope;
+  modelIdentities?: import('./model-identity.js').ModelIdentities;
   schemaVersion: 1;
   mode: 'trigger';
   experiment?: ExperimentSummary;
@@ -114,6 +74,7 @@ export interface TriggerManifest {
   skillInstallDir: string;
   competition?: { mode: 'alone' | 'installed'; skills: { name: string; sha256: string }[] };
   detection?: 'skill-tool' | 'skill-read' | 'unrecorded';
+  triggerDetection?: TriggerDetection;
   tasks: TriggerTaskSummary[];
   metrics: TriggerMetrics;
   warnings: string[];
@@ -129,12 +90,7 @@ async function runTriggerTrial(
   const task = plan.bench.tasks.find((t) => t.id === taskId);
   if (!task) throw new Error(`Unknown task: ${taskId}`);
   const runDir = join(plan.runsRoot, plan.runGroup, task.id, 'installed', `trial-${trial}`);
-  if (existsSync(runDir)) {
-    throw new Error(`Run directory already exists: ${runDir}`);
-  }
-  mkdirSync(runDir, { recursive: true });
-  cpSync(join(plan.bench.dir, task.fixture), runDir, { recursive: true });
-  rmSync(join(runDir, MOCK_MARKER_FILE), { force: true });
+  createTrialWorkspace(join(plan.bench.dir, task.fixture), runDir, { removeMockMarker: true });
   const gitInitialized = await gitInit(runDir);
   throwIfEvaluationInterrupted();
 
@@ -166,12 +122,24 @@ async function runTriggerTrial(
   const monotonicStarted = performance.now();
   let output = '';
   let rawOutput: string | null = null;
+  let modelIdentity: ModelIdentity | undefined;
   let error: string | null = null;
   let tokens: TokenUsage | null = null;
   let failedUsage: TriggerTrialRecord['usageStatus'];
   let triggered: boolean | null = null;
   let executorInvoked = false;
   let executionTiming: ExecutionTiming | undefined;
+  const detection = plan.triggerDetection;
+  let triggerEvidence: TriggerEvidence | undefined = detection
+    ? { status: 'unknown', complete: false, matchedIdentity: null, eventLines: [] } : undefined;
+  const observation = (result: import('./types.js').ExecutorResult) => {
+    if (!detection) return;
+    if (!isDeepStrictEqual(parseTriggerDetection(result.triggerDetection), detection)) throw new Error('Trigger detection declaration differs from the frozen plan.');
+    const evidence = parseTriggerEvidence(result.triggerEvidence, detection);
+    const expected = evidence.status === 'unknown' ? null : evidence.status === 'observed';
+    if ((result.skillTriggered ?? null) !== expected) throw new Error('Trigger boolean contradicts its observation evidence.');
+    triggerEvidence = evidence;
+  };
   try {
     if (!gitInitialized && task.verifierKind === 'command') {
       throw new Error('Benchmark Git initialization or reflog verification failed; trigger task was not executed.');
@@ -180,21 +148,28 @@ async function runTriggerTrial(
     const result = await plan.executor.run(prompt, runDir);
     output = result.output;
     rawOutput = result.rawOutput ?? null;
+    modelIdentity = identityForResult(result, plan.executor.describe());
     tokens = result.tokens ?? null;
     triggered = result.skillTriggered ?? null;
     error = result.guardError ?? null;
     failedUsage = result.usageStatus ?? 'final';
     executionTiming = result.executionTiming;
+    observation(result);
   } catch (executorError) {
     error = (executorError as Error).message;
+    triggered = null;
     if (executorError instanceof ExecutorFailure) {
       executorInvoked = executorError.executorInvoked;
       output = executorError.result.output;
       rawOutput = executorError.result.rawOutput ?? null;
+      modelIdentity = identityForResult(executorError.result, plan.executor.describe());
       tokens = executorError.result.tokens ?? null;
       triggered = executorError.result.skillTriggered ?? null;
       failedUsage = executorError.result.usageStatus ?? 'unknown';
       executionTiming = executorError.result.executionTiming;
+      if (detection && executorError.result.triggerDetection !== undefined) {
+        try { observation(executorError.result); } catch (invalid) { error += `; ${(invalid as Error).message}`; triggered = null; }
+      } else if (detection) triggered = null;
     }
   }
   if (error === null) {
@@ -236,8 +211,10 @@ async function runTriggerTrial(
     durationSeconds,
     wallDurationSeconds: Math.round(((finished.getTime() - started.getTime()) / 1000) * 1000) / 1000,
     executorInvoked,
+    modelIdentity: modelIdentity ?? unknownModelIdentity(plan.executor.describe().modelIntent),
     ...(executionTiming ? { executionTiming } : {}),
     triggered,
+    ...(detection ? { triggerDetection: detection, triggerEvidence } : {}),
     passed,
     score,
     checks,
@@ -265,85 +242,6 @@ async function runTriggerTrial(
     'utf8',
   );
   return record;
-}
-
-function summarizeTriggerTask(
-  taskId: string,
-  shouldTrigger: boolean,
-  triggerClass: TriggerTaskSummary['triggerClass'],
-  records: TriggerTrialRecord[],
-): TriggerTaskSummary {
-  let input = 0;
-  let output = 0;
-  let seenTokens = false;
-  for (const record of records) {
-    if (!record.tokens) continue;
-    seenTokens = true;
-    input += record.tokens.input ?? 0;
-    output += record.tokens.output ?? 0;
-  }
-  return {
-    id: taskId,
-    shouldTrigger,
-    ...(triggerClass ? { triggerClass } : {}),
-    runs: records.filter((r) => r.error === null && r.triggered !== null).length,
-    fired: records.filter((r) => r.error === null && r.triggered === true).length,
-    unknown: records.filter((r) => r.error === null && r.triggered === null).length,
-    errors: records.filter((r) => r.error !== null).length,
-    passes: records.filter((r) => r.passed).length,
-    tokens: seenTokens ? { input, output } : null,
-  };
-}
-
-export function triggerMetrics(tasks: TriggerTaskSummary[]): TriggerMetrics {
-  const positives = tasks.filter((t) => t.shouldTrigger);
-  const negatives = tasks.filter((t) => !t.shouldTrigger);
-  const posFired = positives.reduce((sum, t) => sum + t.fired, 0);
-  const posRuns = positives.reduce((sum, t) => sum + t.runs, 0);
-  const negFired = negatives.reduce((sum, t) => sum + t.fired, 0);
-  const negRuns = negatives.reduce((sum, t) => sum + t.runs, 0);
-  const recall = posRuns > 0 ? posFired / posRuns : null;
-  const falseTriggerRate = negRuns > 0 ? negFired / negRuns : null;
-  const firedTotal = posFired + negFired;
-  const precision = firedTotal > 0 ? posFired / firedTotal : null;
-  const f1 =
-    recall !== null && precision !== null && recall + precision > 0
-      ? (2 * precision * recall) / (precision + recall)
-      : null;
-  let input = 0;
-  let output = 0;
-  let seenTokens = false;
-  for (const task of tasks) {
-    if (!task.tokens) continue;
-    seenTokens = true;
-    input += task.tokens.input;
-    output += task.tokens.output;
-  }
-  return {
-    recall,
-    recallCi95: posRuns > 0 ? wilson95(posFired, posRuns) : null,
-    falseTriggerRate,
-    falseTriggerRateCi95: negRuns > 0 ? wilson95(negFired, negRuns) : null,
-    precision,
-    precisionCi95: firedTotal > 0 ? wilson95(posFired, firedTotal) : null,
-    f1,
-    positives: { fired: posFired, runs: posRuns },
-    negatives: { fired: negFired, runs: negRuns },
-    classRecall: classRecall(positives),
-    tokens: seenTokens ? { input, output } : null,
-  };
-}
-
-function classRecall(positives: TriggerTaskSummary[]): TriggerMetrics['classRecall'] {
-  const out: NonNullable<TriggerMetrics['classRecall']> = {};
-  for (const name of ['explicit', 'implicit', 'contextual'] as const) {
-    const rows = positives.filter((task) => task.triggerClass === name);
-    const runs = rows.reduce((sum, task) => sum + task.runs, 0);
-    if (runs === 0) continue;
-    const fired = rows.reduce((sum, task) => sum + task.fired, 0);
-    out[name] = { fired, runs, recall: fired / runs, recallCi95: wilson95(fired, runs) };
-  }
-  return Object.keys(out).length === 0 ? undefined : out;
 }
 
 function buildTriggerWarnings(manifest: Omit<TriggerManifest, 'warnings'>): string[] {
@@ -382,6 +280,27 @@ function buildTriggerWarnings(manifest: Omit<TriggerManifest, 'warnings'>): stri
 }
 
 export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerManifest> {
+  const scope = measurementScope(plan.bench, 'activation');
+  assertBenchClaimSupported(scope);
+  const declared = parseTriggerDetection(plan.triggerDetection ?? plan.executor.describe().triggerDetection);
+  if (plan.triggerDetection && !isDeepStrictEqual(declared, parseTriggerDetection(plan.executor.describe().triggerDetection))) {
+    throw new Error('Trigger executor declaration differs from the frozen plan.');
+  }
+  if (declared && (!declared.identities.includes(plan.skill.name) || (plan.detection !== undefined &&
+      plan.detection !== (declared.method === 'skill-file-read-command' ? 'skill-read' : 'skill-tool')))) {
+    throw new Error('Trigger identity or detection label contradicts the declared target/protocol.');
+  }
+  plan = { ...plan, ...(declared ? { triggerDetection: declared,
+    detection: plan.detection ?? (declared.method === 'skill-file-read-command' ? 'skill-read' : 'skill-tool') } : {}) };
+  if (declared?.method === 'skill-file-read-command' && !declared.skillPaths.includes(`${plan.skillInstallDir.replaceAll('\\', '/')}/${plan.skill.name}/SKILL.md`)) {
+    throw new Error('Registered Skill read paths do not include the installed target from the trigger plan.');
+  }
+  if (declared) for (const competitor of plan.competitors ?? []) {
+    const alias = parseFrontmatter(readFileSync(join(competitor.sourceDir, 'SKILL.md'), 'utf8'))?.name;
+    if (declared.identities.includes(competitor.name) || (alias && declared.identities.includes(alias))) {
+      throw new Error('Competing Skill has a conflicting registered trigger identity: ' + competitor.name);
+    }
+  }
   if (!RUN_GROUP_PATTERN.test(plan.runGroup)) {
     throw new Error(
       `Invalid run group "${plan.runGroup}": must match ${RUN_GROUP_PATTERN} (got characters outside [A-Za-z0-9._-] or a leading dot/hyphen)`,
@@ -410,6 +329,7 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
     plan.log?.(`Skipping ${skipped} task(s) without a shouldTrigger label.`);
   }
 
+  const allRecords: TriggerTrialRecord[] = [];
   const taskSummaries: TriggerTaskSummary[] = [];
   const budget = createSpendingBudgetRecorder({ budget: plan.spendingBudget, groupDir });
   for (const task of eligible) {
@@ -420,7 +340,7 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
       const identity = { taskId: task.id, trial, condition: 'installed' as const };
       budget.before(identity);
       const outcome = await runTriggerTrial(plan, task.id, trial, installedSkill);
-      records.push(outcome);
+      records.push(outcome); allRecords.push(outcome);
       budget.after(identity, { ...outcome, executorInvoked: outcome.executorInvoked ?? false, usageStatus: outcome.usageStatus ?? 'unknown' });
       throwIfEvaluationInterrupted();
     }
@@ -431,6 +351,8 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
   const manifestWithoutWarnings: Omit<TriggerManifest, 'warnings'> = {
     schemaVersion: 1,
     mode: 'trigger',
+    measurementScope: scope,
+    modelIdentities: modelIdentities(allRecords.filter(r => r.executorInvoked).map(r => ({ receipt: `${r.taskId}/installed/trial-${r.trial}/_result.json`, identity: r.modelIdentity ?? null }))),
     ...(plan.session ? { experiment: plan.session.summary() } : {}),
     runGroup: plan.runGroup,
     createdAt: new Date().toISOString(),
@@ -456,6 +378,7 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
       skills: (plan.competitors ?? []).map((skill) => ({ name: skill.name, sha256: skill.sha256 })),
     },
     detection: plan.detection ?? 'unrecorded',
+    ...(declared ? { triggerDetection: declared } : {}),
     tasks: taskSummaries,
     metrics: triggerMetrics(taskSummaries),
   };
@@ -499,6 +422,9 @@ export function renderTriggerSummary(manifest: TriggerManifest, manifestPath: st
     ? 'Compete  : alone (recall is an upper bound)'
     : `Compete  : ${competing.length} other user Skill(s): ${competing.map((skill) => skill.name).join(', ')}`);
   if (manifest.detection === 'skill-read') lines.push('Detect   : SKILL.md read, not a Skill-invocation event');
+  lines.push(manifest.triggerDetection
+    ? `Protocol : triggerDetection v2 (${manifest.triggerDetection.wireShape}; ${manifest.triggerDetection.identityMatch})`
+    : 'Protocol : legacy/unversioned detection; saved observations are not reinterpreted');
   lines.push(`Trials   : ${manifest.trials} per task`);
   lines.push('');
   const idWidth = Math.max(7, ...manifest.tasks.map((t) => t.id.length));

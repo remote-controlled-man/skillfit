@@ -1,5 +1,6 @@
 import type { Executor, ExecutorDescriptor, ExecutorResult, TokenUsage } from '../types.js';
 import { ExecutorFailure } from '../types.js';
+import { observedModelIdentity } from '../model-identity.js';
 import { evaluationSignal } from '../interruption.js';
 
 export interface ApiExecutorOptions {
@@ -68,7 +69,8 @@ export class ApiExecutor implements Executor {
   }
 
   describe(): ExecutorDescriptor {
-    return { kind: 'api', model: this.model, detail: this.baseUrl, sampling: null };
+    return { kind: 'api', model: this.model, detail: this.baseUrl, sampling: null,
+      modelIntent: { schemaVersion: 1, configured: this.model, requested: this.model } };
   }
 
   async run(prompt: string, _workdir?: string): Promise<ExecutorResult> {
@@ -86,7 +88,24 @@ export class ApiExecutor implements Executor {
       }),
       signal: interrupted ? AbortSignal.any([interrupted, AbortSignal.timeout(this.timeoutMs)]) : AbortSignal.timeout(this.timeoutMs),
     });
-    const body = await response.text();
+    let body = '';
+    try {
+      if (response.body) {
+        const reader = response.body.getReader(), decoder = new TextDecoder();
+        try {
+          for (;;) { const chunk = await reader.read(); if (chunk.done) break; body += decoder.decode(chunk.value, { stream: true }); }
+          body += decoder.decode();
+        } finally { reader.releaseLock(); }
+      } else body = await response.text();
+    } catch (error) {
+      let partial: ChatCompletionResponse | undefined;
+      try { partial = JSON.parse(body) as ChatCompletionResponse; } catch { /* Partial JSON cannot identify a response model or establish counters. */ }
+      throw new ExecutorFailure(`API response body could not be completed: ${(error as Error).message}`, {
+        output: typeof partial?.choices?.[0]?.message?.content === 'string' ? partial.choices[0].message.content : '',
+        rawOutput: body, modelIdentity: observedModelIdentity(body, this.describe().modelIntent, 'api'),
+        tokens: tokenUsage(partial?.usage), usageStatus: 'partial',
+      });
+    }
     let data: ChatCompletionResponse | undefined, parsed = false;
     try {
       const value: unknown = JSON.parse(body); parsed = true;
@@ -95,6 +114,7 @@ export class ApiExecutor implements Executor {
     const content = data?.choices?.[0]?.message?.content;
     const tokens = tokenUsage(data?.usage);
     const failure = (message: string) => new ExecutorFailure(message, {
+      modelIdentity: observedModelIdentity(body, this.describe().modelIntent, 'api'),
       output: typeof content === 'string' ? content : '', rawOutput: body,
       ...(tokens ? { tokens, usageStatus: 'final' as const } : {}),
     });
@@ -103,6 +123,6 @@ export class ApiExecutor implements Executor {
     if (typeof content !== 'string') {
       throw failure('API response did not contain choices[0].message.content');
     }
-    return tokens ? { output: content, tokens } : { output: content };
+    return { output: content, rawOutput: body, modelIdentity: observedModelIdentity(body, this.describe().modelIntent, 'api'), ...(tokens ? { tokens } : {}) };
   }
 }

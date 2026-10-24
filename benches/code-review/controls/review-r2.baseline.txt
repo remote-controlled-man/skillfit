@@ -1,0 +1,3 @@
+Findings:
+
+- medium: src/invoice.js:33 `line.qty = 1` mutates the caller's line objects in place, violating SPEC §2 (purity); return new objects instead.

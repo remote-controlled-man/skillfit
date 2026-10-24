@@ -16,6 +16,70 @@ test('mcnemarExactP matches reference values', () => {
   assert.equal(mcnemarExactP(0, 0), 1);
 });
 
+/** Independent integer binomial coefficients; truncate at 64 bits before binary64 conversion. */
+function integerReferenceP(b: number, c: number): number {
+  const n = b + c;
+  let coefficient = 1n, lowerTail = 1n;
+  for (let i = 1; i <= Math.min(b, c); i++) {
+    coefficient = coefficient * BigInt(n - i + 1) / BigInt(i);
+    lowerTail += coefficient;
+  }
+  return Math.min(1, Number((2n * lowerTail << 64n) / (1n << BigInt(n))) / 2 ** 64);
+}
+
+test('mcnemarExactP remains accurate across the normal/subnormal and legacy zero boundaries', () => {
+  for (const n of [1022, 1023, 1074, 1075, 1200, 2000, 20000]) {
+    for (const offset of [0, 1, 5, 25, 45]) {
+      const b = Math.ceil(n / 2) + offset, c = n - b;
+      const actual = mcnemarExactP(b, c), expected = integerReferenceP(b, c);
+      assert.ok(Math.abs(actual - expected) < 5e-13, `${b}/${c}: ${actual} versus ${expected}`);
+      assert.equal(actual, mcnemarExactP(c, b));
+      assert.ok(actual >= 0 && actual <= 1);
+    }
+  }
+  assert.equal(mcnemarExactP(600, 600), 1);
+  assert.ok(Math.abs(mcnemarExactP(601, 599) - 0.9769718547313974) < 5e-15);
+  assert.ok(Math.abs(mcnemarExactP(50001, 49999) - integerReferenceP(50001, 49999)) < 5e-13);
+});
+
+test('mcnemarExactP preserves representable tiny tails and permits genuine floating-point underflow', () => {
+  for (const n of [1022, 1023, 1074, 1075, 1076, 2000]) {
+    assert.equal(mcnemarExactP(n, 0), 2 ** (1 - n));
+    assert.equal(mcnemarExactP(0, n), 2 ** (1 - n));
+  }
+  for (const n of [1074, 1075, 1076, 1080, 1085, 1100]) {
+    // The two-term integer tail is 2*(1+n)/2^n. Scale from the smallest
+    // subnormal to avoid the reference itself losing 2^-n before multiplication.
+    const expected = Number.MIN_VALUE * (n + 1) / 2 ** (n - 1075);
+    const actual = mcnemarExactP(n - 1, 1);
+    assert.ok(Math.abs(actual - expected) <= Number.MIN_VALUE, `${n - 1}/1: ${actual} versus ${expected}`);
+  }
+});
+
+test('mcnemarExactP stays monotonic with increasing imbalance at a fixed large pair count', () => {
+  let previous = 1;
+  for (let b = 600; b <= 1200; b++) {
+    const p = mcnemarExactP(b, 1200 - b);
+    assert.ok(p <= previous, `${b}/${1200 - b}: ${p} exceeds ${previous}`);
+    previous = p;
+  }
+});
+
+test('mcnemarExactP keeps exact-test decisions on both sides of 0.05', () => {
+  for (const b of [1043, 1044, 1045, 1046]) {
+    const expected = integerReferenceP(b, 2000 - b);
+    assert.equal(mcnemarExactP(b, 2000 - b) < 0.05, expected < 0.05);
+  }
+  assert.ok(integerReferenceP(1044, 956) > 0.05);
+  assert.ok(integerReferenceP(1045, 955) < 0.05);
+});
+
+test('mcnemarExactP rejects invalid or unsafe discordant counts', () => {
+  for (const [b, c] of [[-1, 1], [1, -1], [0.5, 1], [NaN, 1], [1, Infinity], [2 ** 53, 0], [Number.MAX_SAFE_INTEGER, 1]]) {
+    assert.throws(() => mcnemarExactP(b!, c!), RangeError);
+  }
+});
+
 test('mcnemarExactP never increases as discordance grows more one-sided', () => {
   let previous = 1;
   for (let k = 1; k <= 15; k++) {

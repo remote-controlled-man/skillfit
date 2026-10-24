@@ -53,7 +53,7 @@ test('CliExecutor pipes the prompt over stdin and returns stdout', async () => {
 
 test('CliExecutor rejects on a non-zero exit code', async () => {
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', 'process.stderr.write("boom");process.exit(3)'],
+    argv: [process.execPath, '-e', 'process.stdin.on("end",()=>{process.stderr.write("boom");process.exitCode=3});process.stdin.resume();'],
     shell: false,
   });
   await assert.rejects(() => executor.run('x', process.cwd()), /exited with code 3.*boom/s);
@@ -312,6 +312,34 @@ test('CliExecutor trigger detection passes raw output through when stdout is not
   assert.equal(result.output, plain);
 });
 
+test('Unrecognized JSON and a truncated stream cannot establish a negative trigger observation', async () => {
+  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT], shell: false,
+    triggerSkillName: 'review', wireShape: 'content-blocks' });
+  for (const transcript of ['{"arbitrary":true}', '{"type":"system","subtype":"init"}',
+    '{"type":"assistant","message":{"content":[{"type":"text","text":"done"}]}}\n{"type":']) {
+    const result = await executor.run(transcript, process.cwd());
+    assert.equal(result.skillTriggered, undefined); assert.equal(result.triggerEvidence?.status, 'unknown');
+    assert.equal(result.triggerEvidence?.complete, false); assert.equal(result.rawOutput, transcript);
+  }
+});
+
+test('Failed Codex trigger calls retain positive evidence and partial counters without a complete negative', async () => {
+  const transcript = toNdjson([
+    { type: 'item.completed', item: { type: 'command_execution', command: 'cat .agents/skills/review/SKILL.md' } },
+    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2 } },
+    { type: 'turn.failed', error: { message: 'offline provider failure' } },
+  ]);
+  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT + ';process.on("beforeExit",()=>process.exitCode=1)'], shell: false,
+    triggerSkillName: 'review', wireShape: 'codex-items', triggerSkillPaths: ['.agents/skills/review/SKILL.md'] });
+  await assert.rejects(executor.run(transcript, process.cwd()), error => {
+    assert.ok(error instanceof ExecutorFailure); assert.match(error.message, /offline provider failure/);
+    assert.equal(error.result.skillTriggered, true); assert.equal(error.result.triggerEvidence?.complete, false);
+    assert.deepEqual(error.result.triggerEvidence?.eventLines, [1]);
+    assert.deepEqual(error.result.tokens, { input: 10, cachedInput: 4, output: 2 });
+    assert.equal(error.result.usageStatus, 'partial'); assert.equal(error.result.rawOutput, transcript); return true;
+  });
+});
+
 test('CliExecutor trigger detection understands the claude stream-json assistant shape', async () => {
   const executor = new CliExecutor({
     argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
@@ -349,10 +377,12 @@ test('CliExecutor.forAgent with triggerSkillName uses the streamJson template', 
 });
 
 test('CliExecutor.forAgent with triggerSkillName rejects agents without streamJson', () => {
-  assert.throws(
-    () => CliExecutor.forAgent('claude-code', { triggerSkillName: 'banana-standards' }),
-    /streamJson/,
-  );
+  const headless = getAgent('claude-code').headless, saved = headless.streamJson;
+  try {
+    delete headless.streamJson;
+    assert.throws(() => CliExecutor.forAgent('claude-code', { triggerSkillName: 'banana-standards' }), /streamJson/);
+  } finally { headless.streamJson = saved; }
+  assert.match(CliExecutor.forAgent('claude-code', { triggerSkillName: 'banana-standards' }).describe().detail ?? '', /--output-format stream-json --verbose/);
   const codex = CliExecutor.forAgent('codex', { triggerSkillName: 'banana-standards' });
   assert.match(codex.describe().detail ?? '', /--json/);
 });
@@ -383,6 +413,7 @@ test('CliExecutor parses codex items: text, skill file-read trigger, and token u
     argv: [process.execPath, '-e', stdinScript],
     shell: false,
     triggerSkillName: 'banana-standards',
+    triggerSkillPaths: ['C:/repo/.agents/skills/banana-standards/SKILL.md'],
   });
   const ndjson = events.map((event) => JSON.stringify(event)).join('\n') + '\n';
   const result = await executor.run(ndjson, process.cwd());
@@ -393,6 +424,8 @@ test('CliExecutor parses codex items: text, skill file-read trigger, and token u
 
 test('CliExecutor codex shape: no skill-path command means no trigger', async () => {
   const events = [
+    { type: 'thread.started', thread_id: 'offline-negative' },
+    { type: 'turn.started' },
     { type: 'item.completed', item: { id: 'i1', type: 'command_execution', command: 'Get-Content README.md' } },
     { type: 'item.completed', item: { id: 'i2', type: 'agent_message', text: 'Paris' } },
     { type: 'turn.completed', usage: { input_tokens: 10, output_tokens: 3 } },
@@ -403,6 +436,7 @@ test('CliExecutor codex shape: no skill-path command means no trigger', async ()
     argv: [process.execPath, '-e', stdinScript],
     shell: false,
     triggerSkillName: 'banana-standards',
+    triggerSkillPaths: ['.agents/skills/banana-standards/SKILL.md'],
   });
   const result = await executor.run(events.map((event) => JSON.stringify(event)).join('\n'), process.cwd());
   assert.equal(result.output, 'Paris');

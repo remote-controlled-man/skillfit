@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit model identity coverage by executor role version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "primary",
+    "judge",
+    "drafter"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "primary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/population"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "judge": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/population"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "drafter": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/population"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "population": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "invoked",
+        "reported",
+        "unrecorded",
+        "models",
+        "calls"
+      ],
+      "properties": {
+        "invoked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reported": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unrecorded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "models": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "calls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "receipt",
+              "identity"
+            ],
+            "properties": {
+              "receipt": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-zA-Z0-9_./-]+$"
+              },
+              "identity": {
+                "anyOf": [
+                  {
+                    "$ref": "model-identity.schema.json"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

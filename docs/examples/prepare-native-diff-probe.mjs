@@ -46,7 +46,9 @@ const plan = {
   nativeDiffTool: nativeDiffDescriptor(), sourceInventory, request,
   limits: ['development only', 'no automatic expansion or upgrade', 'does not isolate the causal effect of the common helper'],
 };
-console.log(JSON.stringify(plan, null, 2));
+await new Promise((resolve, reject) => {
+  process.stdout.write(JSON.stringify(plan, null, 2) + '\n', error => error ? reject(error) : resolve());
+});
 if (plan.dryRun) process.exit(0);
 
 mkdirSync(join(root, 'runs'), { recursive: true });

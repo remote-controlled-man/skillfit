@@ -2,9 +2,12 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { parseEvalReport, renderEvalMarkdown, runEvalReport } from './eval-report.js';
 import { summarizeCosts, type CostObservation, type RunCosts } from '../harness/costs.js';
+import { RecordedStatisticsNumericError } from '../harness/eval-manifest.js';
 
 function manifest(): Record<string, unknown> {
   const conditions = {
@@ -52,6 +55,101 @@ function sixPairManifest(): Record<string, unknown> {
   });
   return value;
 }
+
+function discordantManifest(improved: number, regressed: number, p: number, verdict: string): Record<string, unknown> {
+  const value = manifest();
+  const trials = improved + regressed;
+  const conditions = {
+    baseline: { passes: regressed, trials, errors: 0 },
+    treatment: { passes: improved, trials, errors: 0 },
+  };
+  value['trials'] = trials;
+  const deltaPassRate = improved / trials - regressed / trials;
+  Object.assign((value['tasks'] as Record<string, unknown>[])[0]!, { conditions, deltaPassRate, verdict });
+  const overall = value['overall'] as Record<string, unknown>;
+  Object.assign(overall, { conditions, deltaPassRate, verdict });
+  Object.assign(overall['stats'] as Record<string, unknown>, {
+    discordant: { improved, regressed }, mcnemarP: p, deltaCi: null,
+  });
+  return value;
+}
+
+test('report eval accepts stable large-sample statistics and genuine tiny-tail zeros unchanged', () => {
+  for (const value of [
+    discordantManifest(600, 600, 1, 'inconclusive'),
+    discordantManifest(601, 599, 0.9769718547313974, 'inconclusive'),
+    discordantManifest(1200, 0, 0, 'effective'),
+    discordantManifest(0, 1200, 0, 'ineffective'),
+  ]) {
+    const original = JSON.stringify(value);
+    const report = parseEvalReport(value);
+    assert.equal(report.overall.verdict, (value['overall'] as Record<string, unknown>)['verdict']);
+    assert.equal(JSON.stringify(value), original);
+  }
+});
+
+test('report eval diagnoses the legacy zero-mass pattern without silently correcting saved statistics', () => {
+  for (const [improved, regressed, verdict] of [
+    [600, 600, 'inconclusive'], [601, 599, 'effective'], [599, 601, 'ineffective'],
+    [900, 300, 'effective'], // Even a nonzero tail below the ordinary comparison tolerance is a lost value.
+  ] as const) {
+    const value = discordantManifest(improved, regressed, 0, verdict);
+    const original = JSON.stringify(value);
+    assert.throws(() => parseEvalReport(value), (error: unknown) => {
+      assert.ok(error instanceof RecordedStatisticsNumericError);
+      assert.equal(error.code, 'RECORDED_STATISTICS_NUMERIC_ERROR');
+      assert.deepEqual(error.details.discordant, { improved, regressed });
+      assert.deepEqual(error.details.recorded, { mcnemarP: 0, verdict });
+      assert.ok(error.details.computed.mcnemarP > 0);
+      assert.equal(error.details.computed.verdict, improved === 900 ? 'effective' : 'inconclusive');
+      return true;
+    });
+    assert.equal(JSON.stringify(value), original);
+  }
+});
+
+test('report eval keeps ordinary integrity errors for statistics outside the legacy pattern', () => {
+  for (const value of [
+    discordantManifest(601, 599, 0.1, 'effective'),
+    discordantManifest(601, 599, 0, 'inconclusive'),
+    discordantManifest(51, 49, 0, 'effective'),
+  ]) {
+    assert.throws(() => parseEvalReport(value), (error: unknown) => {
+      assert.ok(error instanceof Error);
+      assert.ok(!(error instanceof RecordedStatisticsNumericError));
+      assert.match(error.message, /mcnemarP disagrees with discordant counts/);
+      return true;
+    });
+  }
+});
+
+test('report eval CLI exposes numerical diagnostics in the existing error envelope and preserves the file', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-numeric-report-'));
+  try {
+    const path = join(dir, 'manifest.json');
+    const original = `${JSON.stringify(discordantManifest(601, 599, 0, 'effective'), null, 2)}\n`;
+    writeFileSync(path, original);
+    const cli = fileURLToPath(new URL('../cli.js', import.meta.url));
+    const json = spawnSync(process.execPath, [cli, 'report', 'eval', path, '--json'], { encoding: 'utf8' });
+    assert.equal(json.status, 2, json.stderr);
+    const result = JSON.parse(json.stdout);
+    assert.equal(result.schemaVersion, 1);
+    assert.equal(result.kind, 'skillfit.eval-error');
+    assert.equal(result.status, 'error');
+    assert.equal(result.error.code, 'RECORDED_STATISTICS_NUMERIC_ERROR');
+    assert.deepEqual(result.error.details.recorded, { mcnemarP: 0, verdict: 'effective' });
+    assert.equal(result.error.details.computed.verdict, 'inconclusive');
+    assert.ok(Math.abs(result.error.details.computed.mcnemarP - 0.9769718547313974) < 5e-15);
+    assert.deepEqual(result.acceptance, { decision: 'inconclusive', eligibleForUpgrade: false, automaticUpgrade: false });
+    assert.equal(result.costs, undefined, 'an invalid statistical record must not invent verified costs');
+    const text = spawnSync(process.execPath, [cli, 'report', 'eval', path], { encoding: 'utf8' });
+    assert.equal(text.status, 1);
+    assert.match(text.stderr, /RECORDED_STATISTICS_NUMERIC_ERROR.*No adoption is authorized/);
+    assert.equal(readFileSync(path, 'utf8'), original);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 function costManifest(): Record<string, unknown> {
   const value = manifest();

@@ -159,3 +159,67 @@ test('inline public support restores bytes excluded by npm without network acces
   corrupt.supportFiles[0].inlineBase64 = Buffer.from('wrong').toString('base64');
   assert.throws(() => validateCatalog(corrupt), /Integrity mismatch|Invalid inline/);
 });
+
+
+test('lean packages restore absent frozen support from an explicit offline source', async t => {
+  const f = await fixture(t);
+  await fs.copyFile(path.join(f.packageRoot, f.file.path), path.join(f.from, f.file.path));
+  await fs.unlink(path.join(f.packageRoot, f.file.path));
+  await restoreArchives({ ...f.opts, offline: true, yes: true });
+  assert.deepEqual(await fs.readFile(path.join(f.output, f.file.path)), f.support);
+});
+
+test('lean HTTPS restore reuses verified support content across original paths', async t => {
+  const f = await fixture(t); await fs.unlink(path.join(f.packageRoot, f.file.path));
+  const duplicate = { ...f.file, path: 'evidence/artifacts/other/README.md' };
+  f.catalog.supportFiles.push(duplicate);
+  const requests = [];
+  await restoreArchives({ ...f.opts, from: undefined, yes: true, fetchImpl: async url => {
+    requests.push(url);
+    return new Response(url.endsWith('.tar.gz') ? f.bytes : f.support);
+  } });
+  assert.equal(requests.length, 2, 'one support download and one archive download');
+  for (const row of f.catalog.supportFiles) assert.deepEqual(await fs.readFile(path.join(f.output, row.path)), f.support);
+});
+
+
+test('missing or corrupt explicit offline support never falls back to HTTPS', async t => {
+  for (const content of [null, 'corrupt']) await t.test(String(content), async t => {
+    const f = await fixture(t); await fs.unlink(path.join(f.packageRoot, f.file.path));
+    if (content !== null) await fs.writeFile(path.join(f.from, f.file.path), content);
+    await assert.rejects(restoreArchives({ ...f.opts, offline: true, yes: true }), /ENOENT|Integrity mismatch/);
+    await noOutputOrStage(f);
+  });
+});
+
+test('installed support directory aliases are rejected without remote fallback', async t => {
+  const f = await fixture(t), directory = path.dirname(path.join(f.packageRoot, f.file.path));
+  const moved = path.join(f.root, 'moved-support'); await fs.rename(directory, moved); await fs.symlink(moved, directory, 'junction');
+  await assert.rejects(restoreArchives({ ...f.opts, from: undefined, yes: true }), /Unsafe source/);
+  await noOutputOrStage(f);
+});
+
+test('failed concurrent support downloads drain before cleanup and never publish', async t => {
+  const f = await fixture(t); await fs.unlink(path.join(f.packageRoot, f.file.path));
+  for (let i = 0; i < 12; i++) {
+    const bytes = Buffer.from('different support ' + i);
+    f.catalog.supportFiles.push({ path: `evidence/artifacts/more/${i}.txt`, bytes: bytes.length, sha256: sha(bytes) });
+  }
+  let active = 0, peak = 0, calls = 0;
+  await assert.rejects(restoreArchives({ ...f.opts, from: undefined, yes: true, fetchImpl: async () => {
+    const first = calls++ === 0; peak = Math.max(peak, ++active);
+    await new Promise(resolve => setTimeout(resolve, first ? 1 : 15)); active--;
+    return first ? new Response('missing', { status: 404 }) : new Response('invalid bytes');
+  } }), /HTTP 404/);
+  assert.equal(active, 0); assert.ok(peak > 1 && peak <= 6); assert.ok(calls <= 6);
+  await noOutputOrStage(f);
+});
+
+test('HTTP-compressed support verifies decoded bytes rather than encoded content-length', async t => {
+  const f = await fixture(t); await fs.unlink(path.join(f.packageRoot, f.file.path));
+  await restoreArchives({ ...f.opts, from: undefined, yes: true, fetchImpl: async url => new Response(
+    url.endsWith('.tar.gz') ? f.bytes : f.support,
+    url.endsWith('.tar.gz') ? {} : { headers: { 'content-encoding': 'gzip', 'content-length': '7' } },
+  ) });
+  assert.deepEqual(await fs.readFile(path.join(f.output, f.file.path)), f.support);
+});

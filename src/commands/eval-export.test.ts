@@ -160,18 +160,26 @@ test('restored input roots still require original fingerprints and CLI exports a
 });
 
 /** Build a historical plan without inventing snapshots for old evidence. */
-function legacy(run: string): void {
+function legacy(run: string, preserveNewScope = false): void {
   const plan = JSON.parse(readFileSync(join(run, '_plan.json'), 'utf8')); delete plan.inputSnapshot;
+  if (!preserveNewScope) delete plan.details.measurementScope;
   rmSync(join(run, '_inputs'), { recursive: true }); rmSync(join(run, '_inputs.json'));
   const bytes = JSON.stringify(plan, null, 2) + '\n', planSha256 = sha256Text(bytes);
   writeFileSync(join(run, '_plan.json'), bytes);
   const manifest = JSON.parse(readFileSync(join(run, 'manifest.json'), 'utf8'));
+  if (!preserveNewScope) delete manifest.measurementScope;
   manifest.experiment.planSha256 = planSha256; writeFileSync(join(run, 'manifest.json'), JSON.stringify(manifest));
   const session = JSON.parse(readFileSync(join(run, '_session.json'), 'utf8'));
   session.planSha256 = planSha256; writeFileSync(join(run, '_session.json'), JSON.stringify(session));
   writeFileSync(join(run, '_artifacts.json'), JSON.stringify({ schemaVersion: 1, planSha256,
     files: Object.fromEntries(packageFiles(run).filter(path => path !== '_artifacts.json').map(path => [path, sha256File(join(run, path))])), links: {} }));
 }
+
+test('new measurement scope cannot use legacy input recovery to replace missing sealed declarations', async t => {
+  const f = await fixture(t); legacy(f.run, true);
+  await assert.rejects(exportEvaluation(f.run, f.output, { yes: true, log: () => {} }), /measurementScope requires sealed bench inputs/);
+  assert.equal(existsSync(f.output), false);
+});
 
 test('historical runs retain matching-root recovery and never acquire synthetic snapshots', async t => {
   const f = await fixture(t); legacy(f.run);

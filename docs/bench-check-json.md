@@ -36,6 +36,7 @@ not parse the English `message` text.
 | `status` | `passed` means zero failed integrity gates; `failed` means at least one gate failed; `error` means the check did not complete, such as invalid options or an unexpected local execution error |
 | `dir` | Absolute bench directory, or `null` on an error |
 | `bench` | Loaded bench name, complete SHA-256 and task count; `null` if loading failed or on an error |
+| `measurementScope` | Current-source optional scope v1 for a successfully loaded bench, with null requested claim / not-applicable assessment; omitted when loading fails. See [claims](bench-claims.md); this is not a measurement or adoption verdict |
 | `checks` | Ordered gate results, including warnings and informational coverage notes |
 | `summary` | `total`, `passed`, `warnings`, `failures`, `info`; `null` on an error |
 | `error` | `null` for completed validation; otherwise `{code: "INVALID_OR_FAILED_CHECK", message}` with empty `checks` and no summary |
@@ -142,4 +143,6 @@ Agents should inspect failures first, then warnings and evidence coverage. A
 significance or eligibility to upgrade. Missing oracles still warn; command
 cases still skip text-only mock probes. Partial execution errors cannot be
 interpreted as a completed check. See the [authoring guide](bench-authoring.md)
-and [metrics protocol](metrics.md).
+and [metrics protocol](metrics.md). For known synthetic benefit/harm/null/error
+expectations, current source offers the separate [full-pipeline self-test](bench-self-test.md);
+ordinary `MOCK_BASELINE` / `MOCK_TREATMENT` results remain informational.

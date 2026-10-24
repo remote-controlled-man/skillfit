@@ -2,22 +2,27 @@
 
 Use the existing CLI workflow to compare a pinned Skill with baseline on real failures. A historical replay does not create an upstream PR: its purpose is to grade both arms consistently before spending time installing a Skill.
 
-Version 0.10.1 handles Ctrl+C/SIGTERM by stopping managed evaluation
-processes, retaining available output/usage and sealing a stopped run before
-exit 130/143. No partner/retry/replacement is dispatched after cancellation.
-See [interruption and retained records](evaluation-interruption.md). Forced
-termination/power loss may prevent sealing. The same release enforces offline
-case gates and seals project input copies before dispatch. See [sealed inputs](evaluation-input-snapshots.md).
+This guide orders the steps; [planning](eval-planning.md) owns defaults,
+confirmation and budget/output controls. [Interruption](evaluation-interruption.md)
+and [sealed inputs](evaluation-input-snapshots.md) own retained-record contracts.
+These foundations shipped in 0.10.1/0.11.0 and are included in
+[0.13.1](releases/0.13.1.md). Current-source additions and adapter limits are
+separate in the [capability table](eval-agent-preflight.md#current-source-capability-table).
 
-Version 0.11.0 shares reviewed plans between ordinary paired eval and
-Agent requests, including [budget/deadline/output controls](eval-planning.md).
-Use `--json --dry-run` for a machine-readable ordinary plan. JSON execution
-requires its hash and an explicit fresh group. Request `baselineSkill: null`
-matches ordinary installed delivery without `--baseline-skill`; both keep
-inherited configuration and cannot authorize revision adoption.
+Before a real comparison, use [bench self-test](bench-self-test.md) when
+predeclared controls are available. This current-source-only synthetic route
+checks the complete paired pipeline without model calls. It is separate from
+the real calibration/eval steps below and does not establish task power or benefit.
+
+Current source also supports explicit [schema 2 claims and frozen scope](bench-claims.md).
+Choose the target before preview: every selected task must support it. Unsupported
+execution refuses before probes or calls; an unsupported preview is not readiness.
+Schema 1 remains compatible and unrecorded. Read [reports](evaluation-reports.md#frozen-measurement-scope-current-source)
+for scope/diagnostics and unchanged adoption limits. These additions require
+the implementing source build, not npm 0.13.1's version string.
 
 1. Prepare independent tasks from issue requirements and pinned bug/fix revisions. Keep the fix, grader and oracle outside trial workspaces. Run `bench check` offline and review its NOP, oracle and counterexample gates. The [lru-cache replay](../benches/contrib/oss-lru-cache/README.md) has three independently sourced failures; difficulty is initially unknown.
-2. Dry-run baseline calibration with the input mode you will later evaluate. For the three-task replay: `skillfit bench check benches/contrib/oss-lru-cache --calibrate --agent codex --input workspace --trials 2 --max-calls 6 --dry-run`. Run without `--dry-run` only after reviewing the fixed plan. Keep saturated tasks as regression controls; repair broken graders/environments before interpreting a floor.
+2. Dry-run baseline calibration with the input mode you will later evaluate. For the three-task replay: `skillfit bench check benches/contrib/oss-lru-cache --calibrate --agent codex --input workspace --trials 2 --max-calls 6 --dry-run`. Run without `--dry-run` only after reviewing the fixed plan. Saturated tasks have limited observed quality headroom, but may support regression and efficiency comparisons with complete costs and the predeclared policy's gates; calibration itself cannot establish savings. Repair broken graders/environments before interpreting a floor.
 3. Declare a fresh paired run with the full Skill installed only in treatment: `skillfit eval <skill-dir> --mode installed --bench <bench-dir> --agent codex --trials 5 --max-calls <ceiling> --dry-run`. The declared count is tasks × trials × two arms, plus two judge calls per pair when enabled. The default ceiling equals the declared count. A lower ceiling rejects the entire plan; it never truncates tasks, retries errors, or adds replacement samples.
 4. Run the reviewed command without `--dry-run`. Fresh groups retain `_plan.json` (bench/target/implementation hashes, Node/package/available CLI versions, allowlisted configured model settings, declared workspace paths and call budget), `_calls.jsonl` (append-only started/finished/failed events with prompt hashes), `_session.json` (completion/stop reason), and `_artifacts.json` (regular-file hashes and unfollowed symlink targets). Calibration also retains `_calibration.json` with task counts. Existing groups are never overwritten.
 5. Read a saved-evidence report: `skillfit report eval runs/<group>` (add `--json` for an Agent). Both formats accept the same completed or stopped run and show audit/acceptance reasons. See [report inputs](evaluation-reports.md). Inspect task checks, errors, token coverage, read observations and session completeness before deciding. Partial/stopped sessions produce no installation recommendation even if their surviving subset favors treatment. Preserve their receipts, then fix the cause and predeclare a fresh run. Do not pool adaptive calibration into validation.

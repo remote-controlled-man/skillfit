@@ -1,3 +1,4 @@
+import { measurementScope, requestedClaimFor, assertScopeMatches, assertBenchClaimSupported } from './measurement-scope.js';
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -7,7 +8,8 @@ import { getAgent, type AgentDef } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
 import { hashFileSet, sha256File, sha256Text } from './hash.js';
 import { assertNativeDiffFile, assertNativeDiffWorkspace, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
-import type { Bench, EvaluationTarget, Executor } from './types.js';
+import { identityForResult } from './model-identity.js';
+import type { Bench, EvaluationTarget, Executor, ExecutorResult } from './types.js';
 import { ExecutorFailure } from './types.js';
 import { EvaluationInterrupted, evaluationSignal, throwIfEvaluationInterrupted } from './interruption.js';
 import { freezeInputSnapshot, verifyInputSnapshot, type InputSnapshot, type PinnedInput } from './input-snapshot.js';
@@ -127,7 +129,7 @@ function configState(path: string, trust: ConfigFingerprint['trust'], workspaces
   }
 }
 
-function probeVersion(argv: string[]): string | null {
+export function probeVersion(argv: string[]): string | null {
   try {
     const output = execFileSync(argv[0]!, argv.slice(1), {
       encoding: 'utf8',
@@ -169,6 +171,7 @@ export class ExperimentSession {
   readonly planSha256: string;
   readonly plannedCalls: number;
   readonly maxCalls: number;
+  private readonly configuredModel: string | null;
   private readonly inputs: InputFingerprint[];
   private readonly configs: ConfigFingerprint[];
   private readonly workspaces: string[];
@@ -185,6 +188,13 @@ export class ExperimentSession {
   private readonly inputSnapshot: InputSnapshot;
 
   constructor(options: SessionOptions) {
+    const policy = (options.details.component as { policy?: { schemaVersion: number } } | undefined)?.policy;
+    const requested = requestedClaimFor(String(options.details.mode), policy, options.details.stopOnExecutionError === true);
+    const scope = measurementScope(options.bench, requested);
+    if (options.details.measurementScope !== undefined) assertScopeMatches(options.details.measurementScope, options.bench, requested);
+    assertBenchClaimSupported(scope);
+    options = { ...options, details: { ...options.details, measurementScope: scope } };
+
     this.nativeDiffTool = options.details.nativeDiffTool !== undefined;
     this.guardFiles = (options.guardFiles ?? []).map(file => ({ ...file, path: resolve(file.path) }));
     for (const file of this.guardFiles) if (!lstatSync(file.path).isFile() || sha256File(file.path) !== file.sha256) {
@@ -254,7 +264,8 @@ export class ExperimentSession {
       if (agent.headless.runtime?.versionArgv && !options.injected) cliVersion = (options.versionProbe ?? probeVersion)(agent.headless.runtime.versionArgv);
       else if (options.versionProbe && agent.headless.runtime?.versionArgv) cliVersion = options.versionProbe(agent.headless.runtime.versionArgv);
     } else warnings.push('Injected executor: user configuration and CLI version were not automatically probed.');
-    const plan = { schemaVersion: 1, createdAt: new Date().toISOString(), nodeVersion: process.version,
+    this.configuredModel = configured['model'] ?? null;
+    const plan = { schemaVersion: 1, modelIdentityProtocol: 1, createdAt: new Date().toISOString(), nodeVersion: process.version,
       injectedExecutor: options.injected ?? false,
       packageVersion: (JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')) as { version: string }).version,
       agent: options.agent ?? null, cliVersion, configuredSettings: configured, servedModel: 'unrecorded',
@@ -313,6 +324,10 @@ export class ExperimentSession {
   }
 
   wrap(executor: Executor, role: 'agent' | 'judge'): Executor {
+    const annotate = (result: ExecutorResult): ExecutorResult => {
+      const identity = identityForResult(result, executor.describe());
+      return { ...result, modelIdentity: { ...identity, configured: role === 'agent' && executor.describe().kind === 'cli' ? this.configuredModel : identity.configured } };
+    };
     return { describe: () => executor.describe(), run: async (prompt, workdir) => {
       try {
         this.check();
@@ -324,7 +339,7 @@ export class ExperimentSession {
       const ledger = join(this.groupDir, '_calls.jsonl');
       appendFileSync(ledger, JSON.stringify({ event: 'started', call, role, workdir, at: new Date().toISOString(), promptSha256: sha256Text(prompt) }) + '\n');
       try {
-        const result = await executor.run(prompt, workdir);
+        const result = annotate(await executor.run(prompt, workdir));
         this.callsFinished++;
         appendFileSync(ledger, JSON.stringify({ event: 'finished', call, at: new Date().toISOString() }) + '\n');
         try { this.check(); } catch {
@@ -333,6 +348,7 @@ export class ExperimentSession {
         }
         return result;
       } catch (error) {
+        if (error instanceof ExecutorFailure && error.executorInvoked) error.result.modelIdentity = annotate(error.result).modelIdentity;
         if (!this.stopReason) this.stopReason = evaluationSignal()?.aborted
           ? (evaluationSignal()!.reason as Error).message
           : `${role} executor failed; inspect the per-trial error receipt. No further calls.`;

@@ -81,7 +81,7 @@ if (checks[0].pass) {
 }
 const passed = checks.every(check => check.pass);
 console.log(JSON.stringify({ passed, checks }));
-process.exit(passed ? 0 : 1);
+process.exitCode = passed ? 0 : 1;
 `,
     'verifiers/probe-example-task.mjs': `import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';

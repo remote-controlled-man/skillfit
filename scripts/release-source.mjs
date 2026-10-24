@@ -38,6 +38,11 @@ export function validateCiEvidence(run, jobs, receipts, source) {
     assert.equal(row.repository, REPOSITORY); assert.equal(row.sourceCommit, source);
     assert.equal(String(row.runId), String(run.id)); assert.equal(String(row.runAttempt), String(run.run_attempt));
     assert.equal(row.scope, 'full', 'Record-only CI cannot authorize a release');
+    if (['job', 'nodeTarget', 'nodeVersion'].some(key => key in row)) {
+      assert.equal(row.job, 'test', 'Compatibility or minimum CI cannot replace a required job');
+      assert.equal(row.nodeTarget, '22');
+      assert.match(row.nodeVersion ?? '', /^v22\.\d+\.\d+$/, 'Actual required-job Node version must be recorded');
+    }
     assert.equal(row.status, 'passed');
     const c = row.counts;
     assert.ok(c && ['tests', 'pass', 'fail', 'cancelled', 'skipped'].every(k => Number.isSafeInteger(c[k]) && c[k] >= 0));
@@ -75,6 +80,14 @@ export function gh(args) {
   return execFileSync('gh', args, { encoding: 'utf8', timeout: 90_000, maxBuffer: 8 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
+export function sourceCiArtifact(artifacts, attempt, os) {
+  const names = [`ci-result-${attempt}-test-${os}-node-22`, `ci-result-${attempt}-${os}`];
+  const rows = artifacts.filter(row => names.includes(row.name));
+  assert.equal(rows.length, 1, `Missing or ambiguous required CI artifact: ${os}`);
+  assert.equal(rows[0].expired, false, `Required CI artifact expired: ${os}`);
+  return rows[0].name;
+}
+
 export function collectSourceCi(root, source, command = gh) {
   assert.match(source, /^[a-f0-9]{40}$/);
   mkdirSync(root); // Exclusive, including failed source checks.
@@ -84,11 +97,18 @@ export function collectSourceCi(root, source, command = gh) {
   save(join(root, 'source-ci-run.json'), run);
   const jobs = JSON.parse(command(['api', `repos/${REPOSITORY}/actions/runs/${run.id}/attempts/${run.run_attempt}/jobs?per_page=100`]));
   assert.ok(jobs.total_count <= 100, 'Unexpected CI pagination');
+  const artifacts = JSON.parse(command(['api', `repos/${REPOSITORY}/actions/runs/${run.id}/artifacts?per_page=100`]));
+  assert.ok(artifacts.total_count <= 100 && Array.isArray(artifacts.artifacts), 'Unexpected CI artifact pagination');
   const receipts = [];
   for (const os of SYSTEMS) {
     const dir = join(root, 'ci', os); mkdirSync(dir, { recursive: true });
-    command(['run', 'download', String(run.id), '--repo', REPOSITORY, '--name', `ci-result-${run.run_attempt}-${os}`, '--dir', dir]);
-    receipts.push(json(join(dir, 'ci-result.json')));
+    const name = sourceCiArtifact(artifacts.artifacts, run.run_attempt, os);
+    command(['run', 'download', String(run.id), '--repo', REPOSITORY, '--name', name, '--dir', dir]);
+    const receipt = json(join(dir, 'ci-result.json'));
+    if (name === `ci-result-${run.run_attempt}-test-${os}-node-22`) {
+      assert.ok(['job', 'nodeTarget', 'nodeVersion'].every(key => key in receipt), 'New CI artifacts require Node/job metadata');
+    }
+    receipts.push(receipt);
   }
   const result = validateCiEvidence(run, jobs.jobs, receipts, source); save(join(root, 'source-ci.json'), result);
   return result;

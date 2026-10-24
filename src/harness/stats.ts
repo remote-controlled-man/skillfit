@@ -2,15 +2,37 @@ export const MIN_DISCORDANT_FOR_SIGNIFICANCE = 6;
 
 export function mcnemarExactP(b: number, c: number): number {
   const n = b + c;
-  if (n === 0) return 1;
-  const k = Math.max(b, c);
-  let tail = 0;
-  let term = 0.5 ** n;
-  for (let i = 0; i <= n; i++) {
-    if (i >= k) tail += term;
-    term *= (n - i) / (i + 1);
+  if (!Number.isSafeInteger(b) || b < 0 || !Number.isSafeInteger(c) || c < 0 || !Number.isSafeInteger(n)) {
+    throw new RangeError('Discordant counts and their sum must be non-negative safe integers.');
   }
-  return Math.min(1, 2 * tail);
+  if (n === 0) return 1;
+  // With no discordance in one direction, the two-sided tail is exactly 2^(1-n).
+  if (b === 0 || c === 0) return 2 ** (1 - n);
+  const k = Math.max(b, c);
+  if (n <= 1022) {
+    // Retain the existing small-sample values while the initial mass is normal binary64.
+    let tail = 0;
+    let term = 0.5 ** n;
+    for (let i = 0; i <= n; i++) {
+      if (i >= k) tail += term;
+      term *= (n - i) / (i + 1);
+    }
+    return Math.min(1, 2 * tail);
+  }
+
+  // Scale the upper mode to 1 instead of starting at 2^-n (zero at n >= 1075).
+  // All subsequent weights decrease. Symmetry supplies the normalizer without
+  // factorials, large coefficients or subtracting an almost-one lower tail.
+  const mode = Math.ceil(n / 2);
+  if (k === mode) return 1;
+  let term = 1, half = 1, tail = 0;
+  for (let i = mode + 1; i <= n; i++) {
+    term *= (n - i + 1) / i;
+    if (term === 0) break; // Later terms can only be smaller; true tiny tails may round to zero.
+    half += term;
+    if (i >= k) tail += term;
+  }
+  return Math.min(1, 2 * tail / (2 * half - (n % 2 === 0 ? 1 : 0)));
 }
 
 function mulberry32(seed: number): () => number {

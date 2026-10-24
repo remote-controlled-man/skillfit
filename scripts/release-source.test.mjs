@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { validateCiEvidence, validatePreview, reviewedArchive, recordPreview, promotePreview, claimPublication, collectSourceCi, SYSTEMS, REPOSITORY } from './release-source.mjs';
+import { validateCiEvidence, validatePreview, reviewedArchive, recordPreview, promotePreview, claimPublication, collectSourceCi, sourceCiArtifact, SYSTEMS, REPOSITORY } from './release-source.mjs';
 
 const source = 'a'.repeat(40);
 const run = (workflow, event = 'push') => ({ repository: { full_name: REPOSITORY }, head_repository: { full_name: REPOSITORY }, path: `.github/workflows/${workflow}`, head_branch: 'main', head_sha: source, status: 'completed', conclusion: 'success', id: 123, run_attempt: 1, event });
@@ -18,6 +18,43 @@ test('release requires exact main source and actual full successful counts for a
   }
   assert.throws(() => validateCiEvidence(run('ci.yml'), jobs().slice(1), receipts(), source));
   const rows = receipts(); rows[1] = rows[0]; assert.throws(() => validateCiEvidence(run('ci.yml'), jobs(), rows, source));
+});
+test('source CI collects old and new artifact names without accepting compatibility substitutes', t => {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-ci-artifacts-')); t.after(() => rmSync(root, { recursive: true, force: true }));
+  for (const format of ['legacy', 'current', 'missing-metadata']) {
+    const modern = format !== 'legacy';
+    const artifacts = SYSTEMS.map(os => ({ name: modern ? `ci-result-1-test-${os}-node-22` : `ci-result-1-${os}`, expired: false }));
+    artifacts.push({ name: 'ci-result-1-node-compat-ubuntu-latest-node-26', expired: false });
+    const command = args => {
+      if (args[0] === 'api') {
+        if (args[1].includes('/jobs?')) return JSON.stringify({ total_count: 3, jobs: jobs() });
+        if (args[1].includes('/artifacts?')) return JSON.stringify({ total_count: artifacts.length, artifacts });
+        return JSON.stringify({ workflow_runs: [run('ci.yml')] });
+      }
+      const name = args[args.indexOf('--name') + 1];
+      assert.ok(artifacts.some(row => row.name === name));
+      const os = SYSTEMS.find(os => name.includes(os));
+      const row = receipts().find(row => row.os === os);
+      if (format === 'current') Object.assign(row, { job: 'test', nodeTarget: '22', nodeVersion: 'v22.13.0' });
+      writeFileSync(join(args.at(-1), 'ci-result.json'), JSON.stringify(row));
+      return '';
+    };
+    const collect = () => collectSourceCi(join(root, format), source, command);
+    if (format === 'missing-metadata') assert.throws(collect, /require Node\/job metadata/);
+    else assert.equal(collect().systems.length, 3);
+  }
+  const artifact = { name: 'ci-result-1-test-ubuntu-latest-node-22', expired: false };
+  for (const rows of [[], [{ ...artifact, expired: true }], [artifact, artifact],
+    [artifact, { name: 'ci-result-1-ubuntu-latest', expired: false }], [{ ...artifact, name: 'ci-result-2-ubuntu-latest' }],
+    [{ ...artifact, name: 'ci-result-1-node-compat-ubuntu-latest-node-22.13.0' }]]) {
+    assert.throws(() => sourceCiArtifact(rows, '1', 'ubuntu-latest'));
+  }
+  for (const metadata of [{ job: 'node-compat', nodeTarget: '22', nodeVersion: 'v22.13.0' },
+    { job: 'node-minimum', nodeTarget: '22.0.0', nodeVersion: 'v22.0.0' },
+    { job: 'test', nodeTarget: '22', nodeVersion: 'v26.0.0' }, { job: 'test' }]) {
+    const rows = receipts(); Object.assign(rows[0], metadata);
+    assert.throws(() => validateCiEvidence(run('ci.yml'), jobs(), rows, source));
+  }
 });
 test('promotion binds the approved preview attempt, bytes, version, source and CI without repacking', () => {
   const bytes = Buffer.from('reviewed');

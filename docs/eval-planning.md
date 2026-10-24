@@ -5,6 +5,14 @@ planning. Baseline calibration has a separate typed plan with the same budget,
 deadline and output controls in 0.11.0. npm 0.10.1 does not include these
 additions. Existing revision requests remain valid.
 
+This page owns current planning settings, defaults, confirmation and output
+layout. The historical title/anchor is retained; the shared controls described
+here shipped in [0.11.0](releases/0.11.0.md), with later changes labeled below.
+For current adapter support see the [capability table](eval-agent-preflight.md#current-source-capability-table).
+[Metrics](metrics.md) owns measurement/stop semantics, [cost accounting](eval-costs.md)
+owns populations and coverage, and the [component](eval-component.md) owns
+request/result fields. A reviewed plan is not permission to spend.
+
 ## Settings and baselines
 
 | Ordinary paired eval | Agent request field | Meaning |
@@ -16,7 +24,7 @@ additions. Existing revision requests remain valid.
 | `--trials <n>` / `--max-calls <n>` | `trials` / `maxCalls` | Fixed repetitions and call ceiling; reject undersized ceilings before calls |
 | `--pair-order baseline-first\|balanced` | `pairOrder` | Default `baseline-first`; `balanced` alternates first arm by task/trial |
 | `--executor-timeout-seconds <n>` | `executorTimeoutSeconds` | Integer 1–3600, deadline per executor invocation |
-| `--spending-budget <file>` | `spendingBudget` | Optional five absolute batch stop lines |
+| `--spending-budget <file>` | `spendingBudget` | Optional object; all five absolute batch stop lines required when supplied |
 | `--runs-root <dir>` / `--run-group <fresh-name>` | `runsRoot` / `runGroup` | Output parent and fresh group; existing groups cannot be overwritten |
 
 Requests always use installed workspace delivery without judges. `baselineSkill`
@@ -26,6 +34,14 @@ receive identical natural task prompts. “No Skill” describes harness deliver
 inherited global Skills, rules and plugins still apply. Check the agent profile
 before interpreting installation benefit. Ordinary inject, rules and MCP plans
 retain their existing delivery semantics.
+
+Current source also freezes [measurementScope 1](bench-claims.md) in eval
+`plan.evaluation.measurementScope` and calibration `plan.measurementScope`.
+Schema 2 checks every selected task against the derived target; preview may show
+`unsupported`, while execution rejects with `BENCH_CLAIM_UNSUPPORTED` before
+verifier/oracle/executor calls. The requested target comes from mode/policy; no
+new request `objective` field is accepted. Default schema 1 remains compatible
+and unrecorded. Changes to declarations or selection require a fresh preview.
 
 CLI agents and requests default to 600 seconds; API execution preserves its
 120-second default. New paired plans and native records state the effective
@@ -83,6 +99,14 @@ this check. Use sibling input/output directories; invalid layouts fail before
 verifiers, model calls or run creation. Git-root benches are supported: bench
 hashing and sealed snapshots both exclude Git metadata while retaining task bytes.
 
+The budget object is optional as a whole. When supplied it must contain exactly
+`input`, `cachedInput`, `uncachedInput`, `output` and `durationSeconds`; unknown
+or missing fields fail. Token limits are positive safe integers. Seconds are a
+positive finite number no greater than `Number.MAX_SAFE_INTEGER`; a duration-only
+budget is unsupported. [Adapter counter support](eval-agent-preflight.md#current-source-capability-table)
+can block a strict budget before any call. Absolute stop lines, the call ceiling
+and relative adoption-policy cost caps are separate controls.
+
 Budget files are parsed into fixed numeric limits before planning. Those values,
 rather than the source file's path/format, are bound to the hash and sealed in
 the native plan. Editing the file before a new invocation changes the plan when
@@ -105,6 +129,10 @@ Use actual registered IDs. Calibration defaults to two trials per task and runs
 one no-Skill baseline arm. Trigger defaults to five trials, presents on-disk
 files without `--input`, and runs only selected tasks with a `shouldTrigger`
 label. Unlabeled tasks are skipped; a plan with no eligible calls fails.
+The unlabeled skip behavior remains for schema 1; schema 2 requires activation
+support and boolean labels on every selected trigger task, including negatives.
+No task is silently removed to satisfy claims. Fixed [self-test controls](bench-self-test.md)
+use their separate mock-only confirmation contract, not this live-run plan.
 Include negative controls to measure false-trigger rate. Neither mode accepts
 `--pair-order`; trigger does not use a judge or a revision baseline.
 
@@ -134,17 +162,14 @@ and [portable packages](replay-packages.md) for historical/runtime limits.
 
 ## Stop rules and results
 
-All five budget fields are required when supplied. Token lines are positive safe
-integers; seconds are positive finite numbers. Limits count all invoked primary
-agent and enabled judge spending, including failures and excluded partners. Reaching any line stops
-the next call; one in-flight call can overshoot. Missing/partial/invalid final
-usage or an execution/guard error stops further calls and retains known/unknown
-spending. There are no retries, replacements or automatic expansion. The same
-guard covers calibration and trigger invocations. New judge receipts preserve
-both scoring orders and their usage; reports separate primary Agent, judge and
-combined `invocationCosts`. Historical missing judge costs remain unknown, never
-zero. An enabled API judge without credentials is an error before spending;
-login validity still cannot be confirmed offline. See [cost accounting](eval-costs.md).
+The [measurement stop contract](metrics.md#costs-budgets-and-stopping) counts
+all invoked primary/judge spending, including failures and excluded partners.
+It stops subsequent calls on a reached line, incomplete final usage or execution/
+guard error, retains the stopped prefix and adds no retries or replacements.
+An in-flight call can overshoot. [Cost accounting](eval-costs.md#all-executor-roles-0110-and-newer)
+defines primary/judge/combined populations and historical unknowns. An enabled
+API judge without credentials is an error before spending; login validity
+cannot be confirmed offline.
 
 Version 0.12.0 adds a preflight `USAGE_CAPABILITY` check: a CLI adapter
 known to lack one of the required token counters cannot start a budgeted batch,
@@ -163,5 +188,5 @@ Plans and stopped prefixes cannot authorize adoption.
 No-Skill results report improvements, regressions and costs, but retain
 `REVISION_COMPARISON_REQUIRED` and `eligibleForUpgrade: false` under the existing
 revision adoption policy. Ordinary runs also lack predeclared component policy
-binding. Neither entry upgrades a Skill. The [acceptance contract](eval-component.md)
-and [statistical protocol](metrics.md) are unchanged.
+binding. Neither entry upgrades a Skill. See [policy configuration](eval-component.md#adoption-policy)
+and the [measurement protocol](metrics.md#verdict-protocol-what-effective-means).

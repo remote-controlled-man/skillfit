@@ -1,19 +1,23 @@
+import { assertScopeMatches, requestedClaimFor } from './measurement-scope.js';
+import { retainedModelIdentities } from './model-identity-evidence.js';
+import { assertModelIdentity, modelIdentities, type ModelCall } from './model-identity.js';
 import assert from 'node:assert/strict';
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, isAbsolute, join, resolve } from 'node:path';
-import { loadBench } from './bench.js';
+import { loadBench, selectBenchTasks } from './bench.js';
 import { summarizeCosts, type CostObservation } from './costs.js';
 import { readComponentJson, record } from './eval-contract.js';
 import { hashFileSet, sha256File, sha256Text } from './hash.js';
 import { packageFiles, packageMember } from './replay-package.js';
 import { verifyInputSnapshot } from './input-snapshot.js';
 import { assertRecordedAgentEnvironment } from './agent-preflight.js';
-import { runVerifier } from './runner.js';
+import { runVerifier } from './verifier.js';
 import { verdictFromOutput } from './verifier-summary.js';
-import { triggerMetrics, type TriggerTaskSummary } from './trigger.js';
+import { triggerMetrics, type TriggerTaskSummary } from './trigger-summary.js';
 import { collectInstalledSkillFingerprint } from './bundle.js';
 import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } from './eval-budget.js';
+import { parseTriggerDetection, parseTriggerEvidence } from './trigger-detection.js';
 
 function integer(value: unknown, label: string): number {
   assert.ok(typeof value === 'number' && Number.isSafeInteger(value) && value >= 0, `Invalid ${label}.`);
@@ -92,7 +96,8 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
   let source: Record<string, unknown> | null = null, plan: Record<string, unknown> | null = null;
   try {
     plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
-    assert.equal(plan.schemaVersion, 1); assert.equal(typeof plan.packageVersion, 'string');
+    assert.equal(plan.schemaVersion, 1);
+    if (plan.modelIdentityProtocol !== undefined) assert.equal(plan.modelIdentityProtocol, 1, 'Unsupported model identity protocol.'); assert.equal(typeof plan.packageVersion, 'string');
     assert.ok(Array.isArray(plan.inputs), 'Native input fingerprints are missing.');
     const inputs: Record<string, unknown>[] = plan.inputs as Record<string, unknown>[];
     for (const label of ['bench', 'target', 'implementation']) {
@@ -105,6 +110,9 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
     const details = record(plan.details, 'native details');
     assert.ok(details.mode === 'calibration' || details.mode === 'trigger', 'Not a single-arm native run.');
     mode = details.mode;
+    const triggerDetection = mode === 'trigger' ? parseTriggerDetection(details.triggerDetection) : null;
+    if (mode === 'trigger' && details.executor !== undefined) assert.deepEqual(parseTriggerDetection(record(details.executor, 'planned executor').triggerDetection), triggerDetection,
+      'Executor trigger protocol differs from the native plan.');
     assert.ok(integer(details.trials, 'native trials') >= 1 && Number(details.trials) <= 20, 'Native trials must be between 1 and 20.');
     const arm = mode === 'calibration' ? 'baseline' : 'installed';
     const session = record(readComponentJson(join(root, '_session.json')).value, 'native session');
@@ -138,6 +146,7 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
         if (skill.installedSha256 !== undefined) { assert.equal(skill.installedSha256, target.sha256); assert.deepEqual(skill.installedFiles, target.files); }
         if (details.skillInstallDir !== undefined) assert.equal(source.skillInstallDir, details.skillInstallDir);
         if (details.detection !== undefined) assert.equal(source.detection, details.detection);
+        assert.deepEqual(parseTriggerDetection(source.triggerDetection), triggerDetection, 'Summary trigger protocol differs from the native plan.');
         if (details.competition !== undefined) {
           const competition = record(details.competition, 'planned competition');
           assert.deepEqual(source.competition, { mode: competition.mode, skills: (competition.skills as Record<string, unknown>[]).map(skill => ({ name: skill.name, sha256: skill.sha256 })) });
@@ -158,6 +167,17 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
       assert.ok(Array.isArray(selectedIds) && selectedIds.length > 0 && selectedIds.every(id => typeof id === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(id)), 'Invalid native task IDs.');
       assert.equal(new Set(selectedIds).size, selectedIds.length, 'Repeated native task ID.');
       if (bench) assert.ok(selectedIds.every(id => bench.tasks.some(task => task.id === id)), 'Native task selection includes a task outside the pinned bench.');
+    }
+    if (source?.measurementScope !== undefined || details.measurementScope !== undefined) {
+      assert.ok(snapshot && bench && selectedIds, 'measurementScope requires sealed bench inputs and task selection.');
+      const frozen = loadBench(snapshot.roots.get('bench')!);
+      assertScopeMatches(details.measurementScope, selectBenchTasks(frozen, selectedIds), requestedClaimFor(mode));
+      if (source) assert.deepEqual(source.measurementScope, details.measurementScope, 'Summary measurementScope differs from native plan.');
+      if (details.reviewedPlan !== undefined) {
+        const r = record(details.reviewedPlan, 'reviewed plan');
+        const s = mode === 'calibration' ? r.measurementScope : record(r.evaluation, 'reviewed evaluation').measurementScope;
+        assert.deepEqual(s, details.measurementScope, 'Reviewed measurementScope differs from native plan.');
+      }
     }
     const taskIds = mode === 'trigger' && bench ? bench.tasks.filter(task => selectedIds?.includes(task.id) && task.shouldTrigger !== undefined).map(task => task.id) : selectedIds;
     if (taskIds) assert.equal(taskIds.length * Number(details.trials), planned, 'Native task/trial count differs from planned calls.');
@@ -181,6 +201,7 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
       if (mode === 'calibration') assert.equal(e.inputMode, details.inputMode);
       else {
         assert.equal(e.installDir, details.skillInstallDir); assert.deepEqual(e.competition, details.competition); assert.equal(e.detection, details.detection);
+        assert.deepEqual(parseTriggerDetection(e.triggerDetection), triggerDetection, 'Reviewed trigger protocol differs from the native plan.');
         const target = (plan.inputs as Record<string, unknown>[]).find(input => input.label === 'target')!;
         assert.deepEqual(e.installedFingerprint, { sha256: target.sha256, files: target.files });
         if (source) assert.equal(record(e.target, 'reviewed target').sha256, record(source.skill, 'trigger Skill').bundleSha256);
@@ -221,9 +242,26 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
         if (invoked) { missingReceipts++; rows.set(path, unknownReceipt() as CostObservation & Record<string, unknown>); }
         continue;
       }
+      if (plan.modelIdentityProtocol === 1 && r.executorInvoked) assert.ok(r.modelIdentity !== undefined, 'New model identity receipt is missing.');
+      const transcriptName = `${path}/_transcript.jsonl`;
+      const transcript = files[transcriptName] ? readFileSync(packageMember(root, transcriptName), 'utf8') : undefined;
+      assertModelIdentity(r.modelIdentity, transcript, details.executor, typeof record(plan.configuredSettings ?? {}, 'settings').model === 'string' ? String(record(plan.configuredSettings, 'settings').model) : null);
       assert.equal(r.taskId, taskId); assert.equal(r.trial, trial); if (mode === 'calibration') assert.equal(r.condition, 'baseline');
       if (mode === 'trigger') {
         assert.ok(r.triggered === true || r.triggered === false || r.triggered === null);
+        assert.deepEqual(parseTriggerDetection(r.triggerDetection), triggerDetection, 'Receipt trigger protocol differs from the native plan.');
+        if (triggerDetection) {
+          assert.deepEqual(parseTriggerDetection(record(r.executor, 'receipt executor').triggerDetection), triggerDetection,
+            'Receipt executor trigger protocol differs from the native plan.');
+          const e = parseTriggerEvidence(r.triggerEvidence, triggerDetection);
+          assert.equal(r.triggered, e.status === 'unknown' ? null : e.status === 'observed', 'Receipt trigger boolean differs from its evidence.');
+          if (e.eventLines.length) {
+            const transcript = packageMember(root, `${path}/_transcript.jsonl`);
+            assert.ok(files[`${path}/_transcript.jsonl`], 'Trigger evidence transcript is not sealed.');
+            const lines = readFileSync(transcript, 'utf8').split('\n');
+            assert.ok(e.eventLines.every(line => line <= lines.length && lines[line - 1]!.trim()), 'Trigger evidence line is outside the retained transcript.');
+          }
+        }
         if (source) {
           const skill = record(source.skill, 'trigger Skill');
           if (skill.installedSha256 !== undefined) {
@@ -291,13 +329,17 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
         assert.deepEqual(result, task, 'Trigger summary differs from retained observations.'); return result;
       });
       if (mode === 'trigger') assert.deepEqual(JSON.parse(JSON.stringify(triggerMetrics(summaries as TriggerTaskSummary[]))), source.metrics, 'Trigger metrics differ from retained observations.');
+      if (source.modelIdentities !== undefined) {
+        const calls: ModelCall[] = [...rows.entries()].filter(([, row]) => row.executorInvoked).map(([path, row]) => ({ receipt: `${path}/_result.json`, identity: row.modelIdentity as import('./model-identity.js').ModelIdentity ?? null }));
+        assert.deepEqual(source.modelIdentities, modelIdentities(calls), 'Single-arm model identity summary differs from receipts.');
+      } else assert.ok(plan.modelIdentityProtocol !== 1 || [...rows.values()].every(row => !row.executorInvoked), 'New model identity summary is missing.');
       if (source.costs !== undefined) assert.deepEqual(source.costs,
         summarizeCosts({ baseline: [...rows.values()], treatment: [] }, { baseline: [], treatment: [] }), 'Single-arm cost summary differs from its invocation receipts.');
     }
   } catch (error) { reasons.push(error instanceof Error ? error.message : String(error)); }
   const costs = summarizeCosts({ baseline: observations, treatment: [] }, { baseline: [], treatment: [] });
   const retained = reasons.length ? retainedUsage(root, mode) : null;
-  return { evidence: { verified: reasons.length === 0, runDir: root, scope: 'single-arm-native', reasons, indexedFiles, receipts, replayedDeliveries,
+  return { modelIdentities: retainedModelIdentities(root), evidence: { verified: reasons.length === 0, runDir: root, scope: 'single-arm-native', reasons, indexedFiles, receipts, replayedDeliveries,
       replayRequested: options.replay ?? false, observationsReused: true, modelCalls: 0,
       limitation: 'Single-arm observations and local delivery grading only; no new trigger detection, paired comparison, billing claim or upgrade authorization.' },
     usage: { ...(retained?.population ?? costs.attempts.baseline), startedAgentDispatches: retained?.startedAgentDispatches ?? observations.length,

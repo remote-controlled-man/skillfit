@@ -1,10 +1,11 @@
+import { measurementScope, measurementScopeText, type MeasurementScope } from './measurement-scope.js';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { loadBench, selectBenchTasks } from './bench.js';
 import { resolveBenchDir } from './bench-location.js';
 import { listFilesRecursive } from './hash.js';
-import { runVerifier, verifierFailure } from './runner.js';
+import { runVerifier, verifierFailure } from './verifier.js';
 import { MOCK_MARKER_FILE } from './constants.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import { throwIfEvaluationInterrupted, withEvaluationInterrupts } from './interruption.js';
@@ -315,7 +316,8 @@ export async function runOfflineBenchCheck(options: { dir?: string; taskIds?: st
     let dir = resolve(options.dir ?? '.');
     const checks: BenchCheckReport['checks'] = [];
     let identity: BenchCheckReport['bench'] = null;
-    const result = (): BenchCheckReport => ({ dir, bench: identity, checks,
+    let scope: MeasurementScope | undefined;
+    const result = (): BenchCheckReport => ({ dir, bench: identity, ...(scope ? { measurementScope: scope } : {}), checks,
       failures: checks.filter(check => check.status === 'FAIL').length,
       warnings: checks.filter(check => check.status === 'WARN').length });
     const push: BenchDiagnosticSink = (code, status, message, task, evidence) => {
@@ -331,6 +333,7 @@ export async function runOfflineBenchCheck(options: { dir?: string; taskIds?: st
       push('BENCH_LOAD', 'FAIL', `bench does not load: ${(error as Error).message}`);
       return result();
     }
+    scope = measurementScope(bench, null); options.log?.(measurementScopeText(scope));
     identity = { name: bench.name, sha256: bench.contentSha256, taskCount: bench.tasks.length };
     push('BENCH_LOAD', 'PASS', `bench.json valid (${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…)`);
     await inspectBenchIntegrity(bench, push);

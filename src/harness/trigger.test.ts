@@ -8,6 +8,7 @@ import { collectInstalledSkillFingerprint, collectSkillBundle } from './bundle.j
 import { MockExecutor } from './executors/mock.js';
 import { renderTriggerSummary, runTriggerExperiment, triggerMetrics, type TriggerManifest } from './trigger.js';
 import type { Executor, ExecutorResult } from './types.js';
+import { triggerDetection } from './trigger-detection.js';
 
 function tmp(t: import('node:test').TestContext, prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -83,6 +84,21 @@ function makePlan(
     ...overrides,
   };
 }
+
+test('trigger rejects conflicting versioned labels, target identities and competitor aliases before any call', async t => {
+  let calls = 0;
+  const declaration = triggerDetection('content-blocks', ['test-skill']);
+  const executor: Executor = { describe: () => ({ kind: 'stub', model: 'offline', triggerDetection: declaration }), run: async () => { calls++; return { output: 'done' }; } };
+  const plan = makePlan(t, executor, { trials: 1 });
+  await assert.rejects(runTriggerExperiment({ ...plan, detection: 'skill-read' }), /contradicts/);
+  const wrong = triggerDetection('content-blocks', ['other']);
+  await assert.rejects(runTriggerExperiment({ ...plan, executor: { ...executor, describe: () => ({ kind: 'stub', model: 'offline', triggerDetection: wrong }) } }), /contradicts/);
+  const wrongPath = triggerDetection('codex-items', ['test-skill'], ['.different/skills/test-skill/SKILL.md']);
+  await assert.rejects(runTriggerExperiment({ ...plan, executor: { ...executor, describe: () => ({ kind: 'stub', model: 'offline', triggerDetection: wrongPath }) } }), /read paths do not include/);
+  const competitor = makeSkill(t); writeFileSync(join(competitor, 'SKILL.md'), '---\nname: test-skill\ndescription: Conflicting alias.\n---\n');
+  await assert.rejects(runTriggerExperiment({ ...plan, competitors: [{ name: 'other', sourceDir: competitor, sha256: collectInstalledSkillFingerprint(competitor).sha256 }] }), /conflicting registered trigger identity/);
+  assert.equal(calls, 0); assert.equal(existsSync(join(plan.runsRoot, plan.runGroup)), false);
+});
 
 test('trigger verifier exceptions are errors excluded from rates while their output and tokens stay in receipts', async t => {
   const plan = makePlan(t, stubExecutor(() => ({ output: 'done', skillTriggered: true })), { trials: 1 });

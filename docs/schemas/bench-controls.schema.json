@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Offline paired bench controls v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "suites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/suite"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "suites"
+  ],
+  "$defs": {
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "graded": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "passes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 20
+        }
+      },
+      "required": [
+        "graded",
+        "passes",
+        "errors"
+      ]
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "baseline": {
+          "$ref": "#/$defs/counts"
+        },
+        "treatment": {
+          "$ref": "#/$defs/counts"
+        }
+      },
+      "required": [
+        "taskId",
+        "baseline",
+        "treatment"
+      ]
+    },
+    "pRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minInclusive": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maxExclusive": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1.0000000000000002
+        }
+      },
+      "required": [
+        "minInclusive",
+        "maxExclusive"
+      ]
+    },
+    "action": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "output-file"
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "path"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "fixture",
+                "oracle"
+              ]
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "error"
+            },
+            "code": {
+              "const": "SIMULATED_EXECUTOR_FAILURE"
+            }
+          },
+          "required": [
+            "kind",
+            "code"
+          ]
+        }
+      ]
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "completed",
+            "stopped"
+          ]
+        },
+        "statisticalVerdict": {
+          "enum": [
+            "effective",
+            "ineffective",
+            "inconclusive",
+            null
+          ]
+        },
+        "mcnemarPRange": {
+          "$ref": "#/$defs/pRange"
+        },
+        "errorCode": {
+          "const": "SIMULATED_EXECUTOR_FAILURE"
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/task"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "status",
+        "statisticalVerdict",
+        "tasks"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "stopped"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "statisticalVerdict": {
+                "type": "null"
+              }
+            },
+            "not": {
+              "required": [
+                "mcnemarPRange"
+              ]
+            }
+          },
+          "else": {
+            "properties": {
+              "statisticalVerdict": {
+                "enum": [
+                  "effective",
+                  "ineffective",
+                  "inconclusive"
+                ]
+              }
+            },
+            "not": {
+              "required": [
+                "errorCode"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
+        "purpose": {
+          "enum": [
+            "benefit",
+            "harm",
+            "null",
+            "error",
+            "custom"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "inject",
+            "installed"
+          ]
+        },
+        "agent": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "taskIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "trials": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "arms": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "baseline": {
+                "$ref": "#/$defs/action"
+              },
+              "treatment": {
+                "$ref": "#/$defs/action"
+              }
+            },
+            "required": [
+              "baseline",
+              "treatment"
+            ]
+          }
+        },
+        "expected": {
+          "$ref": "#/$defs/expected"
+        }
+      },
+      "required": [
+        "id",
+        "purpose",
+        "mode",
+        "agent",
+        "taskIds",
+        "trials",
+        "arms",
+        "expected"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "inject"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "agent": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "agent": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import type { MeasurementScope } from './measurement-scope.js';
 import type { BenchTask } from './types.js';
 import { verdictFromOutput, type VerifierCheck } from './verifier-summary.js';
 import { MOCK_MARKER_FILE } from './constants.js';
@@ -41,6 +42,7 @@ export interface BenchDiagnostic extends Check {
 }
 
 export interface BenchCheckReport {
+  measurementScope?: MeasurementScope;
   dir: string;
   bench: { name: string; sha256: string; taskCount: number } | null;
   checks: BenchDiagnostic[];

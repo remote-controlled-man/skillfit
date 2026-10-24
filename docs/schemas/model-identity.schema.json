@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Skillfit per-invocation model identity version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "configured",
+    "requested",
+    "status",
+    "reportedModels"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "configured": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "requested": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "reported",
+        "unrecorded"
+      ]
+    },
+    "reportedModels": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source",
+          "location"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "enum": [
+              "api-response-model",
+              "cli-public-event"
+            ]
+          },
+          "location": {
+            "type": "string",
+            "pattern": "^(?:/model|jsonl:[1-9][0-9]*:/message/model)$"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "source": {
+                  "const": "api-response-model"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "location": {
+                  "const": "/model"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "location": {
+                  "pattern": "^jsonl:[1-9][0-9]*:/message/model$"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "reported"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reportedModels": {
+            "minItems": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reportedModels": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

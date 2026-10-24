@@ -3,6 +3,7 @@ import { parseArgs } from 'node:util';
 import { resolve } from 'node:path';
 import { runBenchAdd, runBenchCheck, runBenchInit, prepareBenchCalibration, runBenchCalibration, type BenchCheckCalibrateOptions } from './commands/bench.js';
 import { benchCheckError, benchCheckJson } from './commands/bench-check-report.js';
+import { runBenchSelfTest, selfTestError, selfTestExitCode } from './commands/bench-self-test.js';
 import { inspectBench, manageBench } from './commands/bench-manage.js';
 import { exportEvaluation } from './commands/eval-export.js';
 import { runBundleExport } from './commands/bundle.js';
@@ -34,6 +35,7 @@ Usage:
   skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
   skillfit bench init [dir] [--kind output|command]  Scaffold a text-output or code-editing case
   skillfit bench check [path-or-name] [--json]  Validate a local/bundled bench offline
+  skillfit bench self-test <path-or-name> [--json]  Check declared synthetic controls through the paired pipeline; zero model calls
   skillfit bench check [path-or-name] --calibrate  Plus real baseline-difficulty runs (needs --agent)
   skillfit bench add <dir> --freeze ...     Freeze a real failure into a bench task (see below)
   skillfit bench add <dir> --from-commit <sha>  Mine a fix commit (parent = fixture, fix's tests = verifier)
@@ -51,12 +53,12 @@ Options:
   --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
   --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target
   --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
-  --plan-sha <hash>   Confirm an eval/calibration dry-run plan (also needs --run-group)
-  --json             Machine output for bench check/list/show/edit/remove, report, eval and calibration
+  --plan-sha <hash>   Confirm an eval/calibration/self-test dry-run plan (also needs --run-group)
+  --json             Machine output for bench check/self-test/list/show/edit/remove, report, eval and calibration
   --spending-budget <file>  Eval/calibration/drafting: input, cachedInput, uncachedInput, output, durationSeconds stop lines
   --executor-timeout-seconds <n>  Eval/calibration/drafting: executor deadline (integer 1–3600)
   --pair-order <order>  Paired eval: baseline-first (default) | balanced
-  --runs-root <dir>   Eval/calibration/drafting output parent (default: ./runs)
+  --runs-root <dir>   Eval/calibration/drafting/self-test output parent (default: ./runs)
   --run-group <name>  Fresh record group; reuse its name when confirming an eval preview
   --policy <path>    With paired report eval, assess against a policy (post-hoc changes cannot authorize adoption)
   --records <dir>    With paired report eval, use native evidence from this run directory
@@ -88,7 +90,14 @@ Options:
   --version, -v       Show version
 
 bench init options:
+  --schema-version <1|2>  Explicit schema opt-in (default 1; schema 2 starter claims quality)
   --kind <kind>         output (default, grades a reply) | command (grades file edits)
+
+bench self-test options:
+  --controls <file>     Controls v1 file relative to the bench (default: controls.json)
+  --suite <id>          Select declared suites (repeatable, controls-file order)
+                       inject/installed only; trigger/rules/MCP/judge/drafting unsupported
+                       JSON execution needs --run-group and the preview's --plan-sha
 
 bench edit options:
   --set <field=value>   Change fixture, prompt, promptTrigger, verifier, verifierKind, verifierTimeoutSeconds,
@@ -97,6 +106,7 @@ bench edit options:
                        Edits/removals default to a plan; --yes backs up bench.json and applies
 
 bench add --freeze options:
+  --claim <quality|efficiency|activation>  Repeat for schema 2 tasks; required for freeze/from-commit
   --task <id>            Task id (required)
   --prompt <text>        Task prompt, or --prompt-file <path> (required)
   --verifier-cmd <cmd>   Command run in the task run dir; exit 0 = pass
@@ -120,6 +130,8 @@ Docs: https://github.com/remote-controlled-man/skillfit
 `;
 
 const CLI_OPTIONS = {
+  controls: { type: 'string' },
+  suite: { type: 'string', multiple: true },
   agent: { type: 'string' },
   'judge-agent': { type: 'string' },
   mode: { type: 'string' },
@@ -166,6 +178,8 @@ const CLI_OPTIONS = {
   'verifier-kind': { type: 'string' },
   'verifier-timeout-seconds': { type: 'string' },
   kind: { type: 'string' },
+  'schema-version': { type: 'string' },
+  claim: { type: 'string', multiple: true },
   'should-trigger': { type: 'string' },
   calibrate: { type: 'boolean', default: false },
   json: { type: 'boolean', default: false },
@@ -178,7 +192,7 @@ const CLI_OPTIONS = {
 } as const;
 
 function jsonBenchCommand(): string | null {
-  const supported = ['check', 'list', 'show', 'edit', 'remove'];
+  const supported = ['check', 'self-test', 'list', 'show', 'edit', 'remove'];
   const args = process.argv.slice(2);
   try {
     const { values, positionals } = parseArgs({ args, allowPositionals: true, strict: false, options: CLI_OPTIONS });
@@ -216,10 +230,34 @@ async function main(): Promise<void> {
     console.log(USAGE);
     return;
   }
+  if (command === 'bench' && positionals[1] === 'self-test') {
+    const allowed = new Set(['controls', 'suite', 'runs-root', 'run-group', 'dry-run', 'yes', 'json', 'plan-sha']);
+    for (const [key, value] of Object.entries(values)) if (value !== undefined && value !== false && !allowed.has(key)) {
+      throw new Error(`--${key} is unsupported by bench self-test; modes, tasks and trials come only from controls; no live executor is available.`);
+    }
+    if (positionals.length !== 3 || !positionals[2]) throw new Error('Usage: skillfit bench self-test <path-or-name> [--controls <file>] [--suite <id> ...] [--json] [--dry-run]');
+    if (values['plan-sha'] !== undefined && values['dry-run']) throw new Error('--plan-sha requires a non-dry-run self-test.');
+    if (values['runs-root'] !== undefined && (!values['runs-root'].trim() || values['runs-root'].includes('\0'))) throw new Error('--runs-root must be a non-empty path.');
+    const result = await runBenchSelfTest({ dir: positionals[2], controls: values.controls, suites: values.suite,
+      runsRoot: values['runs-root'], runGroup: values['run-group'], dryRun: values['dry-run'], yes: values.yes,
+      json: values.json, expectedPlanSha256: values['plan-sha'], log: line => values.json ? console.error(line) : console.log(line) });
+    if (values.json) console.log(JSON.stringify(result, null, 2));
+    else {
+      console.log(`Bench self-test: ${result.status}; synthetic=true; ${result.simulatedExecutorInvocations} simulated invocations; 0 harness model calls.`);
+      if (result.plan) { console.log(`Plan SHA: ${result.plan.sha256}`); console.log(`Output: ${result.plan.outputDir}`); }
+      for (const suite of result.suites) console.log(`${suite.id}: ${suite.status}${suite.reasons.length ? ` — ${suite.reasons.join(' ')}` : ''}`);
+      console.log('Synthetic controls cannot authorize adoption. Local verifiers/oracles must be trusted and offline.');
+    }
+    process.exitCode = failureExitCode(selfTestExitCode(result));
+    return;
+  }
+  if (values.controls !== undefined || values.suite !== undefined) throw new Error('--controls and --suite apply only to bench self-test.');
   const calibrationCommand = command === 'bench' && positionals[1] === 'check' && values.calibrate;
   if (values['baseline-skill'] !== undefined && command !== 'eval') {
     throw new Error('--baseline-skill applies only to eval --mode installed.');
   }
+  if (values['schema-version'] !== undefined && !(command === 'bench' && positionals[1] === 'init')) throw new Error('--schema-version applies only to bench init.');
+  if (values.claim !== undefined && !(command === 'bench' && positionals[1] === 'add')) throw new Error('--claim applies only to bench add.');
   if (values.kind !== undefined && !(command === 'bench' && positionals[1] === 'init')) {
     throw new Error('--kind applies only to bench init.');
   }
@@ -407,7 +445,7 @@ async function main(): Promise<void> {
         else if (subcommand === 'show') console.log(JSON.stringify(result.tasks[0], null, 2));
         else {
           console.log(`Bench: ${result.name} (${result.tasks.length} tasks, sha256 ${result.sha256})`);
-          for (const task of result.tasks) console.log(`${task.id}\t${task.verifierKind}\t${task.oracle ? 'oracle' : 'no oracle'}\t${task.fixture}`);
+          for (const task of result.tasks) console.log(`${task.id}\t${task.verifierKind}\t${task.oracle ? 'oracle' : 'no oracle'}\t${task.fixture}\t${task.claims?.join(',') ?? 'legacy-unrecorded'}`);
         }
         return;
       }
@@ -424,7 +462,8 @@ async function main(): Promise<void> {
         if (kind !== undefined && kind !== 'output' && kind !== 'command') {
           throw new Error(`Unknown --kind: ${kind} (expected "output" or "command")`);
         }
-        await runBenchInit({ ...common, dir: positionals[2], kind });
+        if (values['schema-version'] !== undefined && !['1', '2'].includes(values['schema-version'])) throw new Error('--schema-version must be 1 or 2.');
+        await runBenchInit({ ...common, dir: positionals[2], kind, schemaVersion: values['schema-version'] === '2' ? 2 : 1 });
         return;
       }
       if (subcommand === 'check') {
@@ -502,6 +541,7 @@ async function main(): Promise<void> {
         await runBenchAdd({
           ...common,
           benchDir: positionals[2],
+          claims: values.claim,
           task: values.task?.[0],
           prompt: values.prompt,
           promptFile: values['prompt-file'],
@@ -537,6 +577,9 @@ async function main(): Promise<void> {
 
 main().catch((err: unknown) => {
   const benchCommand = jsonBenchCommand();
+  if (benchCommand === 'self-test') {
+    console.log(JSON.stringify(selfTestError(err), null, 2)); process.exitCode = failureExitCode(2); return;
+  }
   if (benchCommand === 'check' && process.argv.includes('--calibrate')) {
     console.log(JSON.stringify(componentError(err), null, 2));
     process.exitCode = failureExitCode(2); return;
