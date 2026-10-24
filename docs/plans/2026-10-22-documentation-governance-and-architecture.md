@@ -8,15 +8,42 @@
 >
 > **当前做到：** D1–D3、A1–A5、V1 已完成本地实施及综合验收；A4 保留原 authoring/确认合同，A5 门禁接入既有 npm test/full CI。实际包、原始历史回放与保护哈希通过，所属测量计划 F8 的 21 项覆盖收尾也已完成；此前 L/C/M 交付保持。
 >
-> **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 9/9；L1–L4 为 4/4，合计 13/13。C1–C4、M1–M3 已交付；本轮 N1–N3 的复核、源 CI 验收及记录内容为 3/3，记录自身的远端集成状态由 PR checks 呈现；F8 由所属计划判定，R 研究不计入本计划完成数。
+> **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 9/9；L1–L4 为 4/4，合计 13/13。C1–C4、M1–M3 已交付；此前 N1–N3 已交付；本轮 M4–M6 的合并、源 CI 验收及记录内容为 3/3，记录自身的远端集成状态由下方动态链接呈现；F8 由所属计划判定，R 研究不计入本计划完成数。
 >
-> **本轮授权：** 2026-10-24 用户在 A4、A5、V1 和 F8 本地完成后，追加授权复核全部改动、确认历史证据和回放、提交推送、创建 PR 并检查/修复 CI。按下方 N1→N2→N3 交付；不合并新 PR、不发布、不执行真实模型或 R1–R4，不修改冻结历史原件。
+> **本轮授权：** 2026-10-24 用户追加授权合并 PR #55、检查/修复合并后 main CI 并更新原计划。按下方 M4→M5→M6 交付；此前 N1–N3 的 review、提交和 PR CI 保持其实际输入范围。不发布、不执行真实模型或 R1–R4，不修改冻结历史原件。
 >
-> **下一步：** 本轮基线为 main `496ad13077a9dc5beb1b3aa25a26b115849868c1`，初始工作区干净；A4/A5/V1/F8 本地验收保持完成。N1 最终复核及保护验证通过；N2 已提交并推送源 `f295149d779de7343b5f957d1a3779c0c150d19f`，创建 [PR #55](https://github.com/remote-controlled-man/skillfit/pull/55)；源 [CI 40100544026](https://github.com/remote-controlled-man/skillfit/actions/runs/40100544026) 8/8 通过；N3 源验收及结果记录已完成，最终记录 head 的远端集成结果由下方动态链接呈现。
+> **下一步：** PR #55 已合并为 main `c1c23bb087e6927e0137e6bcc7b08c10ef3163a7`，实际 [main CI 40103002073](https://github.com/remote-controlled-man/skillfit/actions/runs/40103002073) 8/8 通过并核验八份收据；M4–M6 的合并、源验收及记录内容已完成，记录自身的 PR/最终 main 集成结果由下方动态链接呈现。
 >
 > **最近更新：** 2026-10-24，Asia/Shanghai。
 
+### PR #55 合并与主分支验收（2026-10-24）
+
+顺序与验收：M4 只合并匹配已复核 head 的 PR #55；M5 跟踪真实合并 SHA 的 main push CI，八个 jobs 成功并核对实际收据的 SHA、Node、full/minimum 范围及计数，失败则定位、最小修复和重验；M6 将实际结果写回现有两份计划，经记录 PR、required checks 和正常合并交付，再核对最终 main CI。记录使用固定源结果加动态记录 PR/main 检查链接，避免为记录自身 SHA 循环提交；原历史证据/回放验收和 R1–R4 边界保持。
+
+- [x] M4 合并 PR #55。（2026-10-24T14:33:03Z；匹配已复核 head `ff417da1ace6ef3210981df6f10db53abe2d2d15`，8/8 CI 和安全检查成功，普通 merge 得到 `c1c23bb087e6927e0137e6bcc7b08c10ef3163a7`；合并树与被 review 的 head 无文件差异）
+- [x] M5 验收合并后 main CI。（2026-10-24；[CI 40103002073](https://github.com/remote-controlled-man/skillfit/actions/runs/40103002073) attempt 1，8/8 jobs 成功；八份收据匹配真实 main push SHA `c1c23bb087e6927e0137e6bcc7b08c10ef3163a7`、实际 Node/范围/原始日志计数，既有 main/full 源 CI 验证器通过；无失败、无重跑、无代码修复）
+- [x] M6 完成计划状态与验证结果记录。（2026-10-24，记录内容完成；只修改现有两份计划。提交前 npm test 1079/1079、0 fail/skip/cancel，70.188s；70 页文档、80 个旧锚点与 diff 检查通过；2/2 文件整合 review 无剩余问题，0 skip。记录 PR/required checks、正常合并及最终 main CI 按下方动态链接逐项核对，全部实际检查通过后结束，不追认记录 CI 为源 full CI）
+
+M5 实际 main 验收收据（2026-10-24；run `40103002073` / attempt `1`，全部 0 fail / 0 cancelled）：
+
+| 作业 | 实际 Node | 范围 | tests / pass / skip |
+| --- | --- | --- | --- |
+| macos-latest required | 22.23.3 | full | 1079 / 1079 / 0 |
+| ubuntu-latest required | 22.23.3 | full | 1079 / 1079 / 0 |
+| windows-latest required | 22.23.4 | full | 1076 / 1075 / 1 |
+| node-compat 22.13.0 | 22.13.0 | full | 1079 / 1079 / 0 |
+| node-compat 22.14.0 | 22.14.0 | full | 1079 / 1079 / 0 |
+| node-compat 24 | 24.21.0 | full | 1079 / 1079 / 0 |
+| node-compat 26 | 26.12.1 | full | 1079 / 1079 / 0 |
+| node-minimum 22.0.0 | 22.0.0 | minimum | 3 / 3 / 0 |
+
+Windows 唯一 skip 是既有 POSIX escaped-descendant stdout 检查；信号、后代清理、短路径与完整包自检实际执行，未新增跳过。合并树与 PR #55 已 review 的最终 head 完全一致，复用相同输入上通过的 18+1 历史验收、19+1,583 恢复和实际包证据；1,685 份 evidence/release 原件 SHA 保持。原未定位偶发回放失败的限制说明保留，不声称其根因已修复。八份实际收据、原日志和验证摘要在 `/private/tmp/skillfit-merge55-main-ci/`；长期结果由本表及固定 CI 链接保留。
+
+M6 只修改现有两份计划。记录交付的 required checks 通过后按仓库规则正常合并，再验收最终 main CI；[记录分支 PR](https://github.com/remote-controlled-man/skillfit/pulls?q=is%3Apr+head%3Acodex%2Fpr55-main-verification)与[main CI](https://github.com/remote-controlled-man/skillfit/actions?query=workflow%3ACI+branch%3Amain)呈现记录自身的实际集成结果，不为记录自身 SHA 循环追加提交。records 范围只证明记录检查，四个 Node compatibility 仍跑 full，不能把它们或 minimum 互相冒充。npm 未发布，R1–R4 保持待办。
+
 ### A4/A5/V1/F8 提交与 PR 验收（2026-10-24）
+
+本节保留 PR #55 合并前的验收快照；后续合并/main 结果与本轮授权由上方 M4–M6 维护。
 
 本轮只在此维护交付进度；测量计划引用本节。顺序为 N1 → N2 → N3。计划 review 已确认授权、依赖和验收方式明确，保留先前失败记录与 R1–R4 待办。
 
