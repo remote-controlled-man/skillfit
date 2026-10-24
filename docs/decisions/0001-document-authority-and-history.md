@@ -1,6 +1,6 @@
 # ADR 0001: Document authority and historical boundaries
 
-**Status:** proposed. **Date:** 2026-10-22.
+**Status:** accepted. **Date:** 2026-10-22. **Accepted:** 2026-10-24, authorized stage delivery.
 **Scope:** Source documentation governance; no CLI or evidence-format change.
 **Supersedes:** none. **Superseded by:** none.
 
@@ -15,8 +15,8 @@ to D3. Current delivery status belongs to the [stage plan](../plans/2026-10-22-d
 
 The [governance rules](../documentation-governance.md) and original repository
 instructions already require preserving published evidence and current task
-authorization. This ADR proposes the complete long-term maintenance design;
-its proposed status does not alter those existing requirements.
+authorization. This ADR records the complete long-term maintenance design;
+its acceptance does not alter those existing requirements.
 
 ## Decision
 

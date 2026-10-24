@@ -3,7 +3,7 @@ import { parseModelIdentities, type ModelIdentities } from './model-identity.js'
 import { verdictFor } from './report.js';
 import { mcnemarExactP } from './stats.js';
 import { validateSkillInstallDir } from './installed-skill.js';
-import type { ExperimentSummary } from './experiment-session.js';
+import type { ExperimentSummary } from './types.js';
 import { assertCostTotals, COST_METRICS, type CostMetric, type CostMeasure, type CostPopulation, type RunCosts } from './costs.js';
 import { parseInvocationCosts, type InvocationCosts } from './invocation-costs.js';
 

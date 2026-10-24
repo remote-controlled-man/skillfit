@@ -3,7 +3,7 @@ import { renderModelIdentityLines } from './model-identity.js';
 import { mcnemarExactP, MIN_DISCORDANT_FOR_SIGNIFICANCE } from './stats.js';
 import { CONDITIONS } from './types.js';
 import type { Condition, ExecutorDescriptor, InputMode } from './types.js';
-import type { ExperimentSummary } from './experiment-session.js';
+import type { ExperimentSummary } from './types.js';
 import { renderCostLines, type RunCosts } from './costs.js';
 import type { ComponentMetadata } from './eval-contract.js';
 

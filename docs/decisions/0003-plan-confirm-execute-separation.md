@@ -1,6 +1,6 @@
 # ADR 0003: Separate plan, confirm and execute responsibilities
 
-**Status:** proposed (A3 evaluation delivery recorded; A4 authoring remains open). **Date:** 2026-10-22.
+**Status:** accepted. **Date:** 2026-10-22. **Accepted:** 2026-10-24, authorized stage delivery.
 **Scope:** Internal evaluation/application interfaces; existing confirmation contracts retained.
 **Supersedes:** none. **Superseded by:** none.
 
@@ -56,9 +56,10 @@ return types, exports and wire ordering. Calibration uses its separate baseline
 plan; self-test suites call the shared application directly. See the
 [current interface table](../architecture-interfaces.md#target-application-interfaces-proposed)
 and [A3 execution record](../plans/2026-10-22-documentation-governance-and-architecture.md)
-for concrete ownership and verification. The full ADR remains proposed because
-A4 prepare/apply is unimplemented; this staged status does not weaken the A3
-contract. F7 delivery and F5 content synchronization are prerequisites; current
+for concrete ownership and verification. A4 now provides read-only preparation,
+explicit bounded drafting and guarded apply with existing entry confirmation.
+Source/target drift refuses concurrent overwrites; post-draft rejection retains
+attempt accounting. F7 delivery and F5 synchronization were prerequisites; current
 F3/F5 acceptance status belongs to the [measurement plan](../plans/2026-10-21-measurement-contract-and-capability-remediation.md#当前执行状态).
 
 Verify [CLI usage](../../src/commands/eval-cli-usage.test.ts),

@@ -1,6 +1,6 @@
 import { measurementScopeText } from '../harness/measurement-scope.js';
 import { renderModelIdentityLines } from '../harness/model-identity.js';
-import { agentEnvironmentReportLines } from '../harness/agent-preflight.js';
+import { agentEnvironmentReportLines } from '../harness/agent-preflight-contract.js';
 import { COST_METRICS } from '../harness/costs.js';
 import type { SingleArmReport } from '../harness/single-arm-read.js';
 export { readSingleArmReport, type SingleArmReport } from '../harness/single-arm-read.js';

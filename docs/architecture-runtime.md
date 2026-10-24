@@ -1,6 +1,6 @@
 # Architecture runtime scenarios
 
-These are **current-source** scenarios; the [interface view](architecture-interfaces.md#target-application-interfaces-proposed) distinguishes implemented evaluation services from proposed authoring services.
+These are **current-source** scenarios; the [interface view](architecture-interfaces.md#target-application-interfaces-proposed) describes implemented evaluation and prepare/draft/apply authoring interfaces.
 The [metrics contract](metrics.md), [planning contract](eval-planning.md),
 [cost accounting](eval-costs.md) and mode-specific guides own their semantics;
 this page describes how components collaborate.
@@ -139,8 +139,8 @@ the indicated implementation stages must execute the corresponding regressions.
 | Q4: Read legacy/missing or corrupted evidence | Preserve unknown identity/claims/usage and explicit errors; refuse tampering without silently changing historical meaning | [report](../src/commands/eval-report.test.ts), [identity](../src/commands/eval-model-identity.test.ts), [export](../src/commands/eval-export.test.ts); A2/A3 and original F contracts |
 | Q5: A synthetic benefit or expected error passes | Run/audit the normal pipeline while adoption remains false; error control retains a stopped prefix | [self-test](../src/commands/bench-self-test.test.ts), [self-test signals](../src/commands/bench-self-test-interruption.test.ts); A2/A3 |
 | Q6: Move package/export and remove original inputs | Supported operations and replay work from retained bytes/runtime; altered input/digest refuses | [export modes](../src/commands/eval-export-modes.test.ts), [package](../scripts/check-package.test.mjs), [archive integrity](../scripts/check-archives.test.mjs); V1 |
-| Q7: Introduce a reverse or undeclared dependency | Existing runtime cycle/core checks remain; target layer/type/I/O violations require meaningful new rejection cases | [architecture tests](../scripts/check-architecture.test.mjs); A5, not implemented by A1 |
-| Q8: Author/import/edit a case or apply configuration | Preserve preview, source restrictions, collisions and applicable backup/validation/rollback; no hidden drafting invocation | [bench source](../src/commands/bench-source.test.ts), [management](../src/commands/bench-manage.test.ts), [transaction](../src/install/transaction.test.ts); A4, installation unchanged |
+| Q7: Introduce a reverse or undeclared dependency | Runtime/source type roles, bounded effects, finite dynamic targets and owned legacy exceptions have positive and negative checks | [architecture tests](../scripts/check-architecture.test.mjs); A5 |
+| Q8: Author/import/edit a case or apply configuration | Preserve preview, source restrictions, collisions and applicable backup/validation/rollback; no hidden drafting invocation | [authoring interface](../src/harness/bench-authoring.test.ts), [bench source](../src/commands/bench-source.test.ts), [management](../src/commands/bench-manage.test.ts), [transaction](../src/install/transaction.test.ts); A4, installation unchanged |
 
 [ADR 0003](decisions/0003-plan-confirm-execute-separation.md) explains the staged
 separation while preserving these lifecycle and compatibility requirements.

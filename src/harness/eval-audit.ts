@@ -18,7 +18,7 @@ import { pairConditions, type PairOrder } from './types.js';
 import { NATIVE_DIFF_PATH, NATIVE_DIFF_SNAPSHOT } from './native-diff.js';
 import { assertSpendingCanContinue, parseSpendingBudget, spendingBudgetState } from './eval-budget.js';
 import { verifyInputSnapshot } from './input-snapshot.js';
-import { assertRecordedAgentEnvironment } from './agent-preflight.js';
+import { assertRecordedAgentEnvironment } from './agent-preflight-contract.js';
 import { judgeCallReceipt } from './judge-audit.js';
 import { buildJudgePrompt, judgeOrder, type JudgeCallReceipt, type JudgeResult } from './judge-protocol.js';
 import { summarizeInvocationCosts } from './invocation-costs.js';

@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { getAgent } from '../agents.js';
 import { parseFrontmatter } from '../frontmatter.js';
-import { parseTriggerDetection } from './trigger-detection.js';
+import { parseTriggerDetection } from './trigger-contract.js';
 import { loadBench, selectBenchTasks } from './bench.js';
 import { resolveBenchDir } from './bench-location.js';
 import { RUN_GROUP_PATTERN } from './constants.js';

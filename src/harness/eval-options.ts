@@ -1,12 +1,12 @@
 import type { AcceptancePolicy, ComponentMetadata } from './eval-contract.js';
 import type { MeasurementScope } from './measurement-scope.js';
-import type { TriggerDetection } from './trigger-detection.js';
+import type { TriggerDetection } from './trigger-contract.js';
 import type { NativeDiffDescriptor } from './native-diff.js';
-import type { SessionOptions } from './experiment-session.js';
+import type { SessionOptions } from './types.js';
 import type { EvaluationTarget, Executor, InputMode, PairOrder } from './types.js';
 import type { SpendingBudget } from './eval-budget.js';
 import type { AgentEnvironmentPreflight } from './agent-preflight.js';
-import type { CASE_PREFLIGHT_POLICY } from './eval-preflight.js';
+import type { CASE_PREFLIGHT_POLICY } from './eval-preflight-error.js';
 import type { INPUT_SNAPSHOT_POLICY } from './input-snapshot.js';
 import type { EvalRequest } from './eval-contract.js';
 import type { ControlSuite } from './bench-controls.js';

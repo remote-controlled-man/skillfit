@@ -18,34 +18,8 @@ import { globalSkillRoots } from './agent-preflight.js';
 import { spendingStopFrom, type SpendingStopCode } from './eval-budget.js';
 import { assertEvaluationOutputLayout, physicalPath } from './evaluation-layout.js';
 
-export interface ExperimentSummary {
-  schemaVersion: 1;
-  status: 'completed' | 'stopped' | 'incomplete';
-  plannedCalls: number;
-  maxCalls: number;
-  callsStarted: number;
-  callsFinished: number;
-  stopReason: string | null;
-  stopCode?: SpendingStopCode;
-  planSha256: string;
-}
-
-export interface SessionOptions {
-  bench: Bench;
-  target: EvaluationTarget;
-  baselineTarget?: EvaluationTarget;
-  groupDir: string;
-  workspaces: string[];
-  plannedCalls: number;
-  maxCalls?: number;
-  agent?: string;
-  injected?: boolean;
-  homeDir?: string;
-  env?: NodeJS.ProcessEnv;
-  versionProbe?: (argv: string[]) => string | null;
-  details: Record<string, unknown>;
-  guardFiles?: { label: string; path: string; sha256: string }[];
-}
+import type { ExperimentSummary, SessionOptions } from './types.js';
+export type { ExperimentSummary, SessionOptions } from './types.js';
 
 type InputFingerprint = PinnedInput;
 interface ConfigFingerprint { path: string; state: 'missing' | 'file'; sha256: string | null; trust?: { table: string; field: string; value: string } }

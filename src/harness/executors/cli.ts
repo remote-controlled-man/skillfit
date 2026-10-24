@@ -40,7 +40,8 @@ export interface CliExecutorOptions {
   clock?: ExecutionClock;
 }
 
-export const DEFAULT_CLI_TIMEOUT_MS = 10 * 60 * 1000;
+import { DEFAULT_CLI_TIMEOUT_MS } from '../constants.js';
+export { DEFAULT_CLI_TIMEOUT_MS } from '../constants.js';
 const MAX_AGENT_OUTPUT_BYTES = 32 * 1024 * 1024;
 const DEFAULT_PROMPT_FILE = '_prompt.txt';
 const PROMPT_FILE_PLACEHOLDER = '{promptFile}';

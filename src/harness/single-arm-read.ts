@@ -5,11 +5,11 @@ import { existsSync, statSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { record, readComponentJson } from './eval-contract.js';
-import type { ExperimentSummary } from './experiment-session.js';
+import type { ExperimentSummary } from './types.js';
 import { stoppedAccounting } from './eval-audit.js';
 import { triggerMetrics, type TriggerTaskSummary } from './trigger-summary.js';
 import type { EvalReportOptions } from './eval-options.js';
-import { parseTriggerDetection } from './trigger-detection.js';
+import { parseTriggerDetection } from './trigger-contract.js';
 
 function text(value: unknown, label: string): string {
   if (typeof value !== 'string' || !value.trim()) throw new Error(`${label} must be a nonempty string.`);
