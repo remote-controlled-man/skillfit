@@ -10,11 +10,11 @@
 >
 > **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 6/9；本次新增 L1–L4 为 4/4，合计 10/13。A4/A5/V1 的原验收与授权不变，继续待办；本轮 L 项已完成；本次提交交付 C1–C4 为 4/4；F3/F5 的远端条件已在所属计划验收。
 >
-> **本轮授权：** 2026-10-23 用户追加要求 review 当前全部相关改动，确认历史证据/回放后提交、推送、检查 CI 并修复问题。交付包含当前相互依赖的 F 阶段本地实现、D/A 已完成阶段及 L1–L4；不启动 A4/A5/V1 或 R 研究项，不发布 npm、不执行真实模型/Agent、不修改实际用户配置。遵循主分支 PR 与 required checks 规则。
+> **本轮授权：** 2026-10-24 用户要求合并 PR #53 到 main，检查合并后 CI、修复问题并同步本计划。此前 2026-10-23 的 review、提交、推送及 CI 已完成；本轮按 M1→M2→M3 交付，沿用未变输入的验收。A4/A5/V1、F8/R 研究项保持原范围；遵循主分支 PR 与 required checks 规则。
 >
-> **下一步：** C1–C4 已完成，源提交 `5078262` 的 CI 8/8 通过；F3/F5 已按原条件更新所属计划。原 A4/A5/V1 与 F8/R1–R4 保持待办。交付位于 `origin/codex/docs-evidence-delivery` / PR #53，最终状态记录的检查由 PR checks 自动呈现。
+> **下一步：** C1–C4 已完成，PR #53 已合并为 main `117352d`，[main CI 40061140632](https://github.com/remote-controlled-man/skillfit/actions/runs/40061140632) 8/8 通过且八份实际收据核验通过；本轮 M1–M3 的合并、源 CI 验收及记录内容为 3/3，记录自身的远端集成结果由下方动态 PR/main 检查呈现。F3/F5 已满足原条件；A4/A5/V1 与 F8/R1–R4 保持待办。
 >
-> **最近更新：** 2026-10-23，Asia/Shanghai。
+> **最近更新：** 2026-10-24，Asia/Shanghai。
 
 ## 目标、范围与完成含义
 
@@ -117,6 +117,33 @@ C1/C2 首个源提交 `04ee9b6` 实测收据（2026-10-23，Node 24.21.0/macOS�
 | 最终离线检查 | npm test 1060/1060（最终 67.896s；EOF 格式修正后全量复验）；docs 链接/旧锚点/双语/发布文档、实际 npm 清单/大小、JSON 引用、架构及 diff 检查通过 | 本地结果不代替尚未发生的远端 CI；A4/A5/V1 和 F 计划未满足的项继续待办 |
 
 临时完整输出为 `/private/tmp/skillfit-delivery-{npm-test-final.log,docs.json,package.log,historical.log}`；历史逐项结果及日志摘要在 `/private/tmp/skillfit-delivery-historical/historical-smoke.json`。本表保存长期输入、环境、数量及结论；远端提交/CI 链接在 C3/C4 完成后补充。
+
+### PR #53 合并与主分支验收（2026-10-24）
+
+顺序与验收：M1 核对最新 head、合并规则和全部检查，沿用相同输入的 review，以匹配 head 的普通 merge 合并；M2 只跟踪实际合并 SHA 的 main push CI，八个 jobs 均成功且收据 SHA/运行环境/范围/计数匹配才完成，失败则定位、最小修复并重验受影响检查；M3 将实际提交、CI 链接及结果写回现有两份计划，检查事实、链接、旧锚点与差异，按仓库 PR 规则交付记录。状态记录用固定源 CI 加动态 PR/main 检查链接，避免为了写入记录自身 SHA 反复提交。
+
+- [x] M1 合并 PR #53。（2026-10-24 12:08:09 +08:00；匹配已复核 head `a557e5aff30f70ff53f1c1571ed9b28f742dfde2`，8/8 CI 及安全检查成功，普通 merge 得到 `117352d51f1f3dc5bd3cfb0cf7455052539f1eb4`；合并树与被 review 的 head 无文件差异）
+- [x] M2 验收合并后的 main push CI。（2026-10-24；[CI 40061140632](https://github.com/remote-controlled-man/skillfit/actions/runs/40061140632)，attempt 1，8/8 jobs 成功；八份收据均匹配真实 main push SHA `117352d51f1f3dc5bd3cfb0cf7455052539f1eb4`，通过现有发布源 CI 验证器及兼容/下限范围核对；无代码修复、无重跑 CI）
+- [x] M3 完成计划状态及验证结果记录。（2026-10-24；只改现有两份计划，八份实际 main 收据已核验；本地 npm test 1,063/1,063、0 fail/skip/cancel，68.186s；70 页文档、旧锚点和 diff 检查通过。先前沙箱仅因 HTTP 夹具监听 127.0.0.1 被拒而失败，允许本机端口后全量通过。两文件整合 review 无剩余问题；记录的 PR/required checks 与 main 集成结果见下方动态链接，不追认记录 CI 为源 full CI）
+
+本轮计划 review：执行顺序、失败修复路径、两种 CI 的证据边界和记录交付方式明确；保持历史证据/回放及未实施项的验收条件，无新增设计决策或重复全库 review。
+
+M2 实际 main 验收收据（2026-10-24；run `40061140632` / attempt `1`，全部 0 fail / 0 cancelled）：
+
+| 作业 | 实际 Node | 范围 | tests / pass / skip |
+| --- | --- | --- | --- |
+| Windows required | 22.23.4 | full | 1060 / 1059 / 1 |
+| Ubuntu required | 22.23.3 | full | 1063 / 1063 / 0 |
+| macOS required | 22.23.3 | full | 1063 / 1063 / 0 |
+| Ubuntu compatibility 22.13.0 | 22.13.0 | full | 1063 / 1063 / 0 |
+| Ubuntu compatibility 22.14.0 | 22.14.0 | full | 1063 / 1063 / 0 |
+| Ubuntu compatibility 24 | 24.21.0 | full | 1063 / 1063 / 0 |
+| Ubuntu compatibility 26 | 26.12.1 | full | 1063 / 1063 / 0 |
+| Ubuntu minimum 22.0.0 | 22.0.0 | minimum | 3 / 3 / 0 |
+
+Windows 的 skip 是原有 POSIX escaped-descendant stdout 检查；信号、后代清理、短路径与完整包自检实际执行。main 合并树与 PR head 完全相同，复用 C2 的历史 18+1 回放、19+1,583 恢复及实际包证据；未更改冻结原件或忽略此前已披露的偶发失败。完整八份收据及校验摘要保存在 `/private/tmp/skillfit-merge53-main-receipts/`、`/private/tmp/skillfit-merge53-main-summary.json`，长期结果由上表与固定 GitHub CI 链接保留。
+
+M3 只更新现有两份计划。记录交付的 required checks 按仓库规则通过后正常合并，再核对最终 main CI；记录 PR 和后续 main 状态分别由[记录分支 PR](https://github.com/remote-controlled-man/skillfit/pulls?q=is%3Apr+head%3Acodex%2Fpr53-main-verification)与[main CI](https://github.com/remote-controlled-man/skillfit/actions?query=workflow%3ACI+branch%3Amain)动态呈现，避免为记录自身 SHA 再生成一轮记录提交。records 范围只验证记录，不能替代上述固定源 full CI。
 
 ### C4 初轮失败与修复范围（先记录后实施）
 
