@@ -8,11 +8,11 @@
 >
 > **当前做到：** D1–D3、A1–A5、V1 已完成本地实施及综合验收；A4 保留原 authoring/确认合同，A5 门禁接入既有 npm test/full CI。实际包、原始历史回放与保护哈希通过，所属测量计划 F8 的 21 项覆盖收尾也已完成；此前 L/C/M 交付保持。
 >
-> **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 9/9；L1–L4 为 4/4，合计 13/13。C1–C4、M1–M3 已交付；F8 由所属计划判定，R 研究不计入本计划完成数。
+> **进度：** 计划准备 P1–P3 为 3/3；原实施 D1–D3、A1–A5、V1 为 9/9；L1–L4 为 4/4，合计 13/13。C1–C4、M1–M3 已交付；本轮 N1–N3 的复核、源 CI 验收及记录内容为 3/3，记录自身的远端集成状态由 PR checks 呈现；F8 由所属计划判定，R 研究不计入本计划完成数。
 >
 > **本轮授权：** 2026-10-24 用户在 A4、A5、V1 和 F8 本地完成后，追加授权复核全部改动、确认历史证据和回放、提交推送、创建 PR 并检查/修复 CI。按下方 N1→N2→N3 交付；不合并新 PR、不发布、不执行真实模型或 R1–R4，不修改冻结历史原件。
 >
-> **下一步：** 本轮基线为 main `496ad13077a9dc5beb1b3aa25a26b115849868c1`，初始工作区干净；A4/A5/V1/F8 本地验收保持完成。N1 最终复核及保护验证通过；N2 正在提交、推送并创建 PR，之后 N3 验收实际 PR CI。当前尚未提交，不能用此前 CI 追认本轮改动。
+> **下一步：** 本轮基线为 main `496ad13077a9dc5beb1b3aa25a26b115849868c1`，初始工作区干净；A4/A5/V1/F8 本地验收保持完成。N1 最终复核及保护验证通过；N2 已提交并推送源 `f295149d779de7343b5f957d1a3779c0c150d19f`，创建 [PR #55](https://github.com/remote-controlled-man/skillfit/pull/55)；源 [CI 40100544026](https://github.com/remote-controlled-man/skillfit/actions/runs/40100544026) 8/8 通过；N3 源验收及结果记录已完成，最终记录 head 的远端集成结果由下方动态链接呈现。
 >
 > **最近更新：** 2026-10-24，Asia/Shanghai。
 
@@ -21,8 +21,25 @@
 本轮只在此维护交付进度；测量计划引用本节。顺序为 N1 → N2 → N3。计划 review 已确认授权、依赖和验收方式明确，保留先前失败记录与 R1–R4 待办。
 
 - [x] N1 复核最终改动和保护证据。（2026-10-24；46/46 文件统一 review，0 skip，无新阻断；35 个迁移声明重新比对 AST 一致。提交前 npm test 1079/1079，0 fail/skip/cancel，69.186s；70 页/122 旧锚点与 diff 检查通过。1,685 原件 SHA 保持；当前 1,174 个包文件逐字节匹配已验收候选，19 归档/1,583 支撑及 catalog/fetcher/recipe 与原 18+1 成功回放的输入一致，复用同输入实际执行结果；原未定位偶发失败记录保持）
-- [ ] N2 提交、推送并创建 PR。（进行中，N1 已通过；在 codex/ 分支提交全部本轮改动，提交前核对最终 diff 和范围；PR 写明可观察变化、实际验证、AI 协助和限制；记录固定源提交及 PR 链接，不直接改 main）
-- [ ] N3 验收实际 PR CI 并更新记录。（依赖 N2；八个 jobs 全部成功，核对实际测试 SHA、Node、full/minimum 范围及计数；失败时定位、最小修复、重验并推送。以固定源 CI 收据和动态 PR 检查链接记录，避免为记录自身 SHA 循环提交；最终推送的 head 仍须通过实际 CI）
+- [x] N2 提交、推送并创建 PR。（2026-10-24；源提交 `f295149d779de7343b5f957d1a3779c0c150d19f`，分支 `codex/authoring-boundaries-closeout`，[PR #55](https://github.com/remote-controlled-man/skillfit/pull/55) 已创建并附加到当前任务。46 文件范围与复核清单一致，未直接写 main；PR 包含行为/验证/AI 披露及历史限制）
+- [x] N3 验收实际 PR CI 并更新记录。（2026-10-24，源验收及记录内容完成；[CI 40100544026](https://github.com/remote-controlled-man/skillfit/actions/runs/40100544026) attempt 1，八个 jobs 全通过、八份实际收据已核对。源 head `f295149d779de7343b5f957d1a3779c0c150d19f`，实际测试合成 SHA `2b86a01c7b6d5a8c595f3723ae0945a0a039f558`；无失败、无重跑、无新增代码修复。记录提交前 npm test 1079/1079，0 fail/skip/cancel，69.056s，70 页/旧锚点与 diff 检查通过；两份计划的受影响内容复核无问题。记录自身最终 head 的实际检查仍在下方动态链接核对，不冒充固定源运行）
+
+N3 固定源验收：上述 CI 属于 PR #55 的实际合成测试，不是 main push 或发布源验收。全部 0 fail / 0 cancelled；实际环境/范围如下。
+
+| 作业 | 实际 Node | 范围 | tests / pass / skip |
+| --- | --- | --- | --- |
+| macos-latest required | 22.23.3 | full | 1079 / 1079 / 0 |
+| ubuntu-latest required | 22.23.3 | full | 1079 / 1079 / 0 |
+| windows-latest required | 22.23.4 | full | 1076 / 1075 / 1 |
+| node-compat 22.13.0 | 22.13.0 | full | 1079 / 1079 / 0 |
+| node-compat 22.14.0 | 22.14.0 | full | 1079 / 1079 / 0 |
+| node-compat 24 | 24.21.0 | full | 1079 / 1079 / 0 |
+| node-compat 26 | 26.12.1 | full | 1079 / 1079 / 0 |
+| node-minimum 22.0.0 | 22.0.0 | minimum | 3 / 3 / 0 |
+
+Windows 唯一 skip 是既有 POSIX escaped-descendant stdout 检查；未新增跳过，信号/后代清理、短路径和包自检实际执行。当前只追加两份计划的交付记录，运行时代码、政策、包与冻结历史均与源 CI 相同。八份收据及核验摘要保存在 `/private/tmp/skillfit-pr55-source-ci/`；固定 CI 链接和本表保留长期结果。
+
+本轮记录统一追加一次；最后记录提交的远端集成结果由 [PR #55 checks](https://github.com/remote-controlled-man/skillfit/pull/55/checks) 和[本分支 CI](https://github.com/remote-controlled-man/skillfit/actions?query=workflow%3ACI+branch%3Acodex%2Fauthoring-boundaries-closeout)呈现。提交/推送后检查实际最终 head，不为写入记录自身 SHA 再提交一轮。PR 保持待合并，npm 未发布；R1–R4 仍待办。
 
 ## 目标、范围与完成含义
 
@@ -442,6 +459,8 @@ node scripts/check-contrib-benches.mjs
 V1 完成仅代表本计划所列本地整改验收完成，不代表远端 CI、F8、发布或第三方复现完成。本计划任何必需项未实现/未验证时保持相应阶段及整体未完成，不能以“已有测试绿灯”或“F8 会再检查”代替本阶段证据。F3 已按原条件在所属计划完成；本轮新改动的远端 CI、提交/推送与发布未执行，旧 CI 不替代新源验收。
 
 ### V1 最终验收记录（2026-10-24）
+
+以下是提交前的本地 V1 快照；后续提交/PR 与新源 CI 的实际结果只在上方 N1–N3 更新，不把旧结果改写成新运行。
 
 基线 `496ad13077a9dc5beb1b3aa25a26b115849868c1`，环境 macOS/arm64、Node 24.21.0；本轮 46 个修改/新增文件，未新增 Markdown。排除两份自记录计划后的 44 文件 overlay 指纹为 `5f30a178d4fbc6cf2bcd5e13bf85aa46cfc79400ed464696780f373419a1b153`（排序 path/SHA-256 JSON 再 SHA-256；完整 manifest 在临时验证目录）。代码改变会改变实际 implementation 指纹，未省略新模块来保留旧 plan digest。
 
