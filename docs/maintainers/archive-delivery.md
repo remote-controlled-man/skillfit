@@ -122,3 +122,6 @@ records; they are not active maintenance pages. Removing them from main does not
 shrink old Git history or change existing npm releases.
 
 Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/archive-delivery.md).
+
+The consolidated source guides and references retain earlier paths/anchors at
+[this fixed documentation snapshot](https://github.com/remote-controlled-man/skillfit/tree/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs).

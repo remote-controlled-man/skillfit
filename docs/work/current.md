@@ -4,205 +4,175 @@
 
 ## Status
 
-- Baseline: main `3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850`, package 0.13.1.
-- F1–F8, D1–D3, A1–A5, V1 and their previous deliveries are complete.
-- Previous cleanup: complete locally; pruning, migration, installation, full
-  restoration and frozen verification passed. Its existing diff is preserved.
-- Current task: S2–S5 implemented and verified locally under the reviewed framework.
-- Progress: S2–S5 and final commit review complete; all local verification passed; Git delivery blocked by origin/main protection rules after local commit.
-  Existing cleanup/design changes are preserved. No npm release or live evaluation.
+- Baseline: local main `4ec83672b69799bc62613c381f6b12ba8f3f3068`, package 0.13.1,
+  plus the 18 locally verified C1–C5 changes; preserve that working input.
+- Current task: N1–N5 complete; D1 complete; D2 local commit complete; D3 push pending.
+- Delivery: the user now authorizes final review, commit and push. No new PR,
+  remote CI, publication, live model calls or actual user-configuration writes.
+  Use `[skip ci]`; preserve branch protection and report any rejected push.
 
-## Previous cleanup baseline
+## Execution order and acceptance
 
-- [x] Keep 15 documentation pages total, including this one current plan.
-  Result: docs 189 → 49 files; Markdown 77 → 15.
-- [x] Keep three evidence entry files; retrieve original bytes on demand.
-  Result: evidence 1,605 → 3 files; original catalog unchanged.
-- [x] Migrate current links, package requirements and affected offline fixtures.
-  Result: 39 maintained entries pass; 8 consumed fixtures (157,794 bytes)
-  match original hashes. Retired historical research helpers remain in Git.
-- [x] Verify local build, links, package and complete historical restoration.
-  Passed: 1,081/1,081 offline tests, 24/24 final documentation tests,
-  isolated npm installation, Skill/entry-point checks, 19 archives + 1,583
-  support files restored with original hashes and zero network attempts.
-  Passed: 18 frozen replays + 1 original export-hash check on Node 24.21.0 /
-  macOS arm64; zero model/agent CLI calls. Final package: 1,036 files,
-  1,010,479 compressed bytes; every installed file matches final source.
-  Review: 1,800 paths accounted for (56 changed/new, 1,744 removed),
-  zero skipped, 100% coverage, no remaining findings. Archived bytes were
-  checked against fixed snapshots; 51 historical links resolve locally.
-  Final documentation and whitespace checks passed.
-
-## Framework follow-up — execution order
-
-The [canonical framework](../maintainers/architecture.md#repository-framework-design-for-the-next-migration)
-owns requirements FR1–FR8, module responsibilities, the target tree, artifact
-lifecycle, alternatives, failure analysis and rollback. Keep all work in this
-plan; update its current status and proof links in place.
-
-| Order | Work | Status | Acceptance / validation |
+| Order | Work / dependency | Status | Acceptance / actual verification |
 | --- | --- | --- | --- |
-| S1 | Trace growth and define framework | Complete: refined design only | Review current writers, old ADRs and fixed evidence; separate current behavior from recommendations; cover FR1–FR8, module contracts, format/effect ownership and extension/failure/rollback cases. |
-| S2 | Close output/admission paths before moving files | Complete: standalone schema-3 proof bundle; explicit legacy recovery; stable release guide | Experiment/release defaults write no tracked docs/evidence; one proof bundle; legacy import explicit; current version/Skill and failed-attempt proofs retained. Offline writer/acceptance regressions, then npm test for code changes. |
-| S3 | Migrate tools and docs into the defined hierarchy | Complete: 15 pages grouped, 62 paths moved, 21 obsolete/duplicate script paths retired | Same maintained page scope, one current plan, recipes owned by tooling; migrate imports, package inventory, workflow references and examples together. Documentation gate, installed-package checks and relevant local suite. |
-| S4 | Deepen Resources/Agents, Bench/Usage, Evaluation and Configuration/CLI | Complete: owned contracts, neutral mechanisms and CLI composition; local regressions passed | Extract in dependency order; separate Targets, Execution, Measurement and Records; no Bench→Evaluation or shared host-policy imports. Public interfaces, owned types and colocated tests. Preserve JSON/errors, configuration rollback, signals and changed-plan rejection; architecture and offline suite pass. |
-| S5 | Enforce prevention and validate final delivery | Complete; installed documentation links and npm executable repaired and guarded; remote delivery blocked | Forbidden writes/imports/layouts and extension-contract regressions fail correctly; installed launchers keep required compatibility paths. Actual package installation, Skill docs, 19-archive/1,583-support restoration and 18 frozen replays plus one export-hash check remain correct on their recorded runtime. |
+| N1 | Topic ownership, version baseline and plan review | Complete | One authority per topic; release-process points to releases. Keep one plan; preserve prior verification summary and pinned history. Review all reader/export/launcher and doc/schema/Skill consumers before edits; no unresolved contract choice. |
+| N2 | Rewrite existing docs around reader tasks; after N1 | Complete | 12 docs pages: index 1, guides 4, reference 3, maintenance 3, plan 1. Merge controls into Bench guide, rules/MCP into workflow, claims into existing Bench format. Keep schema/example inputs and statistics meaning. Migrate every current link, registry/package/test/Skill consumer; removed docs stay at fixed Git source. Run baseline anchor/link gate and execute the source onboarding's complete offline loop. |
+| N3 | Records format/version ownership; after N2 | Complete | One Records-owned type/version and replay-capability contract used by readers, exporters, portable validation and generated launcher. Keep paired/single-arm audits distinct and legacy inference explicit. Unsupported explicit versions/types refuse; legacy absence keeps original meaning. First add failing caller/compatibility regressions, then build, relevant replay/audit/export suites and architecture gate. No format bump or historical byte rewrite. |
+| N4 | Derive deterministic CLI reference facts; after N3 | Complete | Existing help text/option declarations have an owned source; derive the repetitive option summary in an existing reference page and check drift locally. Preserve text help bytes, parse behavior, entry-specific defaults and confirmations. No generic parser/schema platform or new maintained page. Verify real help, documentation derivation and installed examples. |
+| N5 | Integrated review and local acceptance; after N4 | Complete | Review final changes plus retained C1–C5 inputs. Run full npm test, architecture/docs gates, actual offline npm install/bin/Skill/docs, source tutorial and five portable replays. Freshly restore/hash 19 archives + 1,583 support files. Reuse frozen replay proofs only after exact closure/log-digest validation; otherwise rerun affected frozen recipes. Record final evidence and limits here. |
 
-S1 findings before implementation: historical evidence had 1,605 files / 202 Markdown, including
-467 runtime and 320 source replay paths; repeated Git blobs do not represent
-that much newly stored Git data. Current flat directories contain 109 harness,
-61 command and 55 script files (including tests). release-records still writes
-versioned docs/receipts and appends plan status; release-docs-smoke still requires
-a new per-version page. Existing role/registry checks do not yet close those
-admission paths. The previous cleanup was therefore storage reduction, not the
-completed framework migration.
+## Final review and delivery
 
-S1 refinement review: current call chains exposed five gaps: mixed experiment/
-delivery axes, missing Resource/Target ownership, scattered vendor decoding,
-replay paths bound to source layout, and evaluation cancellation/UI inside shared
-process mechanisms. The canonical framework now specifies module dependency
-and effect rules, five Evaluation responsibilities, explicit codecs/identity
-compatibility, and six extension scenarios. Calibration/self-test orchestration
-stays in Evaluation to prevent Bench→Evaluation cycles; shared takes explicit
-signals, while hosts retain stop/seal/exit policy. Existing mode strings,
-statistical meaning, record versions and frozen bytes remain unchanged.
+| Order | Work / dependency | Status | Verification |
+| --- | --- | --- | --- |
+| D1 | Reconcile all 52 final paths, review contracts/consumers and historical proofs | Complete | 52/52 accounted; no remaining finding. Fresh npm test: 1,099 pass, zero fail/skip; 159 architecture modules, zero violations; 36 docs entries, zero errors. Fresh installed feature checks: 31 regressions + five portable replays. Fresh offline restore: 19 archives + 1,583 support hashes; reuse 18 frozen replays + one export-hash result after closure/38-log verification. |
+| D2 | Update this plan and commit reviewed inputs; after D1 | Complete | Local reviewed commit uses `[skip ci]`. EOF blank line caught by staged check was removed before push; final npm test again passed 1,099/1,099. Built/shipped bytes remain identical to the accepted installation. Final staged hashes/diff validated before committing. |
+| D3 | Push and verify remote commit; after D2 | Pending | Push current main without force; no PR or remote workflow dispatch. If protection rejects, record the actual refusal and keep delivery incomplete. |
 
-S4 order is Resources/Agents → Bench/Usage → Evaluation internals → Configuration/
-CLI composition. New designs/formats may need explicit coordinated contracts;
-the plan does not promise that all future changes fit one existing interface.
-Validate extension scenarios through caller interfaces and actual installed/
-relocated packages, including generated launcher strings and old delegates.
-No new plugin system, store, global context or portable format is needed or
-selected for this structural migration.
+D1 delivery evidence: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-final-delivery-07jg84r5/. Current runtime/source payload is
+byte-identical to N5; full local tests and installed features/archive restoration
+were freshly executed here. Prior identical review inputs were reused while
+checking consumers against this delivery request; this was one integrated local
+review, not an independent reviewer. Effective remote main rules still require
+a PR and three OS checks; remote main was 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850.
+Do not weaken protection or start CI to satisfy a rejected push.
 
-Validation: the 39-entry documentation gate passed; related documentation/
-registry regressions passed 24/24. Reviewed FR1–FR8 against the six extension
-scenarios, effect/dependency rules, versioned readers and rollback conditions.
-This S1 design-only verification preceded implementation S2–S5. Previous cleanup's full code/install/replay
-proofs describe their own inputs; no full code-suite rerun is needed for these
-two documentation-only edits.
+## Decisions and safety
 
-Implementation preflight review: preserve the six installed-recipe test paths
-and replay cancellation entry as owned compatibility surfaces. Clean generated
-outputs during builds so moved code cannot survive as stale dist modules.
-Move the current plan/page rather than create a second one; update all package,
-script, generated launcher, schema and Skill consumers. The implementation phase kept all verification local. Its original scope had
-no commits, PRs, remote CI or publication; current Git delivery authorization
-and results are recorded below.
+Choose the single-package modular CLI and existing documentation/tool owners.
+Renaming folders alone leaves mixed purposes and duplicated facts; adding a docs
+site, package split or plugin registry creates work without serving this task.
+Rewrite the retained pages and migrate their consumers together. Twelve pages is
+this change's scope, not a permanent quality rule. New independent recurring
+tasks may justify pages through the existing ownership/admission policy.
 
-S2 verification: standalone proof generation failed its new admission assertion
-before implementation, then passed hash/tamper and legacy-recovery regressions.
-Version/Skill checks retain exact command pins without per-version docs.
-Targeted checks passed 41/41; full offline npm test passed 1,081/1,081.
-No release, registry request, model call or repository-record import performed.
+The source documentation targets the current build. docs/README owns the single
+version entry and links the fixed published 0.13.1 documentation. A source-only
+example must say so before commands; npm pins retain their released meanings.
+Tutorials show one complete observable workflow, guides solve tasks, references
+own fields/constraints and architecture explains current ownership/decisions.
 
-S3 verification: path migration initially exposed old test URLs, package roots
-and five normalized vendored/resource Markdown files. Original payload hashes
-were restored before continuing. Affected local regressions passed 143/143,
-including real npm package/inventory, installed examples, complete offline
-19-archive/1,583-support restoration, Node loaders and protected task provenance.
-Documentation gate passed 39 entries; docs remains 15 Markdown pages. The
-frozen 0.11.0 recipe and immutable catalog are byte-identical to baseline.
-The same plan now lives at docs/work/current.md; no extra plan was created.
+Records owns format identification; Application coordinates copying and use cases.
+Keep legacy missing fields distinct from unsupported explicit versions. One
+compatibility table does not unify statistics or rewrite JSON. New launchers may
+carry the selected type, while historical launchers and runtimes remain unchanged.
+Unknown versions failing silently, invented complete costs, changed hashes or a
+missing replay entry stop the slice at the first mismatch until fixed.
 
-S4 verification: Resources/Agents and Bench/Usage now own their contracts and
-readers; Evaluation separates application, temporary targets, execution, pure
-measurement and saved records. Agent invocation accounting/limits serve drafting
-and experiments without Bench importing Evaluation. CLI/composition owns prompts,
-signal listeners, exit codes and rendering. Shared subprocesses take explicit
-AbortSignal; the narrow asynchronous cancellation scope contains no business state.
-A stopped result returned after sealing survives host cancellation unchanged.
-Staged builds remove obsolete modules and preserve the last build on failure.
-Initial full suite exposed 21 failures (mostly stale consumers plus interrupted
-result loss); affected regressions then passed 81/81, zero skipped. TypeScript and
-architecture checks passed: 152 active modules, no cycles/role violations or
-legacy exceptions. Six installed-recipe tests and concrete old replay delegates
-remain owned compatibility entries; no historical bytes/formats were changed.
-S5 begins with a regression that fails when Bench can import orchestration.
+CLI reference generation is limited to deterministic facts already owned by the
+CLI. Do not infer arbitrary semantic validation from TypeScript, erase different
+entry defaults or introduce a universal context. Configuration planning stays
+deferred until a real new caller needs it. No new product experiments are part
+of this architecture task.
 
+Risks: merged guides can become pasted encyclopedias (rewrite around a main
+workflow and link exact contracts); type dispatch can erase legacy behavior
+(test explicit/absent/conflicting formats through public readers and export);
+derivation can become a second authority (one-way generation with a failing
+drift check). Preserve unrelated work; roll back only owned local changes.
 
-S5 verification: bounded dependency/effect, layout and protected-output regressions
-failed before implementation, then passed. Full offline npm test passed
-1,087/1,087, zero failures/skips. Architecture passed 154 active modules with
-no violations/exceptions; documentation passed 39 entries, preserving 15 docs
-pages and three evidence entries. The eight consumed historical fixtures remain
-157,794 exact original bytes. All 55 fixed-source documentation links resolve
-against their recorded Git objects. The frozen 0.11.0 recipe and archive catalog
-remain byte-identical.
+## Verification
 
-Actual offline package installation passed source-byte comparison, current
-Skill/version checks, 31 retained regressions, five portable replays, installation
-backup/reinstall and moved-bundle checks. The generated upstream installer had a
-stale import; a relocated, local-Skills-only installation regression now covers
-that branch. Read-only legacy receipt validation remains available, while normal
-repository admission rejects old receipt/document fan-out. Review covered 2,308
-changed/deleted paths, including all filtered inputs: 2,308 reviewed, zero skipped,
-100% accounting coverage; no remaining actionable finding.
+N1: reviewed the 15-page inventory, source/published version evidence, all current
+reader/export/descriptor/launcher dispatch sites, doc/package/Skill consumers and
+existing anchor/archive checks. The 0.13.1 publication record binds original
+source 4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6; the docs entry now links that
+immutable baseline. release-process canonical now matches the release guide.
+Documentation gate passed 39 entries. Plan scope, alternatives and failure gates
+reviewed with no unresolved choice before N2. Update these notes per slice.
 
-Historical acceptance on Node 24.21.0 / macOS arm64 passed: 19 archives + 1,583
-support files restored with original hashes, 18 frozen replays + one original
-export-hash check. Final commit review revalidated all 1,602 payload hashes and
-38 historical receipt-log digests. Restoration code, catalog, original inputs
-and frozen replay recipes are byte-identical, so those replay results are reused;
-they were not rerun for source-document link changes or the stable CLI shebang.
+N2: 15 → 12 docs pages. Controls, rules/MCP and claims merged into their existing
+canonical task/format owners; current links, package/release checks, Skill and
+registry consumers migrated. Gate: 36 registered entries, no errors, old anchors
+compared to 4ec83672. All 42 focused documentation checks passed. Built-source
+tutorial preview/confirmation/report/export/reproduce passed in a fresh temporary
+workspace with zero model calls; original synthetic verdict and unknown usage
+retained. Artifacts: /private/tmp/skillfit-iteration-jfygeuec/.
 
-Final commit-review package: 1,083 files, 1,051,012 compressed bytes, 5,066,108
-unpacked bytes; SHA-256
-ef0cdf23b04d0a6210d9a4e9420d5f3990aa79275abffddc21dfb6d6d1253814.
-Actual offline npm installation matches every source byte. The installed npm bin
-executes directly; 34 shipped public documents resolve their local links/anchors;
-current Skill/version checks, 31 retained regressions and five current portable
-replays pass. The stable CLI differs only by its restored executable header;
-the remaining package differences are source-document links. No model/agent CLI
-calls or registry requests occurred. Full offline npm test after both fixes
-passed 1,087/1,087 with zero failures/skips. Final documentation/architecture and
-whitespace checks passed. Review accounting covers 2,308 paths, none skipped;
-unchanged prior inputs reuse their integrated review, and all follow-up diffs
-were reviewed against the same requirements and standards.
+N3: Records now owns supported saved versions/type inference and original-runtime
+replay requirements. Reader/export/portable validation and generated launcher use
+the same dependency-free contract; paired/single-arm audits remain separate.
+A public regression first failed because a future artifact index was accepted,
+then passed after refusal was implemented. 98 focused report/export/session
+checks passed, including old absent descriptor types, partial legacy plans,
+unknown native/portable types and future index versions. Architecture: 158
+modules, zero violations/exceptions. No persisted format bump or archived rewrite.
 
-## Delivery
+N4: Help/options now share the CLI-owned definition module. Deterministic rows
+in the existing component reference are generated one-way; missing declarations,
+ambiguous markers or drift fail local tests. Real --help output matched the
+pre-move bytes exactly. All 29 focused CLI/reference checks passed. Architecture:
+159 modules, zero violations/exceptions; documentation gate: 36 entries, no
+errors against the original anchor/path baseline.
 
-Current authorization: review all changes, fix omissions, commit and push directly
-to origin/main. Do not create a PR, run remote CI, publish npm or call live models.
-A commit-message `[skip ci]` directive preserves the existing workflows while
-suppressing the push-triggered run.
+N5: one integrated OCR-guided local review covered final code, tests, docs and
+policy/package consumers, including filtered files. Fifteen byte-identical C1–C5
+files retained their prior review; changed dependencies were inspected here.
+Review fixed partial legacy calibration plans incorrectly acquiring paired mode,
+malformed explicit summary modes being coerced, and stale contribution/link copy.
+Both compatibility failures were reproduced before their fixes. No remaining
+known finding in the authorized scope; this is not an independent second review.
 
-| Order | Status | Acceptance / actual result |
-| --- | --- | --- |
-| Review | Complete | The original 2,308-path input was unchanged. Repaired 22 installed source-only links. Direct invocation also found that the new stable CLI delegate lost its executable shebang; the executable shebang is restored. The actual npm bin and packed-link regression checks both failed before the fixes and now pass. |
-| Local verification | Complete | Full offline suite: 1,087 passed, zero skipped; actual npm bin, Skill docs, 34 public-page links, 31 installed regressions and five portable replays passed. Historical inputs and 38 receipt-log hashes revalidated; exact-input frozen replay proofs reused. Architecture: 154 modules, zero violations; source docs: 39 entries. |
-| Commit and push | Blocked after local commit | Implementation committed as `b68ebd3ee7d7676c5829459915c1d07e0ceb563d` with `[skip ci]`. Direct push was rejected by GitHub GH013: main requires a pull request and all three required status checks. No PR or remote CI was started. Repository protection was not changed; pushing remains incomplete under the current authorization. |
+Final verification (Node 24.21.0 / macOS arm64):
 
-Delivery verification: after the rejected push, origin/main still points to
-`3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850`. The reviewed implementation
-remains committed locally; this same plan records the delivery blocker in a
-follow-up documentation commit, also with `[skip ci]`. No npm release occurred.
+- Full offline suite: 1,099 passed; zero failed, cancelled or skipped.
+- Architecture: 159 modules, zero violations/exceptions. Documentation: 36
+  registered entries, no errors; compare both HEAD and all 39 starting public
+  documents for historical anchors/paths. CLI reference drift and diff checks pass.
+- Final source tutorial passed the complete control preview/confirm, human/JSON
+  read, export/reproduce, fresh command-bench creation/check and real comparison
+  preview. Zero model/real agent CLI calls; synthetic evidence remains ineligible.
+- Actual offline npm pack/install: 1,085 files; 1,027,454 compressed / 4,997,100
+  unpacked bytes; SHA-256
+  fabc014df929e5995cfb3ef9a67ebda00ad3c2cb4307491c64c1942c86b209e6.
+  All installed files matched final source, direct npm binary help matched earlier
+  bytes, Skill/release-document checks and all 31 shipped public doc links passed.
+  Installed feature acceptance passed 31 retained regressions, five portable
+  replays, fake-process success/failure and disposable configuration/bundle checks.
+- Fresh offline restore: all 19 archives + 1,583 support files matched catalog
+  hashes, zero network attempts, collision and preview protections passed.
+  The historical driver/catalog/restorer/recipe closure matched the previously
+  verified inputs and all 38 historical log hashes matched. Reused 18 frozen
+  replays + one export-hash result; those 19 historical procedures were **not
+  rerun**. The earlier intermittent replay limitation remains below.
+- Exact artifacts and review accounting remain outside the repository at
+  /private/tmp/skillfit-iteration-jfygeuec/. At N5 acceptance no commit/push had
+  occurred. Current delivery is tracked in D1–D3 above; no new maintained page,
+  PR, remote CI, registry request, publication or actual user-config write.
 
-Local logs and receipts stay in temporary workspaces. Earlier verification
-results above describe their recorded inputs; this final review adds installed
-public-document link closure to S5 acceptance.
+## Previous verified input
+
+C1–C5: Agent environment/health collection belongs to Agents; Records receives
+facts and uses typed Session details; trigger presentation belongs to CLI.
+Local acceptance: 1,092 tests passed, zero skipped; 157 architecture modules,
+39 documentation entries, 24 old anchors/paths; installed bin/Skill/34 public
+pages, 31 retained regressions and five portable replays passed. Package had
+1,086 files, SHA-256
+4bad2ef8883d381f6848be4289831f4402deb845fcf972191ed036ff67ab2616.
+These results describe the pre-N1 input, not the new edits.
+
+Historical acceptance: all 19 archives + 1,583 support files restored with exact
+hashes; 18 frozen replays plus one export-hash check passed on Node 24.21.0 /
+macOS arm64. C1–C5 revalidated their unchanged closure and 38 log digests and
+explicitly reused those results. An earlier intermittent historical replay
+failure was not root-caused; retain that limitation when interpreting later
+successful replays. Never rewrite an archived observation.
+
+Earlier F1–F8/D1–D3/A1–A5/V1 and S2–S5 work remains in Git history. The local
+implementation commit is `b68ebd3ee7d7676c5829459915c1d07e0ceb563d`; its direct
+push was rejected because main required PR/status checks. No new delivery is
+implied by this plan. Prior full source plans and receipts remain at the
+[fixed source documentation](https://github.com/remote-controlled-man/skillfit/tree/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs).
 
 ## Remaining research
 
-- [ ] R1 Power/MDE, budget allocation and actual sampling capabilities.
-- [ ] R2 Batch task collection, source protections and independent validation.
-- [ ] R3 Deterministic trajectory/process measurement with explicit limits.
-- [ ] R4 Third-party reproduction protocol and independent live evidence.
+R1 Power/MDE and sampling; R2 independent task collection/validation; R3 bounded
+trajectory measurement; R4 third-party reproduction/live evidence. These remain
+proposals, outside this offline framework change.
 
-These remain proposals, not implemented product features. No paid/live agent
-calls or actual user-configuration writes are authorized by this cleanup.
-
-## Previous delivery
-
-PR #55 merged as `c1c23bb087e6927e0137e6bcc7b08c10ef3163a7`;
-[its main full CI](https://github.com/remote-controlled-man/skillfit/actions/runs/40103002073)
-passed 8/8. Plan records merged through PR #56 as the baseline above;
-[final integration CI](https://github.com/remote-controlled-man/skillfit/actions/runs/40104279638)
-passed 8/8. Those results describe their original inputs, not this cleanup.
-
-The full old plans, acceptance receipts, unresolved limitations and historical
-experiment conditions remain at the fixed source snapshot below. An earlier
-intermittent historical replay failure was not root-caused; retain that limit
-when interpreting later successful replays. No archived experiment is rewritten.
-
-Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/plans/2026-10-21-measurement-contract-and-capability-remediation.md).
+<!-- Retained links to earlier sections; current status and evidence are above. -->
+<a id="ownership-follow-up--execution-order"></a>
+<a id="previous-cleanup-baseline"></a>
+<a id="framework-follow-up--execution-order"></a>
+<a id="delivery"></a>
+<a id="previous-delivery"></a>

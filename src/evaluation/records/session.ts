@@ -5,9 +5,11 @@ import { measurementScope, requestedClaimFor, assertScopeMatches, assertBenchCla
 
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { readAgentEnvironment, normalizeProjectTrust, type AgentProjectTrust } from '../../agents/environment.js';
+export { normalizeProjectTrust } from '../../agents/environment.js';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
-import { getAgent, type AgentDef } from "../../agents/matrix.js";
+import { getAgent } from "../../agents/matrix.js";
 import { parseFrontmatter } from "../../resources/frontmatter.js";
 import { hashFileSet, sha256File, sha256Text } from "../../shared/hash.js";
 import { assertNativeDiffFile, assertNativeDiffWorkspace, NATIVE_DIFF_SNAPSHOT } from "../targets/native-diff.js";
@@ -19,15 +21,15 @@ import { currentSignal as evaluationSignal, throwIfCancelled as throwIfEvaluatio
 import { EvaluationInterrupted } from "../execution/interrupted.js";
 import { freezeInputSnapshot, verifyInputSnapshot, type InputSnapshot, type PinnedInput } from "./input-snapshot.js";
 import { loadBench } from "../../bench/read.js";
-import { globalSkillRoots } from "../../agents/preflight.js";
 import { spendingStopFrom, type SpendingStopCode } from "../execution/budget.js";
 import { assertEvaluationOutputLayout, physicalPath } from "../targets/output-layout.js";
 
 import type { ExperimentSummary, SessionOptions } from "./contracts.js";
+import { assertSessionDetails } from "./contracts.js";
 export type { ExperimentSummary, SessionOptions } from './contracts.js';
 
 type InputFingerprint = PinnedInput;
-interface ConfigFingerprint { path: string; state: 'missing' | 'file'; sha256: string | null; trust?: { table: string; field: string; value: string } }
+interface ConfigFingerprint { path: string; state: 'missing' | 'file'; sha256: string | null; trust?: AgentProjectTrust }
 interface SkillInventory { root: string; entries: string[] }
 
 function skillInventory(root: string): SkillInventory {
@@ -67,27 +69,6 @@ function pin(label: string, root: string, exclude?: string): InputFingerprint {
   return { label, root, files, sha256: hashFileSet(root, files), ...(exclude ? { exclude } : {}) };
 }
 
-function expand(spec: string, home: string): string {
-  return spec === '~' ? home : spec.startsWith('~/') ? join(home, spec.slice(2)) : resolve(spec);
-}
-
-/** Only pure trust registrations for the declared workspaces are excluded from the byte contract. */
-export function normalizeProjectTrust(text: string, trust: { table: string; field: string; value: string }, workspaces: readonly string[]): string {
-  const allowed = new Set(workspaces.map(path => resolve(path)));
-  const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const header = new RegExp(`^\\[${escape(trust.table)}\\.("(?:[^"\\\\\\n]|\\\\.)*"|'[^'\\n]*')\\]\\r?\\n([^[]*)`, 'gm');
-  const stripped = text.replace(header, (block: string, quoted: string, body: string) => {
-    let path: string;
-    try { path = quoted.startsWith('"') ? JSON.parse(quoted) as string : quoted.slice(1, -1); }
-    catch { return block; }
-    const value = body.trim();
-    return allowed.has(resolve(path)) &&
-      (value === `${trust.field} = "${trust.value}"` || value === `${trust.field} = '${trust.value}'`) ? '' : block;
-  });
-  // Codex appends blank separator lines when registering projects. Preserve all other bytes.
-  return stripped.replace(/\n+$/, '\n');
-}
-
 function configState(path: string, trust: ConfigFingerprint['trust'], workspaces: string[]): ConfigFingerprint {
   try {
     const raw = readFileSync(path, 'utf8');
@@ -96,28 +77,6 @@ function configState(path: string, trust: ConfigFingerprint['trust'], workspaces
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw new Error(`Cannot fingerprint agent configuration: ${path}`);
     return { path, state: 'missing', sha256: null, ...(trust ? { trust } : {}) };
   }
-}
-
-function selectedSettings(agent: AgentDef, home: string, env: NodeJS.ProcessEnv): { path: string | null; fields: Record<string, string> } {
-  const settings = agent.headless.runtime?.settings;
-  if (!settings) return { path: null, fields: {} };
-  const path = settings.homeOverride && env[settings.homeOverride.env]
-    ? join(env[settings.homeOverride.env]!, settings.homeOverride.relativePath) : expand(settings.file, home);
-  const fields: Record<string, string> = {};
-  if (!existsSync(path)) return { path, fields };
-  const text = readFileSync(path, 'utf8');
-  if (settings.format === 'json') {
-    const data = JSON.parse(text) as Record<string, unknown>;
-    for (const key of settings.keys) if (typeof data[key] === 'string') fields[key] = data[key] as string;
-  } else {
-    const top = text.split(/^\s*\[/m)[0] ?? '';
-    for (const key of settings.keys) {
-      const line = top.split(/\r?\n/).find(line => line.trimStart().startsWith(`${key} `) || line.startsWith(`${key}=`));
-      const match = line?.match(/=\s*("(?:[^"\\]|\\.)*"|'[^']*')\s*(?:#.*)?$/);
-      if (match) fields[key] = match[1]!.startsWith('"') ? JSON.parse(match[1]!) as string : match[1]!.slice(1, -1);
-    }
-  }
-  return { path, fields };
 }
 
 export class ExperimentSession {
@@ -142,8 +101,9 @@ export class ExperimentSession {
   private readonly inputSnapshot: InputSnapshot;
 
   constructor(options: SessionOptions) {
-    const policy = (options.details.component as { policy?: { schemaVersion: number } } | undefined)?.policy;
-    const requested = requestedClaimFor(String(options.details.mode), policy, options.details.stopOnExecutionError === true);
+    assertSessionDetails(options.details);
+    const policy = options.details.component?.policy;
+    const requested = requestedClaimFor(options.details.mode, policy, options.details.stopOnExecutionError === true);
     const scope = measurementScope(options.bench, requested);
     if (options.details.measurementScope !== undefined) assertScopeMatches(options.details.measurementScope, options.bench, requested);
     assertBenchClaimSupported(scope);
@@ -168,7 +128,7 @@ export class ExperimentSession {
     const packageRoot = PACKAGE_ROOT;
     this.inputs = [pin('bench', options.bench.dir, this.groupDir), pin('target', options.target.sourceDir), pin('implementation', join(packageRoot, 'dist'))];
     for (const metadata of [options.details['component'], options.details['reviewedPlan']]) if (metadata !== undefined) {
-      const expected = (metadata as { implementationSha256?: unknown }).implementationSha256;
+      const expected = metadata.implementationSha256;
       if (typeof expected !== 'string' || expected !== this.inputs.find(input => input.label === 'implementation')!.sha256) {
         throw new Error('Evaluation implementation differs from the approved preview; no calls allowed.');
       }
@@ -182,23 +142,10 @@ export class ExperimentSession {
     if (options.agent && (!options.injected || options.homeDir !== undefined)) {
       const agent = getAgent(options.agent);
       const home = options.homeDir ?? homedir();
-      const settings = selectedSettings(agent, home, env);
-      configured = settings.fields;
-      const override = agent.rules.userHomeOverride;
-      const paths = new Set([...agent.rules.userFiles, ...agent.mcp.userFiles, ...agent.hooks.userFiles, ...agent.detect.userFiles].map(spec => {
-        if (spec === agent.headless.runtime?.settings?.file && settings.path) return settings.path;
-        if (override && env[override.env] && spec === agent.rules.userFiles[0]) return join(env[override.env]!, override.relativePath);
-        return expand(spec, home);
-      }));
-      if (override?.overrideRelativePath && agent.rules.userFiles[0]) {
-        const root = env[override.env] ?? dirname(expand(agent.rules.userFiles[0], home));
-        paths.add(join(root, override.overrideRelativePath));
-      }
-      if (settings.path) paths.add(settings.path);
-      const match = agent.headless.projectTrustConfigArg?.match(/^([^.]+)\.'\{workdir\}'\.([^=]+)='([^']+)'$/);
-      const trust = match ? { table: match[1]!, field: match[2]!, value: match[3]! } : undefined;
-      for (const path of paths) this.configs.push(configState(path, path === settings.path ? trust : undefined, this.trustWorkspaces));
-      for (const root of globalSkillRoots(agent, home, env)) {
+      const environment = readAgentEnvironment(agent, { homeDir: home, cwd: process.cwd(), env });
+      configured = environment.settings.fields;
+      for (const file of environment.configFiles) this.configs.push(configState(file.path, file.trust, this.trustWorkspaces));
+      for (const root of environment.skillRoots) {
         this.inventories.push(skillInventory(root));
         if (!existsSync(root)) continue;
         for (const entry of readdirSync(root)) {
@@ -215,8 +162,8 @@ export class ExperimentSession {
           else this.configs.push(configState(path, undefined, this.workspaces));
         }
       }
-      if (agent.headless.runtime?.versionArgv && !options.injected) cliVersion = (options.versionProbe ?? probeVersion)(agent.headless.runtime.versionArgv);
-      else if (options.versionProbe && agent.headless.runtime?.versionArgv) cliVersion = options.versionProbe(agent.headless.runtime.versionArgv);
+      if (environment.versionArgv && !options.injected) cliVersion = (options.versionProbe ?? probeVersion)(environment.versionArgv);
+      else if (options.versionProbe && environment.versionArgv) cliVersion = options.versionProbe(environment.versionArgv);
     } else warnings.push('Injected executor: user configuration and CLI version were not automatically probed.');
     this.configuredModel = configured['model'] ?? null;
     const plan = { schemaVersion: 1, modelIdentityProtocol: 1, createdAt: new Date().toISOString(), nodeVersion: process.version,

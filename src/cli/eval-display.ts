@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from "../evaluation/measurement/report.js";
-import { renderTriggerSummary, type TriggerManifest } from "../evaluation/execution/activation.js";
+import type { TriggerManifest } from '../evaluation/execution/activation.js';
+import { renderTriggerSummary } from './trigger-summary.js';
 import { measurementScopeText } from "../evaluation/measurement/scope.js";
 import { renderAgentEnvironment } from "../agents/preflight.js";
 import type { Bench } from "../bench/contracts.js";

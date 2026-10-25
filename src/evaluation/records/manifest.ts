@@ -1,3 +1,4 @@
+import { SAVED_FORMATS } from './formats.js';
 import type { Verdict, Counts, FacetRow, ReportRow, ReportData } from "../measurement/report-data.js";
 export type { Counts, FacetRow, ReportRow, ReportData } from "../measurement/report-data.js";
 import { parseMeasurementScope, requestedClaimFor, assertBenchClaimSupported } from "../measurement/scope.js";
@@ -264,7 +265,7 @@ function checkDelta(value: ReportRow, label: string): void {
 /** Read only the v4 fields the Markdown report actually uses. Never reinterpret older metrics. */
 export function parseEvalReport(value: unknown): ReportData {
   const manifest = object(value, 'Manifest');
-  if (manifest['schemaVersion'] !== 4) {
+  if (manifest['schemaVersion'] !== SAVED_FORMATS.evaluations.paired.summaryVersion) {
     throw new Error(`Only evaluation manifest schemaVersion 4 can be rendered (found ${JSON.stringify(manifest['schemaVersion'])})`);
   }
   const target = object(manifest['target'], 'target');

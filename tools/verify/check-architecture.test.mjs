@@ -55,7 +55,7 @@ test('shared mechanisms, controls and saved audits do not load experiment orches
     'evaluation/measurement/trial-summary.js', 'evaluation/measurement/judge-protocol.js', 'evaluation/measurement/trigger-summary.js',
     'evaluation/execution/control-executor.js', 'bench/gates/check.js', 'evaluation/records/audit.js',
     'evaluation/records/judge-audit.js', 'evaluation/records/single-arm-audit.js', 'evaluation/application/read.js',
-    'evaluation/records/single-arm-read.js', 'evaluation/application/planning.js', 'cli/eval-single-arm-report.js']) {
+    'evaluation/records/single-arm-read.js', 'evaluation/application/planning.js', 'cli/eval-single-arm-report.js', 'cli/eval-display.js']) {
     assert.ok(files.has(entry), `Missing shared entry: ${entry}`);
     const seen = new Set();
     const visit = (file, chain) => {

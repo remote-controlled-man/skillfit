@@ -61,7 +61,7 @@ selected cohort. A small selected cohort does not waive scale or independence ga
 
 ## Declared scope and offline controls (current source)
 
-[Bench claims](bench-claims.md) owns schema 2 declarations, objective derivation,
+[Bench claims](../../benches/README.md#claims-and-measurement-scope) owns schema 2 declarations, objective derivation,
 pre-call refusal and frozen measurementScope 1. Default schema 1 remains
 legacy-unrecorded; missing historical scope does not acquire today's declarations
 or a new adoption gate. A declaration identifies design support, not validity
@@ -69,7 +69,7 @@ or statistical power. Unsupported schema 2 targets cannot be made acceptable
 by silently dropping tasks or choosing a different report policy. Quality
 observations during an efficiency run do not expand its declared conclusions.
 
-[Self-test protocol 1](../guides/bench-self-test.md) applies predeclared benefit/harm/null/error
+[Self-test protocol 1](../guides/bench-authoring.md#test-known-controls) applies predeclared benefit/harm/null/error
 controls through the paired pipeline without a model. Matching expected outcomes
 checks that pipeline on those controls; it does not prove real-task discrimination,
 native Skill discovery, general efficacy or adoption eligibility. Self-test and
@@ -83,7 +83,7 @@ Bench-health diagnostics qualify interpretation; they do not silently delete tas
 suppress the exact-test verdict. A ceiling warning is not an automatic rejection
 of an efficiency comparison. Current reports separate baseline ceiling/floor,
 quality headroom, efficiency eligibility and activation coverage; see the
-[diagnostic contract](bench-claims.md#reading-difficulty-diagnostics). Calibration
+[diagnostic contract](../../benches/README.md#reading-difficulty-diagnostics). Calibration
 alone cannot qualify a cost comparison: paired variance, final cost coverage and
 regression checks still apply, including for a 100%-passing baseline.
 
@@ -491,7 +491,7 @@ Rules and MCP targets use the same paired statistics as Skill targets but a diff
 mechanism. Both arms start from the same fixture and receive an identical prompt snapshot. The
 baseline/treatment project overlays are applied only after that snapshot, so the local CLI must load
 the configuration through its real project path. API executors are inadmissible because they cannot
-observe workspace configuration. See [config-experiments.md](../guides/config-experiments.md).
+observe workspace configuration. See [rules and MCP overlays](../guides/experiment-workflow.md#rules-and-mcp-overlays).
 
 `mcp check` is a protocol and catalog preflight, not an efficacy result. It proves that a compatible
 stdio server initializes and exposes structurally usable tool definitions without calling a tool.
@@ -636,9 +636,9 @@ and [drafting records](../guides/bench-authoring.md).
   inconclusive results require a new predeclared design, not post-hoc sampling
   until significant. Task heterogeneity, repeat correlation, provider drift and
   cache reuse limit generalization. Sampling remains unpinned.
-- Current source supports opt-in [bench schema 2 claims and frozen measurementScope](bench-claims.md). Schema 1 remains legacy-unrecorded; declarations do not prove validity, power or process improvements.
+- Current source supports opt-in [bench schema 2 claims and frozen measurementScope](../../benches/README.md#claims-and-measurement-scope). Schema 1 remains legacy-unrecorded; declarations do not prove validity, power or process improvements.
   Existing `bench check` mock markers remain verifier-level informational probes.
-  Current source adds [bench self-test](../guides/bench-self-test.md), a separate full-pipeline
+  Current source adds [bench self-test](../guides/bench-authoring.md#test-known-controls), a separate full-pipeline
   synthetic control that cannot authorize efficacy/adoption or validate real Agent
   discovery. It uses the unchanged statistics and actual retained receipts;
   a matched stopped error is a self-test success, never a completed eval verdict.

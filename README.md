@@ -109,13 +109,13 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#current-source-capability-table) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
+The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
 
 The current checkout adds unpublished measurement features and corrections; build it to use additions marked **current source** in the documentation.
 
-This includes [offline self-test protocol 1](docs/guides/bench-self-test.md) and explicit [bench schema 2 / frozen measurementScope 1](docs/reference/bench-claims.md). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
+This includes [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
 
-The npm 0.13.1 commands above retain their released behavior. The [capability table](docs/guides/experiment-workflow.md#current-source-capability-table) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+The npm 0.13.1 commands above retain their released behavior. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
 
 Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
 
@@ -133,7 +133,7 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. Read the [case authoring guide](docs/guides/bench-authoring.md), [JSON check contract](docs/guides/bench-authoring.md), [verifier contract](docs/guides/bench-authoring.md) and [drafting records](docs/guides/bench-authoring.md).
 
-Before live spending, a current source build can run [bench self-test](docs/guides/bench-self-test.md) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
+Before live spending, a current source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
 
 List and inspect cases, or preview an edit. `--yes` applies a validated change with a backup; removal keeps case files. Select a smaller run with repeated `--task`:
 
@@ -197,7 +197,7 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
 ```
 
-Start with `skillfit mcp check` for server discovery and catalog auditing; it calls no tool. Then measure outcomes with the [rules and MCP workflow](docs/guides/config-experiments.md). For Codex MCP trials, a per-run trust override loads the disposable project config without changing user config.
+Start with `skillfit mcp check` for server discovery and catalog auditing; it calls no tool. Then measure outcomes with the [rules and MCP workflow](docs/guides/experiment-workflow.md#rules-and-mcp-overlays). For Codex MCP trials, a per-run trust override loads the disposable project config without changing user config.
 
 ## Share an evaluation
 
@@ -263,7 +263,7 @@ For options, including the full 65-Skill upstream catalog via `--upstream-lock`,
 
 ### Bring your own bench
 
-A bench is `bench.json`, fixtures and deterministic verifiers. Use the [seven-step authoring guide](docs/guides/bench-authoring.md) and [format reference](benches/README.md); bundled cases teach the format rather than establish model quality.
+A bench is `bench.json`, fixtures and deterministic verifiers. Use the [bench authoring guide](docs/guides/bench-authoring.md) and [format reference](benches/README.md); bundled cases teach the format rather than establish model quality.
 
 ## Our own data
 
@@ -297,7 +297,7 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 See the [current work plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md), [changelog](CHANGELOG.md) and [release procedure](docs/maintainers/releases.md).
 
-See the [capability table](docs/guides/experiment-workflow.md#current-source-capability-table) for current adapter and trigger verification limits, and the current work plan for pending implementation. Later work includes live validation and additional agent adapters. The [evidence index](evidence/README.md) and [debugging study status](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
+See the [capability table](docs/guides/experiment-workflow.md#executor-capabilities) for current adapter and trigger verification limits, and the current work plan for pending implementation. Later work includes live validation and additional agent adapters. The [evidence index](evidence/README.md) and [debugging study status](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
 
 ## Contributing
 

@@ -1,3 +1,4 @@
+import { assertRecordVersion, nativeEvaluationType } from './formats.js';
 import { assertScopeMatches, requestedClaimFor } from "../measurement/scope.js";
 import { retainedModelIdentities } from "./model-identity.js";
 import { assertModelIdentity, modelIdentities, type ModelCall } from "../../agents/observation/model-identity.js";
@@ -97,7 +98,7 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
   let source: Record<string, unknown> | null = null, plan: Record<string, unknown> | null = null;
   try {
     plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
-    assert.equal(plan.schemaVersion, 1);
+    assertRecordVersion(plan, 'plan');
     if (plan.modelIdentityProtocol !== undefined) assert.equal(plan.modelIdentityProtocol, 1, 'Unsupported model identity protocol.'); assert.equal(typeof plan.packageVersion, 'string');
     assert.ok(Array.isArray(plan.inputs), 'Native input fingerprints are missing.');
     const inputs: Record<string, unknown>[] = plan.inputs as Record<string, unknown>[];
@@ -109,8 +110,9 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
       assert.deepEqual([...new Set(input.files)].sort(), input.files, 'Pinned input files must be sorted and unique.');
     }
     const details = record(plan.details, 'native details');
-    assert.ok(details.mode === 'calibration' || details.mode === 'trigger', 'Not a single-arm native run.');
-    mode = details.mode;
+    const type = nativeEvaluationType(plan);
+    assert.ok(type !== 'paired', 'Not a single-arm native run.');
+    mode = type;
     const triggerDetection = mode === 'trigger' ? parseTriggerDetection(details.triggerDetection) : null;
     if (mode === 'trigger' && details.executor !== undefined) assert.deepEqual(parseTriggerDetection(record(details.executor, 'planned executor').triggerDetection), triggerDetection,
       'Executor trigger protocol differs from the native plan.');
@@ -118,7 +120,7 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
     const arm = mode === 'calibration' ? 'baseline' : 'installed';
     const session = record(readComponentJson(join(root, '_session.json')).value, 'native session');
     const planSha256 = sha256File(join(root, '_plan.json'));
-    assert.equal(session.schemaVersion, 1); assert.equal(session.planSha256, planSha256);
+    assertRecordVersion(session, 'session'); assert.equal(session.planSha256, planSha256);
     assert.ok(['completed', 'stopped', 'incomplete'].includes(String(session.status)));
     assert.ok(session.stopReason === null || typeof session.stopReason === 'string');
     if (session.status === 'stopped') assert.ok(typeof session.stopReason === 'string' && session.stopReason.length > 0);
@@ -128,7 +130,7 @@ export async function auditSingleArmEvaluation(runDir: string, options: { replay
     assert.equal(plan.plannedCalls, planned); assert.equal(plan.maxCalls, maximum);
     if (session.status === 'completed') { assert.equal(finished, planned); assert.equal(session.stopReason, null); }
     const index = record(readComponentJson(join(root, '_artifacts.json')).value, 'native artifact index');
-    assert.equal(index.schemaVersion, 1); assert.equal(index.planSha256, planSha256);
+    assertRecordVersion(index, 'artifacts'); assert.equal(index.planSha256, planSha256);
     const files = record(index.files, 'native files'); assert.deepEqual(index.links, {}, 'Single-arm replay requires portable regular files.');
     assert.deepEqual(packageFiles(root).filter(path => path !== '_artifacts.json'), Object.keys(files).sort(), 'Native artifact file inventory changed.');
     for (const [path, hash] of Object.entries(files)) { assert.equal(sha256File(packageMember(root, path)), hash, `Native evidence hash mismatch: ${path}`); indexedFiles++; }

@@ -1,3 +1,4 @@
+import { SAVED_FORMATS, assertRecordVersion, nativeEvaluationType, assertPortableEvaluationType, type EvaluationType } from './formats.js';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
@@ -9,7 +10,7 @@ export interface ReplayPackage {
   sourcePlanSha256: string;
   hasManifest: boolean;
   nativeStatus: string;
-  evaluationType?: 'paired' | 'calibration' | 'trigger';
+  evaluationType?: EvaluationType;
   files: Record<string, string>;
 }
 
@@ -41,7 +42,8 @@ export function packageHash(path: string): string {
 /** Checksums detect changed/missing files; they do not authenticate an unknown publisher. */
 export function verifyReplayPackage(root: string): ReplayPackage {
   const metadata = JSON.parse(readFileSync(packageMember(root, 'replay-package.json'), 'utf8')) as ReplayPackage;
-  if (metadata.schemaVersion !== 1 || metadata.kind !== 'skillfit.replay-package' ||
+  assertRecordVersion(metadata, 'package');
+  if (metadata.kind !== 'skillfit.replay-package' ||
     typeof metadata.sourcePlanSha256 !== 'string' || !/^[a-f0-9]{64}$/.test(metadata.sourcePlanSha256) ||
     typeof metadata.hasManifest !== 'boolean' || !['completed', 'stopped', 'incomplete'].includes(metadata.nativeStatus) ||
     !metadata.files || typeof metadata.files !== 'object' || Array.isArray(metadata.files)) throw new Error('Invalid replay-package.json.');
@@ -57,12 +59,10 @@ export function verifyReplayPackage(root: string): ReplayPackage {
     if (!(file in metadata.files)) throw new Error(`Required portable file is missing: ${file}`);
   }
   if (metadata.hasManifest !== ('run/manifest.json' in metadata.files)) throw new Error('Portable manifest coverage changed.');
-  if (metadata.evaluationType !== undefined) {
-    if (!['paired', 'calibration', 'trigger'].includes(metadata.evaluationType)) throw new Error('Invalid portable evaluation type.');
-    const plan = JSON.parse(readFileSync(packageMember(root, 'run/_plan.json'), 'utf8'));
-    const plannedType = ['calibration', 'trigger'].includes(plan.details?.mode) ? plan.details.mode : 'paired';
-    if (metadata.evaluationType !== plannedType) throw new Error('Portable evaluation type differs from its native plan.');
-  }
+  const plan = JSON.parse(readFileSync(packageMember(root, 'run/_plan.json'), 'utf8'));
+  assertRecordVersion(plan, 'plan'); assertRecordVersion(session, 'session');
+  assertRecordVersion(JSON.parse(readFileSync(packageMember(root, 'run/_artifacts.json'), 'utf8')), 'artifacts');
+  assertPortableEvaluationType(metadata.evaluationType, plan);
   return metadata;
 }
 
@@ -111,6 +111,10 @@ import {lstatSync,readFileSync,readdirSync,realpathSync} from 'node:fs';
 import {isAbsolute,join,relative,resolve,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
+const SAVED_FORMATS=${JSON.stringify(SAVED_FORMATS)};
+${assertRecordVersion.toString()}
+${nativeEvaluationType.toString()}
+${assertPortableEvaluationType.toString()}
 ${packageFiles.toString()}
 ${packageMember.toString()}
 ${packageHash.toString()}
@@ -125,7 +129,8 @@ try {
     const child=await runPinnedReplay(root,signal=>{interruptedSignal=signal;});
     if(child.status!==0) throw new Error(child.stderr||'Pinned offline replay failed.');
     const result=JSON.parse(child.stdout);
-    if((metadata.hasManifest||metadata.evaluationType==='calibration'||metadata.evaluationType==='trigger')&&!result.evidence?.verified) throw new Error('Offline evidence audit failed: '+JSON.stringify(result.evidence));
+    const evaluationType=nativeEvaluationType(JSON.parse(readFileSync(packageMember(root,'run/_plan.json'),'utf8')));
+    if((metadata.hasManifest||evaluationType!=='paired')&&!result.evidence?.verified) throw new Error('Offline evidence audit failed: '+JSON.stringify(result.evidence));
     console.log(JSON.stringify({...result,portableReplay:{verified:true,sourcePlanSha256:metadata.sourcePlanSha256,modelCalls:0,scope:'Offline evidence reproduction; no new observations or upgrade authorization.'}},null,2));
   }
 } catch(error) { console.error(error.message); process.exitCode=interruptedSignal==='SIGINT'?130:interruptedSignal==='SIGTERM'?143:2; }

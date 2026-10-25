@@ -107,27 +107,23 @@ test('rules and MCP evaluation tour stays present across README languages', () =
     assert.ok(!/9\/20|16\/20/.test(svg), `${figure} must not imply unpublished evaluation results`);
     assert.match(content, /skillfit mcp check/, `${readme} must mention MCP preflight`);
     assert.match(content, /node dist\/cli\.js eval \.\/context7-experiment --bench \.\/my-context7-bench --agent codex --trials 5/, `${readme} must show config A\/B`);
-    assert.match(content, /\(docs\/guides\/config-experiments\.md\)/, `${readme} must link the config experiment guide`);
+    assert.match(content, /\(docs\/guides\/experiment-workflow\.md#rules-and-mcp-overlays\)/, `${readme} must link the config experiment guide`);
     assert.match(content, /\| `mcp check <spec>` \|/, `${readme} must list the MCP command`);
     assert.match(content, /npm ci\nnpm run build\nnode dist\/cli\.js --help\nnode dist\/cli\.js bench check benches\/code-review/, `${readme} must provide an offline first run`);
   }
 });
 
-test('bench-authoring.md carries all seven steps and both gates', () => {
+test('bench authoring covers preparation, controls and local validation without separate guides', () => {
   const guide = read(GUIDE);
-  for (const step of [
-    '### 1. Start from a real failure',
-    '### 2. Freeze the scene, then shrink it',
-    '### 3. Write the grader',
-    '### 4. Or mine it from git history',
-    '### 5. Write the trigger variant',
-    '### 6. Label it, load it, and plant decoys',
-    '### 7. Rehearse before you pay',
-  ]) {
-    assert.ok(guide.includes(step), `missing step heading: ${step}`);
+  for (const heading of ['## Choose a starter', '## Freeze a real failure',
+    '## Write and challenge the grader', '## Label trigger tasks and controls',
+    '## Test known controls', '## Validate, then calibrate separately']) {
+    assert.ok(guide.includes(heading), `missing task: ${heading}`);
   }
-  assert.match(guide, /\*\*NOP\*\*/, 'the NOP gate must be named');
-  assert.match(guide, /\*\*Oracle\*\*/, 'the oracle gate must be named');
+  assert.match(guide, /\*\*NOP\*\*/);
+  assert.match(guide, /\*\*Oracle\*\*/);
+  assert.match(guide, /bench-controls\.schema\.json/);
+  assert.match(guide, /bench-self-test\.schema\.json/);
 });
 
 // The guide describes gates that must actually exist, so each threshold it quotes is read back out of

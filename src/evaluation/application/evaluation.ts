@@ -1,3 +1,4 @@
+import type { SessionDetails } from '../records/contracts.js';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { RUN_GROUP_PATTERN } from './constants.js';
@@ -28,7 +29,7 @@ export interface EvalPresentation {
 
 function sessionFor(options: EvalOptions, bench: Bench, target: EvaluationTarget, trials: number,
   runsRoot: string, runGroup: string, armNames: string[], plannedCalls: number,
-  details: Record<string, unknown>, baselineTarget?: EvaluationTarget): ExperimentSession {
+  details: SessionDetails, baselineTarget?: EvaluationTarget): ExperimentSession {
   if (!RUN_GROUP_PATTERN.test(runGroup)) throw new Error(`Invalid run group: ${runGroup}`);
   return new ExperimentSession({ bench, target, baselineTarget, groupDir: join(runsRoot, runGroup), plannedCalls,
     maxCalls: options.maxCalls, agent: options.agent, injected: options.executor !== undefined,

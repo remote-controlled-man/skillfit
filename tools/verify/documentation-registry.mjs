@@ -11,6 +11,7 @@ const manual = { kind: 'manual', files: [] };
 export const DOCUMENTATION_CHECKS = {
   'measurement-scope': automatic('src/evaluation/bench-claims.test.ts', 'src/cli/eval-measurement-scope.test.ts', 'src/cli/bench-claims-cli.test.ts', 'src/evaluation/eval-component.test.ts'),
   'documentation-review': manual, 'historical-review': manual, 'study-review': manual,
+  'cli-reference': automatic('tools/verify/cli-reference.test.mjs'),
   'docs-links': automatic('tools/verify/check-docs.test.mjs', 'tools/verify/documentation-registry.test.mjs'),
   'readme-parity': automatic('tools/verify/check-docs.test.mjs'),
   'release-documents': automatic('tools/verify/check-release-docs.test.mjs'),

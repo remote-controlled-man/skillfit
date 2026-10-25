@@ -294,7 +294,9 @@
         "docs-links",
         "bench-contracts",
         "bench-authoring",
-        "verifier-contract"
+        "verifier-contract",
+        "measurement-scope",
+        "eval-replay"
       ]
     },
     {
@@ -450,7 +452,9 @@
         "installed-delivery",
         "offline-controls",
         "verifier-contract",
-        "bench-claims"
+        "bench-claims",
+        "conclusion-limits",
+        "portable-replay"
       ],
       "checks": [
         "docs-links",
@@ -459,62 +463,9 @@
         "verifier-contract",
         "bench-preflight",
         "bench-self-test",
-        "eval-accounting"
-      ]
-    },
-    {
-      "path": "docs/guides/bench-self-test.md",
-      "kind": "how-to",
-      "lifecycle": "maintained",
-      "audience": [
-        "user",
-        "maintainer",
-        "contributor"
-      ],
-      "owner": "bench-authoring",
-      "scope": [
-        {
-          "kind": "source",
-          "ref": "working-tree"
-        }
-      ],
-      "topics": [
-        "conclusion-limits",
-        "offline-controls",
-        "portable-replay",
-        "bench-claims"
-      ],
-      "checks": [
-        "docs-links",
-        "bench-self-test",
+        "eval-accounting",
         "eval-replay",
         "measurement-scope"
-      ]
-    },
-    {
-      "path": "docs/guides/config-experiments.md",
-      "kind": "how-to",
-      "lifecycle": "maintained",
-      "audience": [
-        "user",
-        "maintainer",
-        "contributor"
-      ],
-      "owner": "evaluation",
-      "scope": [
-        {
-          "kind": "source",
-          "ref": "working-tree"
-        }
-      ],
-      "topics": [
-        "configuration-experiments",
-        "evaluation-planning"
-      ],
-      "checks": [
-        "docs-links",
-        "eval-planning",
-        "input-snapshots"
       ]
     },
     {
@@ -557,7 +508,8 @@
         "executor-capabilities",
         "trigger-observations",
         "model-identity",
-        "measurement-scope"
+        "measurement-scope",
+        "cli-reference"
       ]
     },
     {
@@ -642,7 +594,9 @@
         "spending-controls",
         "trigger-observability",
         "verifier-contract",
-        "bench-claims"
+        "bench-claims",
+        "configuration-experiments",
+        "sharing-results"
       ],
       "checks": [
         "docs-links",
@@ -821,11 +775,13 @@
         }
       ],
       "topics": [
-        "released-version"
+        "released-version",
+        "release-process"
       ],
       "checks": [
         "release-documents",
-        "historical-review"
+        "historical-review",
+        "release-workflow"
       ]
     },
     {
@@ -1175,36 +1131,6 @@
         "documentation-review",
         "measurement-scope"
       ]
-    },
-    {
-      "path": "docs/reference/bench-claims.md",
-      "kind": "reference",
-      "lifecycle": "maintained",
-      "audience": [
-        "user",
-        "maintainer",
-        "contributor"
-      ],
-      "owner": "evaluation",
-      "scope": [
-        {
-          "kind": "source",
-          "ref": "working-tree"
-        },
-        {
-          "kind": "protocol",
-          "ref": "measurementScope-1; bench-1/2"
-        }
-      ],
-      "topics": [
-        "bench-claims"
-      ],
-      "checks": [
-        "measurement-scope",
-        "bench-authoring",
-        "eval-replay",
-        "docs-links"
-      ]
     }
   ],
   "topics": {
@@ -1221,8 +1147,8 @@
       ],
       "dependents": [
         "docs/reference/eval-component.md",
-        "docs/guides/experiment-workflow.md",
-        "docs/reference/evaluation-reports.md"
+        "docs/reference/evaluation-reports.md",
+        "docs/guides/experiment-workflow.md"
       ],
       "checks": [
         "metrics-contract",
@@ -1243,13 +1169,13 @@
         "docs/schemas/agent-preflight.schema.json"
       ],
       "dependents": [
-        "README.md",
-        "README.zh-CN.md",
-        "docs/README.md",
         "docs/reference/eval-component.md",
         "docs/reference/evaluation-reports.md",
         "docs/guides/first-real-eval.md",
         "docs/work/current.md",
+        "docs/README.md",
+        "README.md",
+        "README.zh-CN.md",
         "skills/skillfit/SKILL.md"
       ],
       "checks": [
@@ -1286,9 +1212,9 @@
       "schemas": [],
       "dependents": [
         "CONTRIBUTING.md",
+        "docs/README.md",
         "README.md",
         "README.zh-CN.md",
-        "docs/README.md",
         "tools/README.md"
       ],
       "checks": [
@@ -1334,7 +1260,10 @@
     "architecture-interfaces": {
       "canonical": "docs/maintainers/architecture.md",
       "sources": [
-        "src/resources/contracts.ts", "src/agents/contracts.ts", "src/bench/contracts.ts", "src/evaluation/records/contracts.ts",
+        "src/resources/contracts.ts",
+        "src/agents/contracts.ts",
+        "src/bench/contracts.ts",
+        "src/evaluation/records/contracts.ts",
         "src/cli/eval-plan.ts",
         "src/cli/eval-cli.ts",
         "src/cli/eval-component.ts",
@@ -1418,8 +1347,6 @@
       ],
       "schemas": [],
       "dependents": [
-        "benches/README.md",
-        "benches/contrib/README.md",
         "benches/contrib/oss-lru-cache/README.md",
         "benches/contrib/oss-mcp-use-utf8/README.md",
         "benches/contrib/oss-minipass/README.md",
@@ -1427,7 +1354,9 @@
         "benches/contrib/oss-skill-followup/README.md",
         "benches/contrib/oss-skill-independent/README.md",
         "benches/contrib/oss-skill-validation/README.md",
-        "benches/contrib/waza-behavior/README.md"
+        "benches/contrib/README.md",
+        "benches/contrib/waza-behavior/README.md",
+        "benches/README.md"
       ],
       "checks": [
         "bench-authoring",
@@ -1474,7 +1403,6 @@
       ],
       "schemas": [],
       "dependents": [
-        "benches/contrib/README.md",
         "benches/contrib/oss-lru-cache/README.md",
         "benches/contrib/oss-mcp-use-utf8/README.md",
         "benches/contrib/oss-minipass/README.md",
@@ -1482,6 +1410,7 @@
         "benches/contrib/oss-skill-followup/README.md",
         "benches/contrib/oss-skill-independent/README.md",
         "benches/contrib/oss-skill-validation/README.md",
+        "benches/contrib/README.md",
         "benches/contrib/waza-behavior/README.md",
         "docs/guides/bench-authoring.md"
       ],
@@ -1530,12 +1459,12 @@
         "docs/schemas/single-arm-report.schema.json"
       ],
       "dependents": [
-        "README.md",
-        "README.zh-CN.md",
-        "docs/guides/bench-self-test.md",
         "docs/maintainers/architecture.md",
+        "docs/guides/bench-authoring.md",
         "docs/reference/evaluation-reports.md",
-        "docs/guides/first-real-eval.md"
+        "docs/guides/first-real-eval.md",
+        "README.md",
+        "README.zh-CN.md"
       ],
       "checks": [
         "metrics-contract",
@@ -1543,7 +1472,7 @@
       ]
     },
     "configuration-experiments": {
-      "canonical": "docs/guides/config-experiments.md",
+      "canonical": "docs/guides/experiment-workflow.md#rules-and-mcp-overlays",
       "sources": [
         "src/resources/experiment.ts",
         "src/evaluation/execution/prompt.ts",
@@ -1584,8 +1513,8 @@
       ],
       "schemas": [],
       "dependents": [
-        "docs/README.md",
         "docs/reference/eval-component.md",
+        "docs/README.md",
         "evidence/README.md",
         "tools/README.md"
       ],
@@ -1623,10 +1552,10 @@
       "schemas": [],
       "dependents": [
         "CONTRIBUTING.md",
+        "docs/work/current.md",
+        "docs/README.md",
         "README.md",
         "README.zh-CN.md",
-        "docs/README.md",
-        "docs/work/current.md",
         "tools/README.md"
       ],
       "checks": [
@@ -1658,7 +1587,9 @@
         "src/evaluation/records/assess.ts",
         "src/evaluation/application/options.ts",
         "src/evaluation/application/evaluation.ts",
-        "src/evaluation/application/read.ts"
+        "src/evaluation/application/read.ts",
+        "src/cli/definition.ts",
+        "tools/verify/cli-reference.mjs"
       ],
       "schemas": [
         "docs/schemas/eval-request.schema.json",
@@ -1671,7 +1602,8 @@
       ],
       "checks": [
         "eval-planning",
-        "eval-reports"
+        "eval-reports",
+        "cli-reference"
       ]
     },
     "evaluation-interruption": {
@@ -1702,7 +1634,6 @@
       ],
       "schemas": [],
       "dependents": [
-        "docs/guides/config-experiments.md",
         "docs/reference/eval-component.md",
         "docs/reference/evaluation-reports.md",
         "docs/guides/first-real-eval.md"
@@ -1822,12 +1753,12 @@
       ],
       "schemas": [],
       "dependents": [
-        "README.md",
-        "README.zh-CN.md",
         "docs/reference/eval-component.md",
         "docs/reference/evaluation-reports.md",
         "docs/guides/experiment-workflow.md",
-        "docs/guides/first-real-eval.md"
+        "docs/guides/first-real-eval.md",
+        "README.md",
+        "README.zh-CN.md"
       ],
       "checks": [
         "metrics-contract"
@@ -1840,9 +1771,9 @@
       ],
       "schemas": [],
       "dependents": [
+        "docs/README.md",
         "README.md",
-        "README.zh-CN.md",
-        "docs/README.md"
+        "README.zh-CN.md"
       ],
       "checks": [
         "documentation-review",
@@ -1861,18 +1792,18 @@
         "docs/schemas/model-identities.schema.json"
       ],
       "dependents": [
-        "README.md",
-        "README.zh-CN.md",
-        "docs/guides/experiment-workflow.md",
         "docs/reference/eval-component.md",
-        "docs/reference/evaluation-reports.md"
+        "docs/reference/evaluation-reports.md",
+        "docs/guides/experiment-workflow.md",
+        "README.md",
+        "README.zh-CN.md"
       ],
       "checks": [
         "model-identity"
       ]
     },
     "offline-controls": {
-      "canonical": "docs/guides/bench-self-test.md",
+      "canonical": "docs/guides/bench-authoring.md#test-known-controls",
       "sources": [
         "src/evaluation/application/self-test.ts",
         "src/bench/controls.ts",
@@ -1883,14 +1814,13 @@
         "docs/schemas/bench-self-test.schema.json"
       ],
       "dependents": [
-        "README.md",
-        "README.zh-CN.md",
-        "docs/README.md",
-        "docs/guides/bench-authoring.md",
+        "docs/reference/evaluation-reports.md",
         "docs/guides/experiment-workflow.md",
         "docs/guides/first-real-eval.md",
-        "skills/skillfit/SKILL.md",
-        "docs/reference/evaluation-reports.md"
+        "docs/README.md",
+        "README.md",
+        "README.zh-CN.md",
+        "skills/skillfit/SKILL.md"
       ],
       "checks": [
         "bench-self-test"
@@ -1951,7 +1881,7 @@
       ],
       "schemas": [],
       "dependents": [
-        "docs/guides/bench-self-test.md",
+        "docs/guides/bench-authoring.md",
         "docs/reference/eval-component.md",
         "docs/guides/experiment-workflow.md"
       ],
@@ -1968,9 +1898,9 @@
       ],
       "schemas": [],
       "dependents": [
+        "docs/README.md",
         "README.md",
-        "README.zh-CN.md",
-        "docs/README.md"
+        "README.zh-CN.md"
       ],
       "checks": [
         "documentation-review"
@@ -1996,7 +1926,7 @@
       ]
     },
     "release-process": {
-      "canonical": "docs/maintainers/architecture.md",
+      "canonical": "docs/maintainers/releases.md",
       "sources": [
         ".github/workflows/npm-release.yml",
         "tools/release/npm-release.mjs",
@@ -2005,6 +1935,7 @@
       ],
       "schemas": [],
       "dependents": [
+        "docs/maintainers/architecture.md",
         "tools/README.md"
       ],
       "checks": [
@@ -2020,11 +1951,11 @@
       "schemas": [],
       "dependents": [
         "CHANGELOG.md",
-        "README.md",
-        "README.zh-CN.md",
-        "docs/README.md",
+        "docs/maintainers/archive-delivery.md",
         "docs/work/current.md",
-        "docs/maintainers/archive-delivery.md"
+        "docs/README.md",
+        "README.md",
+        "README.zh-CN.md"
       ],
       "checks": [
         "release-documents",
@@ -2077,13 +2008,15 @@
       ]
     },
     "sharing-results": {
-      "canonical": "docs/reference/evaluation-reports.md#sharing-a-result",
+      "canonical": "docs/guides/experiment-workflow.md#read-share-and-reproduce",
       "sources": [
         "src/cli/eval-report.ts",
         "src/evaluation/application/export.ts"
       ],
       "schemas": [],
-      "dependents": [],
+      "dependents": [
+        "docs/reference/evaluation-reports.md"
+      ],
       "checks": [
         "eval-reports",
         "eval-replay"
@@ -2134,8 +2067,8 @@
         "docs/schemas/trigger-detection.schema.json"
       ],
       "dependents": [
-        "docs/guides/experiment-workflow.md",
-        "docs/reference/evaluation-reports.md"
+        "docs/reference/evaluation-reports.md",
+        "docs/guides/experiment-workflow.md"
       ],
       "checks": [
         "trigger-observations"
@@ -2152,7 +2085,6 @@
         "docs/schemas/verifier-error.schema.json"
       ],
       "dependents": [
-        "benches/README.md",
         "benches/contrib/oss-lru-cache/README.md",
         "benches/contrib/oss-mcp-use-utf8/README.md",
         "benches/contrib/oss-minipass/README.md",
@@ -2161,6 +2093,7 @@
         "benches/contrib/oss-skill-independent/README.md",
         "benches/contrib/oss-skill-validation/README.md",
         "benches/contrib/waza-behavior/README.md",
+        "benches/README.md",
         "docs/guides/experiment-workflow.md"
       ],
       "checks": [
@@ -2168,7 +2101,7 @@
       ]
     },
     "bench-claims": {
-      "canonical": "docs/reference/bench-claims.md",
+      "canonical": "benches/README.md#claims-and-measurement-scope",
       "sources": [
         "src/evaluation/measurement/scope.ts",
         "src/bench/read.ts",
@@ -2186,19 +2119,17 @@
         "docs/schemas/single-arm-report.schema.json"
       ],
       "dependents": [
+        "docs/maintainers/architecture.md",
         "docs/guides/bench-authoring.md",
-        "benches/README.md",
+        "docs/reference/eval-component.md",
+        "docs/reference/evaluation-reports.md",
+        "docs/guides/experiment-workflow.md",
+        "docs/guides/first-real-eval.md",
         "docs/reference/metrics.md",
         "docs/README.md",
-        "docs/maintainers/architecture.md",
         "README.md",
         "README.zh-CN.md",
-        "skills/skillfit/SKILL.md",
-        "docs/guides/first-real-eval.md",
-        "docs/guides/bench-self-test.md",
-        "docs/guides/experiment-workflow.md",
-        "docs/reference/eval-component.md",
-        "docs/reference/evaluation-reports.md"
+        "skills/skillfit/SKILL.md"
       ],
       "checks": [
         "measurement-scope",

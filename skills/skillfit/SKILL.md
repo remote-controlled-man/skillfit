@@ -20,7 +20,7 @@ Current-source numerical, trigger-observation and per-call model-identity correc
 self-test protocol 1 and bench schema 2 / measurementScope 1 are not yet published
 in npm 0.13.1. These feature protocols require the implementing build; no minimum
 published release is assigned for the additions. Build the checkout for these additions; read the
-[capability table](https://github.com/remote-controlled-man/skillfit/blob/main/docs/guides/experiment-workflow.md#current-source-capability-table)
+[capability table](https://github.com/remote-controlled-man/skillfit/blob/main/docs/guides/experiment-workflow.md#executor-capabilities)
 before promising a mode, strict budget or model provenance. A package version
 string does not prove the checkout's new behavior is released.
 
@@ -34,9 +34,9 @@ string does not prove the checkout's new behavior is released.
 | "新版 Skill 是否值得采用 / evaluate a candidate for a Skill evolution workflow" | With npm 0.9.0 or a current checkout, use `eval --request <request.json> --dry-run`; read the [component contract](https://github.com/remote-controlled-man/skillfit/blob/main/docs/reference/eval-component.md) for inputs and acceptance policy |
 | "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger`. Add `--compete-installed` to copy other user Skills; otherwise recall is an upper bound. Codex counts a `SKILL.md` read |
 | "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
-| "这个 MCP / AGENTS.md 真的有帮助吗" | Preview `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3 --dry-run`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/guides/config-experiments.md) |
-| "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]`; default schema 1 stays unrecorded; source supports explicit `--schema-version 2` with [claims](https://github.com/remote-controlled-man/skillfit/blob/main/docs/reference/bench-claims.md) |
-| "花钱前确认流水线能测到预期对照" | Current source: preview `node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs --run-group controls-001 --json --dry-run`, then confirm with `--plan-sha <plan.sha256>`; read [self-test](https://github.com/remote-controlled-man/skillfit/blob/main/docs/guides/bench-self-test.md) for controls, limits and fresh output rules |
+| "这个 MCP / AGENTS.md 真的有帮助吗" | Preview `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3 --dry-run`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/guides/experiment-workflow.md#rules-and-mcp-overlays) |
+| "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]`; default schema 1 stays unrecorded; source supports explicit `--schema-version 2` with [claims](https://github.com/remote-controlled-man/skillfit/blob/main/benches/README.md#claims-and-measurement-scope) |
+| "花钱前确认流水线能测到预期对照" | Current source: preview `node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs --run-group controls-001 --json --dry-run`, then confirm with `--plan-sha <plan.sha256>`; read [self-test](https://github.com/remote-controlled-man/skillfit/blob/main/docs/guides/bench-authoring.md#test-known-controls) for controls, limits and fresh output rules |
 | "做代码修改 case" | `bench init <dir> --kind command --dry-run`, then apply within the authorized scope; replace the teaching case with the real fixture, prompt, verifier and oracle |
 | "给 Agent 看 case 校验失败原因" | `bench check <dir> --json` — offline gate IDs, evidence and remediation; this is the integrity result, not calibration |
 | "先测 case 难度" | Version 0.11.0: `bench check <dir> --calibrate --agent <id> --task <id> --trials 1 --max-calls 1 --run-group <fresh-name> --json --dry-run`; calibrate only within authorized spending |

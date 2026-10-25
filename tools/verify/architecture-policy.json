@@ -204,7 +204,8 @@
         "evaluation/records/contracts.js",
         "resources/contracts.js",
         "shared/backup.js",
-        "evaluation/measurement/run-state.js"
+        "evaluation/measurement/run-state.js",
+        "evaluation/records/formats.js"
       ]
     },
     {
@@ -297,7 +298,9 @@
         "agents/execution.js",
         "evaluation/application/request.js",
         "harness/executors/cli.js",
-        "agents/installed-skills.js"
+        "agents/installed-skills.js",
+        "agents/environment.js",
+        "agents/health.js"
       ]
     },
     {
@@ -374,7 +377,9 @@
         "commands/evaluation-report.js",
         "commands/install.js",
         "composition.js",
-        "harness/interruption.js"
+        "harness/interruption.js",
+        "cli/trigger-summary.js",
+        "cli/definition.js"
       ]
     },
     {
@@ -609,7 +614,9 @@
         "agents/mcp-probe.js",
         "agents/observation/model-identity.js",
         "agents/observation/trigger-contract.js",
-        "agents/observation/trigger-detection.js"
+        "agents/observation/trigger-detection.js",
+        "agents/environment.js",
+        "agents/health.js"
       ]
     },
     "usage": {

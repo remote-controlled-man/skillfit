@@ -1,3 +1,4 @@
+import { nativeEvaluationType, summaryEvaluationType } from './formats.js';
 import { auditSingleArmEvaluation } from "./single-arm-audit.js";
 import { parseMeasurementScope, requestedClaimFor, claimDiagnostics } from "../measurement/scope.js";
 import { parseModelIdentities } from "../../agents/observation/model-identity.js";
@@ -104,18 +105,15 @@ export function readSingleArmReport(inputPath: string, options: EvalReportOption
   if (directory && existsSync(regular) && existsSync(calibrated)) throw new Error('Ambiguous run: both paired/trigger and calibration summaries exist.');
   const source = directory ? existsSync(regular) ? regular : existsSync(calibrated) ? calibrated : null : input;
   const data = source ? readComponentJson(source) : null, value = data ? record(data.value, 'summary') : null;
-  let mode: 'trigger' | 'calibration' | null = value?.mode === 'trigger' ? 'trigger'
-    : value?.schemaVersion === 1 && (basename(source!) === '_calibration.json' || value.inputMode !== undefined) ? 'calibration' : null;
-  let plan: Record<string, unknown> | null = null;
-  if (!source || mode) {
-    if (existsSync(join(root, '_plan.json'))) plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
-    const planned = plan?.details ? record(plan.details, 'native plan details').mode : undefined;
-    if (!mode && (planned === 'trigger' || planned === 'calibration')) mode = planned;
-    else if (mode && planned !== undefined && planned !== mode) throw new Error('Summary type differs from the native plan.');
-  }
+  const summaryType = value ? summaryEvaluationType(value, basename(source!)) : null;
+  const plan = existsSync(join(root, '_plan.json')) ? record(readComponentJson(join(root, '_plan.json')).value, 'native plan') : null;
+  const planned = plan ? nativeEvaluationType(plan) : null;
+  const explicitMode = plan?.details ? record(plan.details, 'native plan details').mode : undefined;
+  if (summaryType && explicitMode !== undefined && summaryType !== planned) throw new Error('Summary type differs from the native plan.');
+  const type = summaryType ?? planned;
+  const mode = type === 'paired' ? null : type;
   if (!mode) return null;
   if (options.replay || options.policyPath || options.recordsPath || options.benchDir) throw new Error(`${mode} reports support saved summaries only; --replay, --policy, --records and --bench require a paired report.`);
-  if (value && value.schemaVersion !== 1) throw new Error(`Unsupported ${mode} summary schemaVersion: ${String(value.schemaVersion)}.`);
   let session = value?.experiment === undefined ? null : experiment(value.experiment);
   if (existsSync(join(root, '_session.json'))) {
     const native = experiment(readComponentJson(join(root, '_session.json')).value);

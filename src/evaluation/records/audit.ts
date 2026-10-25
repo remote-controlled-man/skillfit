@@ -1,3 +1,4 @@
+import { assertRecordVersion, nativeEvaluationType } from './formats.js';
 import { assertScopeMatches, requestedClaimFor } from "../measurement/scope.js";
 import { assertModelIdentity, modelIdentities, type ModelCall } from "../../agents/observation/model-identity.js";
 import assert from 'node:assert/strict';
@@ -67,6 +68,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     const report = parseEvalReport(value), raw = record(value, 'manifest'), root = resolve(runDir);
     if (!report.experiment) throw new Error('Native session metadata is missing.');
     const index = record(readComponentJson(join(root, '_artifacts.json')).value, 'artifact index');
+    assertRecordVersion(index, 'artifacts');
     const files = record(index.files, 'indexed files');
     const links = record(index.links, 'indexed links');
     const actualFiles: string[] = [], actualLinks: string[] = [];
@@ -98,6 +100,8 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
     assert.equal(index.planSha256, report.experiment.planSha256);
     assert.deepEqual(readComponentJson(join(root, '_session.json')).value, report.experiment);
     const plan = record(readComponentJson(join(root, '_plan.json')).value, 'native plan');
+    assertRecordVersion(plan, 'plan');
+    assert.ok(nativeEvaluationType(plan) === 'paired', 'Not a paired native plan.');
     if (plan.modelIdentityProtocol !== undefined) assert.equal(plan.modelIdentityProtocol, 1, 'Unsupported model identity protocol.');
     const inputSnapshot = verifyInputSnapshot(root, plan);
     const details = record(plan.details, 'native plan details');

@@ -1,70 +1,11 @@
-# Agent evaluation component
+# Evaluation component contract
 
-Use the existing `eval` engine through a versioned JSON request to compare a
-candidate Skill with its previous complete version. Version 0.11.0 also
-accepts an explicit `baselineSkill: null` to compare with no Skill installed by
-the harness. See [shared planning, budgets and deadlines](../guides/experiment-workflow.md).
-The component returns quality
-changes, observed regressions, spending coverage and a separate adoption decision.
-It never installs, publishes or upgrades a Skill. The original revision component
-shipped in [0.9.0](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.9.0.md); later additions are labeled here.
-For the installed entry use the [0.13.1 release record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md).
-Current-source additions require a build of this checkout, regardless of its
-package version string.
-
-This page owns machine request/result fields, policy configuration and error
-envelopes. [Planning](../guides/experiment-workflow.md) owns shared defaults and confirmation;
-[metrics](metrics.md) owns statistical and adoption semantics;
-[cost accounting](evaluation-reports.md) owns populations and coverage. Reports and
-portable replay have their own [reader](evaluation-reports.md) and
-[package](evaluation-reports.md) contracts.
-
-Build the bench around the task being evaluated, with deterministic acceptance
-checks and an independent reference repair. Bundled and contributed benches are
-examples, not a universal test of every Skill. See the [authoring guide](../guides/bench-authoring.md).
-
-Version 0.11.0 adds [offline Agent environment preflight](../guides/experiment-workflow.md).
-`plan.evaluation.agentPreflight` separates executable availability, declared
-capabilities, same-name global Skill conflicts and unknown authentication. A dry
-plan can be blocked; execution returns `AGENT_PREFLIGHT_FAILED` with the checks
-before case probes, writes or calls. The native plan and report retain the saved
-checks. Authentication remains unknown; preview is not proof of login or consent.
-
-In 0.10.1, execution requires an automatic offline
-[case preflight](../guides/experiment-workflow.md) after preview-hash confirmation and before
-any agent/judge call. `plan.evaluation.casePreflight.status` is `pending`; preview
-executes no verifier/oracle. Hard failures return `CASE_PREFLIGHT_FAILED` and a
-structured `casePreflight` report with zero calls and no native run directory.
-Warnings and unknowns remain separate and nonblocking. Successful probes are
-frozen in the native plan and included in JSON assessment/replay; they do not
-authorize adoption or alter statistical/cost requirements.
-
-Version 0.11.0 [seals original inputs](../guides/experiment-workflow.md)
-before dispatch. Preview declares `plan.evaluation.inputSnapshot.status: "pending"`;
-completed/stopped JSON assessment includes `inputSnapshot` with the plan-bound
-index hash and local copy/storage cost. Native replay/export use sealed inputs
-after originals change or disappear; a damaged archive cannot be overridden.
-Historical runs return null and retain matching-root recovery. Snapshot copies
-make zero model calls and do not change acceptance or incomplete-cost semantics.
-
-The [fixed study index](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) owns debugging-study
-status, cumulative accounting, closed cohorts and links to dated observations.
-This interface guide does not maintain a second study total or execution log.
-Offline readiness and replay establish retained task/evidence properties,
-not new efficacy or permission to continue a closed cohort.
-
-The [request example](../examples/eval-request.json) previews the bundled synthetic
-control target against an Agent with no Skill. It is a delivery fixture, not a
-recommendation or real efficacy experiment:
-
-```bash
-node dist/cli.js eval --request docs/examples/eval-request.json --dry-run
-```
-
-Preview writes no files and makes no agent calls. Real comparisons require your
-own candidate, appropriate independent tasks, an explicit budget and fresh run
-group. Historical debugging requests and inputs are available through the
-[fixed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/examples).
+This reference owns JSON requests/results, execution binding and adoption-policy
+fields. Follow [evaluation workflow](../guides/experiment-workflow.md) for the
+sequence of operations; [report reference](evaluation-reports.md) owns saved
+formats and costs, and [metrics](metrics.md) owns statistical meaning.
+Use the [build/version entry](../README.md#choose-your-build) for availability.
+The component never installs or adopts a Skill automatically.
 
 ## Input and execution
 
@@ -105,7 +46,7 @@ the versioned quality/efficiency policies. The runtime
 parser rejects unknown fields and invalid ranges. `policy` is optional and defaults
 to the conservative values above. `baselineSkill` is required: a string selects
 the previous complete Skill; explicit null selects no harness-installed Skill in
-baseline (version 0.11.0). Omitted/empty/invalid values are rejected.
+baseline. Omitted/empty/invalid values are rejected.
 When comparing revisions, the two complete Skills must have the same
 frontmatter name and different fingerprints. Inherited global configuration
 still applies in both arms. No-Skill comparisons retain measurements but cannot
@@ -124,7 +65,7 @@ into the preview/native plan for both arms and checked against receipts.
 See [planning](../guides/experiment-workflow.md) for defaults and fresh-batch
 requirements, and [timing](../guides/experiment-workflow.md) for retained timeout evidence.
 
-Available in 0.10.0: optional `spendingBudget` freezes whole-batch stop lines
+Optional `spendingBudget` freezes whole-batch stop lines
 in the request, preview and native plan. When present, **all five fields are
 required**; use the [complete format and example](../guides/experiment-workflow.md).
 The [stop contract](metrics.md#costs-budgets-and-stopping) covers accumulated
@@ -140,7 +81,7 @@ the original files untouched. `spendingBudget` in results includes frozen limits
 event count, latest recorded state and read errors. Its stopped-run summary is
 informational, not evidence of a complete verified comparison.
 
-Optional `taskIds` (0.10.0+) selects a nonempty set of unique task IDs. Unknown or
+Optional `taskIds` selects a nonempty set of unique task IDs. Unknown or
 unsafe IDs fail before calls. The bench's manifest order is preserved, and only
 selected cases contribute to planned calls, costs and outcomes. The complete bench
 hash and selected IDs/order are frozen into the plan. CLI positional eval uses
@@ -189,7 +130,7 @@ callers should retain unknown/new fields for forward-compatible reporting.
 | `manifest` | Saved v4 manifest path and byte SHA-256; null when a stopped run produced no final manifest |
 | `identity` | Candidate, baseline, bench and configured executor identities; present with a final manifest |
 | `environment` | Verified native Node/CLI versions, configured settings, recorded `pairOrder`, served-model limitation and executor injection provenance; null for unverified evidence; unrecorded order stays null |
-| `measurementScope` | Current-source optional frozen scope v1; [claims contract](bench-claims.md) owns declarations, target derivation/refusal and legacy interpretation |
+| `measurementScope` | Current-source optional frozen scope v1; [claims contract](../../benches/README.md#claims-and-measurement-scope) owns declarations, target derivation/refusal and legacy interpretation |
 | `diagnostics` | Current-source paired task diagnostics for baseline band, quality headroom, efficiency eligibility and activation coverage; not qualification or power estimates |
 | `quality` | Existing statistical verdict, uncertainty, improved/regressed pairs and per-task outcomes, scores and named-check changes; observations do not expand the declared scope |
 | `costs.populations` | Surviving paired costs and all agent invocations, including graded failures, errored calls and excluded successful partners |
@@ -206,7 +147,7 @@ quality, policy 2 efficiency. Schema 2 unsupported targets execute no probes/cal
 and return `error.code: "BENCH_CLAIM_UNSUPPORTED"`. An unsupported preview can
 still be `planned`; inspect scope as well as environment readiness. Old missing
 scope stays absent/unrecorded. A report policy override cannot rewrite the frozen
-target or grant an undeclared claim. See [frozen scope](bench-claims.md#frozen-scope-and-evidence).
+target or grant an undeclared claim. See [frozen scope](../../benches/README.md#frozen-scope-and-evidence).
 
 New installed-eval previews include `evaluation.nativeDiffTool` (ID, version,
 workspace path and SHA-256). `environment.nativeDiffTool` reports the verified
@@ -304,77 +245,35 @@ set can overfit it. Native hashes detect changes against the saved index; they a
 not signatures or independent provider attestations. Use trusted bench definitions
 and retain/share an external copy of evidence hashes for provenance.
 
-## Offline assessment and replay
 
-The public `report eval` dispatcher in version 0.11.0 also reads
-calibration/trigger summaries as distinct descriptive JSON kinds. They are not
-revision-component results and never enter its paired adoption policy. See
-[report types and option restrictions](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
-The request-based component and paired result contract below are unchanged.
+Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/reference/eval-component.md).
 
-Version 0.10.1 seals Ctrl+C/SIGTERM interruptions with available trial
-receipts, `_interruption.json`, stopped `_session.json` and `_artifacts.json`.
-Request execution preserves exit 130/143 and returns a stopped assessment after
-sealing. Partial/unknown costs stay incomplete and ineligible; no automatic retry
-or replacement occurs. See [the interruption contract](../guides/experiment-workflow.md).
-The npm 0.10.0 archive predates this fix.
+## Positional CLI option summary
 
-Markdown and JSON accept the same manifest/run/package inputs and assessment
-options in 0.10.1. Markdown also displays stopped/incomplete spending and the
-separate acceptance decision. See [report inputs and states](evaluation-reports.md).
+Generated from the CLI's help and option declarations. Request defaults remain
+specified above; individual commands still validate their own combinations.
+After editing CLI definitions, build and regenerate with
+`node tools/verify/cli-reference.mjs --write`. Local tests reject drift.
 
-```bash
-node dist/cli.js report eval ./runs/revision-validation-001 --json
-node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
-```
-
-The first command verifies the native `_artifacts.json` inventory and byte hashes,
-plan/session binding, per-trial results, paired outcomes, installed resources and
-recomputed cost totals. The second also reruns verifiers on temporary copies of
-deliveries. It compares exit codes, scores and named checks without modifying the
-retained evidence or calling a model. Verifiers are executable bench code; use
-trusted benches. Full recipe/fixtures remain necessary for replay.
-
-For relocated native evidence, use `--records <run-dir>` with a manifest copy and
-`--bench <matching-bench>` with `--replay`. The manifest must match the saved native
-manifest, and the replay bench content hash must match. Redacted historical exports
-may differ from native indices; use their dated frozen replay recipes rather than
-treating them as verified native evidence. Historical assessments still retain
-their reported improvements, regressions and available costs, with ineligible
-acceptance when required evidence is absent.
-
-`--policy <policy.json>` supports read-only policy review. A policy different from
-the predeclared policy hash cannot authorize adoption. Store rendered assessments
-outside the sealed run directory; adding files inside it changes the evidence
-inventory. A new request cannot overwrite an existing group or replace failed
-samples. A model upgrade or changed inputs requires a fresh bounded declaration.
-
-## Verify the component offline
-
-Use `report eval <run-dir> --export <new-dir> --json` for a read-only export plan,
-then `--yes` to build a portable directory with unchanged receipts, matching
-inputs, pinned runtime and a checksum/replay entry point. Version 0.11.0 supports
-paired runs with/without a judge, calibration and trigger sessions, including
-stopped prefixes. Single-arm replay verifies saved observations and local grading,
-never paired efficacy. Historical inputs must retain a runtime supporting their
-replay type; missing judge usage is not reconstructed. Missing inputs prevent
-export; partial/unknown costs and ineligible acceptance remain visible. See
-[portable offline packages](evaluation-reports.md) for relocated inputs and privacy
-review. This does not rerun an agent or produce new efficacy observations.
-
-```bash
-npm test
-node --test dist/evaluation/eval-component.test.js
-node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json --json
-```
-
-The component tests inject offline executors and synthetic policy fixtures. They
-exercise plan refusal, policy drift, observed improvements and regressions,
-per-pair check regressions, full failed-call spending, unknown receipts, native
-integrity, balanced adjacent execution and cloned replay. They also check the unchanged dated real evidence.
-These are implementation checks, not new model efficacy measurements. The last
-command reads a synthetic saved result and cannot authorize an upgrade. Use the
-[archive instructions](../maintainers/archive-delivery.md) to restore dated real evidence and
-follow its frozen replay recipe.
-
-Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/eval-component.md).
+<!-- cli-reference:start -->
+| CLI option | Help description |
+| --- | --- |
+| `--agent <id>` | Target agent: claude-code \| codex \| kimi-code (default: all detected) |
+| `--mode <mode>` | Eval mode: inject (default) \| installed (paired complete Skill) \| trigger (single arm) |
+| `--baseline-skill <path>` | With --mode installed, compare a previous Skill version against the target |
+| `--request <path>` | Version 1 Skill revision request (JSON output; excludes positional eval options) |
+| `--plan-sha <hash>` | Confirm an eval/calibration/self-test dry-run plan (also needs --run-group) |
+| `--json` | Machine output for bench check/self-test/list/show/edit/remove, report, eval and calibration |
+| `--bench <path>` | Bench directory for eval (default: bundled benches) |
+| `--task <id>` | With eval/calibration, select cases (repeatable, manifest order); requests use taskIds |
+| `--trials <n>` | Repetitions per condition for eval (integer 1–20; default: 5) |
+| `--max-calls <n>` | Call ceiling for eval / bench check --calibrate / bench add --decompose Also controls baseline calibration repetitions |
+| `--pair-order <order>` | Paired eval: baseline-first (default) \| balanced |
+| `--executor-timeout-seconds <n>` | Eval/calibration/drafting: executor deadline (integer 1–3600) |
+| `--spending-budget <file>` | Eval/calibration/drafting: input, cachedInput, uncachedInput, output, durationSeconds stop lines |
+| `--runs-root <dir>` | Eval/calibration/drafting/self-test output parent (default: ./runs) |
+| `--run-group <name>` | Fresh record group; reuse its name when confirming an eval preview |
+| `--input <mode>` | Paired eval or baseline calibration: snapshot (default) \| workspace (CLI only) |
+| `--replay` | With report eval, audit receipts and regrade cloned deliveries; never call a model |
+| `--export <dir>` | With report eval, plan a portable package; --yes writes a fresh destination |
+<!-- cli-reference:end -->

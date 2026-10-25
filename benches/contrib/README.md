@@ -4,7 +4,7 @@ Drop your bench here as `benches/contrib/<name>/` when you want to submit it. Fo
 same contract as the bundled ones ([benches/README.md](../README.md)), plus a few submission rules.
 
 **Read [docs/guides/bench-authoring.md](../../docs/guides/bench-authoring.md) first.** It is the guide this checklist
-assumes: the seven steps from "something went wrong" to a task you can measure, why each one is
+assumes: the path from a real failure to checked fixtures, graders and controls, why each is
 non-optional, and the ways a bench produces confident wrong numbers. The rules below are the short
 form; the guide is what makes them make sense, and rule 2 in particular is easy to satisfy while
 missing the point entirely.

@@ -231,3 +231,72 @@ test('copies preserve empty fixture directories and executable local verifiers',
   const replay = spawnSync(process.execPath, [join(output, 'reproduce.mjs')], { encoding: 'utf8', timeout: 30_000 });
   assert.equal(replay.status, 0, replay.stderr); assert.equal(JSON.parse(replay.stdout).evidence.verified, true);
 });
+
+
+test('explicit future native artifact versions are unverified and cannot be exported', async t => {
+  const f = await fixture(t);
+  const path = join(f.run, '_artifacts.json');
+  const index = JSON.parse(readFileSync(path, 'utf8'));
+  index.schemaVersion = 2;
+  writeFileSync(path, JSON.stringify(index));
+  const report = await reportEvalComponent(f.run);
+  assert.equal(report.evidence.verified, false);
+  await assert.rejects(() => exportEvaluation(f.run, f.output, { yes: true }), /schemaVersion|audit failed/);
+  assert.ok(!existsSync(f.output));
+  assert.equal(f.calls(), 2);
+});
+
+
+test('portable readers and generated launchers share explicit-version and legacy-type rules', async t => {
+  const f = await fixture(t);
+  await exportEvaluation(f.run, f.output, { yes: true });
+  const metadataPath = join(f.output, 'replay-package.json');
+  const originalMetadata = readFileSync(metadataPath, 'utf8');
+  const originalIndex = readFileSync(join(f.output, 'run/_artifacts.json'), 'utf8');
+  const invoke = () => spawnSync(process.execPath, [join(f.output, 'reproduce.mjs'), '--verify-only'], { encoding: 'utf8' });
+  const metadata = JSON.parse(originalMetadata);
+  delete metadata.evaluationType; // Historical descriptors did not always retain this field.
+  writeFileSync(metadataPath, JSON.stringify(metadata));
+  assert.equal(verifyReplayPackage(f.output).evaluationType, undefined);
+  assert.equal(invoke().status, 0);
+  const historical = await reportEvalComponent(f.output, { replay: true });
+  assert.equal(historical.evidence.verified, true);
+  metadata.evaluationType = 'future-mode';
+  writeFileSync(metadataPath, JSON.stringify(metadata));
+  await assert.rejects(() => reportEvalComponent(f.output), /Invalid portable evaluation type/);
+  assert.match(invoke().stderr, /Invalid portable evaluation type/);
+  const index = JSON.parse(originalIndex); index.schemaVersion = 2;
+  writeFileSync(join(f.output, 'run/_artifacts.json'), JSON.stringify(index));
+  metadata.evaluationType = 'paired';
+  metadata.files['run/_artifacts.json'] = sha256File(join(f.output, 'run/_artifacts.json'));
+  writeFileSync(metadataPath, JSON.stringify(metadata));
+  await assert.rejects(() => reportEvalComponent(f.output), /Unsupported artifacts schemaVersion/);
+  const rejected = invoke(); assert.equal(rejected.status, 2); assert.match(rejected.stderr, /Unsupported artifacts schemaVersion/);
+  assert.equal(f.calls(), 2);
+});
+
+test('native partial readers preserve missing legacy versions and reject explicit future modes or versions', async t => {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-format-')); t.after(() => rmSync(root, { recursive: true, force: true }));
+  const path = join(root, '_plan.json');
+  writeFileSync(path, '{}');
+  const legacy = await reportEvalComponent(root);
+  assert.equal(legacy.status, 'incomplete'); assert.equal(legacy.evidence.verified, false);
+  writeFileSync(path, JSON.stringify({ schemaVersion: 2, details: { mode: 'inject' } }));
+  await assert.rejects(() => reportEvalComponent(root), /Unsupported plan schemaVersion/);
+  writeFileSync(path, JSON.stringify({ schemaVersion: 1, details: { mode: 'future' } }));
+  await assert.rejects(() => reportEvalComponent(root), /Unsupported native evaluation mode/);
+});
+
+test('legacy calibration inference survives partial native metadata and malformed explicit modes refuse', async t => {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-legacy-format-')); t.after(() => rmSync(root, { recursive: true, force: true }));
+  writeFileSync(join(root, '_calibration.json'), JSON.stringify({ schemaVersion: 1, inputMode: 'snapshot', runGroup: 'legacy', trials: 1,
+    tasks: [{ id: 'case', completed: 1, errors: 0, passes: 1 }] }));
+  writeFileSync(join(root, '_plan.json'), '{}');
+  const report = await reportEvalComponent(root);
+  assert.equal(report.kind, 'skillfit.calibration-report'); assert.equal(report.status, 'reported');
+  rmSync(join(root, '_plan.json')); rmSync(join(root, '_calibration.json'));
+  const sample = JSON.parse(readFileSync(fileURLToPath(new URL('../../../docs/examples/eval-manifest.synthetic.json', import.meta.url)), 'utf8'));
+  sample.mode = ['inject'];
+  writeFileSync(join(root, 'manifest.json'), JSON.stringify(sample));
+  await assert.rejects(() => reportEvalComponent(root), /Unsupported summary mode/);
+});

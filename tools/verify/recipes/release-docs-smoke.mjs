@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 // Only current calling instructions: never scan frozen releases or evidence.
 export const RELEASE_DOCUMENTS = [
   'README.md', 'README.zh-CN.md', 'skills/skillfit/SKILL.md',
-  'docs/guides/first-real-eval.md', 'docs/maintainers/archive-delivery.md',
+  'docs/README.md', 'docs/maintainers/archive-delivery.md',
 ];
 
 export function inspectReleaseDocuments(version, read) {

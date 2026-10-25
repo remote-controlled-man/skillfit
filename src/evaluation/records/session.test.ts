@@ -30,7 +30,7 @@ function setup(t: TestContext) {
   const target = collectInstalledSkillTarget(skill);
   const groupDir = join(root, 'runs', 'test');
   const options: SessionOptions = { bench, target, groupDir, workspaces: [join(groupDir, 'one', 'baseline', 'trial-1')],
-    plannedCalls: 2, injected: true, details: { mode: 'test' } };
+    plannedCalls: 2, injected: true, details: { mode: 'inject' } };
   const executor: Executor = { describe: () => ({ kind: 'cli', model: 'offline' }), run: async () => ({ output: 'done', rawOutput: 'raw\n' }) };
   return { root, benchDir, skill, bench, groupDir, options, executor };
 }
@@ -282,4 +282,41 @@ test('an output parent alias into a fixture is rejected before any input writes'
   symlinkSync(join(s.benchDir, 'fixture'), alias);
   assert.throws(() => new ExperimentSession({ ...s.options, groupDir: join(alias, 'new-group') }), /output must be outside/);
   assert.equal(existsSync(join(s.benchDir, 'fixture', 'new-group')), false);
+});
+
+test('Session rejects malformed control details before files or version probes', t => {
+  const s = setup(t); let probes = 0;
+  for (const details of [
+    { mode: 'inject', stopOnExecutionError: 'false' },
+    { mode: 'inject', nativeDiffTool: null },
+    { mode: 'inject', reviewedPlan: null },
+    { mode: 'inject', component: { schemaVersion: 1, implementationSha256: '0'.repeat(64), policy: { schemaVersion: 3 } } },
+    { mode: 'inject', stopOnExecutonError: true },
+  ]) {
+    assert.throws(() => new ExperimentSession({ ...s.options, agent: 'codex', homeDir: s.root,
+      versionProbe: () => { probes++; return 'offline'; }, details: details as SessionOptions['details'] }), /Session details/);
+    assert.equal(existsSync(s.groupDir), false);
+  }
+  assert.equal(probes, 0);
+});
+
+// These compile-only checks fail if the Session interface silently becomes a dictionary again.
+function sessionContractTypeChecks(details: SessionOptions['details']) {
+  // @ts-expect-error Unknown control keys must be declared by the Records owner.
+  const typo: SessionOptions['details'] = { ...details, stopOnExecutonError: true };
+  // @ts-expect-error A control flag cannot be supplied as a string.
+  const flag: SessionOptions['details'] = { ...details, stopOnExecutionError: 'false' };
+  // @ts-expect-error A reviewed plan always identifies its implementation.
+  const approval: SessionOptions['details'] = { ...details, reviewedPlan: {} };
+  return [typo, flag, approval];
+}
+void sessionContractTypeChecks;
+
+test('typed Session details retain the original serialized field order and scope meaning', t => {
+  const s = setup(t);
+  const session = new ExperimentSession({ ...s.options,
+    details: { mode: 'inject', trials: 1, executor: { kind: 'cli', model: 'offline' }, taskIds: ['one'] } });
+  const saved = JSON.parse(readFileSync(join(s.groupDir, '_plan.json'), 'utf8'));
+  assert.equal(JSON.stringify(saved.details), '{"mode":"inject","trials":1,"executor":{"kind":"cli","model":"offline"},"taskIds":["one"],"measurementScope":{"schemaVersion":1,"benchSchemaVersion":1,"taskClaims":[{"taskId":"one","claims":null}],"requestedClaim":"quality","assessment":"legacy-unrecorded"}}');
+  session.finish();
 });

@@ -1,7 +1,8 @@
+import { globalSkillRoots } from './environment.js';
 import { accessSync, constants, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve, win32 } from 'node:path';
-import { loadMatrix, skillUserDirSpecs, type AgentDef } from "./matrix.js";
+import { loadMatrix, type AgentDef } from "./matrix.js";
 import { parseFrontmatter } from "../resources/frontmatter.js";
 import type { EvaluationTarget } from "../resources/contracts.js";
 import type { ExecutorDescriptor } from "./contracts.js";
@@ -42,10 +43,7 @@ export function findExecutable(binary: string, env: NodeJS.ProcessEnv = process.
   return null;
 }
 
-export function globalSkillRoots(agent: AgentDef, home: string, env: NodeJS.ProcessEnv): string[] {
-  return [...new Set([...skillUserDirSpecs(agent, env), ...agent.skills.sharedDirs.filter(path => path.startsWith('~/'))]
-    .map(path => path.startsWith('~/') ? join(home, path.slice(2)) : resolve(path)))];
-}
+export { globalSkillRoots } from './environment.js';
 
 function report(checks: AgentEnvironmentCheck[]): AgentEnvironmentPreflight {
   const matrix = loadMatrix(), count = (status: AgentEnvironmentCheck['status']) => checks.filter(check => check.status === status).length;

@@ -1,3 +1,4 @@
+import { renderTriggerSummary } from '../../cli/trigger-summary.js';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -6,7 +7,7 @@ import { test } from 'node:test';
 import { loadBench } from "../../bench/read.js";
 import { collectInstalledSkillFingerprint, collectSkillBundle } from "../../resources/skill.js";
 import { MockExecutor } from "./mock-executor.js";
-import { renderTriggerSummary, runTriggerExperiment, triggerMetrics, type TriggerManifest } from "./activation.js";
+import { runTriggerExperiment, triggerMetrics, type TriggerManifest } from "./activation.js";
 import type { Executor, ExecutorResult } from "../../agents/contracts.js";
 import { triggerDetection } from "../../agents/observation/trigger-detection.js";
 

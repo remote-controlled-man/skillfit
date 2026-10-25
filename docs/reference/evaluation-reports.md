@@ -1,54 +1,15 @@
-# Read an evaluation report
+# Evaluation report and replay formats
 
-Version 0.10.1 uses the same saved-evidence assessment for Markdown and JSON.
-Both formats accept a manifest file, native run directory or portable replay
-package directory. Neither starts an agent or changes the saved run.
+This reference defines saved result fields, cost populations and portable formats.
+For commands and sharing steps, follow [evaluation workflow](../guides/experiment-workflow.md#read-share-and-reproduce).
+[Choose your build](../README.md#choose-your-build) before using source-only contracts.
+Human and JSON reports read the same saved bytes; they never rescan the current
+environment to invent historical usage, identity or claims.
 
-Version 0.11.0 also displays the saved [Agent environment preflight](../guides/experiment-workflow.md).
-JSON exposes `agentPreflight`; human reports omit its local evidence paths.
-Missing historical metadata stays null. Reading/replaying a report does not
-repeat environment/authentication probes or claim the current machine is ready.
-
-Current-source additions (not yet published in npm 0.13.1): new native records
-also expose `modelIdentities` v1 in JSON and a public-model
-identity section in Markdown. Coverage is split by primary/judge/drafter roles;
-evaluation records use primary/judge; drafter coverage belongs to the separate
-[authoring record](../guides/bench-authoring.md), not `report eval`.
-Relative call-receipt paths retain configured/requested intent separately from
-public response IDs and their exact source locations. Unknown models do not
-become known from executor labels or CLI versions. Historical records without
-these fields remain readable and explicitly unrecorded.
-
-Identity declarations are checked against retained API bodies or matrix-declared
-public CLI events, with hashes and the dispatch ledger audited by the native
-reader. Invalid identity/coverage claims cannot authorize export or adoption.
-Stopped runs retain valid reported IDs and unknown missing receipts. Portable
-exports retain the same identities after relocation; both the current reader and
-the exported `reproduce.mjs` use saved evidence, without calling a model or
-reading current agent configuration. CLI/model declarations do not attest to the
-provider's backend or enumerate every undisclosed internal model. See the
-[identity contract](metrics.md#public-model-identity-per-invocation),
-[identity schema](../schemas/model-identity.schema.json) and
-[coverage schema](../schemas/model-identities.schema.json).
-
-```bash
-skillfit report eval ./runs/my-run
-skillfit report eval ./runs/my-run --json
-skillfit report eval ./runs/my-run/manifest.json
-skillfit report eval ./exports/my-run --replay
-```
-
-For paired runs, `--json` changes the format, not which evidence is checked. `--replay`,
-`--records <run-dir>` and `--policy <policy.json>` work with either format.
-Replay grades disposable delivery copies using trusted local verifiers; it
-does not call a model. An overridden policy is post-hoc and cannot authorize
-adoption unless it matches the policy frozen before execution. Portable packages
-already pin their run/bench and reject external records/bench overrides.
-
-## Frozen measurement scope (current source)
+## Frozen measurement scope
 
 Unpublished source records can include optional `measurementScope` v1 in paired,
-trigger and calibration reports; [bench claims](bench-claims.md) owns its fields
+trigger and calibration reports; [bench claims](../../benches/README.md#claims-and-measurement-scope) owns its fields
 and derivation. Schema 2 uses explicit task declarations; schema 1 records null
 claims and legacy-unrecorded support for a non-null target. Missing historical
 metadata stays absent
@@ -68,9 +29,9 @@ eligibility and activation coverage remain separate. A saturated task is not
 discarded from efficiency; actual paired costs/variance, final coverage and
 regressions still govern qualification. Calibration alone cannot establish
 savings or quality equivalence. Trigger reports keep observed label/detection
-coverage, including unknowns. See [diagnostics](bench-claims.md#reading-difficulty-diagnostics).
+coverage, including unknowns. See [diagnostics](../../benches/README.md#reading-difficulty-diagnostics).
 
-For [self-test](../guides/bench-self-test.md), read a native suite directory, not the wrapper
+For [self-test](../guides/bench-authoring.md#test-known-controls), read a native suite directory, not the wrapper
 parent. Its scope is diagnostic-only and its executor remains synthetic; matching
 controls never permits adoption, even after export or replay.
 
@@ -128,7 +89,7 @@ report separately and link the original. Portable packages retain their pinned
 runtime for reproducing the original interpretation; reading a manifest with
 the current CLI applies the current integrity checks.
 
-## Calibration and trigger reports (source after npm 0.10.1)
+## Calibration and trigger reports
 
 Version 0.11.0 recognizes baseline calibration and trigger runs; the immutable
 npm 0.10.1 archive is unchanged.
@@ -226,7 +187,7 @@ template. Node-only fake subprocesses exercise that adapter and the CLI dry-run;
 no real model, CLI compatibility or authentication was tested. The adapter does
 not currently read Claude token/cache counters. See [the detection contract](metrics.md#l1--trigger-quality-activation).
 
-## Judge spending and stop reasons (source after npm 0.10.1)
+## Judge spending and stop reasons
 
 Paired Markdown and JSON additionally show `invocationCosts`: separate primary,
 judge and combined populations. The original Agent A/B quality and cost tables
@@ -241,80 +202,6 @@ single-arm, stopped and insufficient-evidence results remain ineligible.
 The [single-arm schema](../schemas/single-arm-report.schema.json) and
 [calibration command schema](../schemas/calibration-result.schema.json) describe
 their machine envelopes.
-
-## Sharing a result
-
-For a complete portable directory of a paired native run without a judge, use
-`report eval <run-dir> --export <new-dir> --json` to preview, then add `--yes`.
-The [portable package guide](evaluation-reports.md) covers checksums, matching source
-recovery, offline replay, stopped costs and review of private project contents.
-The Markdown report below is a shorter summary, without the full replay inputs.
-Version 0.11.0 also reads calibration and trigger summaries with separate
-states/metrics and JSON kinds; see [report types](evaluation-reports.md#calibration-and-trigger-reports-source-after-npm-0101).
-They are descriptive single-arm reports and do not enable paired portable exports.
-
-Try a clearly synthetic schema-v4 example first:
-
-```bash
-node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
-```
-
-After a paired `skillfit eval` run, replace the example path with its native run
-directory or the printed `Manifest:` path. Since 0.10.1, Markdown and JSON accept
-the same manifest/run/package inputs and show audit and acceptance reasons.
-Stopped/incomplete runs show retained costs without inventing a completed quality
-comparison. See [report inputs and states](evaluation-reports.md). This command is read-only: it does not call an agent,
-rerun a verifier, change the manifest, or alter the verdict. Paste its output into a pull request or
-issue. The JSON manifest remains the canonical record; attach it when you want someone else to audit
-the task-level outcomes and provenance. The Markdown includes target and bench hashes, the executor,
-trial counts, error counts, McNemar p-value, paired-bootstrap interval, and all warnings. It omits local
-source directories so the short report is easier to share; review the raw manifest and report before
-posting either, since names, warnings, and run data can still describe private work.
-
-An example of the output shape from a **synthetic mock run**:
-
-```markdown
-# skillfit evaluation: example-skill
-
-> **Synthetic harness run.** These numbers do not measure an agent or Skill effect.
-
-| Task | Baseline | Treatment | Errors B/T | Δpass | Verdict |
-|---|---:|---:|---:|---:|---|
-| sample-task | 0/2 (0%) | 2/2 (100%) | 0/0 | +100.0pp | inconclusive |
-
-## Statistical readout
-
-- Overall verdict: **inconclusive** — only 2 discordant pairs
-- Discordant pairs: 2 improved, 0 regressed; McNemar exact p=0.5000
-```
-
-The impressive-looking delta in this synthetic example is **not evidence of benefit**: two discordant
-pairs are too few for significance, and the executor is a mock. For a dated real paired-outcome result
-with its limitations stated, see the [Kimi debugging experiment](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/evidence/2026-09-debugging-bench-exploratory.md).
-Its historical manifest is local to that run; `report eval` renders schema-v4 manifests produced by
-current paired experiments.
-
-The renderer rejects older manifest schemas and missing or inconsistent fields used by the report
-rather than guessing what a field used to mean. It does not compare runs from different model
-versions or bench hashes. Use the [metrics protocol](metrics.md) when interpreting a verdict and the
-[evidence submission template](https://github.com/remote-controlled-man/skillfit/blob/main/.github/ISSUE_TEMPLATE/evidence_submission.yml) when proposing a
-published claim.
-
-New manifests also include [cost accounting](evaluation-reports.md): separate input,
-cache-read input, uncached input, output and elapsed time, each with coverage and
-spending per successful task. All invoked agent runs retain failures and partners
-excluded from quality pairs. Unknown or partial timeout usage suppresses cost
-changes; available totals are labeled as lower bounds. Older manifests explicitly
-mark these additions unrecorded. No report estimates a bill or changes a verdict.
-
-### Offline CI recipe
-
-[`examples/bench-check.yml`](../examples/bench-check.yml) is an opt-in GitHub Actions workflow you can
-copy into a skillfit fork's `.github/workflows/` directory. It checks the bundled benches on
-macOS, Linux, and Windows and writes a small workflow summary. Replace the bench paths with your own
-before enabling it. It makes no agent or model call, so passing it validates bench integrity, not
-Skill efficacy. The repository's normal CI already runs these checks on all three operating systems.
-
 
 ## Cost accounting
 
@@ -348,7 +235,7 @@ spending totals. An executor invocation does not prove that a provider accepted
 a request or billed it. These counts do not include the optional judge, earlier
 calibration cohorts or another experiment's setup spending.
 
-### All executor roles (0.11.0 and newer)
+### All executor roles
 
 New paired manifests and JSON reports add `invocationCosts`, independently of
 the unchanged primary Agent's `overall.costs`. It contains `agent`, `judge` and
@@ -446,7 +333,7 @@ elapsed time can still be compared when token usage is unknown. Earlier v4
 manifests without cost summaries remain readable and explicitly identify this
 missing information; the report does not silently enrich them from local files.
 
-### Failed API responses (version 0.12.0)
+### Failed API responses
 
 API response parsing retains the public response and any valid reported usage
 before rejecting a missing/non-text answer, malformed JSON or non-2xx status.
@@ -531,7 +418,7 @@ the backend's identity; see [report fields](evaluation-reports.md). These additi
 are not yet published in npm 0.13.1. Frozen historical packages keep their own
 runtime and detection/identity interpretation.
 
-Current-source [measurementScope 1](bench-claims.md#frozen-scope-and-evidence)
+Current-source [measurementScope 1](../../benches/README.md#frozen-scope-and-evidence)
 is retained across paired, trigger and calibration exports. New scope is checked
 against the original sealed bench, selected task order and native/reviewed plans.
 Today's external bench cannot fill or broaden it; new scope without its required
@@ -539,7 +426,7 @@ sealed declarations fails rather than taking the historical recovery route.
 Legacy missing metadata stays unrecorded. Current-reader audit and the package's
 pinned `reproduce.mjs` each interpret saved evidence with their own runtime.
 
-For [self-test controls](../guides/bench-self-test.md#results-costs-and-replay), export a native
+For [self-test controls](../guides/bench-authoring.md#test-known-controls), export a native
 suite directory, not its wrapper. It retains a null requested claim, mock identity,
 unknown provider usage and ineligibility; replay executes saved verifiers, not
 control actions or an executor. These source contracts are not npm 0.13.1 features.
@@ -665,4 +552,6 @@ copied automatically, but paths and fingerprints already recorded in native plan
 remain visible. Redaction changes the indexed package; keep the original evidence
 and publish any reviewed redacted derivative with its own explicit recipe.
 
-Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/evaluation-reports.md).
+
+
+Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/reference/evaluation-reports.md).
