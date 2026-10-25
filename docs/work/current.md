@@ -9,7 +9,7 @@
 - Previous cleanup: complete locally; pruning, migration, installation, full
   restoration and frozen verification passed. Its existing diff is preserved.
 - Current task: S2–S5 implemented and verified locally under the reviewed framework.
-- Progress: S2–S5 and final commit review complete; all local verification passed; Git delivery in progress.
+- Progress: S2–S5 and final commit review complete; all local verification passed; Git delivery blocked by origin/main protection rules after local commit.
   Existing cleanup/design changes are preserved. No npm release or live evaluation.
 
 ## Previous cleanup baseline
@@ -46,7 +46,7 @@ plan; update its current status and proof links in place.
 | S2 | Close output/admission paths before moving files | Complete: standalone schema-3 proof bundle; explicit legacy recovery; stable release guide | Experiment/release defaults write no tracked docs/evidence; one proof bundle; legacy import explicit; current version/Skill and failed-attempt proofs retained. Offline writer/acceptance regressions, then npm test for code changes. |
 | S3 | Migrate tools and docs into the defined hierarchy | Complete: 15 pages grouped, 62 paths moved, 21 obsolete/duplicate script paths retired | Same maintained page scope, one current plan, recipes owned by tooling; migrate imports, package inventory, workflow references and examples together. Documentation gate, installed-package checks and relevant local suite. |
 | S4 | Deepen Resources/Agents, Bench/Usage, Evaluation and Configuration/CLI | Complete: owned contracts, neutral mechanisms and CLI composition; local regressions passed | Extract in dependency order; separate Targets, Execution, Measurement and Records; no Bench→Evaluation or shared host-policy imports. Public interfaces, owned types and colocated tests. Preserve JSON/errors, configuration rollback, signals and changed-plan rejection; architecture and offline suite pass. |
-| S5 | Enforce prevention and validate final delivery | Complete; installed documentation links repaired and guarded; delivery checks in progress | Forbidden writes/imports/layouts and extension-contract regressions fail correctly; installed launchers keep required compatibility paths. Actual package installation, Skill docs, 19-archive/1,583-support restoration and 18 frozen replays plus one export-hash check remain correct on their recorded runtime. |
+| S5 | Enforce prevention and validate final delivery | Complete; installed documentation links and npm executable repaired and guarded; remote delivery blocked | Forbidden writes/imports/layouts and extension-contract regressions fail correctly; installed launchers keep required compatibility paths. Actual package installation, Skill docs, 19-archive/1,583-support restoration and 18 frozen replays plus one export-hash check remain correct on their recorded runtime. |
 
 S1 findings before implementation: historical evidence had 1,605 files / 202 Markdown, including
 467 runtime and 320 source replay paths; repeated Git blobs do not represent
@@ -171,7 +171,12 @@ suppressing the push-triggered run.
 | --- | --- | --- |
 | Review | Complete | The original 2,308-path input was unchanged. Repaired 22 installed source-only links. Direct invocation also found that the new stable CLI delegate lost its executable shebang; the executable shebang is restored. The actual npm bin and packed-link regression checks both failed before the fixes and now pass. |
 | Local verification | Complete | Full offline suite: 1,087 passed, zero skipped; actual npm bin, Skill docs, 34 public-page links, 31 installed regressions and five portable replays passed. Historical inputs and 38 receipt-log hashes revalidated; exact-input frozen replay proofs reused. Architecture: 154 modules, zero violations; source docs: 39 entries. |
-| Commit and push | In progress | One implementation commit on main with `[skip ci]`; after remote confirmation, record its receipt in this same plan. No PR/remote CI; verify the final remote ref and clean working tree. |
+| Commit and push | Blocked after local commit | Implementation committed as `b68ebd3ee7d7676c5829459915c1d07e0ceb563d` with `[skip ci]`. Direct push was rejected by GitHub GH013: main requires a pull request and all three required status checks. No PR or remote CI was started. Repository protection was not changed; pushing remains incomplete under the current authorization. |
+
+Delivery verification: after the rejected push, origin/main still points to
+`3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850`. The reviewed implementation
+remains committed locally; this same plan records the delivery blocker in a
+follow-up documentation commit, also with `[skip ci]`. No npm release occurred.
 
 Local logs and receipts stay in temporary workspaces. Earlier verification
 results above describe their recorded inputs; this final review adds installed
