@@ -194,7 +194,9 @@ export async function restoreArchives({ all = false, ids = [], output, yes = fal
     const downloads = new Map();
     await restoreSupport(catalog.supportFiles, async row => {
       if (row.inlineBase64 !== undefined) return Buffer.from(row.inlineBase64, 'base64');
-      const local = await optionalSupportBytes(packagePath, row);
+      // The live index may evolve after its historical copy is archived. Its
+      // original bytes must come from the pinned source, never today's index.
+      const local = row.path === 'evidence/README.md' ? null : await optionalSupportBytes(packagePath, row);
       if (local !== null) return local;
       if (sourcePath) return localBytes(sourcePath, row);
       const key = `${row.bytes}:${row.sha256}`;

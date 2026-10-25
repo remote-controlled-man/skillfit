@@ -13,3 +13,5 @@ runs/
 # it would delete this ignored directory. Use `git clean -fd` (without -x)
 # and review with `git clean -nd` first.
 /workspace4skills/
+
+.skillfit-build-*/

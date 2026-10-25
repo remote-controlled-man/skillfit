@@ -3,13 +3,13 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test, type TestContext } from 'node:test';
-import { loadBench } from './bench.js';
-import { parseVerifierTimeoutSeconds } from './verifier-timeout.js';
-import { runTrial, runVerifier } from './runner.js';
-import { collectSkillBundle } from './bundle.js';
-import { runTriggerExperiment } from './trigger.js';
-import { runBenchCheck, runBenchInit } from '../commands/bench.js';
-import { manageBench } from '../commands/bench-manage.js';
+import { loadBench } from "../bench/read.js";
+import { parseVerifierTimeoutSeconds } from "../bench/gates/timeout.js";
+import { runTrial, runVerifier } from "../evaluation/execution/paired.js";
+import { collectSkillBundle } from "../resources/skill.js";
+import { runTriggerExperiment } from "../evaluation/execution/activation.js";
+import { runBenchCheck, runBenchInit } from "../cli/bench.js";
+import { manageBench } from "../cli/bench-manage.js";
 
 async function fixture(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-verifier-deadline-'));

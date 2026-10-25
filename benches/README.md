@@ -7,7 +7,7 @@ The built-in `code-review` and `debugging` benches teach the format;
 `_self-test` contains synthetic pipeline controls, not efficacy evidence.
 
 > **This file is the reference** — layout, schema, the verifier contract, fixture rules. If you are
-> about to write a bench, read [docs/bench-authoring.md](../docs/bench-authoring.md) first: it walks the
+> about to write a bench, read [docs/guides/bench-authoring.md](../docs/guides/bench-authoring.md) first: it walks the
 > seven steps end to end on one real task and explains why each one is non-optional.
 
 `skillfit eval <skill-path> --bench <bench-dir>` pairs every task twice — once **baseline** (no skill injected) and once **treatment** (skill injected into the prompt) — for `N` trials each, then compares pass rates. `skillfit bench init` scaffolds a new bench (with a working example task) and `skillfit bench check` validates one offline — verifier self-tests, oracle/NOP gates, facet-count bounds, mock-arm probes, fixture hygiene — before you spend a single token on runs. Add `--calibrate --agent <id>` to also run real baseline-difficulty probes: one inject-mode arm per task with an empty skill payload, so `shouldTrigger` labels are **not** required and you pay for one arm, not two. Each task is banded against the L0 floor/ceiling as too hard or broken (≤10% baseline pass rate), discriminative (in between), or too easy/saturated (≥90%); aim for 30–70%. A calibration that completes no runs fails loudly instead of reporting a band it never measured.
@@ -19,10 +19,10 @@ probes and a reference repair. The original must fail and the oracle must pass
 files, and `--input workspace` when previewing/running it with a CLI executor.
 Without `--kind`, the text-output starter remains the default. Replace either
 starter with a real task before making an efficacy claim; see the
-[starter walkthrough](../docs/bench-authoring.md#choose-a-starter).
+[starter walkthrough](../docs/guides/bench-authoring.md#choose-a-starter).
 
 For Agent integration, use `skillfit bench check my-bench --json` (0.10.0+).
-The [version 1 JSON contract](../docs/bench-check-json.md) includes each gate's
+The [version 1 JSON contract](../docs/guides/bench-authoring.md) includes each gate's
 identifier, status, task, location, remediation and bounded process evidence.
 It uses the same offline checks; JSON mode rejects `--calibrate`. Exit 0 permits
 warnings, exit 1 identifies failed gates, and exit 2 identifies incomplete checks
@@ -32,8 +32,8 @@ Use `bench list/show` for inspection and `bench edit/remove` for previewed manif
 changes (`--yes` applies with backup/verification). Removal preserves files. Select
 eval cases with repeated `--task <id>` or request `taskIds`; native plans freeze
 the selected IDs in manifest order and retain the full bench hash. Small subsets
-remain indicative. See [case management](../docs/case-management.md) and
-[portable offline exports](../docs/replay-packages.md).
+remain indicative. See [case management](../docs/guides/bench-authoring.md) and
+[portable offline exports](../docs/reference/evaluation-reports.md).
 
 ## Bench directory layout
 
@@ -77,10 +77,10 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `schemaVersion` | yes | `1` retains legacy behavior; current source supports explicit `2` with required task claims. See [claims and scope](../docs/bench-claims.md). |
+| `schemaVersion` | yes | `1` retains legacy behavior; current source supports explicit `2` with required task claims. See [claims and scope](../docs/reference/bench-claims.md). |
 | `name` | no | Display name; defaults to the directory name. |
 | `tasks` | yes | Non-empty array. Task `id`s must be unique and match `^[A-Za-z0-9][A-Za-z0-9._-]*$`. |
-| `tasks[].claims` | schema 2 only | Nonempty, distinct `quality`, `efficiency` and/or `activation` design support; activation requires `shouldTrigger`. Schema 1 remains unrecorded. See [claims and scope](../docs/bench-claims.md). |
+| `tasks[].claims` | schema 2 only | Nonempty, distinct `quality`, `efficiency` and/or `activation` design support; activation requires `shouldTrigger`. Schema 1 remains unrecorded. See [claims and scope](../docs/reference/bench-claims.md). |
 | `tasks[].fixture` | yes | Directory (relative to the bench root) with the synthetic repository. Convention: `fixtures/<task-id>/`. |
 | `tasks[].prompt` | yes | Markdown file with the task instructions. Convention: `prompts/<task-id>.md`. |
 | `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Spawned without a shell, so the first token must be a real executable. Convention: `node verifiers/<task-id>.mjs`. |
@@ -91,7 +91,7 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 
 Version 0.12.0 also accepts optional `tasks[].verifierTimeoutSeconds` (integer 1–3600,
 default 120). It bounds each verifier/oracle process during checks, evaluation, calibration,
-triggering and replay, separately from model execution. See [the command contract](../docs/verifier-contract.md).
+triggering and replay, separately from model execution. See [the command contract](../docs/guides/bench-authoring.md).
 
 All paths must stay inside the bench directory.
 
@@ -99,9 +99,9 @@ All paths must stay inside the bench directory.
 
 The verifier is the heart of a bench. It must be **deterministic**: same run directory in, same verdict out — no network, no clocks, no randomness.
 
-- Invocation: `<verifier command> <absolute run directory>`, working directory = bench root. The command is spawned **without a shell**, so its first token must be an executable the operating system can start directly: `node verifiers/x.mjs` works, while a bare `npm test` or a `.cmd`/`.bat` wrapper does not (`ENOENT` / `EINVAL` on Windows). Version 0.11.0 groups quoted arguments, so `node "verifiers/check answer.mjs"` works; malformed quoting fails before execution. No shell expansion runs. See [command and error contract](../docs/verifier-contract.md). If the verdict genuinely comes from a shell command, use `bench add --freeze --verifier-cmd "<cmd>"`, which writes a generated `verifiers/<task-id>.mjs` that node runs and that runs your command under a shell inside. Keeping the harness's own spawn shell-free is deliberate, not an oversight — benches are contributed by third parties, and a shell here would turn `"verifier": "node v.mjs & curl …"` in somebody else's `bench.json` into code execution on your machine.
+- Invocation: `<verifier command> <absolute run directory>`, working directory = bench root. The command is spawned **without a shell**, so its first token must be an executable the operating system can start directly: `node verifiers/x.mjs` works, while a bare `npm test` or a `.cmd`/`.bat` wrapper does not (`ENOENT` / `EINVAL` on Windows). Version 0.11.0 groups quoted arguments, so `node "verifiers/check answer.mjs"` works; malformed quoting fails before execution. No shell expansion runs. See [command and error contract](../docs/guides/bench-authoring.md). If the verdict genuinely comes from a shell command, use `bench add --freeze --verifier-cmd "<cmd>"`, which writes a generated `verifiers/<task-id>.mjs` that node runs and that runs your command under a shell inside. Keeping the harness's own spawn shell-free is deliberate, not an oversight — benches are contributed by third parties, and a shell here would turn `"verifier": "node v.mjs & curl …"` in somebody else's `bench.json` into code execution on your machine.
 - A verifier that produces **no exit code at all** — unspawnable, or killed by the 2-minute timeout — has graded nothing, so it is never read as a verdict: `bench check` fails the task and names the cause, and `eval` excludes that trial *and its paired arm* from the rates rather than scoring a fabricated failure. Without that, a broken verifier command would look like a 0% pass rate in both arms and get reported as "bench too hard".
-- **For a functioning verifier, exit code 0 = pass, anything else = fail.** Version 0.11.0 separately excludes recognized grader infrastructure errors, including bench-owned Node uncaught exceptions and explicit `skillfit.verifier-error` JSON messages. They cannot satisfy NOP gates or score a model failure merely by exiting nonzero. Candidate failures/assertions retain normal grading; agent spending stays recorded. See [the contract and custom-runtime error channel](../docs/verifier-contract.md).
+- **For a functioning verifier, exit code 0 = pass, anything else = fail.** Version 0.11.0 separately excludes recognized grader infrastructure errors, including bench-owned Node uncaught exceptions and explicit `skillfit.verifier-error` JSON messages. They cannot satisfy NOP gates or score a model failure merely by exiting nonzero. Candidate failures/assertions retain normal grading; agent spending stays recorded. See [the contract and custom-runtime error channel](../docs/guides/bench-authoring.md).
 - Print a one-line JSON summary as the **last stdout line**. The harness parses it (tolerating surrounding noise) and saves the raw output to `_verifier.txt`:
   - `passed` (boolean) — informational; the exit code is authoritative, and a disagreement is flagged as a warning.
   - `checks` (optional) — `[{"name": "discount-boundary", "pass": true}, ...]`: the acceptance criteria decomposed into 2–8 named programmatic checks. The trial **score** is the fraction of checks passed; scores feed the per-facet table and the paired-bootstrap Δscore CI in the report, letting a bench resolve effects binary pass/fail cannot at small sample sizes. Checks never flip a verdict. Keep them deterministic and outcome-focused. `bench check` reads the count back out of your verifier and warns outside 2–8: one check is binary pass/fail in facet costume and carries none of the graded signal, while a dozen lets whatever those checks happen to measure dominate the score.
@@ -142,7 +142,7 @@ Each run writes to `runs/<runGroup>/<task-id>/<condition>/trial-<n>/`:
 
 A trial whose executor errored, or that produced no engagement (empty final text, and no fixture edit on a command task), was never graded, so it is excluded from the rates rather than counted as a failure — and excluded *pairwise*, because every statistic here is paired: an error in either arm drops that (task, trial) pair from both. Each condition reports `errors` next to `trials`, and a warning names the exclusion.
 
-Verdicts follow the [metrics protocol](../docs/metrics.md): `effective` requires McNemar exact p < 0.05 and a positive pass-rate delta; `ineffective` requires p < 0.05 and a negative delta; otherwise the verdict is `inconclusive`. Fewer than 6 discordant pairs cannot reach significance. The report marks runs below 8 tasks × 5 trials per condition as *indicative* even if their within-bench verdict is significant. The CLI defaults to 5 trials per condition. The report also warns when a task's baseline pass rate is ≥ 90% (too easy to discriminate anything) or ≤ 10% (too hard or broken), and flags any individual check the baseline already passes ≥ 90% of the time as saturated.
+Verdicts follow the [metrics protocol](../docs/reference/metrics.md): `effective` requires McNemar exact p < 0.05 and a positive pass-rate delta; `ineffective` requires p < 0.05 and a negative delta; otherwise the verdict is `inconclusive`. Fewer than 6 discordant pairs cannot reach significance. The report marks runs below 8 tasks × 5 trials per condition as *indicative* even if their within-bench verdict is significant. The CLI defaults to 5 trials per condition. The report also warns when a task's baseline pass rate is ≥ 90% (too easy to discriminate anything) or ≤ 10% (too hard or broken), and flags any individual check the baseline already passes ≥ 90% of the time as saturated.
 
 ## Optional LLM judge
 
@@ -154,7 +154,7 @@ Inject mode answers "does the skill help when it is used?". Trigger mode answers
 
 In trigger mode the skill is **installed** into each run directory (the agent's project skills directory from the capability matrix, e.g. `.kimi-code/skills/`), never injected into the prompt. The agent runs headless with structured (stream-json) output, and skillfit detects invocation mechanically from the transcript: a call to the agent's skill tool naming the skill under test (see `headless.streamJson` in `src/matrix/agents.json`). The raw transcript is saved as `_transcript.jsonl` for audit.
 
-Only the skill under test is installed — the run directory's skills folder is otherwise empty. Real routing quality depends on lexical competition with everything else the user has installed, so **read trigger recall as an upper bound**. Reproducing that competition would mean copying the user's real skill set into a sandbox, which is tracked as a future enhancement rather than done here (see `docs/metrics.md` L1).
+Only the skill under test is installed — the run directory's skills folder is otherwise empty. Real routing quality depends on lexical competition with everything else the user has installed, so **read trigger recall as an upper bound**. Reproducing that competition would mean copying the user's real skill set into a sandbox, which is tracked as a future enhancement rather than done here (see `docs/reference/metrics.md` L1).
 
 Every task needs a `shouldTrigger` label:
 
@@ -165,7 +165,7 @@ The manifest reports recall, false-trigger rate, and precision, each with a Wils
 
 ## Porting your production scenario
 
-The command reference for the three import paths is below; [docs/bench-authoring.md](../docs/bench-authoring.md)
+The command reference for the three import paths is below; [docs/guides/bench-authoring.md](../docs/guides/bench-authoring.md)
 is the version that explains what to do with them and in what order.
 
 The fastest path is freezing a failure you just watched happen:

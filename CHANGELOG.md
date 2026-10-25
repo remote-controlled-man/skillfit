@@ -8,7 +8,7 @@
 - Explain explicit pinned archive restoration and the existing
   `--compete-installed` scope. Add package/install-time checks for current
   documentation versions so stale Skill commands block release validation.
-  See the [0.13.1 release record](docs/releases/0.13.1.md).
+  See the [0.13.1 release record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md).
 
 ## 0.13.0 — protected installation and lean archive delivery (2026-10-21)
 
@@ -18,8 +18,8 @@
 - Move 19 historical compressed archives out of npm packages starting with 0.13.0. Add an
   explicit pinned, hash-checked restore tool with previews and offline local
   sources; keep Git originals, frozen replay support and published releases.
-  See [archive restoration](docs/archive-delivery.md) and the
-  [0.13.0 release record](docs/releases/0.13.0.md).
+  See [archive restoration](docs/maintainers/archive-delivery.md) and the
+  [0.13.0 release record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.0.md).
 
 ## 0.12.0 — reliable case authoring and evaluation costs (2026-10-17)
 
@@ -154,7 +154,7 @@
   Add offline regressions, a reproducible installed-feature smoke recipe and
   operational documentation. No runtime dependencies, real model calls,
   automatic upgrades or statistical-policy changes.
-- See the [release record](docs/releases/0.10.1.md) for publication status and
+- See the [release record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.10.1.md) for publication status and
   verification. Historical evidence and release receipts remain unchanged.
 
 ## 0.10.1 details — seal evaluation inputs before dispatch (2026-10-16)
@@ -224,7 +224,7 @@
   and retained experiment evidence described below. Update CLI help, mirrored
   READMEs, Agent driver and operational contracts. Zero runtime dependencies,
   no new real model calls, unchanged statistical gates and no automatic upgrade.
-- See the [release record](docs/releases/0.10.0.md) for source, checks and publication
+- See the [release record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.10.0.md) for source, checks and publication
   verification. Historical experiment and release records remain unchanged.
 
 ## 0.10.0 details — machine-readable bench checks (2026-10-16)
@@ -256,7 +256,7 @@
   replay packages. The study totals 195 actual calls; seven historical final
   usages remain unknown and no candidate qualifies for adoption.
 - Move the long experiment history to the maintained
-  [evidence index](docs/skill-evaluation-evidence.md). Refocus onboarding and the
+  [evidence index](docs/maintainers/archive-delivery.md). Refocus onboarding and the
   roadmap on authoring cases for users' own tasks. No further model calls or npm
   publication are included.
 
@@ -269,7 +269,7 @@
   adoption gates, startup warnings and all 182 cumulative calls, including seven
   earlier unknown usages. This reused task cannot establish stable improvement
   or causal helper savings; acceptance stays inconclusive and no further calls
-  or independent validation are authorized. See the [report](evidence/2026-10-15-native-diff-mechanism.md).
+  or independent validation are authorized. See the [report](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/evidence/2026-10-15-native-diff-mechanism.md).
 - These evidence files follow the immutable npm 0.9.1 publication; no new package
   publication, runtime change, dependency or acceptance-policy change is included.
 
@@ -278,22 +278,22 @@
 - Prepare a manual, default-dry-run GitHub Actions npm release workflow with
   OIDC, exact-archive checks, version reuse protection and verified registry
   installation after publication scanning. Add offline regression checks;
-  see the [maintainer procedure](docs/releases/trusted-publishing.md).
+  see the [maintainer procedure](docs/maintainers/architecture.md).
 - Verify the first real GitHub Actions OIDC publication: registry version/latest,
   exact archive, 2,333 installed files, CLI smoke, registry signature and source
   attestation all pass. Retain the original workflow timeout and a separate
   read-only verification timeout; the original run remains failed. See the
-  [publication receipt](docs/releases/0.9.1-verification.json).
+  [publication receipt](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.9.1-verification.json).
 - Align package and lockfile versions at 0.9.1 for the first reviewed OIDC
   publication. Runtime behavior, evaluation policies and dependencies are unchanged;
-  see the [release guide](docs/releases/0.9.1.md).
+  see the [release guide](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.9.1.md).
 
 ## [0.9.0] — 2026-10-15
 
 - Release the Agent-callable evaluation component, installed old/new Skill comparison,
   explicit efficiency policy, bounded execution and offline receipt replay as
-  `skillfit@0.9.0`; see the [release guide](docs/releases/0.9.0.md).
-  The [registry installation receipt](docs/releases/0.9.0-verification.json)
+  `skillfit@0.9.0`; see the [release guide](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.9.0.md).
+  The [registry installation receipt](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.9.0-verification.json)
   pins the published archive. No automatic Skill upgrade is included.
 - Supply identical pinned native untracked-file diff tools in new paired installed
   evaluations. Preserve output, native exit status and errors; retain old evidence
@@ -341,8 +341,8 @@
 - Add the pinned `oss-normalize-url` historical failure bench and retain the original,
   compact v1 and v2 comparison evidence, including failed recovery stages. Track the
   frozen compiled replay files so a clean checkout can reproduce saved outcomes.
-  See the [experiment handoff](docs/plans/2026-10-13-skill-experiment-cleanup.md) and
-  [script navigation](scripts/README.md). This work does not implement automatic
+  See the [experiment handoff](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/plans/2026-10-13-skill-experiment-cleanup.md) and
+  [script navigation](https://github.com/remote-controlled-man/skillfit/blob/main/tools/README.md). This work does not implement automatic
   Skill evolution or an adoption gate; statistical verdict semantics are unchanged.
 
 ## 0.9.0 details — Streamable HTTP MCP preflight
@@ -444,7 +444,7 @@ All notable changes to this project are documented here. Format loosely follows
 - Retain the completed 80-call independent original/v4 comparison and a dependency-free replay archive: 40/40 passes per arm and aggregate savings still receive an ineligible `inconclusive` decision because the frozen 10% conservative reduction bound is unmet. Preserve individual cost increases, all 125 study calls, unknown authoring/billing costs and an exact v4 procedural reproduction request.
 
 Graded facet scoring and verifier/oracle acceptance gates, informed by a Skill2Env review
-(see `docs/metrics.md` v2). The exit code remains the sole pass/fail authority; the McNemar verdict
+(see `docs/reference/metrics.md` v2). The exit code remains the sole pass/fail authority; the McNemar verdict
 protocol is unchanged.
 
 ### Added
@@ -489,8 +489,8 @@ protocol is unchanged.
   files from exact author commits, checks their SHA-256 hashes and invocation policy, then runs the
   existing safe install plan. The reviewed Codex lock records 65 upstream and two local Skills;
   the personal bundle stays outside Git.
-- **`docs/bench-authoring.md` — the authoring guide (A11).** The paradigm was complete and well-sourced
-  but had no single home: `docs/metrics.md` carried the *why*, `benches/README.md` the *what*,
+- **`docs/guides/bench-authoring.md` — the authoring guide (A11).** The paradigm was complete and well-sourced
+  but had no single home: `docs/reference/metrics.md` carried the *why*, `benches/README.md` the *what*,
   `benches/contrib/README.md` the *how to submit*, and the two bundled benches the *what one looks
   like*. The mainline — the seven steps, why each is non-optional, one task walked end to end — was
   reconstructable only by reading all four and reconciling them, and the reconciliation did not hold:
@@ -498,7 +498,7 @@ protocol is unchanged.
   contradictions; this is the artifact they were for. Walked on `code-review/review-r1`, with the two
   gates, what neither of them proves (gameability — `feat-slug` is the worked example), a table of the
   ways a bench produces confident wrong numbers, and a PR checklist. Linked from all five READMEs,
-  `benches/README.md`, `benches/contrib/README.md`, `docs/metrics.md` and `CONTRIBUTING.md`; the contrib
+  `benches/README.md`, `benches/contrib/README.md`, `docs/reference/metrics.md` and `CONTRIBUTING.md`; the contrib
   checklist stays as the short form and names the guide as required reading before rule 1. New
   `src/docs.test.ts` pins the links across all five languages and reads every threshold the guide
   quotes back out of the source, so changing a constant breaks the doc's test rather than silently
@@ -543,7 +543,7 @@ protocol is unchanged.
   explicitly a prioritization signal because install dates are unavailable. The description-token
   figure is labelled as raw catalog size before agent-side limits, truncation, or omission.
 
-- **`docs/metrics.md` L1 status corrected (2026-09-29).** Trigger-mode rates already exist, so the
+- **`docs/reference/metrics.md` L1 status corrected (2026-09-29).** Trigger-mode rates already exist, so the
   old blanket "implementation is the next milestone" sentence was stale. Positive tasks currently
   carry only a Boolean `shouldTrigger` label; explicit, implicit, and contextual classes are not
   reported separately, and real installed-skill competition remains unimplemented. The verdict
@@ -555,7 +555,7 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
 - **Paired runs are now interleaved.** The trial loop is outermost, so the two arms of a pair execute
   adjacently instead of all baselines before all treatments — condition is no longer confounded with
   elapsed time (provider drift, rate-limit backoff).
-- **`docs/metrics.md` no longer claims a shared seed.** The headless CLI surfaces in the capability
+- **`docs/reference/metrics.md` no longer claims a shared seed.** The headless CLI surfaces in the capability
   matrix expose no seed or temperature knob, so the earlier "same fixture, prompt, and seed" was
   unsatisfiable as written. The contract now states what *is* controlled (same fixture, same prompt,
   adjacent order) and the manifest records `executor.sampling: null` where the surface offers nothing,
@@ -571,7 +571,7 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   which the next wave closes.
 - **Trigger recall is documented as an upper bound.** Only the skill under test is installed into the
   run directory; real routing quality depends on lexical competition with the user's whole installed
-  set, which the harness does not reproduce. Marked `(Status: spec)` in `docs/metrics.md` rather than
+  set, which the harness does not reproduce. Marked `(Status: spec)` in `docs/reference/metrics.md` rather than
   built, because copying a user's real skill set into a sandbox raises privacy questions this project
   has not settled.
 - **Correction to the 0.3.0 entry below**: it claimed recall, false-trigger rate, precision *and* F1
@@ -600,7 +600,7 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
 - **Errored trials are excluded, not scored as failures (B1).** An executor error left
   `passed = false` on the record and both `statsFor` and `trialFlags` counted it, so a single API
   timeout manufactured a discordant pair and moved Δpass, the McNemar p-value and the bootstrap CI —
-  enough to flip a verdict at the 3–5 trial scale this tool targets. `docs/metrics.md` L0 claimed this
+  enough to flip a verdict at the 3–5 trial scale this tool targets. `docs/reference/metrics.md` L0 claimed this
   was already handled; it was handled in the trigger path only. Exclusion is *pairwise*: dropping a
   trial from one arm alone would misalign the (task, trial) pairs every statistic resamples, so an
   error in either arm removes that pair from both. `ConditionStats` gains a required `errors` count,
@@ -688,7 +688,7 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
 - **Multi-turn token usage accumulates instead of being overwritten (C7).** Each `turn.completed`
   event replaced the running total rather than adding to it, so a session with more than one turn
   reported only its last turn's usage. That corrupts ρ and cost-of-pass — the two claims
-  `docs/metrics.md` L3 says *are* provable at personal sample sizes, which makes them the last place
+  `docs/reference/metrics.md` L3 says *are* provable at personal sample sizes, which makes them the last place
   to under-report. The sibling token path (`kimi-usage.ts`) already summed the same kind of per-entry
   records, so the two paths in one codebase disagreed about whether usage records are increments.
   They are; this one now treats them that way. The code comment records the residual risk: if a surface
@@ -730,7 +730,7 @@ per-finding ledger). These change behaviour or weaken a claim that the code coul
   agent ids so the rule survives future edits. Matrix `verifiedAt` bumped to 2026-09-25; the
   capability depends on the session log location already documented at `sessions.docs` for that agent.
 
-- **The report states the run's resolution, and CI bounds keep a decimal (B4).** `docs/metrics.md`'s
+- **The report states the run's resolution, and CI bounds keep a decimal (B4).** `docs/reference/metrics.md`'s
   verdict protocol requires the CI half-width alongside every delta, as "this bench resolves effects
   ≳ ±Xpp"; no such line existed. Worse, `formatDeltaPp` rounded to whole percentage points and was
   applied to the interval bounds, so `[-0.044, 0.610]` printed as `[-4pp, +61pp]` — which hides both

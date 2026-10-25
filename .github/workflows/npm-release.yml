@@ -50,7 +50,7 @@ jobs:
       - name: Require complete full CI for this exact main source
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/release-source.mjs ci "$RELEASE_ROOT"
+        run: node tools/release/release-source.mjs ci "$RELEASE_ROOT"
       - name: Install build tools and compile (source tests already passed)
         run: |
           npm ci
@@ -65,12 +65,12 @@ jobs:
         run: |
           if [ "$DRY_RUN" = true ]; then
             npm pack --json --pack-destination "$RELEASE_ROOT" > "$RELEASE_ROOT/pack.json"
-            node scripts/npm-release.mjs check "$RELEASE_ROOT/pack.json"
-            node scripts/release-source.mjs preview "$RELEASE_ROOT"
+            node tools/release/npm-release.mjs check "$RELEASE_ROOT/pack.json"
+            node tools/release/release-source.mjs preview "$RELEASE_ROOT"
           else
-            node scripts/release-source.mjs promote "$RELEASE_ROOT" "$PREVIEW_RUN_ID" "$PREVIEW_RUN_ATTEMPT"
-            node scripts/npm-release.mjs guard "$RELEASE_ROOT/pack.json"
-            node scripts/release-source.mjs claim "$RELEASE_ROOT"
+            node tools/release/release-source.mjs promote "$RELEASE_ROOT" "$PREVIEW_RUN_ID" "$PREVIEW_RUN_ATTEMPT"
+            node tools/release/npm-release.mjs guard "$RELEASE_ROOT/pack.json"
+            node tools/release/release-source.mjs claim "$RELEASE_ROOT"
           fi
       - name: Persist publication intent before upload
         if: '!inputs.dry_run'
@@ -83,20 +83,20 @@ jobs:
       - name: Publish with npm trusted publishing
         if: '!inputs.dry_run'
         run: |
-          node scripts/npm-release.mjs guard "$RELEASE_ROOT/pack.json"
+          node tools/release/npm-release.mjs guard "$RELEASE_ROOT/pack.json"
           archive=$(node -p "JSON.parse(require('node:fs').readFileSync(process.env.RELEASE_ROOT + '/pack.json'))[0].filename")
           npm publish "$RELEASE_ROOT/$archive" --access public --tag latest --fetch-retries=0 --fetch-timeout=600000
-          node scripts/release-acceptance.mjs uploaded "$RELEASE_ROOT"
+          node tools/release/release-acceptance.mjs uploaded "$RELEASE_ROOT"
       - name: Verify installation, Skill, examples, archives and provenance once
         if: '!inputs.dry_run'
         run: |
-          node scripts/release-acceptance.mjs verify "$RELEASE_ROOT"
+          node tools/release/release-acceptance.mjs verify "$RELEASE_ROOT"
       - name: Summarize actual state including failures
         if: always()
         env:
           JOB_STATUS: ${{ job.status }}
           DRY_RUN: ${{ inputs.dry_run }}
-        run: node scripts/release-acceptance.mjs summary "$RELEASE_ROOT" "$JOB_STATUS" "$DRY_RUN"
+        run: node tools/release/release-acceptance.mjs summary "$RELEASE_ROOT" "$JOB_STATUS" "$DRY_RUN"
       - name: Retain reviewed archive and verification receipts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

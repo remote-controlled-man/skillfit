@@ -1,12 +1,2 @@
-# Source-maintenance records remain at their original Git paths.
-/plans/
-/decisions/
-/audit-2026-09-24.md
-/audit-2026-09-24-triage.md
-/codex-upstream-audit.md
-/metrics-history.md
-/documentation-governance.md
-/releases/*.json
-/releases/*.txt
-/releases/*.log
-/releases/records/
+/work/
+# Historical originals stay at their pinned Git commits.

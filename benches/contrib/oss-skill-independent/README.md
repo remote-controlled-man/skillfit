@@ -1,7 +1,7 @@
 # Independent original/v4 debugging tasks
 
 Eight real historical defects are pinned before any new agent outcome is observed.
-The selection is the [reviewed proposal](../../../docs/plans/2026-10-15-independent-comparison-proposal.md),
+The selection is the [reviewed proposal](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/plans/2026-10-15-independent-comparison-proposal.md),
 not a result of difficulty calibration or candidate tuning on this set. The
 original/v4 Skill resources and adoption policy remain unchanged. Difficulty is
 uncalibrated; no real model call is authorized by preparing this bench.
@@ -42,8 +42,8 @@ Skill narration, an implementation keyword or a preferred repair strategy.
 
 ```bash
 node dist/cli.js bench check benches/contrib/oss-skill-independent
-node --test scripts/independent-offline.test.mjs
-node scripts/check-independent-readiness.mjs
+node --test tools/verify/independent-offline.test.mjs
+node tools/history/check-independent-readiness.mjs
 ```
 
 Offline checks also give the original the identical reference regression, so a

@@ -1,0 +1,777 @@
+{
+  "schemaVersion": 1,
+  "roles": {
+    "contracts": {
+      "runtime": [
+        "contracts",
+        "calculation"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation"
+      ],
+      "effects": "pure"
+    },
+    "calculation": {
+      "runtime": [
+        "contracts",
+        "calculation"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation"
+      ],
+      "effects": "pure"
+    },
+    "mechanisms": {
+      "runtime": [
+        "contracts",
+        "calculation",
+        "mechanisms"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation"
+      ],
+      "effects": "none"
+    },
+    "integration": {
+      "runtime": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation"
+      ],
+      "effects": "none"
+    },
+    "evidence": {
+      "runtime": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "evidence"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation"
+      ],
+      "effects": "none"
+    },
+    "execution": {
+      "runtime": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "execution"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation",
+        "execution"
+      ],
+      "effects": "none"
+    },
+    "application": {
+      "runtime": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "execution",
+        "application"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation",
+        "execution",
+        "application"
+      ],
+      "effects": "application"
+    },
+    "entry": {
+      "runtime": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation",
+        "execution",
+        "application",
+        "entry",
+        "configuration"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation",
+        "execution",
+        "application",
+        "entry",
+        "configuration"
+      ],
+      "effects": "none"
+    },
+    "installation": {
+      "runtime": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "installation"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "evidence",
+        "installation"
+      ],
+      "effects": "none"
+    },
+    "configuration": {
+      "runtime": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "installation",
+        "configuration"
+      ],
+      "type": [
+        "contracts",
+        "calculation",
+        "mechanisms",
+        "integration",
+        "installation",
+        "configuration"
+      ],
+      "effects": "application"
+    }
+  },
+  "modules": [
+    {
+      "role": "contracts",
+      "files": [
+        "evaluation/application/options.js",
+        "evaluation/application/preflight-error.js",
+        "configuration/constants.js",
+        "resources/invocation.js",
+        "agents/constants.js",
+        "agents/contracts.js",
+        "bench/constants.js",
+        "bench/contracts.js",
+        "evaluation/application/constants.js",
+        "evaluation/measurement/paired-contract.js",
+        "evaluation/records/contracts.js",
+        "resources/contracts.js",
+        "shared/backup.js",
+        "evaluation/measurement/run-state.js"
+      ]
+    },
+    {
+      "role": "calculation",
+      "files": [
+        "resources/frontmatter.js",
+        "agents/preflight-contract.js",
+        "bench/command-template.js",
+        "bench/diagnostics.js",
+        "shared/command.js",
+        "evaluation/measurement/costs.js",
+        "evaluation/measurement/efficiency.js",
+        "evaluation/measurement/judge-protocol.js",
+        "evaluation/measurement/scope.js",
+        "agents/observation/model-identity.js",
+        "evaluation/measurement/report.js",
+        "evaluation/measurement/statistics.js",
+        "evaluation/measurement/trial-summary.js",
+        "agents/observation/trigger-contract.js",
+        "evaluation/measurement/trigger-summary.js",
+        "bench/gates/summary.js",
+        "bench/gates/timeout.js",
+        "agents/accounting.js",
+        "agents/session-observation.js",
+        "agents/timeout.js",
+        "bench/claims.js",
+        "bench/scope.js",
+        "evaluation/measurement/acceptance.js",
+        "evaluation/measurement/policy.js",
+        "evaluation/measurement/report-data.js",
+        "shared/json.js",
+        "evaluation/measurement/invocation-costs.js",
+        "shared/digest.js"
+      ]
+    },
+    {
+      "role": "mechanisms",
+      "files": [
+        "bench/gates/check.js",
+        "bench/location.js",
+        "bench/source.js",
+        "bench/read.js",
+        "resources/skill.js",
+        "evaluation/execution/budget.js",
+        "evaluation/targets/output-layout.js",
+        "shared/timing.js",
+        "shared/hash.js",
+        "evaluation/records/input-snapshot.js",
+        "evaluation/targets/skill.js",
+        "shared/process-tree.js",
+        "evaluation/targets/native-diff.js",
+        "shared/process.js",
+        "evaluation/execution/prompt.js",
+        "evaluation/records/replay-package.js",
+        "resources/experiment.js",
+        "evaluation/targets/workspace.js",
+        "bench/gates/error.js",
+        "bench/gates/verifier.js",
+        "shared/version.js",
+        "agents/call-budget.js",
+        "agents/call-limits.js",
+        "bench/output-layout.js",
+        "evaluation/execution/interrupted.js",
+        "resources/installed-skill.js",
+        "shared/cancellation.js",
+        "shared/input-directories.js",
+        "shared/output-path.js",
+        "shared/read-json.js",
+        "harness/hash.js",
+        "harness/replay-package.js",
+        "shared/local-files.js",
+        "shared/package-root.js"
+      ]
+    },
+    {
+      "role": "integration",
+      "files": [
+        "agents/matrix.js",
+        "agents/preflight.js",
+        "bench/controls.js",
+        "agents/adapters/codex-usage.js",
+        "agents/adapters/api.js",
+        "agents/adapters/cli.js",
+        "evaluation/execution/control-executor.js",
+        "evaluation/execution/mock-executor.js",
+        "agents/adapters/kimi-usage.js",
+        "usage/receipts.js",
+        "agents/observation/trigger-detection.js",
+        "agents/mcp-probe.js",
+        "agents/execution.js",
+        "evaluation/application/request.js",
+        "harness/executors/cli.js",
+        "agents/installed-skills.js"
+      ]
+    },
+    {
+      "role": "evidence",
+      "files": [
+        "evaluation/records/assess.js",
+        "evaluation/records/audit.js",
+        "evaluation/records/manifest.js",
+        "evaluation/records/judge-audit.js",
+        "evaluation/records/model-identity.js",
+        "evaluation/records/single-arm-audit.js",
+        "evaluation/records/single-arm-read.js",
+        "evaluation/records/single-arm-replay.js",
+        "harness/single-arm-audit.js",
+        "commands/eval-single-arm-replay.js",
+        "evaluation/records/read.js"
+      ]
+    },
+    {
+      "role": "execution",
+      "files": [
+        "bench/draft.js",
+        "evaluation/records/session.js",
+        "evaluation/execution/judge.js",
+        "evaluation/execution/paired.js",
+        "evaluation/execution/activation.js"
+      ]
+    },
+    {
+      "role": "application",
+      "files": [
+        "bench/authoring.js",
+        "evaluation/application/calibration.js",
+        "evaluation/application/planning.js",
+        "evaluation/application/preflight.js",
+        "evaluation/application/read.js",
+        "evaluation/application/evaluation.js",
+        "evaluation/application/export.js",
+        "evaluation/application/self-test.js"
+      ]
+    },
+    {
+      "role": "entry",
+      "files": [
+        "cli/main.js",
+        "cli/bench-calibration.js",
+        "cli/bench-check-report.js",
+        "cli/bench-command-template.js",
+        "cli/bench-draft.js",
+        "cli/bench-manage.js",
+        "cli/bench-source.js",
+        "cli/bench.js",
+        "cli/confirm.js",
+        "cli/doctor.js",
+        "cli/eval-cli.js",
+        "cli/eval-component.js",
+        "cli/eval-display.js",
+        "cli/eval-plan.js",
+        "cli/eval-preflight-error.js",
+        "cli/eval-preflight.js",
+        "cli/eval-report.js",
+        "cli/eval-single-arm-report.js",
+        "cli/eval.js",
+        "cli/evaluation-report.js",
+        "cli/mcp.js",
+        "cli/report.js",
+        "cli/evaluation-host.js",
+        "cli.js",
+        "commands/bench.js",
+        "commands/bundle.js",
+        "commands/eval-cli.js",
+        "commands/eval-export.js",
+        "commands/eval.js",
+        "commands/evaluation-report.js",
+        "commands/install.js",
+        "composition.js",
+        "harness/interruption.js"
+      ]
+    },
+    {
+      "role": "installation",
+      "files": [
+        "configuration/transaction.js"
+      ]
+    },
+    {
+      "role": "configuration",
+      "files": [
+        "configuration/install.js",
+        "configuration/setup.js",
+        "configuration/bundle.js",
+        "configuration/upstream.js"
+      ]
+    }
+  ],
+  "migratedFiles": [
+    "shared/process.js",
+    "bench/gates/verifier.js",
+    "evaluation/targets/workspace.js",
+    "evaluation/measurement/trial-summary.js",
+    "evaluation/measurement/judge-protocol.js",
+    "evaluation/measurement/trigger-summary.js",
+    "evaluation/application/planning.js",
+    "evaluation/application/evaluation.js",
+    "evaluation/application/read.js",
+    "evaluation/application/preflight.js",
+    "evaluation/application/calibration.js",
+    "bench/authoring.js",
+    "bench/source.js",
+    "bench/draft.js",
+    "bench/command-template.js",
+    "agents/preflight-contract.js",
+    "agents/observation/trigger-contract.js",
+    "evaluation/application/options.js",
+    "evaluation/application/preflight-error.js",
+    "evaluation/execution/control-executor.js",
+    "agents/accounting.js",
+    "agents/adapters/api.js",
+    "agents/adapters/cli.js",
+    "agents/adapters/codex-usage.js",
+    "agents/adapters/kimi-usage.js",
+    "evaluation/execution/mock-executor.js",
+    "agents/call-budget.js",
+    "agents/call-limits.js",
+    "agents/constants.js",
+    "agents/contracts.js",
+    "agents/execution.js",
+    "agents/matrix.js",
+    "agents/mcp-probe.js",
+    "agents/observation/model-identity.js",
+    "agents/observation/trigger-detection.js",
+    "agents/preflight.js",
+    "agents/session-observation.js",
+    "agents/timeout.js",
+    "bench/claims.js",
+    "bench/constants.js",
+    "bench/contracts.js",
+    "bench/controls.js",
+    "bench/diagnostics.js",
+    "bench/gates/check.js",
+    "bench/gates/error.js",
+    "bench/gates/summary.js",
+    "bench/gates/timeout.js",
+    "bench/location.js",
+    "bench/output-layout.js",
+    "bench/read.js",
+    "bench/scope.js",
+    "cli/bench-calibration.js",
+    "cli/bench-check-report.js",
+    "cli/bench-command-template.js",
+    "cli/bench-draft.js",
+    "cli/bench-manage.js",
+    "cli/bench-source.js",
+    "cli/bench.js",
+    "cli/confirm.js",
+    "cli/doctor.js",
+    "cli/eval-cli.js",
+    "cli/eval-component.js",
+    "cli/eval-display.js",
+    "cli/eval-plan.js",
+    "cli/eval-preflight-error.js",
+    "cli/eval-preflight.js",
+    "cli/eval-report.js",
+    "cli/eval-single-arm-report.js",
+    "cli/eval.js",
+    "cli/evaluation-host.js",
+    "cli/evaluation-report.js",
+    "cli/main.js",
+    "cli/mcp.js",
+    "cli/report.js",
+    "cli.js",
+    "commands/bench.js",
+    "commands/bundle.js",
+    "commands/eval-cli.js",
+    "commands/eval-export.js",
+    "commands/eval-single-arm-replay.js",
+    "commands/eval.js",
+    "commands/evaluation-report.js",
+    "commands/install.js",
+    "composition.js",
+    "configuration/bundle.js",
+    "configuration/constants.js",
+    "configuration/install.js",
+    "configuration/setup.js",
+    "configuration/transaction.js",
+    "configuration/upstream.js",
+    "evaluation/application/constants.js",
+    "evaluation/application/export.js",
+    "evaluation/application/request.js",
+    "evaluation/application/self-test.js",
+    "evaluation/execution/activation.js",
+    "evaluation/execution/budget.js",
+    "evaluation/execution/interrupted.js",
+    "evaluation/execution/judge.js",
+    "evaluation/execution/paired.js",
+    "evaluation/execution/prompt.js",
+    "evaluation/measurement/acceptance.js",
+    "evaluation/measurement/costs.js",
+    "evaluation/measurement/efficiency.js",
+    "evaluation/measurement/invocation-costs.js",
+    "evaluation/measurement/paired-contract.js",
+    "evaluation/measurement/policy.js",
+    "evaluation/measurement/report-data.js",
+    "evaluation/measurement/report.js",
+    "evaluation/measurement/scope.js",
+    "evaluation/measurement/statistics.js",
+    "evaluation/records/assess.js",
+    "evaluation/records/audit.js",
+    "evaluation/records/contracts.js",
+    "evaluation/records/input-snapshot.js",
+    "evaluation/records/judge-audit.js",
+    "evaluation/records/manifest.js",
+    "evaluation/records/model-identity.js",
+    "evaluation/records/replay-package.js",
+    "evaluation/records/session.js",
+    "evaluation/records/single-arm-audit.js",
+    "evaluation/records/single-arm-read.js",
+    "evaluation/records/single-arm-replay.js",
+    "evaluation/targets/native-diff.js",
+    "evaluation/targets/output-layout.js",
+    "evaluation/targets/skill.js",
+    "harness/executors/cli.js",
+    "harness/hash.js",
+    "harness/interruption.js",
+    "harness/replay-package.js",
+    "harness/single-arm-audit.js",
+    "resources/contracts.js",
+    "resources/experiment.js",
+    "resources/frontmatter.js",
+    "resources/installed-skill.js",
+    "resources/invocation.js",
+    "resources/skill.js",
+    "shared/backup.js",
+    "shared/cancellation.js",
+    "shared/command.js",
+    "shared/hash.js",
+    "shared/input-directories.js",
+    "shared/json.js",
+    "shared/output-path.js",
+    "shared/process-tree.js",
+    "shared/read-json.js",
+    "shared/timing.js",
+    "shared/version.js",
+    "usage/receipts.js"
+  ],
+  "exceptions": [],
+  "dynamicImports": [],
+  "businessModules": {
+    "shared": {
+      "prefixes": [
+        "shared/"
+      ],
+      "dependencies": [],
+      "publicFiles": [
+        "shared/backup.js",
+        "shared/cancellation.js",
+        "shared/command.js",
+        "shared/digest.js",
+        "shared/hash.js",
+        "shared/input-directories.js",
+        "shared/json.js",
+        "shared/local-files.js",
+        "shared/output-path.js",
+        "shared/process.js",
+        "shared/process-tree.js",
+        "shared/read-json.js",
+        "shared/timing.js",
+        "shared/version.js",
+        "shared/package-root.js"
+      ]
+    },
+    "resources": {
+      "prefixes": [
+        "resources/"
+      ],
+      "dependencies": [
+        "shared"
+      ],
+      "publicFiles": [
+        "resources/contracts.js",
+        "resources/frontmatter.js",
+        "resources/invocation.js",
+        "resources/skill.js",
+        "resources/experiment.js",
+        "resources/installed-skill.js"
+      ]
+    },
+    "agents": {
+      "prefixes": [
+        "agents/"
+      ],
+      "dependencies": [
+        "shared",
+        "resources"
+      ],
+      "publicFiles": [
+        "agents/matrix.js",
+        "agents/contracts.js",
+        "agents/constants.js",
+        "agents/execution.js",
+        "agents/preflight.js",
+        "agents/preflight-contract.js",
+        "agents/timeout.js",
+        "agents/call-budget.js",
+        "agents/call-limits.js",
+        "agents/accounting.js",
+        "agents/installed-skills.js",
+        "agents/session-observation.js",
+        "agents/mcp-probe.js",
+        "agents/observation/model-identity.js",
+        "agents/observation/trigger-contract.js",
+        "agents/observation/trigger-detection.js"
+      ]
+    },
+    "usage": {
+      "prefixes": [
+        "usage/"
+      ],
+      "dependencies": [
+        "shared",
+        "resources",
+        "agents"
+      ],
+      "publicFiles": [
+        "usage/receipts.js"
+      ]
+    },
+    "bench": {
+      "prefixes": [
+        "bench/"
+      ],
+      "dependencies": [
+        "shared",
+        "resources",
+        "agents"
+      ],
+      "publicFiles": [
+        "bench/authoring.js",
+        "bench/draft.js",
+        "bench/source.js",
+        "bench/location.js",
+        "bench/read.js",
+        "bench/claims.js",
+        "bench/scope.js",
+        "bench/contracts.js",
+        "bench/constants.js",
+        "bench/controls.js",
+        "bench/diagnostics.js",
+        "bench/command-template.js",
+        "bench/gates/check.js",
+        "bench/gates/verifier.js",
+        "bench/gates/summary.js",
+        "bench/gates/timeout.js"
+      ]
+    },
+    "configuration": {
+      "prefixes": [
+        "configuration/"
+      ],
+      "dependencies": [
+        "shared",
+        "resources",
+        "agents",
+        "usage"
+      ],
+      "publicFiles": [
+        "configuration/install.js",
+        "configuration/setup.js",
+        "configuration/bundle.js",
+        "configuration/upstream.js"
+      ]
+    },
+    "evaluation": {
+      "prefixes": [
+        "evaluation/"
+      ],
+      "dependencies": [
+        "shared",
+        "resources",
+        "agents",
+        "bench"
+      ],
+      "publicFiles": [
+        "evaluation/application/calibration.js",
+        "evaluation/application/evaluation.js",
+        "evaluation/application/export.js",
+        "evaluation/application/options.js",
+        "evaluation/application/planning.js",
+        "evaluation/application/preflight.js",
+        "evaluation/application/preflight-error.js",
+        "evaluation/application/self-test.js",
+        "evaluation/application/read.js",
+        "evaluation/measurement/scope.js",
+        "evaluation/measurement/report.js",
+        "evaluation/measurement/costs.js",
+        "evaluation/measurement/invocation-costs.js",
+        "evaluation/measurement/paired-contract.js",
+        "evaluation/execution/activation.js",
+        "evaluation/execution/budget.js",
+        "evaluation/execution/interrupted.js",
+        "evaluation/records/manifest.js",
+        "evaluation/records/single-arm-read.js",
+        "evaluation/records/single-arm-replay.js",
+        "evaluation/records/replay-package.js",
+        "evaluation/records/single-arm-audit.js"
+      ]
+    },
+    "cli": {
+      "prefixes": [
+        "cli/"
+      ],
+      "files": [
+        "cli.js"
+      ],
+      "dependencies": [
+        "shared",
+        "resources",
+        "agents",
+        "bench",
+        "evaluation",
+        "usage",
+        "composition"
+      ],
+      "publicFiles": [
+        "cli.js",
+        "cli/main.js",
+        "cli/confirm.js",
+        "cli/evaluation-host.js",
+        "cli/eval-display.js",
+        "cli/bench.js",
+        "cli/eval.js",
+        "cli/eval-cli.js",
+        "cli/evaluation-report.js"
+      ]
+    },
+    "composition": {
+      "files": [
+        "composition.js"
+      ],
+      "dependencies": [
+        "cli",
+        "configuration",
+        "evaluation"
+      ],
+      "publicFiles": [
+        "composition.js"
+      ]
+    },
+    "compatibility": {
+      "files": [
+        "commands/bench.js",
+        "commands/bundle.js",
+        "commands/eval-cli.js",
+        "commands/eval-export.js",
+        "commands/eval-single-arm-replay.js",
+        "commands/eval.js",
+        "commands/evaluation-report.js",
+        "commands/install.js",
+        "harness/executors/cli.js",
+        "harness/hash.js",
+        "harness/interruption.js",
+        "harness/replay-package.js",
+        "harness/single-arm-audit.js"
+      ],
+      "dependencies": [
+        "shared",
+        "resources",
+        "agents",
+        "evaluation",
+        "cli",
+        "composition",
+        "configuration"
+      ],
+      "publicFiles": []
+    }
+  }
+}

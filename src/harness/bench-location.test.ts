@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { resolveBenchDir } from './bench-location.js';
+import { resolveBenchDir } from "../bench/location.js";
 
 test('bench references prefer local inputs, preserve explicit-path errors and choose bundled names consistently', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-bench-reference-')); t.after(() => rmSync(root, { recursive: true, force: true }));

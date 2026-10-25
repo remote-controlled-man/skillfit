@@ -4,7 +4,7 @@ Thanks for helping make agent configuration evidence-driven.
 
 ## The highest-value contributions
 
-1. **A bench from your real workflow.** Read [docs/bench-authoring.md](docs/bench-authoring.md) first — it is the seven-step guide, walked end to end on one real task. The fastest paths in: `skillfit bench init` for a scaffold, `skillfit bench add --freeze` to capture a failure you just watched, `skillfit bench add --from-commit` to mine a fix from git history, then `skillfit bench check [--calibrate]` before submitting under `benches/contrib/<name>/`. See [benches/README.md](benches/README.md) for the format and the determinism/self-containment rules.
+1. **A bench from your real workflow.** Read [docs/guides/bench-authoring.md](docs/guides/bench-authoring.md) first — it is the seven-step guide, walked end to end on one real task. The fastest paths in: `skillfit bench init` for a scaffold, `skillfit bench add --freeze` to capture a failure you just watched, `skillfit bench add --from-commit` to mine a fix from git history, then `skillfit bench check [--calibrate]` before submitting under `benches/contrib/<name>/`. See [benches/README.md](benches/README.md) for the format and the determinism/self-containment rules.
 2. **Reproductions.** Run an existing evidence experiment on your model/agent and report agreement or disagreement. Attach a reviewed `manifest.json` and, for current paired runs, the output of `node dist/cli.js report eval <manifest.json>`.
 3. **Agent matrix corrections.** Vendor config surfaces change fast. If `src/matrix/agents.json` is stale, a PR with the official docs link and a `verifiedAt` bump is always welcome.
 
@@ -12,8 +12,8 @@ Thanks for helping make agent configuration evidence-driven.
 
 - **Zero runtime dependencies** is a hard rule. Discuss in an issue before proposing one.
 - `npm test` must be green. Tests are `node:test`, offline, and never call a real model API or agent CLI — use `MockExecutor`, injected executors, or injected fs roots.
-- Verdict semantics and the statistical protocol are frozen in [docs/metrics.md](docs/metrics.md); change the doc and the code together.
-- Follow [documentation governance](docs/documentation-governance.md) for document responsibilities, topic authority, registration and version scope. Update the canonical contract and review its dependent guides; preserve old paths/anchors, bilingual README blocks and frozen evidence. [Architecture](docs/architecture.md) and the [ADR index](docs/decisions/README.md) distinguish current implementation from proposed changes. Documentation-only changes need facts, links and diff review; code/build changes require the offline suite.
+- Verdict semantics and the statistical protocol are frozen in [docs/reference/metrics.md](docs/reference/metrics.md); change the doc and the code together.
+- Follow [architecture and maintenance](docs/maintainers/architecture.md) for module boundaries, document ownership and version scope. Update the canonical guide and its affected dependents. Migrate current links when consolidating pages and link the exact historical snapshot for old explanations; preserve bilingual README blocks and frozen evidence bytes. Documentation-only changes need facts, links and diff review; code/build changes require the offline suite.
 - PRs must describe *observable* changes: what the CLI printed/did before and after.
 - AI-generated PRs are welcome, but say so, and you are responsible for having run the code. Unverifiable PRs will be closed without review.
 - **Never run `git clean -fdx` in your clone** if you keep a local `workspace4skills/` lab directory — it deletes ignored directories.

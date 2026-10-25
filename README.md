@@ -17,7 +17,7 @@ then use the recorded evidence and its limits to decide what to enable.
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[Documentation](docs/README.md) · [Quick start](#first-run-with-npm) · [Bench guide](benches/README.md) · [Metrics protocol](docs/metrics.md) · [Evidence](evidence/)
+[Documentation](docs/README.md) · [Quick start](#first-run-with-npm) · [Bench guide](benches/README.md) · [Metrics protocol](docs/reference/metrics.md) · [Evidence](evidence)
 
 </div>
 
@@ -37,7 +37,7 @@ The agent-config ecosystem has solved **distribution** (`npx skills add`, plugin
 
 skillfit is the missing measurement layer: paired A/B experiments with deterministic verifiers, statistical verdicts, and trigger-rate measurement — packaged as a CLI anyone can run.
 
-Build cases around your own tasks: pin the starting files, write the request, and define what a correct result must do. The bundled benches teach the format; the CLI runs your cases, compares outcomes and costs, and preserves evidence. See the [case authoring guide](docs/bench-authoring.md).
+Build cases around your own tasks: pin the starting files, write the request, and define what a correct result must do. The bundled benches teach the format; the CLI runs your cases, compares outcomes and costs, and preserves evidence. See the [case authoring guide](docs/guides/bench-authoring.md).
 
 ## What you get
 
@@ -90,7 +90,7 @@ npx skillfit@0.13.1 bench check ./my-bench --json
 npx skillfit@0.13.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
-Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/first-real-eval.md).
+Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
 
 ### Run from source
 
@@ -109,15 +109,15 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/eval-agent-preflight.md#current-source-capability-table) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
+The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#current-source-capability-table) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
 
 The current checkout adds unpublished measurement features and corrections; build it to use additions marked **current source** in the documentation.
 
-This includes [offline self-test protocol 1](docs/bench-self-test.md) and explicit [bench schema 2 / frozen measurementScope 1](docs/bench-claims.md). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
+This includes [offline self-test protocol 1](docs/guides/bench-self-test.md) and explicit [bench schema 2 / frozen measurementScope 1](docs/reference/bench-claims.md). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
 
-The npm 0.13.1 commands above retain their released behavior. The [capability table](docs/eval-agent-preflight.md#current-source-capability-table) describes adapter support; [metrics](docs/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+The npm 0.13.1 commands above retain their released behavior. The [capability table](docs/guides/experiment-workflow.md#current-source-capability-table) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
 
-Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/experiment-workflow.md).
+Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
 
 ## Build your own cases
 
@@ -131,9 +131,9 @@ node dist/cli.js bench check my-bench --json
 node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input workspace --trials 1 --max-calls 2 --dry-run
 ```
 
-Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. Read the [case authoring guide](docs/bench-authoring.md), [JSON check contract](docs/bench-check-json.md), [verifier contract](docs/verifier-contract.md) and [drafting records](docs/bench-drafting.md).
+Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. Read the [case authoring guide](docs/guides/bench-authoring.md), [JSON check contract](docs/guides/bench-authoring.md), [verifier contract](docs/guides/bench-authoring.md) and [drafting records](docs/guides/bench-authoring.md).
 
-Before live spending, a current source build can run [bench self-test](docs/bench-self-test.md) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
+Before live spending, a current source build can run [bench self-test](docs/guides/bench-self-test.md) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
 
 List and inspect cases, or preview an edit. `--yes` applies a validated change with a backup; removal keeps case files. Select a smaller run with repeated `--task`:
 
@@ -144,7 +144,7 @@ node dist/cli.js bench edit my-bench example-task --set shouldTrigger=true --jso
 node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --task example-task --input workspace --trials 1 --max-calls 2 --dry-run
 ```
 
-See [case management](docs/case-management.md). Live evaluation checks [case integrity](docs/eval-case-preflight.md) and the [Agent environment](docs/eval-agent-preflight.md) before calls; a successful preview alone does not establish readiness.
+See [case management](docs/guides/bench-authoring.md). Live evaluation checks [case integrity](docs/guides/experiment-workflow.md) and the [Agent environment](docs/guides/experiment-workflow.md) before calls; a successful preview alone does not establish readiness.
 
 ### Evaluate a real OSS task
 
@@ -155,7 +155,7 @@ node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input work
 node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
 ```
 
-Import the issue request with `--prompt-file` so the fix message does not reveal the answer. Follow the [real OSS workflow](docs/oss-task-evaluation.md) or inspect the [pinned mcp-use example](benches/contrib/oss-mcp-use-utf8/README.md).
+Import the issue request with `--prompt-file` so the fix message does not reveal the answer. Follow the [real OSS workflow](docs/guides/bench-authoring.md) or inspect the [pinned mcp-use example](benches/contrib/oss-mcp-use-utf8/README.md).
 
 ### Compare Skill revisions
 
@@ -165,7 +165,7 @@ Compare two complete versions with the same frontmatter name and different finge
 node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
 ```
 
-See [revision comparisons](docs/skill-revisions.md) and [installed Skill delivery](docs/installed-skill-evaluation.md).
+See [revision comparisons](docs/guides/experiment-workflow.md) and [installed Skill delivery](docs/guides/experiment-workflow.md).
 
 ### Agent evaluation component
 
@@ -177,9 +177,9 @@ node dist/cli.js eval --request ./request.json --plan-sha <plan.sha256>
 node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
 ```
 
-The [component contract](docs/eval-component.md) defines quality and efficiency policies; `accept`, `reject` and `inconclusive` remain separate from the statistical verdict. Adoption requires complete, independent validation; nothing upgrades automatically.
+The [component contract](docs/reference/eval-component.md) defines quality and efficiency policies; `accept`, `reject` and `inconclusive` remain separate from the statistical verdict. Adoption requires complete, independent validation; nothing upgrades automatically.
 
-[Shared planning](docs/eval-planning.md) covers ordinary/request plans, `--json`, task selection, balanced pair order, deadlines and plan-hash confirmation. `spendingBudget` / `--spending-budget` is optional as a whole; when supplied, **all five fields are mandatory**. Among current CLI readers, only Codex has all required token/cache counters; Kimi/Claude block this budget before calls, and API coverage remains unknown until responses. Reaching a line prevents the next call; an in-flight call can overshoot, and missing/partial final usage stops further calls. Calibration measures baseline difficulty; trigger mode measures discovery. Neither proves paired benefit. Installed evaluations provide the same pinned native diff helper to both arms.
+[Shared planning](docs/guides/experiment-workflow.md) covers ordinary/request plans, `--json`, task selection, balanced pair order, deadlines and plan-hash confirmation. `spendingBudget` / `--spending-budget` is optional as a whole; when supplied, **all five fields are mandatory**. Among current CLI readers, only Codex has all required token/cache counters; Kimi/Claude block this budget before calls, and API coverage remains unknown until responses. Reaching a line prevents the next call; an in-flight call can overshoot, and missing/partial final usage stops further calls. Calibration measures baseline difficulty; trigger mode measures discovery. Neither proves paired benefit. Installed evaluations provide the same pinned native diff helper to both arms.
 
 ### Test rules and MCP setups
 
@@ -197,7 +197,7 @@ node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent 
 node dist/cli.js eval ./context7-experiment --bench ./my-context7-bench --agent codex --trials 5
 ```
 
-Start with `skillfit mcp check` for server discovery and catalog auditing; it calls no tool. Then measure outcomes with the [rules and MCP workflow](docs/config-experiments.md). For Codex MCP trials, a per-run trust override loads the disposable project config without changing user config.
+Start with `skillfit mcp check` for server discovery and catalog auditing; it calls no tool. Then measure outcomes with the [rules and MCP workflow](docs/guides/config-experiments.md). For Codex MCP trials, a per-run trust override loads the disposable project config without changing user config.
 
 ## Share an evaluation
 
@@ -207,7 +207,7 @@ Try a saved synthetic report, then use the manifest or directory printed by your
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
 
-Markdown and JSON read paired, calibration and trigger records, including incomplete runs. Rendering a report does not authorize adoption. See [sharing](docs/sharing-results.md), [report states](docs/evaluation-reports.md) and [cost coverage](docs/eval-costs.md).
+Markdown and JSON read paired, calibration and trigger records, including incomplete runs. Rendering a report does not authorize adoption. See [sharing](docs/reference/evaluation-reports.md), [report states](docs/reference/evaluation-reports.md) and [cost coverage](docs/reference/evaluation-reports.md).
 
 Export a sealed run to a fresh portable directory. Preview first; `--yes` writes:
 
@@ -218,9 +218,9 @@ node ./exports/my-run/reproduce.mjs --verify-only
 node ./exports/my-run/reproduce.mjs
 ```
 
-[Portable replay](docs/replay-packages.md) verifies saved observations and runs trusted local verifiers, with zero model calls. [Sealed inputs](docs/evaluation-input-snapshots.md) preserve the original case and target. [Interruption](docs/evaluation-interruption.md) retains available spending; unknown usage stays unknown.
+[Portable replay](docs/reference/evaluation-reports.md) verifies saved observations and runs trusted local verifiers, with zero model calls. [Sealed inputs](docs/guides/experiment-workflow.md) preserve the original case and target. [Interruption](docs/guides/experiment-workflow.md) retains available spending; unknown usage stays unknown.
 
-Version 0.13.0 adds an explicit [restore tool](docs/archive-delivery.md): fetch pinned bytes once, then replay historical study archives offline. Git originals and frozen reports stay available; normal installation and CLI commands do not fetch archives.
+Version 0.13.0 adds an explicit [restore tool](docs/maintainers/archive-delivery.md): fetch pinned bytes once, then replay historical study archives offline. Git originals and frozen reports stay available; normal installation and CLI commands do not fetch archives.
 
 ## Selectable Codex setup
 
@@ -232,7 +232,7 @@ node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
 node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
 ```
 
-See the [selectable setup guide](docs/selectable-codex.md) for source provenance, retired entries and evidence limits.
+See the [selectable setup guide](docs/guides/selectable-codex.md) for source provenance, retired entries and evidence limits.
 
 ### Portable Codex setup
 
@@ -246,7 +246,7 @@ node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 ```
 
-For options, including the full 65-Skill upstream catalog via `--upstream-lock`, see [portable setup](docs/portable-codex.md) and the [source audit](docs/codex-upstream-audit.md).
+For options, including the full 65-Skill upstream catalog via `--upstream-lock`, see [portable setup](docs/guides/selectable-codex.md) and the [source audit](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md).
 
 ## The eight commands
 
@@ -263,7 +263,7 @@ For options, including the full 65-Skill upstream catalog via `--upstream-lock`,
 
 ### Bring your own bench
 
-A bench is `bench.json`, fixtures and deterministic verifiers. Use the [seven-step authoring guide](docs/bench-authoring.md) and [format reference](benches/README.md); bundled cases teach the format rather than establish model quality.
+A bench is `bench.json`, fixtures and deterministic verifiers. Use the [seven-step authoring guide](docs/guides/bench-authoring.md) and [format reference](benches/README.md); bundled cases teach the format rather than establish model quality.
 
 ## Our own data
 
@@ -280,14 +280,14 @@ We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pa
 
 These are observed outcomes on the recorded tasks, not tests of every workflow claim. Regression-test artifacts do not establish process order, and 0.00pp cannot exclude an unmeasured process effect. A saturated baseline limits observed quality headroom; it does not automatically discard a task for an efficiency comparison with complete costs and no observed regression.
 
-See the [evidence index](evidence/README.md) and [current debugging study](docs/skill-evaluation-evidence.md) for dated scope and available records. These author-run records do not establish independent third-party live reproduction; offline replay verifies saved observations.
+See the [evidence index](evidence/README.md) and [archived debugging study](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) for dated scope and available records. These author-run records do not establish independent third-party live reproduction; offline replay verifies saved observations.
 
 ## Design principles
 
 - **Standards, not formats.** AGENTS.md (AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — we write what agents already read.
 - **Deny by default.** We install only what a profile explicitly declares, pinned by content hash.
 - **Dry-run first.** Preview configuration changes before applying them; replacements keep backups and are verified. New bench/run/bundle artifacts preserve existing outputs through collision checks.
-- **Honest numbers.** New efficacy submissions need a pinned, shareable manifest; some older reports lack downloadable raw manifests. Verdict semantics are frozen in [docs/metrics.md](docs/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and runs below 8 tasks × 5 trials are labeled *indicative* even if their within-bench verdict is statistically significant.
+- **Honest numbers.** New efficacy submissions need a pinned, shareable manifest; some older reports lack downloadable raw manifests. Verdict semantics are frozen in [docs/reference/metrics.md](docs/reference/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and runs below 8 tasks × 5 trials are labeled *indicative* even if their within-bench verdict is statistically significant.
 
 ### Disclaimer
 
@@ -295,15 +295,15 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 ## Roadmap
 
-See the [October delivery roadmap](docs/growth-roadmap-2026-10.md), [changelog](CHANGELOG.md) and [0.13.1 release record](docs/releases/0.13.1.md).
+See the [current work plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md), [changelog](CHANGELOG.md) and [release procedure](docs/maintainers/releases.md).
 
-See the [capability table](docs/eval-agent-preflight.md#current-source-capability-table) for current adapter and trigger verification limits, and the roadmap's linked active plans for pending implementation. Later work includes live validation and additional agent adapters. The [evidence index](evidence/README.md) and [debugging study status](docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
+See the [capability table](docs/guides/experiment-workflow.md#current-source-capability-table) for current adapter and trigger verification limits, and the current work plan for pending implementation. Later work includes live validation and additional agent adapters. The [evidence index](evidence/README.md) and [debugging study status](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
 
 ## Contributing
 
-Follow [CONTRIBUTING.md](CONTRIBUTING.md). Useful contributions include real-workflow cases, reproducible evidence and matrix corrections. [Security reports](SECURITY.md) have a separate channel.
+Follow [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md). Useful contributions include real-workflow cases, reproducible evidence and matrix corrections. [Security reports](https://github.com/remote-controlled-man/skillfit/blob/main/SECURITY.md) have a separate channel.
 
-For development handoff, use [documentation governance](docs/documentation-governance.md), the [architecture entry](docs/architecture.md) and [ADR index](docs/decisions/README.md). The [governance plan](docs/plans/2026-10-22-documentation-governance-and-architecture.md#当前执行状态) owns its migration progress; the [measurement plan](docs/plans/2026-10-21-measurement-contract-and-capability-remediation.md#当前执行状态) owns F1–F8/R1–R4.
+For development handoff, use [architecture and maintenance](docs/maintainers/architecture.md). The [current work plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md#status) records cleanup progress and pending research.
 
 ### License
 
