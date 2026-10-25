@@ -6,10 +6,13 @@
 
 - Baseline: local main `4ec83672b69799bc62613c381f6b12ba8f3f3068`, package 0.13.1,
   plus the 18 locally verified C1–C5 changes; preserve that working input.
-- Current task: N1–N5 complete; D1 complete; D2 local commit complete; D3 push pending.
+- Current task: N1–N5 complete; D1 complete; D1–D2 complete; D3 blocked. Reviewed code is committed locally; nothing was pushed.
 - Delivery: the user now authorizes final review, commit and push. No new PR,
   remote CI, publication, live model calls or actual user-configuration writes.
   Use `[skip ci]`; preserve branch protection and report any rejected push.
+  Reviewed source commit: ad7ce4c07d39526044cb9254ecfb1ea623697247.
+  Main push was rejected. Alternate remote branch is proposed only and needs
+  explicit user authorization after the automatic approval rejection.
 
 ## Execution order and acceptance
 
@@ -27,7 +30,7 @@
 | --- | --- | --- | --- |
 | D1 | Reconcile all 52 final paths, review contracts/consumers and historical proofs | Complete | 52/52 accounted; no remaining finding. Fresh npm test: 1,099 pass, zero fail/skip; 159 architecture modules, zero violations; 36 docs entries, zero errors. Fresh installed feature checks: 31 regressions + five portable replays. Fresh offline restore: 19 archives + 1,583 support hashes; reuse 18 frozen replays + one export-hash result after closure/38-log verification. |
 | D2 | Update this plan and commit reviewed inputs; after D1 | Complete | Local reviewed commit uses `[skip ci]`. EOF blank line caught by staged check was removed before push; final npm test again passed 1,099/1,099. Built/shipped bytes remain identical to the accepted installation. Final staged hashes/diff validated before committing. |
-| D3 | Push and verify remote commit; after D2 | Pending | Push current main without force; no PR or remote workflow dispatch. If protection rejects, record the actual refusal and keep delivery incomplete. |
+| D3 | Push and verify remote commit; after D2 | Blocked | Main push of ad7ce4c was rejected with GH013: PR required and 3/3 checks missing. Automatic approval also rejected the proposed codex/docs-framework-architecture push because the new remote target lacked explicit authorization. No branch was created or pushed. Main remains at 3a3ff415; no PR/remote CI/protection change. Only propose the alternate branch until explicitly authorized. |
 
 D1 delivery evidence: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-final-delivery-07jg84r5/. Current runtime/source payload is
 byte-identical to N5; full local tests and installed features/archive restoration
