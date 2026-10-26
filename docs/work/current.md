@@ -6,7 +6,8 @@
   this HEAD was verified at `origin/codex/docs-framework-architecture`.
 - Current task: correct existing documentation and release instructions, then
   make experiment workflow, process-data placement, retention and cleanup explicit.
-- Progress: W1–W4 complete; W5 review/local acceptance complete, commit/push pending.
+- Progress: W1–W5 complete; reviewed source committed, pushed and independently
+  verified at the authorized branch. This follow-up records the verified status.
 - Scope: existing documents and their current registry metadata. No new maintained
   document, dependency, registry, runtime format, cleanup command or telemetry
   framework. No PR, remote CI, publication, model/agent calls, actual configuration
@@ -21,7 +22,7 @@
 | W2 | Correct document purpose and release manual; after W1 | Complete | Remove obsolete page-count/restoration assertions. Correct reference/how-to registry kinds. Keep one operation authority: workflow for steps, reports for saved fields, metrics for statistical meaning. Complete the existing release page with main/source-CI gate, reviewed preview ID/attempt, original tarball promotion, one upload, acceptance, receipt delivery and failure recovery. Validate instructions against current workflow/tools offline; do not dispatch them. Preserve old headings/anchors and frozen statistical meaning. |
 | W3 | Implement workflow and data-handling rules in existing guides; after W2 | Complete | Explain design→offline gates→separate development/calibration→fixed validation/preview→execution→sealed read/analysis→optional delivery→retention/cleanup. Use an ignored outer study workspace with unchanged native batch layout. Separate memory-only values, observed facts and derived metrics. Declare consumers, provenance/unknowns and manual cleanup conditions; protect active/referenced batches and every indexed native file. Clarify custom analysis is not automatically exported and retention intent is separate from native completion status. Link concise rules from architecture/Bench/Skill instead of duplicating them. |
 | W4 | Integrated review, runnable example and installed acceptance; after W3 | Complete | Review every final path plus metadata, source facts and links against exact baseline. Run existing docs/release/CLI-reference checks. Execute the complete zero-model tutorial in a fresh temporary outer workspace; derive output outside sealed runs and verify unchanged native bytes/export after analysis. Actual offline npm pack/install/bin/Skill/docs and installed feature recipe must pass 31 regressions and five portable replays. Confirm runtime/manifest/tool behavior unchanged. Full npm test only if code/build behavior changes; otherwise reuse the exact HEAD suite (1,065 pass) and execute affected checks. Record actual results and limits below. |
-| W5 | Final review and authorized branch delivery; after W4 | Local checks complete; delivery pending | Freeze/review all 12 modified paths, confirm exact installed acceptance inputs, run `npm test` before committing plus final docs/link/diff checks. Preserve installation and moved replay, use `[skip ci]`, push only the named branch without force, and verify the remote commit equals local HEAD. Update this plan with actual proof and delivery status. |
+| W5 | Final review and authorized branch delivery; after W4 | Complete | Freeze/review all 12 modified paths, confirm exact installed acceptance inputs, run `npm test` before committing plus final docs/link/diff checks. Preserve installation and moved replay, use `[skip ci]`, push only the named branch without force, and verify the remote commit equals local HEAD. Update this plan with actual proof and delivery status. |
 
 ## Decisions and limits
 
@@ -68,7 +69,7 @@ criterion is removed to make a check pass.
 
 ## Verification
 
-W5 local acceptance (Node 24.21.0 / macOS arm64):
+W5 final review, local acceptance and source delivery (Node 24.21.0 / macOS arm64):
 
 - Final integrated local review covered all 12 modified paths, including OCR's
   selected JSON and all 11 filtered Markdown files; zero skipped/findings. No
@@ -90,11 +91,15 @@ W5 local acceptance (Node 24.21.0 / macOS arm64):
 - Fresh architecture: 159 modules, zero violations/exceptions. Documentation:
   34 entries, zero errors, 117 prior headings/paths accounted. Diff checks pass;
   docs still has 11 pages, no new tracked file, runtime format or dependency.
+  The status-only follow-up passed all 41 affected documentation checks.
 - Before delivery the remote branch is e0baacb49981349a145b4ddb0477e7d82da3255d;
   remote main is 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. Push CI targets only
   main; delivery also uses `[skip ci]`. No PR, remote CI or release dispatch.
-- Commit/push and exact remote-HEAD comparison remain pending. The existing
-  plan will receive the verified source-delivery status in a status-only follow-up.
+- Source commit `cc7315f0ef33333962106d8dbb08413463f329f1` was pushed without force to
+  `origin/codex/docs-framework-architecture`; independent `ls-remote` matched
+  the complete SHA. Remote main remains unchanged. The working tree was clean.
+  This status-only follow-up changes only the plan and preserves every accepted
+  package/runtime byte. Its push is also checked by an independent remote-ref read.
 - Exact W5 proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-w5-review-mcaoy3dd.
 
 W4 final acceptance (Node 24.21.0 / macOS arm64):
