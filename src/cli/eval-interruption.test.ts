@@ -93,7 +93,10 @@ finally{writeFileSync(root+'/done.json',JSON.stringify({before,after:counts(),ca
   let stderr = ''; child.stdout!.resume(); child.stderr!.on('data', chunk => { stderr += chunk; });
   const closed = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(resolve => child!.on('exit', (code, signal) => resolve({ code, signal })));
   if (mode !== 'between') {
-    for (let i = 0; i < 300 && !existsSync(ready) && child.exitCode === null; i++) await delay(50);
+    // Verifier interruption first completes the real preflight gates. Allow that
+    // setup to finish on slow runners; the post-interrupt exit bound stays 10s.
+    const readyTimeoutMs = mode === 'verifier' ? 45_000 : 15_000;
+    for (let i = 0; i < readyTimeoutMs / 50 && !existsSync(ready) && child.exitCode === null; i++) await delay(50);
     assert.ok(existsSync(ready), `Fake process did not start: ${stderr}`);
     await delay(100);
     // Windows kill('SIGINT') forcibly terminates rather than delivering a console
@@ -168,7 +171,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) test(`${signal} also stops 
   assert.ok(!existsSync(join(f.root, 'bench/tasks/interrupted-draft/verify.mjs')));
 });
 
-test('interrupting a verifier kills its tree and preserves final agent usage', { timeout: 30_000 }, async t => {
+test('interrupting a verifier kills its tree and preserves final agent usage', { timeout: 60_000 }, async t => {
   const f = await scenario(t, 'verifier'), record = json(join(f.run, 'example-task/baseline/trial-1/_result.json'));
   assert.deepEqual(record.tokens, { input: 20, cachedInput: 5, output: 4 }); assert.equal(record.usageStatus, 'final');
   assert.match(record.error, /SIGINT/); assert.equal(record.passed, false);
