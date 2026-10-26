@@ -4,20 +4,25 @@
 
 - Baseline: clean local `main` at 3404dcd4ffdf990a31b325fb9fd24d84df949c72;
   the last delivery independently matched origin/codex/docs-framework-architecture.
-- Current task: review and locally validate the cumulative branch for merging
-  into main; fix the discovered baseline-documentation gap before integration.
+- Current task: integrate the reviewed cumulative source into main through the
+  authorized temporary branch, one PR and existing CI; keep retired archive
+  trees absent and preserve installed workflows and current saved replay.
 - Progress: W1–W5 and L1–L5 complete; R1 scope review and M1–M3 local merge
-  verification complete. R3 integration awaits clarification of the required
+  verification complete. R3 integration is authorized and in progress through the
   remote route; R2 version preparation and R4 publication remain
   separate proposed work, not prerequisites for this source-only merge.
+- CI suitability follow-up: M5 complete locally. Current CI remains suitable;
+  M6's clean temporary integration branch and one existing CI route are now
+  authorized. No workflow or product code change was needed for CI suitability.
 - Delivery: reviewed candidate a59848a8ffd12f4403ea91ac04bb10d987c99817 is pushed
   to origin/codex/docs-framework-architecture; independent remote read matched.
   Main remains 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. No merge occurred.
 - Scope: existing plan/docs and necessary offline regressions. User authorized
   merging only after successful review/flow validation; no version bump or npm
   publication. No new maintained document, dependency, Calibration refactor, real
-  experiment or actual user-configuration write. Prior no-new-PR/no-remote-CI
-  constraints still prevent the repository-required integration route until clarified.
+  experiment or actual user-configuration write. The user approved this one
+  PR/remote-CI integration route after its review; earlier no-PR/no-CI limits
+  remain historical task constraints, not a prohibition on this approved route.
 
 ## Execution order and acceptance
 
@@ -35,14 +40,38 @@
 | L5 | Review exact final inputs and deliver to the authorized branch; after L4 | Complete | Reconcile all 15 final paths and link/build/installed proofs, run full offline npm test before committing, update this plan, commit with `[skip ci]`, push only origin/codex/docs-framework-architecture without force, then independently compare remote/local HEAD. Preserve main, installation and replay; record actual results and source delivery. |
 | R1 | Review integration/release scope; after L5 | Complete | Compare the delivered HEAD with the last verified main baseline, identify user-visible changes and exclusions, and name the required source/version/package/acceptance steps. This is local preparation, without registry availability claims or remote writes. |
 | R2 | Prepare candidate version and local release inputs; after R1 | Proposed; not executed | Candidate 0.14.0, subject to an unpublished-version check. Synchronize package/lockfile/changelog and current README/Skill command pins, source-only availability notes and implementing-source snapshots; preserve historical minima and old publication links. Review the cumulative main-to-branch scope, then run local tests, actual pack/install/docs and portable replay. |
-| R3 | Validate then integrate reviewed source; after R1 for this source-only merge | Local verification complete; remote route pending clarification | Refresh remote main and reconcile any drift; use the repository's permitted integration path without changing protections. Current main rules require a PR and three OS checks, conflicting with retained constraints; no bypass or rules change. First close the exact-main documentation baseline gap and run the local CI entry, Bench checks and installed proof. Obtain required remote checks only after authorization; exact-source main CI remains mandatory before any later release. |
+| R3 | Validate then integrate reviewed source; after R1 for this source-only merge | Local verification complete; authorized integration in progress | Main rules require a PR and three OS checks; the user approved one PR and existing CI. Use the reviewed temporary integration branch, preserve protections and consumed source snapshots, then verify exact main CI. No version bump, publication or paid experiment. |
 | R4 | Preview, publish once and verify delivery; after R3 | Pending publication authorization | Inspect the exact preview attempt/tarball/hash, then promote those bytes for a new unpublished version. All six existing acceptance stages must pass; retain complete receipts externally and update this plan. Never repack between reviewed preview and upload, repeat an ambiguous upload or run real models. |
 | M1 | Review actual merge baseline, rules and local CI entry; within R3 | Complete | Main remains 3a3ff4 and delivery branch 3404dcd; no open PR. Rulesets require a PR and windows/ubuntu/macos status checks. Exact-main docs gate currently fails 287 old path/anchor migrations; preserve that failure and fix it before claiming merge readiness. |
 | M2 | Add bounded regression and exact-main snapshot navigation; after M1 | Complete | Existing docs gate must cover representative publication-era retained headings plus retired docs/evidence paths without requiring Git history in tests. Add only fixed snapshot links in existing docs/Bench indexes; preserve all original bytes at 3a3ff4, no restored archive or new page. Full actual-main gate must account for every old path/heading. |
 | M3 | Local equivalent of the CI workflow and installed acceptance; after M2 | Complete locally | Existing full-scope CI entry passed 1,068 tests against exact main; public CLI/Bench steps, fresh installed 31 regressions/five portable replays, 29 installed documents and immutable snapshot targets passed. This is macOS/Node 24 working-tree acceptance, not remote or exact-source CI proof. No model calls. |
 | M4 | Deliver reviewed candidate and resolve required remote route; after M3 | Candidate delivered; merge route pending clarification | Four reviewed paths committed and pushed only to origin/codex/docs-framework-architecture without force; independent source ref matched a59848a and main stayed unchanged. Source-branch push has no CI trigger without a PR. The new candidate has no CI-skip instruction, keeping it eligible for checks if the route is authorized. Asked once whether the required PR/CI route (including automatic main CI after merge) is allowed; no new PR, remote CI, main mutation or npm publication until clarified. |
+| M5 | Review CI suitability and integration-message/history risks; after M4 | Complete locally | Current CI owner paths and gates remain applicable. A depth-two shallow PR merge and the proposed clean integration's PR/main-push shapes all select full scope and pass the 1,499 old path/anchor migrations. Product/package trees remain identical; only this plan differs. Found eleven CI-skip messages, default squash message aggregation and automatic branch deletion; M6 avoids those risks without changing CI. |
+| M6 | One temporary integration branch and existing CI; after M5 | Authorized; preparing candidate | Keep origin/codex/docs-framework-architecture and its consumed snapshot ancestry. Create one temporary codex/ branch containing the exact reviewed tree in a single clean commit based on refreshed main. Open one PR and run existing three-OS, Node compatibility and minimum jobs. Explicitly supply a clean final merge title/body; default squash messages can copy old CI-skip instructions. Let automatic deletion affect only the temporary branch. Investigate failed jobs and fix evidenced defects; merge only after successful checks. No new workflow/platform, protection change, npm publication or real experiment. |
+| M7 | Exact main CI, tree/deletion verification and final status; after M6 | Pending M6 | Inspect automatic main CI for the actual merged SHA. Confirm source/package files and all intended deletions against the reviewed candidate; verify the original snapshot branch remains. Update this sole plan with real PR/CI/merge outcomes on the retained delivery branch, incorporating main as an ancestor. Do not open another PR or trigger another full CI solely to record post-merge status. |
 
 ## Decisions and limits
+
+CI suitability: the current CI already uses the reorganized source/tools and
+contains real offline npm pack/install, public entry docs, request/self-test and
+portable-export regressions. The separate installed release recipe adds five
+mode-complete moved replays; it was passed locally in M3, not asserted to be a
+remote CI stage. Keep these scopes distinct. Existing three-OS checks cover
+filesystem/process differences; four Node compatibility jobs and the minimum
+job check distinct runtime capabilities. No evidence currently requires replacing
+this workflow or deleting a failing assertion.
+
+Proposed integration handling: eleven original branch commits contain CI-skip
+instructions. GitHub documents different push/PR skip behavior; the repository's
+default squash body copies commit messages, creating a main-CI skip risk. Its
+automatic branch deletion would also remove the verified remote branch
+retaining consumed intermediate source snapshots if that branch were squashed
+directly. A temporary clean integration branch preserves the original delivery
+branch, gives main one clean source commit and adds no maintained mechanism.
+Verify file-tree identity and explicitly control the final message; do not rewrite
+old commits, change repository settings or treat a skipped check as verification.
+The user subsequently approved M6, including its one PR, existing CI and merge
+after successful verification. This does not authorize npm publication.
 
 Release scope review: the branch contains the cumulative architecture and artifact
 cleanup, not merely the final link correction. Relative to the last verified main
@@ -132,6 +161,45 @@ preserve npm/demo blocks and bilingual parity, and test the actual installed
 package and portable replays. No acceptance is removed to make a check pass.
 
 ## Verification
+
+M6 preparation: live main remains 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850
+and the retained delivery branch remains 6b20bc143a7762d7a085386c009dc2e6135b9c04;
+no open PR exists. A tracked-file audit found no archive/evidence/history
+directory or archive/historical/restore-named file. No additional product
+deletion is needed; the cumulative deletion list must survive integration.
+Package archives and current saved-result/replay code still have active consumers.
+All product/package inputs remain those accepted in M3; only this plan changed.
+
+M5 CI suitability review:
+
+- Reviewed current ci-scope/build/package tests, workflow assertions, source-CI
+  receipt consumer, installed feature recipe and native portable export tests.
+  The checks use current owners and do not restore retired archive trees. The
+  existing test matrix is three Node-22 OS jobs, four Linux Node compatibility
+  jobs and one minimum-runtime job. No new job/check/dependency is needed for
+  the integration shape reviewed here; actual remote compatibility is unverified.
+- A real shallow Git checkout with only the synthetic PR merge and two visible
+  parents passed existing `classify` and `documentation` commands against main
+  3a3ff4/source 6b20bc1: full scope, 2,305 paths, available baseline, zero errors,
+  all 1,499 old paths/headings accounted. This specifically checks the current
+  depth-two checkout arrangement, not just an event-variable fixture.
+- A separate temporary one-clean-commit integration was exercised as both a PR
+  merge and a main push in a shallow checkout. Both selected full scope and
+  passed all 1,499 migrations. Exact Git-tree comparison found only the current
+  plan update versus source 6b20bc1; all package/runtime files are unchanged.
+  This rehearses a proposed route, not a remotely created commit or CI run.
+- Live repository settings permit squash, use COMMIT_MESSAGES for the default
+  squash body and delete the merged head branch automatically. Eleven earlier
+  source messages contain skip instructions; the current tip does not. GitHub's
+  [skip behavior](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs)
+  and [push/PR distinction](https://github.blog/changelog/2021-02-08-github-actions-skip-pull-request-and-push-workflows-with-skip-ci/)
+  make an explicit clean message necessary. Preserve the consumed original
+  branch and let only a temporary integration branch be auto-deleted.
+- Reused M3's 1,068 tests, actual installation and five-mode installed replay
+  acceptance only for the unchanged source/package inputs. No repeated full
+  suite or repack was needed for this plan-only follow-up. No PR, remote write,
+  CI dispatch, merge, user-configuration write, model call or publication.
+- Proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-ci-readiness-_tjqaj_0.
 
 M4: source candidate a59848a8ffd12f4403ea91ac04bb10d987c99817 was committed
 after the full local suite and final docs/link/package/diff checks, then pushed
