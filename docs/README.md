@@ -2,21 +2,24 @@
 
 ## Choose your build
 
-This documentation describes the **current source build**. Build with Node >=22
-and `npm run build`; its package version still reads 0.13.1 but includes
-unpublished controls, bench claims and observation changes. A version string
-alone does not identify those features. Source guides use `node dist/cli.js`.
+This documentation describes the **0.14.0 package and current source**:
+offline controls, bench claims, observation corrections and task-local Bench
+inputs. Source guides use Node >=22, `npm run build` and `node dist/cli.js`.
+A version string alone does not prove registry publication. Check availability
+before using the pinned `npx skillfit@0.14.0` commands; use the reviewed source
+walkthrough when the package is unavailable.
 
 For the published npm 0.13.1 behavior, use its
 [original source documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs)
-and [publication record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md). Commands explicitly pinned to
-`npx skillfit@0.13.1` retain their published meaning; do not substitute that prefix
-for a source-only example.
+and [publication record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md). Its archived commands retain their
+original meaning; do not use that older package for 0.14.0 features.
 
 Standalone driver links and unshipped source references use the
-[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/ed5eaff7d222de1c73874ce022785fbe89291017);
-this keeps them usable without sibling docs or a checkout. Source maintainers
-follow the files in their actual checkout. These links do not announce a release.
+[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/c9522ddea4c181056f1065e04f3ee0f69845146a);
+this keeps them usable without sibling docs or a checkout. That implementation
+snapshot predates the version bump and may still print 0.13.1; its full commit
+identifies the behavior. Source maintainers follow their actual checkout. These
+links do not announce a release.
 
 ## Find your task
 

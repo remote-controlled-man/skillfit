@@ -3,10 +3,10 @@
 This is the current source contract for what skillfit measures and how it
 computes verdicts. The **v2 statistical protocol** is frozen at 2026-09-23;
 additive evidence/operational contracts do not change its formulas, thresholds,
-paired exclusions or historical interpretations. Current-source behavior reviewed
-2026-10-22 includes unpublished numerical, trigger, model-identity, self-test and
-bench-claim changes; a `0.13.1` version string does
-not imply those changes are in the released npm package. See the
+paired exclusions or historical interpretations. The 0.14.0 package
+includes numerical, trigger, model-identity, self-test and bench-claim additions
+beyond npm 0.13.1. Registry availability is verified separately; see the
+[build/version entry](../README.md#choose-your-build). See the
 [capability table](../guides/experiment-workflow.md) for
 implemented readers and verification scope, and [revision history](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/metrics-history.md)
 for the former chronological additions. Changes to this contract need a reasoned

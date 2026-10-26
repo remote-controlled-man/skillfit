@@ -30,33 +30,33 @@
 ## 安装
 
 ```bash
-npx skillfit@0.13.1 --help
-npx skillfit@0.13.1 doctor
+npx skillfit@0.14.0 --help
+npx skillfit@0.14.0 doctor
 ```
 
-需要 Node.js 22+。npm 可能先下载包；下面的 case 校验和预览不调用模型。以上固定版本命令使用已发布版本；请先[选择构建](docs/README.md#choose-your-build)，区分对应文档和仅源码提供的新功能。
+需要 Node.js 22+。以上命令面向 0.14.0 包，npm 会在该版本可用时下载；下面的 case 校验和预览不调用模型。源码运行和旧版文档入口见[选择构建](docs/README.md#choose-your-build)。
 
 ## 用 npm 开始
 
 在项目目录执行，将 `./my-skill` 替换为包含自己 `SKILL.md` 的目录：
 
 ```bash
-npx skillfit@0.13.1 bench init my-bench --kind command --dry-run
-npx skillfit@0.13.1 bench init my-bench --kind command --yes
-npx skillfit@0.13.1 bench check ./my-bench --json
-npx skillfit@0.13.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.14.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.14.0 bench init my-bench --kind command --yes
+npx skillfit@0.14.0 bench check ./my-bench --json
+npx skillfit@0.14.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 测收益前先把教学用 fixture、prompt、verifier 和 oracle 换成真实任务。预览声明两次调用，实际不调用。检查 `plan.evaluation.agentPreflight.status`；离线登录状态仍未知。case 与运行记录分开放。继续阅读[第一次真实评测](docs/guides/first-real-eval.md)。
 
 ### 从源码运行
 
-下面固定已审查的源码快照，便于复现这套操作。这些功能也已合入 main；npm 0.13.1 仍是较早的发布版本。开发当前工作树时按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。后续 `node dist/cli.js` 示例需要先构建源码：
+下面固定已审查的实现快照，便于复现这套操作。它包含本文描述的行为，记录时间早于 0.14.0 版本号更新。开发当前工作树时按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。后续 `node dist/cli.js` 示例需要先构建源码：
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach ed5eaff7d222de1c73874ce022785fbe89291017
+git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
 npm ci
 npm run build
 node dist/cli.js --help
@@ -69,11 +69,11 @@ node dist/cli.js install --agent codex --dry-run
 
 校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
 
-当前工作树包含尚未发布的测量功能和修正；文档中标为**当前源码**的新增能力需要构建当前工作树。
+0.14.0 包包含文档中标为**当前源码**的测量功能和修正；较早的 npm 0.13.1 不包含这些新增能力。注册表发布状态与源码准备分开验证。
 
 其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益。不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。
 
-上面的 npm 0.13.1 命令保留已发布行为。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
+上面的固定 npm 版本命令面向 0.14.0。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
 
 配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。8×5 是规模/采用下限，不是每项 bench 内精确检验判定的起点，也不保证统计功效。sampling 未固定，目前没有经验证的 MDE 规划器。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/guides/experiment-workflow.md#bound-calls-and-spending)。
 
@@ -134,7 +134,7 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 用 `bench add --freeze` 记录失败，或用 `--from-commit` 导入修复。[case 编写指南](docs/guides/bench-authoring.md)说明这两条路径、verifier 要求和离线校验。
 
-真实花费前，当前源码构建可以通过 [bench self-test](docs/guides/bench-authoring.md#test-known-controls) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。已发布 npm 0.13.1 尚无此入口。
+真实花费前，0.14.0 包或已审查的源码构建可以通过 [bench self-test](docs/guides/bench-authoring.md#test-known-controls) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。已发布 npm 0.13.1 尚无此入口。
 
 列出、查看 case 或预览修改。`--yes` 会备份并应用通过验证的变更；移除注册仍保留 case 文件。重复 `--task` 选择较小的运行范围：
 

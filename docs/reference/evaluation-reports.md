@@ -2,7 +2,7 @@
 
 This reference defines saved result fields, cost populations and portable formats.
 For commands and sharing steps, follow [evaluation workflow](../guides/experiment-workflow.md#read-share-and-reproduce).
-[Choose your build](../README.md#choose-your-build) before using source-only contracts.
+[Choose your build](../README.md#choose-your-build) before using version-specific contracts.
 Human and JSON reports read the same saved bytes; they never rescan the current
 environment to invent historical usage, identity or claims.
 
@@ -419,7 +419,8 @@ Export and replay make zero model calls. Replay executes trusted local verifiers
 Current-source model-identity additions retain per-call public IDs, source locations
 and unknown coverage after relocation. They do not backfill legacy data or prove
 the backend's identity; see [model identity contract](metrics.md#public-model-identity-per-invocation). These additions
-are not yet published in npm 0.13.1. Frozen historical packages keep their own
+belong to the 0.14.0 package, beyond npm 0.13.1; registry availability
+is separate. Frozen historical packages keep their own
 runtime and detection/identity interpretation.
 
 Current-source [measurementScope 1](../../benches/README.md#frozen-scope-and-evidence)
@@ -433,7 +434,7 @@ pinned `reproduce.mjs` each interpret saved evidence with their own runtime.
 For [self-test controls](../guides/bench-authoring.md#test-known-controls), export a native
 suite directory, not its wrapper. It retains a null requested claim, mock identity,
 unknown provider usage and ineligibility; replay executes saved verifiers, not
-control actions or an executor. These source contracts are not npm 0.13.1 features.
+control actions or an executor. These contracts are included in the 0.14.0 package, beyond npm 0.13.1.
 
 ### Preview, export and move
 

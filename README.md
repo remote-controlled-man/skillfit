@@ -30,36 +30,36 @@ then use the recorded evidence and its limits to decide what to enable.
 ## Install
 
 ```bash
-npx skillfit@0.13.1 --help
-npx skillfit@0.13.1 doctor
+npx skillfit@0.14.0 --help
+npx skillfit@0.14.0 doctor
 ```
 
-Requires Node.js 22+. npm may download the package; the case checks and previews below make no model calls. These pinned commands use the published release; [choose your build](docs/README.md#choose-your-build) for its matching docs and source-only additions.
+Requires Node.js 22+. These commands target the 0.14.0 package; npm may download it when available. The case checks and previews make no model calls. [Choose your build](docs/README.md#choose-your-build) for source execution and older release documentation.
 
 ## First run with npm
 
 In your project directory, replace `./my-skill` with a directory containing your `SKILL.md`:
 
 ```bash
-npx skillfit@0.13.1 bench init my-bench --kind command --dry-run
-npx skillfit@0.13.1 bench init my-bench --kind command --yes
-npx skillfit@0.13.1 bench check ./my-bench --json
-npx skillfit@0.13.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.14.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.14.0 bench init my-bench --kind command --yes
+npx skillfit@0.14.0 bench check ./my-bench --json
+npx skillfit@0.14.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
 
 ### Run from source
 
-For a reproducible source walkthrough, build the reviewed snapshot below. These
-features have also been merged into main; npm 0.13.1 remains the older release.
+For a reproducible source walkthrough, build the reviewed implementation snapshot
+below. It contains the behavior described here and predates the 0.14.0 version bump.
 For development on your checkout, follow [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
 The remaining `node dist/cli.js` examples require a source build:
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach ed5eaff7d222de1c73874ce022785fbe89291017
+git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
 npm ci
 npm run build
 node dist/cli.js --help
@@ -72,11 +72,11 @@ node dist/cli.js install --agent codex --dry-run
 
 The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
 
-The current checkout adds unpublished measurement features and corrections; build it to use additions marked **current source** in the documentation.
+The 0.14.0 package includes the measurement features and corrections described as **current source**; earlier npm 0.13.1 does not include these additions. Registry publication is verified separately from source preparation.
 
 This includes [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
 
-The npm 0.13.1 commands above retain their released behavior. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+The pinned npm commands above target 0.14.0. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
 
 Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
 
@@ -137,7 +137,7 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. The [case authoring guide](docs/guides/bench-authoring.md) covers both paths, verifier requirements and offline validation.
 
-Before live spending, a current source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
+Before live spending, the 0.14.0 package or a reviewed source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
 
 List and inspect cases, or preview an edit. `--yes` applies a validated change with a backup; removal keeps case files. Select a smaller run with repeated `--task`:
 

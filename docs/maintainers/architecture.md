@@ -4,7 +4,8 @@ skillfit is one TypeScript/Node >=22 ESM CLI with zero runtime dependencies.
 This page explains the current system and the contracts changes must preserve.
 Execution order, progress and validation live only in the
 source-only `docs/work/current.md` (not shipped in npm).
-Current source includes unpublished changes beyond npm 0.13.1.
+This is the architecture of the 0.14.0 package and current source;
+[build/version availability](../README.md#choose-your-build) is separate.
 
 Start with the map, module owners and workflows. Use the later compatibility,
 retention and extension rules when changing one of those modules.
