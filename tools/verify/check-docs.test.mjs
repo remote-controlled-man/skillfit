@@ -156,6 +156,27 @@ test('old paths and fragments require retained headings or explicit compatibilit
   ]);
 });
 
+test('cumulative main integration preserves publication-era paths and index headings offline', () => {
+  const root = fileURLToPath(new URL('../..', import.meta.url));
+  const result = checkDocumentation(root, {
+    baseline: '3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850',
+    changes: [
+      { path: 'docs/architecture.md', status: 'D' },
+      { path: 'evidence/README.md', status: 'D' },
+    ],
+    // Recorded public names, not Git lookups: shallow checkouts need no old objects.
+    previousDocuments: new Map([
+      ['docs/README.md', '# skillfit documentation\n## Start here\n'],
+      ['benches/README.md', '# skillfit benches\n## What the harness records\n'],
+      ['docs/architecture.md', '# Architecture\n'],
+      ['evidence/README.md', '# Evidence\n'],
+    ]),
+  });
+  assert.deepEqual(result.errors, []);
+  assert.ok(result.anchorMigrations.length >= 6);
+  assert.ok(result.anchorMigrations.every(row => row.status !== 'missing'));
+});
+
 test('source changes identify affected authority, dependents and fixed checks without requiring a cosmetic doc edit', t => {
   const f = governedFixture(t), policy = JSON.parse(readFileSync(join(f.root, 'tools/verify/documentation-policy.json'), 'utf8'));
   f.put('src/engine.ts', 'export const version = 1;');

@@ -41,3 +41,8 @@ shipped in npm. Completed process details remain at fixed Git snapshots.
 Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/README.md).
 
 Retired source pages and research files remain in Git: [documentation snapshot](https://github.com/remote-controlled-man/skillfit/tree/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/docs), [original research files](https://github.com/remote-controlled-man/skillfit/tree/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence). Current builds do not ship a repository archive catalog or restore tool.
+
+The publication-era layout remains available at its fixed
+[index](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/README.md),
+[documentation tree](https://github.com/remote-controlled-man/skillfit/tree/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs) and
+[study tree](https://github.com/remote-controlled-man/skillfit/tree/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/evidence).

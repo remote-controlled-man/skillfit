@@ -2,18 +2,19 @@
 
 ## Status
 
-- Baseline: clean local `main` at ed5eaff7d222de1c73874ce022785fbe89291017;
-  the previously authorized delivery branch was independently verified at this HEAD.
-- Current task: fix version-sensitive documentation links and build/version entry
-  instructions, with small offline regression checks in the existing doc gates.
-- Progress: W1–W5 complete (previous delivery); L1–L5 complete; reviewed source pushed and independently verified.
-  This status-only follow-up records the completed delivery.
-- Scope: existing documents and documentation checks/tests only. No maintained
-  document, dependency, crawler, URL registry, runtime format or version bump.
-  Calibration, real experiments and runtime/configuration behavior stay unchanged.
-  No PR, remote CI, model/agent call, publication or actual user-configuration
-  write. The current follow-up authorizes commit/push only to
-  `origin/codex/docs-framework-architecture`, without force, PR or remote CI.
+- Baseline: clean local `main` at 3404dcd4ffdf990a31b325fb9fd24d84df949c72;
+  the last delivery independently matched origin/codex/docs-framework-architecture.
+- Current task: review and locally validate the cumulative branch for merging
+  into main; fix the discovered baseline-documentation gap before integration.
+- Progress: W1–W5 and L1–L5 complete; R1 scope review and M1–M3 local merge
+  verification complete. R3 integration awaits clarification of the required
+  remote route; R2 version preparation and R4 publication remain
+  separate proposed work, not prerequisites for this source-only merge.
+- Scope: existing plan/docs and necessary offline regressions. User authorized
+  merging only after successful review/flow validation; no version bump or npm
+  publication. No new maintained document, dependency, Calibration refactor, real
+  experiment or actual user-configuration write. Prior no-new-PR/no-remote-CI
+  constraints still prevent the repository-required integration route until clarified.
 
 ## Execution order and acceptance
 
@@ -29,8 +30,42 @@
 | L3 | Correct current links and build/version entrances; after L2 | Complete | Keep together-shipped links relative; pin standalone Skill/source-only references to the already delivered ed5eaff snapshot. Replace misleading current-plan URLs with the explicit source-only path, since the plan does not ship in npm. Make published/current-source entrances explicit in existing README/Skill/docs/release pages; keep bilingual blocks identical, add an explicit reviewed checkout to the source quickstart, and preserve historical/npm command blocks, links, command pins and feature minimums. |
 | L4 | Final integrated review and local installation/replay acceptance; after L3 | Complete | Run full offline npm test, final docs/anchors and package checks. Actual fresh npm pack/install, bin/Skill/doc links and installed feature recipe must pass 31 regressions/five portable replays. Verify source-only targets remain excluded and no absolute main link bypasses the new check; inspect final inputs, preserve native bytes, and update this plan. No remote CI, PR or publication. |
 | L5 | Review exact final inputs and deliver to the authorized branch; after L4 | Complete | Reconcile all 15 final paths and link/build/installed proofs, run full offline npm test before committing, update this plan, commit with `[skip ci]`, push only origin/codex/docs-framework-architecture without force, then independently compare remote/local HEAD. Preserve main, installation and replay; record actual results and source delivery. |
+| R1 | Review integration/release scope; after L5 | Complete | Compare the delivered HEAD with the last verified main baseline, identify user-visible changes and exclusions, and name the required source/version/package/acceptance steps. This is local preparation, without registry availability claims or remote writes. |
+| R2 | Prepare candidate version and local release inputs; after R1 | Proposed; not executed | Candidate 0.14.0, subject to an unpublished-version check. Synchronize package/lockfile/changelog and current README/Skill command pins, source-only availability notes and implementing-source snapshots; preserve historical minima and old publication links. Review the cumulative main-to-branch scope, then run local tests, actual pack/install/docs and portable replay. |
+| R3 | Validate then integrate reviewed source; after R1 for this source-only merge | Local verification complete; remote route pending clarification | Refresh remote main and reconcile any drift; use the repository's permitted integration path without changing protections. Current main rules require a PR and three OS checks, conflicting with retained constraints; no bypass or rules change. First close the exact-main documentation baseline gap and run the local CI entry, Bench checks and installed proof. Obtain required remote checks only after authorization; exact-source main CI remains mandatory before any later release. |
+| R4 | Preview, publish once and verify delivery; after R3 | Pending publication authorization | Inspect the exact preview attempt/tarball/hash, then promote those bytes for a new unpublished version. All six existing acceptance stages must pass; retain complete receipts externally and update this plan. Never repack between reviewed preview and upload, repeat an ambiguous upload or run real models. |
+| M1 | Review actual merge baseline, rules and local CI entry; within R3 | Complete | Main remains 3a3ff4 and delivery branch 3404dcd; no open PR. Rulesets require a PR and windows/ubuntu/macos status checks. Exact-main docs gate currently fails 287 old path/anchor migrations; preserve that failure and fix it before claiming merge readiness. |
+| M2 | Add bounded regression and exact-main snapshot navigation; after M1 | Complete | Existing docs gate must cover representative publication-era retained headings plus retired docs/evidence paths without requiring Git history in tests. Add only fixed snapshot links in existing docs/Bench indexes; preserve all original bytes at 3a3ff4, no restored archive or new page. Full actual-main gate must account for every old path/heading. |
+| M3 | Local equivalent of the CI workflow and installed acceptance; after M2 | Complete locally | Existing full-scope CI entry passed 1,068 tests against exact main; public CLI/Bench steps, fresh installed 31 regressions/five portable replays, 29 installed documents and immutable snapshot targets passed. This is macOS/Node 24 working-tree acceptance, not remote or exact-source CI proof. No model calls. |
+| M4 | Deliver reviewed candidate and resolve required remote route; after M3 | Candidate prepared; branch delivery pending | Commit the four reviewed paths and push only origin/codex/docs-framework-architecture without force; independently verify remote source/main refs. Source-branch push has no CI trigger without a PR. Do not put a CI-skip instruction on this new candidate, which must remain eligible for checks if the route is authorized. Ask once whether the required PR/CI route (including automatic main CI after merge) is allowed; no new PR, remote CI, main mutation or npm publication until clarified. |
 
 ## Decisions and limits
+
+Release scope review: the branch contains the cumulative architecture and artifact
+cleanup, not merely the final link correction. Relative to the last verified main
+3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850, include source-only offline self-test,
+explicit bench claims/measurement scope and observation/numerical corrections;
+module ownership and current saved-report/replay compatibility; retirement of the
+unused repository archive lifecycle; current docs/data-handling contracts and
+release-workflow proof reuse. Most path churn is historical-tree removal and
+module moves; path counts do not describe independent product features.
+
+The proposed next minor is 0.14.0 because this is more than documentation repair.
+It is a candidate, not a checked-free registry version or an approved publication.
+The package and latest changelog entry still say 0.13.1; R2 must add the actual
+release entry and synchronize versioned instructions. Keep old publication bytes,
+historical feature minimums and matching documentation links intact. Source build
+examples must reference a delivered commit containing the candidate behavior and
+version; a matching version string alone is insufficient.
+
+Release exclusions: no Calibration refactor, paid/live study, new storage/GC,
+telemetry platform or documentation system. Existing offline installed recipes
+exercise disposable targets only. Actual integration must first reconcile current
+main; the comparison here uses the recorded main baseline, not an unchecked claim
+that the remote has remained unchanged. The existing release contract requires
+exact-source main CI, so no publication is executable under the retained no-CI
+constraint. Do not weaken that contract or create another release route.
+
 
 Link/build decision: repository and installed pages use relative links only for
 co-distributed targets. A standalone Skill cannot assume the checkout or sibling
@@ -94,6 +129,64 @@ preserve npm/demo blocks and bilingual parity, and test the actual installed
 package and portable replays. No acceptance is removed to make a check pass.
 
 ## Verification
+
+M3 final local acceptance (Node 24.21.0 / macOS arm64):
+
+- Existing `ci-scope.mjs classify` selected full scope for the cumulative
+  main-to-source changes. Its actual `test` entry passed the documentation gate
+  and full npm test: 1,068 passed, zero failed/cancelled/skipped. This rehearsal
+  supplied the exact main baseline through a local event fixture; it is not a
+  GitHub run, committed-source receipt, or proof of other OS/Node versions.
+- All eight public workflow/Bench checks passed under disposable HOME and a
+  Node/Git-only PATH: help, eval preview, synthetic report, install preview,
+  doctor, both packaged Bench checks and contributed Bench integrity. Fresh
+  installed empty-history report JSON also passed. No real Agent/model calls or
+  actual user-configuration writes.
+- Fresh offline npm pack/install/bin and package policy passed. All 1,079
+  installed files match source. Installed feature acceptance passed 31
+  regressions, five portable replays, four release-entry documents, fake-process
+  success/failure and disposable configuration/bundle safeguards. Archive:
+  947,794 compressed / 4,580,168 unpacked bytes; SHA-256
+  b9e50e3c6e504e23a8536c81e39f6e39a2ca00925a37c0a144cfc148cd1b2985.
+- All 29 shipped public documents pass link/anchor checks without package Git;
+  the four newly selected historical snapshot targets exist in local Git.
+  Architecture: 159 modules, zero violations/exceptions. Main-baseline docs:
+  34 entries, zero errors, 1,499 previous paths/headings accounted.
+- One integrated local OCR-guided review accounted for all four incremental
+  paths (one selected test and three manually reviewed Markdown files), zero
+  skipped or unresolved findings. No independent reviewer. Prior accepted
+  runtime/package inputs remain unchanged; this correction adds only immutable
+  navigation and an offline regression. Final status text is checked afterward.
+- Version remains 0.13.1; this did not publish a package. No new maintained file,
+  dependency, Calibration change, historical-byte rewrite or native format change.
+  R3 remains incomplete until the conflicting remote integration route is
+  clarified and the permitted merge/checks actually succeed.
+- Proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-main-integration-j2oxg4vt.
+
+M2: the new offline regression failed on retained publication-era headings and
+retired docs/evidence paths, then passed after four immutable snapshot-navigation
+links were added to the two existing indexes. The actual main-baseline gate now
+passes all 1,499 prior headings/paths with zero errors (previously 287 errors).
+No new page, archive restoration, protocol change or weakened check. M3 rehearses
+the existing local CI entry against main before asking about the remote route.
+
+
+M1: queried live main rulesets read-only (classic protection returns 404, but
+rulesets enforce PR + test (windows-latest), test (ubuntu-latest), test (macos-latest)).
+No open PR on the delivery branch. Live main/source refs match the last delivery.
+The existing gate against actual main reports 287 migration errors: 274 deleted
+pages (76 docs, 198 evidence) and 13 old headings in two retained indexes. Earlier
+L5 gates used the adjacent ed5eaff baseline; that did not prove the cumulative
+main integration. No runtime failure is implied; do not weaken the gate. Plan
+updated/reviewed before M2. Proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-main-integration-j2oxg4vt.
+
+R1: local HEAD is the delivered 3404dcd and the working tree was clean before
+this plan edit. Reviewed package metadata, changelog, release procedure and the
+cumulative diff against recorded main 3a3ff4. Scope and proposed order are above;
+no version/registry probe, source change, remote CI, merge or publication occurred.
+Only plan facts/links/diff need checking now. Existing L5 tests/install/replay
+results remain prior evidence, not new R2 acceptance.
+
 
 L5 final review, local acceptance and delivery (Node 24.21.0 / macOS arm64):
 
