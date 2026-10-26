@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "baselineSkill": null,
+  "candidateSkill": "../../benches/_self-test/target",
+  "bench": "../../benches/_self-test/example",
+  "agent": "codex",
+  "purpose": "development",
+  "pairOrder": "balanced",
+  "executorTimeoutSeconds": 60,
+  "trials": 1,
+  "maxCalls": 4,
+  "runsRoot": "../../runs/eval-example",
+  "runGroup": "synthetic-preview-example"
+}

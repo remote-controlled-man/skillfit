@@ -4,8 +4,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test, type TestContext } from 'node:test';
-import { captureSourceFiles, freezeSourceFiles } from './bench-source.js';
-import { runBenchAdd, runBenchInit } from './bench.js';
+import { captureSourceFiles, freezeSourceFiles } from "../cli/bench-source.js";
+import { runBenchAdd, runBenchInit } from "../cli/bench.js";
 
 function fixture(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-freeze-boundary-'));

@@ -1,1 +1,2 @@
-export { readEvaluation as readEvaluationReport } from '../harness/eval-read-service.js';
+// Compatibility entry for pinned replay/installed acceptance; implementation has one owner.
+export * from '../cli/evaluation-report.js';

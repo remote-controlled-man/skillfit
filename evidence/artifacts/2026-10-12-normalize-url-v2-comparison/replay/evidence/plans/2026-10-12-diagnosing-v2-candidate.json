@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "frozenAt": "2026-10-12T09:58:11.439977+00:00",
-  "candidate": "evidence/inputs/diagnosing-bugs-compact-v2",
-  "skillFileSha256": "0f5fc2b02ff8cea43b4386943e6411a5495df4df0f1c11f92b252e8e66adf470",
-  "source": "evidence/inputs/diagnosing-bugs-compact-v1",
-  "knownFailure": "v1 onInsert application-history classification on lru-cache",
-  "independence": "Candidate frozen before opening oss-mcp-use-utf8 prompt, fixture, grader or oracle during this revision turn; file names/repository family were visible. Existing public historical tasks may have been known in previous work or model training."
-}

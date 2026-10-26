@@ -1,9 +1,0 @@
-{
-  "matched": 4,
-  "excluded": 0,
-  "invocationCount": 4,
-  "costsMatch": true,
-  "freshExtractionHashesMatch": true,
-  "analysisMatches": true,
-  "actualInvocationsIncludingReadiness": 5
-}
