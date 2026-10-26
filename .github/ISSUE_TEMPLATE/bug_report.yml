@@ -28,6 +28,6 @@ body:
     id: artifacts
     attributes:
       label: Manifest / run artifacts (if an eval is involved)
-      description: Attach runs/<group>/manifest.json, _result.json, _verifier.txt, or the bench.json + task ids. Secrets are never included in these files; check them anyway before uploading.
+      description: Attach a minimal reproduction or relevant excerpts from manifest.json, _result.json, _verifier.txt, or bench.json + task ids. Artifacts can contain task content, private paths or secrets. Review and sanitize a sharing copy before uploading; keep the original replay files unchanged.
     validations:
       required: false

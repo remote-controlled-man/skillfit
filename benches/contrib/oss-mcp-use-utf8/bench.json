@@ -5,11 +5,11 @@
   "tasks": [
     {
       "id": "view-utf8",
-      "fixture": "fixtures/view-utf8",
-      "prompt": "prompts/view-utf8.md",
-      "verifier": "node --experimental-strip-types verifiers/view-utf8.mjs",
+      "fixture": "tasks/view-utf8/fixture",
+      "prompt": "tasks/view-utf8/prompt.md",
+      "verifier": "node --experimental-strip-types tasks/view-utf8/verify.mjs",
       "verifierKind": "command",
-      "oracle": "node ground-truth/oracle-view-utf8.mjs",
+      "oracle": "node tasks/view-utf8/reference/oracle.mjs",
       "shouldTrigger": true
     }
   ]

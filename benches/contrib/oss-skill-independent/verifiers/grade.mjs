@@ -8,7 +8,7 @@ import { files, regressionEvidence, testRun } from './regression-evidence.mjs';
 const bench = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const specs = JSON.parse(readFileSync(join(bench, 'task-specs.json'), 'utf8'));
 export async function grade(task, supplied) {
-  const run = resolve(supplied), canonical = join(bench, 'fixtures', task), spec = specs[task];
+  const run = resolve(supplied), canonical = join(bench, 'tasks', task, 'fixture'), spec = specs[task];
   assert.ok(spec, 'unknown task');
   const checks = [];
   const check = (name, operation) => {
@@ -39,7 +39,7 @@ export async function grade(task, supplied) {
   }
   let evidence = [];
   check('Submitted regression passes the repair and complete functional upstream fix, and fails the original', () => {
-    evidence = regressionEvidence(run, canonical, join(bench, 'ground-truth', task), spec.sourcePaths);
+    evidence = regressionEvidence(run, canonical, join(bench, 'tasks', task, 'reference'), spec.sourcePaths);
     assert.ok(evidence.length > 0 && evidence.every(row => row.finalPassed) && evidence.some(row => row.caseWitnesses.length > 0), 'A retained registered regression must distinguish original and full maintainer fix');
   });
   const passed = checks.every(row => row.pass);

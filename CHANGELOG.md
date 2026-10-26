@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.14.0 — evaluation contracts and maintainable Bench inputs
+
+This entry describes the prepared source/package contents; publication status is
+verified separately through the [release procedure](docs/maintainers/releases.md).
+
+- Add offline synthetic controls (`bench self-test` protocol 1) and explicit
+  Bench schema 2 claims with frozen measurementScope 1. Keep schema 1 and old
+  records unrecorded; controls remain ineligible as evidence of Skill benefit.
+- Correct numerical edge cases, structured trigger observations and per-call
+  public model identity while preserving the frozen v2 protocol and unknown
+  legacy evidence. Keep declared scope through audits, exports and moved replay.
+- Group the 36 contributed tasks under `tasks/<id>/` and use one Bench-owned
+  template/path convention for init, freeze, commit import and drafting. Preserve
+  public dataset roots, task ids/order, raw upstream inputs/licenses and old
+  relative layouts. Register the output starter's existing trigger prompt.
+- Establish owned configuration/evaluation/resource/agent/Bench modules and local
+  dependency/effect checks without adding runtime dependencies.
+- Consolidate current guides, references, driver guidance and version entrances.
+  Retire repository archive/restorer/catalog and receipt-import maintenance;
+  historical published bytes remain at their fixed Git commits, and current
+  saved-result readers/portable replay remain supported.
+- Reuse exact source CI for release preparation, promote the reviewed original
+  tarball once, and generate/verify acceptance receipts externally. Installed
+  recipes resolve generated scripts through manifests; the frozen original
+  recipe is unchanged.
+- Separate named experiment workspaces from temporary validation/package work
+  and external release receipts. No automatic deletion or expiry is introduced.
+
 ## 0.13.1 — current driver guidance and release document checks (2026-10-21)
 
 - Correct stale fixed-version commands in the driver Skill and first-run guide;

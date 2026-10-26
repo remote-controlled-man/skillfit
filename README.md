@@ -17,7 +17,7 @@ then use the recorded evidence and its limits to decide what to enable.
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[Documentation](docs/README.md) · [Quick start](#first-run-with-npm) · [Bench guide](benches/README.md) · [Metrics protocol](docs/reference/metrics.md) · [Reports](docs/reference/evaluation-reports.md)
+[Documentation](docs/README.md) · [Quick start](#first-run-with-npm) · [Bench guide](benches/README.md) · [Reports](docs/reference/evaluation-reports.md) · [Contributing](#contributing)
 
 </div>
 
@@ -27,15 +27,68 @@ then use the recorded evidence and its limits to decide what to enable.
 
 ---
 
+## Install
+
+```bash
+npx skillfit@0.14.0 --help
+npx skillfit@0.14.0 doctor
+```
+
+Requires Node.js 22+. These commands target the 0.14.0 package; npm may download it when available. The case checks and previews make no model calls. [Choose your build](docs/README.md#choose-your-build) for source execution and older release documentation.
+
+## First run with npm
+
+In your project directory, replace `./my-skill` with a directory containing your `SKILL.md`:
+
+```bash
+npx skillfit@0.14.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.14.0 bench init my-bench --kind command --yes
+npx skillfit@0.14.0 bench check ./my-bench --json
+npx skillfit@0.14.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+```
+
+Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
+
+### Run from source
+
+For a reproducible source walkthrough, build the reviewed implementation snapshot
+below. It contains the behavior described here and predates the 0.14.0 version bump.
+For development on your checkout, follow [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
+The remaining `node dist/cli.js` examples require a source build:
+
+```bash
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
+npm ci
+npm run build
+node dist/cli.js --help
+node dist/cli.js bench check benches/code-review
+node dist/cli.js bench check benches/debugging
+node dist/cli.js doctor
+node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+node dist/cli.js install --agent codex --dry-run
+```
+
+The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
+
+The 0.14.0 package includes the measurement features and corrections described as **current source**; earlier npm 0.13.1 does not include these additions. Registry publication is verified separately from source preparation.
+
+This includes [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
+
+The pinned npm commands above target 0.14.0. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+
+Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
+
 ## Why
 
-The agent-config ecosystem has solved **distribution** (`npx skills add`, plugin marketplaces, MCP registries) but not **selection**. The evidence says unverified configuration can hurt:
+Installing a configuration does not show whether it helps your tasks. Published studies illustrate why measurement matters:
 
 - Curated Skills raised average pass rates by **+16.6pp** across 87 tasks and 18 model–harness configurations; gains varied by configuration ([SkillsBench v4](https://arxiv.org/abs/2602.12670v4)).
 - LLM-generated context files showed no statistically significant success-rate improvement, while increasing average inference cost by **20% on SWE-bench and 23% on CTXbench** ([Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3)).
 - **36.82% of 3,984 scanned public Skills** had at least one security issue in Snyk’s February 5, 2026 study ([ToxicSkills findings](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)).
 
-skillfit is the missing measurement layer: paired A/B experiments with deterministic verifiers, statistical verdicts, and trigger-rate measurement — packaged as a CLI anyone can run.
+skillfit provides paired A/B experiments with deterministic verifiers, statistical verdicts and trigger-rate measurement. These studies motivate the tool; they do not validate skillfit or predict gains on your tasks.
 
 Build cases around your own tasks: pin the starting files, write the request, and define what a correct result must do. The bundled benches teach the format; the CLI runs your cases, compares outcomes and costs, and preserves evidence. See the [case authoring guide](docs/guides/bench-authoring.md).
 
@@ -70,57 +123,6 @@ The run recorded one activation in nine in-domain trials. The table's pass count
 
 <sub>Captured 2026-09-22 on Kimi Code against the four-task `code-review` bench. The bench has since gained a fifth task; the four metric lines above are re-rendered from that run's recorded per-task counts, so the run is real and the formatting is current.</sub>
 
-## Install
-
-```bash
-npx skillfit@0.13.1 --help
-npx skillfit@0.13.1 doctor
-```
-
-Requires Node.js 22+. npm may download the package; the case checks and previews below make no model calls. These pinned commands use the published release; [choose your build](docs/README.md#choose-your-build) for its matching docs and source-only additions.
-
-## First run with npm
-
-In your project directory, replace `./my-skill` with a directory containing your `SKILL.md`:
-
-```bash
-npx skillfit@0.13.1 bench init my-bench --kind command --dry-run
-npx skillfit@0.13.1 bench init my-bench --kind command --yes
-npx skillfit@0.13.1 bench check ./my-bench --json
-npx skillfit@0.13.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
-```
-
-Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
-
-### Run from source
-
-Build the reviewed source snapshot below. A plain clone starts on main, which
-may not contain the source-only features described here:
-
-```bash
-git clone https://github.com/remote-controlled-man/skillfit.git
-cd skillfit
-git switch --detach ed5eaff7d222de1c73874ce022785fbe89291017
-npm ci
-npm run build
-node dist/cli.js --help
-node dist/cli.js bench check benches/code-review
-node dist/cli.js bench check benches/debugging
-node dist/cli.js doctor
-node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
-node dist/cli.js install --agent codex --dry-run
-```
-
-The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
-
-The current checkout adds unpublished measurement features and corrections; build it to use additions marked **current source** in the documentation.
-
-This includes [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
-
-The npm 0.13.1 commands above retain their released behavior. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
-
-Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
-
 ## Build your own cases
 
 Scaffold a code-editing teaching case, then replace its inputs with your real task:
@@ -133,9 +135,9 @@ node dist/cli.js bench check my-bench --json
 node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input workspace --trials 1 --max-calls 2 --dry-run
 ```
 
-Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. Read the [case authoring guide](docs/guides/bench-authoring.md), [JSON check contract](docs/guides/bench-authoring.md), [verifier contract](docs/guides/bench-authoring.md) and [drafting records](docs/guides/bench-authoring.md).
+Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. The [case authoring guide](docs/guides/bench-authoring.md) covers both paths, verifier requirements and offline validation.
 
-Before live spending, a current source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
+Before live spending, the 0.14.0 package or a reviewed source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
 
 List and inspect cases, or preview an edit. `--yes` applies a validated change with a backup; removal keeps case files. Select a smaller run with repeated `--task`:
 
@@ -167,7 +169,7 @@ Compare two complete versions with the same frontmatter name and different finge
 node dist/cli.js eval ./skill-new --baseline-skill ./skill-old --mode installed --bench ./my-bench --agent codex --trials 5 --dry-run
 ```
 
-See [revision comparisons](docs/guides/experiment-workflow.md) and [installed Skill delivery](docs/guides/experiment-workflow.md).
+See [revision comparisons and installed Skill delivery](docs/guides/experiment-workflow.md#plan-before-spending).
 
 ### Agent evaluation component
 
@@ -181,11 +183,13 @@ node dist/cli.js report eval ./runs/revision-validation-001 --json --replay
 
 The [component contract](docs/reference/eval-component.md) defines quality and efficiency policies; `accept`, `reject` and `inconclusive` remain separate from the statistical verdict. Adoption requires complete, independent validation; nothing upgrades automatically.
 
-[Shared planning](docs/guides/experiment-workflow.md) covers ordinary/request plans, `--json`, task selection, balanced pair order, deadlines and plan-hash confirmation. `spendingBudget` / `--spending-budget` is optional as a whole; when supplied, **all five fields are mandatory**. Among current CLI readers, only Codex has all required token/cache counters; Kimi/Claude block this budget before calls, and API coverage remains unknown until responses. Reaching a line prevents the next call; an in-flight call can overshoot, and missing/partial final usage stops further calls. Calibration measures baseline difficulty; trigger mode measures discovery. Neither proves paired benefit. Installed evaluations provide the same pinned native diff helper to both arms.
+[Experiment planning](docs/guides/experiment-workflow.md#plan-before-spending) covers task selection, pair order and plan confirmation. Optional `spendingBudget` / `--spending-budget` requires **all five fields**; see [spending limits](docs/guides/experiment-workflow.md#bound-calls-and-spending) for supported counters, unknown usage and in-flight overshoot. Calibration measures baseline difficulty and trigger mode measures discovery; neither proves paired benefit.
 
 ### Test rules and MCP setups
 
-Create baseline and treatment project overlays next to `skillfit-experiment.json`:
+Create baseline and treatment project overlays next to `skillfit-experiment.json`.
+The first command previews; the second runs real agent calls. Inspect the plan
+and choose a call budget before execution:
 
 ```text
 context7-experiment/
@@ -209,7 +213,7 @@ Try a saved synthetic report, then use the manifest or directory printed by your
 node dist/cli.js report eval docs/examples/eval-manifest.synthetic.json
 ```
 
-Markdown and JSON read paired, calibration and trigger records, including incomplete runs. Rendering a report does not authorize adoption. See [sharing](docs/reference/evaluation-reports.md), [report states](docs/reference/evaluation-reports.md) and [cost coverage](docs/reference/evaluation-reports.md).
+Markdown and JSON read paired, calibration and trigger records, including incomplete runs. Rendering a report does not authorize adoption. The [report reference](docs/reference/evaluation-reports.md) explains sharing, report states and cost coverage.
 
 Export a sealed run to a fresh portable directory. Preview first; `--yes` writes:
 
@@ -254,14 +258,16 @@ For options, including the full 65-Skill upstream catalog via `--upstream-lock`,
 
 | Command | What it does | Writes? |
 |---|---|---|
-| `doctor` | Detects installed agents, checks rules bloat, skill validity/conflicts, MCP declaration presence and JSON syntax where supported, and silent-failure traps (e.g. AGENTS.md that Claude Code never reads) | Never |
-| `report` | Skill usage receipts from retained local session history: fires per skill, candidates with no observed fire, and raw catalog size before agent-side limits. Absence is a prioritization signal, not proof of uselessness. It also renders an existing evaluation manifest as Markdown with `report eval`. | `--export --yes` writes a fresh replay directory; otherwise read-only |
-| `eval <target>` | Paired baseline/treatment runs for a Skill, rules overlay, or MCP overlay; deterministic verifier + optional blind LLM judge, token-cost delta, McNemar exact test, paired bootstrap CI, and graded facet-score CIs. `--mode trigger` installs a Skill and measures trigger recall / false-trigger rate from the agent transcript | `runs/` locally |
-| `mcp check <spec>` | Handshakes with a stdio MCP server or a Streamable HTTP endpoint, requests `tools/list`, and audits tool names, descriptions, input schemas, and annotations. Never calls a tool | Never |
-| `bench` | `init` scaffolds a bench directory with a working example task; `check` validates a bench offline (verifier self-tests, oracle/NOP gates, mock-arm probes, fixture hygiene, trigger-label coverage); `add --freeze` turns a failure you just watched into a permanent bench task, and `--decompose` confirms before one agent call to draft the verifier + oracle, admitted only if both gates pass | `init`/`add`/`edit`/`remove` write after confirmation; `check --calibrate` calls an agent and writes runs; plain `check` runs local verifiers |
-| `install` | Managed-block rules (`<!-- SKILLFIT_START/END -->`, idempotent), skill copy with conflict protection, content-hash lockfile, post-install verification. Writes are staged first; if a write or verification fails, the installer rolls back changed target files, including the lockfile. Abrupt termination can still leave a partial install; re-run to reconcile. Your original is kept at `<file>.skillfit-bak` and the first backup wins, so later updates cannot overwrite it. `--dry-run` reports conflicts and exits 0; add `--strict` to make them fail (CI gates) | Only after confirmation |
-| `setup codex` | Lists or installs a chosen set of pinned, verified upstream Skills and repository-owned Skills with global routing guidance; defaults to a dry run | Only with `--yes` |
-| `bundle` | `export` creates a portable Codex profile from used local Skills and active global guidance | Only after confirmation |
+| `doctor` | Inspect agent configuration, invalid Skills, conflicts and supported MCP declarations | Read-only |
+| `report` | Summarize observed Skill usage or render saved evaluation results | Only `report eval --export --yes` writes a fresh replay directory |
+| `eval <target>` | Compare a Skill, rules or MCP overlay; trigger mode observes Skill activation | Saves runs; real evaluations call an agent/model |
+| `mcp check <spec>` | Connect to an MCP server and audit `tools/list`; never invoke a tool | No skillfit output files; starts or contacts the server |
+| `bench` | Scaffold, inspect, edit and validate tasks; current source also supports offline `self-test` | Edits require confirmation; calibration/drafting call agents and save output; plain checks run local verifiers |
+| `install` | Apply a profile with conflict checks, backups, verification and rollback on failure | After confirmation; preview with `--dry-run`, add `--strict` to fail on conflicts |
+| `setup codex` | Select pinned Skills and global routing guidance; defaults to a preview | Only `--yes` installs; source selection needs network |
+| `bundle` | Export selected local Skills and global guidance for another machine | After confirmation; generated setup previews before installation |
+
+Use `node dist/cli.js --help` for flags and the [configuration guide](docs/guides/selectable-codex.md) for setup options. No observed Skill use is not proof of uselessness. Offline checks and replay still execute trusted local bench code. Installation keeps the first `<file>.skillfit-bak`; rollback handles write/validation failures, while abrupt termination can leave a partial install.
 
 ### Bring your own bench
 
@@ -286,7 +292,7 @@ See the [original study records](https://github.com/remote-controlled-man/skillf
 
 ## Design principles
 
-- **Standards, not formats.** AGENTS.md (AAIF), SKILL.md, `.agents/skills/`, `.mcpb` — we write what agents already read.
+- **Native configuration.** Use each agent’s supported rules and Skill locations, including `AGENTS.md`, `SKILL.md` and `.agents/skills/` where applicable; the agent matrix owns the differences.
 - **Deny by default.** We install only what a profile explicitly declares, pinned by content hash.
 - **Dry-run first.** Preview configuration changes before applying them; replacements keep backups and are verified. New bench/run/bundle artifacts preserve existing outputs through collision checks.
 - **Honest numbers.** New efficacy submissions need a pinned, shareable manifest; some older reports lack downloadable raw manifests. Verdict semantics are frozen in [docs/reference/metrics.md](docs/reference/metrics.md): significance comes from an exact McNemar test over discordant pairs, deltas carry paired-bootstrap CIs, and runs below 8 tasks × 5 trials are labeled *indicative* even if their within-bench verdict is statistically significant.
@@ -301,12 +307,16 @@ See the [changelog](CHANGELOG.md) and [release procedure](docs/maintainers/relea
 
 See the [capability table](docs/guides/experiment-workflow.md#executor-capabilities) for current adapter and trigger verification limits, and the current work plan for pending implementation. Later work includes live validation and additional agent adapters. The [original study records](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md) and [debugging study status](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
 
+## Getting help
+
+Check the [documentation](docs/README.md) for the build you use. For bugs or questions, [search existing issues or open one](https://github.com/remote-controlled-man/skillfit/issues); include the command, expected/actual behavior, skillfit and Node versions, OS and relevant agent version. Review artifacts for private content before sharing. Follow [SECURITY.md](https://github.com/remote-controlled-man/skillfit/blob/main/SECURITY.md) for security reports.
+
 ## Contributing
 
 Follow [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md). Useful contributions include real-workflow cases, reproducible evidence and matrix corrections. [Security reports](https://github.com/remote-controlled-man/skillfit/blob/main/SECURITY.md) have a separate channel.
 
 For development handoff, use [architecture and maintenance](docs/maintainers/architecture.md). Active progress is recorded in the source-only `docs/work/current.md`; that plan is excluded from npm.
 
-### License
+## License
 
 [MIT](LICENSE)

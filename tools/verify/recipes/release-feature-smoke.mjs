@@ -6,8 +6,8 @@ import { join, resolve } from 'node:path';
 import { promises as fs } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-// Keep the published 0.11.0 recipe immutable. This explicit derived recipe only
-// changes its asserted version; the original seven workflow checks stay intact.
+// Keep the published 0.11.0 recipe immutable. Derive the current version and
+// resolve generated script paths through manifests; retain all seven checks.
 assert.equal(process.argv.length, 4, 'Provide package and fresh output directories.');
 const installed = resolve(process.argv[2]), parent = resolve(process.argv[3]);
 const version = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8')).version;
@@ -16,7 +16,24 @@ assert.equal(existsSync(parent), false, 'Preserve previous receipts; choose a fr
 const original = readFileSync(new URL('0.11.0-feature-smoke.mjs', import.meta.url), 'utf8');
 const sourceSha256 = createHash('sha256').update(original).digest('hex');
 assert.equal(sourceSha256, 'aeb14d990bc65e05ec1ea7dc42ac6cadbd5af2bf11603430972ccaddbe4ee870');
-const derived = original.replaceAll('0.11.0', version);
+let derived = original.replaceAll('0.11.0', version);
+const adaptations = [
+  ["const { runBenchInit, runBenchCalibration } = await load('commands/bench.js');", `const { parseCommand } = await load('shared/command.js');
+const taskScript = (bench, field) => {
+  const task = JSON.parse(readFileSync(join(bench, 'bench.json'), 'utf8')).tasks[0];
+  const args = parseCommand(task[field]);
+  assert.equal(args[0], 'node'); assert.equal(args.length, 2);
+  return args[1];
+};
+const { runBenchInit, runBenchCalibration } = await load('commands/bench.js');`],
+  ["['verifiers/example-task.mjs', 'ground-truth/oracle-example-task.mjs']",
+    "[taskScript(bench, 'verifier'), taskScript(bench, 'oracle')]"],
+  ["join(broken, 'verifiers/example-task.mjs')", "join(broken, taskScript(broken, 'verifier'))"],
+];
+for (const [before, after] of adaptations) {
+  assert.equal(derived.split(before).length - 1, 1, `Expected one current-recipe adaptation: ${before}`);
+  derived = derived.replace(before, after);
+}
 mkdirSync(parent, { recursive: true });
 const env = { ...process.env };
 for (const key of Object.keys(env)) if (/^(SKILLFIT_|OPENAI_|ANTHROPIC_)/.test(key)) delete env[key];

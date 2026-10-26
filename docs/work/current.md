@@ -2,32 +2,67 @@
 
 ## Status
 
-- Baseline: clean local `main` at 3404dcd4ffdf990a31b325fb9fd24d84df949c72;
-  the last delivery independently matched origin/codex/docs-framework-architecture.
-- Current task: integrate the reviewed cumulative source into main through the
-  authorized temporary branch, one PR and existing CI; keep retired archive
-  trees absent and preserve installed workflows and current saved replay.
-- Progress: W1–W5 and L1–L5 complete; R1 scope review and M1–M3 local merge
-  verification complete. R3 integration is in progress through PR #57 and its
-  existing CI; R2 version preparation and R4 publication remain
-  separate proposed work, not prerequisites for this source-only merge.
-- CI suitability follow-up: M5 complete locally. Current CI remains suitable;
-  M6's clean temporary integration branch and one existing CI route are now
-  authorized. No workflow or product code change was needed for CI suitability.
-- Delivery: reviewed candidate a59848a8ffd12f4403ea91ac04bb10d987c99817 is pushed
-  to origin/codex/docs-framework-architecture; independent remote read matched.
-  Main remains 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. No merge occurred.
-- Scope: existing plan/docs and necessary offline regressions. User authorized
-  merging only after successful review/flow validation; no version bump or npm
-  publication. No new maintained document, dependency, Calibration refactor, real
-  experiment or actual user-configuration write. The user approved this one
-  PR/remote-CI integration route after its review; earlier no-PR/no-CI limits
-  remain historical task constraints, not a prohibition on this approved route.
+- Current task: R5 checked integration and formal 0.14.0 preview are in progress;
+  R2 source delivery and candidate preparation are complete;
+  B1–B5/C1–C4 are complete. The user approved continuing delivery/preparation.
+  Defer automatic deletion: do not add it to this release's execution steps;
+  revisit only if an owned disposable temporary-directory leak is evidenced.
+  There is no new cleanup service, timer or runs expiry requirement.
+- Baseline: 8d8ff24c7adddb0cc1e7f3653a56baddeefef363, clean checkout. Eleven
+  Bench manifests index 51 tasks; the eight contributed datasets own 36 tasks.
+  The 858 tracked Bench files include 342 fixture and 315 reference files.
+- Scope: generated task layout, all eight contributed datasets and their actual
+  consumers, existing dataset cards/format/authoring/workflow/architecture docs,
+  current installed acceptance, affected offline tests and documentation data
+  exclusions. Reuse this sole plan and existing checks. Preserve the public Bench
+  root paths, task ids/order, schema 1/2, CLI flags and historical saved readers.
+- Required result: maintainable tasks use tasks/<id>/; one manifest indexes the
+  executable inputs. Shared graders stay once per dataset. Bench names/cards
+  describe workloads rather than a personal study. Explicit native runs, derived
+  work and exports keep their established separate locations and retention rules.
+- Verification: test-first new authoring/legacy reading, 11 Bench gates, unchanged
+  task/fixture/reference provenance, docs/architecture gates, complete offline
+  suite, fresh actual npm pack/install and portable replay for new and old layouts.
+  B1's temporary baseline and previous native records preserve before/after proof.
+- Delivery boundary: the user now authorizes one PR, its existing necessary CI,
+  merge after successful checks, exact-main CI and formal dry-run publication
+  preview. npm upload still requires separate review/authorization. Keep the
+  existing source/CI/package gates; do not add automatic deletion or paid runs.
+- Source baseline: c9522ddea4c181056f1065e04f3ee0f69845146a, clean at this phase's
+  start. At that point the remote delivery branch was 8d8ff24c7adddb0cc1e7f3653a56baddeefef363;
+  remote main remains 655bccaa384bbc3d0dc5602e76efa63968272ece. Official npm
+  registry returns latest=0.13.1 and HTTP 404 for 0.14.0 at preparation time;
+  reserve no version and recheck availability before any future upload.
+
 
 ## Execution order and acceptance
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| R5a | Reconcile authorization, actual main and existing release gates; after R2d | Complete | Remote main is 655bcca and candidate is 90e9b83, with no open PR. Reuse byte-identical installed/local proof; preflight the actual main docs baseline and CI scope before creating the PR. Found 108 false compatibility failures for moved historical Bench data; preserve the failure log. |
+| R5b | Fix historical input classification and review affected inputs; after R5a | Complete | Test first through the existing baseline-reader/documentation gate. Use the fixed baseline's existing exclusions for its task data, retaining real document/card paths, private-path protection and missing-evidence failures. No retired-path catalog, broad bypass, restored inputs or new document. Verify targeted tests, exact-main docs gate, architecture and npm test; packaged bytes must remain identical to R2c. |
+| R5c | Deliver one PR and wait for existing CI; after R5b | In progress | Push the reviewed plan/tool fix once, create one PR with actual behavior, tests and AI disclosure, and attach it. Reuse the unchanged CI workflow; all eight checks, including three required OS jobs, must succeed. Preserve exact source and avoid status-only pushes during the PR run. |
+| R5d | Merge and validate exact-source main CI; after R5c | Pending | Use an explicit clean merge title/body to retain pinned source ancestry and avoid old skip markers. Verify merged product tree and intended deletions, then wait for the automatically triggered main push CI. Require its exact three full OS receipts; PR/local proofs cannot replace them. |
+| R5e | Generate, inspect and retain the formal preview; after R5d | Pending | Dispatch npm-release.yml once on the verified main with dry_run=true. Download the exact successful run/attempt artifact, validate source/CI identities, original tarball integrity/version/size/package bytes and summary. Retain the complete artifact externally; update this original plan without moving main after preview. Never upload npm or claim registry/provenance/signature acceptance during a preview. |
+| R2a | Review scope/version and deliver reviewed base | Complete | Keep auto-deletion deferred. Read official registry and exact remote refs; verify no open PR or branch-triggered CI. Push c9522dd non-force to the existing branch and compare the remote SHA. Use that delivered full source commit for standalone behavior links. |
+| R2b | Synchronize 0.14.0 candidate metadata and existing docs; after R2a | Complete | Update package/lockfile/changelog and current bilingual README/Skill/docs version pins together; retain old publication snapshots, feature minima and historical command blocks. Clearly distinguish candidate package semantics from registry availability. No new document or publication claim. |
+| R2c | Review and verify the final candidate locally; after R2b | Complete | Single integrated OCR-guided scoped review plus reused unchanged-source proof. Run docs/link/version/architecture gates and npm test. Actual fresh offline pack/install, installed current feature recipe, Skill/docs, public preview and moved replay must pass without model calls or real configuration writes; keep proof outside source. |
+| R2d | Commit/push candidate preparation and reconcile status; after R2c | Complete; payload 70304aa verified | Commit only reviewed candidate metadata/docs/plan with a clean message, recheck no open PR or non-main push CI, then push non-force to the existing branch, and compare remote/local SHA with unchanged main. Record actual results and pending integration/publication gates here. No PR/remote CI/main merge/npm upload. |
+| C1 | Audit ignored runs, consumers and recoverability; after B5 | Complete | Inventory the 36 roots/107,908 files/1,305,113,411 bytes; check active processes and tracked consumers. Compare actual native observations with fixed published packages, not folder names/status. Identify unique retained records and disposable copies before deletion; keep proof outside the repository. Review the explicit cleanup selection. |
+| C2 | Remove obsolete local work and reconcile existing guidance; after C1 | Complete | Delete explicit unused whole scratch/duplicate directories only after C1. Keep any unique required native/cost/diagnostic populations intact and verify relocation if needed. Leave runs with only named, needed experiment workspaces, or empty when records are covered or the owner explicitly retires unmatched originals. Development/package/release scratch uses OS temporary or explicit external workspaces; do not add a GC command, archive catalog, new document or change CLI defaults. |
+| C3 | Verify final tree and cleanup; after C2 | Complete | Reuse B4 review/installation/replay proof only for identical bytes; review new docs/plan and any changed inputs. Check retained/published hashes, actual replay, source/package exclusions and absent active consumers; run docs/architecture checks and npm test before committing. Never weaken checks or delete private workspace4skills. |
+| C4 | Commit the reviewed Bench and cleanup guidance; after C3 | Complete locally | Stage only reviewed task source/docs/assets; ignored local deletions must not enter the index. Commit with [skip ci], confirm recorded tree and clean source status, and record progress/results in this sole plan. No push, PR, remote CI, publish or paid evaluation. |
+| B1 | Consumer inventory, alternatives and design review | Complete | Confirm 11 manifests/51 tasks/8 contributed datasets, schema-independent relative paths and actual generator/grader/test/recipe consumers. Preserve root names/task identities and frozen proposals. Choose task-local inputs without a new format/flag/registry; review failure/rollback cases before editing. Save immutable baseline hashes and an old-layout native result outside the repository. |
+| B2 | Implement task-local authoring and curated inputs; after B1 | Complete | Two disjoint parts may proceed together: generator init/freeze/from-commit/drafting share a task-layout convention; migrate all 36 contributed tasks, leaving genuinely shared graders once per dataset. Preserve source/fixture/prompt/license bytes, provenance and protections, public root paths and task ids/order. Test new creation/capture and old-layout reading through existing interfaces. |
+| B3 | Reconcile contracts, cards, data discovery and installed recipes; after B2 | Complete | Rewrite existing cards around reusable workloads, remove study-stage claims and fix input-mode/answer-isolation/mock wording. Exclude only each known dataset's task-data subtree from maintained-doc discovery. Current release recipe derives its two script lookups from manifests, preserving the hash-pinned original recipe and every check. No new layout option, schema, alias catalog or extra maintained page. |
+| B4 | Integrated final review and compatibility acceptance; after B3 | Complete | Account for every move/edit/add/delete in one OCR-guided review. Run all 11 Bench checks, original/fix semantic regressions and frozen-input hashes; docs old paths/headings, architecture and full npm test. Fresh actual package/install must pass current installed feature recipe/five moved replays and read/export/relocate/replay the original old-layout native record. Confirm ordinary previews make zero model calls and reject collisions/symlinks. |
+| B5 | Close this plan against final evidence; after B4 | Complete locally | Match every requirement to final-input evidence, distinguish moved-path/new Bench hashes from immutable old saved identities, check no unintended files/dependencies/archive/remote writes and record actual counts/limits. Leave implementation locally reviewable; no automatic commit, PR, CI, publish or live experiment. |
+| D1 | Audit entry documents and review this scope; after M7 | Complete | Read root instructions, both READMEs, contribution/security routes, existing docs checks and package scripts. Verify external research claims against original sources. Use concise reader-focused guidance; no universal line-count rule, new template or personal agent-tool requirement. |
+| D2 | Correct README navigation and contribution onboarding; after D1 | Complete | Put install/first preview before background/history. Keep all existing badges and fenced command/demo blocks byte-identical, mirror Chinese section order, preserve anchors and fixed links. Correct the post-merge source description, collapse repeated guide links and move detailed contracts to their existing owners. Add actual development setup and separate offline checks from optional paid calibration. |
+| D3 | Clarify project-specific agent guidance; after D2 | Complete | Keep commands runnable from the repository root and ownership concise with the architecture link. Preserve skillfit-driver routing, offline tests, zero runtime dependencies, CLI/bilingual conventions, writer backups/rollback, private lab protection, immutable observations and current replay. Retain all previous heading anchors; add no generic approval or agent-specific tooling mandate. |
+| D4 | One integrated final review and local acceptance; after D3 | Complete locally | Account for all five paths, review instruction changes against baseline and verify bilingual blocks/badges/headings, original snapshots and anchor migration. Execute new contributor commands and existing docs/entry checks; fresh offline pack/install and installed recipe must preserve installation and five portable replays. Record actual results and limits here; leave edits local. |
+| D5 | Recheck final inputs and pre-commit validation; after D4 | Complete | Compare all five content hashes with D4, reuse the integrated review only for unchanged inputs and inspect this plan follow-up. Preserve installed 31-regression/five-replay proof only when every packaged byte still matches. Run npm test once with loopback listening allowed, retain docs/anchors/version/diff checks and record actual results. |
+| D6 | Commit and push the reviewed documents; after D5 | Complete; payload df2d6eb verified | Confirm the remote branch is still the expected baseline and has no open PR; check workflow triggers. Commit only the six planned paths with [skip ci], push non-force to origin/codex/docs-framework-architecture, and independently compare remote/local HEAD and unchanged main. Record delivery in this sole plan with a status-only follow-up; verify its final ref in the handoff. No new PR or remote CI. |
 | W1 | Reconcile audit findings, consumers and plan | Complete | Reviewed the 11 docs pages, release workflow inputs/order, existing output guards, session sealing and export inventory. Use current owners and commands; keep cleanup a documented explicit manual operation. No unresolved contract choice requires a new mechanism. |
 | W2 | Correct document purpose and release manual; after W1 | Complete | Remove obsolete page-count/restoration assertions. Correct reference/how-to registry kinds. Keep one operation authority: workflow for steps, reports for saved fields, metrics for statistical meaning. Complete the existing release page with main/source-CI gate, reviewed preview ID/attempt, original tarball promotion, one upload, acceptance, receipt delivery and failure recovery. Validate instructions against current workflow/tools offline; do not dispatch them. Preserve old headings/anchors and frozen statistical meaning. |
 | W3 | Implement workflow and data-handling rules in existing guides; after W2 | Complete | Explain design→offline gates→separate development/calibration→fixed validation/preview→execution→sealed read/analysis→optional delivery→retention/cleanup. Use an ignored outer study workspace with unchanged native batch layout. Separate memory-only values, observed facts and derived metrics. Declare consumers, provenance/unknowns and manual cleanup conditions; protect active/referenced batches and every indexed native file. Clarify custom analysis is not automatically exported and retention intent is separate from native completion status. Link concise rules from architecture/Bench/Skill instead of duplicating them. |
@@ -39,17 +74,409 @@
 | L4 | Final integrated review and local installation/replay acceptance; after L3 | Complete | Run full offline npm test, final docs/anchors and package checks. Actual fresh npm pack/install, bin/Skill/doc links and installed feature recipe must pass 31 regressions/five portable replays. Verify source-only targets remain excluded and no absolute main link bypasses the new check; inspect final inputs, preserve native bytes, and update this plan. No remote CI, PR or publication. |
 | L5 | Review exact final inputs and deliver to the authorized branch; after L4 | Complete | Reconcile all 15 final paths and link/build/installed proofs, run full offline npm test before committing, update this plan, commit with `[skip ci]`, push only origin/codex/docs-framework-architecture without force, then independently compare remote/local HEAD. Preserve main, installation and replay; record actual results and source delivery. |
 | R1 | Review integration/release scope; after L5 | Complete | Compare the delivered HEAD with the last verified main baseline, identify user-visible changes and exclusions, and name the required source/version/package/acceptance steps. This is local preparation, without registry availability claims or remote writes. |
-| R2 | Prepare candidate version and local release inputs; after R1 | Proposed; not executed | Candidate 0.14.0, subject to an unpublished-version check. Synchronize package/lockfile/changelog and current README/Skill command pins, source-only availability notes and implementing-source snapshots; preserve historical minima and old publication links. Review the cumulative main-to-branch scope, then run local tests, actual pack/install/docs and portable replay. |
-| R3 | Validate then integrate reviewed source; after R1 for this source-only merge | Local verification complete; authorized integration in progress | Main rules require a PR and three OS checks; the user approved one PR and existing CI. Use the reviewed temporary integration branch, preserve protections and consumed source snapshots, then verify exact main CI. No version bump, publication or paid experiment. |
+| R2 | Prepare candidate version and local release inputs; after R1 | Complete; R2a–R2d above | Candidate 0.14.0, subject to an unpublished-version check. Synchronize package/lockfile/changelog and current README/Skill command pins, source-only availability notes and implementing-source snapshots; preserve historical minima and old publication links. Review the cumulative main-to-branch scope, then run local tests, actual pack/install/docs and portable replay. |
+| R3 | Validate then integrate reviewed source; after R1 for this source-only merge | Complete | PR #57 merged as 655bcca after eight final PR checks; exact main push CI passed all eight jobs and existing source-CI collection validated its three full OS receipts. All intended deletions and consumed snapshot ancestry are preserved. No version bump, publication or paid experiment. |
 | R4 | Preview, publish once and verify delivery; after R3 | Pending publication authorization | Inspect the exact preview attempt/tarball/hash, then promote those bytes for a new unpublished version. All six existing acceptance stages must pass; retain complete receipts externally and update this plan. Never repack between reviewed preview and upload, repeat an ambiguous upload or run real models. |
 | M1 | Review actual merge baseline, rules and local CI entry; within R3 | Complete | Main remains 3a3ff4 and delivery branch 3404dcd; no open PR. Rulesets require a PR and windows/ubuntu/macos status checks. Exact-main docs gate currently fails 287 old path/anchor migrations; preserve that failure and fix it before claiming merge readiness. |
 | M2 | Add bounded regression and exact-main snapshot navigation; after M1 | Complete | Existing docs gate must cover representative publication-era retained headings plus retired docs/evidence paths without requiring Git history in tests. Add only fixed snapshot links in existing docs/Bench indexes; preserve all original bytes at 3a3ff4, no restored archive or new page. Full actual-main gate must account for every old path/heading. |
 | M3 | Local equivalent of the CI workflow and installed acceptance; after M2 | Complete locally | Existing full-scope CI entry passed 1,068 tests against exact main; public CLI/Bench steps, fresh installed 31 regressions/five portable replays, 29 installed documents and immutable snapshot targets passed. This is macOS/Node 24 working-tree acceptance, not remote or exact-source CI proof. No model calls. |
 | M4 | Deliver reviewed candidate and resolve required remote route; after M3 | Complete; M6 subsequently authorized | Four reviewed paths committed and pushed only to origin/codex/docs-framework-architecture without force; independent source ref matched a59848a and main stayed unchanged. The user subsequently authorized M6's one PR/existing-CI route, without npm publication. |
 | M5 | Review CI suitability and integration-message/history risks; after M4 | Complete locally | Current CI owner paths and gates remain applicable. A depth-two shallow PR merge and the proposed clean integration's PR/main-push shapes all select full scope and pass the 1,499 old path/anchor migrations. Product/package trees remain identical; only this plan differs. Found eleven CI-skip messages, default squash message aggregation and automatic branch deletion; M6 avoids those risks without changing CI. |
-| M6 | One temporary integration branch and existing CI; after M5 | PR #57; first CI 7/8 passed, Windows installation test timeout under repair | Retained source 5a3c9c8 and initial integration b5a052e have identical trees. PR #57 preserves all 1,989 deletions. Windows's real offline npm install exceeded its test-only 60-second envelope; M6a changes only the bounded Windows test allowance and records timing. Retain every installation/inventory/self-test assertion, then require the final PR checks before merging. No workflow/platform, protection, publication or real experiment change. |
-| M6a | Diagnose and verify Windows package-test timeout; within M6 | Local 1,068 tests passed; final Windows/PR verification pending | Preserved first-run logs/receipt. Existing package test is the observed red seam: spawnSync cmd.exe ETIMEDOUT at offline npm install, 1,063 pass / 1 fail / 1 skip. Only the Windows install-test envelope becomes 120 seconds with timing diagnostics; other systems keep 60 seconds. Product/install/verifier deadlines and assertions are unchanged. Integrated review covered the two changed paths; require actual Windows/full PR success, not a synthetic Windows claim from macOS. |
-| M7 | Exact main CI, tree/deletion verification and final status; after M6 | Pending M6 | Inspect automatic main CI for the actual merged SHA. Confirm source/package files and all intended deletions against the reviewed candidate; verify the original snapshot branch remains. Update this sole plan with real PR/CI/merge outcomes on the retained delivery branch, incorporating main as an ancestor. Do not open another PR or trigger another full CI solely to record post-merge status. |
+| M6 | One temporary integration branch and existing CI; after M5 | Complete; PR #57 merged as 655bcca | Retained source 5a3c9c8 and initial integration b5a052e have identical trees. Final candidate 153c014 adds only M6a's package-test envelope and plan updates; all 1,989 deletions remain. Final PR CI passed all eight jobs. Merged with explicit clean title/body, without protection, workflow/platform, publication or real experiment changes. |
+| M6a | Diagnose and verify Windows package-test timeout; within M6 | Complete | Original Windows timeout preserved. Local suite: 1,068 pass, zero fail/cancel/skip. Final actual Windows CI: 1,065 tests, 1,064 pass, zero fail/cancel and one existing platform skip; offline install completed in 48,429 ms within the bounded 120-second envelope. Product deadlines and all assertions are unchanged; no claim of deterministic Windows reproduction on macOS. |
+| M7 | Exact main CI, tree/deletion verification and final status; after M6 | Complete | Main run 40294723010 passed all eight jobs on 655bccaa384bbc3d0dc5602e76efa63968272ece. Existing source-CI collection validated three full OS receipts; source tree equals the reviewed candidate and all 1,989 deletions remain. This sole-plan follow-up incorporates main into the retained delivery branch, preserving six consumed pins. Verify the final pushed ref independently in the handoff; no new PR or CI run solely for status. |
+
+## Checked integration and preview progress
+
+R5a complete: explicit user authorization supersedes the earlier no-PR/no-remote-CI
+boundary only for this one checked integration and formal preview. npm publication
+remains unauthorized. Main protection requires a PR and three OS checks; the
+unchanged release workflow requires successful full push CI for the exact main
+source and promotes an exact preview run/attempt. Existing eight CI jobs stay.
+
+The preflight against actual main 655bcca finds 108 compatibility errors, all
+removed Bench task-data Markdown paths from the previous fixture/prompt/reference
+layout. Current discovery correctly excludes tasks/ but the Git baseline adapter
+uses only current exclusions, so it reads retired data as maintained prose.
+Fix this before creating the PR, using that baseline's own existing data
+exclusions. Keep real document/card path/anchor checks and offline/shallow Git
+operation. The original failed result and subsequent proof are external at the
+workspace identified by /private/tmp/skillfit-014-integration-location.txt.
+
+R5b complete: the new regression first failed because the baseline adapter read
+old fixture Markdown. It now reads the fixed source's existing documentation
+exclusions before selecting old prose. Removed dataset cards still fail; sources
+predating the registry still check real pages, and an available policy read
+failure remains an error. No historical task inputs are loaded to classify them.
+No catalog or blanket exclusion was added. Thirty focused docs/registry tests
+pass; the actual main comparison has zero errors and 244 retained/migrated
+anchors. Architecture remains 159 modules, zero violations/exceptions.
+Full npm test passes 1,072 tests, zero fail/cancel/skip, 105,541 ms. The single
+integrated review covers both tool files and this plan; no open findings.
+All 1,079 packaged files still exactly match R2c's fresh installed acceptance,
+so its installation, Bench, self-test and old/new portable-replay evidence applies.
+Only source-only verification tools/plan changed. CI classifies the cumulative
+1,355 path changes as full. R5c is ready for one reviewed delivery and one PR;
+no status-only push will interrupt its run.
+
+## Candidate delivery and preparation progress
+
+R2a complete: automatic deletion is deliberately deferred, not a new release
+prerequisite. Existing temporary-data boundaries and manual whole-study rules
+remain. Official registry and remote refs are recorded above. Existing CI runs
+on main push or PR; branch delivery alone is not a release. The source-only R3
+completion records an earlier merge and does not cover this new candidate.
+Current reviewed source must still go through the required integration/source-CI
+route before an authorized publication; local proofs do not waive those gates.
+At R2a completion the remote branch exactly matched c9522dd; main stayed 655bcca.
+There is no open PR; the checked workflows trigger CI only for main pushes/PRs.
+R2b complete: synchronized 0.14.0 metadata, changelog and all affected current
+version/build entrances. Historical minima and publication links stay fixed.
+Standalone implementation links and the reproducible source walkthrough use the
+already delivered c9522dd. That snapshot intentionally precedes version metadata
+and still prints 0.13.1; docs state this explicitly rather than claiming a
+0.14.0 version string at that fixed commit. Current 0.14.0 source/package content
+and registry availability remain distinct; no release date or upload is claimed.
+R2d commit-message review: the existing branch has no push-CI trigger or open
+PR, so a clean commit message preserves today's no-CI boundary and avoids a
+skip marker blocking a later explicitly authorized PR check. Recheck both before
+push. Do not create a dummy integration branch/commit just to remove a marker.
+R2c complete: one integrated OCR-guided review covers all 13 changed paths,
+including 12 filtered paths checked manually. No open findings. Package/lockfile
+change only the three root version fields; dependencies are unchanged. All old
+changelog bytes, README command/demo blocks except approved version/source pins,
+and the frozen metrics body remain exact. All 13 referenced fixed source files
+exist at the already delivered snapshots. No implementation, Bench payload,
+profile, schema, workflow or dependency changed.
+
+Final npm test: 1,070 pass, zero fail/cancel/skip, 104,783 ms. Documentation:
+34 registered pages, zero errors, 192 c9522dd path/heading migrations accounted
+for. Architecture: 159 modules, zero violations/exceptions. Actual offline
+pack/install has 1,079 files (908,113 archive bytes), all matching current source;
+installed bin/version and driver/docs pins are 0.14.0. The current installed
+recipe passes all seven foundation checks, 31 regressions and five moved replays,
+plus isolated configuration backup/reinstall and relocated bundle install. All
+11 installed Bench gates pass (51 tasks). The old native record is read/exported/
+relocated/replayed through the new installed CLI with its original bytes intact.
+The public installed self-test protocol also passes all four suites, 27 simulated
+invocations, pure preview, report/export/moved replay and no adoption eligibility.
+All real model/agent CLI calls and user-configuration writes are zero. Runs remains
+empty. These are macOS/Node 24.21.0 local proofs, not registry installation,
+signature/provenance validation or exact-main source CI.
+
+R2d complete: reviewed candidate payload 70304aada4090e8af7378ce53d496e2acaf143c3
+was committed and pushed non-force to origin/codex/docs-framework-architecture.
+Independent ls-remote exactly matched that payload; main remained
+655bccaa384bbc3d0dc5602e76efa63968272ece. The branch has no open PR and only
+main pushes/PRs trigger CI. No PR, remote CI, main merge or npm upload occurred.
+This source-only status follow-up records actual delivery; independently verify
+its final remote ref in the handoff. The 1,079 packaged bytes are unchanged from
+R2c, and this plan stays excluded from the package. The clean commit message
+supports a future authorized PR. Current-candidate main integration, required
+source CI, formal preview and npm publication remain pending separate
+authorization. Existing release gates are not bypassed.
+
+Evidence is external at the workspace identified by
+/private/tmp/skillfit-delivery-prep-location.txt. Review this sequence before
+changing candidate metadata. No unresolved design decision requires an ADR or
+a new automatic-cleanup mechanism.
+
+## Runs cleanup and commit progress
+
+C1 complete: source/Bench changes passed B1–B5, but the ignored local runs
+root was not included in physical cleanup. Current inventory has 36 legacy
+workspaces, 107,908 files and 1,305,113,411 bytes. These are generated experiment,
+research, build and installation/replay copies, not tracked product modules.
+No runs path is tracked. Existing manual whole-batch retention rules still apply:
+protect observed facts and accounting populations until a verified complete
+published delivery or retained original covers their consumer. Do not infer
+expendability from completed/stopped status or remove selected negative outcomes.
+Fixed published packages will be read from existing Git objects only for this
+one-time safety comparison; no archive/restorer/catalog is added to current source.
+The one-time comparison reads 19 complete packages at the fixed published
+3a3ff4 commit. Of 76 local native copies, 47 match a complete published copy;
+others include private/original bytes differing from the normalized delivery.
+After this distinction and recovery loss were explained, the user explicitly
+selected deletion of all obsolete experiments, including unpublished/private
+originals, with only published results retained at their fixed Git commits.
+This supersedes retaining unconsumed local originals; do not create an archive
+or claim the private raw bytes are recoverable. All 36 explicit whole roots are
+selected (not partial positive/negative outcomes). There are zero source path
+consumers, zero open files under runs, and no linked worktrees in those roots.
+C2 complete: deleted all 36 reviewed obsolete whole workspaces, removing
+107,908 files / 1,305,113,411 logical bytes (1.24 GiB). runs is empty and remains
+ignored. No archive copy, tracked run content or private-lab mutation. The 19
+fixed published package SHA values are unchanged after cleanup. Four existing
+entry/workflow/architecture/tool pages distinguish needed study workspaces from
+OS-temporary development/package/build scratch and external release receipts.
+The workflow explicitly distinguishes redacted published derivatives from private
+raw recovery; no native layout, CLI default, retention service or new document.
+C3 complete: after deletion, two complete packages from fixed published Git
+objects replay successfully without the old runs paths: the native-diff package
+regrades four deliveries with quality/cost/acceptance equal, and the independent
+comparison stop package regrades 12 with quality/cost/budget equal, retaining its
+reject decision. Both make zero model calls. The first temporary extraction
+incorrectly materialized unindexed macOS AppleDouble metadata as ordinary files;
+removing only those transport companions fixed extraction. Indexed package bytes,
+sealed runtime, assertions and Git objects were never changed. No historical
+archive tree or restorer was added to current source.
+
+The integrated follow-up accounts for all 1,344 final path/status entries,
+reusing B4 only for unchanged bytes and reviewing the five documentation/plan
+inputs. Review corrected wording to preserve normal dist/node_modules locations;
+only one-off validation/package scratch goes to OS temporary storage. No open
+findings. Final npm test: 1,070 pass, zero fail/cancel/skip, 96,975 ms. Architecture
+retains 159 modules and zero violations/exceptions; 34 registered docs and 1,414
+old path/heading migrations pass. Runs remains empty and untracked.
+
+Fresh actual offline pack/install has 1,079 files matching current source;
+1,077 match B4 exactly and the two changed files are the reviewed workflow and
+architecture pages. Runs, private lab and source-only plan remain excluded.
+Installed acceptance again passes seven foundation checks, 31 regressions, five
+moved portable replays, isolated configuration install/reinstall and relocated
+bundle install, with zero real model/agent CLI/user-configuration calls/writes.
+C4 complete: created one local commit on codex/docs-framework-architecture
+containing the reviewed Bench/source/docs changes and this cleanup guidance,
+with [skip ci]. Staged review confirms all 858 Bench file bytes match the final
+worktree; Git identifies 605 renames among 739 changed paths (short wrappers and
+template consolidation account for remaining add/delete pairs). Ignored runs and
+private workspace4skills are absent from the index. Runs is empty. This final
+status is folded into the same commit; the handoff names its final hash. The
+committed product/package bytes retain C3 acceptance; only this source-only plan
+status changes afterward. No push, PR, remote CI, publication or paid evaluation.
+
+The cleanup proof is outside the repository at the workspace identified by
+/private/tmp/skillfit-runs-cleanup-location.txt. The user authorized cleanup and
+local commit, retaining the existing no-new-documents/no-PR/no-remote-CI boundaries.
+
+## Bench maintenance decision and progress
+
+Requirements: B-R1 makes a task's prompt, fixture, grader and reference local to
+that task; B-R2 keeps one manifest and genuine shared grading implementation;
+B-R3 preserves public roots/ids/order, schemas, old saved readers and raw input
+provenance; B-R4 keeps generated outputs out of source and maintained docs;
+B-R5 verifies generated, installed and relocated behavior without live spending.
+There is no network service/QPS or new running-cost requirement: this is local
+file organization at the measured 11-Bench/51-task scale, with zero model calls.
+New permanent infrastructure, Docker requirements, generic telemetry/GC and
+Calibration changes are non-goals.
+
+Decision: use tasks/<id>/{prompt.md,fixture/,verify.mjs,reference/}; an optional
+prompt.trigger.md/probe lives beside the task. A task using a truly shared grader
+references it directly from bench.json; do not manufacture duplicate adapters.
+Keep existing dataset-root shared graders, clocks, licenses and provenance.
+Consolidate generated template/layout knowledge under one Bench-owned module;
+load/edit/gates/replay keep consuming the manifest interface. Existing code-review,
+debugging and fixed self-test inputs may retain their legacy layout as explicit
+compatibility/teaching inputs. No new layout switch or format version.
+
+Alternatives: documentation-only cleanup is cheap but retains the observed
+multi-directory edits for every authored task (B-R1). Fully replacing the format,
+renaming public roots or adding aliases would create migration machinery without
+improving the manifest interface (B-R2/B-R3). The chosen task-local organization
+improves locality behind the existing deep load/read interface. A future actual
+consumer requiring different paths can already express them in the manifest;
+there is no reason for a storage/plugin framework at this scale.
+
+Current primary guidance: [Harbor task directories](https://docs.harborframework.com/tasks/overview)
+keep instruction/environment/solution/tests with each task; the earlier comparison
+of Promptfoo/Inspect/SWE-bench remains recorded at the fixed P1–P5 plan. This is
+an inference about locality, not adoption of Harbor's TOML, containers or platform.
+This changes an implementation convention, not schema/CLI contracts; record it
+here instead of creating another ADR or glossary. Existing domain terms remain
+in the architecture document.
+
+Pre-mortem and rollback: (1) a moved reference path silently breaks grading —
+original-fails/reference-passes and all 11 gates must expose it before delivery;
+(2) a fixed recipe or old result depends on the old tree — retain the original
+recipe bytes/hash and test old native reads plus real moved replay;
+(3) dataset Markdown is rediscovered as project docs — narrow known task-data
+exclusions and the existing registry gate must expose it. Zero lost payload bytes,
+zero failing required gates and zero changed immutable originals are acceptance
+conditions; any violation blocks delivery. Source moves can be reverted against
+the recorded baseline; no published bytes are rewritten. Bench content hashes
+will legitimately change with paths/cards; never copy old hashes onto new inputs.
+No approval question remains: the user's requested reorganization supplies scope;
+real experiments, publication and public-contract breaks remain out of scope.
+
+B1 complete: root instructions and relevant skills read; one delegated read-only
+consumer audit completed. Baseline hashes are saved at the temporary workspace
+named by /private/tmp/skillfit-bench-maintenance-location.txt. The earlier
+old-layout native self-test result and installed package remain available there
+by explicit receipt pointer; preserve their native indexed bytes during B4.
+B2 complete: new authoring paths first failed against the old layout, then passed.
+A separate failing assertion exposed the output starter's unregistered trigger
+prompt; registering the optional field fixed it. Both starter kinds pass actual
+offline graders. Templates/layout have one Bench owner. The authoring/reader/CLI
+suite passes 122/122, including source drift, rollback and symlink/collision guards.
+All eight contributed Bench gates pass (36 tasks), as do 35 source and 16 tool
+regressions. The migration map accounts for 640 moves: 574 byte-identical assets
+and 66 path-adjusted executable wrappers; six shared scripts use the new lookups.
+Forty-eight unmoved assets are byte-identical. Original prompts, fixture/reference
+source and license bytes, provenance, task ids/order/schema/claims and Node flags
+are unchanged. Dataset roots remain stable; current paths legitimately change
+Bench hashes. No models or real configuration writes were used.
+B3 complete: all eight existing cards now describe workloads, scope, source and
+offline commands rather than a study sequence. Repaired the MCP card's deleted
+evidence examples and pinned the original selection proposal's source link;
+raw source hashes/Git blobs are untouched. Existing format/authoring/architecture
+pages own task locality, shared graders and honest input/answer-isolation limits.
+Known dataset task-data exclusions shrink 21 entries to eight; cards remain
+maintained documents. All 34 registered documents and baseline anchors pass.
+The current recipe first failed on its old generated script path, then passed
+with manifest-derived lookups: seven foundation checks, 31 regressions and five
+portable replays. The hash-pinned original recipe is unchanged. A new legacy
+layout regression runs/reads/exports, deletes original inputs and replays a moved
+package successfully. No new maintained document, schema, flag or dependency.
+B4 complete: the single OCR-guided review accounts for all 1,341 path/status
+entries (502 selected and 839 manually accounted filtered entries), including
+both sides of all moves, exact-byte payloads, script path diffs, tests, cards,
+policies and this plan. No open findings. Review found five stale manifest
+study descriptions and custom test fixtures that assumed old starter directories;
+those are fixed without removing assertions. The initial full suite's 20 failures
+are retained; the affected 68-test suite and then the final full npm test pass.
+Final suite: 1,070 pass, zero fail/cancel/skip, 109,047 ms. Architecture: 159 modules,
+zero violations/exceptions. Documentation: 34 registered pages, zero errors and
+1,391 baseline path/heading migrations accounted for. No new maintained document.
+Independent baseline comparison confirms all 51 task ids/order/schema/task
+metadata and command flags, 640 moves, 574 exact moved payloads and 190 unchanged
+other input files. Only current descriptions/cards, known executable paths and
+one proposal URL change; raw source hashes/Git blobs and original recipe remain.
+
+Fresh actual offline pack/install: 1,079 package files match current source bytes;
+installed bin/version, source-plan exclusion and new task-local command starter
+pass. All 11 installed Bench gates pass for 51 tasks. The installed current
+recipe passes all seven foundation checks, 31 regressions and five moved replays,
+including isolated-home configuration backup/reinstall and relocated bundle
+install. The pre-change native record also passes installed public CLI report,
+export, moved-package read, verify-only and full regrade. All 265 non-Git native
+files and 449 portable files retain exact bytes through these operations; transient
+Git metadata is excluded by the existing replay contract. All model/agent CLI
+calls and real user-configuration writes are zero. These are macOS/Node 24.21.0
+local checks, not remote CI, registry publication or model efficacy evidence.
+B5 complete: B-R1 task locality is covered by both starter kinds, capture/import/
+draft tests and all contributed tasks; B-R2 has one template owner/manifest and
+shared graders without duplicate task wrappers; B-R3 is covered by baseline
+hash/proposal checks and old-layout native/portable replay; B-R4 retains the
+same 858 Bench files/34 maintained documents with narrow task-data exclusions,
+no generated records in source; B-R5 is covered by the full local suite and fresh
+installed acceptance above. Final review hashes differ only for these reviewed
+status updates; all 1,079 packaged bytes still match the installed acceptance.
+Package/lockfile, original proposal fixture, original recipe and HEAD remain
+unchanged. No new dependencies, document, archive tree, schema, layout flag or
+alias catalog. No commit/push/PR/remote CI/publication or live run was performed.
+Evidence is outside the repository at the workspace identified by
+/private/tmp/skillfit-bench-maintenance-location.txt, including baseline and
+migration maps, initial/final tests, integrated review, final-input integrity,
+pack/install, installed feature and old-native acceptance receipts.
+
+## Entry-document review and verification
+
+D1: GitHub's README guide describes purpose, usefulness, getting started and help;
+the official AGENTS format separates agent instructions from human onboarding and
+requires no fixed section schema. Compared uv's README and Ruff's contribution
+entry points without adopting their unrelated tooling or approval policies.
+Original SkillsBench v4, Evaluating AGENTS.md v3 (section 4.2) and Snyk's dated
+ToxicSkills study support the README's quoted figures; these are external study
+results, not validation of skillfit. Review found no need for a new document,
+formatter, universal length gate or agent-specific instruction tree.
+
+D2: moved install/first preview ahead of research/history in both READMEs; clarified
+that the fixed source walkthrough is reproducible and its features now exist on
+main, while npm 0.13.1 is older. Consolidated repeated reference links and command
+summaries, added issue/help routing, made License a peer section, and removed the
+unsupported .mcpb implication. CONTRIBUTING now provides actual checkout/build/test
+steps, distinguishes offline validation from optional paid calibration and directs
+retained results outside the repository. Existing historical data and links stay.
+
+D3: AGENTS links contributor and architecture owners, identifies compatibility
+entries without a brittle test count, consolidates offline-test instructions and
+names the existing docs/anchor check. It preserves all project-specific code,
+writer/rollback, private-lab, immutable-data and replay boundaries. Complex work
+uses this sole plan and records results per step; no new approval mechanism.
+
+D4 final local acceptance (macOS arm64 / Node 24.21.0):
+
+- One integrated OCR-guided review accounted for all five modified paths. OCR
+  filters Markdown as unsupported; all five were manually reviewed against the
+  frozen diff, baseline instructions and this task. Zero skipped paths or
+  unresolved findings. This was local review, not an independent second reviewer.
+- Contributor setup executed with `npm ci --offline --no-audit --no-fund` using
+  the existing cache. `npm test` rebuilt successfully: 1,068 tests, 1,067 pass,
+  one failure, zero cancel/skip (109.31 seconds). The only failure was the sandbox
+  denying a loopback HTTP listener (EPERM). Retained that log; reran the unchanged
+  MCP test file outside that restriction: all 11 pass, including the failed case.
+  Every suite case therefore has a passing result across these runs; this is not
+  described as a single all-green full-suite invocation. No assertions changed.
+- Existing docs gate: 34 registered documents, zero errors, all 73 previous
+  headings/paths accounted against baseline 3472a8701524a59b0c048b4477236dee388615c7.
+  Both READMEs preserve all 15 fenced blocks and five badges byte-for-byte from
+  baseline; their ordered blocks/headings remain bilingual. Bundled GFM rendering
+  produces Install/First run as the entry sections, 15 pre blocks and three
+  tables in each language. No browser/GitHub pixel-render claim.
+- Fresh offline npm pack/install: all 1,079 installed files match final source;
+  29 shipped public documents have zero link/version errors. Five distinct fixed
+  snapshot targets used by these changed documents resolve from local Git,
+  including their Markdown anchors. Built/installed help works. npm pack initially
+  hit the sandbox's global-cache write restriction; a fresh temporary cache
+  succeeded without changing ownership or the user's cache.
+- Installed acceptance: 31 regressions, five moved portable replays, four release
+  entry documents and disposable configuration preview/install/reinstall/bundle
+  checks pass. Zero model/real agent calls or actual user-configuration writes.
+- Only the five planned Markdown files changed. Product, test, Bench, package,
+  lockfile, workflow and historical bytes remain unchanged. No new maintained
+  document, dependency, remote CI, PR, commit/push or publication. Other operating
+  systems/live agents and arbitrary external URL availability were not retested.
+
+D5–D6 delivery follow-up: user authorized this review/commit/push after D4. All
+five D4 hashes initially match, with no unrelated edits. The earlier sandbox HTTP
+failure is retained; run one complete offline suite with local listening allowed
+before committing. Other D4 proofs may be reused only for identical final inputs.
+Remote preflight confirms the branch remains at 3472a8701524a59b0c048b4477236dee388615c7,
+main remains 655bccaa384bbc3d0dc5602e76efa63968272ece and the branch has no open
+PR. Existing CI runs on main pushes/PRs; this branch push with [skip ci] does not
+request CI. No workflow setting is changed.
+
+D5 scope correction, reviewed before editing: the existing bug-report template
+claims artifacts never contain secrets. Trial execution writes verifier output
+into _verifier.txt and retains task/model output, so this unconditional promise
+is false. Replace only that description with instructions to inspect private
+content and share a minimal sanitized copy, leaving native replay bytes intact.
+This sixth path is contributor-facing text, not a product/schema/workflow change.
+The full pre-commit suite just passed 1,068/1,068 with no failure/cancel/skip
+(101.81 seconds). It predates this description-only fix; validate the final YAML
+and changed line separately rather than rerun unaffected tests. Ruby/Psych parsed
+both original/final issue forms successfully; a structural comparison confirms
+only the artifacts description changed, with all required fields/ids/types intact.
+No parser/tool dependency was added. Bundled Node/Python YAML modules were
+unavailable; their failed availability attempts were not treated as verification.
+
+D5 complete: the integrated review now covers six paths (one OCR-selected YAML,
+five manually accounted Markdown files). Reused D4 review only for unchanged
+inputs and checked the new template and plan against the source writer and OCR
+issue-form rules. No unresolved finding remains. Final docs gate remains 34
+registered files/zero errors, with all 73 old anchors/paths preserved. All 1,079
+packaged files still match D4's actual installation, retaining its 31 regressions
+and five portable replays. Product, fixtures, receipts and native replay bytes
+are unchanged.
+
+D6 delivered: committed exactly the six reviewed paths as
+`df2d6ebab870f6a4cbaedb7810fc4e0fb6eeb04d` with [skip ci] and pushed non-force
+to origin/codex/docs-framework-architecture. Independent git ls-remote returned
+that exact commit. Main stayed at 655bccaa384bbc3d0dc5602e76efa63968272ece.
+No PR was created and no remote workflow was dispatched. This status-only
+follow-up changes this plan alone; the final status ref and absence of new CI
+runs are checked in the handoff. Installation/replay and final package-byte
+proofs still apply because none of their inputs changed. No additional full
+suite is needed for a status-only plan update; the pre-commit suite and final
+docs/diff checks are retained.
+
+Reference guidance: [GitHub README](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes),
+[official AGENTS format](https://agents.md/),
+[uv README](https://github.com/astral-sh/uv/blob/main/README.md) and
+[Ruff contributions](https://github.com/astral-sh/ruff/blob/main/CONTRIBUTING.md).
+Proofs stay only in the temporary workspace named by
+`/private/tmp/skillfit-entry-docs-review-location.txt`.
 
 ## Decisions and limits
 
@@ -94,10 +521,10 @@ version; a matching version string alone is insufficient.
 Release exclusions: no Calibration refactor, paid/live study, new storage/GC,
 telemetry platform or documentation system. Existing offline installed recipes
 exercise disposable targets only. Actual integration must first reconcile current
-main; the comparison here uses the recorded main baseline, not an unchecked claim
-that the remote has remained unchanged. The existing release contract requires
-exact-source main CI, so no publication is executable under the retained no-CI
-constraint. Do not weaken that contract or create another release route.
+main; the comparison uses the recorded main baseline. M6–M7 subsequently verified
+the actual merged source and its exact main CI. Publication still requires a new
+unpublished version and separate authorization. Preserve the existing release
+contract; this source integration does not create another release route.
 
 
 Link/build decision: repository and installed pages use relative links only for
@@ -130,9 +557,10 @@ Documents have distinct reader jobs: tutorial, how-to, reference and explanation
 Do not give every page the same template or impose a permanent page-count cap.
 Fix stale facts and duplicate procedures in their existing owners. The release
 manual describes the existing authorized workflow, not a new publication path.
-The release workflow is not dispatched. This link-entry follow-up makes only
-local source/documentation checks and the authorized branch delivery; release
-dispatch, PR creation and remote CI remain outside this follow-up.
+The release workflow was not dispatched. The earlier link-entry follow-up was
+limited to local checks and branch delivery. M6 later received separate user
+authorization for one PR, existing CI and source integration; publication remains
+outside this task.
 
 Use existing `--runs-root` / `--run-group` under ignored `runs/`; the proposed
 outer study folders do not change native records. Keep analyses and scratch
@@ -163,6 +591,51 @@ package and portable replays. No acceptance is removed to make a check pass.
 
 ## Verification
 
+M7 final main acceptance:
+
+- [Main CI 40294723010](https://github.com/remote-controlled-man/skillfit/actions/runs/40294723010)
+  attempt 1 passed all eight jobs for 655bccaa384bbc3d0dc5602e76efa63968272ece.
+  Existing `release-source.mjs ci` collected and validated the actual three
+  full OS receipts, run/attempt, job identity, Node version, source and counts.
+  Ubuntu/macOS each passed 1,068 tests with zero fail/cancel/skip. Windows passed
+  1,064 of 1,065 tests, zero fail/cancel and one existing POSIX-only skip.
+  Windows offline install completed in 37,776 ms; all later package checks and
+  the complete public/Bench workflow passed. All four compatibility jobs and
+  the minimum-runtime job succeeded; no extra dispatch or model calls.
+- Main's complete Git tree equals reviewed candidate 153c014 exactly. All
+  1,989 intended deletions match the original list. Tracked and owned physical
+  archive/evidence/history trees are absent; no archive catalog/restorer remains.
+  Original source 5a3c9c8 retains all six consumed snapshot commits as ancestors.
+- All 1,079 installed package bytes remain those already accepted in M3; M6a
+  modifies only an unshipped test and this plan. The local five-mode installed
+  replay acceptance is reused for those identical payloads, alongside actual
+  package/install/self-test and native-export checks in the three-OS CI. These
+  scopes remain distinct; no new historical study is restored or executed.
+- Final plan facts/links/diff pass: 34 documentation entries, zero errors;
+  18 main-plan and 1,499 original-main paths/headings accounted. No product or
+  package inputs changed after successful main CI.
+  The delivery commit incorporates main and original source as parents; its
+  only tree difference from main is this plan. Retain the original branch,
+  let the temporary PR branch be removed, and compare final remote refs before
+  reporting delivery. No second PR, extra CI round, rule change or publication.
+- Final proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-framework-merge-50s4fkv1.
+
+M6 merge: PR #57 was squash-merged at 2026-10-26T08:47:24Z as
+655bccaa384bbc3d0dc5602e76efa63968272ece, after all eight final PR checks passed.
+The explicit final title/body contains no CI-skip instructions. No second PR or
+publication was created. M7 verified automatic main CI for this exact SHA.
+
+M6 final PR acceptance: run 40293096838 attempt 1 passed all eight jobs on
+153c0141046c27e5a96fb59af694b45c0d0fbe99. The pre-merge query found PR #57
+mergeable/CLEAN, targeting main 3a3ff4. Windows's real offline installation completed in
+48,429 ms; all subsequent package/bin/docs/request/self-test checks passed.
+Actual Windows counts: 1,065 tests, 1,064 pass, zero fail/cancel, one unchanged
+POSIX-only skip. A variable-duration installation exceeded the old envelope on
+the original run; no package defect was observed after the bounded allowance.
+The actual Windows receipt, timing and all eight job conclusions are retained
+externally. This status update was held for M7 delivery so recording outcomes
+does not trigger another PR CI round.
+
 M6a red evidence: PR run 40290734964 attempt 1 passed seven jobs; Windows failed
 only `actual offline npm package matches the reviewed inventory and active
 runtime` at check-package.test.mjs:63. Offline npm install hit spawnSync's
@@ -188,7 +661,8 @@ origin/codex/docs-framework-architecture. Integration b5a052e55a79961d81b8f37f71
 is one clean commit on main 3a3ff4, with the identical tree
 a181ce5e05a7a91b957baa26d7fcc1611a35346e. All 2,305 changed paths and 1,989
 deletions are preserved. [PR #57](https://github.com/remote-controlled-man/skillfit/pull/57)
-is the sole PR and starts existing CI; results are pending. Main has not merged.
+was the sole PR and started existing CI; results were pending and main had not
+yet merged at this stage. M6–M7 above record the final outcomes.
 Proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-framework-merge-50s4fkv1.
 
 M6 preparation: live main remains 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850

@@ -7,7 +7,7 @@ import {casesFor} from './cases.mjs';
 import {files,regressionEvidence,testRun} from './regression-evidence.mjs';
 const bench = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export async function grade(task, supplied) {
-  const run = resolve(supplied), canonical = join(bench,'fixtures',task);
+  const run = resolve(supplied), canonical = join(bench,'tasks',task,'fixture');
   const checks = [], check = (name, fn) => {try {fn(); checks.push({name,pass:true});} catch(error) {checks.push({name,pass:false,detail:String(error.message).slice(0,300)});}};
   check('supplied assets unchanged and ordinary smoke tests pass', () => {
     for (const file of files(canonical).filter(file => file !== 'index.js')) {
@@ -26,7 +26,7 @@ export async function grade(task, supplied) {
   } catch(error) {checks.push({name:'public behavior probe completeness',pass:false,detail:error.message});}
   let evidence = [];
   check('retained regression passes submission and upstream fix but fails original', () => {
-    evidence = regressionEvidence(run,canonical,join(bench,'ground-truth',task),'index.js');
+    evidence = regressionEvidence(run,canonical,join(bench,'tasks',task,'reference'),'index.js');
     assert.ok(evidence.length > 0 && evidence.every(row => row.finalPassed) && evidence.some(row => row.caseWitnesses.length > 0));
   });
   const passed = checks.every(row => row.pass);

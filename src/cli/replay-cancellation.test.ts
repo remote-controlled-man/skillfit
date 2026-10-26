@@ -39,7 +39,7 @@ async function scenario(t: TestContext, signal: 'SIGINT' | 'SIGTERM', repeat = f
   mkdirSync(skill); writeFileSync(join(skill, 'SKILL.md'), '# Offline cancellation fixture\n');
   const leaf = join(root, 'leaf.mjs');
   writeFileSync(leaf, `import{appendFileSync}from'node:fs';process.on('SIGINT',()=>{});process.on('SIGTERM',()=>{});setInterval(()=>appendFileSync(${JSON.stringify(heartbeat)},'x'),30);setTimeout(()=>process.exit(),30000);`);
-  writeFileSync(join(bench, 'verifiers/example-task.mjs'), `import{spawn}from'node:child_process';import{existsSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
+  writeFileSync(join(bench, 'tasks/example-task/verify.mjs'), `import{spawn}from'node:child_process';import{existsSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';
 if(process.env.SKILLFIT_OFFLINE_REPLAY_BLOCK==='yes'){
 process.on('SIGINT',()=>{});process.on('SIGTERM',()=>{});
 const leaf=spawn(process.execPath,[${JSON.stringify(leaf)}],{stdio:'ignore'});

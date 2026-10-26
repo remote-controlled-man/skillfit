@@ -59,7 +59,7 @@ test('efficiency requests and activation execution refuse incompatible tasks bef
   let calls = 0;
   const executor = { describe: () => ({ kind: 'cli', model: 'offline-stub' }), run: async () => { calls++; return { output: 'skillfit-ok' }; } };
   const marker = join(f.root, 'probe-started');
-  writeFileSync(join(f.bench, 'verifiers/example-task.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(marker)},'started');process.exit(1);`);
+  writeFileSync(join(f.bench, 'tasks/example-task/verify.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(marker)},'started');process.exit(1);`);
   const request = join(f.root, 'request.json');
   writeFileSync(request, JSON.stringify({ schemaVersion: 1, baselineSkill: null, candidateSkill: f.skill, bench: f.bench,
     agent: 'codex', purpose: 'validation', trials: 1, maxCalls: 2, runsRoot: f.options.runsRoot, runGroup: 'saved',

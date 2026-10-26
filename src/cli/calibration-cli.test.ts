@@ -21,7 +21,7 @@ async function fixture(t: TestContext) {
   const manifest = JSON.parse(readFileSync(join(dir, 'bench.json'), 'utf8'));
   manifest.tasks.push({ ...manifest.tasks[0], id: 'second-task' });
   writeFileSync(join(dir, 'bench.json'), JSON.stringify(manifest));
-  writeFileSync(join(dir, 'verifiers/example-task.mjs'),
+  writeFileSync(join(dir, 'tasks/example-task/verify.mjs'),
     `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(sentinel)},'must never run');process.exit(1);`);
   const args = ['bench', 'check', dir, '--calibrate', '--json', '--agent', 'codex', '--run-group', 'reviewed', '--runs-root', join(root, 'results')];
   const cli = (extra: string[], status: number, base = args) => {
@@ -77,7 +77,7 @@ test('changing a calibration bench, spending lines, task set or executor deadlin
     const f = await fixture(t), settings = ['--spending-budget', f.budgetPath];
     const preview = f.cli(['--dry-run', ...settings], 0).data;
     let altered: string[] = [];
-    if (change === 'bench') writeFileSync(join(f.dir, 'prompts/example-task.md'), 'A new task.');
+    if (change === 'bench') writeFileSync(join(f.dir, 'tasks/example-task/prompt.md'), 'A new task.');
     if (change === 'budget') writeFileSync(f.budgetPath, JSON.stringify({ ...budget, input: 101 }));
     if (change === 'tasks') altered = ['--task', 'second-task'];
     if (change === 'timeout') altered = ['--executor-timeout-seconds', '12'];

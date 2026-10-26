@@ -1,10 +1,12 @@
-# Independent original/v4 debugging tasks
+<a id="independent-originalv4-debugging-tasks"></a>
 
-Eight real historical defects are pinned before any new agent outcome is observed.
-The selection is the [reviewed proposal](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/plans/2026-10-15-independent-comparison-proposal.md),
-not a result of difficulty calibration or candidate tuning on this set. The
-original/v4 Skill resources and adoption policy remain unchanged. Difficulty is
-uncalibrated; no real model call is authorized by preparing this bench.
+# Async context, timer and command lifecycle defects
+
+Eight historical defects from p-limit, p-timeout, p-throttle and Commander.
+The original selection is recorded in the [fixed proposal](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/plans/2026-10-15-independent-comparison-proposal.md).
+This is source provenance, not a current efficacy result or authorization to run models.
+Tasks live under `tasks/<id>/`; `bench.json` indexes commands and `verifiers/`
+contains shared grading code.
 
 | Task | Source fix | Behavior |
 | --- | --- | --- |
@@ -55,5 +57,5 @@ The two Commander fixtures exceed the snapshot-mode size warning because their
 runtime context is retained. Use installed workspace comparison; no source is
 trimmed to improve token numbers. All eight tasks are positive debugging tasks:
 this bench does not measure trigger precision. Related promise libraries and
-repeated repositories limit generalization. No prior cohort's quality outcomes
-are pooled, no new task has been used to edit v4, and no automatic upgrade occurs.
+repeated repositories limit generalization. Offline integrity does not establish independence from a candidate already
+tuned against these cases. Freeze a separate validation set for such a candidate.

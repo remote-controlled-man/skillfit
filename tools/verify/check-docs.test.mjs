@@ -196,15 +196,63 @@ test('source changes identify affected authority, dependents and fixed checks wi
   assert.deepEqual(result.unmappedChanges, ['src/new.ts']);
 });
 
+test('baseline loading excludes historical Bench inputs while retaining removed dataset cards', t => {
+  const f = governedFixture(t), base = 'c'.repeat(40), requested = [];
+  const prefix = 'benches/contrib/example/';
+  const data = ['fixtures/case/README.md', 'prompts/case.md', 'ground-truth/case.md'].map(path => prefix + path);
+  const card = prefix + 'README.md';
+  const policy = JSON.parse(readFileSync(join(f.root, 'tools/verify/documentation-policy.json'), 'utf8'));
+  policy.exclusions = ['fixtures/', 'prompts/', 'ground-truth/'].map(path => ({
+    path: prefix + path, reason: 'Frozen task input', owner: 'bench-authoring', verification: 'bench-contracts',
+  }));
+  const git = args => {
+    requested.push(args);
+    if (args[0] !== 'show') return '';
+    if (args[1] === base + ':tools/verify/documentation-policy.json') return JSON.stringify(policy);
+    assert.equal(args[1], base + ':' + card, 'never read historical task inputs as prose');
+    return '# Example dataset\n';
+  };
+  const changes = [...data, card].map(path => ({ path, status: 'D' }));
+  const loaded = readDocumentationBaseline(f.root, base, changes, git);
+  assert.deepEqual([...loaded.previousDocuments], [[card, '# Example dataset\n']]);
+  assert.ok(requested.every(args => !data.some(path => args.includes(base + ':' + path))));
+  const checked = checkDocumentation(f.root, loaded);
+  assert.deepEqual(checked.errors, [card + ': old path removed; restore a compatibility page.']);
+  assert.deepEqual(checked.anchorMigrations.map(row => row.from), [card + '#example-dataset']);
+});
+
 test('Git baseline loading requests only public non-excluded Markdown and fails on unavailable requested evidence', t => {
   const f = governedFixture(t), base = 'a'.repeat(40), requested = [];
   const changes = [{ path: 'docs/work/current.md', status: 'M' }, { path: 'src/engine.ts', status: 'M' }, { path: 'workspace4skills/private.md', status: 'M' }];
-  const git = args => { requested.push(args.join(' ')); return args[0] === 'show' ? '# Current\n' : base; };
+  const git = args => {
+    requested.push(args.join(' '));
+    if (args[0] !== 'show') return base;
+    return args[1] === base + ':tools/verify/documentation-policy.json' ? '{"exclusions":[]}' : '# Current\n';
+  };
   const result = readDocumentationBaseline(f.root, base, changes, git);
   assert.deepEqual([...result.previousDocuments], [['docs/work/current.md', '# Current\n']]);
   assert.ok(requested.every(command => !command.includes('workspace4skills') && !command.includes('src/engine')));
   assert.throws(() => readDocumentationBaseline(f.root, base, changes, () => { throw Error('missing baseline'); }), /baseline/);
   assert.throws(() => readDocumentationBaseline(f.root, 'HEAD', changes, git), /exact.*SHA/);
+});
+
+test('baselines predating the registry still check documents and available policy read failures remain errors', t => {
+  const f = governedFixture(t), base = 'd'.repeat(40), file = 'docs/removed.md';
+  const policySource = base + ':tools/verify/documentation-policy.json';
+  const changes = [{ path: file, status: 'D' }];
+  const oldGit = args => {
+    if (args[0] === 'cat-file' && args[2] === policySource) throw Error('policy did not exist');
+    if (args[0] === 'show') { assert.equal(args[1], base + ':' + file); return '# Removed\n'; }
+    return '';
+  };
+  const loaded = readDocumentationBaseline(f.root, base, changes, oldGit);
+  assert.deepEqual([...loaded.previousDocuments], [[file, '# Removed\n']]);
+  assert.match(checkDocumentation(f.root, loaded).errors.join('\n'), /removed.md.*restore a compatibility page/);
+  const failedGit = args => {
+    if (args[0] === 'show' && args[1] === policySource) throw Error('policy read failed');
+    return '';
+  };
+  assert.throws(() => readDocumentationBaseline(f.root, base, changes, failedGit), /policy read failed/);
 });
 
 test('the standalone command emits one structured gate result through a directory alias', t => {

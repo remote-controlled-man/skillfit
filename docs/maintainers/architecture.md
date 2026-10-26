@@ -4,7 +4,8 @@ skillfit is one TypeScript/Node >=22 ESM CLI with zero runtime dependencies.
 This page explains the current system and the contracts changes must preserve.
 Execution order, progress and validation live only in the
 source-only `docs/work/current.md` (not shipped in npm).
-Current source includes unpublished changes beyond npm 0.13.1.
+This is the architecture of the 0.14.0 package and current source;
+[build/version availability](../README.md#choose-your-build) is separate.
 
 Start with the map, module owners and workflows. Use the later compatibility,
 retention and extension rules when changing one of those modules.
@@ -99,10 +100,12 @@ docs/{guides,reference,maintainers,work,schemas,examples,assets}/
 benches/                  reusable task inputs and provenance
 profiles/                 installation inputs
 skills/                   shipped CLI driver
-runs/                     ignored attempts/exports/release workspaces
+runs/                     ignored, on-demand experiment workspaces
 ```
 
 Each topic has one canonical page; `docs/work/current.md` is the only plan.
+One-off validation/package scratch uses OS temporary directories; release receipts
+use explicit external destinations. An idle checkout needs no generated runs.
 The docs index routes readers to task guides, references, maintenance contracts
 and the sole plan. Bench format/claims stay with benches.
 The docs index owns build/version availability; fixed Git snapshots retain retired
@@ -144,6 +147,14 @@ and bounded, retaining costs/identity/failures. `applyBenchChange` rechecks inpu
 validates, backs up and rolls back. Public previews cannot mutate private write
 bytes. Rejected post-draft apply still finalizes its summary; partial starter
 writes remove only owned files. Edit/remove preserve unregistered task files.
+
+`src/bench/templates.ts` owns starter content and the shared task-path convention;
+authoring uses it for init/freeze/from-commit/draft. New and contributed tasks keep
+prompt, fixture and private reference under `tasks/<id>/`; real shared graders
+remain once at dataset level. `bench.json` is the executable index. Loading,
+gates, saved records and replay consume its paths rather than a directory name.
+Legacy bundled teaching layouts stay readable. Reorganization changes the
+current Bench hash; saved observations keep their original sealed identities.
 
 ## Write and evidence contracts
 

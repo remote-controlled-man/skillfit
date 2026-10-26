@@ -1,4 +1,0 @@
-import {copyFileSync} from 'node:fs';
-import {fileURLToPath} from 'node:url';
-import {join} from 'node:path';
-for (const file of ['index.js','regression.test.mjs']) copyFileSync(fileURLToPath(new URL('./buffered-readable/'+file,import.meta.url)),join(process.argv[2],file));

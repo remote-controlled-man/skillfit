@@ -39,7 +39,7 @@ test('drafting confirmation and predictable write failures precede every model c
   const f = await fixture(t), original = readFileSync(join(f.bench, 'bench.json'), 'utf8');
   assert.equal(await runBenchAdd({ ...f.options, executor: f.executor(), confirm: async () => false }), null);
   assert.equal(f.calls(), 0); assert.equal(existsSync(f.records), false);
-  mkdirSync(join(f.bench, 'prompts/drafted.md'));
+  mkdirSync(join(f.bench, 'tasks/drafted/prompt.md'), { recursive: true });
   await assert.rejects(runBenchAdd({ ...f.options, executor: f.executor(), yes: true }), /non-file/);
   assert.equal(f.calls(), 0); assert.equal(existsSync(f.records), false);
   assert.equal(readFileSync(join(f.bench, 'bench.json'), 'utf8'), original);
@@ -47,7 +47,8 @@ test('drafting confirmation and predictable write failures precede every model c
 
 test('symlinked output parents cannot write outside the bench or start a draft', async t => {
   const f = await fixture(t), outside = join(f.root, 'outside'); mkdirSync(outside);
-  symlinkSync(outside, join(f.bench, 'fixtures/drafted'), process.platform === 'win32' ? 'junction' : 'dir');
+  mkdirSync(join(f.bench, 'tasks/drafted'), { recursive: true });
+  symlinkSync(outside, join(f.bench, 'tasks/drafted/fixture'), process.platform === 'win32' ? 'junction' : 'dir');
   await assert.rejects(runBenchAdd({ ...f.options, executor: f.executor(), yes: true }), /symlink/);
   assert.equal(f.calls(), 0); assert.equal(existsSync(join(outside, 'drafted')), false);
 });

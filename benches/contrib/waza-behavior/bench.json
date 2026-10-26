@@ -3,8 +3,32 @@
   "name": "waza-behavior",
   "description": "Single-turn behavioral regression diagnostics adapted from pinned Waza cases. Not an independent efficacy benchmark for Waza.",
   "tasks": [
-    { "id": "explicit-hold", "fixture": "fixtures/explicit-hold", "prompt": "prompts/explicit-hold.md", "verifier": "node verifiers/behavior.mjs explicit-hold", "verifierKind": "command", "oracle": "node ground-truth/oracle.mjs explicit-hold", "shouldTrigger": false },
-    { "id": "receipt-current", "fixture": "fixtures/receipt-current", "prompt": "prompts/receipt-current.md", "verifier": "node verifiers/behavior.mjs receipt-current", "verifierKind": "command", "oracle": "node ground-truth/oracle.mjs receipt-current", "shouldTrigger": true },
-    { "id": "receipt-stale", "fixture": "fixtures/receipt-stale", "prompt": "prompts/receipt-stale.md", "verifier": "node verifiers/behavior.mjs receipt-stale", "verifierKind": "command", "oracle": "node ground-truth/oracle.mjs receipt-stale", "shouldTrigger": true }
+    {
+      "id": "explicit-hold",
+      "fixture": "tasks/explicit-hold/fixture",
+      "prompt": "tasks/explicit-hold/prompt.md",
+      "verifier": "node verifiers/behavior.mjs explicit-hold",
+      "verifierKind": "command",
+      "oracle": "node verifiers/oracle.mjs explicit-hold",
+      "shouldTrigger": false
+    },
+    {
+      "id": "receipt-current",
+      "fixture": "tasks/receipt-current/fixture",
+      "prompt": "tasks/receipt-current/prompt.md",
+      "verifier": "node verifiers/behavior.mjs receipt-current",
+      "verifierKind": "command",
+      "oracle": "node verifiers/oracle.mjs receipt-current",
+      "shouldTrigger": true
+    },
+    {
+      "id": "receipt-stale",
+      "fixture": "tasks/receipt-stale/fixture",
+      "prompt": "tasks/receipt-stale/prompt.md",
+      "verifier": "node verifiers/behavior.mjs receipt-stale",
+      "verifierKind": "command",
+      "oracle": "node verifiers/oracle.mjs receipt-stale",
+      "shouldTrigger": true
+    }
   ]
 }

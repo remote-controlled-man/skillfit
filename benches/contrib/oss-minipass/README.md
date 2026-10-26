@@ -1,9 +1,9 @@
-# Historical minipass stream defects
+<a id="historical-minipass-stream-defects"></a>
+
+# Stream completion and backpressure defects
 
 Four actual upstream defects exercise asynchronous completion, buffered readable
-notifications, slow proxy pipelines, and completion listener lifecycles. This
-bench is a development and calibration set for the debugging Skill study. It is
-not the study's independent validation set.
+notifications, slow proxy pipelines, and completion listener lifecycles.
 
 Each fixture retains the pre-fix `index.js`, upstream README, license and package
 metadata. `provenance.json` pins parent/fix commits, source hashes, dependency
@@ -27,3 +27,6 @@ replacing it with a direct stream connection. Deterministic event-loop drainage
 replaces timing sleeps. Each grader and known-correct oracle runs offline.
 Difficulty and baseline saturation require live calibration; none of these
 tasks measures negative Skill routing.
+
+Tasks are grouped under `tasks/<id>/`; `bench.json` owns membership and commands.
+The upstream ISC notices are retained.

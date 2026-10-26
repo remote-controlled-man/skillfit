@@ -18,10 +18,17 @@ import type { Executor } from "../agents/contracts.js";
 import { createSpendingBudgetRecorder } from "../evaluation/execution/budget.js";
 import { summarizeCosts, type CostObservation } from "../evaluation/measurement/costs.js";
 
-async function fixture(t: TestContext, classified = true) {
+async function fixture(t: TestContext, classified = true, legacy = false) {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-export-modes-')); t.after(() => rmSync(root, { recursive: true, force: true }));
   const bench = join(root, 'bench'), skill = join(root, 'skill'), runsRoot = join(root, 'runs');
-  await runBenchInit({ dir: bench, yes: true, log: () => {} });
+  if (legacy) {
+    for (const dir of ['fixtures/example-task', 'prompts', 'verifiers', 'ground-truth']) mkdirSync(join(bench, dir), { recursive: true });
+    writeFileSync(join(bench, 'fixtures/example-task/answer.txt'), 'skillfit-ok\n');
+    writeFileSync(join(bench, 'prompts/example-task.md'), 'Read answer.txt and return its contents.');
+    writeFileSync(join(bench, 'verifiers/example-task.mjs'), `import{readFileSync,existsSync}from'node:fs';import{join}from'node:path';const file=join(process.argv[2],'_output.md');const pass=existsSync(file)&&readFileSync(file,'utf8').trim()==='skillfit-ok';console.log(JSON.stringify({passed:pass,checks:[{name:'exact-answer',pass},{name:'input-preserved',pass:readFileSync(join(process.argv[2],'answer.txt'),'utf8')==='skillfit-ok\\n'}]}));process.exit(pass?0:1);`);
+    writeFileSync(join(bench, 'ground-truth/oracle-example-task.mjs'), `import{writeFileSync}from'node:fs';import{join}from'node:path';writeFileSync(join(process.argv[2],'_output.md'),'skillfit-ok\\n');`);
+    writeFileSync(join(bench, 'bench.json'), JSON.stringify({ schemaVersion: 1, name: 'legacy-layout', tasks: [{ id: 'example-task', fixture: 'fixtures/example-task', prompt: 'prompts/example-task.md', verifier: 'node verifiers/example-task.mjs', oracle: 'node ground-truth/oracle-example-task.mjs' }] }));
+  } else await runBenchInit({ dir: bench, yes: true, log: () => {} });
   const file = join(bench, 'bench.json'), definition = JSON.parse(readFileSync(file, 'utf8'));
   definition.tasks[0].shouldTrigger = true;
   if (classified) definition.tasks[0].triggerClass = 'explicit';
@@ -53,6 +60,24 @@ function rewritePlan(run: string, change: (plan: Record<string, any>) => void) {
   const index = JSON.parse(readFileSync(join(run, '_artifacts.json'), 'utf8')); index.planSha256 = sha256;
   writeFileSync(join(run, '_artifacts.json'), JSON.stringify(index)); reseal(run);
 }
+
+test('legacy relative layout still executes, seals, exports and replays after original inputs are removed', async t => {
+  const f = await fixture(t, true, true), run = join(f.runsRoot, 'legacy'), output = join(f.root, 'portable');
+  assert.equal(loadBench(f.bench).tasks[0]!.fixture, 'fixtures/example-task');
+  await runEval({ skillPath: f.skill, bench: f.bench, executor: f.executor, judgeExecutor: null,
+    trials: 1, maxCalls: 2, runsRoot: f.runsRoot, runGroup: 'legacy', dryRun: false, yes: true, log: () => {} });
+  const before = await readEvaluationReport(run);
+  assert.equal(before.evidence.verified, true, JSON.stringify(before.evidence));
+  const bytes = packageFiles(run).map(file => [file, sha256File(join(run, file))]);
+  await exportEvaluation(run, output, { yes: true, log: () => {} });
+  assert.deepEqual(packageFiles(run).map(file => [file, sha256File(join(run, file))]), bytes);
+  const moved = join(f.root, 'legacy received'); renameSync(output, moved);
+  rmSync(f.bench, { recursive: true }); rmSync(f.skill, { recursive: true }); rmSync(run, { recursive: true });
+  assert.equal(verifyReplayPackage(moved).evaluationType, 'paired');
+  const result = replay(moved);
+  assert.equal(result.evidence.verified, true);
+  assert.equal(result.portableReplay.modelCalls, 0); assert.equal(f.calls(), 2);
+});
 
 test('calibration and trigger export/replay survive deleted inputs and retain single-arm observations, unknown cache and partial costs', async t => {
   for (const variant of ['calibration', 'trigger', 'trigger-unclassified'] as const) await t.test(variant, async t => {
@@ -172,7 +197,7 @@ test('single-arm budget replay includes setup attempts that never invoked an Age
 test('portable replay forwards interruption and waits for verifier cleanup before exiting', async t => {
   for (const signal of ['SIGINT', 'SIGTERM'] as const) await t.test(signal, async t => {
     const f = await fixture(t), enabled = join(f.root, 'enable-hanging-verifier'), pidFile = join(f.root, 'verifier.pid');
-    writeFileSync(join(f.bench, 'verifiers/example-task.mjs'), `import{existsSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';if(existsSync(${JSON.stringify(enabled)})){writeFileSync(${JSON.stringify(pidFile)},String(process.pid));setInterval(()=>{},1000);}else{const file=join(process.argv[2],'_output.md');const passed=existsSync(file)&&readFileSync(file,'utf8').includes('skillfit-ok');console.log(JSON.stringify({passed}));process.exit(passed?0:1);}`);
+    writeFileSync(join(f.bench, 'tasks/example-task/verify.mjs'), `import{existsSync,readFileSync,writeFileSync}from'node:fs';import{join}from'node:path';if(existsSync(${JSON.stringify(enabled)})){writeFileSync(${JSON.stringify(pidFile)},String(process.pid));setInterval(()=>{},1000);}else{const file=join(process.argv[2],'_output.md');const passed=existsSync(file)&&readFileSync(file,'utf8').includes('skillfit-ok');console.log(JSON.stringify({passed}));process.exit(passed?0:1);}`);
     const run = join(f.runsRoot, 'cancel'); await runEval({ skillPath: f.skill, bench: f.bench, executor: f.executor, judgeExecutor: null,
       trials: 1, runsRoot: f.runsRoot, runGroup: 'cancel', dryRun: false, yes: true, log: () => {} });
     const output = join(f.root, 'portable'); await exportEvaluation(run, output, { yes: true, log: () => {} });

@@ -6,17 +6,21 @@ import { join } from 'node:path';
 import { test, type TestContext } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runVerifier } from "./execution/paired.js";
+import { loadBench } from "../bench/read.js";
+import { parseCommand } from "../shared/command.js";
 
 const BENCH = fileURLToPath(new URL("../../benches/contrib/waza-behavior/", import.meta.url));
+const definition = loadBench(BENCH);
+const taskFor = (id: string) => definition.tasks.find(task => task.id === id)!;
 function fixture(t: TestContext, id: string) {
   const dir = mkdtempSync(join(tmpdir(), 'skillfit-waza-behavior-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  cpSync(join(BENCH, 'fixtures', id), dir, { recursive: true });
+  cpSync(join(BENCH, taskFor(id).fixture), dir, { recursive: true });
   return dir;
 }
-const grade = (id: string, dir: string) => runVerifier(BENCH, `node verifiers/behavior.mjs ${id}`, dir);
+const grade = (id: string, dir: string) => runVerifier(BENCH, taskFor(id).verifier, dir);
 async function solve(id: string, dir: string) {
-  assert.equal((await runVerifier(BENCH, `node ground-truth/oracle.mjs ${id}`, dir)).exitCode, 0);
+  assert.equal((await runVerifier(BENCH, taskFor(id).oracle!, dir)).exitCode, 0);
 }
 function checkLinks(dir: string) { execFileSync(process.execPath, ['scripts/check-links.mjs'], { cwd: dir }); }
 
@@ -90,7 +94,7 @@ test('hold initialization overrides disabled global reflog without changing glob
   assert.equal(readFileSync(globalConfig, 'utf8'), '[core]\nlogAllRefUpdates = false\n');
 
   const oracleDir = fixture(t, 'explicit-hold');
-  execFileSync(process.execPath, [join(BENCH, 'ground-truth/oracle.mjs'), 'explicit-hold', oracleDir], { env });
+  execFileSync(process.execPath, [join(BENCH, parseCommand(taskFor('explicit-hold').oracle!)[1]!), 'explicit-hold', oracleDir], { env });
   assert.equal((await grade('explicit-hold', oracleDir)).exitCode, 0);
 });
 

@@ -20,6 +20,13 @@ content with a real case before interpreting efficacy. Schema 1 stays compatible
 and unrecorded; select `--schema-version 2` explicitly for a new bench with
 [declared claims](../../benches/README.md#claims-and-measurement-scope).
 
+New tasks are generated under `tasks/<id>/`: `prompt.md`, optional
+`prompt.trigger.md`, `fixture/`, `verify.mjs` and `reference/`. Inspect `bench.json`
+to see the actual files and commands. Keep one dataset card at the root and task
+instructions in their prompt; share real grading helpers under `verifiers/`
+instead of copying them for each task. The loader also accepts older relative
+layouts; moving files needs no format version or new CLI option.
+
 ## Freeze a real failure
 
 Write the task as a teammate would ask it. Freeze only the files needed to
@@ -97,7 +104,8 @@ before real execution. Fixed outputs do not prove a Skill helps a live agent.
 
 ## Test known controls
 
-Full-pipeline controls are a separate source-only `bench self-test` protocol 1.
+Full-pipeline controls use the separate `bench self-test` protocol 1 included
+in the 0.14.0 package and the reviewed implementing source build.
 Declare them in `controls.json` using the
 [controls schema](../schemas/bench-controls.schema.json) and
 [teaching example](../../benches/_self-test/example/controls.json).

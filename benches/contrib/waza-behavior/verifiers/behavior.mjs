@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const [id, suppliedDir] = process.argv.slice(2);
 if (!['explicit-hold', 'receipt-current', 'receipt-stale'].includes(id) || !suppliedDir) process.exit(2);
 const runDir = resolve(suppliedDir);
-const fixture = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', id);
+const fixture = join(dirname(fileURLToPath(import.meta.url)), '..', 'tasks', id, 'fixture');
 const read = (file) => readFileSync(join(runDir, file));
 const json = (file) => JSON.parse(read(file).toString('utf8'));
 const hash = (file) => createHash('sha256').update(read(file)).digest('hex');

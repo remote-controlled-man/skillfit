@@ -15,7 +15,12 @@ they do not call a live agent or change personal configuration.
 [Architecture and maintenance](../docs/maintainers/architecture.md) explains current
 module, documentation and release contracts. `verify/fixtures/` contains only
 inputs consumed by current offline regressions, grouped by test owner; it is
-excluded from npm. Generated outputs belong in temporary or ignored workspaces.
+excluded from npm. One-off source copies, package extractions and check logs belong
+in OS temporary directories, not the experiment `runs/` tree. Ordinary `dist/`
+and `node_modules/` keep their existing project locations. Keep a result only
+while its review or delivery consumes it; release receipts use an explicit
+external destination. Experiment retention follows the
+[workflow](../docs/guides/experiment-workflow.md#retain-and-clean-up).
 
 ## Release tools
 

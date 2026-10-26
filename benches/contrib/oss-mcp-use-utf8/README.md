@@ -1,8 +1,11 @@
-# Real OSS workflow example: mcp-use HTML resource UTF-8
+<a id="real-oss-workflow-example-mcp-use-html-resource-utf-8"></a>
 
-This is a real source defect replayed in a small, offline fixture. It is a
-**workflow and regression example**, not a claim that this case is difficult or
-that any Skill helps. Earlier snapshot pilots passed in both arms.
+# MCP HTML resource UTF-8 defect
+
+The `view-utf8` task reproduces a base64 HTML decoding defect in mcp-use.
+It is a small workflow/regression example; passing offline gates does not prove
+model difficulty or Skill benefit. Inputs live under `tasks/view-utf8/`;
+`bench.json` owns the executed paths.
 
 ## Source and adaptation
 
@@ -45,12 +48,10 @@ This adapted fixture narrows the claim to this function and its local tests.
 
 ```bash
 node dist/cli.js bench check benches/contrib/oss-mcp-use-utf8
-node dist/cli.js eval evidence/inputs/diagnosing-bugs --bench benches/contrib/oss-mcp-use-utf8 --input workspace --agent codex --trials 1 --dry-run
-node dist/cli.js eval evidence/inputs/diagnosing-bugs --bench benches/contrib/oss-mcp-use-utf8 --input workspace --agent codex --trials 1
-node dist/cli.js report eval <manifest-path-printed-by-eval>
 ```
 
-The real pair makes **two agent calls**. It checks the workflow; one task × one
-pair is indicative. The target is a vendored, pinned evaluation input, not an
-installed Skill. Source details are in `evidence/inputs/README.md`. Use
-`docs/oss-task-evaluation.md` to prepare your own task and a fixed validation run.
+This checks the untouched and reference-repaired fixtures without model calls.
+Use [bench authoring](../../../docs/guides/bench-authoring.md) and the
+[evaluation workflow](../../../docs/guides/experiment-workflow.md) to prepare a
+separately authorized comparison with your own pinned Skill. Saved results use
+report/export and their sealed inputs; this source dataset is not a result archive.

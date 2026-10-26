@@ -24,7 +24,7 @@ test('empty Git index never falls back to ignored or untracked files, including 
   await runBenchInit({ dir: f.bench, yes: true, log: () => {} });
   for (const dryRun of [true, false]) await assert.rejects(runBenchAdd({ benchDir: f.bench, sourceDir: f.source,
     task: 'freeze', freeze: true, prompt: 'Solve', expect: 'done', dryRun, yes: true, log: () => {} }), /No git-tracked files/);
-  assert.equal(existsSync(join(f.bench, 'fixtures', 'freeze')), false);
+  assert.equal(existsSync(join(f.bench, 'tasks', 'freeze')), false);
 });
 
 test('non-Git sources require explicit includes; Git sources support the same narrowing', t => {

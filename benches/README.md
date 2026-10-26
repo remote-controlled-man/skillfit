@@ -38,22 +38,34 @@ Do not switch to YAML or create a new schema merely to move files.
 
 ```
 my-bench/
-  bench.json                 # required: manifest
-  prompts/
-    <task-id>.md             # task instructions shown to the agent
-  fixtures/
-    <task-id>/               # synthetic repository copied into each run directory
-      ...
-      .skillfit-mock.json    # optional: canned outputs for offline/mock runs
-  verifiers/
-    <task-id>.mjs            # deterministic grader; exit code 0 = pass
-  ground-truth/              # seed answers / rubrics (never copied into run directories)
-    <task-id>.md
-    oracle-<task-id>.mjs     # optional: applies the reference solution to a fixture copy
-    solutions/<task-id>/     # optional: the reference solution as real files, for the oracle to copy
+  bench.json                 # sole executable task index
+  README.md                  # short dataset card
+  provenance.json            # upstream pins/adaptations when applicable
+  LICENSE.upstream           # preserve required upstream notices
+  tasks/
+    <task-id>/
+      prompt.md              # instructions shown to the agent
+      prompt.trigger.md      # optional on-disk/trigger instructions
+      fixture/               # only this input tree reaches a trial workspace
+      verify.mjs             # optional task-specific deterministic grader
+      probe.mjs              # optional private behavior probe
+      reference/
+        oracle.mjs           # applies the reference repair to a fixture copy
+        answer.md            # optional rubric
+        ...                  # original reference files, outside the fixture
+  verifiers/                 # optional genuinely shared grading implementation
 ```
 
-Only the task's `fixtures/<task-id>/` directory is copied into a run directory. Everything else — prompts, verifiers, ground truth — stays in the bench directory, so agents never see the answers.
+New init/freeze/from-commit/draft output follows this task-local convention.
+Keep a shared grader once and reference it directly in the manifest; a task does
+not need a duplicate wrapper. Existing schema 1/2 relative paths, including the
+bundled code-review/debugging and fixed self-test layouts, remain supported.
+
+The harness delivers the declared fixture, instructions and selected treatment;
+it does not deliberately deliver private graders or reference answers to the
+agent. This separation is not a filesystem sandbox or a guarantee against an
+agent reading other files accessible on its host. Review execution isolation
+separately when running untrusted agents or tasks.
 
 ## `bench.json` schema
 
@@ -64,11 +76,11 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
   "tasks": [
     {
       "id": "review-r1",
-      "fixture": "fixtures/review-r1",
-      "prompt": "prompts/review-r1.md",
-      "verifier": "node verifiers/seeded-bugs.mjs",
-      "oracle": "node ground-truth/oracle-r1.mjs",
-      "rubric": "ground-truth/r1.md"
+      "fixture": "tasks/review-r1/fixture",
+      "prompt": "tasks/review-r1/prompt.md",
+      "verifier": "node tasks/review-r1/verify.mjs",
+      "oracle": "node tasks/review-r1/reference/oracle.mjs",
+      "rubric": "tasks/review-r1/reference/answer.md"
     }
   ]
 }
@@ -80,11 +92,11 @@ Only the task's `fixtures/<task-id>/` directory is copied into a run directory. 
 | `name` | no | Display name; defaults to the directory name. |
 | `tasks` | yes | Non-empty array. Task `id`s must be unique and match `^[A-Za-z0-9][A-Za-z0-9._-]*$`. |
 | `tasks[].claims` | schema 2 only | Nonempty, distinct `quality`, `efficiency` and/or `activation` design support; activation requires `shouldTrigger`. Schema 1 remains unrecorded. See [claims and scope](#claims-and-measurement-scope). |
-| `tasks[].fixture` | yes | Directory (relative to the bench root) with the synthetic repository. Convention: `fixtures/<task-id>/`. |
-| `tasks[].prompt` | yes | Markdown file with the task instructions. Convention: `prompts/<task-id>.md`. |
-| `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Spawned without a shell, so the first token must be a real executable. Convention: `node verifiers/<task-id>.mjs`. |
+| `tasks[].fixture` | yes | Directory (relative to the bench root) with the synthetic repository. Convention: `tasks/<task-id>/fixture/`. |
+| `tasks[].prompt` | yes | Markdown file with the task instructions. Convention: `tasks/<task-id>/prompt.md`. |
+| `tasks[].verifier` | yes | Command run from the bench root; the run directory is appended as the last argument. Spawned without a shell, so the first token must be a real executable. Convention: `node tasks/<task-id>/verify.mjs`. |
 | `tasks[].verifierKind` | no | `output` (default): the verifier grades the agent's final message at `_output.md`. `command`: the verifier runs a real command (e.g. a test suite) inside the run directory, for tasks where the agent edits files. `command` tasks need a CLI executor (`--agent <id>`), because only that works inside the run directory — an API-key-only `eval` refuses the bench at plan time rather than silently scoring both arms 0. |
-| `tasks[].oracle` | no (warned when absent) | Command (same invocation convention as the verifier) that applies the reference solution to a fixture copy — writes `_output.md` for `output` tasks, edits files for `command` tasks. `bench check` fails when the oracle-solved fixture does not pass the verifier with every check green. A task that registers **no** oracle gets a WARN naming the consequence — winnability is unverified, so nothing proves the task is solvable — rather than a FAIL, because `bench add --freeze` legitimately produces oracle-less tasks mid-authoring. Convention: `node ground-truth/oracle-<task-id>.mjs`. |
+| `tasks[].oracle` | no (warned when absent) | Command (same invocation convention as the verifier) that applies the reference solution to a fixture copy — writes `_output.md` for `output` tasks, edits files for `command` tasks. `bench check` fails when the oracle-solved fixture does not pass the verifier with every check green. A task that registers **no** oracle gets a WARN naming the consequence — winnability is unverified, so nothing proves the task is solvable — rather than a FAIL, because `bench add --freeze` legitimately produces oracle-less tasks mid-authoring. Convention: `node tasks/<task-id>/reference/oracle.mjs`. |
 | `tasks[].rubric` | no | Markdown file injected into the optional LLM judge prompt (never shown to the agent under test). |
 | `tasks[].shouldTrigger` | no | Whether an in-scope skill *should* fire on this task. Required for `--mode trigger` (unlabeled tasks are skipped there). Include negative controls (`false`) — aim for ≥30% of tasks; `bench check` reports the fraction and warns below that target, because false-trigger rate is the metric a thin negative sample undermines first. |
 
@@ -98,7 +110,7 @@ All paths must stay inside the bench directory.
 
 The verifier is the heart of a bench. It must be **deterministic**: same run directory in, same verdict out — no network, no clocks, no randomness.
 
-- Invocation: `<verifier command> <absolute run directory>`, working directory = bench root. The command is spawned **without a shell**, so its first token must be an executable the operating system can start directly: `node verifiers/x.mjs` works, while a bare `npm test` or a `.cmd`/`.bat` wrapper does not (`ENOENT` / `EINVAL` on Windows). The parser groups quoted arguments, so `node "verifiers/check answer.mjs"` works; malformed quoting fails before execution. No shell expansion runs. See [command and error contract](../docs/guides/bench-authoring.md). If the verdict genuinely comes from a shell command, use `bench add --freeze --verifier-cmd "<cmd>"`, which writes a generated `verifiers/<task-id>.mjs` that node runs and that runs your command under a shell inside. Keeping the harness's own spawn shell-free is deliberate, not an oversight — benches are contributed by third parties, and a shell here would turn `"verifier": "node v.mjs & curl …"` in somebody else's `bench.json` into code execution on your machine.
+- Invocation: `<verifier command> <absolute run directory>`, working directory = bench root. The command is spawned **without a shell**, so its first token must be an executable the operating system can start directly: `node verifiers/x.mjs` works, while a bare `npm test` or a `.cmd`/`.bat` wrapper does not (`ENOENT` / `EINVAL` on Windows). The parser groups quoted arguments, so `node "verifiers/check answer.mjs"` works; malformed quoting fails before execution. No shell expansion runs. See [command and error contract](../docs/guides/bench-authoring.md). If the verdict genuinely comes from a shell command, use `bench add --freeze --verifier-cmd "<cmd>"`, which writes a generated `tasks/<task-id>/verify.mjs` that node runs and that runs your command under a shell inside. Keeping the harness's own spawn shell-free is deliberate, not an oversight — benches are contributed by third parties, and a shell here would turn `"verifier": "node v.mjs & curl …"` in somebody else's `bench.json` into code execution on your machine.
 - A verifier that produces **no exit code at all** — unspawnable, or killed by the 2-minute timeout — has graded nothing, so it is never read as a verdict: `bench check` fails the task and names the cause, and `eval` excludes that trial *and its paired arm* from the rates rather than scoring a fabricated failure. Without that, a broken verifier command would look like a 0% pass rate in both arms and get reported as "bench too hard".
 - **For a functioning verifier, exit code 0 = pass, anything else = fail.** The grader separately excludes recognized grader infrastructure errors, including bench-owned Node uncaught exceptions and explicit `skillfit.verifier-error` JSON messages. They cannot satisfy NOP gates or score a model failure merely by exiting nonzero. Candidate failures/assertions retain normal grading; agent spending stays recorded. See [the contract and custom-runtime error channel](../docs/guides/bench-authoring.md).
 - Print a one-line JSON summary as the **last stdout line**. The harness parses it (tolerating surrounding noise) and saves the raw output to `_verifier.txt`:
@@ -108,15 +120,15 @@ The verifier is the heart of a bench. It must be **deterministic**: same run dir
 - The run directory contains the agent's raw final message at `_output.md`, the full prompt at `_prompt.txt`, plus any files the agent created or modified in place (CLI executors run inside the run directory).
 - Two kinds: `output` verifiers (default) grade `_output.md`; `command` verifiers (`verifierKind: "command"`) run a real command — e.g. the repo's test suite — inside the run directory, for tasks where the agent edits files. A command verifier must *fail on the untouched fixture* (the task is unsolved as shipped); `bench check` verifies exactly that. When the task registers an `oracle`, `bench check` also verifies the other direction: the oracle-solved fixture must exit 0 with every check passing. Together these are the NOP/oracle gates — they catch broken verifiers and unwinnable tasks before you spend tokens.
 
-Node is the recommended verifier runtime because it is everywhere skillfit runs: `node verifiers/<task-id>.mjs`.
+Node is the recommended verifier runtime because it is everywhere skillfit runs: `node tasks/<task-id>/verify.mjs`.
 
 ## Fixture rules
 
-- Keep fixtures small and self-contained; every file is embedded into the prompt, so size is tokens.
+- Keep fixtures self-contained. Snapshot input embeds eligible files into the prompt, so size consumes tokens; workspace input presents files on disk to a CLI executor. Keep the context needed to reproduce the task instead of trimming a historical source to improve token counts.
 - Files whose name starts with `_`, any `.git` directory, and `.skillfit-mock.json` are never shown to the agent. For non-mock executors the marker file is deleted from the run directory before the agent starts, so it cannot leak into real runs.
-- Seed defects deliberately and record them in `ground-truth/`. The best benches are ported from real production incidents: take a bug that actually escaped, shrink the repo around it, and assert the reviewer finds it.
+- Seed defects deliberately and record them in the task's `reference/`. The best benches are ported from real production incidents: take a bug that actually escaped, shrink the repo around it, and assert the reviewer finds it.
 - Include decoys (plausible-but-correct code) so that a treatment which simply "reports more" is penalized by your scoring logic.
-- Include a `.skillfit-mock.json` marker so the bench can be exercised offline with the MockExecutor:
+- Output-kind tasks may include a `.skillfit-mock.json` marker for fixed offline MockExecutor outputs:
 
 ```json
 {

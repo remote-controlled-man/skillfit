@@ -50,7 +50,7 @@ test('runBenchInit dry-run prints the plan and writes nothing', async (t) => {
   const output = lines.join('\n');
   assert.match(output, /Bench scaffold plan \(dry run\)/);
   assert.match(output, /\+ bench\.json/);
-  assert.match(output, /\+ verifiers\/example-task\.mjs/);
+  assert.match(output, /\+ tasks\/example-task\/verify\.mjs/);
 });
 
 test('bench init preserves a target created while confirmation is pending', async t => {
@@ -60,7 +60,7 @@ test('bench init preserves a target created while confirmation is pending', asyn
     mkdirSync(dir); writeFileSync(join(dir, 'bench.json'), 'concurrent content'); return true;
   } }), /not empty|changed/);
   assert.equal(readFileSync(join(dir, 'bench.json'), 'utf8'), 'concurrent content');
-  assert.ok(!existsSync(join(dir, 'verifiers')));
+  assert.ok(!existsSync(join(dir, 'tasks')));
 });
 
 test('runBenchInit scaffolds a bench that loads and passes bench check', async (t) => {
@@ -87,7 +87,7 @@ test('command starter dry-run writes nothing and invalid kinds fail before writi
   const { lines, log } = collector();
   await runBenchInit({ cwd, kind: 'command', dryRun: true, log });
   assert.ok(!existsSync(join(cwd, 'skillfit-bench')));
-  assert.match(lines.join('\n'), /fixtures\/example-task\/index\.js/);
+  assert.match(lines.join('\n'), /tasks\/example-task\/fixture\/index\.js/);
   await assert.rejects(() => runBenchInit({ cwd, kind: 'typo' as 'command', yes: true, log }), /Unknown bench kind/);
   assert.ok(!existsSync(join(cwd, 'skillfit-bench')));
 });
@@ -99,12 +99,12 @@ test('command starter is self-contained, passes offline NOP/oracle gates and pre
   await runBenchInit({ dir, kind: 'command', yes: true, log });
   const bench = loadBench(dir);
   assert.equal(bench.tasks[0]?.verifierKind, 'command');
-  assert.equal(bench.tasks[0]?.promptTrigger, 'prompts/example-task.trigger.md');
-  const original = readFileSync(join(dir, 'fixtures/example-task/index.js'), 'utf8');
+  assert.equal(bench.tasks[0]?.promptTrigger, 'tasks/example-task/prompt.trigger.md');
+  const original = readFileSync(join(dir, 'tasks/example-task/fixture/index.js'), 'utf8');
   const report = await runBenchCheck({ dir, log: () => {} });
   assert.equal(report.failures, 0, JSON.stringify(report.checks));
   assert.equal(report.warnings, 0, JSON.stringify(report.checks));
-  assert.equal(readFileSync(join(dir, 'fixtures/example-task/index.js'), 'utf8'), original,
+  assert.equal(readFileSync(join(dir, 'tasks/example-task/fixture/index.js'), 'utf8'), original,
     'offline check must solve only a disposable copy');
   assert.match(lines.join('\n'), /--input workspace --trials 1 --max-calls 2 --dry-run/);
   const preview = spawnSync(process.execPath, [join(PACKAGE_ROOT, 'dist/cli.js'),
@@ -131,9 +131,9 @@ test('command starter grades behavior, accepting equivalent repairs and rejectin
   ];
   for (const program of programs) await t.test(program.id, async () => {
     const runDir = join(cwd, `run ${program.id}`);
-    cpSync(join(dir, 'fixtures/example-task'), runDir, { recursive: true });
+    cpSync(join(dir, 'tasks/example-task/fixture'), runDir, { recursive: true });
     writeFileSync(join(runDir, 'index.js'), program.source);
-    const result = await runVerifier(dir, 'node verifiers/example-task.mjs', runDir);
+    const result = await runVerifier(dir, 'node tasks/example-task/verify.mjs', runDir);
     assert.equal(result.exitCode, program.passed ? 0 : 1, result.output);
     const summary = parseVerifierSummary(result.output);
     assert.equal(summary?.passed, program.passed);
@@ -153,11 +153,11 @@ test('command starter rejects modified or missing protected tests and package me
   for (const file of ['package.json', 'test.mjs']) {
     for (const mutation of ['modify', 'remove']) await t.test(`${mutation} ${file}`, async () => {
       const runDir = join(cwd, `${mutation}-${file}`);
-      cpSync(join(dir, 'fixtures/example-task'), runDir, { recursive: true });
+      cpSync(join(dir, 'tasks/example-task/fixture'), runDir, { recursive: true });
       writeFileSync(join(runDir, 'index.js'), 'export const add = (a, b) => a + b;');
       if (mutation === 'remove') rmSync(join(runDir, file));
       else writeFileSync(join(runDir, file), file === 'package.json' ? '{"type":"module"}' : '// tests removed');
-      const result = await runVerifier(dir, 'node verifiers/example-task.mjs', runDir);
+      const result = await runVerifier(dir, 'node tasks/example-task/verify.mjs', runDir);
       assert.equal(result.exitCode, 1, result.output);
       assert.equal(parseVerifierSummary(result.output)?.checks[0]?.pass, false);
     });
@@ -742,7 +742,7 @@ test('runBenchAdd --freeze captures only git-tracked files and registers the tas
     log: () => {},
   });
   assert.ok(result);
-  const fixture = join(benchDir, 'fixtures', 'add-bug');
+  const fixture = join(benchDir, 'tasks', 'add-bug', 'fixture');
   assert.ok(existsSync(join(fixture, 'add.js')), 'tracked file captured');
   assert.ok(!existsSync(join(fixture, 'untracked.txt')), 'untracked file excluded');
   assert.ok(!existsSync(join(fixture, 'node_modules')), 'node_modules excluded');
@@ -750,22 +750,22 @@ test('runBenchAdd --freeze captures only git-tracked files and registers the tas
   const task = bench.tasks.find((entry) => entry.id === 'add-bug');
   assert.equal(task?.verifierKind, 'command');
   assert.equal(task?.shouldTrigger, true);
-  assert.equal(task?.promptTrigger, 'prompts/add-bug.trigger.md');
-  assert.ok(existsSync(join(benchDir, 'prompts', 'add-bug.trigger.md')));
-  assert.ok(existsSync(join(benchDir, 'ground-truth', 'add-bug.md')));
+  assert.equal(task?.promptTrigger, 'tasks/add-bug/prompt.trigger.md');
+  assert.ok(existsSync(join(benchDir, 'tasks/add-bug/prompt.trigger.md')));
+  assert.ok(existsSync(join(benchDir, 'tasks/add-bug/reference/answer.md')));
 
   const runDir = mkdtempSync(join(tmpdir(), 'skillfit-freeze-run-'));
   t.after(() => rmSync(runDir, { recursive: true, force: true }));
   for (const file of ['add.js', 'add.test.js', 'package.json']) {
     writeFileSync(join(runDir, file), readFileSync(join(fixture, file)));
   }
-  const failing = spawnSync('node', [join(benchDir, 'verifiers', 'add-bug.mjs'), runDir], {
+  const failing = spawnSync('node', [join(benchDir, 'tasks', 'add-bug', 'verify.mjs'), runDir], {
     cwd: benchDir,
     encoding: 'utf8',
   });
   assert.notEqual(failing.status, 0, 'verifier fails while the bug is present');
   writeFileSync(join(runDir, 'add.js'), 'export function add(a, b) {\n  return a + b;\n}\n');
-  const passing = spawnSync('node', [join(benchDir, 'verifiers', 'add-bug.mjs'), runDir], {
+  const passing = spawnSync('node', [join(benchDir, 'tasks', 'add-bug', 'verify.mjs'), runDir], {
     cwd: benchDir,
     encoding: 'utf8',
   });
@@ -794,13 +794,13 @@ test('runBenchAdd --freeze supports --expect output verifiers', async (t) => {
   const runDir = mkdtempSync(join(tmpdir(), 'skillfit-freeze-run-'));
   t.after(() => rmSync(runDir, { recursive: true, force: true }));
   writeFileSync(join(runDir, '_output.md'), 'The implementation subtracts instead of adds.');
-  const ok = spawnSync('node', [join(benchDir, 'verifiers', 'explain-bug.mjs'), runDir], {
+  const ok = spawnSync('node', [join(benchDir, 'tasks', 'explain-bug', 'verify.mjs'), runDir], {
     cwd: benchDir,
     encoding: 'utf8',
   });
   assert.equal(ok.status, 0);
   writeFileSync(join(runDir, '_output.md'), 'no idea');
-  const bad = spawnSync('node', [join(benchDir, 'verifiers', 'explain-bug.mjs'), runDir], {
+  const bad = spawnSync('node', [join(benchDir, 'tasks', 'explain-bug', 'verify.mjs'), runDir], {
     cwd: benchDir,
     encoding: 'utf8',
   });
@@ -850,10 +850,10 @@ test('runBenchAdd --freeze --decompose installs a gated draft with its oracle', 
   const bench = loadBench(benchDir);
   const task = bench.tasks.find((entry) => entry.id === 'add-bug-drafted');
   assert.equal(task?.verifierKind, 'command');
-  assert.equal(task?.oracle, 'node ground-truth/oracle-add-bug-drafted.mjs');
-  assert.ok(existsSync(join(benchDir, 'ground-truth', 'oracle-add-bug-drafted.mjs')));
+  assert.equal(task?.oracle, 'node tasks/add-bug-drafted/reference/oracle.mjs');
+  assert.ok(existsSync(join(benchDir, 'tasks/add-bug-drafted/reference/oracle.mjs')));
   assert.match(
-    readFileSync(join(benchDir, 'verifiers', 'add-bug-drafted.mjs'), 'utf8'),
+    readFileSync(join(benchDir, 'tasks', 'add-bug-drafted', 'verify.mjs'), 'utf8'),
     /tests-pass/,
   );
   const report = await runBenchCheck({ dir: benchDir, log: () => {} });
@@ -978,7 +978,7 @@ test('runBenchAdd --decompose dry-run skips the agent and writes nothing', async
   });
   assert.equal(result, null);
   assert.equal(invoked, false);
-  assert.ok(!existsSync(join(benchDir, 'verifiers', 'x1.mjs')));
+  assert.ok(!existsSync(join(benchDir, 'tasks', 'x1', 'verify.mjs')));
 });
 
 test('runBenchAdd validates flags and rejects duplicates', async (t) => {
@@ -1028,21 +1028,22 @@ test('runBenchAdd --freeze dry-run writes nothing', async (t) => {
     log,
   });
   assert.equal(result, null);
-  assert.ok(!existsSync(join(benchDir, 'fixtures', 'add-bug')));
+  assert.ok(!existsSync(join(benchDir, 'tasks', 'add-bug', 'fixture')));
   assert.match(lines.join('\n'), /dry run/);
   // The command string is persisted into a generated verifier and re-run under a shell on every
   // later check and eval, so it is disclosed before anything is written.
-  assert.match(lines.join('\n'), /--verifier-cmd "node --test" is written into verifiers\/add-bug\.mjs/);
+  assert.match(lines.join('\n'), /--verifier-cmd "node --test" is written into tasks\/add-bug\/verify\.mjs/);
   assert.match(lines.join('\n'), /re-executed with a shell/);
 });
 
 test('runBenchAdd backs up an existing file and rolls back a failed write', async (t) => {
   const source = gitRepoWithBug(t);
   const benchDir = await freezeBench(t);
-  const leftover = join(benchDir, 'verifiers', 'add-bug.mjs');
+  mkdirSync(join(benchDir, 'tasks', 'add-bug'), { recursive: true });
+  const leftover = join(benchDir, 'tasks', 'add-bug', 'verify.mjs');
   writeFileSync(leftover, 'original verifier\n');
   const before = readFileSync(join(benchDir, 'bench.json'), 'utf8');
-  mkdirSync(join(benchDir, 'prompts', 'blocked.md'));
+  mkdirSync(join(benchDir, 'tasks/blocked/prompt.md'), { recursive: true });
   await assert.rejects(
     runBenchAdd({
       benchDir, task: 'blocked', prompt: 'Fix add.', freeze: true, sourceDir: source,
@@ -1051,8 +1052,8 @@ test('runBenchAdd backs up an existing file and rolls back a failed write', asyn
     /non-file/,
   );
   assert.equal(readFileSync(join(benchDir, 'bench.json'), 'utf8'), before);
-  assert.equal(existsSync(join(benchDir, 'fixtures', 'blocked', 'add.js')), false);
-  rmSync(join(benchDir, 'prompts', 'blocked.md'), { recursive: true, force: true });
+  assert.equal(existsSync(join(benchDir, 'tasks', 'blocked', 'fixture', 'add.js')), false);
+  rmSync(join(benchDir, 'tasks/blocked/prompt.md'), { recursive: true, force: true });
 
   await runBenchAdd({
     benchDir, task: 'add-bug', prompt: 'Fix add.', freeze: true, sourceDir: source,
@@ -1079,7 +1080,7 @@ test('runBenchAdd works in a non-git source directory with explicit file selecti
     yes: true,
     log: () => {},
   });
-  const fixture = join(benchDir, 'fixtures', 'plain');
+  const fixture = join(benchDir, 'tasks', 'plain', 'fixture');
   assert.ok(existsSync(join(fixture, 'main.js')));
   assert.ok(!existsSync(join(fixture, 'node_modules')));
   assert.ok(!existsSync(join(fixture, '.git')));
@@ -1136,7 +1137,7 @@ test('runBenchAdd --from-commit mines parent fixture + embedded FAIL_TO_PASS ver
   });
   assert.ok(result);
   assert.match(result.taskId, /^fix-[0-9a-f]{7}$/);
-  const fixture = join(benchDir, 'fixtures', result.taskId);
+  const fixture = join(benchDir, 'tasks', result.taskId, 'fixture');
   assert.match(readFileSync(join(fixture, 'src', 'add.js'), 'utf8'), /return a - b/, 'fixture is the parent (buggy) state');
   assert.ok(existsSync(join(fixture, 'package.json')));
   assert.ok(existsSync(join(fixture, 'test', 'sanity.test.js')), 'parent tests come along');
@@ -1151,13 +1152,13 @@ test('runBenchAdd --from-commit mines parent fixture + embedded FAIL_TO_PASS ver
   writeFileSync(join(runDir, 'package.json'), readFileSync(join(fixture, 'package.json')));
   mkdirSync(join(runDir, 'src'), { recursive: true });
   writeFileSync(join(runDir, 'src', 'add.js'), readFileSync(join(fixture, 'src', 'add.js')));
-  const pristine = spawnSync('node', [join(benchDir, 'verifiers', `${result.taskId}.mjs`), runDir], {
+  const pristine = spawnSync('node', [join(benchDir, 'tasks', result.taskId, 'verify.mjs'), runDir], {
     cwd: benchDir,
     encoding: 'utf8',
   });
   assert.notEqual(pristine.status, 0, 'embedded fix tests fail on the parent state');
   writeFileSync(join(runDir, 'src', 'add.js'), 'export function add(a, b) {\n  return a + b;\n}\n');
-  const fixed = spawnSync('node', [join(benchDir, 'verifiers', `${result.taskId}.mjs`), runDir], {
+  const fixed = spawnSync('node', [join(benchDir, 'tasks', result.taskId, 'verify.mjs'), runDir], {
     cwd: benchDir,
     encoding: 'utf8',
   });
@@ -1177,9 +1178,9 @@ test('commit import honors an issue prompt without revealing the fix message', a
     const result = await runBenchAdd({ benchDir, sourceDir: repo, fromCommit: fixCommit,
       ...promptOptions, yes: true, log: () => {} });
     assert.ok(result);
-    assert.equal(readFileSync(join(benchDir, 'prompts', `${result.taskId}.md`), 'utf8'), issue);
-    assert.match(readFileSync(join(benchDir, 'fixtures', result.taskId, 'src/add.js'), 'utf8'), /return a - b/);
-    assert.ok(!existsSync(join(benchDir, 'fixtures', result.taskId, 'test/add-fix.test.js')));
+    assert.equal(readFileSync(join(benchDir, 'tasks', result.taskId, 'prompt.md'), 'utf8'), issue);
+    assert.match(readFileSync(join(benchDir, 'tasks', result.taskId, 'fixture', 'src/add.js'), 'utf8'), /return a - b/);
+    assert.ok(!existsSync(join(benchDir, 'tasks', result.taskId, 'fixture', 'test/add-fix.test.js')));
   }
   const benchDir = await freezeBench(t);
   for (const invalid of [{ prompt: '' }, { prompt: 'x', promptFile }]) {
@@ -1260,7 +1261,7 @@ test('runBenchAdd --from-commit mines a repository with non-ASCII paths', async 
     log: () => {},
   });
   assert.ok(result);
-  const mined = join(benchDir, 'fixtures', result.taskId, 'src', 'café-notes.txt');
+  const mined = join(benchDir, 'tasks', result.taskId, 'fixture', 'src', 'café-notes.txt');
   assert.ok(existsSync(mined), 'the accented file is part of the parent state and must be mined');
   assert.equal(readFileSync(mined, 'utf8'), 'pricing edge cases\n');
 });
@@ -1311,7 +1312,7 @@ test('runBenchAdd --from-commit honors --include and dry-run', async (t) => {
     log,
   });
   assert.equal(dry, null);
-  assert.ok(!existsSync(join(benchDir, 'fixtures', `fix-${fixCommit.slice(0, 7)}`)));
+  assert.ok(!existsSync(join(benchDir, 'tasks', `fix-${fixCommit.slice(0, 7)}`, 'fixture')));
   const result = await runBenchAdd({
     benchDir,
     fromCommit: fixCommit,
@@ -1321,8 +1322,8 @@ test('runBenchAdd --from-commit honors --include and dry-run', async (t) => {
     log: () => {},
   });
   assert.ok(result);
-  assert.ok(existsSync(join(benchDir, 'fixtures', result.taskId, 'src', 'add.js')));
-  assert.ok(!existsSync(join(benchDir, 'fixtures', result.taskId, 'package.json')), 'include filters the fixture');
+  assert.ok(existsSync(join(benchDir, 'tasks', result.taskId, 'fixture', 'src', 'add.js')));
+  assert.ok(!existsSync(join(benchDir, 'tasks', result.taskId, 'fixture', 'package.json')), 'include filters the fixture');
 });
 
 function makeCalibBench(t: import('node:test').TestContext): string {
@@ -1499,5 +1500,5 @@ test('bench add refuses source changes during confirmation without writing a tas
       writeFileSync(join(source, 'answer.txt'), 'after'); return true;
     } }), /source.*changed/i);
   assert.equal(readFileSync(join(dir, 'bench.json'), 'utf8'), before);
-  assert.ok(!existsSync(join(dir, 'fixtures/captured')));
+  assert.ok(!existsSync(join(dir, 'tasks/captured/fixture')));
 });
