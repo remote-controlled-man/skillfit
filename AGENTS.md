@@ -2,13 +2,13 @@
 
 ## Project and layout
 
-Evidence-driven configuration CLI for Claude Code, Codex CLI, and Kimi Code. Uses TypeScript and Node.js 22+. See `node dist/cli.js --help` for commands.
+Evidence-driven configuration CLI for Claude Code, Codex CLI, and Kimi Code. Uses TypeScript and Node.js 22+. These instructions cover this repository; [CONTRIBUTING.md](CONTRIBUTING.md) owns contributor setup and PR guidance. See [architecture and maintenance](docs/maintainers/architecture.md) for the full dependency map and extension contracts.
 
 - `src/cli/` and `src/composition.ts` — parsing, presentation, confirmation and concrete host wiring.
 - `src/resources/`, `src/agents/`, `src/bench/`, `src/usage/` — owned resource, execution, task and observation interfaces.
 - `src/evaluation/` — application, temporary targets, execution, measurement and records.
 - `src/configuration/` — real install/setup/bundle transactions and rollback; `src/shared/` — generic mechanisms.
-- `src/commands/` and `src/harness/` — fixed installed-recipe/replay delegates and six retained test entries; add new work under its canonical owner.
+- `src/commands/` and `src/harness/` — compatibility entries for installed recipes/replay; add new work under its canonical owner, not these delegates.
 - `src/matrix/agents.json` — agent capability matrix.
 - `benches/` and `skills/` — public bench format, bundled benches, and the CLI driver skill.
 - `docs/` — grouped guides/reference/maintainer contracts; update the sole plan in `docs/work/current.md`.
@@ -23,6 +23,8 @@ Evidence-driven configuration CLI for Claude Code, Codex CLI, and Kimi Code. Use
 
 ## Commands and completion
 
+Run from the repository root. Build before invoking `dist/cli.js`:
+
 ```bash
 npm ci                      # install development dependencies from the lockfile
 npm run build               # compile and type-check TypeScript
@@ -30,7 +32,8 @@ npm test                    # build + all offline tests
 node dist/cli.js doctor     # optional read-only smoke against the real machine
 ```
 
-- Run `npm test` before delivering code/build changes and before any commit. Documentation-only edits require checking facts, links, and the diff; validate executable examples when changed. No lint or formatter script is currently configured.
+- Run `npm test` before delivering code/build changes and before any commit. Tests use `node:test` and stay offline: use `MockExecutor`, injected executors or injected fs roots instead of real model APIs or agent CLIs.
+- For documentation-only edits, run `node tools/verify/check-docs.mjs`, check facts and the diff, and execute changed examples. For moved/renamed sections, add `--base <full-base-commit>` to check old paths/anchors. This does not verify external URL availability or factual accuracy. No lint or formatter script is configured.
 - For bench changes, follow [docs/guides/bench-authoring.md](docs/guides/bench-authoring.md) and run `node dist/cli.js bench check <bench-dir>`. See [.github/workflows/ci.yml](.github/workflows/ci.yml) for additional checks relevant to the affected behavior.
 - Fix failures caused by the change and rerun affected checks. Report actual results, pre-existing failures, and unavailable checks; do not weaken assertions or claim a skipped check passed. PRs follow [CONTRIBUTING.md](CONTRIBUTING.md), including observable before/after behavior and AI disclosure.
 
@@ -41,7 +44,6 @@ node dist/cli.js doctor     # optional read-only smoke against the real machine
 - **Zero runtime dependencies:** use Node built-ins to keep the shipped CLI self-contained. New devDependencies need a stated reason in the PR; proposals to change the runtime-dependency policy require prior discussion per [CONTRIBUTING.md](CONTRIBUTING.md).
 - Use ESM with `module: NodeNext`; relative imports carry `.js` so compiled imports resolve in Node.
 - Agent-specific paths and behaviors come from `src/matrix/agents.json`, rather than command-local constants, to avoid divergent agent support. Matrix edits require a `verifiedAt` bump and an official docs link.
-- Tests use `node:test` and stay offline: use `MockExecutor`, injected executors, or injected fs roots instead of real model APIs or agent CLIs, keeping runs deterministic and free of live costs or configuration changes.
 - Verdict semantics and the statistical protocol are frozen contracts in [docs/reference/metrics.md](docs/reference/metrics.md). When a task changes either, update code and documentation together so historical results remain interpretable.
 - User-facing CLI output is English. README.md is the English source of truth; README.zh-CN.md mirrors it section-by-section. Keep badges, code blocks, and the demo console block verbatim; localize text-bearing SVGs per README and share the text-free logo.
 
@@ -55,5 +57,5 @@ node dist/cli.js doctor     # optional read-only smoke against the real machine
 
 ## Workflow and authorization
 
-- For complex changes, give a short plan, implement, check, and fix until the relevant checks pass or a concrete blocker remains. Routine reversible edits can proceed directly.
+- For complex changes, use the sole plan `docs/work/current.md`: define order and acceptance before implementing, then update progress and actual verification after each step. Implement, check and fix until the relevant checks pass or a concrete blocker remains. Routine reversible edits can proceed directly.
 - Ask when unresolved ambiguity materially affects scope or correctness, or when a needed action exceeds existing authorization (for example, real paid evaluations, changing actual user configuration, publishing, or breaking a public CLI/output/manifest contract). Prepare the plan, diff, or dry run first; continue independent local work while awaiting the decision.

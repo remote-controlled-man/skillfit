@@ -2,33 +2,39 @@
 
 ## Status
 
-- Baseline: reviewed source 6b20bc1; original main 3a3ff4. Source 5a3c9c8
-  preserved the reviewed tree and consumed source-snapshot ancestry.
-- Current task: complete. PR #57 merged the reviewed source into main at
-  655bccaa384bbc3d0dc5602e76efa63968272ece; exact main CI passed all eight jobs.
-  Retired archive trees are absent; installation and current saved replay remain.
-- Progress: W1–W5 and L1–L5 complete; R1 scope review and M1–M3 local merge
-  verification complete; M1–M7 (including M6a) and R3 source integration are
-  complete. R2 version preparation and R4 publication remain
-  separate proposed work, not prerequisites for this source-only merge.
-- CI suitability follow-up: M5 complete locally. Current CI remains suitable;
-  the authorized temporary branch and one PR completed. Only the Windows
-  package-test allowance/timing changed after an observed timeout; no workflow
-  or product deadline changed. Final PR and main CI both passed eight jobs.
-- Delivery: main matches reviewed candidate 153c014 byte-for-byte, including
-  all 1,989 deletions. This final status is recorded on the retained delivery
-  branch, incorporating main as an ancestor and retaining the six consumed pins.
-- Scope: existing plan/docs and necessary offline regressions. User authorized
-  merging only after successful review/flow validation; no version bump or npm
-  publication. No new maintained document, dependency, Calibration refactor, real
-  experiment or actual user-configuration write. The user approved this one
-  PR/remote-CI integration route after its review; earlier no-PR/no-CI limits
-  remain historical task constraints, not a prohibition on this approved route.
+- Current task: D1–D5 complete locally; D6 authorized branch delivery in progress.
+  The user authorized committing and pushing the existing documentation changes. Improve the
+  existing README, AGENTS and contribution entry points for users and contributors.
+  GitHub's README guidance, the official AGENTS format and uv/Ruff entry documents
+  inform the review; they do not impose a new template or process on this project.
+- Baseline: 3472a8701524a59b0c048b4477236dee388615c7; clean working tree.
+  PR #57 already merged as 655bccaa384bbc3d0dc5602e76efa63968272ece and its
+  exact-main CI passed eight jobs. That completed delivery is not fresh validation
+  of this documentation task. Keep the original branch and consumed snapshot pins.
+- Scope: edit existing AGENTS.md, both READMEs, CONTRIBUTING.md, this plan
+  and the bug-report template description. Clarify reader order, version/build scope, contributor setup and agent
+  instructions. Preserve protections, all existing README badge/command/demo
+  bytes, historical claims/links and inbound anchors; sections may move together.
+- Verification: existing documentation/entry tests and offline link/version checks;
+  inspect final rendered entry structure and run the new contributor commands.
+  Existing installation/replay recipes run against the final packed documents.
+  No product/test/workflow change, new maintained page or dependency, remote CI,
+  PR, publication, Calibration change or real model/configuration call. D5–D6
+  authorize only non-force delivery to origin/codex/docs-framework-architecture.
+- Previous work: W1–W5, L1–L5, M1–M7 (including M6a) and R3 source integration
+  complete. R2 candidate-version preparation and R4 publication remain separate,
+  unapproved work; package version stays 0.13.1.
 
 ## Execution order and acceptance
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| D1 | Audit entry documents and review this scope; after M7 | Complete | Read root instructions, both READMEs, contribution/security routes, existing docs checks and package scripts. Verify external research claims against original sources. Use concise reader-focused guidance; no universal line-count rule, new template or personal agent-tool requirement. |
+| D2 | Correct README navigation and contribution onboarding; after D1 | Complete | Put install/first preview before background/history. Keep all existing badges and fenced command/demo blocks byte-identical, mirror Chinese section order, preserve anchors and fixed links. Correct the post-merge source description, collapse repeated guide links and move detailed contracts to their existing owners. Add actual development setup and separate offline checks from optional paid calibration. |
+| D3 | Clarify project-specific agent guidance; after D2 | Complete | Keep commands runnable from the repository root and ownership concise with the architecture link. Preserve skillfit-driver routing, offline tests, zero runtime dependencies, CLI/bilingual conventions, writer backups/rollback, private lab protection, immutable observations and current replay. Retain all previous heading anchors; add no generic approval or agent-specific tooling mandate. |
+| D4 | One integrated final review and local acceptance; after D3 | Complete locally | Account for all five paths, review instruction changes against baseline and verify bilingual blocks/badges/headings, original snapshots and anchor migration. Execute new contributor commands and existing docs/entry checks; fresh offline pack/install and installed recipe must preserve installation and five portable replays. Record actual results and limits here; leave edits local. |
+| D5 | Recheck final inputs and pre-commit validation; after D4 | Complete | Compare all five content hashes with D4, reuse the integrated review only for unchanged inputs and inspect this plan follow-up. Preserve installed 31-regression/five-replay proof only when every packaged byte still matches. Run npm test once with loopback listening allowed, retain docs/anchors/version/diff checks and record actual results. |
+| D6 | Commit and push the reviewed documents; after D5 | In progress | Confirm the remote branch is still the expected baseline and has no open PR; check workflow triggers. Commit only the six planned paths with [skip ci], push non-force to origin/codex/docs-framework-architecture, and independently compare remote/local HEAD and unchanged main. Record delivery in this sole plan with a status-only follow-up; verify its final ref in the handoff. No new PR or remote CI. |
 | W1 | Reconcile audit findings, consumers and plan | Complete | Reviewed the 11 docs pages, release workflow inputs/order, existing output guards, session sealing and export inventory. Use current owners and commands; keep cleanup a documented explicit manual operation. No unresolved contract choice requires a new mechanism. |
 | W2 | Correct document purpose and release manual; after W1 | Complete | Remove obsolete page-count/restoration assertions. Correct reference/how-to registry kinds. Keep one operation authority: workflow for steps, reports for saved fields, metrics for statistical meaning. Complete the existing release page with main/source-CI gate, reviewed preview ID/attempt, original tarball promotion, one upload, acceptance, receipt delivery and failure recovery. Validate instructions against current workflow/tools offline; do not dispatch them. Preserve old headings/anchors and frozen statistical meaning. |
 | W3 | Implement workflow and data-handling rules in existing guides; after W2 | Complete | Explain design→offline gates→separate development/calibration→fixed validation/preview→execution→sealed read/analysis→optional delivery→retention/cleanup. Use an ignored outer study workspace with unchanged native batch layout. Separate memory-only values, observed facts and derived metrics. Declare consumers, provenance/unknowns and manual cleanup conditions; protect active/referenced batches and every indexed native file. Clarify custom analysis is not automatically exported and retention intent is separate from native completion status. Link concise rules from architecture/Bench/Skill instead of duplicating them. |
@@ -51,6 +57,103 @@
 | M6 | One temporary integration branch and existing CI; after M5 | Complete; PR #57 merged as 655bcca | Retained source 5a3c9c8 and initial integration b5a052e have identical trees. Final candidate 153c014 adds only M6a's package-test envelope and plan updates; all 1,989 deletions remain. Final PR CI passed all eight jobs. Merged with explicit clean title/body, without protection, workflow/platform, publication or real experiment changes. |
 | M6a | Diagnose and verify Windows package-test timeout; within M6 | Complete | Original Windows timeout preserved. Local suite: 1,068 pass, zero fail/cancel/skip. Final actual Windows CI: 1,065 tests, 1,064 pass, zero fail/cancel and one existing platform skip; offline install completed in 48,429 ms within the bounded 120-second envelope. Product deadlines and all assertions are unchanged; no claim of deterministic Windows reproduction on macOS. |
 | M7 | Exact main CI, tree/deletion verification and final status; after M6 | Complete | Main run 40294723010 passed all eight jobs on 655bccaa384bbc3d0dc5602e76efa63968272ece. Existing source-CI collection validated three full OS receipts; source tree equals the reviewed candidate and all 1,989 deletions remain. This sole-plan follow-up incorporates main into the retained delivery branch, preserving six consumed pins. Verify the final pushed ref independently in the handoff; no new PR or CI run solely for status. |
+
+## Entry-document review and verification
+
+D1: GitHub's README guide describes purpose, usefulness, getting started and help;
+the official AGENTS format separates agent instructions from human onboarding and
+requires no fixed section schema. Compared uv's README and Ruff's contribution
+entry points without adopting their unrelated tooling or approval policies.
+Original SkillsBench v4, Evaluating AGENTS.md v3 (section 4.2) and Snyk's dated
+ToxicSkills study support the README's quoted figures; these are external study
+results, not validation of skillfit. Review found no need for a new document,
+formatter, universal length gate or agent-specific instruction tree.
+
+D2: moved install/first preview ahead of research/history in both READMEs; clarified
+that the fixed source walkthrough is reproducible and its features now exist on
+main, while npm 0.13.1 is older. Consolidated repeated reference links and command
+summaries, added issue/help routing, made License a peer section, and removed the
+unsupported .mcpb implication. CONTRIBUTING now provides actual checkout/build/test
+steps, distinguishes offline validation from optional paid calibration and directs
+retained results outside the repository. Existing historical data and links stay.
+
+D3: AGENTS links contributor and architecture owners, identifies compatibility
+entries without a brittle test count, consolidates offline-test instructions and
+names the existing docs/anchor check. It preserves all project-specific code,
+writer/rollback, private-lab, immutable-data and replay boundaries. Complex work
+uses this sole plan and records results per step; no new approval mechanism.
+
+D4 final local acceptance (macOS arm64 / Node 24.21.0):
+
+- One integrated OCR-guided review accounted for all five modified paths. OCR
+  filters Markdown as unsupported; all five were manually reviewed against the
+  frozen diff, baseline instructions and this task. Zero skipped paths or
+  unresolved findings. This was local review, not an independent second reviewer.
+- Contributor setup executed with `npm ci --offline --no-audit --no-fund` using
+  the existing cache. `npm test` rebuilt successfully: 1,068 tests, 1,067 pass,
+  one failure, zero cancel/skip (109.31 seconds). The only failure was the sandbox
+  denying a loopback HTTP listener (EPERM). Retained that log; reran the unchanged
+  MCP test file outside that restriction: all 11 pass, including the failed case.
+  Every suite case therefore has a passing result across these runs; this is not
+  described as a single all-green full-suite invocation. No assertions changed.
+- Existing docs gate: 34 registered documents, zero errors, all 73 previous
+  headings/paths accounted against baseline 3472a8701524a59b0c048b4477236dee388615c7.
+  Both READMEs preserve all 15 fenced blocks and five badges byte-for-byte from
+  baseline; their ordered blocks/headings remain bilingual. Bundled GFM rendering
+  produces Install/First run as the entry sections, 15 pre blocks and three
+  tables in each language. No browser/GitHub pixel-render claim.
+- Fresh offline npm pack/install: all 1,079 installed files match final source;
+  29 shipped public documents have zero link/version errors. Five distinct fixed
+  snapshot targets used by these changed documents resolve from local Git,
+  including their Markdown anchors. Built/installed help works. npm pack initially
+  hit the sandbox's global-cache write restriction; a fresh temporary cache
+  succeeded without changing ownership or the user's cache.
+- Installed acceptance: 31 regressions, five moved portable replays, four release
+  entry documents and disposable configuration preview/install/reinstall/bundle
+  checks pass. Zero model/real agent calls or actual user-configuration writes.
+- Only the five planned Markdown files changed. Product, test, Bench, package,
+  lockfile, workflow and historical bytes remain unchanged. No new maintained
+  document, dependency, remote CI, PR, commit/push or publication. Other operating
+  systems/live agents and arbitrary external URL availability were not retested.
+
+D5–D6 delivery follow-up: user authorized this review/commit/push after D4. All
+five D4 hashes initially match, with no unrelated edits. The earlier sandbox HTTP
+failure is retained; run one complete offline suite with local listening allowed
+before committing. Other D4 proofs may be reused only for identical final inputs.
+Remote preflight confirms the branch remains at 3472a8701524a59b0c048b4477236dee388615c7,
+main remains 655bccaa384bbc3d0dc5602e76efa63968272ece and the branch has no open
+PR. Existing CI runs on main pushes/PRs; this branch push with [skip ci] does not
+request CI. No workflow setting is changed.
+
+D5 scope correction, reviewed before editing: the existing bug-report template
+claims artifacts never contain secrets. Trial execution writes verifier output
+into _verifier.txt and retains task/model output, so this unconditional promise
+is false. Replace only that description with instructions to inspect private
+content and share a minimal sanitized copy, leaving native replay bytes intact.
+This sixth path is contributor-facing text, not a product/schema/workflow change.
+The full pre-commit suite just passed 1,068/1,068 with no failure/cancel/skip
+(101.81 seconds). It predates this description-only fix; validate the final YAML
+and changed line separately rather than rerun unaffected tests. Ruby/Psych parsed
+both original/final issue forms successfully; a structural comparison confirms
+only the artifacts description changed, with all required fields/ids/types intact.
+No parser/tool dependency was added. Bundled Node/Python YAML modules were
+unavailable; their failed availability attempts were not treated as verification.
+
+D5 complete: the integrated review now covers six paths (one OCR-selected YAML,
+five manually accounted Markdown files). Reused D4 review only for unchanged
+inputs and checked the new template and plan against the source writer and OCR
+issue-form rules. No unresolved finding remains. Final docs gate remains 34
+registered files/zero errors, with all 73 old anchors/paths preserved. All 1,079
+packaged files still match D4's actual installation, retaining its 31 regressions
+and five portable replays. Product, fixtures, receipts and native replay bytes
+are unchanged. D6 commit/push and independent remote verification remain pending.
+
+Reference guidance: [GitHub README](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes),
+[official AGENTS format](https://agents.md/),
+[uv README](https://github.com/astral-sh/uv/blob/main/README.md) and
+[Ruff contributions](https://github.com/astral-sh/ruff/blob/main/CONTRIBUTING.md).
+Proofs stay only in the temporary workspace named by
+`/private/tmp/skillfit-entry-docs-review-location.txt`.
 
 ## Decisions and limits
 
