@@ -1,7 +1,0 @@
-{
-  "archivePath": "../2026-10-12-diagnosing-v2/transfer-records.tar.gz",
-  "archiveSha256": "508ffd7b9ac8b9bcc438202a4c352f3bb7a31df91a9f27867568a31d42d10158",
-  "member": "transfer-v2-20261012/query-shape/baseline/trial-2/_result.json",
-  "memberSha256": "79db9fbefa4144bd5f102929b65cbbde50fe5c38c268c21a08a8784b8fa0f278",
-  "unchangedCopy": true
-}

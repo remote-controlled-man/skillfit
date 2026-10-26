@@ -1,7 +1,7 @@
 {
   "name": "skillfit",
   "version": "0.13.1",
-  "description": "Evidence-driven configuration for AI coding agents: measure which skills, rules and MCP servers actually help — then install only those.",
+  "description": "Evidence-driven configuration for AI coding agents: measure which skills, rules and MCP servers actually help \u2014 then install only those.",
   "type": "module",
   "bin": {
     "skillfit": "dist/cli.js"
@@ -20,9 +20,10 @@
     "dist/harness/bench-location.test.js",
     "benches",
     "docs",
-    "evidence",
     "profiles",
-    "skills"
+    "skills",
+    "tools/verify/recipes/*.mjs",
+    "CHANGELOG.md"
   ],
   "repository": {
     "type": "git",
@@ -31,10 +32,10 @@
   "homepage": "https://github.com/remote-controlled-man/skillfit#readme",
   "bugs": "https://github.com/remote-controlled-man/skillfit/issues",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test \"dist/**/*.test.js\" \"scripts/*.test.mjs\"",
+    "build": "node tools/verify/build.mjs",
+    "test": "npm run build && node --test \"dist/**/*.test.js\" \"tools/**/*.test.mjs\"",
     "doctor": "npm run build && node dist/cli.js doctor",
-    "check": "npm run build && node --test \"dist/**/*.test.js\" \"scripts/*.test.mjs\"",
+    "check": "npm run build && node --test \"dist/**/*.test.js\" \"tools/**/*.test.mjs\"",
     "prepublishOnly": "npm test"
   },
   "keywords": [

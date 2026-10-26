@@ -3,10 +3,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { ApiExecutor } from '../harness/executors/api.js';
-import { runBenchInit } from './bench.js';
-import { runEval } from './eval.js';
-import { readEvaluationReport } from './evaluation-report.js';
+import { ApiExecutor } from "../agents/adapters/api.js";
+import { runBenchInit } from "../cli/bench.js";
+import { runEval } from "../cli/eval.js";
+import { readEvaluationReport } from "../cli/evaluation-report.js";
 
 for (const role of ['agent', 'judge'] as const) test(`failed ${role} API content retains known final costs in stopped reports`, async t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-api-failure-')); t.after(() => rmSync(root, { recursive: true, force: true }));

@@ -3,8 +3,8 @@
 Drop your bench here as `benches/contrib/<name>/` when you want to submit it. For a measured result, open an Evidence submission issue instead of pasting an unverifiable percentage. A contrib bench follows the
 same contract as the bundled ones ([benches/README.md](../README.md)), plus a few submission rules.
 
-**Read [docs/bench-authoring.md](../../docs/bench-authoring.md) first.** It is the guide this checklist
-assumes: the seven steps from "something went wrong" to a task you can measure, why each one is
+**Read [docs/guides/bench-authoring.md](../../docs/guides/bench-authoring.md) first.** It is the guide this checklist
+assumes: the path from a real failure to checked fixtures, graders and controls, why each is
 non-optional, and the ways a bench produces confident wrong numbers. The rules below are the short
 form; the guide is what makes them make sense, and rule 2 in particular is easy to satisfy while
 missing the point entirely.
@@ -16,7 +16,7 @@ missing the point entirely.
 2. **Pass the offline gate:** `node dist/cli.js bench check benches/contrib/<name>` must report
    **0 failures**, with no missing-oracle warning. This runs both offline gates: the untouched fixture
    must fail (NOP), and the reference solution must pass (oracle). Include the complete output in the PR.
-   `node scripts/check-contrib-benches.mjs` checks every contributed directory using the same CLI.
+   `node tools/verify/check-contrib-benches.mjs` checks every contributed directory using the same CLI.
 3. **Show the difficulty when available:** `--calibrate --agent <id> --trials 2` makes live agent
    calls and is optional for the first submission. If you ran it, paste the pass-rate bands. If not,
    say difficulty is uncalibrated. A saturated task (baseline ≥ 90%) can still be a regression net,
@@ -37,6 +37,14 @@ missing the point entirely.
 
 ## Index
 
+These are reusable inputs, not a history of published results. Defect datasets
+exercise real source behavior; diagnostic controls exercise specific harness or
+instruction behavior. The personal-study names on older directories do not imply
+independence, efficacy or a promotion sequence. Future names should describe the
+workload/domain. Keep generated run output outside this tree.
+
+### Defect datasets
+
 | Bench | Domain | Contributor | Notes |
 |---|---|---|---|
 | [oss-mcp-use-utf8](oss-mcp-use-utf8/README.md) | MCP App HTML decoding | skillfit replay of MIT-licensed mcp-use source | Pinned real-source workflow/regression example; earlier baselines saturated; no general Skill efficacy claim |
@@ -46,4 +54,10 @@ missing the point entirely.
 | [oss-skill-independent](oss-skill-independent/README.md) | Async context, timers, errors and command lifecycle | skillfit replay of MIT-licensed p-limit, p-timeout, p-throttle and Commander source | Eight fixed, previously untuned defects; identical-regression original/fix gates and protected assets; difficulty uncalibrated, zero new model calls |
 | [oss-lru-cache](oss-lru-cache/README.md) | Asynchronous cache fetch lifecycle | skillfit replay of ISC-licensed lru-cache source | Three pinned real-source defects; offline third-side gates, live difficulty uncalibrated |
 | [oss-skill-followup](oss-skill-followup/README.md) | Debounce and duration formatting | skillfit replay of independently sourced defects | Prospective eight-task followup; separate from the first study, no pooled efficacy claim |
-| [waza-behavior](waza-behavior/README.md) | Hold instructions and verification receipts | skillfit adaptations of MIT-licensed Waza contracts | Regression/diagnostic controls; inadmissible as independent evidence of Waza benefit |
+
+
+### Diagnostic controls
+
+| Bench | Purpose | Limits |
+| --- | --- | --- |
+| [waza-behavior](waza-behavior/README.md) | Hold instructions and verification receipts, adapted from MIT-licensed Waza contracts | Regression/diagnostic controls; inadmissible as independent evidence of Waza benefit |

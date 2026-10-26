@@ -5,14 +5,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test, type TestContext } from 'node:test';
-import { runBenchInit, runBenchCalibration, prepareBenchCalibration } from './bench.js';
-import { runEval, type EvalOptions } from './eval.js';
-import { runEvalCli } from './eval-cli.js';
-import { readEvaluationReport } from './evaluation-report.js';
-import { exportEvaluation } from './eval-export.js';
-import { loadBench } from '../harness/bench.js';
-import { hashFileSet, listFilesRecursive } from '../harness/hash.js';
-import { assertEvaluationOutputLayout } from '../harness/evaluation-layout.js';
+import { runBenchInit, runBenchCalibration, prepareBenchCalibration } from "../cli/bench.js";
+import { runEval, type EvalOptions } from "../cli/eval.js";
+import { runEvalCli } from "../cli/eval-cli.js";
+import { readEvaluationReport } from "../cli/evaluation-report.js";
+import { exportEvaluation } from "../evaluation/application/export.js";
+import { loadBench } from "../bench/read.js";
+import { hashFileSet, listFilesRecursive } from "../shared/hash.js";
+import { assertEvaluationOutputLayout } from "../evaluation/targets/output-layout.js";
 
 async function fixture(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-layout-'));
@@ -103,10 +103,20 @@ test('every preview rejects output inside inputs before probes, calls or directo
     calibrate: { executor: f.base.executor!, trials: 1, runsRoot, runGroup: 'study' } }), /output must be outside/);
   await assert.rejects(runEval({ ...f.base, runsRoot: roots[0] }), /output must be outside/);
   assert.equal(existsSync(marker), false); assert.equal(f.calls(), 0);
-  assert.throws(() => assertEvaluationOutputLayout(fileURLToPath(new URL('../not-created', import.meta.url)), { benchDir: f.bench }), /output must be outside/);
-  const cli = spawnSync(process.execPath, [fileURLToPath(new URL('../cli.js', import.meta.url)), 'eval', f.skill,
+  assert.throws(() => assertEvaluationOutputLayout(fileURLToPath(new URL("../not-created", import.meta.url)), { benchDir: f.bench }), /output must be outside/);
+  const cli = spawnSync(process.execPath, [fileURLToPath(new URL("../cli/main.js", import.meta.url)), 'eval', f.skill,
     '--bench', f.bench, '--agent', 'codex', '--runs-root', roots[0]!, '--run-group', 'study', '--dry-run', '--json'],
   { encoding: 'utf8', env: { PATH: '' } });
   assert.equal(cli.status, 2); assert.equal(JSON.parse(cli.stdout).kind, 'skillfit.eval-error');
   assert.equal(existsSync(marker), false); assert.equal(f.calls(), 0);
+});
+
+test('evaluation cannot regenerate tracked docs or evidence, even with explicit output options', async t => {
+  const f = await fixture(t), packageRoot = fileURLToPath(new URL('../../', import.meta.url));
+  for (const tree of ['docs', 'evidence', 'src', 'tools']) {
+    const output = join(packageRoot, tree, 'forbidden-generated-run');
+    await assert.rejects(runEval({ ...f.base, runsRoot: join(packageRoot, tree), runGroup: 'forbidden-generated-run', dryRun: true }), /maintained project trees/);
+    assert.equal(existsSync(output), false);
+  }
+  assert.equal(f.calls(), 0);
 });

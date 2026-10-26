@@ -1,3 +1,0 @@
-# Frozen originals remain in Git. Restore exact catalog entries explicitly.
-# Includes both compressed archives and their complete replay support.
-*

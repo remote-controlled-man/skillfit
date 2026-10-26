@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "documents": [
     {
-      "path": "docs/documentation-governance.md",
+      "path": "docs/maintainers/architecture.md",
       "kind": "reference",
       "lifecycle": "maintained",
       "audience": [
@@ -25,7 +25,7 @@
   ],
   "topics": {
     "documentation-governance": {
-      "canonical": "docs/documentation-governance.md#document-registry",
+      "canonical": "docs/maintainers/architecture.md#development-and-documentation",
       "sources": [
         "AGENTS.md"
       ],

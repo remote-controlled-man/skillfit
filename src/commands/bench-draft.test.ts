@@ -1,4 +1,4 @@
-import { observedModelIdentity, parseModelIdentities, assertModelIdentity } from '../harness/model-identity.js';
+import { observedModelIdentity, parseModelIdentities, assertModelIdentity } from "../agents/observation/model-identity.js";
 import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -6,9 +6,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test, type TestContext } from 'node:test';
-import { runBenchAdd, runBenchInit } from './bench.js';
-import { ExecutorFailure, type Executor, type ExecutorResult } from '../harness/types.js';
-import { loadBench } from '../harness/bench.js';
+import { runBenchAdd, runBenchInit } from "../cli/bench.js";
+import { ExecutorFailure, type Executor, type ExecutorResult } from "../agents/contracts.js";
+import { loadBench } from "../bench/read.js";
 
 const json = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
 const verifier = `import fs from 'node:fs';import path from 'node:path';const p=path.join(process.argv[2],'_output.md');const passed=fs.existsSync(p)&&fs.readFileSync(p,'utf8')==='done';console.log(JSON.stringify({passed,checks:[{name:'answer',pass:passed},{name:'exact',pass:passed}]}));process.exit(passed?0:1);`;
@@ -139,7 +139,7 @@ test('CLI drafting previews accept budget/output controls without executing the 
   writeFileSync(binary, process.platform === 'win32' ? `@echo executed>"${marker}"\r\n` : `#!/bin/sh\nprintf executed > '${marker}'\n`);
   chmodSync(binary, 0o755);
   const budgetPath = join(f.root, 'budget.json'); writeFileSync(budgetPath, JSON.stringify(budget));
-  const cli = fileURLToPath(new URL('../cli.js', import.meta.url));
+  const cli = fileURLToPath(new URL("../cli/main.js", import.meta.url));
   const result = spawnSync(process.execPath, [cli, 'bench', 'add', f.bench, '--freeze', '--source-dir', f.source,
     '--include', 'input.txt', '--task', 'cli-draft', '--prompt', 'Answer done', '--decompose', '--agent', 'codex',
     '--max-calls', '1', '--executor-timeout-seconds', '13', '--verifier-timeout-seconds', '7', '--spending-budget', budgetPath,

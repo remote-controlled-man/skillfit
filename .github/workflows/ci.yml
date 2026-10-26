@@ -32,9 +32,9 @@ jobs:
           cache: npm
       - name: Classify changed files (unknown changes use full CI)
         id: scope
-        run: node scripts/ci-scope.mjs classify
+        run: node tools/verify/ci-scope.mjs classify
       - run: npm ci
-      - run: node scripts/ci-scope.mjs test
+      - run: node tools/verify/ci-scope.mjs test
       - name: First-run plan (offline, no agent CLI)
         if: steps.scope.outputs.scope == 'full'
         run: |
@@ -50,7 +50,7 @@ jobs:
         run: |
           node dist/cli.js bench check benches/code-review
           node dist/cli.js bench check benches/debugging
-          node scripts/check-contrib-benches.mjs
+          node tools/verify/check-contrib-benches.mjs
       - name: Smoke report (no session history on runners)
         if: steps.scope.outputs.scope == 'full'
         run: node dist/cli.js report --json
@@ -58,7 +58,7 @@ jobs:
         if: always()
         env:
           SKILLFIT_JOB_STATUS: ${{ job.status }}
-        run: node scripts/ci-scope.mjs record
+        run: node tools/verify/ci-scope.mjs record
       - name: Retain CI evidence and failure logs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -87,19 +87,19 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: node scripts/ci-scope.mjs classify
+      - run: node tools/verify/ci-scope.mjs classify
       - run: npm ci
-      - run: node scripts/ci-scope.mjs test
+      - run: node tools/verify/ci-scope.mjs test
       - name: Bench integrity (offline verifier self-tests)
         run: |
           node dist/cli.js bench check benches/code-review
           node dist/cli.js bench check benches/debugging
-          node scripts/check-contrib-benches.mjs
+          node tools/verify/check-contrib-benches.mjs
       - name: Record actual Node compatibility result
         if: always()
         env:
           SKILLFIT_JOB_STATUS: ${{ job.status }}
-        run: node scripts/ci-scope.mjs record
+        run: node tools/verify/ci-scope.mjs record
       - name: Retain Node compatibility evidence and failure logs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -124,14 +124,14 @@ jobs:
         with:
           node-version: '22.0.0'
           cache: npm
-      - run: node scripts/ci-scope.mjs classify
+      - run: node tools/verify/ci-scope.mjs classify
       - run: npm ci
-      - run: node scripts/ci-scope.mjs minimum
+      - run: node tools/verify/ci-scope.mjs minimum
       - name: Record actual minimum Node result
         if: always()
         env:
           SKILLFIT_JOB_STATUS: ${{ job.status }}
-        run: node scripts/ci-scope.mjs record
+        run: node tools/verify/ci-scope.mjs record
       - name: Retain minimum Node evidence and failure logs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
