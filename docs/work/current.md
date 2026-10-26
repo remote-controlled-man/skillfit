@@ -6,7 +6,8 @@
   the previously authorized delivery branch was independently verified at this HEAD.
 - Current task: fix version-sensitive documentation links and build/version entry
   instructions, with small offline regression checks in the existing doc gates.
-- Progress: W1–W5 complete (previous delivery); L1–L4 complete; L5 review/local acceptance complete; commit/push pending.
+- Progress: W1–W5 complete (previous delivery); L1–L5 complete; reviewed source pushed and independently verified.
+  This status-only follow-up records the completed delivery.
 - Scope: existing documents and documentation checks/tests only. No maintained
   document, dependency, crawler, URL registry, runtime format or version bump.
   Calibration, real experiments and runtime/configuration behavior stay unchanged.
@@ -27,7 +28,7 @@
 | L2 | Reproduce and close the offline check gap; after L1 | Complete | Add a failing regression through existing documentation checks: version-sensitive same-repository blob/tree links cannot silently follow main, a tag or another moving ref. Permit full commit snapshots and unrelated external/live policy links. Retain relative file/anchor checks and offline/shallow-checkout operation; no Git-history fetch or network crawler. |
 | L3 | Correct current links and build/version entrances; after L2 | Complete | Keep together-shipped links relative; pin standalone Skill/source-only references to the already delivered ed5eaff snapshot. Replace misleading current-plan URLs with the explicit source-only path, since the plan does not ship in npm. Make published/current-source entrances explicit in existing README/Skill/docs/release pages; keep bilingual blocks identical, add an explicit reviewed checkout to the source quickstart, and preserve historical/npm command blocks, links, command pins and feature minimums. |
 | L4 | Final integrated review and local installation/replay acceptance; after L3 | Complete | Run full offline npm test, final docs/anchors and package checks. Actual fresh npm pack/install, bin/Skill/doc links and installed feature recipe must pass 31 regressions/five portable replays. Verify source-only targets remain excluded and no absolute main link bypasses the new check; inspect final inputs, preserve native bytes, and update this plan. No remote CI, PR or publication. |
-| L5 | Review exact final inputs and deliver to the authorized branch; after L4 | Checks complete; delivery pending | Reconcile all 15 final paths and link/build/installed proofs, run full offline npm test before committing, update this plan, commit with `[skip ci]`, push only origin/codex/docs-framework-architecture without force, then independently compare remote/local HEAD. Preserve main, installation and replay; record actual results and source delivery. |
+| L5 | Review exact final inputs and deliver to the authorized branch; after L4 | Complete | Reconcile all 15 final paths and link/build/installed proofs, run full offline npm test before committing, update this plan, commit with `[skip ci]`, push only origin/codex/docs-framework-architecture without force, then independently compare remote/local HEAD. Preserve main, installation and replay; record actual results and source delivery. |
 
 ## Decisions and limits
 
@@ -94,7 +95,7 @@ package and portable replays. No acceptance is removed to make a check pass.
 
 ## Verification
 
-L5 pre-commit acceptance (Node 24.21.0 / macOS arm64):
+L5 final review, local acceptance and delivery (Node 24.21.0 / macOS arm64):
 
 - All 15 inputs matched the final L4 manifest before delivery updates. Integrated
   local OCR-guided review accounted for three selected code files and 12 filtered
@@ -117,8 +118,13 @@ L5 pre-commit acceptance (Node 24.21.0 / macOS arm64):
   main 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. Push only the named branch,
   without force; use `[skip ci]` alongside the main-only push CI trigger. No PR,
   remote CI, publication, new maintained file, dependency or runtime format.
-- Commit/push and exact remote/local HEAD comparison remain pending; a status-only
-  follow-up records the verified delivery. Final plan/diff checks run before commit.
+- Source commit `9fdeca657bbb1b0cbc0a152409b333e8a48a8185` was pushed without force to
+  `origin/codex/docs-framework-architecture`. Independent ls-remote matched local
+  HEAD exactly; remote main was unchanged and the working tree was clean. This
+  status-only follow-up records the result, changing no accepted package/runtime
+  byte. Verify its final push by another independent remote-ref read.
+  Status-only documentation checks: 43 passed, zero fail/cancel/skip; final
+  source/package inputs remain identical to the accepted source delivery.
 - Delivery proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-link-entry-delivery-y75ux1bx.
 
 L1: reviewed the absolute-URL bypass, standalone driver distribution, source/npm
