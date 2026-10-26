@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { loadBench } from "../bench/read.js";
 import { sha256File } from "../shared/hash.js";
 import { runVerifier } from "./execution/paired.js";
 import { verdictFromOutput } from "../bench/gates/summary.js";
+import { parseCommand } from "../shared/command.js";
 const root = fileURLToPath(new URL("../../benches/contrib/oss-lru-cache/", import.meta.url));
 const bench = loadBench(root);
 
@@ -62,6 +63,8 @@ test('OSS replay provenance matches every retained upstream source and license b
   const provenance = JSON.parse(readFileSync(join(root, 'provenance.json'), 'utf8')) as { cases: { id: string; sourceSha256: Record<string, string> }[] };
   for (const item of provenance.cases) for (const [key, hash] of Object.entries(item.sourceSha256)) {
     const split = key.indexOf(':'); const arm = key.slice(0, split); const rel = key.slice(split + 1);
-    assert.equal(sha256File(join(root, arm === 'pre' ? 'fixtures' : 'ground-truth', item.id, rel)), hash);
+    const task = bench.tasks.find(task => task.id === item.id)!;
+    const source = arm === 'pre' ? join(root, task.fixture) : dirname(join(root, parseCommand(task.oracle!)[1]!));
+    assert.equal(sha256File(join(source, rel)), hash);
   }
 });

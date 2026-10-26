@@ -11,7 +11,12 @@ The prompts, fixtures, verifier and oracle were authored for skillfit; Waza's MI
 | receipt-current | Current tool/input hashes, reuse decision, receipt unchanged, no extra checker receipt |
 | receipt-stale | Fresh tool/input hashes, recheck decision, one new checker receipt |
 
-Run `skillfit bench check benches/contrib/waza-behavior` before any model calls.
+```bash
+node dist/cli.js bench check benches/contrib/waza-behavior
+```
+
+Tasks live under `tasks/<id>/`. The manifest directly references one shared
+`verifiers/behavior.mjs` and oracle; no duplicate per-task grader is needed.
 The NOP must fail; each independent oracle must pass every facet. Offline tests also reject committed
 fixes, unnecessary rechecks, stale evidence reuse and checker tampering. Ground truth and verifiers
 remain outside the task workspace. Only Node built-ins and Git are needed.

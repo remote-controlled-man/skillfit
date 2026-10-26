@@ -56,12 +56,12 @@ const timer=setInterval(()=>{if(existsSync(${JSON.stringify(heartbeat)})){clearI
 setTimeout(()=>process.exit(),30000);`;
   const fake = join(root, 'fake.mjs'); writeFileSync(fake, fakeSource);
   if (mode === 'verifier' || mode === 'preflight') {
-    writeFileSync(join(bench, 'verifiers/live-block.mjs'), fakeSource);
+    writeFileSync(join(bench, 'tasks/example-task/live-block.mjs'), fakeSource);
     // Only the post-agent verifier blocks in the verifier scenario. Preflight
     // still exercises the real missing/empty/oracle gates of the starter.
-    writeFileSync(join(bench, 'verifiers/block.mjs'), mode === 'preflight' ? fakeSource :
-      "import{existsSync}from'node:fs';import{join}from'node:path';await import(existsSync(join(process.argv[2],'_prompt.txt'))?'./live-block.mjs':'./example-task.mjs');");
-    raw.tasks[0].verifier = 'node verifiers/block.mjs';
+    writeFileSync(join(bench, 'tasks/example-task/block.mjs'), mode === 'preflight' ? fakeSource :
+      "import{existsSync}from'node:fs';import{join}from'node:path';await import(existsSync(join(process.argv[2],'_prompt.txt'))?'./live-block.mjs':'./verify.mjs');");
+    raw.tasks[0].verifier = 'node tasks/example-task/block.mjs';
   }
   writeFileSync(join(bench, 'bench.json'), JSON.stringify(raw));
   const request = join(root, 'request.json');
@@ -165,7 +165,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) test(`${signal} also stops 
   const f = await scenario(t, 'draft', signal), receipt = json(join(f.run, '_result.json'));
   assert.deepEqual(receipt.tokens, { input: 12, cachedInput: 7, output: 3 }); assert.equal(receipt.usageStatus, 'partial');
   assert.equal(f.session.costs.metrics.input.knownTotal, 12); assert.equal(f.session.costs.metrics.input.coverage.partial, 1);
-  assert.ok(!existsSync(join(f.root, 'bench/verifiers/interrupted-draft.mjs')));
+  assert.ok(!existsSync(join(f.root, 'bench/tasks/interrupted-draft/verify.mjs')));
 });
 
 test('interrupting a verifier kills its tree and preserves final agent usage', { timeout: 30_000 }, async t => {

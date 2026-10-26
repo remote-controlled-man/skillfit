@@ -13,6 +13,7 @@ import { exportEvaluation } from "../evaluation/application/export.js";
 import { loadBench } from "../bench/read.js";
 import { hashFileSet, listFilesRecursive } from "../shared/hash.js";
 import { assertEvaluationOutputLayout } from "../evaluation/targets/output-layout.js";
+import { parseCommand } from "../shared/command.js";
 
 async function fixture(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-layout-'));
@@ -40,13 +41,14 @@ test('bench Git directories/worktree files do not change input hashes; real task
   const f = await fixture(t), original = loadBench(f.bench).contentSha256;
   assert.equal(original, hashFileSet(f.bench, listFilesRecursive(f.bench)), 'Git-free fingerprints keep their previous meaning.');
   mkdirSync(join(f.bench, '.git')); writeFileSync(join(f.bench, '.git', 'HEAD'), 'ref: refs/heads/main\n');
-  const nested = join(f.bench, 'fixtures', 'example-task', '.git'); writeFileSync(nested, 'gitdir: /unread-worktree-metadata\n');
+  const task = loadBench(f.bench).tasks[0]!;
+  const nested = join(f.bench, task.fixture, '.git'); writeFileSync(nested, 'gitdir: /unread-worktree-metadata\n');
   assert.equal(loadBench(f.bench).contentSha256, original);
   writeFileSync(join(f.bench, '.git', 'HEAD'), 'ref: refs/heads/other\n');
   assert.equal(loadBench(f.bench).contentSha256, original);
   rmSync(join(f.bench, '.git'), { recursive: true }); writeFileSync(join(f.bench, '.git'), 'gitdir: /unread-worktree-metadata\n');
   assert.equal(loadBench(f.bench).contentSha256, original);
-  writeFileSync(join(f.bench, 'prompts', 'example-task.md'), 'Changed actual task.');
+  writeFileSync(join(f.bench, task.prompt), 'Changed actual task.');
   assert.notEqual(loadBench(f.bench).contentSha256, original);
   const definition = JSON.parse(readFileSync(join(f.bench, 'bench.json'), 'utf8'));
   definition.tasks[0].prompt = '.git'; writeFileSync(join(f.bench, 'bench.json'), JSON.stringify(definition));
@@ -89,9 +91,10 @@ for (const mode of ['inject', 'installed', 'trigger', 'calibration'] as const) t
 
 test('every preview rejects output inside inputs before probes, calls or directories, including aliases', async t => {
   const f = await fixture(t), marker = join(f.root, 'verifier-ran');
-  writeFileSync(join(f.bench, 'verifiers', 'example-task.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(marker)},'probed');process.exit(1);`);
+  const task = loadBench(f.bench).tasks[0]!;
+  writeFileSync(join(f.bench, parseCommand(task.verifier)[1]!), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(marker)},'probed');process.exit(1);`);
   const alias = join(f.root, 'bench-alias'); symlinkSync(f.bench, alias, process.platform === 'win32' ? 'junction' : 'dir');
-  const roots = [join(f.bench, 'runs'), join(f.bench, 'fixtures', 'example-task', 'runs'), join(f.skill, 'runs'), join(alias, 'new', 'runs'), join(f.root, '.git', 'runs')];
+  const roots = [join(f.bench, 'runs'), join(f.bench, task.fixture, 'runs'), join(f.skill, 'runs'), join(alias, 'new', 'runs'), join(f.root, '.git', 'runs')];
   for (const mode of ['inject', 'installed', 'trigger'] as const) {
     for (const runsRoot of [...roots, ...(mode === 'installed' ? [join(f.old, 'runs')] : [])]) {
       await assert.rejects(runEvalCli({ ...f.base, mode, runsRoot, dryRun: true,

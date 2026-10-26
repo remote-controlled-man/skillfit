@@ -18,9 +18,9 @@ test('schema flags, repeated claims, freeze and JSON edits work through the real
   const cli = (...args: string[]) => spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', timeout: 15_000 });
   assert.equal(cli('bench', 'init', bench, '--schema-version', '2', '--yes').status, 0);
   const add = ['bench', 'add', bench, '--freeze', '--source-dir', source, '--include', 'input.txt', '--task', 'captured', '--prompt', 'Solve', '--expect', 'fixed'];
-  assert.notEqual(cli(...add, '--yes').status, 0); assert.equal(existsSync(join(bench, 'fixtures/captured')), false);
+  assert.notEqual(cli(...add, '--yes').status, 0); assert.equal(existsSync(join(bench, 'tasks/captured/fixture')), false);
   assert.equal(cli(...add, '--claim', 'quality', '--claim', 'efficiency', '--dry-run').status, 0);
-  assert.equal(existsSync(join(bench, 'fixtures/captured')), false);
+  assert.equal(existsSync(join(bench, 'tasks/captured/fixture')), false);
   const applied = cli(...add, '--claim', 'quality', '--claim', 'efficiency', '--yes'); assert.equal(applied.status, 0, applied.stderr);
   assert.deepEqual(loadBench(bench).tasks[1]!.claims, ['quality', 'efficiency']);
   const edited = cli('bench', 'edit', bench, 'captured', '--set', 'claims=["efficiency"]', '--yes', '--json');
@@ -46,5 +46,5 @@ test('from-commit schema 2 import retains claims and original source/protection 
   await runBenchInit({ dir: bench, schemaVersion: 2, yes: true, log: () => {} });
   await runBenchAdd({ benchDir: bench, sourceDir: source, fromCommit: commit, task: 'fix', claims: ['quality'], yes: true, log: () => {} });
   assert.deepEqual(loadBench(bench).tasks[1]!.claims, ['quality']);
-  assert.equal(readFileSync(join(bench, 'fixtures/fix/index.js'), 'utf8'), 'module.exports = (a,b) => a-b;\n');
+  assert.equal(readFileSync(join(bench, loadBench(bench).tasks[1]!.fixture, 'index.js'), 'utf8'), 'module.exports = (a,b) => a-b;\n');
 });

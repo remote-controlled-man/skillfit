@@ -5,32 +5,32 @@
   "tasks": [
     {
       "id": "fetch-size",
-      "fixture": "fixtures/fetch-size",
-      "prompt": "prompts/fetch-size.md",
-      "verifier": "node verifiers/fetch-size.mjs",
+      "fixture": "tasks/fetch-size/fixture",
+      "prompt": "tasks/fetch-size/prompt.md",
+      "verifier": "node tasks/fetch-size/verify.mjs",
       "verifierKind": "command",
-      "oracle": "node ground-truth/oracle-fetch-size.mjs",
-      "rubric": "ground-truth/fetch-size.md",
+      "oracle": "node tasks/fetch-size/reference/oracle.mjs",
+      "rubric": "tasks/fetch-size/reference/answer.md",
       "shouldTrigger": true
     },
     {
       "id": "fetch-abort",
-      "fixture": "fixtures/fetch-abort",
-      "prompt": "prompts/fetch-abort.md",
-      "verifier": "node verifiers/fetch-abort.mjs",
+      "fixture": "tasks/fetch-abort/fixture",
+      "prompt": "tasks/fetch-abort/prompt.md",
+      "verifier": "node tasks/fetch-abort/verify.mjs",
       "verifierKind": "command",
-      "oracle": "node ground-truth/oracle-fetch-abort.mjs",
-      "rubric": "ground-truth/fetch-abort.md",
+      "oracle": "node tasks/fetch-abort/reference/oracle.mjs",
+      "rubric": "tasks/fetch-abort/reference/answer.md",
       "shouldTrigger": true
     },
     {
       "id": "fetch-lifecycle",
-      "fixture": "fixtures/fetch-lifecycle",
-      "prompt": "prompts/fetch-lifecycle.md",
-      "verifier": "node verifiers/fetch-lifecycle.mjs",
+      "fixture": "tasks/fetch-lifecycle/fixture",
+      "prompt": "tasks/fetch-lifecycle/prompt.md",
+      "verifier": "node tasks/fetch-lifecycle/verify.mjs",
       "verifierKind": "command",
-      "oracle": "node ground-truth/oracle-fetch-lifecycle.mjs",
-      "rubric": "ground-truth/fetch-lifecycle.md",
+      "oracle": "node tasks/fetch-lifecycle/reference/oracle.mjs",
+      "rubric": "tasks/fetch-lifecycle/reference/answer.md",
       "shouldTrigger": true
     }
   ]

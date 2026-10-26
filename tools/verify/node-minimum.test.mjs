@@ -1,16 +1,20 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, rmSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import * as nodeModule from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parseCommand } from '../../dist/shared/command.js';
 
 const repo = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const bench = join(repo, 'benches/contrib/oss-lru-cache');
 const cases = ['fetch-size', 'fetch-abort', 'fetch-lifecycle'];
-const loaders = ['runtime.mjs', ...cases.map(id => `fixtures/${id}/runtime.mjs`)];
+const definition = JSON.parse(readFileSync(join(bench, 'bench.json'), 'utf8'));
+const taskFor = id => definition.tasks.find(task => task.id === id);
+const reference = id => dirname(parseCommand(taskFor(id).oracle)[1]);
+const loaders = ['runtime.mjs', ...cases.map(id => `${taskFor(id).fixture}/runtime.mjs`)];
 
 test('Node minimum: built CLI help and saved synthetic report work without agent calls', () => {
   for (const [args, expected] of [
@@ -29,8 +33,8 @@ test('Node minimum: every active loader loads both CJS arms without the TS API',
   // Reference sources are applied to disposable fixture copies, as in the real oracle path.
   for (const arm of ['fixtures', 'ground-truth']) for (const id of cases.slice(0, 2)) {
     const root = join(work, arm, id);
-    cpSync(join(bench, 'fixtures', id), root, { recursive: true });
-    if (arm === 'ground-truth') cpSync(join(bench, arm, id, 'index.js'), join(root, 'index.js'));
+    cpSync(join(bench, taskFor(id).fixture), root, { recursive: true });
+    if (arm === 'ground-truth') cpSync(join(bench, reference(id), 'index.js'), join(root, 'index.js'));
   }
   for (const file of loaders) {
     const { loadCache } = await import(pathToFileURL(join(bench, file)).href);
@@ -50,7 +54,7 @@ test('Node minimum: TS capability is explicitly refused when absent, both arms l
   for (const file of loaders) {
     const { loadCache } = await import(pathToFileURL(join(bench, file)).href);
     for (const arm of ['fixtures', 'ground-truth']) {
-      const root = join(bench, arm, 'fetch-lifecycle');
+      const root = join(bench, arm === 'fixtures' ? taskFor('fetch-lifecycle').fixture : reference('fetch-lifecycle'));
       if (!supported) {
         await assert.rejects(loadCache(root, true), /This replay requires Node >=22\.13 for built-in TypeScript stripping\./);
       } else {

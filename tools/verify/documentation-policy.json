@@ -2061,128 +2061,50 @@
       "verification": "bench-preflight"
     },
     {
-      "path": "benches/contrib/oss-lru-cache/fixtures/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "path": "benches/contrib/oss-lru-cache/tasks/",
+      "reason": "Task instructions, fixture/vendor documentation and private reference answers are executable Bench inputs, not maintained project documentation.",
       "owner": "bench-authoring",
       "verification": "bench-preflight"
     },
     {
-      "path": "benches/contrib/oss-lru-cache/ground-truth/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "path": "benches/contrib/oss-mcp-use-utf8/tasks/",
+      "reason": "Task instructions, fixture/vendor documentation and private reference answers are executable Bench inputs, not maintained project documentation.",
       "owner": "bench-authoring",
       "verification": "bench-preflight"
     },
     {
-      "path": "benches/contrib/oss-lru-cache/prompts/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "path": "benches/contrib/oss-minipass/tasks/",
+      "reason": "Task instructions, fixture/vendor documentation and private reference answers are executable Bench inputs, not maintained project documentation.",
       "owner": "bench-authoring",
       "verification": "bench-preflight"
     },
     {
-      "path": "benches/contrib/oss-mcp-use-utf8/ground-truth/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "path": "benches/contrib/oss-normalize-url/tasks/",
+      "reason": "Task instructions, fixture/vendor documentation and private reference answers are executable Bench inputs, not maintained project documentation.",
       "owner": "bench-authoring",
       "verification": "bench-preflight"
     },
     {
-      "path": "benches/contrib/oss-mcp-use-utf8/prompts/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "path": "benches/contrib/oss-skill-followup/tasks/",
+      "reason": "Task instructions, fixture/vendor documentation and private reference answers are executable Bench inputs, not maintained project documentation.",
       "owner": "bench-authoring",
       "verification": "bench-preflight"
     },
     {
-      "path": "benches/contrib/oss-minipass/fixtures/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "path": "benches/contrib/oss-skill-independent/tasks/",
+      "reason": "Task instructions, fixture/vendor documentation and private reference answers are executable Bench inputs, not maintained project documentation.",
       "owner": "bench-authoring",
       "verification": "bench-preflight"
     },
     {
-      "path": "benches/contrib/oss-minipass/ground-truth/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "path": "benches/contrib/oss-skill-validation/tasks/",
+      "reason": "Task instructions, fixture/vendor documentation and private reference answers are executable Bench inputs, not maintained project documentation.",
       "owner": "bench-authoring",
       "verification": "bench-preflight"
     },
     {
-      "path": "benches/contrib/oss-minipass/prompts/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-normalize-url/fixtures/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-normalize-url/ground-truth/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-normalize-url/prompts/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-skill-followup/fixtures/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-skill-followup/prompts/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-skill-independent/fixtures/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-skill-independent/ground-truth/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-skill-independent/prompts/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-skill-validation/fixtures/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-skill-validation/ground-truth/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/oss-skill-validation/prompts/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/waza-behavior/fixtures/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
-      "owner": "bench-authoring",
-      "verification": "bench-preflight"
-    },
-    {
-      "path": "benches/contrib/waza-behavior/prompts/",
-      "reason": "Task prompts, fixture/vendor files or reference answers: benchmark inputs, not project maintenance documentation.",
+      "path": "benches/contrib/waza-behavior/tasks/",
+      "reason": "Task instructions, fixture/vendor documentation and private reference answers are executable Bench inputs, not maintained project documentation.",
       "owner": "bench-authoring",
       "verification": "bench-preflight"
     },

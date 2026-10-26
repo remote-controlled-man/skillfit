@@ -8,9 +8,12 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { runVerifier } from "./execution/paired.js";
 import { verdictFromOutput } from "../bench/gates/summary.js";
+import { loadBench } from "../bench/read.js";
+import { parseCommand } from "../shared/command.js";
 
 const bench = fileURLToPath(new URL("../../benches/contrib/oss-normalize-url", import.meta.url));
-const fixture = join(bench, 'fixtures/query-shape');
+const task = loadBench(bench).tasks[0]!;
+const fixture = join(bench, task.fixture);
 function workspace(t: import('node:test').TestContext): string {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-normalize-test-'));
   cpSync(fixture, root, { recursive: true });
@@ -18,11 +21,11 @@ function workspace(t: import('node:test').TestContext): string {
   return root;
 }
 function oracle(root: string): void {
-  const result = spawnSync(process.execPath, [join(bench, 'ground-truth/oracle-query-shape.mjs'), root]);
+  const result = spawnSync(process.execPath, [join(bench, parseCommand(task.oracle!)[1]!), root]);
   assert.equal(result.status, 0);
 }
 async function grade(root: string) {
-  const result = await runVerifier(bench, 'node verifiers/query-shape.mjs', root);
+  const result = await runVerifier(bench, task.verifier, root);
   return { ...result, summary: verdictFromOutput(result.output)! };
 }
 

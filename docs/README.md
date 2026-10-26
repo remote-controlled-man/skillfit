@@ -46,3 +46,5 @@ The publication-era layout remains available at its fixed
 [index](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/README.md),
 [documentation tree](https://github.com/remote-controlled-man/skillfit/tree/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs) and
 [study tree](https://github.com/remote-controlled-man/skillfit/tree/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/evidence).
+
+Before task-local Bench organization: [fixed input snapshot](https://github.com/remote-controlled-man/skillfit/tree/8d8ff24c7adddb0cc1e7f3653a56baddeefef363/benches). Current tasks and commands are indexed by their current `bench.json`; saved runs use their own sealed inputs.

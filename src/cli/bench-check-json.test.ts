@@ -129,7 +129,7 @@ test('JSON warnings and marker failures identify the affected bench fields and f
   delete manifest.tasks[0].oracle;
   manifest.tasks[0].shouldTrigger = true;
   writeFileSync(path, JSON.stringify(manifest));
-  writeFileSync(join(dir, 'fixtures/example-task/large.txt'), 'x'.repeat(66 * 1024));
+  writeFileSync(join(dir, 'tasks/example-task/fixture/large.txt'), 'x'.repeat(66 * 1024));
   const warnings = cli(cwd, ['bench', 'check', dir, '--json'], 0);
   const oracle = warnings.checks.find((c: { code: string }) => c.code === 'ORACLE');
   assert.equal(oracle.status, 'WARN');
@@ -137,39 +137,39 @@ test('JSON warnings and marker failures identify the affected bench fields and f
   assert.equal(oracle.evidence, null);
   const size = warnings.checks.find((c: { code: string }) => c.code === 'FIXTURE_SIZE');
   assert.equal(size.status, 'WARN');
-  assert.equal(size.location.path, 'fixtures/example-task');
+  assert.equal(size.location.path, 'tasks/example-task/fixture');
   assert.equal(warnings.checks.find((c: { code: string }) => c.code === 'NEGATIVE_CONTROLS').status, 'WARN');
-  writeFileSync(join(dir, 'fixtures/example-task', MOCK_MARKER_FILE), '{');
+  writeFileSync(join(dir, 'tasks/example-task/fixture', MOCK_MARKER_FILE), '{');
   const failed = cli(cwd, ['bench', 'check', dir, '--json'], 1);
   const marker = failed.checks.find((c: { code: string }) => c.code === 'MOCK_MARKER');
   assert.equal(marker.status, 'FAIL');
   assert.equal(marker.taskId, 'example-task');
-  assert.equal(marker.location.path, `fixtures/example-task/${MOCK_MARKER_FILE}`);
+  assert.equal(marker.location.path, `tasks/example-task/fixture/${MOCK_MARKER_FILE}`);
 });
 
 test('JSON identifies a failed oracle process and retains its real command, exit and stderr', async t => {
   const { cwd, dir } = await scaffold(t);
-  writeFileSync(join(dir, 'ground-truth/oracle-example-task.mjs'), "console.error('reference unavailable'); process.exit(7);");
+  writeFileSync(join(dir, 'tasks/example-task/reference/oracle.mjs'), "console.error('reference unavailable'); process.exit(7);");
   const data = cli(cwd, ['bench', 'check', dir, '--json'], 1);
   const gate = data.checks.find((c: { code: string }) => c.code === 'ORACLE');
   assert.equal(gate.status, 'FAIL');
   assert.equal(gate.taskId, 'example-task');
-  assert.equal(gate.evidence.command, 'node ground-truth/oracle-example-task.mjs');
+  assert.equal(gate.evidence.command, 'node tasks/example-task/reference/oracle.mjs');
   assert.equal(gate.evidence.exitCode, 7);
   assert.match(gate.evidence.output, /reference unavailable/);
 });
 
 test('JSON exposes the actual failing verifier facets after the reference repair', async t => {
   const { cwd, dir } = await scaffold(t);
-  writeFileSync(join(dir, 'ground-truth/oracle-example-task.mjs'),
+  writeFileSync(join(dir, 'tasks/example-task/reference/oracle.mjs'),
     "import {writeFileSync} from 'node:fs';import {join} from 'node:path';writeFileSync(join(process.argv[2],'index.js'),'export const add=(a,b)=>Math.abs(a+b);');");
   const data = cli(cwd, ['bench', 'check', dir, '--json'], 1);
   const gate = data.checks.find((c: { code: string }) => c.code === 'ORACLE');
   assert.equal(gate.status, 'FAIL');
-  assert.equal(gate.evidence.command, 'node verifiers/example-task.mjs');
+  assert.equal(gate.evidence.command, 'node tasks/example-task/verify.mjs');
   assert.ok(gate.evidence.checks.some((c: { name: string; pass: boolean }) => c.name === 'negative-numbers' && !c.pass));
   assert.ok(gate.evidence.checks.some((c: { name: string; pass: boolean }) => c.name === 'positive-and-zero' && c.pass));
-  const verifier = join(dir, 'verifiers/example-task.mjs');
+  const verifier = join(dir, 'tasks/example-task/verify.mjs');
   writeFileSync(verifier, readFileSync(verifier, 'utf8').replace('process.exitCode = passed ? 0 : 1', 'process.exitCode = 0'));
   const inconsistent = cli(cwd, ['bench', 'check', dir, '--json'], 1);
   const lowScore = inconsistent.checks.find((c: { code: string }) => c.code === 'ORACLE');
@@ -194,7 +194,7 @@ test('an unspawnable verifier is a JSON failure with an unknown exit, never a pa
 
 test('noisy verifier output stays inside bounded JSON evidence while named facets are retained', async t => {
   const { cwd, dir } = await scaffold(t);
-  const path = join(dir, 'verifiers/example-task.mjs');
+  const path = join(dir, 'tasks/example-task/verify.mjs');
   writeFileSync(path, "console.log('x'.repeat(10_000));console.error('verifier diagnostic');\n" + readFileSync(path, 'utf8'));
   const data = cli(cwd, ['bench', 'check', dir, '--json'], 0);
   const evidence = data.checks.find((c: { code: string }) => c.code === 'ORACLE').evidence;
@@ -207,7 +207,7 @@ test('noisy verifier output stays inside bounded JSON evidence while named facet
 test('argument errors return offline bench JSON before any verifier or agent starts', async t => {
   const { cwd, dir } = await scaffold(t);
   const sentinel = join(cwd, 'verifier-started');
-  writeFileSync(join(dir, 'verifiers/example-task.mjs'),
+  writeFileSync(join(dir, 'tasks/example-task/verify.mjs'),
     `import {writeFileSync} from 'node:fs'; writeFileSync(${JSON.stringify(sentinel)},'unexpected'); process.exit(1);`);
   const cases = [
     ['--json', 'bench', 'check', dir, '--trials', 'nope'],
@@ -229,7 +229,7 @@ test('argument errors return offline bench JSON before any verifier or agent sta
 test('JSON calibration has a distinct planned/error contract and never runs probes without confirmation', async t => {
   const { cwd, dir } = await scaffold(t);
   const sentinel = join(cwd, 'verifier-started');
-  writeFileSync(join(dir, 'verifiers/example-task.mjs'),
+  writeFileSync(join(dir, 'tasks/example-task/verify.mjs'),
     `import {writeFileSync} from 'node:fs';writeFileSync(${JSON.stringify(sentinel)},'unexpected');process.exit(1);`);
   const env = { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => key.toUpperCase() !== 'PATH')),
     PATH: '', HOME: join(cwd, 'home'), USERPROFILE: join(cwd, 'home'), CODEX_HOME: join(cwd, 'home/codex') };

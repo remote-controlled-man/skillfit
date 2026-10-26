@@ -1,4 +1,6 @@
-# Real normalize-url query-shape replay
+<a id="real-normalize-url-query-shape-replay"></a>
+
+# URL query-shape normalization defect
 
 This task replays [issue #193](https://github.com/sindresorhus/normalize-url/issues/193)
 from `sindresorhus/normalize-url`: default query sorting adds an equals sign to
@@ -24,5 +26,6 @@ node dist/cli.js bench check benches/contrib/oss-normalize-url
 
 The offline gate needs Node 22+ and no dependencies, network or model. AVA,
 coverage, lint, type declarations and the upstream full CI are not executed.
-This is one historical task from a second repository, not general efficacy
-evidence. Difficulty was not calibrated before the declared v2 transfer pilot.
+This is one historical task, not general efficacy evidence. Offline gates do
+not establish baseline difficulty or Skill benefit. `tasks/query-shape/` groups
+the prompt, fixture, grader and reference; `bench.json` indexes their paths.

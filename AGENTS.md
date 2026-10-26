@@ -14,7 +14,7 @@ Evidence-driven configuration CLI for Claude Code, Codex CLI, and Kimi Code. Use
 - `docs/` — grouped guides/reference/maintainer contracts; update the sole plan in `docs/work/current.md`.
 - `tools/{verify,release}/` — local gates and release proof generation.
 - `profiles/` — deny-by-default install manifests; `codex-curated` is the public selectable source profile.
-- `runs/` — gitignored local evaluation output; exports and release receipts use explicit external destinations.
+- `runs/` — gitignored experiment workspaces, created only when needed. Use OS temporary directories for one-off validation/package scratch and explicit external destinations for release receipts; follow the [workflow retention rules](docs/guides/experiment-workflow.md#retain-and-clean-up).
 
 ## Skill routing
 

@@ -161,6 +161,14 @@ folders. Create only what is needed. Local inputs/outputs remain out of Git;
 reusable benches and source methods belong to their existing owners. Ignored
 storage is not a backup or a public delivery location.
 
+`runs/` is generated local data, not a maintained source module. It can be empty
+when no experiment needs local records. Use one named workspace for an actual
+study; do not mix source clones, package installations, build logs or release
+verification into it. One-off validation scratch uses OS temporary directories;
+ordinary `dist/` and `node_modules/` keep their existing project locations.
+Release receipts use their explicit external destination. Create neither a placeholder
+README nor another archive/catalog to make an empty output directory persist.
+
 | Data | Where and what to retain |
 | --- | --- |
 | Memory-only intermediate values | Keep in memory; no file for each variable. |
@@ -208,6 +216,13 @@ supported native-record slimming. Before deleting anything:
 4. Delete only the selected unused **whole batch**, redundant complete export,
    or genuinely expendable outer files. Keep active/referenced batches and intact
    indexed records.
+
+A fixed published package may be a normalized or redacted derivative, not an
+exact backup of private originals. Verify the delivery satisfies its actual
+consumer before discarding an original; record the loss of raw recovery when
+the owner chooses to retire that work. Ending an entire unused study may remove
+its local originals together. This does not rewrite published observations or
+justify dropping negative outcomes from a retained claim.
 
 Snapshots and portable exports contain intentional exact-byte copies. The export
 preview reports payload size; native `inputSnapshot.cost` reports snapshot bytes,

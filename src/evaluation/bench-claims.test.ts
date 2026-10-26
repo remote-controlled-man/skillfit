@@ -107,7 +107,7 @@ test('unsupported schema 2 target is visible in preview and refuses before verif
   const preview = await prepareEvalPlan(options, {});
   assert.equal(preview.plan.evaluation.measurementScope?.assessment, 'unsupported');
   const sentinel = join(f.root, 'verifier-started');
-  writeFileSync(join(f.dir, 'verifiers/example-task.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(sentinel)},'bad');process.exit(1);`);
+  writeFileSync(join(f.dir, 'tasks/example-task/verify.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(sentinel)},'bad');process.exit(1);`);
   await assert.rejects(runEval({ ...options, dryRun: false }), /BENCH_CLAIM_UNSUPPORTED/);
   const { existsSync } = await import('node:fs');
   assert.equal(calls, 0); assert.equal(existsSync(sentinel), false); assert.equal(existsSync(options.runsRoot), false);

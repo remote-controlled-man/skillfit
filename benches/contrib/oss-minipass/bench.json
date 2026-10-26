@@ -1,42 +1,42 @@
 {
   "schemaVersion": 1,
   "name": "oss-minipass",
-  "description": "Four pinned real minipass stream defects. Development calibration; independent of Skill contents. Public outcome checks and retained regression replay, no model grader. Difficulty not yet calibrated.",
+  "description": "Four pinned historical minipass stream defects: asynchronous completion, readable notifications, pipeline backpressure and listener lifecycles. Deterministic behavior and executable regression checks; no model judge.",
   "tasks": [
     {
       "id": "async-end",
-      "fixture": "fixtures/async-end",
-      "prompt": "prompts/async-end.md",
-      "verifier": "node verifiers/async-end.mjs",
+      "fixture": "tasks/async-end/fixture",
+      "prompt": "tasks/async-end/prompt.md",
+      "verifier": "node tasks/async-end/verify.mjs",
       "verifierKind": "command",
-      "oracle": "node ground-truth/oracle-async-end.mjs",
+      "oracle": "node tasks/async-end/reference/oracle.mjs",
       "shouldTrigger": true
     },
     {
       "id": "buffered-readable",
-      "fixture": "fixtures/buffered-readable",
-      "prompt": "prompts/buffered-readable.md",
-      "verifier": "node verifiers/buffered-readable.mjs",
+      "fixture": "tasks/buffered-readable/fixture",
+      "prompt": "tasks/buffered-readable/prompt.md",
+      "verifier": "node tasks/buffered-readable/verify.mjs",
       "verifierKind": "command",
-      "oracle": "node ground-truth/oracle-buffered-readable.mjs",
+      "oracle": "node tasks/buffered-readable/reference/oracle.mjs",
       "shouldTrigger": true
     },
     {
       "id": "pipeline-order",
-      "fixture": "fixtures/pipeline-order",
-      "prompt": "prompts/pipeline-order.md",
-      "verifier": "node verifiers/pipeline-order.mjs",
+      "fixture": "tasks/pipeline-order/fixture",
+      "prompt": "tasks/pipeline-order/prompt.md",
+      "verifier": "node tasks/pipeline-order/verify.mjs",
       "verifierKind": "command",
-      "oracle": "node ground-truth/oracle-pipeline-order.mjs",
+      "oracle": "node tasks/pipeline-order/reference/oracle.mjs",
       "shouldTrigger": true
     },
     {
       "id": "end-listeners",
-      "fixture": "fixtures/end-listeners",
-      "prompt": "prompts/end-listeners.md",
-      "verifier": "node verifiers/end-listeners.mjs",
+      "fixture": "tasks/end-listeners/fixture",
+      "prompt": "tasks/end-listeners/prompt.md",
+      "verifier": "node tasks/end-listeners/verify.mjs",
       "verifierKind": "command",
-      "oracle": "node ground-truth/oracle-end-listeners.mjs",
+      "oracle": "node tasks/end-listeners/reference/oracle.mjs",
       "shouldTrigger": true
     }
   ]

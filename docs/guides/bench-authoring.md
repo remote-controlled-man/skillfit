@@ -20,6 +20,13 @@ content with a real case before interpreting efficacy. Schema 1 stays compatible
 and unrecorded; select `--schema-version 2` explicitly for a new bench with
 [declared claims](../../benches/README.md#claims-and-measurement-scope).
 
+New tasks are generated under `tasks/<id>/`: `prompt.md`, optional
+`prompt.trigger.md`, `fixture/`, `verify.mjs` and `reference/`. Inspect `bench.json`
+to see the actual files and commands. Keep one dataset card at the root and task
+instructions in their prompt; share real grading helpers under `verifiers/`
+instead of copying them for each task. The loader also accepts older relative
+layouts; moving files needs no format version or new CLI option.
+
 ## Freeze a real failure
 
 Write the task as a teammate would ask it. Freeze only the files needed to

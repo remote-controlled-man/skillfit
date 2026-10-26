@@ -1,14 +1,16 @@
 {
   "schemaVersion": 1,
   "name": "oss-normalize-url-query-shape",
-  "description": "Pinned normalize-url issue #193 and maintainer fix. Independent repository transfer control; difficulty uncalibrated and one historical task cannot establish general efficacy.",
-  "tasks": [{
-    "id": "query-shape",
-    "fixture": "fixtures/query-shape",
-    "prompt": "prompts/query-shape.md",
-    "verifier": "node verifiers/query-shape.mjs",
-    "verifierKind": "command",
-    "oracle": "node ground-truth/oracle-query-shape.mjs",
-    "shouldTrigger": true
-  }]
+  "description": "Pinned normalize-url issue #193 and maintainer fix. One query-shape normalization defect with protected assets, deterministic behavior and executable regression checks; offline integrity is not efficacy evidence.",
+  "tasks": [
+    {
+      "id": "query-shape",
+      "fixture": "tasks/query-shape/fixture",
+      "prompt": "tasks/query-shape/prompt.md",
+      "verifier": "node tasks/query-shape/verify.mjs",
+      "verifierKind": "command",
+      "oracle": "node tasks/query-shape/reference/oracle.mjs",
+      "shouldTrigger": true
+    }
+  ]
 }

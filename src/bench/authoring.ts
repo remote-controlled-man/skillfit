@@ -10,7 +10,7 @@ import { sha256File, sha256Text } from "../shared/hash.js";
 import { runVerifier, verifierFailure } from "./gates/verifier.js";
 import { MOCK_MARKER_FILE } from './constants.js';
 import type { Executor } from "../agents/contracts.js";
-import { commandTemplateFiles } from "./command-template.js";
+import { benchTemplateFiles, taskFilePaths } from "./templates.js";
 import { BACKUP_SUFFIX } from '../shared/backup.js';
 import { throwIfCancelled as throwIfEvaluationInterrupted } from "../shared/cancellation.js";
 import { freezeSourceFiles } from "./source.js";
@@ -104,101 +104,12 @@ export async function draftBenchChange(change: PreparedBenchChange, log: (line: 
   change.assertCurrent(); await state.draft(log);
 }
 
-function templateFiles(benchName: string): Record<string, string> {
-  return {
-    'bench.json': `${JSON.stringify(
-      {
-        schemaVersion: 1,
-        name: benchName,
-        description: 'Describe what real-work tasks this bench measures.',
-        tasks: [
-          {
-            id: 'example-task',
-            fixture: 'fixtures/example-task',
-            prompt: 'prompts/example-task.md',
-            verifier: 'node verifiers/example-task.mjs',
-            oracle: 'node ground-truth/oracle-example-task.mjs',
-            rubric: 'ground-truth/example-task.md',
-          },
-        ],
-      },
-      null,
-      2,
-    )}\n`,
-    'prompts/example-task.md': `# Example task
-
-The repository snapshot below contains \`answer.txt\`. Reply with its exact contents and nothing else.
-`,
-    'prompts/example-task.trigger.md': `# Example task
-
-The repository in your current working directory contains \`answer.txt\`. Reply with its exact contents and nothing else.
-`,
-    'fixtures/example-task/answer.txt': 'skillfit-ok\n',
-    [`fixtures/example-task/${MOCK_MARKER_FILE}`]: `${JSON.stringify(
-      { baseline: { output: 'skillfit-ok' }, treatment: { output: 'skillfit-ok' } },
-      null,
-      2,
-    )}\n`,
-    'verifiers/example-task.mjs': `import fs from 'node:fs';
-import path from 'node:path';
-
-const runDir = process.argv[2];
-if (!runDir) {
-  console.error('usage: node example-task.mjs <run-dir>');
-  process.exit(2);
-}
-
-let output;
-try {
-  output = fs.readFileSync(path.join(runDir, '_output.md'), 'utf8').trim();
-} catch {
-  console.log(JSON.stringify({ passed: false, checks: [{ name: 'exact-answer', pass: false }], error: 'missing _output.md' }));
-  process.exit(1);
-}
-const passed = output === 'skillfit-ok';
-console.log(JSON.stringify({ passed, checks: [{ name: 'exact-answer', pass: passed }] }));
-process.exitCode = passed ? 0 : 1;
-`,
-    'ground-truth/oracle-example-task.mjs': `import fs from 'node:fs';
-import path from 'node:path';
-
-const runDir = process.argv[2];
-if (!runDir) {
-  console.error('usage: node oracle-example-task.mjs <run-dir>');
-  process.exit(2);
-}
-
-// The oracle applies the reference solution: the exact contents of answer.txt.
-const answer = fs.readFileSync(path.join(runDir, 'answer.txt'), 'utf8').trim();
-fs.writeFileSync(path.join(runDir, '_output.md'), answer + '\\n', 'utf8');
-`,
-    'ground-truth/example-task.md': `# Ground truth — example-task
-
-The expected answer is \`skillfit-ok\` (the exact contents of \`answer.txt\`).
-
-This task is a placeholder so the scaffold passes \`skillfit bench check\` out of the box. Replace it with
-a real task from your own work:
-
-1. Drop the real (pre-change) repository state into \`fixtures/<task-id>/\` — the best tasks come from
-   failures you have actually seen: a bug that escaped review, a migration that went wrong.
-2. Write the prompt a teammate would get (\`prompts/<task-id>.md\`, plus a \`.trigger.md\` variant that
-   references the on-disk repo instead of the inline snapshot).
-3. Encode what you would check by hand into \`verifiers/<task-id>.mjs\` — exit code 0 = pass, nothing else
-   matters. Keep it deterministic: no network, no clocks, no randomness.
-4. Record the expected answer here in \`ground-truth/\` so future edits stay honest.
-5. Run \`skillfit bench check\`, then calibrate difficulty with a real agent
-   (quality-improvement target: baseline pass rate 30–70%; efficiency requires
-   paired costs, coverage and regression checks — see docs/reference/metrics.md).
-`,
-  };
-}
-
 function prepareInit(options: BenchInitOptions, dependencies: BenchAuthoringDependencies): PreparedBenchChange<{ dir: string; created: string[] }> {
   const kind = options.kind ?? 'output', schemaVersion = options.schemaVersion ?? 1;
   if (!BENCH_SCHEMA_VERSIONS.includes(schemaVersion)) throw new Error('bench init schemaVersion must be 1 or 2.');
   if (kind !== 'output' && kind !== 'command') throw new Error(`Unknown bench kind: ${kind} (expected "output" or "command")`);
   const dir = resolve(options.cwd ?? process.cwd(), options.dir ?? 'skillfit-bench');
-  const files = kind === 'command' ? commandTemplateFiles(basename(dir)) : templateFiles(basename(dir));
+  const files = benchTemplateFiles(basename(dir), kind);
   if (schemaVersion === 2) {
     const manifest = JSON.parse(files['bench.json']!); manifest.schemaVersion = 2;
     for (const task of manifest.tasks) task.claims = ['quality'];
@@ -522,31 +433,32 @@ function prepareAdd(options: BenchAddOptions, now: () => Date): PreparedBenchCha
   const draft = options.decompose ? new BenchDraftSession(options, taskId, benchDir, cwd, captured.fixtureFiles,
     buildDecomposePrompt(captured.promptText, captured.fixtureFiles.map(file => file.rel), captured.verifierKind)) : undefined;
 
+  const files = taskFilePaths(taskId);
   const generated: Record<string, string> = {
-    [`prompts/${taskId}.md`]: `${captured.promptText.trimEnd()}\n`,
-    [`prompts/${taskId}.trigger.md`]: `${captured.promptText.trimEnd()}\n\nThe repository is in your current working directory.\n`,
-    [`verifiers/${taskId}.mjs`]: captured.verifierSource,
-    [`ground-truth/${taskId}.md`]: captured.groundTruth,
+    [files.prompt]: `${captured.promptText.trimEnd()}\n`,
+    [files.promptTrigger]: `${captured.promptText.trimEnd()}\n\nThe repository is in your current working directory.\n`,
+    [files.verifier]: captured.verifierSource,
+    [files.rubric]: captured.groundTruth,
   };
   if (captured.oracleSource || options.decompose) {
-    generated[`ground-truth/oracle-${taskId}.mjs`] = captured.oracleSource ?? '';
+    generated[files.oracle] = captured.oracleSource ?? '';
   }
   const taskEntry = {
     ...(claims ? { claims } : {}),
     id: taskId,
-    fixture: `fixtures/${taskId}`,
-    prompt: `prompts/${taskId}.md`,
-    promptTrigger: `prompts/${taskId}.trigger.md`,
-    verifier: `node verifiers/${taskId}.mjs`,
+    fixture: files.fixture,
+    prompt: files.prompt,
+    promptTrigger: files.promptTrigger,
+    verifier: `node ${files.verifier}`,
     verifierKind: captured.verifierKind,
     ...timeout,
-    rubric: `ground-truth/${taskId}.md`,
-    ...(captured.oracleSource || options.decompose ? { oracle: `node ground-truth/oracle-${taskId}.mjs` } : {}),
+    rubric: files.rubric,
+    ...(captured.oracleSource || options.decompose ? { oracle: `node ${files.oracle}` } : {}),
     ...(options.oracle ? { oracle: options.oracle } : {}),
     ...(options.shouldTrigger !== undefined ? { shouldTrigger: options.shouldTrigger } : {}),
   };
 
-  const targets = [...captured.fixtureFiles.map(file => join(benchDir, 'fixtures', taskId, file.rel)),
+  const targets = [...captured.fixtureFiles.map(file => join(benchDir, files.fixture, file.rel)),
     ...Object.keys(generated).map(rel => join(benchDir, rel)), benchJsonPath];
   assertBenchWrites(benchDir, targets);
   if (sha256File(benchJsonPath) !== sha256Text(originalManifest)) throw new Error('Bench manifest changed while preparing the task; nothing was written.');
@@ -571,12 +483,12 @@ function prepareAdd(options: BenchAddOptions, now: () => Date): PreparedBenchCha
     // dry-run and the real path, because the scripted `--yes` case is the one where nobody is
     // reading a prompt.
     before.push(
-      `Note: --verifier-cmd ${JSON.stringify(options.verifierCmd)} is written into verifiers/${taskId}.mjs and re-executed with a shell on every later \`bench check\` and \`eval\` — it outlives this command.`,
+      `Note: --verifier-cmd ${JSON.stringify(options.verifierCmd)} is written into ${files.verifier} and re-executed with a shell on every later \`bench check\` and \`eval\` — it outlives this command.`,
     );
   }
 
   preview.push(`bench add plan (dry run) — task "${taskId}" into ${benchDir}:`);
-  preview.push(`  + fixtures/${taskId}/ (${captured.planFixtureLine})`);
+  preview.push(`  + ${files.fixture}/ (${captured.planFixtureLine})`);
   for (const rel of Object.keys(generated)) preview.push(`  + ${rel}`);
   if (options.decompose) {
     preview.push('  ~ draft verifier.mjs + oracle.mjs with an agent, validated by the NOP + oracle gates (skipped in dry run)');
@@ -588,7 +500,7 @@ function prepareAdd(options: BenchAddOptions, now: () => Date): PreparedBenchCha
     if (file.rel.split(/[\\/]/).includes('..') || isAbsolute(file.rel)) {
       throw new Error(`Fixture path escapes the task directory: ${file.rel}`);
     }
-    writes.push({ target: join(benchDir, 'fixtures', taskId, file.rel), content: file.content });
+    writes.push({ target: join(benchDir, files.fixture, file.rel), content: file.content });
   }
   for (const [rel, content] of Object.entries(generated)) {
     writes.push({ target: join(benchDir, rel), content });
@@ -599,7 +511,7 @@ function prepareAdd(options: BenchAddOptions, now: () => Date): PreparedBenchCha
     dir: benchDir,
     taskId,
     files: [
-      ...captured.fixtureFiles.map((file) => `fixtures/${taskId}/${file.rel}`),
+      ...captured.fixtureFiles.map((file) => `${files.fixture}/${file.rel}`),
       ...Object.keys(generated),
       'bench.json',
     ],
@@ -613,8 +525,8 @@ function prepareAdd(options: BenchAddOptions, now: () => Date): PreparedBenchCha
     draft: draft ? async log => {
       try {
         const output = await draftVerifierWithOracle(draft, log);
-        generated[`verifiers/${taskId}.mjs`] = output.verifierSource;
-        generated[`ground-truth/oracle-${taskId}.mjs`] = output.oracleSource;
+        generated[files.verifier] = output.verifierSource;
+        generated[files.oracle] = output.oracleSource;
         for (const write of writes) {
           const rel = relative(benchDir, write.target).split('\\').join('/');
           if (rel in generated) write.content = generated[rel]!;

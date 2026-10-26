@@ -98,7 +98,7 @@ export function regressionEvidence(run, canonical, reference, source) {
 }
 
 export async function grade(id, run) {
-  const canonical = join(bench, 'fixtures', id); const source = id === 'fetch-lifecycle' ? 'src/index.ts' : 'index.js';
+  const canonical = join(bench, 'tasks', id, 'fixture'); const source = id === 'fetch-lifecycle' ? 'src/index.ts' : 'index.js';
   const checks = [];
   const check = async (name, body) => { try { await body(); checks.push({ name, pass: true }); }
     catch (error) { checks.push({ name, pass: false, detail: String(error.message).slice(0, 400) }); } };
@@ -122,7 +122,7 @@ export async function grade(id, run) {
   } catch (error) { checks.push({ name: 'runtime probe completeness', pass: false, detail: error.message }); }
   let evidence = [];
   await check('new regression has submission-pass/original-fail/reference-pass test-case evidence', () => {
-    evidence = regressionEvidence(run, canonical, join(bench, 'ground-truth', id), source);
+    evidence = regressionEvidence(run, canonical, join(bench, 'tasks', id, 'reference'), source);
     assert.ok(evidence.length > 0 && evidence.every(row => row.finalPassed) && evidence.some(row => row.caseWitnesses.length > 0));
   });
   const count = checks.filter(c => c.pass).length; const passed = count === checks.length;

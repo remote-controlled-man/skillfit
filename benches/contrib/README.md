@@ -20,11 +20,12 @@ missing the point entirely.
 3. **Show the difficulty when available:** `--calibrate --agent <id> --trials 2` makes live agent
    calls and is optional for the first submission. If you ran it, paste the pass-rate bands. If not,
    say difficulty is uncalibrated. A saturated task (baseline ≥ 90%) can still be a regression net,
-   but cannot measure lift on that agent.
+   but has limited observed quality headroom. Paired efficiency remains a separate
+   question; baseline calibration alone proves neither equivalence nor benefit.
 4. **Keep it self-contained:** fixtures must not need a build step or installed dependencies for the
    verifier to run, must not contain secrets or customer data, and must stay small. Default snapshot
    input inlines fixtures into prompts; `--input workspace` presents them on disk to a CLI instead.
-5. **Record the seed answer** in `ground-truth/` — what a correct outcome looks like and why the verifier
+5. **Record the seed answer** in `tasks/<id>/reference/` — what a correct outcome looks like and why the verifier
    is right.
 
 ## What maintainers do
@@ -43,17 +44,26 @@ instruction behavior. The personal-study names on older directories do not imply
 independence, efficacy or a promotion sequence. Future names should describe the
 workload/domain. Keep generated run output outside this tree.
 
+For additions, keep `tasks/<id>/{prompt.md,fixture/,reference/}` together, with
+an optional task-specific `verify.mjs`; genuinely shared graders stay under
+`verifiers/`. The existing manifest is the only executable membership list.
+Keep one short root card, source provenance and licenses; generated runs,
+process logs, reports and replay exports belong in their explicit workspaces.
+The [workflow](../../docs/guides/experiment-workflow.md#store-process-data-and-analysis)
+owns retention and manual cleanup. Existing public directory names are retained
+for callers; their cards describe workloads rather than a study sequence.
+
 ### Defect datasets
 
 | Bench | Domain | Contributor | Notes |
 |---|---|---|---|
 | [oss-mcp-use-utf8](oss-mcp-use-utf8/README.md) | MCP App HTML decoding | skillfit replay of MIT-licensed mcp-use source | Pinned real-source workflow/regression example; earlier baselines saturated; no general Skill efficacy claim |
-| [oss-normalize-url](oss-normalize-url/README.md) | URL query normalization | skillfit replay of MIT-licensed normalize-url source | Pinned issue #193 and maintainer fix; Node-only evidence gates; difficulty uncalibrated before the v2 transfer pilot |
-| [oss-minipass](oss-minipass/README.md) | Stream completion and backpressure | skillfit replay of ISC-licensed minipass source | Four pinned historical defects; development/calibration set with public behavior and regression replay gates |
-| [oss-skill-validation](oss-skill-validation/README.md) | Asynchronous mapping and cache lifetime | skillfit replay of MIT-licensed p-map and quick-lru source | Eight independently sourced defects in two repositories; separate from minipass development; no efficacy result implied by offline gates |
-| [oss-skill-independent](oss-skill-independent/README.md) | Async context, timers, errors and command lifecycle | skillfit replay of MIT-licensed p-limit, p-timeout, p-throttle and Commander source | Eight fixed, previously untuned defects; identical-regression original/fix gates and protected assets; difficulty uncalibrated, zero new model calls |
+| [oss-normalize-url](oss-normalize-url/README.md) | URL query normalization | skillfit replay of MIT-licensed normalize-url source | Pinned issue #193 and maintainer fix; Node-only evidence gates; offline gates do not establish difficulty or benefit |
+| [oss-minipass](oss-minipass/README.md) | Stream completion and backpressure | skillfit replay of ISC-licensed minipass source | Four pinned historical defects; public behavior and regression replay gates |
+| [oss-skill-validation](oss-skill-validation/README.md) | Asynchronous mapping and cache lifetime | skillfit replay of MIT-licensed p-map and quick-lru source | Eight independently sourced defects in two repositories; no efficacy result implied by offline gates |
+| [oss-skill-independent](oss-skill-independent/README.md) | Async context, timers, errors and command lifecycle | skillfit replay of MIT-licensed p-limit, p-timeout, p-throttle and Commander source | Eight pinned defects; identical-regression original/fix gates and protected assets; difficulty uncalibrated, zero new model calls |
 | [oss-lru-cache](oss-lru-cache/README.md) | Asynchronous cache fetch lifecycle | skillfit replay of ISC-licensed lru-cache source | Three pinned real-source defects; offline third-side gates, live difficulty uncalibrated |
-| [oss-skill-followup](oss-skill-followup/README.md) | Debounce and duration formatting | skillfit replay of independently sourced defects | Prospective eight-task followup; separate from the first study, no pooled efficacy claim |
+| [oss-skill-followup](oss-skill-followup/README.md) | Debounce and duration formatting | skillfit replay of independently sourced defects | Eight pinned defects with deterministic clock and regression gates |
 
 
 ### Diagnostic controls

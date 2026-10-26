@@ -1,15 +1,11 @@
-# Prospective debugging Skill followup tasks
+<a id="prospective-debugging-skill-followup-tasks"></a>
 
-Eight historical functional defects in p-debounce, debounce and
-humanize-duration provide a fresh task set for the unchanged compact v4
-candidate. They were selected after the separately retained first study but
-before any followup model call. They are different defects in new repositories;
-the first study's tasks and outcomes are not reused or pooled into this set.
+# Debounce and duration formatting defects
 
-The candidate and original Skill resources remain unchanged. Offline original
-failures and full maintainer passes establish benchmark integrity, without
-establishing model or Skill improvement. A real comparison needs its own fixed
-request, bounded declaration and native receipts before any model call.
+Eight historical defects from p-debounce, debounce and humanize-duration exercise
+promise rejection, overlapping calls, receiver preservation, recursive callbacks,
+timer boundaries and displayed duration counts. Tasks live under `tasks/<id>/`;
+`bench.json` owns commands and `verifiers/` holds shared grading code.
 
 | Task | Independently published repair |
 | --- | --- |
@@ -53,9 +49,6 @@ node dist/cli.js bench check benches/contrib/oss-skill-followup
 
 This task mix remains limited to JavaScript async wrappers, callbacks and
 duration formatting in three repositories. It cannot establish universal
-debugging improvement. Freeze the complete bench, resources, configuration,
-policy, order, deadlines and five paired trials before evaluation. Eight tasks
-require 80 executor calls; readiness, development and other cohorts stay in
-their own ledgers. Preserve every result, individual regression and spending
-dimension. A completed cohort receives no outcome-driven extra trials or
-relaxed thresholds. A changed candidate needs another independent declaration.
+debugging improvement. Difficulty requires a separately authorized baseline
+calibration. A candidate tuned against these cases needs a separate frozen
+validation set.

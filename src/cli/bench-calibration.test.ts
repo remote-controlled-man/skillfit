@@ -29,8 +29,8 @@ async function fixture(t: TestContext, kind: 'output' | 'command' = 'output') {
 test('calibration refuses a solved fixture or broken oracle before any executor, version probe or native output', async t => {
   for (const gate of ['untouched', 'oracle'] as const) await t.test(gate, async t => {
     const f = await fixture(t, 'command');
-    if (gate === 'untouched') writeFileSync(join(f.dir, 'verifiers/example-task.mjs'), 'process.exit(0);');
-    else writeFileSync(join(f.dir, 'ground-truth/oracle-example-task.mjs'), 'process.exit(4);');
+    if (gate === 'untouched') writeFileSync(join(f.dir, 'tasks/example-task/verify.mjs'), 'process.exit(0);');
+    else writeFileSync(join(f.dir, 'tasks/example-task/reference/oracle.mjs'), 'process.exit(4);');
     let calls = 0, versions = 0;
     const executor: Executor = { describe: () => ({ kind: 'cli', model: 'offline' }), run: async () => { calls++; return final; } };
     const report = await runBenchCheck({ dir: f.dir, calibrate: { executor, agent: 'codex', trials: 1,
@@ -44,7 +44,7 @@ test('calibration refuses a solved fixture or broken oracle before any executor,
 
 test('calibration preview fingerprints settings without executing verifier/oracle and rejects a stale plan', async t => {
   const f = await fixture(t), sentinel = join(f.root, 'probe');
-  writeFileSync(join(f.dir, 'verifiers/example-task.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(sentinel)},'bad');process.exit(1);`);
+  writeFileSync(join(f.dir, 'tasks/example-task/verify.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(sentinel)},'bad');process.exit(1);`);
   const options = { dir: f.dir, calibrate: { agent: 'codex', trials: 2, runsRoot: f.runsRoot, runGroup: f.runGroup,
     executorTimeoutSeconds: 17, spendingBudget: budget, sessionOptions: { homeDir: join(f.root, 'home'), env: { PATH: '' } } } };
   const plan = prepareBenchCalibration(options);
@@ -66,7 +66,7 @@ test('strict calibration exposes typed Agent and case preflight failures without
   await assert.rejects(runBenchCalibration({ dir: f.dir, calibrate: { agent: 'codex', runsRoot: f.runsRoot, runGroup: f.runGroup,
     sessionOptions: { homeDir: join(f.root, 'home'), env: { PATH: '', CODEX_HOME: join(f.root, 'home/codex') } } }, log: () => {} }),
   (error: unknown) => error instanceof AgentPreflightFailed && error.agentPreflight.status === 'blocked');
-  writeFileSync(join(f.dir, 'verifiers/example-task.mjs'), 'process.exit(0);');
+  writeFileSync(join(f.dir, 'tasks/example-task/verify.mjs'), 'process.exit(0);');
   let calls = 0;
   const executor: Executor = { describe: () => ({ kind: 'cli', model: 'offline' }), run: async () => { calls++; return final; } };
   await assert.rejects(runBenchCalibration({ dir: f.dir, calibrate: { executor, runsRoot: f.runsRoot, runGroup: f.runGroup }, log: () => {} }),
@@ -78,7 +78,7 @@ test('offline warnings and unknown winnability do not block calibration and are 
   const f = await fixture(t);
   const manifest = json(join(f.dir, 'bench.json')); delete manifest.tasks[0].oracle;
   writeFileSync(join(f.dir, 'bench.json'), JSON.stringify(manifest));
-  writeFileSync(join(f.dir, 'fixtures/example-task/large.txt'), 'x'.repeat(66 * 1024));
+  writeFileSync(join(f.dir, 'tasks/example-task/fixture/large.txt'), 'x'.repeat(66 * 1024));
   let calls = 0;
   const executor: Executor = { describe: () => ({ kind: 'cli', model: 'offline' }), run: async () => { calls++; return final; } };
   const options = { dir: f.dir, calibrate: { executor, trials: 1, runsRoot: f.runsRoot, runGroup: f.runGroup, spendingBudget: budget } };
@@ -98,10 +98,10 @@ test('offline warnings and unknown winnability do not block calibration and are 
 test('calibration rechecks environment and bench changes introduced by offline probes before first dispatch', async t => {
   for (const change of ['environment', 'bench'] as const) await t.test(change, async t => {
     const f = await fixture(t), home = join(f.root, 'home'), codex = join(home, 'codex');
-    const path = join(f.dir, 'verifiers/example-task.mjs'), source = readFileSync(path, 'utf8');
+    const path = join(f.dir, 'tasks/example-task/verify.mjs'), source = readFileSync(path, 'utf8');
     const mutation = change === 'environment'
       ? `mkdirSync(${JSON.stringify(join(codex, 'skills/calibration-none'))},{recursive:true});writeFileSync(${JSON.stringify(join(codex, 'skills/calibration-none/SKILL.md'))},'---\\nname: calibration-none\\n---\\nbody');`
-      : `writeFileSync(${JSON.stringify(join(f.dir, 'prompts/example-task.md'))},'changed');`;
+      : `writeFileSync(${JSON.stringify(join(f.dir, 'tasks/example-task/prompt.md'))},'changed');`;
     writeFileSync(path, `import{mkdirSync,writeFileSync}from'node:fs';${mutation}\n${source}`);
     let calls = 0;
     const executor: Executor = { describe: () => ({ kind: 'cli', model: 'offline' }), run: async () => { calls++; return final; } };
@@ -177,7 +177,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) for (const stage of ['verif
 const leaf=spawn(process.execPath,[${JSON.stringify(leaf)}],{stdio:'ignore'});
 const timer=setInterval(()=>{if(existsSync(${JSON.stringify(heartbeat)})){clearInterval(timer);writeFileSync(${JSON.stringify(ready)},JSON.stringify({dir:process.argv[2],pids:[process.pid,leaf.pid]}));}},20);
 setTimeout(()=>process.exit(),20000);`;
-    writeFileSync(join(f.dir, stage === 'oracle' ? 'ground-truth/oracle-example-task.mjs' : 'verifiers/example-task.mjs'), source);
+    writeFileSync(join(f.dir, stage === 'oracle' ? 'tasks/example-task/reference/oracle.mjs' : 'tasks/example-task/verify.mjs'), source);
     const module = pathToFileURL(fileURLToPath(new URL("./bench.js", import.meta.url))).href;
     const harness = join(f.root, 'harness.mjs');
     writeFileSync(harness, `import{writeFileSync}from'node:fs';import{runBenchCheck}from ${JSON.stringify(module)};

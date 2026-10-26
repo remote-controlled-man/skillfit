@@ -52,7 +52,7 @@ test('ordinary paired CLI and judge streams retain full costs and finish within 
 
 test('known missing CLI counters block primary, judge and calibration before probes or spending', async t => {
   const f = await setup(t), sentinel = join(f.root, 'must-not-run');
-  writeFileSync(join(f.bench, 'verifiers/example-task.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(sentinel)},'called');process.exit(1);`);
+  writeFileSync(join(f.bench, 'tasks/example-task/verify.mjs'), `import{writeFileSync}from'node:fs';writeFileSync(${JSON.stringify(sentinel)},'called');process.exit(1);`);
   for (const name of ['claude', 'codex']) {
     const executable = join(f.bin, name + (process.platform === 'win32' ? '.CMD' : ''));
     writeFileSync(executable, 'A synthetic availability marker, never executed.'); chmodSync(executable, 0o755);

@@ -1,10 +1,10 @@
-# Independent debugging Skill validation tasks
+<a id="independent-debugging-skill-validation-tasks"></a>
+
+# Asynchronous mapping and cache lifetime defects
 
 Eight historical upstream defects from p-map and quick-lru cover asynchronous
 input order, concurrency, early termination, iterator cleanup, source errors,
-cold thenables and cache lifetime semantics. These tasks are separate from the
-minipass development set and were selected before observing its candidate
-outcomes. No task or check was generated from a Skill instruction.
+cold thenables and cache lifetime semantics.
 
 `provenance.json` pins each pre-fix parent and maintainer fix. Source, upstream
 documentation and original metadata are retained; minimal Node test scripts
@@ -23,14 +23,10 @@ an explicit simulated clock, restored after each check.
 node dist/cli.js bench check benches/contrib/oss-skill-validation
 ```
 
-Freeze the complete bench, Skill resources, execution configuration and trial
-count before evaluating a candidate. Eight tasks with five paired trials require
-80 calls, excluding any separately declared readiness/development work. Report
-every task, pair, regression, failure and spending population. Do not add trials
-until a significance threshold is reached or edit a candidate against this set
-and continue calling it independent validation.
-
 The task mix is limited to JavaScript asynchronous mapping and cache behavior
 in two repositories. Statistical scale alone does not establish broad debugging
 improvement or absence of future harm. The bench has no negative routing cases;
 it evaluates installed revision outcomes rather than trigger precision.
+
+Tasks are grouped under `tasks/<id>/`; `bench.json` owns membership and commands.
+Shared grading code stays in `verifiers/`. MIT source notices are retained.

@@ -25,7 +25,8 @@ async function fixture(t: TestContext, cases = ['exact']) {
   writeFileSync(join(skill, 'SKILL.md'), '---\nname: review-alias\ndescription: Synthetic offline control.\n---\nReturn skillfit-ok.\n');
   const definition = JSON.parse(readFileSync(join(bench, 'bench.json'), 'utf8')), original = definition.tasks[0];
   definition.tasks = cases.map(id => {
-    const prompt = `prompts/${id}.md`; writeFileSync(join(bench, prompt), `CASE ${id}\nReply skillfit-ok.\n`);
+    mkdirSync(join(bench, 'tasks', id), { recursive: true });
+    const prompt = `tasks/${id}/prompt.md`; writeFileSync(join(bench, prompt), `CASE ${id}\nReply skillfit-ok.\n`);
     return { ...original, id, prompt, promptTrigger: prompt, shouldTrigger: !['prefix', 'other', 'negative'].includes(id) };
   });
   writeFileSync(join(bench, 'bench.json'), JSON.stringify(definition));

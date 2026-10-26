@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { cpSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { parseCommand } from '../../dist/shared/command.js';
 const bench = fileURLToPath(new URL('../../benches/contrib/oss-skill-independent/', import.meta.url));
 const definition = JSON.parse(readFileSync(join(bench, 'bench.json'), 'utf8'));
 const specs = JSON.parse(readFileSync(join(bench, 'task-specs.json'), 'utf8'));
@@ -15,14 +16,14 @@ function setup(t, task, fixed) {
   const directory = mkdtempSync(join(tmpdir(), 'skillfit-independent-')); t.after(() => rmSync(directory, { recursive: true, force: true }));
   cpSync(join(bench, task.fixture), directory, { recursive: true });
   if (fixed) {
-    const result = spawnSync(process.execPath, [join(bench, 'ground-truth/oracle-' + task.id + '.mjs'), directory], { encoding: 'utf8', timeout: 5000 });
+    const result = spawnSync(process.execPath, [join(bench, parseCommand(task.oracle)[1]), directory], { encoding: 'utf8', timeout: 5000 });
     assert.equal(result.status, 0, result.stderr);
-  } else copyFileSync(join(bench, 'ground-truth', task.id, 'regression.test.mjs'), join(directory, 'regression.test.mjs'));
+  } else copyFileSync(join(bench, dirname(parseCommand(task.oracle)[1]), 'regression.test.mjs'), join(directory, 'regression.test.mjs'));
   return directory;
 }
 function grade(task, directory) {
   const env = { ...process.env }; delete env.NODE_TEST_CONTEXT;
-  const result = spawnSync(process.execPath, [join(bench, 'verifiers', task.id + '.mjs'), directory], { encoding: 'utf8', timeout: 20000, env });
+  const result = spawnSync(process.execPath, [join(bench, parseCommand(task.verifier)[1]), directory], { encoding: 'utf8', timeout: 20000, env });
   assert.equal(result.error, undefined, result.stderr); assert.equal(result.signal, null);
   const value = JSON.parse(result.stdout.trim()); assert.equal(value.checks.length, 6);
   assert.equal(value.passed, result.status === 0);
@@ -35,8 +36,9 @@ test('independent source tasks retain proposal identities, complete fixture/refe
   for (const task of provenance.tasks) {
     const declared = proposal.tasks.find(row => row.id === task.task); assert.ok(declared);
     assert.equal(task.before, declared.before); assert.equal(task.fix, declared.upstreamFix);
-    for (const [directory, records] of [['fixtures', task.fixtureFiles], ['ground-truth', task.referenceFiles]]) for (const row of records) {
-      assert.equal(createHash('sha256').update(readFileSync(join(bench, directory, task.task, row.path))).digest('hex'), row.sha256, task.task + ':' + row.path);
+    const selected = definition.tasks.find(row => row.id === task.task); assert.ok(selected);
+    for (const [directory, records] of [[selected.fixture, task.fixtureFiles], [dirname(parseCommand(selected.oracle)[1]), task.referenceFiles]]) for (const row of records) {
+      assert.equal(createHash('sha256').update(readFileSync(join(bench, directory, row.path))).digest('hex'), row.sha256, task.task + ':' + row.path);
     }
     for (const file of declared.functionalFiles) {
       const row = file.path === 'package.json' ? task.packageRecords.find(row => row.arm === 'fixed') :
@@ -78,7 +80,7 @@ test('modifying a protected vendored dependency is rejected even with the real f
 
 test('the incomplete maintainer context patch without its import mapping is rejected', t => {
   const task = definition.tasks.find(row => row.id === 'limit-async-context'), directory = setup(t, task, false);
-  copyFileSync(join(bench, 'ground-truth', task.id, 'index.js'), join(directory, 'index.js'));
+  copyFileSync(join(bench, dirname(parseCommand(task.oracle)[1]), 'index.js'), join(directory, 'index.js'));
   const result = grade(task, directory); assert.equal(result.exitCode, 1); assert.equal(result.checks[0].pass, false);
   assert.ok(result.checks.slice(1, 5).some(row => !row.pass));
 });

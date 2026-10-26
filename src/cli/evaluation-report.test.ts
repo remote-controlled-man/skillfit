@@ -22,7 +22,8 @@ async function fixture(t: TestContext, ids: string[]) {
   await runBenchInit({ dir: bench, yes: true, log: () => {} });
   const path = join(bench, 'bench.json'), body = JSON.parse(readFileSync(path, 'utf8')), original = body.tasks[0];
   body.tasks = ids.map(id => {
-    const prompt = `prompts/${id}.md`; writeFileSync(join(bench, prompt), `CASE ${id}\nReply with skillfit-ok.\n`);
+    mkdirSync(join(bench, 'tasks', id), { recursive: true });
+    const prompt = `tasks/${id}/prompt.md`; writeFileSync(join(bench, prompt), `CASE ${id}\nReply with skillfit-ok.\n`);
     return { ...original, id, prompt, promptTrigger: prompt, shouldTrigger: !id.startsWith('neg'),
       ...(id === 'pos-fired' ? { triggerClass: 'explicit' } : id === 'pos-missed' ? { triggerClass: 'implicit' } : id === 'pos-unknown' ? { triggerClass: 'contextual' } : {}) };
   });

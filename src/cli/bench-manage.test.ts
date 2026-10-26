@@ -41,8 +41,8 @@ test('case edits verify schema, preserve first backups and unregister without de
   const result = manageBench({ ...base, taskId: 'example-task', action: 'remove' });
   assert.equal(result.status, 'applied');
   assert.deepEqual(loadBench(dir).tasks.map(task => task.id), ['real-task']);
-  assert.ok(existsSync(join(dir, 'fixtures/example-task/index.js')));
-  assert.ok(existsSync(join(dir, 'verifiers/example-task.mjs')));
+  assert.ok(existsSync(join(dir, 'tasks/example-task/fixture/index.js')));
+  assert.ok(existsSync(join(dir, 'tasks/example-task/verify.mjs')));
   assert.throws(() => manageBench({ ...base, action: 'remove' }), /last task/);
 });
 

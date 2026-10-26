@@ -32,7 +32,7 @@ async function setup(t: TestContext, kind: 'command' | 'output' = 'command') {
   const base = { bench, skillPath: skill, trials: 1, maxCalls: 2, executor, judgeExecutor: null,
     runsRoot: join(root, 'runs'), runGroup: 'checked', yes: true, dryRun: false, log: () => {} };
   return { root, bench, skill, old, raw, save, base, judge, calls: () => calls, judges: () => judges,
-    verifier: join(bench, 'verifiers/example-task.mjs'), oracle: join(bench, 'ground-truth/oracle-example-task.mjs') };
+    verifier: join(bench, raw.tasks[0].verifier.slice('node '.length)), oracle: join(bench, raw.tasks[0].oracle.slice('node '.length)) };
 }
 
 test('grader load/runtime/reported errors block output and command tasks without an oracle or any executor call', async t => {
@@ -67,10 +67,10 @@ test('an oracle explicitly reporting an infrastructure error cannot pass by exit
 
 test('quoted verifier/oracle paths grade a real file repair, preserve failure/pass and replay without originals', async t => {
   const f = await setup(t);
-  renameSync(f.verifier, join(f.bench, 'verifiers/check answer.mjs'));
-  renameSync(f.oracle, join(f.bench, 'ground-truth/repair answer.mjs'));
-  f.raw.tasks[0].verifier = 'node "verifiers/check answer.mjs"';
-  f.raw.tasks[0].oracle = "node 'ground-truth/repair answer.mjs'"; f.save();
+  renameSync(f.verifier, join(f.bench, 'tasks/example-task/check answer.mjs'));
+  renameSync(f.oracle, join(f.bench, 'tasks/example-task/reference/repair answer.mjs'));
+  f.raw.tasks[0].verifier = 'node "tasks/example-task/check answer.mjs"';
+  f.raw.tasks[0].oracle = "node 'tasks/example-task/reference/repair answer.mjs'"; f.save();
   let calls = 0;
   const executor: Executor = { describe: () => ({ kind: 'mock', model: 'offline-quoted-repair' }), run: async (_p, dir) => {
     if (++calls === 2) writeFileSync(join(dir, 'index.js'), 'export const add = (a,b) => a+b;\n');
@@ -173,7 +173,7 @@ test('missing/empty output, unspawnable verifiers and failed oracles are hard ga
 
 test('warnings and unknown coverage are distinct, nonblocking and frozen for offline reporting', async t => {
   const f = await setup(t); delete f.raw.tasks[0].oracle; f.raw.tasks[0].shouldTrigger = true; f.save();
-  writeFileSync(join(f.bench, 'fixtures/example-task/large.txt'), 'x'.repeat(66 * 1024));
+  writeFileSync(join(f.bench, 'tasks/example-task/fixture/large.txt'), 'x'.repeat(66 * 1024));
   const lines: string[] = [];
   await runEval({ ...f.base, log: line => lines.push(line) });
   assert.equal(f.calls(), 2);
@@ -193,8 +193,9 @@ test('warnings and unknown coverage are distinct, nonblocking and frozen for off
 test('only selected tasks are probed; trigger mode also skips unlabelled tasks', async t => {
   for (const trigger of [false, true]) await t.test(String(trigger), async t => {
     const f = await setup(t);
-    writeFileSync(join(f.bench, 'verifiers/unselected.mjs'), "console.log('must not be probed');process.exit(0);");
-    f.raw.tasks.push({ ...f.raw.tasks[0], id: 'unselected', verifier: 'node verifiers/unselected.mjs' });
+    mkdirSync(join(f.bench, 'tasks/unselected'), { recursive: true });
+    writeFileSync(join(f.bench, 'tasks/unselected/verify.mjs'), "console.log('must not be probed');process.exit(0);");
+    f.raw.tasks.push({ ...f.raw.tasks[0], id: 'unselected', verifier: 'node tasks/unselected/verify.mjs' });
     if (trigger) f.raw.tasks[0].shouldTrigger = true;
     f.save();
     await runEval({ ...f.base, ...(trigger ? { mode: 'trigger', skillInstallDir: 'skills', maxCalls: 1,
@@ -218,7 +219,7 @@ test('dry-run stays side-effect-free and declares pending preflight rather than 
 
 test('missing mock coverage is unknown; malformed markers and overflowing mock probes block evaluation', async t => {
   for (const issue of ['absent', 'omitted-arm', 'malformed', 'overflow-probe'] as const) await t.test(issue, async t => {
-    const f = await setup(t, 'output'), marker = join(f.bench, 'fixtures/example-task/.skillfit-mock.json');
+    const f = await setup(t, 'output'), marker = join(f.bench, 'tasks/example-task/fixture/.skillfit-mock.json');
     if (issue === 'absent') rmSync(marker);
     else if (issue === 'omitted-arm') writeFileSync(marker, '{}');
     else if (issue === 'malformed') writeFileSync(marker, '{');
@@ -254,7 +255,7 @@ test('existing run groups are rejected before executing any offline probe or ove
 test('probe mutations of bench or either Skill cannot silently change the approved inputs', async t => {
   for (const which of ['bench', 'candidate', 'baseline']) await t.test(which, async t => {
     const f = await setup(t);
-    const target = which === 'bench' ? join(f.bench, 'prompts/example-task.md') : join(which === 'candidate' ? f.skill : f.old, 'SKILL.md');
+    const target = which === 'bench' ? join(f.bench, 'tasks/example-task/prompt.md') : join(which === 'candidate' ? f.skill : f.old, 'SKILL.md');
     writeFileSync(f.verifier, `import{appendFileSync}from'node:fs';appendFileSync(${JSON.stringify(target)},'changed');process.exit(1);`);
     delete f.raw.tasks[0].oracle; f.save();
     await assert.rejects(runEval({ ...f.base, mode: 'installed', baselineSkillPath: f.old, skillInstallDir: 'skills' }), error => {

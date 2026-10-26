@@ -1,1 +1,1 @@
-export { commandTemplateFiles } from "../bench/command-template.js";
+export { commandTemplateFiles } from "../bench/templates.js";
