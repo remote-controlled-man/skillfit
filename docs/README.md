@@ -19,7 +19,7 @@ for a source-only example.
 | --- | --- |
 | Learn the complete workflow without model spending | [First evaluation](guides/first-real-eval.md) |
 | Prepare and validate your own cases | [Bench authoring](guides/bench-authoring.md) |
-| Plan an experiment, select inputs and handle stops | [Evaluation workflow](guides/experiment-workflow.md) |
+| Plan/run an experiment, handle stops and retain/clean outputs | [Evaluation workflow](guides/experiment-workflow.md) |
 | Select Skills or move a Codex configuration | [Codex configuration](guides/selectable-codex.md) |
 | Integrate JSON requests/results | [Component contract](reference/eval-component.md) |
 | Look up result fields, costs or replay formats | [Report reference](reference/evaluation-reports.md) |

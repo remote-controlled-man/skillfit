@@ -12,8 +12,7 @@ Unpublished source records can include optional `measurementScope` v1 in paired,
 trigger and calibration reports; [bench claims](../../benches/README.md#claims-and-measurement-scope) owns its fields
 and derivation. Schema 2 uses explicit task declarations; schema 1 records null
 claims and legacy-unrecorded support for a non-null target. Missing historical
-metadata stays absent
-and never acquires today's declarations. Assessment is design support, not proof
+metadata stays absent and never acquires today's declarations. Assessment is design support, not proof
 of validity, power or adoption. Null diagnostic targets are not efficacy claims.
 
 New audits compare summary scope with the native/reviewed plan and selected
@@ -21,7 +20,7 @@ order in the original sealed bench. Malformed/unsupported versions, missing
 new scope on only one side, or contradictory declarations cannot verify evidence.
 A paired report policy override leaves the original target unchanged and cannot
 grant an undeclared schema 2 claim. Quality numbers remain observations within
-that scope. [Portable replay](evaluation-reports.md) retains the same frozen inputs.
+that scope. [Portable replay](#portable-replay) retains the same frozen inputs.
 
 Paired JSON adds per-task `diagnostics`; calibration JSON has
 `summary.tasks[].diagnostics`. Baseline ceiling/floor, quality headroom, efficiency
@@ -63,8 +62,8 @@ as `[run]` in diagnostic text; JSON retains precise paths for investigation.
 
 Saved costs stay in their original final/partial/unknown populations. Reports do
 not replace missing cache counts with zero or estimate unrecorded billing.
-See [cost accounting](evaluation-reports.md), [input snapshots](../guides/experiment-workflow.md)
-and [portable packages](evaluation-reports.md). Review project data before sharing.
+See [cost accounting](#cost-accounting), [input snapshots](../guides/experiment-workflow.md)
+and [portable packages](#contents-and-machine-contract). Review project data before sharing.
 
 ## Numerical integrity errors
 
@@ -157,7 +156,7 @@ recomputed from retained observations; saved detection booleans are reused, not
 redetected by a new parser. Changed
 deliveries, fingerprints and verdicts fail verification. Calibration/trigger
 exports retain the original compiled implementation and reject older runtimes
-without single-arm replay support; see [portable packages](evaluation-reports.md).
+without single-arm replay support; see [portable packages](#contents-and-machine-contract).
 Successful rendering exits 0; invalid human inputs exit 1, while invalid JSON
 reports use the existing error envelope and exit 2. Saved input files are never
 rewritten, and reading any of these reports makes zero model or agent CLI calls.
@@ -193,7 +192,7 @@ Paired Markdown and JSON additionally show `invocationCosts`: separate primary,
 judge and combined populations. The original Agent A/B quality and cost tables
 remain unchanged. Successful, failed and interrupted judge orders have independent
 receipts and final/partial/unknown usage. Missing historical judge usage stays
-unknown. See [all executor roles](evaluation-reports.md).
+unknown. See [all executor roles](#all-executor-roles).
 
 Budget stops retain `session.stopCode` and safe reason text. Single-arm reports
 show the same frozen `spendingBudget` limits/latest state as paired reports.
@@ -218,6 +217,11 @@ paired, calibration, trigger and judge calls. Version 0.11.0 exposes these
 shared controls; absolute stop lines are separate from relative adoption caps
 and provider invoices. Current adapter readers and strict-budget limitations
 belong to the [capability table](../guides/experiment-workflow.md).
+
+Native paired condition summaries may include `tokenCoverage.input/output`: the
+number of surviving graded trials with final recorded usage for each field.
+Missing legacy coverage stays unrecorded. This coverage does not change existing
+`tokens` totals or verdicts; incomplete coverage cannot prove complete overhead.
 
 ### Two populations
 
@@ -414,7 +418,7 @@ implementation used by the experiment and a dependency-free replay entry point.
 Export and replay make zero model calls. Replay executes trusted local verifiers.
 Current-source model-identity additions retain per-call public IDs, source locations
 and unknown coverage after relocation. They do not backfill legacy data or prove
-the backend's identity; see [report fields](evaluation-reports.md). These additions
+the backend's identity; see [model identity contract](metrics.md#public-model-identity-per-invocation). These additions
 are not yet published in npm 0.13.1. Frozen historical packages keep their own
 runtime and detection/identity interpretation.
 
@@ -433,33 +437,22 @@ control actions or an executor. These source contracts are not npm 0.13.1 featur
 
 ### Preview, export and move
 
-```bash
-skillfit report eval ./runs/my-run --export ./exports/my-run --json
-skillfit report eval ./runs/my-run --export ./exports/my-run --yes --json
-node ./exports/my-run/reproduce.mjs --verify-only
-node ./exports/my-run/reproduce.mjs
-skillfit report eval ./exports/my-run --json --replay
-```
+Follow [read, export and reproduce](../guides/experiment-workflow.md#read-share-and-reproduce)
+for the command sequence. The operation contract is:
 
-Without `--yes`, export only checks inputs and prints the plan. `--dry-run` always
-prevents writing. Apply stages and checks the files, claims an unused destination
-and verifies the resulting package. Existing destinations, including empty ones,
-are rejected. The output must be outside the source run and pinned input roots.
-If a transfer fails after claiming its destination, inspect that incomplete output
-and use a fresh destination; it is never reported as a successful export.
+| Operation | Behavior |
+| --- | --- |
+| Export preview | No `--yes`, or explicit `--dry-run`: validate inputs and return the plan without writing. |
+| Export apply | `--yes` stages/verifies files, claims a fresh destination outside the source run and all pinned input roots, and verifies it. Existing destinations, even empty ones, fail. |
+| Failed transfer | An incomplete claimed destination is not success; preserve it for inspection and choose a fresh destination. |
+| `reproduce.mjs --verify-only` | Check inventory, hashes and source-plan binding; execute no verifier. |
+| `reproduce.mjs` | Use the pinned compiled CLI to regrade temporary delivery copies; start no model. Node >=22 and the verifier's external toolchains remain necessary. |
+| Current CLI `report eval --replay` | Interpret packaged evidence with the current installed CLI; this is distinct from the pinned reproducer. |
 
-Move the complete directory to another machine, then run its `reproduce.mjs`.
-Node.js 22+ and any external toolchains required by your verifier are necessary;
-the package does not install system dependencies. `--verify-only` checks inventory,
-hashes and source-plan binding without executing verifiers. Default replay uses
-the copied compiled CLI, grades temporary delivery copies and returns JSON. The
-last command above uses the currently installed CLI and the packaged bench.
-`reproduce.mjs` forwards Ctrl+C/SIGINT and SIGTERM to the pinned CLI, waits for
-its local verifier processes to stop, then exits 130 or 143. Saved evidence is
-read-only during both successful and interrupted replay. The launcher uses the
-original implementation's cancellation context, including for older paired report
-dispatchers; runtimes predating that cancellation module cannot be exported by
-this source version.
+SIGINT/SIGTERM is forwarded through the pinned cancellation context; the launcher
+waits for managed processes and exits 130/143. Saved evidence stays read-only.
+The package does not install the verifier's external toolchains.
+Runtimes predating that cancellation support cannot be exported by this build.
 
 The source must have sealed native evidence. A completed manifest must pass the
 native evidence audit. Missing, changed or linked native artifacts reject export.

@@ -185,6 +185,10 @@ historical adoption requirement; a declaration mismatch is an integrity error.
   `reproduce.mjs` executes trusted verifiers. Review project data before sharing.
 - `mcp check` starts the configured local server and performs discovery only; it never calls a tool.
 - `eval` writes under the declared runs root (`runs/` by default, gitignored).
+  Keep derived analysis/scratch outside sealed batches; never edit/prune indexed
+  receipts. Follow the [workflow](https://github.com/remote-controlled-man/skillfit/blob/main/docs/guides/experiment-workflow.md#retain-and-clean-up)
+  for explicit manual retention/cleanup. This CLI has no automatic GC or generic
+  custom process-metric collector.
 - `bench init` / `bench add` show a plan before writing; `bench edit/remove` default
   to a plan and apply with `--yes`, with backup and validation. Removal preserves
   files and cannot remove the last registration. Use existing authorization for

@@ -103,8 +103,8 @@ runs/                     ignored attempts/exports/release workspaces
 ```
 
 Each topic has one canonical page; `docs/work/current.md` is the only plan.
-The 12 docs pages comprise one index, four task guides, three references, three
-maintenance pages and the sole plan. Bench format/claims stay with benches.
+The docs index routes readers to task guides, references, maintenance contracts
+and the sole plan. Bench format/claims stay with benches.
 The docs index owns build/version availability; fixed Git snapshots retain retired
 paths. CLI owns help and parser declarations in `src/cli/definition.ts`;
 `tools/verify/cli-reference.mjs` derives selected reference rows and local tests
@@ -227,34 +227,32 @@ Test built, installed and relocated packages, not only source imports.
 
 ## Artifact lifecycle and admission to main
 
-| Artifact | Retention |
+| Artifact | Owner and retention |
 | --- | --- |
-| Active source/tests/Bench inputs/schemas | Owning tree; only exact consumed historical fixtures. |
-| Run facts, failed/stopped attempts and sealed inputs | Fresh explicit ignored/external workspace; no automatic source import. |
-| Reports, analysis and logs | Derived attempt output, not another maintained truth source. |
-| Shared evaluation | Explicit exported package and its stated conclusion/limits; retain where its actual recipient consumes it, not in a new source catalog. |
-| Release proofs | One external proof bundle per attempt; source keeps the changelog/current links. Verification is read-only; repository import is retired. |
-| Current work | One ordered plan; replace status/results rather than append every review/CI transcript. |
+| Source/tests/Bench inputs/schemas | Canonical owning tree; retain reusable inputs and actual regression consumers. |
+| Native Run facts and sealed inputs/runtime | Records; immutable batch directory, including failed/stopped observations. |
+| Derived analyses, reports and temporary work | Explicit siblings outside sealed batches; retain methods/results only while consumed. |
+| Shared evaluation | Complete verified export for an actual recipient/claim; state interpretation and availability limits. |
+| Release proofs | One external proof bundle per attempt; source keeps changelog/current links, never imports receipts. |
+| Current work | One ordered plan; replace status/results and link prior details instead of appending transcripts. |
 
-Promotion of sealed positive/negative/stopped Runs requires exact input/runtime
-identity and replay limits; dirty execution retains actual bytes. Corrections
-link a new identity. A study may reuse identical runtimes; standalone packages
-stay self-contained. No cross-study object server is introduced.
+The [experiment workflow](../guides/experiment-workflow.md#store-process-data-and-analysis)
+owns the outer workspace, observed/derived process-data rules and explicit manual
+retention/cleanup procedure. Completion status and retention intent are separate.
+No automatic cleanup, custom telemetry facility or shared storage platform is
+implied. Current export copies native inputs/runtime and does not automatically
+package external analysis. A sealed transcript or trial workspace is not scratch.
 
-A release proof and an evaluation run are different products: the former proves
-package delivery; the latter records task outcomes and costs. Release acceptance
-checks the installed package and current portable replays, never old personal
-studies. A failed run stays in its explicit workspace; it does not create a new
-maintained page, study catalog entry or mandatory release check.
+Agents supplies observable facts, Execution attaches invocation context, Records
+owns saved formats, Measurement derives metrics and CLI presents them. New raw
+process observations require versioned reader/writer support; do not add an untyped
+control dictionary. Reuse existing owners when a real measurement need appears.
 
-Bench inputs consist of one manifest, task prompts, copied fixtures, deterministic
-graders and protected reference answers. Dataset provenance/license lives beside
-the inputs. Keep file roles separate so reference answers never enter agent
-workspaces. Existing manifest paths support both grouped files and task-local
-subdirectories; no new format version or mass rename is needed to separate data
-from outputs. See [Bench lifecycle](../../benches/README.md#input-and-output-lifecycle)
-for admission/removal and the [catalog](../../benches/contrib/README.md) for dataset
-purpose. Regression fixtures belong to their consuming tests, not an archive.
+Release proofs establish package delivery; Runs establish scoped task observations.
+Release acceptance checks installed behavior/current portable replay, never old
+personal studies. A failed Run stays in its explicit workspace without creating
+a new source page/catalog or mandatory release check. Retained standalone
+packages stay self-contained; copies are not removed by editing sealed indices.
 
 ## Growth controls and extension acceptance
 
@@ -318,18 +316,19 @@ Apply the current plan in dependency order. The first changed historical hash,
 missing runtime entry or unexplained relevant local failure stops the slice.
 Preserve the last verified source and unrelated work; roll back only owned local
 changes. After immutable publication, correct forward under a linked identity.
-Final integration verifies installation, restoration and frozen replay on their
-recorded runtimes. Changed code requires fresh confirmation for new Runs.
+Final integration verifies the installed CLI and current saved-result/export/
+portable replay contracts. Changed code requires fresh confirmation for new Runs.
 
 Pre-mortem: writers repopulate docs (detect tracked-root writes; gate destinations),
 Shared gains host policy (detect signal/exit/business imports; pass explicit inputs),
 or moves break replay (detect missing launcher imports; test installed/relocated
-packages). Expiring-only storage blocks publication. These checks cannot replace
+packages). The release operator retains complete proofs beyond expiring workflow
+artifacts. These checks cannot replace
 review of responsibility ownership.
 
 Non-goals: new statistical thresholds, paid research, microservices, plugin loading
-or destructive workspace cleanup. Open: verify durable release immutability before
-a new publication; concrete new public formats/protocols need compatibility design.
+or destructive workspace cleanup. No extra storage platform or retention job is
+planned; concrete new public formats/protocols need compatibility design.
 
 ## Development and documentation
 

@@ -11,15 +11,17 @@ it cannot establish a real Skill's benefit or adoption eligibility.
 Choose a fresh run group and an export directory that does not exist:
 
 ```bash
-node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs --run-group first-controls --json --dry-run
+node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs/first-study/batches --run-group first-controls --json --dry-run
 ```
 
-Inspect the control suites and `plan.sha256`. Preview creates no run directory
-and executes no verifier, oracle or agent. Copy the returned digest into the
+The [outer workspace](experiment-workflow.md#store-process-data-and-analysis) groups
+this tutorial's batches and exports under ignored `runs/first-study/`; the CLI
+creates only the needed output paths. Inspect the control suites and `plan.sha256`.
+Preview creates no run directory and executes no verifier, oracle or agent. Copy the returned digest into the
 next command, keeping the same inputs and output group:
 
 ```bash
-node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs --run-group first-controls --json --plan-sha <plan.sha256>
+node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs/first-study/batches --run-group first-controls --json --plan-sha <plan.sha256>
 ```
 
 Do not enter the angle-bracket placeholder literally. A changed input needs a
@@ -33,8 +35,8 @@ checks. Expected benefit/harm verdicts are effective/ineffective, the null is
 inconclusive, and the controlled error is stopped. Read a native suite directory:
 
 ```bash
-node dist/cli.js report eval ./runs/first-controls/known-benefit
-node dist/cli.js report eval ./runs/first-controls/known-benefit --json
+node dist/cli.js report eval ./runs/first-study/batches/first-controls/known-benefit
+node dist/cli.js report eval ./runs/first-study/batches/first-controls/known-benefit --json
 ```
 
 The benefit control has six discordant pairs and exact p = 0.03125. Its observed
@@ -47,8 +49,8 @@ saved outcomes, unknown usage and errors.
 ## 3. Export and reproduce without model calls
 
 ```bash
-node dist/cli.js report eval ./runs/first-controls/known-benefit --export ./first-controls-replay --yes
-node ./first-controls-replay/reproduce.mjs
+node dist/cli.js report eval ./runs/first-study/batches/first-controls/known-benefit --export ./runs/first-study/exports/first-controls --yes
+node ./runs/first-study/exports/first-controls/reproduce.mjs
 ```
 
 Expect successful integrity checks and the same synthetic verdict. Reproduction
@@ -56,7 +58,8 @@ uses the sealed runtime, inputs and outputs; it regrades saved work and makes
 no new observation about a model. It can be moved to a different directory and
 run again with Node.js. Export the suite, not the self-test wrapper JSON. See
 [sharing and recovery](experiment-workflow.md#read-share-and-reproduce) for
-privacy, interrupted runs and historical restoration.
+privacy, interrupted runs and retention. Save derived analyses outside the sealed
+suite; do not delete individual indexed files to save space.
 
 ## 4. Prepare a real comparison
 
@@ -66,7 +69,7 @@ Create a fresh teaching case, then replace it with an independent real task:
 node dist/cli.js bench init ./my-bench --kind command --dry-run
 node dist/cli.js bench init ./my-bench --kind command --yes
 node dist/cli.js bench check ./my-bench --json
-node dist/cli.js eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-real --json --dry-run
+node dist/cli.js eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs/first-study/batches --run-group first-real --json --dry-run
 ```
 
 Replace `./my-skill` with an existing Skill directory. These commands still make

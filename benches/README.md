@@ -23,7 +23,9 @@ lists in a new registry. Study timelines, budgets, run ledgers, reports, replay
 copies and release receipts do not belong here. A new dataset needs a recurring
 user task or current regression consumer; a one-off study stays in its workspace.
 Remove an unused dataset rather than adding an archive lifecycle. Preserve
-licenses and references used by retained tasks.
+licenses and references used by retained tasks. The
+[workflow](../docs/guides/experiment-workflow.md#store-process-data-and-analysis)
+owns process-data placement and whole-batch retention/cleanup rules.
 
 The schema is independent of physical layout. `fixture`, `prompt`, `verifier`,
 `oracle` and `rubric` are bench-relative paths, so a large dataset may group related

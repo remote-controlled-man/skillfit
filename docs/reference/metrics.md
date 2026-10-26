@@ -15,7 +15,7 @@ PR and an explicit date/protocol scope.
 This page owns measurement meaning, statistical formulas, shared adoption gates,
 stop semantics and evidence limitations. [Planning](../guides/experiment-workflow.md) owns option
 defaults, confirmation and budget input format; the [component](eval-component.md)
-owns machine request/result fields and policy configuration; [cost accounting](evaluation-reports.md)
+owns machine request/result fields and policy configuration; [cost accounting](evaluation-reports.md#cost-accounting)
 owns cost populations and coverage fields. Implemented facts belong in these
 contracts; progress belongs in the linked [measurement plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md#status).
 
@@ -477,7 +477,7 @@ Source drift, unsafe paths, symlinks and fixture collisions fail before the affe
 Inherited agent configuration is not isolated, and installation does not guarantee activation.
 Old v4 manifests and inject mode retain their existing interpretation. Paired tests, scale labels,
 error exclusions, CI calculations and verdict semantics above are unchanged. See
-[installed-skill-evaluation.md](../guides/experiment-workflow.md) for usage and limits.
+[delivery and comparison workflow](../guides/experiment-workflow.md#plan-before-spending) for usage and limits.
 
 In installed mode, `--baseline-skill` selects a previous complete Skill with the
 same frontmatter name and a different fingerprint. Both versions are frozen;
@@ -515,12 +515,10 @@ cohort at a line with complete evidence. Completed audits replay chronological
 before/after snapshots; elapsed limits are operational guards, not API hard caps,
 adoption thresholds or provider invoices.
 
-Known missing token/cache readers block a strict budget before calls for either
-primary or judge. Among current CLI adapters, Codex has all required counters;
-Kimi lacks cached-input partitioning and Claude collects no token counters.
-API coverage is unknown offline and requires complete response counters at
-runtime. This is skillfit reader support, not a claim about vendor capabilities.
-See [capabilities](../guides/experiment-workflow.md).
+Known missing token/cache readers block strict budgets before primary or judge
+calls; offline-unknown coverage still needs complete final counters at runtime.
+Adapter-specific support belongs to the [capability table](../guides/experiment-workflow.md#executor-capabilities).
+This describes skillfit's readers, not vendor capability guarantees.
 
 SIGINT/SIGTERM stops subsequent dispatches and managed active processes, retaining
 receipts and sealing the stopped prefix. Interrupted execution is ungraded;
@@ -529,10 +527,9 @@ unknown. Stopped/incomplete runs cannot authorize adoption. Read [interruption](
 and [execution timing](../guides/experiment-workflow.md) for monotonic elapsed intervals, wall timing,
 CLI deadlines and clock/observation-gap errors.
 
-New condition summaries also record `tokenCoverage.input/output`: the number of
-graded surviving runs that supplied each field. Existing `tokens` totals and
-verdict semantics are unchanged. Missing or partial coverage cannot establish a
-complete overhead claim; legacy totals without coverage are shown as unrecorded.
+Token coverage counts which surviving graded runs supplied each field. Missing or
+partial coverage cannot establish complete overhead; legacy absence is unrecorded.
+See [report accounting](evaluation-reports.md#cost-accounting) for field names.
 
 Optional `tasks[].costs` and `overall.costs` (cost schema 1) add descriptive
 accounting for surviving graded pairs and all invoked agent runs separately.
@@ -546,7 +543,7 @@ available public-transcript usage as partial receipts. Pre-call guard/setup
 refusals are counted separately and do not enter spending totals. Judge and
 other cohorts' spending are excluded. These observations introduce no cost
 significance, monetary estimate or change to the quality protocol. See
-[evaluation cost accounting](evaluation-reports.md) for field and denominator rules.
+[evaluation cost accounting](evaluation-reports.md#cost-accounting) for field and denominator rules.
 
 `invocationCosts` separately records primary Agent, judge and combined spending;
 judge successes are parsed grading calls and are not task successes for Agent
@@ -555,12 +552,12 @@ failure. Historical missing judge costs remain unknown. API/cache readers retain
 only explicit compatible counters; a malformed/failed response is not evidence
 of a free invocation. Missing cache counts never become zero.
 
-Failed JSON CLI invocations may add an identity/time-bound local numeric usage
-snapshot when the matrix capability permits it. This is partial cumulative usage,
-never final coverage or an accepted outcome; receipt `usageEvidence` preserves
-the counter provenance without private transcript bodies. Unknown/ambiguous
-metadata remains unknown, and original frozen failures are not rewritten.
-Quality exclusions, verdicts and every completeness/adoption gate stay unchanged.
+Failure usage recovery, when supported, supplies only provenance-bound partial
+cumulative counters. Unknown/ambiguous input remains unknown, recorded failures
+remain failures, and no frozen receipt is rewritten. The
+[receipt contract](evaluation-reports.md#partial-usage-after-a-failed-json-cli-call)
+owns source matching and reader details. Quality exclusions, verdicts and every
+completeness/adoption gate remain unchanged.
 
 ## Evidence and replay
 
@@ -586,8 +583,8 @@ sub-object versions fail explicitly. Statistical formulas, policy 1/2 thresholds
 and hash normalization remain unchanged. Fixed reports/replay inputs and release
 records are not rewritten; any evidence correction is a separate dated entry.
 See [input snapshots](../guides/experiment-workflow.md), [bounded workflow](../guides/experiment-workflow.md),
-[report states](evaluation-reports.md), [preflight](../guides/experiment-workflow.md) and
-[portable packages](evaluation-reports.md).
+[report states](evaluation-reports.md#completed-stopped-and-incomplete-inputs), [preflight](../guides/experiment-workflow.md) and
+[portable packages](evaluation-reports.md#portable-replay).
 
 ## Public model identity per invocation
 

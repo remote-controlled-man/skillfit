@@ -477,7 +477,7 @@
     },
     {
       "path": "docs/reference/evaluation-reports.md",
-      "kind": "how-to",
+      "kind": "reference",
       "lifecycle": "maintained",
       "audience": [
         "user",
@@ -722,7 +722,7 @@
     },
     {
       "path": "docs/maintainers/releases.md",
-      "kind": "index",
+      "kind": "how-to",
       "lifecycle": "maintained",
       "audience": [
         "user",

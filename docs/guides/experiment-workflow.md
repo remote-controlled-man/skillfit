@@ -7,6 +7,25 @@ zero-model-call loop, start with [first evaluation](first-real-eval.md).
 [report reference](../reference/evaluation-reports.md) owns saved formats and
 [metrics](../reference/metrics.md) owns statistical meaning.
 
+## Choose the study and batches
+
+Declare the question, claim, representative tasks, sample size, policy and stop
+conditions before looking at validation outcomes. Development and optional live
+calibration use separate batches; freeze independent validation before evaluating
+the candidate on it. Calibration is baseline difficulty, trigger is single-arm
+activation, and paired eval compares outcomes/costs. Do not pool these populations.
+
+Use this order:
+
+1. Prepare reusable inputs and run offline `bench check` / known controls.
+2. Develop and, if separately authorized, calibrate on development tasks.
+3. Freeze validation inputs, candidate, policy, task order and spending limits.
+4. Preview the exact fresh batch and confirm its digest within spending scope.
+5. Execute the fixed cohort, retaining attempted failures and available costs.
+6. Read sealed facts; save derived analysis outside the batch.
+7. Export only for a real recipient/reference, verify/replay the delivery, then
+   apply the [retention rules](#retain-and-clean-up) to unused whole batches.
+
 ## Plan before spending
 
 ```bash
@@ -90,8 +109,114 @@ drafter; there is no separate judge CLI probe. Missing probes remain unrecorded.
 Configured/requested identity and public reported IDs are separate declarations;
 reports never backfill old identity from today's configuration.
 
+## Read, share and reproduce
+
+```bash
+node dist/cli.js report eval ./runs/my-run
+node dist/cli.js report eval ./runs/my-run --json
+node dist/cli.js report eval ./runs/my-run --export ./my-run-replay --yes
+node ./my-run-replay/reproduce.mjs --verify-only
+node ./my-run-replay/reproduce.mjs
+```
+
+Use a native run directory (a self-test suite is one), a supported saved summary,
+or a replay package as appropriate. Reports read saved inputs, not the current
+machine, and do not call agents. Markdown is a derived report, not replacement
+evidence. Review prompts, outputs, copied project files and paths before sharing;
+a portable export can include private material. Keep any redacted derivative
+separate with its own recovery instructions; never edit original evidence.
+
+Export pins the run's original runtime and hash-checked inputs, not today's
+implementation. Reproduction audits and regrades saved output without model
+calls. It preserves unknown usage and synthetic/incomplete eligibility limits.
+Native stopped/incomplete inputs are first-class records, not zeros or success.
+Do not pool cohorts or drop negative results. The [report format reference](../reference/evaluation-reports.md)
+explains required files, missing legacy capabilities and explicit recovery.
+
+SIGINT/SIGTERM seal stopped-prefix accounting and terminate descendants; abrupt
+kill can leave incomplete evidence. Guards protect original configuration and
+stop on unexpected changes. Completed accounting alone is not efficacy.
+Current report/export/replay operates on explicitly supplied saved runs. Preserve
+their sealed inputs and original runtime; replay does not start a new paid experiment.
+
+## Store process data and analysis
+
+Use an ignored outer workspace; only batch directories have the native CLI
+layout. For example, select `--runs-root ./runs/my-study/batches` and an explicit
+fresh `--run-group dev-001` or `validation-001` when previewing/confirming:
+
+```text
+runs/my-study/
+  request.json             # optional experiment request, when using --request
+  batches/
+    dev-001/               # native records, including sealed inputs/runtime
+    validation-001/        # independent validation; same native layout
+  derived/                 # analyses, charts, reports and their method/version
+  scratch/                 # temporary work with no evidence consumer
+  exports/                 # complete deliveries made for an actual consumer
+```
+
+This is a convention using existing paths, not a new format or required set of
+folders. Create only what is needed. Local inputs/outputs remain out of Git;
+reusable benches and source methods belong to their existing owners. Ignored
+storage is not a backup or a public delivery location.
+
+| Data | Where and what to retain |
+| --- | --- |
+| Memory-only intermediate values | Keep in memory; no file for each variable. |
+| Observed facts | Existing native call/trial receipts, responses, timing, usage and provenance. Preserve failures, missing/partial values and the sealed input identity. |
+| Derived process metrics | `derived/`, outside every native batch. Identify source batch/hash, method/version, unit and missing-value meaning; preserve a method needed by a final conclusion. |
+| Temporary work | `scratch/`, only when no record, analysis or delivery depends on it; reclaim after its processes finish. |
+
+Choose process measurements for a declared question, such as observable tool
+calls or stage time. Keep observations separate from computed counts/ratios.
+Missing observation is unknown, not zero; an assistant's description is not an
+observed event. Logs that supply an observation follow the facts rule. New raw
+observations need an owned, versioned writer/reader contract; there is no generic
+custom telemetry or trajectory-scoring facility in this CLI.
+
+Sealed, hash-indexed native records are immutable: do not add analysis files inside
+`batches/<group>/`, edit a receipt, or delete a transcript/trial workspace that
+appears in `_artifacts.json`. Those workspaces are part of the record, even if
+they look temporary. Store reports in `derived/` after creating that directory.
+External analysis is not automatically included in portable export; disclose its
+inputs/method and deliver it separately when a conclusion depends on it. A
+redacted derivative keeps its own identity and recovery limits.
+
+## Retain and clean up
+
+Retention is a consumer decision, separate from `completed` / `stopped` /
+`incomplete`. A completed run may be unused; a failed run may be essential.
+
+| Keep while… | Action |
+| --- | --- |
+| A conclusion, cost account, investigation or replay still references the batch | Keep the complete native record or a verified complete delivery that satisfies those consumers. Include negative/stopped observations in the declared population. |
+| A recipient or published claim relies on a delivery | Keep one complete verified package in the actual delivery location, with its descriptor/hash and stated availability. Check needed external verifier toolchains. |
+| Analysis can be rebuilt from retained facts/method | Delete/recompute expendable derived copies when needed; retain final interpretation and method where actually consumed. |
+| Temporary work has no remaining consumer | Clean it after the processes finish. Native indexed files never become scratch by filename. |
+
+Cleanup is manual; there is no retention marker, automatic expiry, GC command or
+supported native-record slimming. Before deleting anything:
+
+1. Select explicit, known batch/scratch/duplicate-export paths and inspect their
+   contents/size. Do not target the whole runs root or private lab.
+2. Confirm no process is active and no conclusion, accounting, diagnosis or
+   delivery depends on those bytes. Do not delete negative results selectively
+   while keeping a study claim that depends on its original cohort.
+3. If keeping a portable delivery instead, verify and actually replay the complete
+   moved package first; confirm no remaining consumer needs the original path.
+4. Delete only the selected unused **whole batch**, redundant complete export,
+   or genuinely expendable outer files. Keep active/referenced batches and intact
+   indexed records.
+
+Snapshots and portable exports contain intentional exact-byte copies. The export
+preview reports payload size; native `inputSnapshot.cost` reports snapshot bytes,
+files and copy time. Avoid exports without a consumer and unneeded duplicate
+local deliveries. No shared object store or payload deduplication is required.
+
 ## Rules and MCP overlays
 
+This optional recipe leaves the main workflow above unchanged.
 A configuration experiment holds task/fixture constant while changing only
 matrix-defined project configuration. An MCP discovery check validates catalog
 protocol, not effectiveness, and starts a local server even though it calls no
@@ -202,35 +327,5 @@ statistical protocol used for Skill experiments applies.
 Useful cases check task outcomes, correct/false tool selection, errors, observable
 costs and confirmation behavior. Prefer a disposable fixture server for repeatable
 outcomes. An experiment does not authorize side effects in external systems.
-
-## Read, share and reproduce
-
-```bash
-node dist/cli.js report eval ./runs/my-run
-node dist/cli.js report eval ./runs/my-run --json
-node dist/cli.js report eval ./runs/my-run > ./run-report.md
-node dist/cli.js report eval ./runs/my-run --export ./my-run-replay --yes
-node ./my-run-replay/reproduce.mjs
-```
-
-Use a native run directory (a self-test suite is one), a supported saved summary,
-or a replay package as appropriate. Reports read saved inputs, not the current
-machine, and do not call agents. Markdown is a derived report, not replacement
-evidence. Review prompts, outputs, copied project files and paths before sharing;
-a portable export can include private material. Keep any redacted derivative
-separate with its own recovery instructions; never edit original evidence.
-
-Export pins the run's original runtime and hash-checked inputs, not today's
-implementation. Reproduction audits and regrades saved output without model
-calls. It preserves unknown usage and synthetic/incomplete eligibility limits.
-Native stopped/incomplete inputs are first-class records, not zeros or success.
-Do not pool cohorts or drop negative results. The [report format reference](../reference/evaluation-reports.md)
-explains required files, missing legacy capabilities and explicit recovery.
-
-SIGINT/SIGTERM seal stopped-prefix accounting and terminate descendants; abrupt
-kill can leave incomplete evidence. Guards protect original configuration and
-stop on unexpected changes. Completed accounting alone is not efficacy.
-Current report/export/replay operates on explicitly supplied saved runs. Preserve
-their sealed inputs and original runtime; replay does not start a new paid experiment.
 
 Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/guides/experiment-workflow.md).

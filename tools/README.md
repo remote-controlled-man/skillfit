@@ -24,7 +24,9 @@ excluded from npm. Generated outputs belong in temporary or ignored workspaces.
 explicitly authorized release. Source gates bind exact main CI, preview attempt,
 package bytes and publication intent. Recovery preserves failed observations;
 records verification is read-only and never imports receipts into source. No script authorizes a
-publication merely by producing a plan.
+publication merely by producing a plan. Follow the existing
+[release procedure](../docs/maintainers/releases.md) for preview, publication,
+acceptance and recovery order.
 
 ## Retired procedures
 
