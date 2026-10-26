@@ -6,7 +6,7 @@ import { reviewedArchive } from './release-source.mjs';
 
 const json = file => JSON.parse(readFileSync(file, 'utf8'));
 const save = (file, value, exclusive = true) => writeFileSync(file, JSON.stringify(value, null, 2) + '\n', exclusive ? { flag: 'wx' } : {});
-export const ACCEPTANCE_STAGES = ['registry-install', 'documents', 'examples', 'features', 'archives', 'history', 'provenance', 'signatures'];
+export const ACCEPTANCE_STAGES = ['registry-install', 'documents', 'examples', 'features', 'provenance', 'signatures'];
 
 export function acceptanceMarkdown(state) {
   return `## Release ${state.version}: ${state.status}\n\nSource: \`${state.sourceCommit}\`. Upload: ${state.uploadAccepted ? 'accepted; never repeat' : 'not established'}.\n\n` +

@@ -15,7 +15,6 @@ If neither works, tell the user to install from https://github.com/remote-contro
 The evaluation workflow requires 0.12.0 or newer for Git-bench/layout,
 ordinary CLI costs, API-failure evidence, bundled names and recorded case drafting.
 Earlier versions lack some of these fixes; inspect the installed version before using new flags.
-The historical archive restore entry point requires 0.13.0 or newer.
 Current-source numerical, trigger-observation and per-call model-identity corrections,
 self-test protocol 1 and bench schema 2 / measurementScope 1 are not yet published
 in npm 0.13.1. These feature protocols require the implementing build; no minimum
@@ -82,19 +81,6 @@ offline. Missing controls mean not-configured, never permission for live fallbac
 Read/export an individual native suite rather than the wrapper parent; replay
 preserves synthetic identity, unknown provider usage and ineligibility. It does
 not test native activation.
-
-## Historical study archives
-
-In 0.13.0 and newer, npm excludes the historical compressed archives; ordinary
-installation and CLI commands never fetch them automatically. For archived study
-replay, locate the installed package and follow the
-[restore guide](https://github.com/remote-controlled-man/skillfit/blob/main/docs/maintainers/archive-delivery.md).
-Use `node <package-dir>/evidence/fetch-archives.mjs --list`, then preview
-`--all --output <new-dir>` before applying with `--yes` within existing authorization.
-The output must be fresh; `--from <archive-root> --offline` restores from a local
-source without network. Restoration prepares verified files, without extracting
-or executing them. Retain each historical recipe's original Node/platform limits
-and saved outcomes; do not start its old live experiments to replay evidence.
 
 ## Spend discipline
 
@@ -203,3 +189,5 @@ historical adoption requirement; a declaration mismatch is an integrity error.
   to a plan and apply with `--yes`, with backup and validation. Removal preserves
   files and cannot remove the last registration. Use existing authorization for
   scoped writes; ask only when that authorization is missing.
+
+<a id="historical-study-archives"></a>

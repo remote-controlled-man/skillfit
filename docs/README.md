@@ -25,13 +25,14 @@ for a source-only example.
 | Look up result fields, costs or replay formats | [Report reference](reference/evaluation-reports.md) |
 | Understand statistical verdicts and adoption limits | [Metrics protocol](reference/metrics.md) |
 | Change the code or understand module owners | [Architecture](maintainers/architecture.md) |
-| Restore original historical evidence | [Archive recovery](maintainers/archive-delivery.md) |
 | Prepare a software publication | [Release procedure](maintainers/releases.md) |
 
 CLI `--help` owns flags; [Bench format](../benches/README.md) owns task files and
 claims. JSON schemas, executable examples and SVG assets remain under `schemas/`,
-`examples/` and `assets/`. [Evidence](../evidence/README.md) links original results;
+`examples/` and `assets/`.
 [the current plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md)
 owns active progress. Completed process details remain at fixed Git snapshots.
 
 Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/README.md).
+
+Retired source pages and research files remain in Git: [documentation snapshot](https://github.com/remote-controlled-man/skillfit/tree/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/docs), [original research files](https://github.com/remote-controlled-man/skillfit/tree/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence). Current builds do not ship a repository archive catalog or restore tool.

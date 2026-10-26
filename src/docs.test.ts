@@ -85,13 +85,6 @@ test('the first real evaluation guide and its five-trial default are visible in 
   assert.match(guide, /already available globally/);
 });
 
-test('the evidence index links only to files present in a clean checkout', () => {
-  const base = resolve(PACKAGE_ROOT, 'evidence');
-  for (const [, target] of read('evidence/README.md').matchAll(/\]\(([^)#]+?)(?:#[^)]*)?\)/g)) {
-    if (!target || /^https?:/.test(target)) continue;
-    assert.ok(existsSync(resolve(base, target)), `broken evidence index link: ${target}`);
-  }
-});
 
 test('rules and MCP evaluation tour stays present across README languages', () => {
   for (const [readme, figure, language, label] of [

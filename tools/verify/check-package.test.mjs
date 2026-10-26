@@ -1,20 +1,19 @@
 import { documentationFiles, inspectDocumentation } from './check-docs.mjs';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { materializeHistoricalSource } from '../history/historical-source.mjs';
 import { PACKAGE_POLICY, inspectBuiltPackage, validatePackageContents } from './check-package.mjs';
 
 const fixture = () => ({ size: 100, unpackedSize: 200, files:
   [...new Set([...PACKAGE_POLICY.requiredFiles, ...PACKAGE_POLICY.retainedTests, ...PACKAGE_POLICY.archives])].map(path => ({ path })) });
 
-test('package policy retains installed workflows, six recipe tests and the on-demand archive catalog', () => {
+test('package policy retains installed workflows, six recipe tests without repository archives', () => {
   assert.ok(validatePackageContents(fixture()).files > 0);
-  for (const path of [PACKAGE_POLICY.requiredFiles[0], PACKAGE_POLICY.retainedTests[0], 'evidence/README.md']) {
+  for (const path of [PACKAGE_POLICY.requiredFiles[0], PACKAGE_POLICY.retainedTests[0]]) {
     const pack = fixture(); pack.files = pack.files.filter(file => file.path !== path);
     assert.throws(() => validatePackageContents(pack), /Required package file/);
   }
@@ -22,7 +21,7 @@ test('package policy retains installed workflows, six recipe tests and the on-de
 
 test('package policy rejects private paths, unknown archives and active development tests', () => {
   for (const path of ['workspace4skills/private.md', 'docs/runs/output.json', 'docs/auth.json',
-    'docs/tmp.tgz', PACKAGE_POLICY.externalArchives[0], 'dist/cli/main.test.js', '../escape', 'docs/../escape']) {
+    'docs/tmp.tgz', 'evidence/README.md', 'dist/cli/main.test.js', '../escape', 'docs/../escape']) {
     const pack = fixture(); pack.files.push({ path });
     assert.throws(() => validatePackageContents(pack), undefined, path);
   }
@@ -51,7 +50,7 @@ test('actual offline npm package matches the reviewed inventory and active runti
   assert.equal(entries.length, 1);
   inspectBuiltPackage(entries[0]);
   assert.deepEqual(entries[0].files.map(file => file.path).filter(path => path.startsWith('evidence/')).sort(),
-    ['evidence/README.md', 'evidence/archive-catalog.v1.json', 'evidence/fetch-archives.mjs']);
+    []);
   const extracted = spawnSync('tar', ['-xzf', join(cache, entries[0].filename), '-C', cache], {
     encoding: 'utf8', timeout: 30_000,
   });
@@ -74,7 +73,7 @@ test('actual offline npm package matches the reviewed inventory and active runti
     encoding: 'utf8', timeout: 30_000,
   });
   assert.equal(documents.status, 0, `${documents.error ?? ''}\n${documents.stderr}`);
-  assert.equal(JSON.parse(documents.stdout).documents.length, 5);
+  assert.equal(JSON.parse(documents.stdout).documents.length, 4);
   const request = spawnSync(process.execPath, [join(installed, 'dist/cli.js'), 'eval', '--request',
     join(installed, 'docs/examples/eval-request.json'), '--dry-run'], { encoding: 'utf8', timeout: 30_000 });
   assert.equal(request.status, 0, request.stderr);
@@ -108,32 +107,12 @@ test('actual offline npm package matches the reviewed inventory and active runti
   const integrity = spawnSync(process.execPath, [join(installed, 'dist/cli.js'), 'bench', 'check', declaredBench, '--json'], { encoding: 'utf8', timeout: 30_000 });
   assert.equal(integrity.status, 0, integrity.stderr);
   assert.equal(JSON.parse(integrity.stdout).measurementScope.assessment, 'not-applicable');
-  const alias = join(cache, 'package-alias');
-  symlinkSync(installed, alias, 'junction');
-  const blocked = spawnSync(process.execPath, [join(installed, 'tools/verify/recipes/archive-delivery-smoke.mjs'), installed,
-    fileURLToPath(new URL('../..', import.meta.url)), join(alias, 'in-place-output')], { encoding: 'utf8', timeout: 30_000 });
-  assert.notEqual(blocked.status, 0);
-  assert.equal(existsSync(join(installed, 'in-place-output')), false, 'Invalid aliased output must not modify the package');
-  const history = materializeHistoricalSource(fileURLToPath(new URL('../..', import.meta.url)));
-  t.after(history.dispose);
-  const restored = spawnSync(process.execPath, [join(installed, 'tools/verify/recipes/archive-delivery-smoke.mjs'), installed,
-    history.directory, join(cache, 'archive-smoke')], {
-    encoding: 'utf8', timeout: 60_000, maxBuffer: 8 * 1024 * 1024,
-  });
-  assert.equal(restored.status, 0, `${restored.error ?? ''}\n${restored.stderr}`);
-  const receipt = JSON.parse(restored.stdout);
-  assert.equal(receipt.archivesRestored, 19);
-  assert.equal(receipt.supportFilesRestored, 1583);
-  assert.equal(receipt.inlineSupportFiles, 4);
-  assert.equal(receipt.networkAttempts, 0);
 });
-
 
 test('package excludes source-maintenance records and on-demand frozen artifacts', () => {
   const pack = fixture();
-  pack.files = pack.files.filter(file => !file.path.startsWith('evidence/artifacts/'));
   assert.ok(validatePackageContents(pack).files > 0);
   for (const path of ['evidence/artifacts/saved/replay/dist/cli.js', 'docs/plans/completed.md', 'docs/decisions/old.md', 'docs/releases/0.13.1-verification.json', 'docs/releases/records/0.14.0/features.json']) {
-    assert.throws(() => validatePackageContents({ ...pack, files: [...pack.files, { path }] }), /Source-only/);
+    assert.throws(() => validatePackageContents({ ...pack, files: [...pack.files, { path }] }), /Source-only|Unreviewed package root/);
   }
 });

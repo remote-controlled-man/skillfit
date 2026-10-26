@@ -12,9 +12,9 @@ Evidence-driven configuration CLI for Claude Code, Codex CLI, and Kimi Code. Use
 - `src/matrix/agents.json` — agent capability matrix.
 - `benches/` and `skills/` — public bench format, bundled benches, and the CLI driver skill.
 - `docs/` — grouped guides/reference/maintainer contracts; update the sole plan in `docs/work/current.md`.
-- `tools/{verify,release,history}/` — local gates, release proof generation and historical recovery.
+- `tools/{verify,release}/` — local gates and release proof generation.
 - `profiles/` — deny-by-default install manifests; `codex-curated` is the public selectable source profile.
-- `evidence/` — index, pinned hash catalog and explicit restore tool; historical reports/data stay at fixed Git commits. `runs/` — gitignored local eval output.
+- `runs/` — gitignored local evaluation output; exports and release receipts use explicit external destinations.
 
 ## Skill routing
 
@@ -37,7 +37,7 @@ node dist/cli.js doctor     # optional read-only smoke against the real machine
 ## Code and contracts
 
 - Keep business dependencies and bounded effects enforced by `tools/verify/check-architecture.mjs`; use owner interfaces rather than private Agent adapters. Shared takes explicit process signals; CLI owns OS signal listeners, exit behavior and prompts.
-- Generated runs/receipts stay in explicit ignored workspaces. Do not add executable recipes to docs or unpacked historical trees to evidence. Normal release verification never imports repository records; legacy recovery is explicit.
+- Generated runs/receipts stay in explicit ignored workspaces. Do not add executable recipes to docs or a repository evidence/archive tree. Release verification never imports repository records or restores old studies.
 - **Zero runtime dependencies:** use Node built-ins to keep the shipped CLI self-contained. New devDependencies need a stated reason in the PR; proposals to change the runtime-dependency policy require prior discussion per [CONTRIBUTING.md](CONTRIBUTING.md).
 - Use ESM with `module: NodeNext`; relative imports carry `.js` so compiled imports resolve in Node.
 - Agent-specific paths and behaviors come from `src/matrix/agents.json`, rather than command-local constants, to avoid divergent agent support. Matrix edits require a `verifiedAt` bump and an official docs link.
@@ -51,7 +51,7 @@ node dist/cli.js doctor     # optional read-only smoke against the real machine
 - **New bench/run/bundle artifacts:** preserve collision checks and existing outputs. A fresh output has no previous content to back up; eval workspaces use disposable fixture copies. Keep these separate from writes to actual user configuration.
 - **Repository source and documentation edits:** use Git diffs and relevant checks, preserving unrelated user work. The configuration-writer backup and confirmation flow does not apply to routine repository edits.
 - `workspace4skills/` at the repository root is the author's gitignored private lab. Keep it out of commits and CI reads. Do not run `git clean -fdx` in this checkout: it deletes ignored directories, including that lab.
-- Published evidence bytes remain immutable at their pinned Git commits. Main may replace historical trees with an index/catalog and explicit restoration; preserve original paths and hashes in recovered workspaces. Corrections link the original, never rewrite archived results.
+- Published evidence bytes remain immutable at their fixed Git commits; current source does not maintain a historical archive catalog or restorer. Preserve current saved-result readers and portable replay. New retained Bench inputs need a reusable task or current regression consumer; generated runs/reports do not belong in benches. Corrections link the original observation.
 
 ## Workflow and authorization
 

@@ -33,7 +33,7 @@ test('real Git diff identifies bookkeeping and mixed/delete changes without a pa
 test('release and CI entrypoints execute through directory aliases rather than silently returning success', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-release-alias-')); t.after(() => rmSync(root, { recursive: true, force: true }));
   const alias = join(root, 'repo'); symlinkSync(new URL('../..', import.meta.url), alias, 'junction');
-  for (const [file, usage] of [['tools/verify/ci-scope.mjs', /Set SKILLFIT_CI_DIR|Use classify/], ['tools/release/release-source.mjs', /Provide a release result directory/], ['tools/release/release-acceptance.mjs', /Provide a release result directory/], ['tools/release/release-records.mjs', /Provide records bundle/], ['tools/release/npm-release.mjs', /Use check, guard or verify/], ['tools/verify/recipes/release-historical-smoke.mjs', /Provide installed package, verified workspace/]]) {
+  for (const [file, usage] of [['tools/verify/ci-scope.mjs', /Set SKILLFIT_CI_DIR|Use classify/], ['tools/release/release-source.mjs', /Provide a release result directory/], ['tools/release/release-acceptance.mjs', /Provide a release result directory/], ['tools/release/release-records.mjs', /Provide records bundle/], ['tools/release/npm-release.mjs', /Use check, guard or verify/]]) {
     const result = spawnSync(process.execPath, [join(alias, file)], { encoding: 'utf8', timeout: 30_000 });
     assert.notEqual(result.status, 0, `${file} must reject missing arguments through aliases`); assert.match(result.stderr, usage);
   }

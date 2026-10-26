@@ -1,26 +1,24 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ACCEPTANCE_STAGES, runAcceptance, summarize, prepareRecovery } from './release-acceptance.mjs';
 import { inspectDriver, inspectProvenance, recoverUpload } from './release-checks.mjs';
-import { exportRecords, importRecords, verifyRecords } from './release-records.mjs';
-import { classifyChanges } from '../verify/ci-scope.mjs';
-import { historicalRecipe } from '../verify/recipes/release-historical-smoke.mjs';
+import { exportRecords, verifyRecords } from './release-records.mjs';
 
 const fresh = t => { const root = mkdtempSync(join(tmpdir(), 'skillfit-acceptance-')); t.after(() => rmSync(root, { recursive: true, force: true })); return root; };
 const sourceCommit = 'a'.repeat(40);
 const info = { version: '0.14.0', sourceCommit, uploadAccepted: true, runId: '123', runAttempt: '1' };
 const stages = calls => ACCEPTANCE_STAGES.map(id => ({ id, run: () => { calls.push(id); return { verified: true }; } }));
 
-test('all eight acceptance checks execute once, checkpoint state and cannot overwrite a previous attempt', async t => {
+test('all six acceptance checks execute once, checkpoint state and cannot overwrite a previous attempt', async t => {
   const root = fresh(t), calls = []; const result = await runAcceptance(root, info, stages(calls));
   assert.deepEqual(calls, ACCEPTANCE_STAGES); assert.equal(result.status, 'passed');
-  assert.equal(result.events.length, 16); assert.ok(result.checks.every(row => row.status === 'passed'));
+  assert.equal(result.events.length, 12); assert.ok(result.checks.every(row => row.status === 'passed'));
   assert.equal(JSON.parse(readFileSync(join(root, 'acceptance-state.json'))).status, 'passed');
-  await assert.rejects(runAcceptance(root, info, stages(calls)), /Preserve previous/); assert.equal(calls.length, 8);
+  await assert.rejects(runAcceptance(root, info, stages(calls)), /Preserve previous/); assert.equal(calls.length, 6);
 });
 test('failed acceptance retains failed state/log context and never executes dependent checks or emits success', async t => {
   const root = fresh(t), calls = [], checks = stages(calls); checks[1].run = () => { calls.push('documents'); throw Error('fixture document failure'); };
@@ -62,15 +60,8 @@ test('driver and source proof validation reject malformed fields and different s
   assert.throws(() => inspectProvenance(metadata, attestations, { ...info, integrity, sourceCommit: 'b'.repeat(40) }));
   assert.throws(() => inspectProvenance(metadata, attestations, { ...info, integrity, runId: '456' }));
 });
-test('unknown historical recipes fail closed instead of silently excluding an archive', () => {
-  assert.throws(() => historicalRecipe({ path: 'evidence/artifacts/unknown/new.tar.gz', id: 'unknown-new' }), /Unknown historical recipe/);
-  assert.throws(() => historicalRecipe({ path: 'evidence/artifacts/2026-10-12-diagnosing-revision/other-records.tar.gz', id: '2026-10-12-diagnosing-revision-other-records' }), /Unknown historical phase/);
-  assert.throws(() => historicalRecipe({ path: 'evidence/artifacts/2026-10-12-normalize-url-v2-available/other.tar.gz', id: '2026-10-12-normalize-url-v2-available-other' }), /Unknown historical export/);
-  const catalog = JSON.parse(readFileSync(new URL('../../evidence/archive-catalog.v1.json', import.meta.url)));
-  assert.equal(catalog.archives.map(historicalRecipe).length, 19);
-});
 test('real retained 0.13.1 provenance is compatible without another network request', () => {
-  const folder = new URL('../verify/fixtures/history/', import.meta.url);
+  const folder = new URL('../verify/fixtures/release/', import.meta.url);
   const metadata = JSON.parse(readFileSync(new URL('0.13.1-registry-metadata.json', folder))), attestations = JSON.parse(readFileSync(new URL('0.13.1-attestations.json', folder)));
   const receipt = JSON.parse(readFileSync(new URL('0.13.1-verification.json', folder)));
   assert.equal(inspectProvenance(metadata, attestations, { version: receipt.version, integrity: receipt.integrity, sourceCommit: receipt.sourceCommit, runId: '39571125220', runAttempt: '1' }).sourceCommit, receipt.sourceCommit);
@@ -102,51 +93,35 @@ test('generated receipt bundle is a standalone proof without repository import o
   const exported = exportRecords(root, state);
   const exportedManifest = JSON.parse(readFileSync(join(exported.bundle, 'manifest.json')));
   assert.equal(exportedManifest.schemaVersion, 3, 'New deliveries must not be repository import instructions');
+  const proof = JSON.parse(readFileSync(join(exported.bundle, 'receipts/verification.json')));
+  assert.equal(proof.schemaVersion, 3);
+  assert.deepEqual(proof.checks.map(row => row.id), ['registry-install', 'documents', 'examples', 'features', 'provenance', 'signatures']);
   assert.ok(exportedManifest.files.every(file => file.path.startsWith('receipts/')));
   assert.equal(exportedManifest.planMarkdown, undefined);
   assert.equal(verifyRecords(exported.bundle).status, 'verified');
-  const repo = join(root, 'repo'); mkdirSync(join(repo, 'docs/releases'), { recursive: true });
-  writeFileSync(join(repo, 'docs/releases/0.14.0.md'), '# Human release\n');
-  assert.throws(() => importRecords(exported.bundle, repo, { yes: true }), /Unsupported/);
-  assert.equal(readFileSync(join(repo, 'docs/releases/0.14.0.md'), 'utf8'), '# Human release\n');
-  assert.equal(existsSync(join(repo, 'docs/releases/records')), false);
   writeFileSync(join(exported.bundle, 'receipts/documents.json'), '{"tampered":true}');
   assert.throws(() => verifyRecords(exported.bundle), /digest mismatch/);
-
 });
 
-function receiptBundle(t, schemaVersion) {
-  const root = fresh(t), bundle = join(root, 'bundle'), repo = join(root, 'repo');
-  const directory = schemaVersion === 1 ? 'docs/releases' : 'docs/releases/records/0.14.0';
-  const prefix = schemaVersion === 1 ? '0.14.0-' : '';
-  mkdirSync(join(bundle, directory), { recursive: true }); mkdirSync(join(repo, 'docs/releases'), { recursive: true });
-  const featurePath = `${directory}/${prefix}features.json`, verificationPath = `${directory}/${prefix}verification.json`;
-  const digest = file => createHash('sha256').update(readFileSync(join(bundle, file))).digest('hex');
-  writeFileSync(join(bundle, featurePath), '{"verified":true}');
-  writeFileSync(join(bundle, verificationPath), JSON.stringify({ version: '0.14.0', sourceCommit,
-    checks: ACCEPTANCE_STAGES.map(id => ({ id, status: 'passed' })), receipts: { features: { path: prefix + 'features.json', sha256: digest(featurePath) } } }));
-  const manifest = { schemaVersion, version: '0.14.0', sourceCommit,
-    files: [featurePath, verificationPath].map(path => ({ path, sha256: digest(path) })), releaseMarkdown: '# Verified\n', planMarkdown: '# Verified\n' };
-  writeFileSync(join(bundle, 'manifest.json'), JSON.stringify(manifest));
-  return { root, bundle, repo, manifest, featurePath };
+const oldStages = ['registry-install', 'documents', 'examples', 'features', 'archives', 'history', 'provenance', 'signatures'];
+function standaloneProof(t, schemaVersion, ids) {
+  const root = fresh(t), receipts = join(root, 'receipts'); mkdirSync(receipts);
+  const proof = { schemaVersion, version: info.version, sourceCommit,
+    checks: ids.map(id => ({ id, status: 'passed' })), receipts: {} };
+  writeFileSync(join(receipts, 'verification.json'), JSON.stringify(proof));
+  const hash = createHash('sha256').update(readFileSync(join(receipts, 'verification.json'))).digest('hex');
+  writeFileSync(join(root, 'manifest.json'), JSON.stringify({ schemaVersion: 3, version: info.version, sourceCommit,
+    files: [{ path: 'receipts/verification.json', sha256: hash }], summary: 'Frozen standalone receipt' }));
+  return root;
 }
-
-test('legacy flat manifest 1 receipts still preview, import and preserve existing files', t => {
-  const f = receiptBundle(t, 1);
-  assert.equal(importRecords(f.bundle, f.repo).status, 'planned');
-  assert.equal(existsSync(join(f.repo, f.featurePath)), false);
-  assert.equal(importRecords(f.bundle, f.repo, { yes: true }).status, 'imported');
-  assert.equal(readFileSync(join(f.repo, f.featurePath), 'utf8'), '{"verified":true}');
-  assert.throws(() => importRecords(f.bundle, f.repo, { yes: true }), /Preserve existing receipt/);
+test('old complete eight-stage standalone receipts remain read-only verifiable', t => {
+  const root = standaloneProof(t, 2, oldStages);
+  const before = readFileSync(join(root, 'receipts/verification.json'));
+  assert.deepEqual(verifyRecords(root), { status: 'verified', version: info.version, receipts: 1, writes: 0, publishes: 0 });
+  assert.deepEqual(readFileSync(join(root, 'receipts/verification.json')), before);
 });
-
-test('grouped receipt import refuses directory aliases and traversal before writing', t => {
-  const f = receiptBundle(t, 2), outside = join(f.root, 'outside'); mkdirSync(outside);
-  symlinkSync(outside, join(f.repo, 'docs/releases/records'), 'junction');
-  assert.throws(() => importRecords(f.bundle, f.repo, { yes: true }), /ordinary directories/);
-  assert.equal(existsSync(join(outside, '0.14.0')), false);
-  const other = receiptBundle(t, 2); other.manifest.files[0].path = 'docs/releases/records/0.14.0/../escape.json';
-  writeFileSync(join(other.bundle, 'manifest.json'), JSON.stringify(other.manifest));
-  assert.throws(() => importRecords(other.bundle, other.repo, { yes: true }), /Unsupported/);
-  assert.equal(existsSync(join(other.repo, 'docs/releases/records')), false);
+test('proof protocols refuse incomplete, mismatched and unknown stage lists', t => {
+  for (const [schemaVersion, ids] of [[2, oldStages.filter(id => id !== 'history')], [2, ACCEPTANCE_STAGES], [3, oldStages], [4, ACCEPTANCE_STAGES], [undefined, ACCEPTANCE_STAGES]]) {
+    assert.throws(() => verifyRecords(standaloneProof(t, schemaVersion, ids)));
+  }
 });

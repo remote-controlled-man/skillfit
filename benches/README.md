@@ -6,6 +6,32 @@ This reference owns task files, claims, verifier and fixture contracts. Follow
 Use the [bench catalog](contrib/README.md) to find retained cases. Built-in cases
 teach the format; `_self-test` contains synthetic controls, not efficacy evidence.
 
+## Input and output lifecycle
+
+| Artifact | Location / consumer | Retention rule |
+| --- | --- | --- |
+| Bench definition | This tree or a user-owned bench; loaded through `bench.json` | Reusable tasks, grader/reference, upstream pin and license. One manifest indexes executable tasks. |
+| Diagnostic controls | `_self-test/` and explicitly labelled catalog entries | Exercise harness behavior; never promote them as independent efficacy evidence. |
+| Evaluation run | Explicit `--runs-root` / `--run-group`; ignored `runs/` by default | Preserve observations, sealed inputs, failures and unknown usage for current report/export/replay. |
+| Shared replay | Explicit export destination | Self-contained delivery for a recipient; never copy it back into Bench inputs. |
+| Release receipt | External release workflow bundle | Package-delivery proof, not task data or evidence of Skill benefit. |
+
+Keep one short dataset card per contributed bench: purpose, task IDs, upstream
+revision/license, offline command and interpretation limits. Keep task instructions
+in prompt files and executable membership in `bench.json`; do not duplicate task
+lists in a new registry. Study timelines, budgets, run ledgers, reports, replay
+copies and release receipts do not belong here. A new dataset needs a recurring
+user task or current regression consumer; a one-off study stays in its workspace.
+Remove an unused dataset rather than adding an archive lifecycle. Preserve
+licenses and references used by retained tasks.
+
+The schema is independent of physical layout. `fixture`, `prompt`, `verifier`,
+`oracle` and `rubric` are bench-relative paths, so a large dataset may group related
+assets under task directories. The layout below is the current scaffold convention;
+existing schema 1/2 benches remain valid. Only the declared fixture is copied to
+the agent workspace; graders and answers must remain outside that fixture.
+Do not switch to YAML or create a new schema merely to move files.
+
 ## Bench directory layout
 
 ```

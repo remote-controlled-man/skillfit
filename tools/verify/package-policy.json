@@ -1,5 +1,5 @@
 {
-  "reviewedAt": "2026-10-22",
+  "reviewedAt": "2026-10-26",
   "maxArchiveBytes": 4194304,
   "maxUnpackedBytes": 19922944,
   "requiredFiles": [
@@ -38,11 +38,6 @@
     "tools/verify/recipes/0.11.0-feature-smoke.mjs",
     "tools/verify/recipes/release-docs-smoke.mjs",
     "tools/verify/recipes/release-feature-smoke.mjs",
-    "tools/verify/recipes/release-historical-smoke.mjs",
-    "evidence/archive-catalog.v1.json",
-    "evidence/fetch-archives.mjs",
-    "docs/maintainers/archive-delivery.md",
-    "tools/verify/recipes/archive-delivery-smoke.mjs",
     "dist/evaluation/measurement/scope.js",
     "benches/README.md",
     "docs/schemas/bench.schema.json",
@@ -65,8 +60,7 @@
     "dist/cli/eval-preflight.js",
     "dist/cli/eval-preflight-error.js",
     "dist/cli/bench-calibration.js",
-    "dist/cli/eval-display.js",
-    "evidence/README.md"
+    "dist/cli/eval-display.js"
   ],
   "retainedTests": [
     "dist/commands/bench-source.test.js",
@@ -77,41 +71,11 @@
     "dist/harness/bench-location.test.js"
   ],
   "archives": [],
-  "externalArchives": [
-    "evidence/artifacts/2026-10-12-diagnosing-revision/calibration-records.tar.gz",
-    "evidence/artifacts/2026-10-12-diagnosing-revision/interrupted-records.tar.gz",
-    "evidence/artifacts/2026-10-12-diagnosing-revision/validation-records.tar.gz",
-    "evidence/artifacts/2026-10-12-diagnosing-v2/regression-records.tar.gz",
-    "evidence/artifacts/2026-10-12-diagnosing-v2/transfer-records.tar.gz",
-    "evidence/artifacts/2026-10-12-normalize-url-v2-available/readiness-records.tar.gz",
-    "evidence/artifacts/2026-10-12-normalize-url-v2-comparison/records.tar.gz",
-    "evidence/artifacts/2026-10-12-normalize-url-v2-recovery/records.tar.gz",
-    "evidence/artifacts/2026-10-12-normalize-url-v2-validated/records.tar.gz",
-    "evidence/artifacts/2026-10-13-debugging-completed-development/package.tar.gz",
-    "evidence/artifacts/2026-10-13-debugging-controls-and-sleep-stop/package.tar.gz",
-    "evidence/artifacts/2026-10-13-debugging-development-stops/package.tar.gz",
-    "evidence/artifacts/2026-10-14-debugging-followup-routing-stop/package.tar.gz",
-    "evidence/artifacts/2026-10-14-debugging-independent-validation/package.tar.gz",
-    "evidence/artifacts/2026-10-14-debugging-reading-pilot-and-cost-review/package.tar.gz",
-    "evidence/artifacts/2026-10-14-debugging-spending-stop/package.tar.gz",
-    "evidence/artifacts/2026-10-15-independent-comparison-regression-stop/package.tar.gz",
-    "evidence/artifacts/2026-10-15-native-diff-mechanism/package.tar.gz",
-    "evidence/artifacts/2026-10-15-receiver-mechanism-stop/package.tar.gz"
-  ],
   "sourceOnlyPrefixes": [
-    "evidence/artifacts/",
+    "docs/work/",
     "docs/plans/",
     "docs/decisions/",
-    "docs/releases/records/",
-    "evidence/inputs/",
-    "evidence/plans/",
-    "docs/work/"
+    "docs/releases/records/"
   ],
-  "sourceOnlyFiles": [
-    "docs/audit-2026-09-24.md",
-    "docs/audit-2026-09-24-triage.md",
-    "docs/codex-upstream-audit.md",
-    "docs/metrics-history.md",
-    "docs/documentation-governance.md"
-  ]
+  "sourceOnlyFiles": []
 }

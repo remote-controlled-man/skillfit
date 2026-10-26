@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { appendFileSync, constants, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { constants, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ACCEPTANCE_STAGES, acceptanceMarkdown } from './release-acceptance.mjs';
 import { reviewedArchive, REPOSITORY } from './release-source.mjs';
@@ -34,7 +34,7 @@ export function exportRecords(root, state) {
   for (const name of readdirSync(root).filter(name => /^registry-install-attempt-\d+\.log$/.test(name))) copy(name.replace(/\.log$/, '.txt'), join(root, name));
   const published = json(join(root, 'published.json')), ci = json(join(root, 'source-ci.json'));
   assert.equal(published.version, version); assert.equal(published.latest, version); assert.equal(ci.sourceCommit, state.sourceCommit);
-  const verification = { schemaVersion: 2, kind: 'skillfit.release-verification', version, latest: published.latest, publishedAt: published.publishedAt,
+  const verification = { schemaVersion: 3, kind: 'skillfit.release-verification', version, latest: published.latest, publishedAt: published.publishedAt,
     verifiedAt: state.finishedAt, sourceCommit: state.sourceCommit, sourceCi: ci.url,
     publicationRun: `https://github.com/${REPOSITORY}/actions/runs/${state.runId}/attempts/${state.runAttempt}`,
     artifact: { filename: archive.pack.filename, sha256: archive.sha256, integrity: archive.pack.integrity, packageBytes: archive.pack.size,
@@ -53,7 +53,7 @@ export function exportRecords(root, state) {
 export function verifyRecords(bundle) {
   bundle = realpathSync(bundle);
   const manifest = json(join(bundle, 'manifest.json'));
-  assert.equal(manifest.schemaVersion, 3, 'Use explicit legacy import for old repository-shaped bundles');
+  assert.equal(manifest.schemaVersion, 3, 'Only standalone receipt bundles are supported');
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/); assert.match(manifest.sourceCommit, /^[a-f0-9]{40}$/);
   assert.ok(Array.isArray(manifest.files) && manifest.files.length && typeof manifest.summary === 'string');
   const seen = new Set();
@@ -68,7 +68,13 @@ export function verifyRecords(bundle) {
   assert.ok(seen.has('receipts/verification.json'), 'Complete verification receipt is required');
   const proof = json(join(bundle, 'receipts/verification.json'));
   assert.equal(proof.version, manifest.version); assert.equal(proof.sourceCommit, manifest.sourceCommit);
-  assert.deepEqual(proof.checks.map(row => row.id), ACCEPTANCE_STAGES);
+  // Verification v2 describes the retired eight-stage protocol; v3 removes
+  // repository history checks. Never infer a protocol from a partial check list.
+  assert.ok([2, 3].includes(proof.schemaVersion), 'Unsupported release verification protocol');
+  const stages = proof.schemaVersion === 2
+    ? ['registry-install', 'documents', 'examples', 'features', 'archives', 'history', 'provenance', 'signatures']
+    : ACCEPTANCE_STAGES;
+  assert.deepEqual(proof.checks.map(row => row.id), stages);
   assert.ok(proof.checks.every(row => row.status === 'passed'));
   for (const row of Object.values(proof.receipts)) {
     assert.equal(row.path, basename(row.path));
@@ -78,70 +84,9 @@ export function verifyRecords(bundle) {
   return { status: 'verified', version: manifest.version, receipts: manifest.files.length, writes: 0, publishes: 0 };
 }
 
-export function importRecords(bundle, repo, { yes = false, plan } = {}) {
-  const manifest = json(join(bundle, 'manifest.json')); assert.ok([1, 2].includes(manifest.schemaVersion), 'Unsupported records manifest'); assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
-  assert.match(manifest.sourceCommit, /^[a-f0-9]{40}$/); assert.ok(manifest.files.length > 0);
-  repo = realpathSync(repo); bundle = realpathSync(bundle);
-  for (const dir of ['docs', 'docs/releases', ...(plan ? ['docs/plans'] : [])]) assert.ok(lstatSync(join(repo, dir)).isDirectory() && !lstatSync(join(repo, dir)).isSymbolicLink(), 'Import directories must be ordinary directories');
-  assert.ok(below(repo, join(repo, 'docs/releases')), 'Keep imported records inside the repository');
-  const version = manifest.version, nested = manifest.schemaVersion === 2, recordDirectory = nested ? `docs/releases/records/${version}` : 'docs/releases';
-  const prefix = `${recordDirectory}/${nested ? '' : version + '-'}`, verificationPath = `${prefix}verification.json`, seen = new Set();
-  for (const directory of nested ? ['docs/releases/records', recordDirectory] : []) {
-    const target = join(repo, directory);
-    if (existsSync(target)) assert.ok(lstatSync(target).isDirectory() && !lstatSync(target).isSymbolicLink() && below(repo, target), 'Import directories must be ordinary directories');
-  }
-  for (const file of manifest.files) {
-    assert.ok(file.path.startsWith(prefix) && /^[a-z0-9][a-z0-9-]*\.(json|txt)$/.test(file.path.slice(prefix.length)) && !seen.has(file.path), 'Unsupported or duplicate record path');
-    seen.add(file.path); const source = join(bundle, file.path);
-    assert.ok(lstatSync(source).isFile() && below(bundle, source)); assert.match(file.sha256, /^[a-f0-9]{64}$/);
-    assert.equal(digest(source), file.sha256, `Import digest mismatch: ${file.path}`);
-    if (file.path.endsWith('.json')) json(source);
-    assert.ok(!existsSync(join(repo, file.path)), `Preserve existing receipt: ${file.path}`);
-  }
-  const verification = json(join(bundle, verificationPath));
-  assert.ok(seen.has(verificationPath), 'Complete receipt must be included in the manifest');
-  assert.equal(verification.version, version); assert.equal(verification.sourceCommit, manifest.sourceCommit);
-  assert.deepEqual(verification.checks.map(row => row.id), ACCEPTANCE_STAGES); assert.ok(verification.checks.every(row => row.status === 'passed'));
-  for (const row of Object.values(verification.receipts)) {
-    assert.ok(seen.has(`${recordDirectory}/${row.path}`), 'Every receipt reference must be included in the manifest');
-    assert.equal(row.path, basename(row.path)); const file = join(bundle, recordDirectory, row.path);
-    assert.ok(lstatSync(file).isFile() && below(bundle, file)); assert.equal(digest(file), row.sha256);
-  }
-  const marker = `<!-- skillfit-release:${version}:start -->`, documents = [{ path: `docs/releases/${version}.md`, body: manifest.releaseMarkdown }];
-  if (plan) { assert.match(plan, /^docs\/plans\/[a-zA-Z0-9._-]+\.md$/); assert.ok(existsSync(join(repo, plan))); documents.push({ path: plan, body: manifest.planMarkdown }); }
-  for (const doc of documents) {
-    assert.equal(typeof doc.body, 'string'); assert.ok(below(repo, dirname(join(repo, doc.path))));
-    if (existsSync(join(repo, doc.path))) {
-      assert.ok(lstatSync(join(repo, doc.path)).isFile() && below(repo, join(repo, doc.path)));
-      assert.ok(!readFileSync(join(repo, doc.path), 'utf8').includes(marker), 'Preserve existing release status');
-    }
-  }
-  if (yes) {
-    mkdirSync(join(repo, recordDirectory), { recursive: true });
-    for (const file of manifest.files) copyFileSync(join(bundle, file.path), join(repo, file.path), constants.COPYFILE_EXCL);
-    for (const doc of documents) {
-      const file = join(repo, doc.path), block = `${marker}\n${doc.body}\n<!-- skillfit-release:${version}:end -->\n`;
-      if (doc.path === plan) writeFileSync(file, block + '\n' + readFileSync(file, 'utf8'));
-      else appendFileSync(file, '\n' + block);
-    }
-  }
-  return { status: yes ? 'imported' : 'planned', version, receipts: manifest.files.length, documents: documents.map(doc => doc.path), publishes: 0 };
-}
-
 if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const [bundle, ...args] = process.argv.slice(2); assert.ok(bundle, 'Provide records bundle; repository recovery requires --legacy-import');
-  if (!args.includes('--legacy-import')) {
-    assert.equal(args.length, 0, 'Normal delivery verification takes only a bundle; use --legacy-import explicitly for recovery');
-    console.log(JSON.stringify(verifyRecords(resolve(bundle))));
-  } else {
-  const [repo, ...flags] = args; assert.ok(repo && !repo.startsWith('--'), 'Provide legacy recovery repository');
-  const options = {};
-  for (let i = 0; i < flags.length; i++) {
-    if (flags[i] === '--legacy-import') { continue;
-    } else if (flags[i] === '--yes') { assert.ok(!options.yes, 'Duplicate --yes'); options.yes = true;
-    } else if (flags[i] === '--plan') { assert.ok(!options.plan && flags[i + 1] && !flags[i + 1].startsWith('--'), 'Provide one --plan path'); options.plan = flags[++i];
-    } else throw new Error('Use --yes and optional --plan <path>');
-  }
-  console.log(JSON.stringify(importRecords(resolve(bundle), resolve(repo), options)));
-  }
+  const [bundle, ...args] = process.argv.slice(2);
+  assert.ok(bundle, 'Provide records bundle');
+  assert.equal(args.length, 0, 'Provide only a standalone records bundle');
+  console.log(JSON.stringify(verifyRecords(resolve(bundle))));
 }

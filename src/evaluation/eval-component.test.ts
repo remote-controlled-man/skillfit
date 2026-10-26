@@ -538,7 +538,7 @@ test('aggregate improvement cannot hide a named-check regression or incomplete c
 
 test('published real revision evidence preserves recorded cost coverage and never authorizes an upgrade', async () => {
   for (const name of ['2026-10-12-diagnosing-revision', '2026-10-12-normalize-url-v2-validated']) {
-    const path = join(ROOT, 'tools/verify/fixtures/history', name.includes('diagnosing') ? 'manifest.json' : 'validated-manifest.json');
+    const path = join(ROOT, 'tools/verify/fixtures/measurement', name.includes('diagnosing') ? 'manifest.json' : 'validated-manifest.json');
     const result = await reportEvalComponent(path); assert.ok('quality' in result);
     assert.equal(result.acceptance.eligibleForUpgrade, false);
     const saved = JSON.parse(readFileSync(path, 'utf8'));

@@ -10,7 +10,7 @@ const manual = { kind: 'manual', files: [] };
 // Reviewed development-test locations, never commands supplied by registry text.
 export const DOCUMENTATION_CHECKS = {
   'measurement-scope': automatic('src/evaluation/bench-claims.test.ts', 'src/cli/eval-measurement-scope.test.ts', 'src/cli/bench-claims-cli.test.ts', 'src/evaluation/eval-component.test.ts'),
-  'documentation-review': manual, 'historical-review': manual, 'study-review': manual,
+  'documentation-review': manual, 'historical-review': manual,
   'cli-reference': automatic('tools/verify/cli-reference.test.mjs'),
   'docs-links': automatic('tools/verify/check-docs.test.mjs', 'tools/verify/documentation-registry.test.mjs'),
   'readme-parity': automatic('tools/verify/check-docs.test.mjs'),
@@ -31,8 +31,6 @@ export const DOCUMENTATION_CHECKS = {
   'input-snapshots': automatic('src/commands/eval-layout.test.ts', 'src/cli/eval-preflight.test.ts'),
   'eval-reports': automatic('src/cli/eval-report.test.ts', 'src/cli/evaluation-report.test.ts', 'src/evaluation/eval-component.test.ts'),
   'eval-replay': automatic('src/evaluation/application/export.test.ts', 'src/cli/eval-export-modes.test.ts', 'src/cli/replay-cancellation.test.ts'),
-  'archive-integrity': automatic('tools/history/check-archives.test.mjs'),
-  'archive-restoration': automatic('tools/verify/fetch-archives.test.mjs'),
   'package-contents': automatic('tools/verify/check-package.test.mjs'),
   'install-transactions': automatic('src/configuration/transaction.test.ts', 'src/configuration/install.test.ts', 'src/configuration/setup.test.ts', 'src/configuration/bundle.test.ts'),
   'profile-sources': automatic('src/configuration/upstream.test.ts', 'src/configuration/setup.test.ts'),

@@ -43,7 +43,6 @@ Skill narration, an implementation keyword or a preferred repair strategy.
 ```bash
 node dist/cli.js bench check benches/contrib/oss-skill-independent
 node --test tools/verify/independent-offline.test.mjs
-node tools/history/check-independent-readiness.mjs
 ```
 
 Offline checks also give the original the identical reference regression, so a

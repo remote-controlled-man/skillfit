@@ -18,7 +18,7 @@
 - Move 19 historical compressed archives out of npm packages starting with 0.13.0. Add an
   explicit pinned, hash-checked restore tool with previews and offline local
   sources; keep Git originals, frozen replay support and published releases.
-  See [archive restoration](docs/maintainers/archive-delivery.md) and the
+  See [archive restoration](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/docs/maintainers/archive-delivery.md) and the
   [0.13.0 release record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.0.md).
 
 ## 0.12.0 — reliable case authoring and evaluation costs (2026-10-17)
@@ -256,7 +256,7 @@
   replay packages. The study totals 195 actual calls; seven historical final
   usages remain unknown and no candidate qualifies for adoption.
 - Move the long experiment history to the maintained
-  [evidence index](docs/maintainers/archive-delivery.md). Refocus onboarding and the
+  [evidence index](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/docs/maintainers/archive-delivery.md). Refocus onboarding and the
   roadmap on authoring cases for users' own tasks. No further model calls or npm
   publication are included.
 

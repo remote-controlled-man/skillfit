@@ -3,18 +3,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compiledModules } from './check-architecture.mjs';
-import { validateCatalog } from '../../evidence/fetch-archives.mjs';
 
 export const PACKAGE_POLICY = JSON.parse(readFileSync(new URL('package-policy.json', import.meta.url), 'utf8'));
-
-export const ARCHIVE_CATALOG = validateCatalog(JSON.parse(readFileSync(new URL('../../evidence/archive-catalog.v1.json', import.meta.url), 'utf8')));
-const evidenceFiles = new Set(['evidence/README.md', 'evidence/archive-catalog.v1.json', 'evidence/fetch-archives.mjs']);
 
 export function validatePackageContents(pack, runtimeFiles = []) {
   assert.ok(Array.isArray(pack.files) && pack.files.length, 'An inspected package inventory is required');
   const names = pack.files.map(file => file.path), files = new Set(names);
   assert.equal(files.size, names.length, 'Package paths must be unique');
-  const roots = new Set(['dist', 'benches', 'docs', 'evidence', 'profiles', 'skills', 'README.md', 'README.zh-CN.md', 'LICENSE', 'package.json', 'CHANGELOG.md', 'tools']);
+  const roots = new Set(['dist', 'benches', 'docs', 'profiles', 'skills', 'README.md', 'README.zh-CN.md', 'LICENSE', 'package.json', 'CHANGELOG.md', 'tools']);
   for (const name of names) {
     assert.equal(typeof name, 'string');
     assert.ok(!name.includes('\\') && !name.startsWith('/') && !name.split('/').some(part => part === '..' || part === '.'), `Unsafe package path: ${name}`);
@@ -23,12 +19,10 @@ export function validatePackageContents(pack, runtimeFiles = []) {
     assert.ok(!/(?:^|\/)(?:workspace4skills|runs|node_modules|\.git)(?:\/|$)/.test(name), `Private/generated path in package: ${name}`);
     assert.ok(!/(?:^|\/)(?:\.env|auth\.json|credentials|id_rsa|id_ed25519)$/.test(name), `Credential path in package: ${name}`);
     if (name.startsWith('tools/')) assert.ok(/^tools\/verify\/recipes\/[^/]+\.mjs$/.test(name) && PACKAGE_POLICY.requiredFiles.includes(name), `Unreviewed shipped tool: ${name}`);
-    if (name.startsWith('evidence/')) assert.ok(evidenceFiles.has(name), `Historical source must be restored on demand: ${name}`);
     if (name.startsWith('dist/') && name.endsWith('.test.js')) {
       assert.ok(PACKAGE_POLICY.retainedTests.includes(name), `Unreviewed active test in package: ${name}`);
     }
     if (/\.(?:tar\.gz|tgz|zip)$/.test(name)) {
-      assert.ok(!PACKAGE_POLICY.externalArchives.includes(name), `External archive must not ship in npm: ${name}`);
       assert.ok(PACKAGE_POLICY.archives.includes(name), `Unreviewed archive in package: ${name}`);
     }
   }

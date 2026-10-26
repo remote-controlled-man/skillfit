@@ -56,7 +56,7 @@ test('missing timeout usage and no successes suppress cost ratios without invent
 });
 
 test('published real Skill revision receipts reproduce cost regressions and unknown timeout usage offline', () => {
-  const root = join(fileURLToPath(new URL("../../..", import.meta.url)), 'tools/verify/fixtures/history');
+  const root = join(fileURLToPath(new URL("../../..", import.meta.url)), 'tools/verify/fixtures/measurement');
   const analysis = JSON.parse(readFileSync(join(root, 'cost-analysis.json'), 'utf8'));
   const manifest = JSON.parse(readFileSync(join(root, 'manifest.json'), 'utf8'));
   assert.equal(manifest.experiment.callsStarted, 30);

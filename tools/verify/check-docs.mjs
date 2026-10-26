@@ -90,7 +90,7 @@ export function inspectBenchCatalog(root = ROOT) {
 
 /** Inspect only owned public trees; never traverse runs, private labs or directory aliases. */
 export function inspectRepositoryLayout(root = ROOT) {
-  const errors = [], compact = new Set(['evidence/README.md', 'evidence/archive-catalog.v1.json', 'evidence/fetch-archives.mjs']);
+  const errors = [];
   const walk = (dir, visit) => {
     if (!existsSync(join(root, dir))) return;
     if (lstatSync(join(root, dir)).isSymbolicLink()) { errors.push(`${dir}: directory alias is not admitted`); return; }
@@ -108,7 +108,7 @@ export function inspectRepositoryLayout(root = ROOT) {
     else if (file.endsWith('.md') && file !== 'docs/README.md' && !/^docs\/(?:guides|reference|maintainers|work)\/[^/]+\.md$/.test(file)) errors.push(`${file}: flat or unowned documentation topic`);
     else if (!file.endsWith('.md') && !/^docs\/(?:schemas|examples|assets)\//.test(file)) errors.push(`${file}: generated records are not maintained documentation`);
   });
-  walk('evidence', file => { if (!compact.has(file)) errors.push(`${file}: preserve on-demand history; do not admit unpacked evidence`); });
+  walk('evidence', file => { errors.push(file + ': retired evidence tree; keep run outputs outside maintained source'); });
   walk('src', file => { if (!file.endsWith('.ts') && !/^src\/matrix\/[^/]+\.json$/.test(file)) errors.push(`${file}: generated output is not source`); });
   walk('tools', file => { if (/\.(?:log|tgz|zip|tar\.gz)$/.test(file) || /\/(?:receipts|records|runs)\//.test(file)) errors.push(`${file}: generated attempts belong outside tooling`); });
   return errors;
@@ -144,11 +144,11 @@ export function checkDocumentation(root = ROOT, { changes = [], previousDocument
     const exists = existsSync(join(root, path));
     if (!exists) {
       const oldAnchors = [...markdownAnchors(previous)];
-      const archiveGuide = join(root, 'docs/maintainers/archive-delivery.md');
+      const documentationIndex = join(root, 'docs/README.md');
       const snapshot = /^[a-f0-9]{40}$/.test(baseline ?? '') && !/^0+$/.test(baseline)
         ? `https://github.com/remote-controlled-man/skillfit/tree/${baseline}/${path.split('/')[0]}` : null;
-      const archived = snapshot && changes.some(row => row.path === path && row.status === 'D') && existsSync(archiveGuide) &&
-        markdownLinks(readFileSync(archiveGuide, 'utf8')).some(link => link.target === snapshot);
+      const archived = snapshot && changes.some(row => row.path === path && row.status === 'D') && existsSync(documentationIndex) &&
+        markdownLinks(readFileSync(documentationIndex, 'utf8')).some(link => link.target === snapshot);
       for (const from of oldAnchors.length ? oldAnchors.map(fragment => `${path}#${fragment}`) : [path]) result.anchorMigrations.push({ from,
         to: archived ? `https://github.com/remote-controlled-man/skillfit/blob/${baseline}/${from}` : null, status: archived ? 'archived' : 'missing' });
       if (!archived) result.errors.push(`${path}: old path removed; restore a compatibility page.`);

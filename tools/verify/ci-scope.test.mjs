@@ -62,15 +62,15 @@ test('CI receipts identify actual runtime/job and retain failed or minimum resul
 test('record validation rejects malformed JSON, escaping references and altered digests', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-ci-records-')); t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, 'docs/releases'), { recursive: true }); mkdirSync(join(root, 'docs/plans'));
-  for (const file of ['AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'benches/README.md', 'benches/contrib/README.md', 'tools/README.md', 'evidence/README.md', ...RELEASE_DOCUMENTS]) {
+  for (const file of ['AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'benches/README.md', 'benches/contrib/README.md', 'tools/README.md', ...RELEASE_DOCUMENTS]) {
     mkdirSync(join(root, file, '..'), { recursive: true }); writeFileSync(join(root, file), 'npx skillfit@0.13.1 [Changelog](CHANGELOG.md)');
   }
   // Fixture links use a valid root entry; nested current docs contain no links.
   for (const file of RELEASE_DOCUMENTS.filter(f => f.includes('/'))) writeFileSync(join(root, file), 'npx skillfit@0.13.1');
-  for (const file of ['AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'benches/README.md', 'benches/contrib/README.md', 'tools/README.md', 'evidence/README.md']) writeFileSync(join(root, file), 'Fixture.');
+  for (const file of ['AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'benches/README.md', 'benches/contrib/README.md', 'tools/README.md']) writeFileSync(join(root, file), 'Fixture.');
   writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'skillfit', version: '0.13.1' }));
   writeFileSync(join(root, 'docs/releases/0.13.1.md'), '# Release');
-  registerDocuments(root, ['AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'benches/README.md', 'benches/contrib/README.md', 'tools/README.md', 'evidence/README.md', ...RELEASE_DOCUMENTS, 'docs/releases/0.13.1.md']);
+  registerDocuments(root, ['AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'benches/README.md', 'benches/contrib/README.md', 'tools/README.md', ...RELEASE_DOCUMENTS, 'docs/releases/0.13.1.md']);
   const file = 'docs/releases/0.14.0-verification.json', target = join(root, file);
   writeFileSync(join(root, 'docs/releases/0.14.0-result.json'), '{}');
   const hash = createHash('sha256').update('{}').digest('hex');

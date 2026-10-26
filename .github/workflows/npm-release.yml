@@ -87,7 +87,7 @@ jobs:
           archive=$(node -p "JSON.parse(require('node:fs').readFileSync(process.env.RELEASE_ROOT + '/pack.json'))[0].filename")
           npm publish "$RELEASE_ROOT/$archive" --access public --tag latest --fetch-retries=0 --fetch-timeout=600000
           node tools/release/release-acceptance.mjs uploaded "$RELEASE_ROOT"
-      - name: Verify installation, Skill, examples, archives and provenance once
+      - name: Verify installation, Skill, examples, features and provenance once
         if: '!inputs.dry_run'
         run: |
           node tools/release/release-acceptance.mjs verify "$RELEASE_ROOT"

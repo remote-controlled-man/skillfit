@@ -391,42 +391,6 @@
       ]
     },
     {
-      "path": "docs/maintainers/archive-delivery.md",
-      "kind": "how-to",
-      "lifecycle": "maintained",
-      "audience": [
-        "user",
-        "maintainer",
-        "contributor"
-      ],
-      "owner": "distribution",
-      "scope": [
-        {
-          "kind": "source",
-          "ref": "working-tree"
-        },
-        {
-          "kind": "released",
-          "ref": "0.13.1"
-        }
-      ],
-      "topics": [
-        "archive-inventory",
-        "debugging-study",
-        "historical-archives",
-        "package-contents",
-        "released-version"
-      ],
-      "checks": [
-        "docs-links",
-        "archive-integrity",
-        "archive-restoration",
-        "release-documents",
-        "package-contents",
-        "study-review"
-      ]
-    },
-    {
       "path": "docs/guides/bench-authoring.md",
       "kind": "how-to",
       "lifecycle": "maintained",
@@ -488,7 +452,6 @@
         "adoption-policy",
         "agent-capabilities",
         "cost-accounting",
-        "debugging-study",
         "evaluation-component",
         "evaluation-planning",
         "evaluation-reports",
@@ -745,7 +708,6 @@
       "topics": [
         "agent-capabilities",
         "architecture",
-        "debugging-study",
         "documentation-governance",
         "measurement-work",
         "offline-controls",
@@ -776,12 +738,14 @@
       ],
       "topics": [
         "released-version",
-        "release-process"
+        "release-process",
+        "package-contents"
       ],
       "checks": [
         "release-documents",
         "historical-review",
-        "release-workflow"
+        "release-workflow",
+        "package-contents"
       ]
     },
     {
@@ -810,31 +774,6 @@
         "install-transactions",
         "profile-sources",
         "documentation-review"
-      ]
-    },
-    {
-      "path": "evidence/README.md",
-      "kind": "index",
-      "lifecycle": "maintained",
-      "audience": [
-        "user",
-        "maintainer",
-        "contributor"
-      ],
-      "owner": "evidence",
-      "scope": [
-        {
-          "kind": "source",
-          "ref": "working-tree"
-        }
-      ],
-      "topics": [
-        "debugging-study"
-      ],
-      "checks": [
-        "historical-review",
-        "docs-links",
-        "study-review"
       ]
     },
     {
@@ -1065,9 +1004,7 @@
       ],
       "topics": [
         "architecture",
-        "debugging-study",
         "documentation-governance",
-        "historical-archives",
         "package-contents",
         "release-process"
       ],
@@ -1327,18 +1264,6 @@
         "eval-replay"
       ]
     },
-    "archive-inventory": {
-      "canonical": "docs/maintainers/archive-delivery.md",
-      "sources": [
-        "evidence/archive-catalog.v1.json",
-        "tools/history/check-archives.mjs"
-      ],
-      "schemas": [],
-      "dependents": [],
-      "checks": [
-        "archive-integrity"
-      ]
-    },
     "bench-authoring": {
       "canonical": "docs/guides/bench-authoring.md",
       "sources": [
@@ -1506,23 +1431,6 @@
         "eval-accounting"
       ]
     },
-    "debugging-study": {
-      "canonical": "docs/maintainers/archive-delivery.md",
-      "sources": [
-        "evidence/archive-catalog.v1.json"
-      ],
-      "schemas": [],
-      "dependents": [
-        "docs/reference/eval-component.md",
-        "docs/README.md",
-        "evidence/README.md",
-        "tools/README.md"
-      ],
-      "checks": [
-        "study-review",
-        "docs-links"
-      ]
-    },
     "development-rules": {
       "canonical": "AGENTS.md",
       "sources": [
@@ -1686,8 +1594,7 @@
     "evidence-submission": {
       "canonical": "CONTRIBUTING.md#submitting-evidence",
       "sources": [
-        ".github/ISSUE_TEMPLATE/evidence_submission.yml",
-        "evidence/README.md"
+        ".github/ISSUE_TEMPLATE/evidence_submission.yml"
       ],
       "schemas": [],
       "dependents": [
@@ -1709,22 +1616,6 @@
       "dependents": [],
       "checks": [
         "execution-timing"
-      ]
-    },
-    "historical-archives": {
-      "canonical": "docs/maintainers/archive-delivery.md",
-      "sources": [
-        "evidence/archive-catalog.v1.json",
-        "evidence/fetch-archives.mjs"
-      ],
-      "schemas": [],
-      "dependents": [
-        "tools/README.md"
-      ],
-      "checks": [
-        "archive-integrity",
-        "archive-restoration",
-        "release-documents"
       ]
     },
     "installed-delivery": {
@@ -1844,7 +1735,7 @@
       ]
     },
     "package-contents": {
-      "canonical": "docs/maintainers/archive-delivery.md",
+      "canonical": "docs/maintainers/releases.md",
       "sources": [
         "package.json",
         "tools/verify/package-policy.json",
@@ -1951,7 +1842,6 @@
       "schemas": [],
       "dependents": [
         "CHANGELOG.md",
-        "docs/maintainers/archive-delivery.md",
         "docs/work/current.md",
         "docs/README.md",
         "README.md",

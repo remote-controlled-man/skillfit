@@ -10,7 +10,7 @@ const bench = fileURLToPath(new URL('../../benches/contrib/oss-skill-independent
 const definition = JSON.parse(readFileSync(join(bench, 'bench.json'), 'utf8'));
 const specs = JSON.parse(readFileSync(join(bench, 'task-specs.json'), 'utf8'));
 const provenance = JSON.parse(readFileSync(join(bench, 'provenance.json'), 'utf8'));
-const proposal = JSON.parse(readFileSync(new URL('./fixtures/history/independent-inputs.json', import.meta.url), 'utf8'));
+const proposal = JSON.parse(readFileSync(new URL('./fixtures/bench/independent-inputs.json', import.meta.url), 'utf8'));
 function setup(t, task, fixed) {
   const directory = mkdtempSync(join(tmpdir(), 'skillfit-independent-')); t.after(() => rmSync(directory, { recursive: true, force: true }));
   cpSync(join(bench, task.fixture), directory, { recursive: true });

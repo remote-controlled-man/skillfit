@@ -6,17 +6,26 @@ for versioned product changes and the [fixed 0.13.1 record](https://github.com/r
 for the original publication receipts.
 
 Use one reviewed source/archive/preview and explicit publication intent. Verify
-registry installation, current Skill/examples, installed features, restored
-archives, frozen history, source provenance and registry signatures. Normal
-checks are offline; actual publication and model calls need their own scope.
+registry installation, current Skill/documents, examples, installed features,
+source provenance and registry signatures: exactly six stages. Source tests are
+offline; registry installation/provenance/signatures require the network during
+an authorized publication. None of these steps calls a model.
 
 Successful acceptance produces a standalone records bundle with one manifest
 and hash-linked receipts. Verify it with `node tools/release/release-records.mjs <bundle>`.
 Keep the complete bundle with its versioned delivery; expiring workflow logs
-are not its permanent archive. Neither receipt generation nor checking writes
+are not a durable delivery. Neither receipt generation nor checking writes
 repository documentation or adds per-version pages.
 
-Old repository-shaped bundles remain recoverable only through explicit
-`--legacy-import`; this is recovery, not the normal release path. The current
-plan replaces its status and links proof rather than appending release logs.
-See [architecture](architecture.md) for source/confirmation and archive policy.
+The standalone bundle manifest remains schema 3. Verification protocol 3 requires
+the current six stages; protocol 2 still verifies complete eight-stage bundles
+read-only. Partial, mismatched or unknown protocols fail. Repository-shaped
+receipt import is retired; normal acceptance never restores historical studies.
+The current plan replaces its status and links proof rather than appending logs.
+
+The npm package contains the runtime, reusable Bench inputs, current user docs,
+profiles, driver Skill and the installed feature recipes actually executed by
+acceptance. It excludes development tooling/fixtures, the current plan, generated
+runs and historical study data. Package inventory and size checks remain in
+`tools/verify/check-package.mjs`; no external archive catalog is required.
+See [architecture](architecture.md) for artifact ownership and confirmation.

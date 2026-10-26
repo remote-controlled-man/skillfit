@@ -94,13 +94,12 @@ src/
   shared/                 explicit-input mechanisms
   commands/ + harness/    retained recipe/replay delegates and six test entries
 
-tools/{verify,release,history}/
+tools/{verify,release}/
 docs/{guides,reference,maintainers,work,schemas,examples,assets}/
 benches/                  reusable task inputs and provenance
 profiles/                 installation inputs
 skills/                   shipped CLI driver
 runs/                     ignored attempts/exports/release workspaces
-evidence/                 index, pinned hash catalog and explicit restorer
 ```
 
 Each topic has one canonical page; `docs/work/current.md` is the only plan.
@@ -155,10 +154,11 @@ Fresh run/bundle/bench outputs instead reject collisions; evaluation fixtures ar
 disposable copies. Repository edits use Git review/checks. Never clean ignored
 workspaces wholesale: `workspace4skills/` is a private lab.
 
-Published bytes remain at pinned Git commits. Restore checks fixed source, size
-and SHA-256, rejects collisions and neither executes automatically nor falls
-back to main. [Archive instructions](archive-delivery.md) own recovery;
-[metrics](../reference/metrics.md) owns verdict/statistical semantics.
+Published bytes remain at fixed Git commits. Current source has no repository
+archive catalog/restorer or mandatory historical-study release stage. Preserve
+current saved-result readers and portable replay, including their original
+runtime requirements. [Metrics](../reference/metrics.md) owns verdict/statistical
+semantics; [Bench format](../../benches/README.md) owns reusable task inputs.
 
 ## Domain terms and owners
 
@@ -232,8 +232,8 @@ Test built, installed and relocated packages, not only source imports.
 | Active source/tests/Bench inputs/schemas | Owning tree; only exact consumed historical fixtures. |
 | Run facts, failed/stopped attempts and sealed inputs | Fresh explicit ignored/external workspace; no automatic source import. |
 | Reports, analysis and logs | Derived attempt output, not another maintained truth source. |
-| Published Evidence | Verified manifest, packed payload and conclusion; concise main index/digest, no unpacked copies. |
-| Release proofs | One external proof bundle per attempt; main keeps changelog/current links. Legacy import is explicit recovery. |
+| Shared evaluation | Explicit exported package and its stated conclusion/limits; retain where its actual recipient consumes it, not in a new source catalog. |
+| Release proofs | One external proof bundle per attempt; source keeps the changelog/current links. Verification is read-only; repository import is retired. |
 | Current work | One ordered plan; replace status/results rather than append every review/CI transcript. |
 
 Promotion of sealed positive/negative/stopped Runs requires exact input/runtime
@@ -241,13 +241,20 @@ identity and replay limits; dirty execution retains actual bytes. Corrections
 link a new identity. A study may reuse identical runtimes; standalone packages
 stay self-contained. No cross-study object server is introduced.
 
-Old history retains pinned Git sources. Future durable payload transport may use
-versioned [Release assets](https://docs.github.com/en/rest/releases/assets) after
-[immutable-release protection](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
-is verified; the setting/transport remain unverified and unchanged. Stage and
-verify before publication. Expiring [Actions artifacts](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/remove-workflow-artifacts)
-cannot be the only published copy. Durability failure blocks promotion, not
-local Runs; it never changes old restoration rules implicitly.
+A release proof and an evaluation run are different products: the former proves
+package delivery; the latter records task outcomes and costs. Release acceptance
+checks the installed package and current portable replays, never old personal
+studies. A failed run stays in its explicit workspace; it does not create a new
+maintained page, study catalog entry or mandatory release check.
+
+Bench inputs consist of one manifest, task prompts, copied fixtures, deterministic
+graders and protected reference answers. Dataset provenance/license lives beside
+the inputs. Keep file roles separate so reference answers never enter agent
+workspaces. Existing manifest paths support both grouped files and task-local
+subdirectories; no new format version or mass rename is needed to separate data
+from outputs. See [Bench lifecycle](../../benches/README.md#input-and-output-lifecycle)
+for admission/removal and the [catalog](../../benches/contrib/README.md) for dataset
+purpose. Regression fixtures belong to their consuming tests, not an archive.
 
 ## Growth controls and extension acceptance
 
@@ -263,7 +270,7 @@ contents and dependency closure. No universal file/line-count gate is imposed.
 | Resource variant | Resources and temporary Target delivery tests; no measurement or real-config transaction change. New public kind needs schema/capability work. |
 | Report or metric | Display in presentation; metric in Measurement when facts exist. New facts/meaning need protocol/read support. |
 | Experiment design | Execution, Application wiring and declared measurement/read support; no forced paired/single-arm unification. |
-| Historical reader/transport | Records/legacy or tools/history with fixtures; no old-byte rewrite or live execution. |
+| Historical reader/transport | Records/legacy with consumed compatibility fixtures; no old-byte rewrite or live execution. |
 | Existing use case's new caller | Same explicit public operation; never parse CLI stdout or invoke its dry-run branch to plan. |
 
 These are acceptance scenarios, not a plugin system. Test normal, unsupported,
@@ -285,7 +292,7 @@ and [documentation](https://github.com/remote-controlled-man/skillfit/blob/3a3ff
 decisions remain fixed historical sources.
 
 - FR1: One business owner and small interface per module; no global domain types.
-- FR2: One page per topic and one plan; maintain the 15-page migration scope.
+- FR2: One page per topic and one plan; use the existing reader-task owners.
 - FR3: Generated attempts/reports/receipts and frozen run copies stay external to source/npm.
 - FR4: Preserve exact history, unknown/failure accounting and explicit offline replay.
 - FR5: One package/toolchain, zero runtime dependencies, current CLI/config contracts.

@@ -17,7 +17,7 @@ then use the recorded evidence and its limits to decide what to enable.
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[Documentation](docs/README.md) · [Quick start](#first-run-with-npm) · [Bench guide](benches/README.md) · [Metrics protocol](docs/reference/metrics.md) · [Evidence](evidence)
+[Documentation](docs/README.md) · [Quick start](#first-run-with-npm) · [Bench guide](benches/README.md) · [Metrics protocol](docs/reference/metrics.md) · [Reports](docs/reference/evaluation-reports.md)
 
 </div>
 
@@ -220,7 +220,7 @@ node ./exports/my-run/reproduce.mjs
 
 [Portable replay](docs/reference/evaluation-reports.md) verifies saved observations and runs trusted local verifiers, with zero model calls. [Sealed inputs](docs/guides/experiment-workflow.md) preserve the original case and target. [Interruption](docs/guides/experiment-workflow.md) retains available spending; unknown usage stays unknown.
 
-Version 0.13.0 adds an explicit [restore tool](docs/maintainers/archive-delivery.md): fetch pinned bytes once, then replay historical study archives offline. Git originals and frozen reports stay available; normal installation and CLI commands do not fetch archives.
+Current source keeps task inputs in benches and generated observations in explicit run directories. Report/export/replay uses those saved runs; old study files remain at fixed Git commits and are no longer a release prerequisite.
 
 ## Selectable Codex setup
 
@@ -280,7 +280,7 @@ We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pa
 
 These are observed outcomes on the recorded tasks, not tests of every workflow claim. Regression-test artifacts do not establish process order, and 0.00pp cannot exclude an unmeasured process effect. A saturated baseline limits observed quality headroom; it does not automatically discard a task for an efficiency comparison with complete costs and no observed regression.
 
-See the [evidence index](evidence/README.md) and [archived debugging study](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) for dated scope and available records. These author-run records do not establish independent third-party live reproduction; offline replay verifies saved observations.
+See the [original study records](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md) and [archived debugging study](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) for dated scope and available records. These author-run records do not establish independent third-party live reproduction; offline replay verifies saved observations.
 
 ## Design principles
 
@@ -297,7 +297,7 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 See the [current work plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md), [changelog](CHANGELOG.md) and [release procedure](docs/maintainers/releases.md).
 
-See the [capability table](docs/guides/experiment-workflow.md#executor-capabilities) for current adapter and trigger verification limits, and the current work plan for pending implementation. Later work includes live validation and additional agent adapters. The [evidence index](evidence/README.md) and [debugging study status](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
+See the [capability table](docs/guides/experiment-workflow.md#executor-capabilities) for current adapter and trigger verification limits, and the current work plan for pending implementation. Later work includes live validation and additional agent adapters. The [original study records](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md) and [debugging study status](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
 
 ## Contributing
 

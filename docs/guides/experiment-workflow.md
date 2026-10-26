@@ -230,8 +230,7 @@ explains required files, missing legacy capabilities and explicit recovery.
 SIGINT/SIGTERM seal stopped-prefix accounting and terminate descendants; abrupt
 kill can leave incomplete evidence. Guards protect original configuration and
 stop on unexpected changes. Completed accounting alone is not efficacy.
-Restoring [historical archives](../maintainers/archive-delivery.md) is an explicit
-operation; ordinary install/report/export never imports repository history or
-starts paid experiments. Replay original bytes at their pinned runtime.
+Current report/export/replay operates on explicitly supplied saved runs. Preserve
+their sealed inputs and original runtime; replay does not start a new paid experiment.
 
 Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/guides/experiment-workflow.md).

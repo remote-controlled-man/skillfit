@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -11,7 +10,6 @@ const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const registry = 'https://registry.npmjs.org';
 const json = file => JSON.parse(readFileSync(file, 'utf8'));
 const save = (file, value) => writeFileSync(file, JSON.stringify(value, null, 2) + '\n', { flag: 'wx' });
-const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 
 export function inspectDriver(text) {
   const frontmatter = /^---\r?\n([\s\S]+?)\r?\n---(?:\r?\n|$)/.exec(text);
@@ -63,7 +61,7 @@ export async function recoverUpload(root, fetchImpl = fetch) {
 export function acceptanceChecks(root, publication) {
   const archive = reviewedArchive(root), work = join(root, 'acceptance'), logs = join(root, 'logs');
   mkdirSync(work); mkdirSync(logs);
-  let installed, prefix, archiveWorkspace;
+  let installed, prefix;
   const run = (command, args, label, cwd = work, env = {}) => {
     const result = spawnSync(command, args, { cwd, encoding: 'utf8', timeout: 25 * 60_000, maxBuffer: 64 * 1024 * 1024,
       env: { ...process.env, npm_config_update_notifier: 'false', ...env } });
@@ -113,27 +111,6 @@ export function acceptanceChecks(root, publication) {
     { id: 'features', run: () => {
       node([join(installed, 'tools/verify/recipes/release-feature-smoke.mjs'), installed, join(work, 'features')], 'features');
       return { ...json(join(work, 'features/feature-smoke.json')), foundations: json(join(work, 'features/foundations/feature-smoke.json')) };
-    } },
-    { id: 'archives', run: () => {
-      const catalog = json(join(installed, 'evidence/archive-catalog.v1.json')); archiveWorkspace = join(work, 'online');
-      const restore = join(installed, 'evidence/fetch-archives.mjs');
-      const listed = node([restore, '--list'], 'archive-catalog'); assert.equal(listed.trim().split(/\r?\n/).length, catalog.archives.length);
-      node([restore, '--all', '--output', archiveWorkspace], 'archive-preview'); assert.ok(!existsSync(archiveWorkspace));
-      node([restore, '--all', '--output', archiveWorkspace, '--yes'], 'archive-online');
-      for (const row of [...catalog.archives, ...catalog.supportFiles]) {
-        const bytes = readFileSync(join(archiveWorkspace, row.path)); assert.equal(bytes.length, row.bytes); assert.equal(digest(bytes), row.sha256, row.path);
-      }
-      node([join(installed, 'tools/verify/recipes/archive-delivery-smoke.mjs'), installed, archiveWorkspace, join(work, 'offline')], 'archive-offline');
-      const offline = json(join(work, 'offline/archive-delivery-smoke.json')); assert.equal(offline.networkAttempts, 0); assert.equal(offline.collisionPreserved, true);
-      return { archivesRestored: catalog.archives.length, supportFilesRestored: catalog.supportFiles.length,
-        archiveSource: catalog.source, archiveBytes: catalog.archives.reduce((n, row) => n + row.bytes, 0),
-        archives: catalog.archives.map(row => ({ ...row, verified: true })), previewWrites: 0, defaultFixedHttps: true, offline };
-    } },
-    { id: 'history', run: () => {
-      node([join(installed, 'tools/verify/recipes/release-historical-smoke.mjs'), installed, archiveWorkspace, join(logs, 'history')], 'history');
-      const receipt = json(join(logs, 'history/historical-smoke.json'));
-      assert.equal(receipt.results.length, json(join(installed, 'evidence/archive-catalog.v1.json')).archives.length);
-      assert.ok(receipt.results.every(row => row.verified)); return receipt;
     } },
     { id: 'provenance', run: async () => {
       const metadata = await fetchJson(`${registry}/skillfit/${archive.pack.version}`, 'registry-metadata');

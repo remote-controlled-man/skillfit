@@ -17,7 +17,7 @@
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[文档目录](docs/README.md) · [快速开始](#用-npm-开始) · [Bench 指南](benches/README.md) · [指标协议](docs/reference/metrics.md) · [证据库](evidence)
+[文档目录](docs/README.md) · [快速开始](#用-npm-开始) · [Bench 指南](benches/README.md) · [指标协议](docs/reference/metrics.md) · [评测报告](docs/reference/evaluation-reports.md)
 
 </div>
 
@@ -220,7 +220,7 @@ node ./exports/my-run/reproduce.mjs
 
 [可迁移回放](docs/reference/evaluation-reports.md)验证保存的观察并执行可信本地 verifier，不调用模型。[固定输入](docs/guides/experiment-workflow.md#read-share-and-reproduce)保留原 case 与目标。[中断处理](docs/guides/experiment-workflow.md#read-share-and-reproduce)保留可用花费，未知用量仍为未知。
 
-0.13.0 增加显式的[归档恢复工具](docs/maintainers/archive-delivery.md)：按固定版本下载一次，之后离线回放历史研究记录。Git 原件和冻结报告继续保留；正常安装和 CLI 命令不会下载归档。
+当前源码把任务输入放在 benches，把生成的观测放在显式运行目录。报告、导出和回放使用这些运行记录；旧研究文件留在固定 Git 提交中，不再作为发布前提。
 
 ## 可选择的 Codex 配置
 
@@ -280,7 +280,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 这些是所记录任务上的结果，不是对所有工作流声称的检验。回归测试产物不能证明过程顺序，0.00pp 也不能排除未测量的过程效应。基线饱和限制已观察到的质量提升空间，但完整成本且无已观察回归时，不会自动排除该任务的效率比较价值。
 
-参见[证据总索引](evidence/README.md)与[已归档调试研究](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)，了解各日期报告的范围和可用记录。这些作者运行记录不能建立第三方独立真实复现；离线 replay 验证的是已保存观测。
+参见[原始研究记录](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md)与[已归档调试研究](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)，了解各日期报告的范围和可用记录。这些作者运行记录不能建立第三方独立真实复现；离线 replay 验证的是已保存观测。
 
 ## 设计原则
 
@@ -297,7 +297,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 参见[当前工作计划](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md)、[更新记录](CHANGELOG.md)和[发布流程](docs/maintainers/releases.md)。
 
-当前适配器与 trigger 的验证边界见[能力表](docs/guides/experiment-workflow.md#executor-capabilities)，实施待办见当前工作计划。后续工作包括真实环境验证和增加 Agent 适配器。[证据总索引](evidence/README.md)与[调试研究状态](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)保留当前结论的限制。67 个 Skill 的目录和 13 个 Skill 的入门集均未作为集合评测。
+当前适配器与 trigger 的验证边界见[能力表](docs/guides/experiment-workflow.md#executor-capabilities)，实施待办见当前工作计划。后续工作包括真实环境验证和增加 Agent 适配器。[原始研究记录](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md)与[调试研究状态](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)保留当前结论的限制。67 个 Skill 的目录和 13 个 Skill 的入门集均未作为集合评测。
 
 ## 贡献
 

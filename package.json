@@ -20,7 +20,6 @@
     "dist/harness/bench-location.test.js",
     "benches",
     "docs",
-    "evidence",
     "profiles",
     "skills",
     "tools/verify/recipes/*.mjs",

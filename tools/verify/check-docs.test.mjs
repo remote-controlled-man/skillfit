@@ -209,7 +209,7 @@ test('deleted pages require an exact archived tree and migrated live links', t =
   writeFileSync(policyFile, JSON.stringify(policy)); rmSync(join(f.root, path));
   const options = { baseline, changes: [{ path, status: 'D' }], previousDocuments: new Map([[path, '# History\n']]) };
   assert.match(checkDocumentation(f.root, options).errors.join('\n'), /old path removed/);
-  const archive = join(f.root, 'docs/maintainers/archive-delivery.md');
+  const archive = join(f.root, 'docs/README.md');
   writeFileSync(archive, readFileSync(archive, 'utf8') + `\n[History](https://github.com/remote-controlled-man/skillfit/tree/${baseline}/docs).\n`);
   const passed = checkDocumentation(f.root, options); assert.deepEqual(passed.errors, []);
   assert.equal(passed.anchorMigrations[0].status, 'archived');
@@ -226,16 +226,17 @@ test('repository admission rejects flat pages, extra plans, executable docs and 
   }
   const errors = inspectRepositoryLayout(root);
   assert.equal(errors.length, 4);
-  for (const fragment of ['flat', 'sole current plan', 'executable', 'on-demand history']) assert.ok(errors.some(error => error.includes(fragment)), fragment);
+  for (const fragment of ['flat', 'sole current plan', 'executable', 'retired evidence tree']) assert.ok(errors.some(error => error.includes(fragment)), fragment);
 });
 
-test('admission accepts owned topics, schema inputs and compact history entries without following aliases', t => {
+test('admission accepts owned topics and schema inputs without following aliases', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-layout-valid-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  for (const file of ['docs/README.md', 'docs/work/current.md', 'docs/guides/task.md', 'docs/schemas/example.json', 'evidence/README.md']) {
+  for (const file of ['docs/README.md', 'docs/work/current.md', 'docs/guides/task.md', 'docs/schemas/example.json']) {
     mkdirSync(join(root, file, '..'), { recursive: true }); writeFileSync(join(root, file), 'owned');
   }
   assert.deepEqual(inspectRepositoryLayout(root), []);
+  mkdirSync(join(root, 'evidence'));
   symlinkSync(join(root, 'docs'), join(root, 'evidence/alias'), 'dir');
   assert.ok(inspectRepositoryLayout(root).some(error => /alias/.test(error)));
 });

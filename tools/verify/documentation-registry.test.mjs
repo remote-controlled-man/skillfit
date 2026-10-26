@@ -95,7 +95,7 @@ test('replacement cycles, overlapping exclusions and unsafe source references fa
   delete f.policy.documents[0].supersededBy; f.save();
   assert.deepEqual(inspectDocumentationRegistry(f.root).errors, []);
   f.put('docs/data/a.md', '# Input');
-  f.policy.exclusions = ['docs/data/', 'docs/data/a.md'].map(path => ({ path, reason: 'data', owner: 'evidence', verification: 'archive-integrity' })); f.save();
+  f.policy.exclusions = ['docs/data/', 'docs/data/a.md'].map(path => ({ path, reason: 'data', owner: 'evidence', verification: 'docs-links' })); f.save();
   assert.match(inspectDocumentationRegistry(f.root).errors.join('\n'), /overlapping exclusion/);
 });
 
@@ -112,7 +112,7 @@ test('aliases cannot expose excluded frozen inputs or a non-document source root
   for (const target of ['docs/data', 'evidence/artifacts', 'src']) for (const registered of [false, true]) {
     const f = fixture(t);
     f.put(target + '/README.md', '# Private\n');
-    if (target !== 'src') f.policy.exclusions.push({ path: target + '/', reason: 'Frozen input', owner: 'evidence', verification: 'archive-integrity' });
+    if (target !== 'src') f.policy.exclusions.push({ path: target + '/', reason: 'Frozen input', owner: 'evidence', verification: 'docs-links' });
     symlinkSync(join(f.root, target), join(f.root, 'docs/alias'), 'junction');
     if (registered) {
       const alias = { ...structuredClone(f.policy.documents[0]), path: 'docs/alias/README.md' };

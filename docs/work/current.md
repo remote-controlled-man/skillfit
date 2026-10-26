@@ -1,147 +1,145 @@
 # Current work
 
-<a id="当前执行状态"></a>
-
 ## Status
 
-- Baseline: local main `4ec83672b69799bc62613c381f6b12ba8f3f3068`, package 0.13.1,
-  plus the 18 locally verified C1–C5 changes; preserve that working input.
-- Current task: N1–N5 and D1–D3 complete; authorized branch delivery verified.
-- Delivery: the user explicitly authorized current HEAD to
-  `origin/codex/docs-framework-architecture`. No PR, remote CI, publication,
-  live model calls or actual user-configuration writes. Use `[skip ci]`.
-  Reviewed source: ad7ce4c07d39526044cb9254ecfb1ea623697247.
-  Authorized HEAD 7dff42c2ababbdb93d9ab1bb34bf349599921232 was pushed and
-  independently matched with the remote ref. Main remains protected and unchanged.
+- Baseline: clean local `main` at 5696bfa32cf28a5fc11d8d5da237f5d070a3cf17;
+  previous architecture work was delivered to `origin/codex/docs-framework-architecture`.
+- Current task: remove unused repository archive machinery and clarify Bench/input,
+  run/output and release-proof ownership using evidence from mature projects.
+- Progress: P1–P5 and Q1 complete; Q2 commit in progress.
+- Delivery scope: the user now authorizes review, commit and push to
+  `origin/codex/docs-framework-architecture`, followed by exact remote-ref verification.
+  No PR, remote CI, publication, model calls or actual user-configuration writes.
+  Commits use `[skip ci]`; do not push main or change branch protection.
 
 ## Execution order and acceptance
 
-| Order | Work / dependency | Status | Acceptance / actual verification |
+| Order | Work / dependency | Status | Verification / result |
 | --- | --- | --- | --- |
-| N1 | Topic ownership, version baseline and plan review | Complete | One authority per topic; release-process points to releases. Keep one plan; preserve prior verification summary and pinned history. Review all reader/export/launcher and doc/schema/Skill consumers before edits; no unresolved contract choice. |
-| N2 | Rewrite existing docs around reader tasks; after N1 | Complete | 12 docs pages: index 1, guides 4, reference 3, maintenance 3, plan 1. Merge controls into Bench guide, rules/MCP into workflow, claims into existing Bench format. Keep schema/example inputs and statistics meaning. Migrate every current link, registry/package/test/Skill consumer; removed docs stay at fixed Git source. Run baseline anchor/link gate and execute the source onboarding's complete offline loop. |
-| N3 | Records format/version ownership; after N2 | Complete | One Records-owned type/version and replay-capability contract used by readers, exporters, portable validation and generated launcher. Keep paired/single-arm audits distinct and legacy inference explicit. Unsupported explicit versions/types refuse; legacy absence keeps original meaning. First add failing caller/compatibility regressions, then build, relevant replay/audit/export suites and architecture gate. No format bump or historical byte rewrite. |
-| N4 | Derive deterministic CLI reference facts; after N3 | Complete | Existing help text/option declarations have an owned source; derive the repetitive option summary in an existing reference page and check drift locally. Preserve text help bytes, parse behavior, entry-specific defaults and confirmations. No generic parser/schema platform or new maintained page. Verify real help, documentation derivation and installed examples. |
-| N5 | Integrated review and local acceptance; after N4 | Complete | Review final changes plus retained C1–C5 inputs. Run full npm test, architecture/docs gates, actual offline npm install/bin/Skill/docs, source tutorial and five portable replays. Freshly restore/hash 19 archives + 1,583 support files. Reuse frozen replay proofs only after exact closure/log-digest validation; otherwise rerun affected frozen recipes. Record final evidence and limits here. |
+| P1 | Consumer audit, external research and plan review | Complete | `src/` does not consume the repository archive catalog/restorer. Release, packaging and dedicated historical tests keep it alive. Compared primary Promptfoo, Inspect and SWE-bench sources below. Separate actual product replay from obsolete repository restoration before deleting anything. |
+| P2 | Release acceptance and proof compatibility; after P1 | Complete | New releases require exactly install/documents/examples/features/provenance/signatures. Add a failing public regression, then preserve read-only verification of complete older eight-stage standalone bundles and refuse partial/unknown protocols. Remove repository receipt import and its tests; keep release-upload recovery. |
+| P3 | Remove archive infrastructure and all consumers; after P2 | Complete | Delete `evidence/`, `tools/history/`, archive guide and archive-only recipes/tests. Remove historical-object fetches from CI and archive requirements from npm packaging. Keep ordinary tarball inspection, offline install, current report/export/portable replay, provenance and signatures. No fixed Git commit or published package is rewritten. |
+| P4 | Bench and documentation ownership; after P3 | Complete | Retain reusable inputs and real regression fixtures with their licenses. Bench manifest remains the only executable task index; preserve schema 1/2. Explain input layout, dataset admission, output locations and removal rules in existing Bench/architecture guides. Catalog distinguishes reusable cases from diagnostic controls; remove dated study/recovery instructions. Migrate links, Skill, registry, package policy and AGENTS together. Docs index provides the fixed-source link for retired pages. |
+| P5 | Integrated review and final local acceptance; after P4 | Complete | One OCR-guided review covering final code, tests, docs and deleted callers. Full `npm test`; architecture/docs/link gates against the exact baseline; offline contributed bench checks. Actual npm pack/install and five current portable replays through the installed feature recipe; check current report/export and Skill docs. Record actual counts, package size and any unresolved limitation here. |
 
-## Final review and delivery
+## Delivery review and progress
 
-| Order | Work / dependency | Status | Verification |
+| Order | Work / dependency | Status | Verification / result |
 | --- | --- | --- | --- |
-| D1 | Reconcile all 52 final paths, review contracts/consumers and historical proofs | Complete | 52/52 accounted; no remaining finding. Fresh npm test: 1,099 pass, zero fail/skip; 159 architecture modules, zero violations; 36 docs entries, zero errors. Fresh installed feature checks: 31 regressions + five portable replays. Fresh offline restore: 19 archives + 1,583 support hashes; reuse 18 frozen replays + one export-hash result after closure/38-log verification. |
-| D2 | Update this plan and commit reviewed inputs; after D1 | Complete | Local reviewed commit uses `[skip ci]`. EOF blank line caught by staged check was removed before push; final npm test again passed 1,099/1,099. Built/shipped bytes remain identical to the accepted installation. Final staged hashes/diff validated before committing. |
-| D3 | Push authorized branch and verify remote; after D2 | Complete | Explicit authorization resolved the earlier alternate-target rejection. Pushed original HEAD 7dff42c2ababbdb93d9ab1bb34bf349599921232 to origin/codex/docs-framework-architecture; independent ls-remote matched exactly. Main remains 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. No PR, remote CI or protection change. This follow-up changes only plan status; prior code/evidence/replay acceptance remains valid. |
+| Q1 | Reconcile final inputs, review consumers and verify install/replay | Complete | Confirm all 65 task paths against P5 hashes, including the seven untracked fixture moves. Reconcile the integrated review with current requirements; fill any uncovered consumer. Run the required full offline suite before committing. Verify retained install/replay receipts against exact package/source/log bytes; rerun only when inputs or proof are unavailable/changed. |
+| Q2 | Commit reviewed source and updated plan; after Q1 | In progress | Stage only the reviewed task paths, check staged whitespace/content hashes and include `[skip ci]`. Preserve unrelated work. |
+| Q3 | Push authorized branch and confirm remote; after Q2 | Pending | Normal fast-forward push HEAD to origin/codex/docs-framework-architecture; independently compare remote SHA with local HEAD. No PR or remote CI. Record actual result here. |
 
-D1 delivery evidence: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-final-delivery-07jg84r5/. Current runtime/source payload is
-byte-identical to N5; full local tests and installed features/archive restoration
-were freshly executed here. Prior identical review inputs were reused while
-checking consumers against this delivery request; this was one integrated local
-review, not an independent reviewer. Effective remote main rules still require
-a PR and three OS checks; remote main was 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850.
-Do not weaken protection or start CI to satisfy a rejected push.
+## Decisions and research
 
-## Decisions and safety
+Keep a single modular CLI. Four distinct artifacts have different consumers:
+reusable Bench inputs are versioned with their graders; completed runs preserve sealed
+local observations under ignored `runs/<group>/`; exports/replay packages are
+explicit user-selected deliveries; release receipts belong to an external
+workflow artifact. There is no fifth, automatically accumulated repository
+`evidence` lifecycle. Future changes must name a real consumer before adding a
+new retained artifact or mandatory gate.
 
-Choose the single-package modular CLI and existing documentation/tool owners.
-Renaming folders alone leaves mixed purposes and duplicated facts; adding a docs
-site, package split or plugin registry creates work without serving this task.
-Rewrite the retained pages and migrate their consumers together. Twelve pages is
-this change's scope, not a permanent quality rule. New independent recurring
-tasks may justify pages through the existing ownership/admission policy.
+Primary comparisons (reviewed 2026-10-26):
 
-The source documentation targets the current build. docs/README owns the single
-version entry and links the fixed published 0.13.1 documentation. A source-only
-example must say so before commands; npm pins retain their released meanings.
-Tutorials show one complete observable workflow, guides solve tasks, references
-own fields/constraints and architecture explains current ownership/decisions.
+- [Promptfoo tests](https://www.promptfoo.dev/docs/configuration/test-cases/)
+  separate reusable case/assertion configuration from
+  [explicit generated outputs](https://www.promptfoo.dev/docs/configuration/outputs/).
+- [Inspect tasks](https://inspect.aisi.org.uk/tasks.html) own dataset/solver/scorer;
+  [evaluation logs](https://inspect.aisi.org.uk/eval-logs.html) go to a configurable
+  run-log directory rather than becoming task definitions.
+- [SWE-bench harness](https://www.swebench.com/SWE-bench/reference/harness/)
+  consumes datasets/predictions; its separate
+  [experiments repository](https://github.com/SWE-bench/experiments) has submission
+  metadata with real leaderboard consumers and externally hosted bulky artifacts.
 
-Records owns format identification; Application coordinates copying and use cases.
-Keep legacy missing fields distinct from unsupported explicit versions. One
-compatibility table does not unify statistics or rewrite JSON. New launchers may
-carry the selected type, while historical launchers and runtimes remain unchanged.
-Unknown versions failing silently, invented complete costs, changed hashes or a
-missing replay entry stop the slice at the first mismatch until fixed.
+Our choice is an inference from those boundaries, not a claim that every project
+uses one physical layout. Do not copy their provider/plugin/storage platforms.
+Changing JSON/YAML syntax or renaming every fixture would not remove our unused
+archive lifecycle. Keep existing compatible manifest paths and offline fixtures;
+clarify authoring and artifact ownership instead. No new schema or dependency.
 
-CLI reference generation is limited to deterministic facts already owned by the
-CLI. Do not infer arbitrary semantic validation from TypeScript, erase different
-entry defaults or introduce a universal context. Configuration planning stays
-deferred until a real new caller needs it. No new product experiments are part
-of this architecture task.
+The user now explicitly requests archive removal, superseding earlier requirements
+to ship the catalog/restorer and rerun all repository historical procedures.
+Published evidence remains unchanged in fixed Git history. Current saved-result
+readers and portable replay remain required; legacy repository import is retired.
+Complete old standalone release bundles remain read-only verifiable. Reject
+unknown/partial proof protocols; do not reinterpret failed checks as passed.
 
-Risks: merged guides can become pasted encyclopedias (rewrite around a main
-workflow and link exact contracts); type dispatch can erase legacy behavior
-(test explicit/absent/conflicting formats through public readers and export);
-derivation can become a second authority (one-way generation with a failing
-drift check). Preserve unrelated work; roll back only owned local changes.
+Plan review: deletion follows every known consumer, including Skill instructions,
+package rules and document anchor migration. Main risks are confusing npm tarballs
+with obsolete history, invalidating old standalone receipts, and deleting fixture
+inputs used by current offline regressions. P2 tests and P5 installed acceptance
+cover these seams. No unresolved material design choice blocks implementation.
 
 ## Verification
 
-N1: reviewed the 15-page inventory, source/published version evidence, all current
-reader/export/descriptor/launcher dispatch sites, doc/package/Skill consumers and
-existing anchor/archive checks. The 0.13.1 publication record binds original
-source 4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6; the docs entry now links that
-immutable baseline. release-process canonical now matches the release guide.
-Documentation gate passed 39 entries. Plan scope, alternatives and failure gates
-reviewed with no unresolved choice before N2. Update these notes per slice.
+P3–P4: deleted the catalog/restorer, historical tools, archive guide and archive-only
+recipes/tests; removed all three CI historical-object fetches and npm requirements.
+Current product report/export/replay code is unchanged. Seven genuinely consumed
+fixtures moved by owner with identical bytes; the unused budget ledger was deleted.
+Bench format/catalog and existing architecture/release/Skill entry points now
+separate inputs, diagnostics, run outputs and delivery proofs. No new maintained
+page or schema. Documentation gate: 34 entries, zero errors against 5696bfa,
+171 old headings/paths accounted. The two fixture-only failures caused by the
+removed archive check ID were fixed; all 51 focused checks then passed.
 
-N2: 15 → 12 docs pages. Controls, rules/MCP and claims merged into their existing
-canonical task/format owners; current links, package/release checks, Skill and
-registry consumers migrated. Gate: 36 registered entries, no errors, old anchors
-compared to 4ec83672. All 42 focused documentation checks passed. Built-source
-tutorial preview/confirmation/report/export/reproduce passed in a fresh temporary
-workspace with zero model calls; original synthetic verdict and unknown usage
-retained. Artifacts: /private/tmp/skillfit-iteration-jfygeuec/.
+P2: new-standalone-proof regression failed first (schema 2 vs expected 3), then passed.
+Ten release-acceptance checks pass: exact six-stage generation, old complete
+eight-stage read-only verification, incomplete/mismatched/unknown refusal and
+failed/interrupted upload recovery. Manifest remains standalone schema 3; its
+verification protocol distinguishes old v2/eight stages from new v3/six stages.
+Repository import removed; no historical receipt bytes were changed.
 
-N3: Records now owns supported saved versions/type inference and original-runtime
-replay requirements. Reader/export/portable validation and generated launcher use
-the same dependency-free contract; paired/single-arm audits remain separate.
-A public regression first failed because a future artifact index was accepted,
-then passed after refusal was implemented. 98 focused report/export/session
-checks passed, including old absent descriptor types, partial legacy plans,
-unknown native/portable types and future index versions. Architecture: 158
-modules, zero violations/exceptions. No persisted format bump or archived rewrite.
+P1: clean baseline confirmed. Read-only consumer audit covered source, release,
+CI, package policy, documentation registry, Skill and bench test dependencies.
+No production runtime imports the deleted facilities. Keep the versioned
+0.11.0 installed feature recipe: it is still called and hash-pinned by current
+feature acceptance. Preserve real provenance and regression fixtures even where
+their folder is currently named history. No live experiment was run.
 
-N4: Help/options now share the CLI-owned definition module. Deterministic rows
-in the existing component reference are generated one-way; missing declarations,
-ambiguous markers or drift fail local tests. Real --help output matched the
-pre-move bytes exactly. All 29 focused CLI/reference checks passed. Architecture:
-159 modules, zero violations/exceptions; documentation gate: 36 entries, no
-errors against the original anchor/path baseline.
 
-N5: one integrated OCR-guided local review covered final code, tests, docs and
-policy/package consumers, including filtered files. Fifteen byte-identical C1–C5
-files retained their prior review; changed dependencies were inspected here.
-Review fixed partial legacy calibration plans incorrectly acquiring paired mode,
-malformed explicit summary modes being coerced, and stale contribution/link copy.
-Both compatibility failures were reproduced before their fixes. No remaining
-known finding in the authorized scope; this is not an independent second review.
+P5 final acceptance (Node 24.21.0 / macOS arm64):
 
-Final verification (Node 24.21.0 / macOS arm64):
+- Integrated OCR-guided review accounted for all 65 paths: 21 selected by OCR and
+  44 filtered docs/tests/deletions/data checked here; zero skipped, no remaining
+  finding. Consumer exploration was delegated; final review was one local review.
+- Full offline `npm test`: 1,065 passed, zero failed/cancelled/skipped, 69.5 seconds.
+  Removed archive-only coverage explains the lower count than the 1,099 baseline.
+  A subsequent registry-order-only cleanup and plan wording change passed all
+  26 affected documentation regressions; no product/runtime input changed.
+- Architecture: 159 modules, zero violations/exceptions. Documentation: 34 entries,
+  zero errors against the exact baseline. All eight contributed benches / 36 tasks
+  passed offline integrity checks. Docs now has 11 maintained pages, no new page.
+- Actual offline npm pack/install/bin and Skill document checks passed: 1,079 files,
+  943,203 compressed / 4,567,018 unpacked bytes (84,251 / 430,082 bytes less than
+  baseline). SHA-256 a4c771c70ef7087138b3502a364511e6a61972f5b2eceb1bb588eb8491973286.
+  Every installed file matches final source; installed feature acceptance passed
+  31 regressions and five portable replays, fake-process success/failure and
+  disposable configuration/bundle checks. Four release entry documents passed.
+- Seven moved fixture files match baseline bytes; no product runtime code changed,
+  no executable reference to a deleted script remains. Diff and final link checks
+  pass. Old complete eight-stage receipts remain read-only verifiable; repository
+  import and historical-study restore/rerun are deliberately retired, not tested
+  as current requirements. Original Git commits and published packages are untouched.
+- Proofs and optional HTML comparison are outside the repository:
+  /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-archive-removal-hbq8f6rg.
+  Zero model calls, real agent CLI calls or actual user-configuration writes.
+  At P5 no new commit, push, PR, remote CI, registry verification or publication occurred.
+  Validation was local on macOS/Node 24; remote OS/Node matrices were not run.
 
-- Full offline suite: 1,099 passed; zero failed, cancelled or skipped.
-- Architecture: 159 modules, zero violations/exceptions. Documentation: 36
-  registered entries, no errors; compare both HEAD and all 39 starting public
-  documents for historical anchors/paths. CLI reference drift and diff checks pass.
-- Final source tutorial passed the complete control preview/confirm, human/JSON
-  read, export/reproduce, fresh command-bench creation/check and real comparison
-  preview. Zero model/real agent CLI calls; synthetic evidence remains ineligible.
-- Actual offline npm pack/install: 1,085 files; 1,027,454 compressed / 4,997,100
-  unpacked bytes; SHA-256
-  fabc014df929e5995cfb3ef9a67ebda00ad3c2cb4307491c64c1942c86b209e6.
-  All installed files matched final source, direct npm binary help matched earlier
-  bytes, Skill/release-document checks and all 31 shipped public doc links passed.
-  Installed feature acceptance passed 31 retained regressions, five portable
-  replays, fake-process success/failure and disposable configuration/bundle checks.
-- Fresh offline restore: all 19 archives + 1,583 support files matched catalog
-  hashes, zero network attempts, collision and preview protections passed.
-  The historical driver/catalog/restorer/recipe closure matched the previously
-  verified inputs and all 38 historical log hashes matched. Reused 18 frozen
-  replays + one export-hash result; those 19 historical procedures were **not
-  rerun**. The earlier intermittent replay limitation remains below.
-- Exact artifacts and review accounting remain outside the repository at
-  /private/tmp/skillfit-iteration-jfygeuec/. At N5 acceptance no commit/push had
-  occurred. Current delivery is tracked in D1–D3 above; no new maintained page,
-  PR, remote CI, registry request, publication or actual user-config write.
+Q1 delivery review: all 65 paths accounted, zero skipped or remaining finding.
+The previous 64 source/data inputs and OCR rules match exactly; reviewed the plan's
+new delivery authorization and rechecked deletion/receipt consumers. Fresh full
+`npm test`: 1,065 passed, zero fail/cancel/skip (71.0 seconds). Fresh acceptance
+using the same hash-verified installed package passed 31 regressions, five portable
+replays and four release-document checks; all 1,079 installed files still match
+current source. Architecture: 159 modules, zero violations; docs: 34 entries,
+zero errors and 171 prior paths/headings accounted. Seven fixture moves retain
+original bytes. Contributed bench input closure is unchanged; P5's eight-bench /
+36-task offline result remains applicable. Proofs: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-cleanup-delivery-tfy8ptfd.
+No real model/agent calls, user-configuration writes, remote CI or PR.
+The authorized remote branch still points to baseline 5696bfa before delivery.
 
 ## Previous verified input
 
@@ -167,15 +165,26 @@ push was rejected because main required PR/status checks. No new delivery is
 implied by this plan. Prior full source plans and receipts remain at the
 [fixed source documentation](https://github.com/remote-controlled-man/skillfit/tree/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs).
 
-## Remaining research
 
-R1 Power/MDE and sampling; R2 independent task collection/validation; R3 bounded
-trajectory measurement; R4 third-party reproduction/live evidence. These remain
-proposals, outside this offline framework change.
+## Previous delivery
 
-<!-- Retained links to earlier sections; current status and evidence are above. -->
+N1–N5 / D1–D3 completed before this task: 1,099 offline tests, 159 architecture
+modules and 36 registered documentation entries passed; installed features passed
+31 regressions and five portable replays. Historical restoration then verified
+19 archives and 1,583 support files. Those are baseline results, not proof for
+this cleanup. Delivery branch and local HEAD matched 5696bfa; remote main remained
+3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. No PR or remote CI was created.
+
+Previous full plan: [fixed source](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/docs/work/current.md).
+
+<!-- Retained inbound anchors. -->
+<a id="当前执行状态"></a>
 <a id="ownership-follow-up--execution-order"></a>
 <a id="previous-cleanup-baseline"></a>
 <a id="framework-follow-up--execution-order"></a>
 <a id="delivery"></a>
 <a id="previous-delivery"></a>
+
+<a id="final-review-and-delivery"></a>
+<a id="decisions-and-safety"></a>
+<a id="remaining-research"></a>
