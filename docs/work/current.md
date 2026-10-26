@@ -10,6 +10,9 @@
   verification complete. R3 integration awaits clarification of the required
   remote route; R2 version preparation and R4 publication remain
   separate proposed work, not prerequisites for this source-only merge.
+- Delivery: reviewed candidate a59848a8ffd12f4403ea91ac04bb10d987c99817 is pushed
+  to origin/codex/docs-framework-architecture; independent remote read matched.
+  Main remains 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. No merge occurred.
 - Scope: existing plan/docs and necessary offline regressions. User authorized
   merging only after successful review/flow validation; no version bump or npm
   publication. No new maintained document, dependency, Calibration refactor, real
@@ -37,7 +40,7 @@
 | M1 | Review actual merge baseline, rules and local CI entry; within R3 | Complete | Main remains 3a3ff4 and delivery branch 3404dcd; no open PR. Rulesets require a PR and windows/ubuntu/macos status checks. Exact-main docs gate currently fails 287 old path/anchor migrations; preserve that failure and fix it before claiming merge readiness. |
 | M2 | Add bounded regression and exact-main snapshot navigation; after M1 | Complete | Existing docs gate must cover representative publication-era retained headings plus retired docs/evidence paths without requiring Git history in tests. Add only fixed snapshot links in existing docs/Bench indexes; preserve all original bytes at 3a3ff4, no restored archive or new page. Full actual-main gate must account for every old path/heading. |
 | M3 | Local equivalent of the CI workflow and installed acceptance; after M2 | Complete locally | Existing full-scope CI entry passed 1,068 tests against exact main; public CLI/Bench steps, fresh installed 31 regressions/five portable replays, 29 installed documents and immutable snapshot targets passed. This is macOS/Node 24 working-tree acceptance, not remote or exact-source CI proof. No model calls. |
-| M4 | Deliver reviewed candidate and resolve required remote route; after M3 | Candidate prepared; branch delivery pending | Commit the four reviewed paths and push only origin/codex/docs-framework-architecture without force; independently verify remote source/main refs. Source-branch push has no CI trigger without a PR. Do not put a CI-skip instruction on this new candidate, which must remain eligible for checks if the route is authorized. Ask once whether the required PR/CI route (including automatic main CI after merge) is allowed; no new PR, remote CI, main mutation or npm publication until clarified. |
+| M4 | Deliver reviewed candidate and resolve required remote route; after M3 | Candidate delivered; merge route pending clarification | Four reviewed paths committed and pushed only to origin/codex/docs-framework-architecture without force; independent source ref matched a59848a and main stayed unchanged. Source-branch push has no CI trigger without a PR. The new candidate has no CI-skip instruction, keeping it eligible for checks if the route is authorized. Asked once whether the required PR/CI route (including automatic main CI after merge) is allowed; no new PR, remote CI, main mutation or npm publication until clarified. |
 
 ## Decisions and limits
 
@@ -129,6 +132,13 @@ preserve npm/demo blocks and bilingual parity, and test the actual installed
 package and portable replays. No acceptance is removed to make a check pass.
 
 ## Verification
+
+M4: source candidate a59848a8ffd12f4403ea91ac04bb10d987c99817 was committed
+after the full local suite and final docs/link/package/diff checks, then pushed
+without force to origin/codex/docs-framework-architecture. Independent ls-remote
+matched the candidate and confirmed main remained at 3a3ff4. This status-only
+follow-up changes no accepted package/runtime byte. The required remote-route
+question is pending; no PR, remote CI, merge or npm publication occurred.
 
 M3 final local acceptance (Node 24.21.0 / macOS arm64):
 
