@@ -6,7 +6,7 @@
   previous architecture work was delivered to `origin/codex/docs-framework-architecture`.
 - Current task: remove unused repository archive machinery and clarify Bench/input,
   run/output and release-proof ownership using evidence from mature projects.
-- Progress: P1–P5 and Q1 complete; Q2 commit in progress.
+- Progress: P1–P5 and Q1–Q3 complete; source delivery independently verified.
 - Delivery scope: the user now authorizes review, commit and push to
   `origin/codex/docs-framework-architecture`, followed by exact remote-ref verification.
   No PR, remote CI, publication, model calls or actual user-configuration writes.
@@ -27,8 +27,8 @@
 | Order | Work / dependency | Status | Verification / result |
 | --- | --- | --- | --- |
 | Q1 | Reconcile final inputs, review consumers and verify install/replay | Complete | Confirm all 65 task paths against P5 hashes, including the seven untracked fixture moves. Reconcile the integrated review with current requirements; fill any uncovered consumer. Run the required full offline suite before committing. Verify retained install/replay receipts against exact package/source/log bytes; rerun only when inputs or proof are unavailable/changed. |
-| Q2 | Commit reviewed source and updated plan; after Q1 | In progress | Stage only the reviewed task paths, check staged whitespace/content hashes and include `[skip ci]`. Preserve unrelated work. |
-| Q3 | Push authorized branch and confirm remote; after Q2 | Pending | Normal fast-forward push HEAD to origin/codex/docs-framework-architecture; independently compare remote SHA with local HEAD. No PR or remote CI. Record actual result here. |
+| Q2 | Commit reviewed source and updated plan; after Q1 | Complete | Committed reviewed source b16d1917753b5b01704382880d1bf1b3bac7b780 with `[skip ci]`; all 65 staged path/content checks and whitespace checks passed. Seven fixture moves were recognized as byte-identical renames; working tree clean after commit. |
+| Q3 | Push authorized branch and confirm remote; after Q2 | Complete | Normal fast-forward push to origin/codex/docs-framework-architecture succeeded; independent ls-remote matched b16d1917753b5b01704382880d1bf1b3bac7b780 exactly. No PR or remote CI. This follow-up synchronizes only the verified plan status on the same branch with `[skip ci]`. |
 
 ## Decisions and research
 
@@ -140,6 +140,12 @@ original bytes. Contributed bench input closure is unchanged; P5's eight-bench /
 36-task offline result remains applicable. Proofs: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-cleanup-delivery-tfy8ptfd.
 No real model/agent calls, user-configuration writes, remote CI or PR.
 The authorized remote branch still points to baseline 5696bfa before delivery.
+
+Q2–Q3 delivery: reviewed source b16d1917753b5b01704382880d1bf1b3bac7b780 is committed and
+independently verified at the authorized remote branch. No force push, main push,
+protection change, PR, remote CI or publication. This follow-up changes only the
+plan; accepted package/runtime bytes and all Q1 results remain unchanged. Final
+status synchronization uses the same branch and is checked by remote SHA after push.
 
 ## Previous verified input
 
