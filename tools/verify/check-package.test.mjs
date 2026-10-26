@@ -56,10 +56,14 @@ test('actual offline npm package matches the reviewed inventory and active runti
   });
   assert.equal(extracted.status, 0, `${extracted.error ?? ''}\n${extracted.stderr}`);
   const consumer = join(cache, 'consumer');
+  // Allow cold filesystem installation on Windows; this bounds the test, not product execution.
+  const installTimeout = process.platform === 'win32' ? 120_000 : 60_000;
+  const installStarted = performance.now();
   const installation = spawnSync('npm', ['install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', consumer, join(cache, entries[0].filename)], {
-    encoding: 'utf8', timeout: 60_000, shell: process.platform === 'win32',
+    encoding: 'utf8', timeout: installTimeout, shell: process.platform === 'win32',
     env: { ...process.env, npm_config_cache: cache, npm_config_update_notifier: 'false' },
   });
+  t.diagnostic(`Offline npm install: ${Math.round(performance.now() - installStarted)} ms; limit ${installTimeout} ms.`);
   assert.equal(installation.status, 0, `${installation.error ?? ''}\n${installation.stderr}`);
   const binary = join(consumer, 'node_modules/.bin', process.platform === 'win32' ? 'skillfit.cmd' : 'skillfit');
   const binaryHelp = spawnSync(binary, ['--help'], { encoding: 'utf8', timeout: 30_000, shell: process.platform === 'win32' });
