@@ -2,7 +2,7 @@
 
 ## Status
 
-- Current task: D1–D5 complete locally; D6 authorized branch delivery in progress.
+- Current task: D1–D6 complete: reviewed payload df2d6eb is pushed and remotely verified.
   The user authorized committing and pushing the existing documentation changes. Improve the
   existing README, AGENTS and contribution entry points for users and contributors.
   GitHub's README guidance, the official AGENTS format and uv/Ruff entry documents
@@ -34,7 +34,7 @@
 | D3 | Clarify project-specific agent guidance; after D2 | Complete | Keep commands runnable from the repository root and ownership concise with the architecture link. Preserve skillfit-driver routing, offline tests, zero runtime dependencies, CLI/bilingual conventions, writer backups/rollback, private lab protection, immutable observations and current replay. Retain all previous heading anchors; add no generic approval or agent-specific tooling mandate. |
 | D4 | One integrated final review and local acceptance; after D3 | Complete locally | Account for all five paths, review instruction changes against baseline and verify bilingual blocks/badges/headings, original snapshots and anchor migration. Execute new contributor commands and existing docs/entry checks; fresh offline pack/install and installed recipe must preserve installation and five portable replays. Record actual results and limits here; leave edits local. |
 | D5 | Recheck final inputs and pre-commit validation; after D4 | Complete | Compare all five content hashes with D4, reuse the integrated review only for unchanged inputs and inspect this plan follow-up. Preserve installed 31-regression/five-replay proof only when every packaged byte still matches. Run npm test once with loopback listening allowed, retain docs/anchors/version/diff checks and record actual results. |
-| D6 | Commit and push the reviewed documents; after D5 | In progress | Confirm the remote branch is still the expected baseline and has no open PR; check workflow triggers. Commit only the six planned paths with [skip ci], push non-force to origin/codex/docs-framework-architecture, and independently compare remote/local HEAD and unchanged main. Record delivery in this sole plan with a status-only follow-up; verify its final ref in the handoff. No new PR or remote CI. |
+| D6 | Commit and push the reviewed documents; after D5 | Complete; payload df2d6eb verified | Confirm the remote branch is still the expected baseline and has no open PR; check workflow triggers. Commit only the six planned paths with [skip ci], push non-force to origin/codex/docs-framework-architecture, and independently compare remote/local HEAD and unchanged main. Record delivery in this sole plan with a status-only follow-up; verify its final ref in the handoff. No new PR or remote CI. |
 | W1 | Reconcile audit findings, consumers and plan | Complete | Reviewed the 11 docs pages, release workflow inputs/order, existing output guards, session sealing and export inventory. Use current owners and commands; keep cleanup a documented explicit manual operation. No unresolved contract choice requires a new mechanism. |
 | W2 | Correct document purpose and release manual; after W1 | Complete | Remove obsolete page-count/restoration assertions. Correct reference/how-to registry kinds. Keep one operation authority: workflow for steps, reports for saved fields, metrics for statistical meaning. Complete the existing release page with main/source-CI gate, reviewed preview ID/attempt, original tarball promotion, one upload, acceptance, receipt delivery and failure recovery. Validate instructions against current workflow/tools offline; do not dispatch them. Preserve old headings/anchors and frozen statistical meaning. |
 | W3 | Implement workflow and data-handling rules in existing guides; after W2 | Complete | Explain design→offline gates→separate development/calibration→fixed validation/preview→execution→sealed read/analysis→optional delivery→retention/cleanup. Use an ignored outer study workspace with unchanged native batch layout. Separate memory-only values, observed facts and derived metrics. Declare consumers, provenance/unknowns and manual cleanup conditions; protect active/referenced batches and every indexed native file. Clarify custom analysis is not automatically exported and retention intent is separate from native completion status. Link concise rules from architecture/Bench/Skill instead of duplicating them. |
@@ -146,7 +146,18 @@ issue-form rules. No unresolved finding remains. Final docs gate remains 34
 registered files/zero errors, with all 73 old anchors/paths preserved. All 1,079
 packaged files still match D4's actual installation, retaining its 31 regressions
 and five portable replays. Product, fixtures, receipts and native replay bytes
-are unchanged. D6 commit/push and independent remote verification remain pending.
+are unchanged.
+
+D6 delivered: committed exactly the six reviewed paths as
+`df2d6ebab870f6a4cbaedb7810fc4e0fb6eeb04d` with [skip ci] and pushed non-force
+to origin/codex/docs-framework-architecture. Independent git ls-remote returned
+that exact commit. Main stayed at 655bccaa384bbc3d0dc5602e76efa63968272ece.
+No PR was created and no remote workflow was dispatched. This status-only
+follow-up changes this plan alone; the final status ref and absence of new CI
+runs are checked in the handoff. Installation/replay and final package-byte
+proofs still apply because none of their inputs changed. No additional full
+suite is needed for a status-only plan update; the pre-commit suite and final
+docs/diff checks are retained.
 
 Reference guidance: [GitHub README](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes),
 [official AGENTS format](https://agents.md/),
