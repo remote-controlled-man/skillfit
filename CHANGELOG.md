@@ -342,7 +342,7 @@
   compact v1 and v2 comparison evidence, including failed recovery stages. Track the
   frozen compiled replay files so a clean checkout can reproduce saved outcomes.
   See the [experiment handoff](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/plans/2026-10-13-skill-experiment-cleanup.md) and
-  [script navigation](https://github.com/remote-controlled-man/skillfit/blob/main/tools/README.md). This work does not implement automatic
+  [script navigation](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/tools/README.md). This work does not implement automatic
   Skill evolution or an adoption gate; statistical verdict semantics are unchanged.
 
 ## 0.9.0 details — Streamable HTTP MCP preflight

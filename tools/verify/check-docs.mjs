@@ -31,6 +31,19 @@ export function inspectDocumentation(root = ROOT, files = documentationFiles(roo
       errors.push(`${file}: source leaves the public documentation scope`); continue;
     }
     for (const { target, line } of markdownLinks(readFileSync(source, 'utf8'))) {
+      // Source-sensitive references must not change version when main or a tag moves.
+      // Keep this offline: immutable historical targets are not fetched or reinterpreted.
+      const repository = /^(?:https?:)?\/\/github\.com\/remote-controlled-man\/skillfit\/(?:blob|tree)\/([^?#]+)/i.exec(target);
+      if (repository) {
+        let parts;
+        try { parts = decodeURIComponent(repository[1]).split('/'); }
+        catch { errors.push(`${file}:${line}: invalid URL encoding: ${target}`); continue; }
+        const [revision, ...path] = parts;
+        if (path.some(part => /^(?:docs|benches|src|tools|\.github)$/.test(part)) &&
+            !/^[a-f0-9]{40}$/i.test(revision)) {
+          errors.push(`${file}:${line}: version-sensitive repository link needs a full commit; use a relative link only when both files ship together: ${target}`);
+        }
+      }
       if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(target)) continue;
       let decoded;
       try { decoded = decodeURIComponent(target); }

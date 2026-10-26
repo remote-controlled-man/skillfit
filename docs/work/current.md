@@ -2,17 +2,17 @@
 
 ## Status
 
-- Baseline: clean local `main` at e0baacb49981349a145b4ddb0477e7d82da3255d;
-  this HEAD was verified at `origin/codex/docs-framework-architecture`.
-- Current task: correct existing documentation and release instructions, then
-  make experiment workflow, process-data placement, retention and cleanup explicit.
-- Progress: W1–W5 complete; reviewed source committed, pushed and independently
-  verified at the authorized branch. This follow-up records the verified status.
-- Scope: existing documents and their current registry metadata. No new maintained
-  document, dependency, registry, runtime format, cleanup command or telemetry
-  framework. No PR, remote CI, publication, model/agent calls, actual configuration
-  writes or deletion of existing runs. The follow-up authorizes commit and push
-  only to `origin/codex/docs-framework-architecture`, with no PR or remote CI.
+- Baseline: clean local `main` at ed5eaff7d222de1c73874ce022785fbe89291017;
+  the previously authorized delivery branch was independently verified at this HEAD.
+- Current task: fix version-sensitive documentation links and build/version entry
+  instructions, with small offline regression checks in the existing doc gates.
+- Progress: W1–W5 complete (previous delivery); L1–L4 complete; L5 review/local acceptance complete; commit/push pending.
+- Scope: existing documents and documentation checks/tests only. No maintained
+  document, dependency, crawler, URL registry, runtime format or version bump.
+  Calibration, real experiments and runtime/configuration behavior stay unchanged.
+  No PR, remote CI, model/agent call, publication or actual user-configuration
+  write. The current follow-up authorizes commit/push only to
+  `origin/codex/docs-framework-architecture`, without force, PR or remote CI.
 
 ## Execution order and acceptance
 
@@ -23,8 +23,33 @@
 | W3 | Implement workflow and data-handling rules in existing guides; after W2 | Complete | Explain design→offline gates→separate development/calibration→fixed validation/preview→execution→sealed read/analysis→optional delivery→retention/cleanup. Use an ignored outer study workspace with unchanged native batch layout. Separate memory-only values, observed facts and derived metrics. Declare consumers, provenance/unknowns and manual cleanup conditions; protect active/referenced batches and every indexed native file. Clarify custom analysis is not automatically exported and retention intent is separate from native completion status. Link concise rules from architecture/Bench/Skill instead of duplicating them. |
 | W4 | Integrated review, runnable example and installed acceptance; after W3 | Complete | Review every final path plus metadata, source facts and links against exact baseline. Run existing docs/release/CLI-reference checks. Execute the complete zero-model tutorial in a fresh temporary outer workspace; derive output outside sealed runs and verify unchanged native bytes/export after analysis. Actual offline npm pack/install/bin/Skill/docs and installed feature recipe must pass 31 regressions and five portable replays. Confirm runtime/manifest/tool behavior unchanged. Full npm test only if code/build behavior changes; otherwise reuse the exact HEAD suite (1,065 pass) and execute affected checks. Record actual results and limits below. |
 | W5 | Final review and authorized branch delivery; after W4 | Complete | Freeze/review all 12 modified paths, confirm exact installed acceptance inputs, run `npm test` before committing plus final docs/link/diff checks. Preserve installation and moved replay, use `[skip ci]`, push only the named branch without force, and verify the remote commit equals local HEAD. Update this plan with actual proof and delivery status. |
+| L1 | Resolve distribution/link rules and review this plan; after W5 | Complete | Account for repository pages, source-only plan/tooling, standalone Skill and npm documents. Use relative links only when the target ships together; otherwise use an existing reviewed commit containing the described source. Keep published npm instructions distinct. No new release or branch mutation. |
+| L2 | Reproduce and close the offline check gap; after L1 | Complete | Add a failing regression through existing documentation checks: version-sensitive same-repository blob/tree links cannot silently follow main, a tag or another moving ref. Permit full commit snapshots and unrelated external/live policy links. Retain relative file/anchor checks and offline/shallow-checkout operation; no Git-history fetch or network crawler. |
+| L3 | Correct current links and build/version entrances; after L2 | Complete | Keep together-shipped links relative; pin standalone Skill/source-only references to the already delivered ed5eaff snapshot. Replace misleading current-plan URLs with the explicit source-only path, since the plan does not ship in npm. Make published/current-source entrances explicit in existing README/Skill/docs/release pages; keep bilingual blocks identical, add an explicit reviewed checkout to the source quickstart, and preserve historical/npm command blocks, links, command pins and feature minimums. |
+| L4 | Final integrated review and local installation/replay acceptance; after L3 | Complete | Run full offline npm test, final docs/anchors and package checks. Actual fresh npm pack/install, bin/Skill/doc links and installed feature recipe must pass 31 regressions/five portable replays. Verify source-only targets remain excluded and no absolute main link bypasses the new check; inspect final inputs, preserve native bytes, and update this plan. No remote CI, PR or publication. |
+| L5 | Review exact final inputs and deliver to the authorized branch; after L4 | Checks complete; delivery pending | Reconcile all 15 final paths and link/build/installed proofs, run full offline npm test before committing, update this plan, commit with `[skip ci]`, push only origin/codex/docs-framework-architecture without force, then independently compare remote/local HEAD. Preserve main, installation and replay; record actual results and source delivery. |
 
 ## Decisions and limits
+
+Link/build decision: repository and installed pages use relative links only for
+co-distributed targets. A standalone Skill cannot assume the checkout or sibling
+docs exist. Its source links, and references to unshipped source tooling, use the
+already delivered full commit ed5eaff7d222de1c73874ce022785fbe89291017. Runtime source
+is unchanged from that snapshot; existing historical snapshots remain untouched.
+The source-only current plan is named as a path, never linked as an npm file or
+mislabelled immutable history as active progress. Published npm 0.13.1 and its
+original docs remain distinct from unpublished source features; do not change the
+version or substitute an npm prefix for a source command.
+
+L1 review: limit new validation to version-sensitive blob/tree links in this
+repository (`docs/`, `benches/`, `src/`, `tools/`, `.github/`). A full commit is
+required; live issue/workflow pages and root contribution/security policy links
+keep their intended live meaning. Existing relative checks still resolve files
+and anchors. Pin syntax enforcement does not claim external HTTP availability;
+verify all newly selected commit targets/anchors from local Git during L4. This
+avoids new dependencies, arbitrary historical-object fetches and package Git
+requirements. Release instructions must remind maintainers to refresh affected
+source/Skill pins when the referenced behavior changes.
 
 The module layout is sufficient for this work. Application coordinates,
 Execution schedules, Agents supplies observable facts, Records seals and reads,
@@ -36,8 +61,9 @@ Documents have distinct reader jobs: tutorial, how-to, reference and explanation
 Do not give every page the same template or impose a permanent page-count cap.
 Fix stale facts and duplicate procedures in their existing owners. The release
 manual describes the existing authorized workflow, not a new publication path.
-The release workflow is not dispatched. The follow-up performs only the
-authorized Git branch push and read-only remote-ref verification.
+The release workflow is not dispatched. This link-entry follow-up makes only
+local source/documentation checks and the authorized branch delivery; release
+dispatch, PR creation and remote CI remain outside this follow-up.
 
 Use existing `--runs-root` / `--run-group` under ignored `runs/`; the proposed
 outer study folders do not change native records. Keep analyses and scratch
@@ -59,108 +85,111 @@ unconsumed exports and retain a verified complete delivery where needed. This
 work does not deduplicate payloads, rewrite old bytes, change statistical gates,
 choose a new storage platform or promise durable backup from ignored directories.
 
-Plan review: all proposed changes are local document/metadata edits using existing
-commands. Main risks are moving operational text that carries statistical meaning,
-claiming automatic cleanup/custom telemetry, and suggesting deletion within a
-sealed run. Preserve protocol statements, state capabilities accurately, retain
-old anchors and verify the real source tutorial plus installed replay. W4 fails
-on a broken command/link, changed native hash or replay mismatch; no acceptance
-criterion is removed to make a check pass.
+Plan review: use the existing documentation interface for bounded offline checks,
+not a new crawler or distribution format. Main risks are referencing a moving
+version, linking unshipped files as package content, or cloning main while
+promising another build. Validate the chosen snapshot and source checkout,
+preserve npm/demo blocks and bilingual parity, and test the actual installed
+package and portable replays. No acceptance is removed to make a check pass.
 
 ## Verification
 
-W5 final review, local acceptance and source delivery (Node 24.21.0 / macOS arm64):
+L5 pre-commit acceptance (Node 24.21.0 / macOS arm64):
 
-- Final integrated local review covered all 12 modified paths, including OCR's
-  selected JSON and all 11 filtered Markdown files; zero skipped/findings. No
-  independent reviewer was used. Source contracts, release workflow and cleanup
-  safeguards match the documented behavior; no new implementation was required.
-- Fresh full offline `npm test`: 1,065 passed, zero failed/cancelled/skipped
-  (70.65 seconds). The first sandboxed attempt passed 1,064 but could not bind
-  127.0.0.1 for one MCP test (EPERM); the unchanged suite passed after granting
-  local loopback permission. Both observations are preserved, no assertion changed.
-- Reused W4's actual offline-installed package only after checking its tarball
-  SHA-256 and all 1,079 installed files against current source. Fresh installed
-  acceptance passed 31 regressions, five portable replays, four release-document
-  checks, fake-process success/failure and disposable configuration/bundle checks.
-  No model/real agent call or actual user-configuration write occurred.
-- Fresh relocated tutorial replay returned byte-identical complete result JSON
-  with the original batch unavailable; all 607 delivery files remained unchanged.
-  Verify-only also passed. W4's full ten-command tutorial and 344 native-file
-  invariance proof retain identical source inputs and remain applicable.
-- Fresh architecture: 159 modules, zero violations/exceptions. Documentation:
-  34 entries, zero errors, 117 prior headings/paths accounted. Diff checks pass;
-  docs still has 11 pages, no new tracked file, runtime format or dependency.
-  The status-only follow-up passed all 41 affected documentation checks.
-- Before delivery the remote branch is e0baacb49981349a145b4ddb0477e7d82da3255d;
-  remote main is 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. Push CI targets only
-  main; delivery also uses `[skip ci]`. No PR, remote CI or release dispatch.
-- Source commit `cc7315f0ef33333962106d8dbb08413463f329f1` was pushed without force to
-  `origin/codex/docs-framework-architecture`; independent `ls-remote` matched
-  the complete SHA. Remote main remains unchanged. The working tree was clean.
-  This status-only follow-up changes only the plan and preserves every accepted
-  package/runtime byte. Its push is also checked by an independent remote-ref read.
-- Exact W5 proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-w5-review-mcaoy3dd.
+- All 15 inputs matched the final L4 manifest before delivery updates. Integrated
+  local OCR-guided review accounted for three selected code files and 12 filtered
+  documents/tests, zero skipped or unresolved findings. No independent reviewer.
+  Only authorization/status text changed after the previously reviewed source.
+- Fresh full offline npm test: 1,067 passed, zero failed/cancelled/skipped
+  (104.75 seconds). Architecture: 159 modules, zero violations/exceptions.
+- Fresh link checks: 34 registered docs, zero errors, 177 old headings/paths
+  accounted. Verified 22 selected snapshot targets/anchors from Git; all 29
+  installed public pages and the standalone driver pass without package Git.
+  The exact source-checkout command/proof still selects the driver snapshot.
+- Reused the actual L4 offline installation only after verifying archive SHA-256
+  91873c64a5f1fc11e030bd5651fa272c80271234c5dd9b94104c0a7b4a6a6812 and
+  all 1,079 installed files against current source; no repack/reinstall was needed.
+  Fresh installed bin/four entry-doc checks pass. Fresh installed feature acceptance
+  passed 31 regressions, five portable replays, fake-process success/failure and
+  disposable configuration/bundle checks. Zero real model/agent calls or actual
+  user-configuration writes; runtime, formats and statistical text are unchanged.
+- Remote baseline independently read: delivery branch ed5eaff7d222de1c73874ce022785fbe89291017,
+  main 3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850. Push only the named branch,
+  without force; use `[skip ci]` alongside the main-only push CI trigger. No PR,
+  remote CI, publication, new maintained file, dependency or runtime format.
+- Commit/push and exact remote/local HEAD comparison remain pending; a status-only
+  follow-up records the verified delivery. Final plan/diff checks run before commit.
+- Delivery proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-link-entry-delivery-y75ux1bx.
 
-W4 final acceptance (Node 24.21.0 / macOS arm64):
+L1: reviewed the absolute-URL bypass, standalone driver distribution, source/npm
+entries and package exclusions before implementation. Relative links cannot
+replace source-only targets or standalone-driver URLs indiscriminately. The
+scoped existing-check approach needs no crawler, registry, dependency or fetch.
 
-- One integrated OCR-guided review covered all 12 modified paths: the selected
-  registry plus 11 filtered Markdown files; zero skipped or remaining findings.
-  Review restored the moved tokenCoverage field description at its reference
-  owner and retained explicit export-path/external-toolchain constraints.
-- Existing focused docs/release/CLI-reference checks: 62 pass, zero fail/skip.
-  After the reference-only review fix, 36 affected documentation checks also pass.
-  Architecture: 159 modules, zero violations/exceptions. Documentation: 34 entries,
-  zero errors against e0baacb; 117 prior headings/paths retained or accounted.
-- Executed all 10 tutorial commands in a fresh temporary outer workspace:
-  controls, human/JSON read, export/replay, command-bench creation/check and real
-  comparison preview. Exactly 27 synthetic executor invocations, zero model or
-  real agent CLI calls. Derived analysis and owned scratch cleanup left all 344
-  native indexed-file/index hashes unchanged. Moved the complete original batch
-  away; the relocated portable package still verified and regraded with identical
-  quality, unknown-usage semantics and synthetic ineligibility.
-- Final actual offline npm pack/install/bin/Skill and all 29 shipped public-doc
-  links pass. Installed acceptance: 31 regressions, five portable replays, four
-  release-entry documents, disposable configuration/bundle checks and fake-process
-  success/failure. All 1,079 installed files match final source. Package size:
-  947,048 compressed / 4,577,532 unpacked bytes; SHA-256
-  207be6382cf8264f4e0d3d43870515337565bf2e8be71898bb985a6e11a24e56.
-- No runtime/build/executable-tool behavior or native format changed; the only
-  tooling metadata edits are two document-kind values. The core statistical
-  protocol text is byte-identical. The 1,065-test HEAD suite was not rerun; its
-  exact source closure is unchanged and the affected checks above ran locally.
-- No added tracked file or maintained page: docs remains 11 pages. No new
-  dependency, registry, background retention, custom collector or cleanup command.
-  No existing user run was deleted. Zero real user-configuration writes, remote
-  CI, PR, publication, commit or push. Release dispatch/recovery network steps
-  were checked against workflow/tools and offline fixtures, not executed.
-- Exact proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-workflow-contracts-xmw_emc4.
+L2: the regression first failed because six moving-ref links produced zero errors,
+then passed after a 13-line extension to inspectDocumentation. Main, moving tags
+and feature branches are rejected for source-sensitive paths. Full commits,
+live contribution/security/workflow channels and other repositories stay valid.
+This enforces reference syntax offline, not arbitrary external HTTP availability.
 
-W3: workflow now owns the study/batch sequence, optional MCP recipe, ignored outer
-workspace, observed/derived/memory data and explicit manual retention/cleanup.
-Existing tutorial uses the same outer batches/exports arrangement; architecture,
-Bench, index and Skill link the guide. Native records/CLI formats remain untouched;
-custom metrics and automatic GC are explicitly unavailable. Link gate: 34 entries,
-zero errors against e0baacb, 117 prior headings/paths accounted. No new page,
-registry, runtime module, telemetry or cleanup implementation. W4 exercises the
-source/installed examples before claiming final acceptance.
+L3: fixed source-sensitive links to the delivered ed5eaff snapshot and kept
+co-distributed links relative. Source-only active progress is named as a path,
+not an npm link. README/Skill/docs distinguish npm 0.13.1 from source additions;
+the release manual requires refreshing affected snapshots. Review found clone
+alone selects old main: the new source-entry regression failed, then passed
+when both README recipes explicitly selected the same full commit as the driver
+before npm ci/build. The checkout executed successfully in an offline disposable
+clone starting from old main. Published npm/demo blocks, feature minimums and
+historical snapshots are unchanged. The previous assertion requiring a broken
+main-plan link now requires the explicit source-only path and rejects an
+unshipped package-relative plan link; other README/command checks are preserved.
 
-W2: corrected stale architecture counts/restoration and tutorial copy; report and
-release registry kinds now match their jobs. The release page now walks exact
-main/source proof, preview ID/attempt, reviewed-byte promotion, single upload,
-six-stage acceptance, receipt retention and failed-attempt recovery. Compared all
-steps/fields to existing workflow and tools; no remote dispatch. Report commands
-point to workflow; metric edits preserve statistical/population semantics. Existing
-62 focused docs/release/CLI-reference checks passed, zero fail/skip. Link gate:
-34 entries, zero errors against e0baacb; old headings preserved.
+L4 final acceptance (Node 24.21.0 / macOS arm64):
 
-W1: confirmed clean baseline and current release workflow; existing architecture
-gate passes 159 modules with zero violations/exceptions, documentation gate passes
-34 entries. Manual reading found stale architecture text, two registry kind
-mismatches, repeated report procedures and missing release/data-lifecycle steps.
-No source behavior change is needed. Plan reviewed before W2; no new document.
+- One integrated local OCR-guided review covered all 15 modified paths: three
+  selected files and 12 filtered documents/tests; zero skipped/findings. No
+  independent reviewer was used. Status-only plan edits were inspected afterward.
+- Final full offline npm test: 1,067 passed, zero failed/cancelled/skipped
+  (109.82 seconds). Before the source-entry follow-up, the earlier suite passed
+  1,065/1,066 and exposed the old assertion requiring the broken main-plan link;
+  preserved that failure, corrected its contract as described in L3, and reran
+  the complete final suite. Final focused docs/registry/entry checks: 43 pass.
+- Verified 22 selected full-commit link targets and Markdown anchors from local
+  Git, without fetching history or contacting GitHub. The documented source
+  checkout selects ed5eaff from old main and exposes the required guides.
+- Fresh offline npm pack/install/bin/Skill/docs and package policy pass: all
+  1,079 installed files match final source. The 29 shipped public documents pass
+  relative links/anchors and the new source-reference check. A standalone copy
+  of the driver also passes without sibling docs, registry or Git checkout.
+- Fresh installed acceptance: 31 regressions, five portable replays, four release
+  entry documents, fake-process success/failure and disposable configuration/
+  bundle checks passed. Zero model/real agent calls or actual user-config writes.
+- Package: 947,712 compressed / 4,579,570 unpacked bytes; SHA-256
+  91873c64a5f1fc11e030bd5651fa272c80271234c5dd9b94104c0a7b4a6a6812.
+- Architecture: 159 modules, zero violations/exceptions. Docs: 34 entries,
+  zero errors against ed5eaff, 177 previous headings/paths accounted. Docs stays
+  at 11 pages. npm excludes the plan and development tools as before.
+- Runtime, Calibration, formats, Bench data, package/lockfile and frozen feature
+  recipes are unchanged. Statistical text from Unit of analysis onward is
+  byte-identical. Both README command/demo block sets match baseline after
+  removing only the newly required source checkout line. No new tracked file,
+  dependency, maintained document, remote CI, PR, publication, commit or push.
+- Acceptance is local macOS/Node 24. Other OS/live Agent/registry checks were not
+  run. They are outside this task; external URL hosting is not guaranteed by
+  offline pin validation.
+
+Exact current proof directory: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-document-entries-2e6uv63r.
 
 ## Previous verified delivery
+
+W1–W5 corrected documents/releases and established explicit experiment/data
+lifecycle rules, then delivered source cc7315f and status follow-up ed5eaff to
+the authorized branch. Fresh final source suite: 1,065 pass; installed acceptance:
+31 regressions, five portable replays and four entry-document checks. All 1,079
+installed files matched source; relocated replay preserved all 607 package files.
+Docs: 34 entries/11 pages, 117 old paths/headings accounted; architecture: 159
+modules, zero violations. These are baseline results, not fresh L4 acceptance.
+Complete previous plan/proofs: [fixed W1–W5 plan](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/docs/work/current.md).
 
 P1–P5 / Q1–Q3 removed unused repository archive infrastructure. Source b16d191 and
 plan follow-up e0baacb were pushed to the authorized branch; final remote/local

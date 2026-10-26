@@ -9,9 +9,14 @@ alone does not identify those features. Source guides use `node dist/cli.js`.
 
 For the published npm 0.13.1 behavior, use its
 [original source documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs)
-and [publication record](maintainers/releases.md). Commands explicitly pinned to
+and [publication record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md). Commands explicitly pinned to
 `npx skillfit@0.13.1` retain their published meaning; do not substitute that prefix
 for a source-only example.
+
+Standalone driver links and unshipped source references use the
+[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/ed5eaff7d222de1c73874ce022785fbe89291017);
+this keeps them usable without sibling docs or a checkout. Source maintainers
+follow the files in their actual checkout. These links do not announce a release.
 
 ## Find your task
 
@@ -30,8 +35,8 @@ for a source-only example.
 CLI `--help` owns flags; [Bench format](../benches/README.md) owns task files and
 claims. JSON schemas, executable examples and SVG assets remain under `schemas/`,
 `examples/` and `assets/`.
-[the current plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md)
-owns active progress. Completed process details remain at fixed Git snapshots.
+Active progress belongs to the source-only `docs/work/current.md`, which is not
+shipped in npm. Completed process details remain at fixed Git snapshots.
 
 Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/README.md).
 

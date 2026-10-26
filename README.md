@@ -77,7 +77,7 @@ npx skillfit@0.13.1 --help
 npx skillfit@0.13.1 doctor
 ```
 
-Requires Node.js 22+. npm may download the package; the case checks and previews below make no model calls.
+Requires Node.js 22+. npm may download the package; the case checks and previews below make no model calls. These pinned commands use the published release; [choose your build](docs/README.md#choose-your-build) for its matching docs and source-only additions.
 
 ## First run with npm
 
@@ -94,11 +94,13 @@ Replace the teaching fixture, prompt, verifier and oracle before measuring benef
 
 ### Run from source
 
-Build a local checkout:
+Build the reviewed source snapshot below. A plain clone starts on main, which
+may not contain the source-only features described here:
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
+git switch --detach ed5eaff7d222de1c73874ce022785fbe89291017
 npm ci
 npm run build
 node dist/cli.js --help
@@ -295,7 +297,7 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 ## Roadmap
 
-See the [current work plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md), [changelog](CHANGELOG.md) and [release procedure](docs/maintainers/releases.md).
+See the [changelog](CHANGELOG.md) and [release procedure](docs/maintainers/releases.md).
 
 See the [capability table](docs/guides/experiment-workflow.md#executor-capabilities) for current adapter and trigger verification limits, and the current work plan for pending implementation. Later work includes live validation and additional agent adapters. The [original study records](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md) and [debugging study status](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
 
@@ -303,7 +305,7 @@ See the [capability table](docs/guides/experiment-workflow.md#executor-capabilit
 
 Follow [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md). Useful contributions include real-workflow cases, reproducible evidence and matrix corrections. [Security reports](https://github.com/remote-controlled-man/skillfit/blob/main/SECURITY.md) have a separate channel.
 
-For development handoff, use [architecture and maintenance](docs/maintainers/architecture.md). The [current work plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md#status) records cleanup progress and pending research.
+For development handoff, use [architecture and maintenance](docs/maintainers/architecture.md). Active progress is recorded in the source-only `docs/work/current.md`; that plan is excluded from npm.
 
 ### License
 

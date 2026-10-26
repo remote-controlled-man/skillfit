@@ -77,7 +77,7 @@ npx skillfit@0.13.1 --help
 npx skillfit@0.13.1 doctor
 ```
 
-需要 Node.js 22+。npm 可能先下载包；下面的 case 校验和预览不调用模型。
+需要 Node.js 22+。npm 可能先下载包；下面的 case 校验和预览不调用模型。以上固定版本命令使用已发布版本；请先[选择构建](docs/README.md#choose-your-build)，区分对应文档和仅源码提供的新功能。
 
 ## 用 npm 开始
 
@@ -94,11 +94,12 @@ npx skillfit@0.13.1 eval ./my-skill --bench ./my-bench --mode installed --agent 
 
 ### 从源码运行
 
-构建本地源码：
+构建下面固定的已审查源码快照。仅克隆仓库会进入 main，可能不包含这里描述的仅源码功能：
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
+git switch --detach ed5eaff7d222de1c73874ce022785fbe89291017
 npm ci
 npm run build
 node dist/cli.js --help
@@ -295,7 +296,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 ## Roadmap
 
-参见[当前工作计划](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md)、[更新记录](CHANGELOG.md)和[发布流程](docs/maintainers/releases.md)。
+参见[更新记录](CHANGELOG.md)和[发布流程](docs/maintainers/releases.md)。
 
 当前适配器与 trigger 的验证边界见[能力表](docs/guides/experiment-workflow.md#executor-capabilities)，实施待办见当前工作计划。后续工作包括真实环境验证和增加 Agent 适配器。[原始研究记录](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md)与[调试研究状态](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)保留当前结论的限制。67 个 Skill 的目录和 13 个 Skill 的入门集均未作为集合评测。
 
@@ -303,7 +304,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 贡献真实工作 case、可复现证据和矩阵修正。[安全报告](https://github.com/remote-controlled-man/skillfit/blob/main/SECURITY.md)有独立渠道。
 
-开发接手时，阅读[架构与维护](docs/maintainers/architecture.md)。[当前工作计划](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md#status)记录清理进度和待开展的研究。
+开发接手时，阅读[架构与维护](docs/maintainers/architecture.md)。当前进度记录在仅源码提供的 `docs/work/current.md` 中；npm 包不包含这份计划。
 
 ### License
 

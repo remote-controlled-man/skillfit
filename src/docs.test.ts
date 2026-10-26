@@ -57,7 +57,8 @@ test('the first-run commands work in Bash and PowerShell and match across README
   for (const readme of READMES) {
     const content = normalized(readme);
     assert.ok(content.includes(commandBlock), `${readme} must use the same first-run commands`);
-    assert.ok(content.includes('(https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md)'), `${readme} must link the source-only delivery plan from installed packages`);
+    assert.ok(content.includes('`docs/work/current.md`'), `${readme} must name the source-only plan`);
+    assert.doesNotMatch(content, /\]\((?:\.\/)?docs\/work\/current\.md(?:[)#])/, `${readme} must not link the unshipped plan as a package file`);
   }
 });
 

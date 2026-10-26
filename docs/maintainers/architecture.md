@@ -3,7 +3,7 @@
 skillfit is one TypeScript/Node >=22 ESM CLI with zero runtime dependencies.
 This page explains the current system and the contracts changes must preserve.
 Execution order, progress and validation live only in the
-[current plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md).
+source-only `docs/work/current.md` (not shipped in npm).
 Current source includes unpublished changes beyond npm 0.13.1.
 
 Start with the map, module owners and workflows. Use the later compatibility,
@@ -58,7 +58,7 @@ Measurement. Measurement is pure; Records owns saved codecs, sealing, audit and
 readers, not another live scheduler. Calibration and control self-test belong to
 Evaluation even when the CLI command starts with `bench`.
 
-[Architecture policy](https://github.com/remote-controlled-man/skillfit/blob/main/tools/verify/architecture-policy.json)
+[Architecture policy](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/tools/verify/architecture-policy.json)
 registers each active file once by business owner and technical role: contracts,
 calculation, mechanisms, integration, evidence, execution, application, entry,
 configuration or installation. Runtime and type dependencies are checked

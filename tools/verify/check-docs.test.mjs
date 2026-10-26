@@ -54,6 +54,32 @@ test('documentation check rejects missing files/anchors without reading outside 
   assert.match(errors[2], /public documentation scope/);
 });
 
+test('version-sensitive repository links reject moving refs while snapshots and live channels stay offline', t => {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-doc-versions-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const base = 'https://github.com/remote-controlled-man/skillfit';
+  const snapshot = 'ed5eaff7d222de1c73874ce022785fbe89291017';
+  writeFileSync(join(root, 'README.md'), [
+    `[wrong source](VERSION_BASE/blob/main/docs/guides/experiment-workflow.md)`,
+    `[moving tag](VERSION_BASE/tree/v0.13.1/docs)`,
+    `[feature branch](VERSION_BASE/blob/codex/docs-framework-architecture/benches/README.md)`,
+    `[moving tooling](VERSION_BASE/blob/main/tools/verify/architecture-policy.json)`,
+    `[moving matrix](VERSION_BASE/blob/main/src/matrix/agents.json)`,
+    `[moving definition](VERSION_BASE/blob/main/.github/workflows/npm-release.yml)`,
+    `[snapshot](VERSION_BASE/blob/VERSION_SHA/docs/guides/experiment-workflow.md#executor-capabilities)`,
+    `[published docs](VERSION_BASE/tree/VERSION_SHA/docs)`,
+    `[live security](VERSION_BASE/blob/main/SECURITY.md)`,
+    `[live contribution](VERSION_BASE/blob/main/CONTRIBUTING.md)`,
+    `[workflow](VERSION_BASE/actions/workflows/npm-release.yml)`,
+    '[external](https://github.com/another/project/blob/main/docs/guide.md)',
+  ].join('\n').replaceAll('VERSION_BASE', base).replaceAll('VERSION_SHA', snapshot));
+  const errors = inspectDocumentation(root, ['README.md']);
+  assert.equal(errors.length, 6);
+  for (const [index, error] of errors.entries()) {
+    assert.match(error, new RegExp(`README.md:${index + 1}: .*full commit`));
+  }
+});
+
 test('documentation links cannot follow directory aliases into private or external roots', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-doc-alias-'));
   const outside = mkdtempSync(join(tmpdir(), 'skillfit-doc-outside-'));

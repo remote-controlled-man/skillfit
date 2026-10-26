@@ -5,7 +5,7 @@ version alone does not identify a source checkout. See the [changelog](../../CHA
 and [fixed 0.13.1 record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md)
 for published behavior. This guide operates the existing
 [npm release workflow](https://github.com/remote-controlled-man/skillfit/actions/workflows/npm-release.yml);
-its [definition](https://github.com/remote-controlled-man/skillfit/blob/main/.github/workflows/npm-release.yml)
+its [definition](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/.github/workflows/npm-release.yml)
 and release tools enforce the steps below. Dispatch only within explicit release
 authorization; reading or editing this guide does not start a workflow. Run local
 maintainer commands from the reviewed source checkout: release orchestration
@@ -14,7 +14,11 @@ tools are source-only; the npm package carries installed verification recipes.
 ## Prepare the source
 
 1. Choose a new unpublished version. Update package/lockfile/changelog and current
-   README/Skill command pins together; retain historical feature minimums.
+   README/Skill command pins together; retain historical feature minimums. Refresh
+   affected standalone Skill/source-reference links to an already delivered full
+   commit containing the described behavior; preserve published-version doc links.
+   Use relative links only for files that ship together. The source-only current
+   plan and release tooling are excluded from npm; do not link them as package files.
 2. Review changes and run `npm test` plus relevant local checks. Follow the normal
    repository delivery rules to land the reviewed source on `main`.
 3. Require completed full **main push CI for that exact commit**, including its

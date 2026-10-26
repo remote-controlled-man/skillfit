@@ -17,7 +17,7 @@ stop semantics and evidence limitations. [Planning](../guides/experiment-workflo
 defaults, confirmation and budget input format; the [component](eval-component.md)
 owns machine request/result fields and policy configuration; [cost accounting](evaluation-reports.md#cost-accounting)
 owns cost populations and coverage fields. Implemented facts belong in these
-contracts; progress belongs in the linked [measurement plan](https://github.com/remote-controlled-man/skillfit/blob/main/docs/work/current.md#status).
+contracts; progress belongs in the source-only `docs/work/current.md`, excluded from npm.
 
 - [Analysis unit and sampling](#unit-of-analysis)
 - [Declared scope and offline controls](#declared-scope-and-offline-controls-current-source)

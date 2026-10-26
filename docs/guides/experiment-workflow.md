@@ -89,7 +89,7 @@ or convert unknown counters into observations.
 ## Executor capabilities
 
 This table describes current skillfit adapters, verified offline against the
-[matrix](https://github.com/remote-controlled-man/skillfit/blob/main/src/matrix/agents.json)
+[matrix](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/src/matrix/agents.json)
 and adapter fixtures. It does not attest today's installed vendor CLIs, login
 or a provider backend. Sampling remains unpinned: no temperature/seed is sent.
 
@@ -287,7 +287,7 @@ bench fixture. `treatment` is required and must contain at least one file. Both 
 the experiment directory, including after symlinks are resolved.
 
 The treatment must use the selected agent's project path from
-[`src/matrix/agents.json`](https://github.com/remote-controlled-man/skillfit/blob/main/src/matrix/agents.json):
+[`src/matrix/agents.json`](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/src/matrix/agents.json):
 
 | Agent | Rules path | MCP path |
 |---|---|---|
