@@ -2,7 +2,8 @@
 
 ## Status
 
-- Current task: R2 source delivery and 0.14.0 preparation are complete;
+- Current task: R5 checked integration and formal 0.14.0 preview are in progress;
+  R2 source delivery and candidate preparation are complete;
   B1–B5/C1–C4 are complete. The user approved continuing delivery/preparation.
   Defer automatic deletion: do not add it to this release's execution steps;
   revisit only if an owned disposable temporary-directory leak is evidenced.
@@ -23,10 +24,10 @@
   task/fixture/reference provenance, docs/architecture gates, complete offline
   suite, fresh actual npm pack/install and portable replay for new and old layouts.
   B1's temporary baseline and previous native records preserve before/after proof.
-- Delivery boundary: push the reviewed current branch and prepare/review/validate
-  the candidate locally. Do not create a PR, dispatch remote CI, merge main or
-  publish npm under this continuation. Those actions need a concrete candidate
-  and explicit authorization; existing repository release gates remain intact.
+- Delivery boundary: the user now authorizes one PR, its existing necessary CI,
+  merge after successful checks, exact-main CI and formal dry-run publication
+  preview. npm upload still requires separate review/authorization. Keep the
+  existing source/CI/package gates; do not add automatic deletion or paid runs.
 - Source baseline: c9522ddea4c181056f1065e04f3ee0f69845146a, clean at this phase's
   start. At that point the remote delivery branch was 8d8ff24c7adddb0cc1e7f3653a56baddeefef363;
   remote main remains 655bccaa384bbc3d0dc5602e76efa63968272ece. Official npm
@@ -38,6 +39,11 @@
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| R5a | Reconcile authorization, actual main and existing release gates; after R2d | Complete | Remote main is 655bcca and candidate is 90e9b83, with no open PR. Reuse byte-identical installed/local proof; preflight the actual main docs baseline and CI scope before creating the PR. Found 108 false compatibility failures for moved historical Bench data; preserve the failure log. |
+| R5b | Fix historical input classification and review affected inputs; after R5a | Complete | Test first through the existing baseline-reader/documentation gate. Use the fixed baseline's existing exclusions for its task data, retaining real document/card paths, private-path protection and missing-evidence failures. No retired-path catalog, broad bypass, restored inputs or new document. Verify targeted tests, exact-main docs gate, architecture and npm test; packaged bytes must remain identical to R2c. |
+| R5c | Deliver one PR and wait for existing CI; after R5b | In progress | Push the reviewed plan/tool fix once, create one PR with actual behavior, tests and AI disclosure, and attach it. Reuse the unchanged CI workflow; all eight checks, including three required OS jobs, must succeed. Preserve exact source and avoid status-only pushes during the PR run. |
+| R5d | Merge and validate exact-source main CI; after R5c | Pending | Use an explicit clean merge title/body to retain pinned source ancestry and avoid old skip markers. Verify merged product tree and intended deletions, then wait for the automatically triggered main push CI. Require its exact three full OS receipts; PR/local proofs cannot replace them. |
+| R5e | Generate, inspect and retain the formal preview; after R5d | Pending | Dispatch npm-release.yml once on the verified main with dry_run=true. Download the exact successful run/attempt artifact, validate source/CI identities, original tarball integrity/version/size/package bytes and summary. Retain the complete artifact externally; update this original plan without moving main after preview. Never upload npm or claim registry/provenance/signature acceptance during a preview. |
 | R2a | Review scope/version and deliver reviewed base | Complete | Keep auto-deletion deferred. Read official registry and exact remote refs; verify no open PR or branch-triggered CI. Push c9522dd non-force to the existing branch and compare the remote SHA. Use that delivered full source commit for standalone behavior links. |
 | R2b | Synchronize 0.14.0 candidate metadata and existing docs; after R2a | Complete | Update package/lockfile/changelog and current bilingual README/Skill/docs version pins together; retain old publication snapshots, feature minima and historical command blocks. Clearly distinguish candidate package semantics from registry availability. No new document or publication claim. |
 | R2c | Review and verify the final candidate locally; after R2b | Complete | Single integrated OCR-guided scoped review plus reused unchanged-source proof. Run docs/link/version/architecture gates and npm test. Actual fresh offline pack/install, installed current feature recipe, Skill/docs, public preview and moved replay must pass without model calls or real configuration writes; keep proof outside source. |
@@ -79,6 +85,39 @@
 | M6 | One temporary integration branch and existing CI; after M5 | Complete; PR #57 merged as 655bcca | Retained source 5a3c9c8 and initial integration b5a052e have identical trees. Final candidate 153c014 adds only M6a's package-test envelope and plan updates; all 1,989 deletions remain. Final PR CI passed all eight jobs. Merged with explicit clean title/body, without protection, workflow/platform, publication or real experiment changes. |
 | M6a | Diagnose and verify Windows package-test timeout; within M6 | Complete | Original Windows timeout preserved. Local suite: 1,068 pass, zero fail/cancel/skip. Final actual Windows CI: 1,065 tests, 1,064 pass, zero fail/cancel and one existing platform skip; offline install completed in 48,429 ms within the bounded 120-second envelope. Product deadlines and all assertions are unchanged; no claim of deterministic Windows reproduction on macOS. |
 | M7 | Exact main CI, tree/deletion verification and final status; after M6 | Complete | Main run 40294723010 passed all eight jobs on 655bccaa384bbc3d0dc5602e76efa63968272ece. Existing source-CI collection validated three full OS receipts; source tree equals the reviewed candidate and all 1,989 deletions remain. This sole-plan follow-up incorporates main into the retained delivery branch, preserving six consumed pins. Verify the final pushed ref independently in the handoff; no new PR or CI run solely for status. |
+
+## Checked integration and preview progress
+
+R5a complete: explicit user authorization supersedes the earlier no-PR/no-remote-CI
+boundary only for this one checked integration and formal preview. npm publication
+remains unauthorized. Main protection requires a PR and three OS checks; the
+unchanged release workflow requires successful full push CI for the exact main
+source and promotes an exact preview run/attempt. Existing eight CI jobs stay.
+
+The preflight against actual main 655bcca finds 108 compatibility errors, all
+removed Bench task-data Markdown paths from the previous fixture/prompt/reference
+layout. Current discovery correctly excludes tasks/ but the Git baseline adapter
+uses only current exclusions, so it reads retired data as maintained prose.
+Fix this before creating the PR, using that baseline's own existing data
+exclusions. Keep real document/card path/anchor checks and offline/shallow Git
+operation. The original failed result and subsequent proof are external at the
+workspace identified by /private/tmp/skillfit-014-integration-location.txt.
+
+R5b complete: the new regression first failed because the baseline adapter read
+old fixture Markdown. It now reads the fixed source's existing documentation
+exclusions before selecting old prose. Removed dataset cards still fail; sources
+predating the registry still check real pages, and an available policy read
+failure remains an error. No historical task inputs are loaded to classify them.
+No catalog or blanket exclusion was added. Thirty focused docs/registry tests
+pass; the actual main comparison has zero errors and 244 retained/migrated
+anchors. Architecture remains 159 modules, zero violations/exceptions.
+Full npm test passes 1,072 tests, zero fail/cancel/skip, 105,541 ms. The single
+integrated review covers both tool files and this plan; no open findings.
+All 1,079 packaged files still exactly match R2c's fresh installed acceptance,
+so its installation, Bench, self-test and old/new portable-replay evidence applies.
+Only source-only verification tools/plan changed. CI classifies the cumulative
+1,355 path changes as full. R5c is ready for one reviewed delivery and one PR;
+no status-only push will interrupt its run.
 
 ## Candidate delivery and preparation progress
 

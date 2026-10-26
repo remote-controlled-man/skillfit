@@ -199,6 +199,18 @@ export function readDocumentationBaseline(root, base, changes, git = args => exe
   const registry = inspectDocumentationRegistry(root);
   if (registry.errors.length) throw Error(registry.errors.join('\n'));
   git(['cat-file', '-e', `${base}^{commit}`]);
+  // A moved data directory must use its own source-era classification, not today's paths.
+  const policySource = `${base}:tools/verify/documentation-policy.json`;
+  let hasPreviousPolicy = false;
+  try { git(['cat-file', '-e', policySource]); hasPreviousPolicy = true; }
+  catch { /* Older commits can predate the documentation registry. */ }
+  let previousExclusions = [];
+  if (hasPreviousPolicy) {
+    previousExclusions = JSON.parse(git(['show', policySource])).exclusions;
+    if (!Array.isArray(previousExclusions) || previousExclusions.some(e => !e || typeof e.path !== 'string' || !publicMarkdownPath(e.path.endsWith('/') ? e.path + 'input.md' : e.path))) {
+      throw Error('Invalid documentation exclusions at the requested baseline.');
+    }
+  }
   if (changes === undefined) {
     const parts = git(['diff', '--name-status', '--no-renames', '-z', base, '--']).split('\0');
     changes = [];
@@ -211,7 +223,7 @@ export function readDocumentationBaseline(root, base, changes, git = args => exe
   }
   const previousDocuments = new Map();
   for (const { path, status } of changes) {
-    if (status === 'A' || !publicMarkdownPath(path) || documentationExcluded(path, registry.policy.exclusions)) continue;
+    if (status === 'A' || !publicMarkdownPath(path) || documentationExcluded(path, registry.policy.exclusions) || documentationExcluded(path, previousExclusions)) continue;
     previousDocuments.set(path, git(['show', `${base}:${path}`]));
   }
   return { changes, previousDocuments, baseline: base };
