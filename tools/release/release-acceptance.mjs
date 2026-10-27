@@ -3,6 +3,8 @@ import { appendFileSync, constants, copyFileSync, existsSync, mkdirSync, readFil
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { reviewedArchive } from './release-source.mjs';
+// Link receipts before CLI evaluation: they also import the acceptance contracts.
+import { exportRecords } from './release-records.mjs';
 
 const json = file => JSON.parse(readFileSync(file, 'utf8'));
 const save = (file, value, exclusive = true) => writeFileSync(file, JSON.stringify(value, null, 2) + '\n', exclusive ? { flag: 'wx' } : {});
@@ -96,7 +98,6 @@ if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(process.argv[
   else if (mode === 'summary') summarize(root, status, dry === 'true');
   else if (mode === 'verify' || mode === 'recover') {
     const { acceptanceChecks, recoverUpload } = await import('./release-checks.mjs');
-    const { exportRecords } = await import('./release-records.mjs');
     const attempt = mode === 'recover' ? prepareRecovery(root, status) : root;
     if (!existsSync(join(attempt, 'publication.json'))) await recoverUpload(attempt);
     const publication = json(join(attempt, 'publication.json')), archive = reviewedArchive(attempt);

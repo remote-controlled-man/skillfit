@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ACCEPTANCE_STAGES, runAcceptance, summarize, prepareRecovery } from './release-acceptance.mjs';
 import { inspectDriver, inspectProvenance, recoverUpload } from './release-checks.mjs';
 import { exportRecords, verifyRecords } from './release-records.mjs';
@@ -12,6 +14,20 @@ const fresh = t => { const root = mkdtempSync(join(tmpdir(), 'skillfit-acceptanc
 const sourceCommit = 'a'.repeat(40);
 const info = { version: '0.14.0', sourceCommit, uploadAccepted: true, runId: '123', runAttempt: '1' };
 const stages = calls => ACCEPTANCE_STAGES.map(id => ({ id, run: () => { calls.push(id); return { verified: true }; } }));
+
+test('verify and recover CLI entries validate inputs without an unsettled module await', t => {
+  const root = fresh(t), original = join(root, 'original'), recovery = join(root, 'recovery');
+  mkdirSync(original);
+  const entry = fileURLToPath(new URL('./release-acceptance.mjs', import.meta.url));
+  for (const mode of ['verify', 'recover']) {
+    const result = spawnSync(process.execPath, [entry, mode, original, recovery], { encoding: 'utf8', timeout: 10_000 });
+    assert.equal(result.status, 1, `${mode}: ${result.stderr}`);
+    assert.match(result.stderr, /ENOENT[^\n]*pack\.json/);
+    assert.doesNotMatch(result.stderr, /unsettled top-level await/);
+    assert.equal(existsSync(recovery), false);
+    assert.equal(existsSync(join(original, 'acceptance-state.json')), false);
+  }
+});
 
 test('all six acceptance checks execute once, checkpoint state and cannot overwrite a previous attempt', async t => {
   const root = fresh(t), calls = []; const result = await runAcceptance(root, info, stages(calls));
