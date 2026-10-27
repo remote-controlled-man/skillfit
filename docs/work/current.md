@@ -2,13 +2,26 @@
 
 ## Status
 
-- Current task: R5 checked integration and formal 0.14.0 preview are in progress;
+- Current task: R6 reviews and integrates release-acceptance repair 5f3c0ec with
+  one authorized PR, existing necessary CI, merge and exact-main CI. No npm
+  publication, workflow dispatch, repack or new release is authorized in R6.
+  R4 publication/registry acceptance are complete through verification-only
+  recovery. R5 integration/preview are complete;
   R2 source delivery and candidate preparation are complete;
   B1–B5/C1–C4 are complete. The user approved continuing delivery/preparation.
-  Remaining gap: merged main Windows CI failed on verifier-fixture readiness;
-  its local test-only fix passes and the user now authorizes one additional
-  protected-branch repair PR, its CI/merge, exact-main CI and formal preview.
-  No formal preview or npm upload has occurred.
+  Verified source: PR #59 is merged as b6c804b; exact main push CI
+  40357729252 passed all eight jobs and verified full three-OS receipts.
+  Formal 0.14.0 preview 40359981385, attempt 1, succeeded; its original archive,
+  source/CI identity and all 1,079 packaged files are verified. After its
+  successful prepublication review, formal publication run 40437444187,
+  attempt 1, uploaded the original reviewed preview successfully. Its post-upload
+  CLI loading failure is preserved; the bounded source-tool fix and existing
+  recover command completed all six acceptance stages in a fresh external
+  attempt. npm latest=0.14.0, 18 standalone receipts verified, and all 1,079
+  installed files match the reviewed package/source. Source-tool repair is
+  currently on the existing branch; the user now authorizes its R6 integration.
+  R6a review is complete; PR delivery and exact-main acceptance remain. Never
+  upload 0.14.0 again.
   Defer automatic deletion: do not add it to this release's execution steps;
   revisit only if an owned disposable temporary-directory leak is evidenced.
   There is no new cleanup service, timer or runs expiry requirement.
@@ -28,11 +41,12 @@
   task/fixture/reference provenance, docs/architecture gates, complete offline
   suite, fresh actual npm pack/install and portable replay for new and old layouts.
   B1's temporary baseline and previous native records preserve before/after proof.
-- Delivery boundary: original PR #58 is merged; the user now authorizes one
-  additional bounded test-fix PR, existing necessary CI, merge after successful
-  checks, exact-main CI and formal dry-run publication preview. npm upload still
-  requires separate review/authorization. Keep existing source/CI/package gates;
-  do not add automatic deletion, paid runs or a further unapproved PR.
+- Delivery boundary: PRs #58/#59 and the one 0.14.0 upload/recovery are complete.
+  R6 authorizes one repair PR, existing CI, protected merge and automatic main
+  CI. Preserve all original release artifacts and verification gates; do not
+  publish again, add automatic deletion, run paid experiments or create another
+  unrelated PR. Update this sole plan after each phase without restarting CI
+  merely for progress text.
 - Source baseline: c9522ddea4c181056f1065e04f3ee0f69845146a, clean at this phase's
   start. At that point the remote delivery branch was 8d8ff24c7adddb0cc1e7f3653a56baddeefef363;
   remote main was 655bccaa384bbc3d0dc5602e76efa63968272ece. Official npm
@@ -44,14 +58,17 @@
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| R6a | Review 5f3c0ec and exact integration scope | Complete; no open findings | Freeze main b6c804b and head 5f3c0ec. Review all three paths, including the plan filtered by OCR, static-link initialization, public verify/recover entries and original recovery receipts. Run focused release checks, docs against actual main and npm test; retain unchanged 1,079-file package and fixed publication source. |
+| R6b | Deliver one reviewed repair PR; after R6a | In progress; local acceptance passed | Commit only original-plan authorization/progress, push non-force, create and attach one PR. Wait for all eight unchanged CI jobs and security on the exact head, with no progress-only push/retry during CI. No npm workflow dispatch. |
+| R6c | Merge repair and verify exact-main CI; after R6b | Pending | Use a normal protected merge with an explicit clean message and checked head. Verify merged tree, consumed ancestry and unchanged published bytes, then require all eight automatic main jobs and same-attempt full three-OS receipts. Update/deliver final plan status on the existing branch, verify remote refs and retain original release failure/recovery truth. Never republish 0.14.0. |
 | R5a | Reconcile authorization, actual main and existing release gates; after R2d | Complete | Remote main is 655bcca and candidate is 90e9b83, with no open PR. Reuse byte-identical installed/local proof; preflight the actual main docs baseline and CI scope before creating the PR. Found 108 false compatibility failures for moved historical Bench data; preserve the failure log. |
 | R5b | Fix historical input classification and review affected inputs; after R5a | Complete | Test first through the existing baseline-reader/documentation gate. Use the fixed baseline's existing exclusions for its task data, retaining real document/card paths, private-path protection and missing-evidence failures. No retired-path catalog, broad bypass, restored inputs or new document. Verify targeted tests, exact-main docs gate, architecture and npm test; packaged bytes must remain identical to R2c. |
 | R5c | Deliver one PR and wait for existing CI; after R5b | Complete; PR #58 checks passed | Push the reviewed plan/tool fix once, create one PR with actual behavior, tests and AI disclosure, and attach it. Reuse the unchanged CI workflow; all eight checks, including three required OS jobs, must succeed. Preserve exact source and avoid status-only pushes during the PR run. |
 | R5d | Merge and validate exact-source main CI; after R5c | Merged; main Windows CI failed | Use an explicit clean merge title/body to retain pinned source ancestry and avoid old skip markers. Verify merged product tree and intended deletions, then wait for the automatically triggered main push CI. Require its exact three full OS receipts; PR/local proofs cannot replace them. |
 | R5f | Diagnose main Windows startup failure and prepare the bounded test fix; after R5d failure | Complete locally; repair delivery authorized | Preserve failed run/receipt. Reproduce the exact readiness assertion with a delayed offline harness, distinguish setup readiness from interruption semantics, and verify the smallest test-only envelope correction. Keep kill-tree, usage/sealing assertions and the post-interrupt 10-second deadline. Run affected tests/full offline suite and review package-byte identity. The user subsequently authorizes R5g–R5h; do not bypass source CI or start preview/publication early. |
-| R5g | Deliver the authorized bounded test repair PR; after R5f | In progress | Reconcile unchanged reviewed inputs, update this original plan, commit only the test/plan, push non-force, create and attach one repair PR. Existing eight CI jobs must pass; preserve all interruption assertions and package bytes. No status-only push while checks run. |
-| R5h | Merge repair and validate exact-main CI; after R5g | Pending | Merge the exact checked repair with a clean message. Confirm main product bytes and consumed commit ancestry; require the automatically triggered eight main checks and the same-attempt full three-OS source receipts before preview. Retain the original failed run; no blind rerun or weakened gate. |
-| R5e | Generate, inspect and retain the formal preview; after R5h | Pending successful main CI | Dispatch npm-release.yml once on the verified main with dry_run=true. Download the exact successful run/attempt artifact, validate source/CI identities, original tarball integrity/version/size/package bytes and summary. Retain the complete artifact externally; update this original plan without moving main after preview. Never upload npm or claim registry/provenance/signature acceptance during a preview. |
+| R5g | Deliver the authorized bounded test repair PR; after R5f | Complete; PR #59 checks passed | Reconcile unchanged reviewed inputs, update this original plan, commit only the test/plan, push non-force, create and attach one repair PR. Existing eight CI jobs must pass; preserve all interruption assertions and package bytes. No status-only push while checks run. |
+| R5h | Merge repair and validate exact-main CI; after R5g | Complete; main CI and three OS receipts passed | Merge the exact checked repair with a clean message. Confirm main product bytes and consumed commit ancestry; require the automatically triggered eight main checks and the same-attempt full three-OS source receipts before preview. Retain the original failed run; no blind rerun or weakened gate. |
+| R5e | Generate, inspect and retain the formal preview; after R5h | Complete; preview 40359981385/1 verified | Dispatch npm-release.yml once on the verified main with dry_run=true. Download the exact successful run/attempt artifact, validate source/CI identities, original tarball integrity/version/size/package bytes and summary. Retain the complete artifact externally; update this original plan without moving main after preview. Never upload npm or claim registry/provenance/signature acceptance during a preview. |
 | R2a | Review scope/version and deliver reviewed base | Complete | Keep auto-deletion deferred. Read official registry and exact remote refs; verify no open PR or branch-triggered CI. Push c9522dd non-force to the existing branch and compare the remote SHA. Use that delivered full source commit for standalone behavior links. |
 | R2b | Synchronize 0.14.0 candidate metadata and existing docs; after R2a | Complete | Update package/lockfile/changelog and current bilingual README/Skill/docs version pins together; retain old publication snapshots, feature minima and historical command blocks. Clearly distinguish candidate package semantics from registry availability. No new document or publication claim. |
 | R2c | Review and verify the final candidate locally; after R2b | Complete | Single integrated OCR-guided scoped review plus reused unchanged-source proof. Run docs/link/version/architecture gates and npm test. Actual fresh offline pack/install, installed current feature recipe, Skill/docs, public preview and moved replay must pass without model calls or real configuration writes; keep proof outside source. |
@@ -84,7 +101,7 @@
 | R1 | Review integration/release scope; after L5 | Complete | Compare the delivered HEAD with the last verified main baseline, identify user-visible changes and exclusions, and name the required source/version/package/acceptance steps. This is local preparation, without registry availability claims or remote writes. |
 | R2 | Prepare candidate version and local release inputs; after R1 | Complete; R2a–R2d above | Candidate 0.14.0, subject to an unpublished-version check. Synchronize package/lockfile/changelog and current README/Skill command pins, source-only availability notes and implementing-source snapshots; preserve historical minima and old publication links. Review the cumulative main-to-branch scope, then run local tests, actual pack/install/docs and portable replay. |
 | R3 | Validate then integrate reviewed source; after R1 for this source-only merge | Complete | PR #57 merged as 655bcca after eight final PR checks; exact main push CI passed all eight jobs and existing source-CI collection validated its three full OS receipts. All intended deletions and consumed snapshot ancestry are preserved. No version bump, publication or paid experiment. |
-| R4 | Preview, publish once and verify delivery; after R3 | Pending publication authorization | Inspect the exact preview attempt/tarball/hash, then promote those bytes for a new unpublished version. All six existing acceptance stages must pass; retain complete receipts externally and update this plan. Never repack between reviewed preview and upload, repeat an ambiguous upload or run real models. |
+| R4 | Preview, publish once and verify delivery; after R5e | Complete; one upload, six recovery checks and receipts passed | Inspect the exact preview attempt/tarball/hash, then promote those bytes for a new unpublished version. All six existing acceptance stages must pass; retain complete receipts externally and update this plan. Never repack between reviewed preview and upload, repeat an ambiguous upload or run real models. |
 | M1 | Review actual merge baseline, rules and local CI entry; within R3 | Complete | Main remains 3a3ff4 and delivery branch 3404dcd; no open PR. Rulesets require a PR and windows/ubuntu/macos status checks. Exact-main docs gate currently fails 287 old path/anchor migrations; preserve that failure and fix it before claiming merge readiness. |
 | M2 | Add bounded regression and exact-main snapshot navigation; after M1 | Complete | Existing docs gate must cover representative publication-era retained headings plus retired docs/evidence paths without requiring Git history in tests. Add only fixed snapshot links in existing docs/Bench indexes; preserve all original bytes at 3a3ff4, no restored archive or new page. Full actual-main gate must account for every old path/heading. |
 | M3 | Local equivalent of the CI workflow and installed acceptance; after M2 | Complete locally | Existing full-scope CI entry passed 1,068 tests against exact main; public CLI/Bench steps, fresh installed 31 regressions/five portable replays, 29 installed documents and immutable snapshot targets passed. This is macOS/Node 24 working-tree acceptance, not remote or exact-source CI proof. No model calls. |
@@ -95,6 +112,108 @@
 | M7 | Exact main CI, tree/deletion verification and final status; after M6 | Complete | Main run 40294723010 passed all eight jobs on 655bccaa384bbc3d0dc5602e76efa63968272ece. Existing source-CI collection validated three full OS receipts; source tree equals the reviewed candidate and all 1,989 deletions remain. This sole-plan follow-up incorporates main into the retained delivery branch, preserving six consumed pins. Verify the final pushed ref independently in the handoff; no new PR or CI run solely for status. |
 
 ## Checked integration and preview progress
+
+R6 authorized on 2026-10-27: the user requests a careful review of 5f3c0ec,
+one repair PR, necessary CI, merge after success and post-merge main CI. This
+supersedes R4's earlier no-additional-PR boundary only for this repair. Current
+main is b6c804b and the existing branch is exactly 5f3c0ec, with no open PR;
+main protection requires a PR and the three OS jobs. Existing CI has eight jobs;
+keep its workflow and assertions. R4 publication/recovery proof remains fixed
+to original source b6c804b and one upload; integration must not dispatch npm.
+
+R6a complete: the integrated OCR-guided review accounts for both source tools
+and the manually reviewed plan across main b6c804b to 5f3c0ec. No open finding.
+Static linking finishes the receipt module before the acceptance CLI awaits its
+other imports; both public verify/recover entries reach ordinary input checks,
+and the standalone records entry verifies the original 18 hash-linked receipts.
+All 29 focused release cases pass. Full npm test passes 1,073 tests with zero
+fail/cancel/skip (70,554 ms); docs against exact main and diff checks pass.
+All 1,079 files equal the already accepted npm installation; loader/test bytes
+are unchanged from 5f3c0ec. Commit only this authorization/progress follow-up
+before the PR; do not push progress during its checks. Evidence is external at
+the workspace identified by /private/tmp/skillfit-release-fix-integration-location.txt.
+
+R4 authorized on 2026-10-27: the user approves npm upload after final checks.
+Order remains reviewed preview promotion → one upload → the six existing
+acceptance stages → standalone receipt verification → original-plan delivery.
+Prepublication review confirms unchanged main b6c804b and successful preview
+40359981385/1, its available artifact, exact main CI 40357729252/1 and original
+908,113-byte archive SHA-256
+ba495eafeb58b3d741390d88493014d70fca1f4aba4a2d842df2a893238cde03.
+Official registry returns 404 for 0.14.0 and latest=0.13.1; there is no prior
+0.14.0 publication intent or running release. Reuse the unchanged source/CI and
+1,079-file installed acceptance proof; do not repack or repeat full CI. External
+publication proof uses formal-publication-b6c804b in the existing integration
+workspace. Main must stay at the preview source throughout this publication.
+
+R4 dispatched once: publication run 40437444187, attempt 1, uses main b6c804b
+with dry_run=false and exact reviewed preview 40359981385/1. The release workflow
+must retrieve the original tarball, claim one upload and run acceptance; do not
+claim publication until its actual upload and registry results are available.
+
+R4 upload accepted: run 40437444187/1 retrieved the approved original archive,
+persisted publication intent and completed npm upload. The next verification
+step exited 13 at its top-level await of release-records.mjs, before creating
+acceptance state. Preserve the entire original failed artifact and run logs.
+Offline empty-input invocations reproduce the identical exit 13 for both verify
+and recover. Ranked hypotheses: the receipt module's import back to acceptance
+creates an entry-point await cycle; a Node-specific loader difference; malformed
+receipt input. The first predicts that linking receipts before starting the CLI
+will instead reach normal input validation. The second predicts a platform-only
+failure; the third predicts a receipt error after loading, rather than the same
+failure with empty input.
+
+Recovery order/acceptance: first add failing public CLI regressions for verify
+and recover in the existing offline test, then make the smallest source-only
+loader correction and rerun affected tests. Run the existing recover command on
+the preserved original artifact into a fresh external directory; require all six
+unchanged acceptance stages and standalone receipt verification. Reconcile exact
+original tarball/source/provenance and package bytes; full offline npm test and
+one integrated review cover the source repair before its branch commit. Do not
+rerun the publication workflow, repack, change main, add a PR, weaken any check
+or claim registry acceptance until actually verified.
+
+R4 loader repair verified locally: the public verify/recover regression first
+fails with the production exit-13 await warning. Link exportRecords statically
+before executing the acceptance CLI rather than awaiting the back-importing
+module while the CLI is still evaluating. Both entry paths now reach normal
+missing-input validation, preserving evidence and creating no recovery output.
+All 29 existing/affected release tests pass; acceptance assertions/stages and the
+published payload are unchanged. Begin the existing recover command against the
+preserved accepted publication in a new external recovery-attempt directory.
+
+R4 verification recovery complete: the existing recover CLI uses the original
+accepted artifact in fresh formal-publication-b6c804b/recovery-attempt. All six
+unchanged stages pass: registry-install, documents, examples, features, provenance
+and signatures. Actual installed Skill/frontmatter, bilingual README and document
+pins pass; 31 installed regressions and five portable replays pass. npm signatures
+reports one verified registry signature and one verified attestation; provenance
+binds source b6c804b and original publication 40437444187/1. Registry latest is
+0.14.0, with official publishedAt=2026-10-27T02:18:01.991Z. Installation initially
+observed E404 from propagation and succeeded on its existing bounded second
+attempt; both observations are retained. Upload count remains exactly one.
+
+The original, recovered and npm-installed 908,113-byte package preserves SHA-256
+ba495eafeb58b3d741390d88493014d70fca1f4aba4a2d842df2a893238cde03;
+all 1,079 installed files equal current package source. Source-only loader/test
+edits do not ship and require no repack or patch version. No real model/agent CLI
+call or actual user-configuration write occurred. Generated standalone protocol-3
+records contain 18 hash-linked receipts; the real release-records CLI verifies
+them with zero writes/publishes. The complete original failed artifact, logs,
+recovery state/records and publication-review.json remain external, identified by
+formal-publication-proof-location.txt in the integration workspace. Do not replace
+the original GitHub failure with a success claim: upload succeeded there, while
+all post-upload acceptance and receipt delivery completed in local recovery.
+
+R4 source repair delivery: final offline npm test passes 1,073 tests with zero
+fail/cancel/skip (69,934 ms); the earlier pre-repair 1,072-test result is not the
+repair's acceptance. The focused release tests pass 29 cases. One integrated
+OCR-guided review covers the two tool files and this manually reviewed plan;
+no open finding, new dependency, document or public package/runtime change.
+Deliver only these three paths on origin/codex/docs-framework-architecture,
+confirm its remote SHA and preserve main b6c804b. The loader fix is not merged
+into main, has no new PR/remote CI, and must be integrated through the protected
+branch route before the next release; current registry delivery is verified.
 
 R5a complete: explicit user authorization supersedes the earlier no-PR/no-remote-CI
 boundary only for this one checked integration and formal preview. npm publication
@@ -199,6 +318,99 @@ source/tool consumer and was not created by this task's explicit temporary-root
 commands. Preserve it as unrelated work; do not inspect or delete its records.
 No runs path is tracked or packaged. Earlier empty-runs observations describe
 their verification time and are not authorization to delete new work.
+
+R5g in progress: committed the reviewed test/plan as
+0c2b0a846610eb164be11c5c3c76df7dd758657f and recreated the automatically removed
+original delivery branch non-force. Created the one authorized repair PR #59
+against main 8746a3d. Existing CI 40341875940 is running on that exact source;
+keep progress local until checks finish to avoid a status-only rerun. There is
+no product/package/workflow change and no npm upload. Preserve the unrelated
+ignored workspace; source status includes only this local plan follow-up.
+
+R5g complete: PR #59 CI 40341875940 passed all eight existing jobs on exact
+head 0c2b0a8; its security check also passed and merge state is CLEAN. This
+includes actual Windows execution of the verifier interruption case and Bench
+checks. No retry, workflow change or status-only push. At that phase the app's
+PR artifact-attachment function was unavailable; do not claim attachment until
+the successful resumed-phase call recorded below.
+R5h proceeds with the exact checked head and a clean normal merge.
+
+R5h blocked at the execution approval boundary, not at a test: both normal
+merge attempts were rejected before execution. The reviewer said the current
+question-reply was historical quoted material and not current merge authority.
+The first rejection was followed by a read-only guard: PR #59 remained OPEN/CLEAN
+at 0c2b0a8 against 8746a3d with all nine checks SUCCESS. The second request used
+the same protected gh pr merge action and supplied the exact current human
+question/answer plus guard proof; it was rejected for the same reason. Do not
+try a different tool, admin flag, indirect command or bypass. Request a plain
+current chat confirmation. The user already approved the intended scope; this
+is an automatic-review authorization-recognition blocker, not a new design ask.
+No merge or additional main CI/preview was executed. Keep this status local
+while the PR remains open so its successful checks are not invalidated by a
+status-only push. All tests/product bytes remain the exact accepted inputs.
+
+R5h resumed on 2026-10-27: the user directly confirms merging PR #59, checking
+main CI and generating the 0.14.0 preview without npm upload. Read-only preflight
+confirms OPEN/CLEAN, all nine checks SUCCESS, exact head 0c2b0a8 and unchanged
+base 8746a3d. The app attachment tool is available again and PR #59 is now
+attached successfully. Reuse existing checked inputs; keep this progress local
+until integration/preview completes so a status-only push does not repeat CI.
+
+R5h merge complete: the normal protected merge succeeded after direct user
+confirmation. PR #59 is merged as b6c804b7865ed214fd34b97a75be9a0edbe891d2;
+its entire committed tree equals reviewed head 0c2b0a8, with original main
+655bcca and consumed source c9522dd preserved in ancestry. The retained local
+branch fast-forwards to that main while keeping this sole-plan follow-up.
+Automatic main push CI 40357729252, attempt 1, is running on b6c804b; wait for
+that existing run and its full receipts. No additional PR, rerun or npm upload.
+
+Post-merge local verification: npm test passes 1,072 tests, zero fail/cancel/skip,
+73,710 ms, before this progress-only commit. Documentation has zero errors
+against 8746a3d; all 1,079 packaged files still equal the prior fresh installed
+candidate byte for byte. This preserves its installation, Skill/document and
+old/new portable replay acceptance; it does not substitute for main CI. The
+only local source diff is this original plan. Keep unrelated ignored work intact.
+
+R5h complete: exact-source main push CI 40357729252, attempt 1, passed all eight
+jobs on b6c804b. Existing collectSourceCi/validateCiEvidence validates the original
+same-attempt full three-OS receipts: Ubuntu and macOS each pass 1,072 tests;
+Windows passes 1,068 of 1,069 tests with one existing platform skip, zero failures
+or cancellations. Preserve original failed run 40337728891; no rerun was used.
+The complete main receipts and upcoming preview proof are external under
+formal-preview-b6c804b in the integration workspace. R5e may now dispatch the
+existing dry-run workflow once. No source change, extra PR or npm upload.
+
+R5e complete: one dry-run dispatch on unchanged main b6c804b produced successful
+preview [40359981385, attempt 1](https://github.com/remote-controlled-man/skillfit/actions/runs/40359981385).
+Downloaded its exact npm-release-40359981385-1 artifact into the external
+formal-preview-b6c804b/preview-artifact directory. Existing reviewedArchive,
+validateCiEvidence, validatePreview, validateRelease and inspectBuiltPackage
+validate source identity, same-attempt main CI, version, original archive integrity,
+inventory and workflow summary. The original 0.14.0 tarball is 908,113 bytes,
+contains 1,079 files and has SHA-256
+ba495eafeb58b3d741390d88493014d70fca1f4aba4a2d842df2a893238cde03.
+Every archived file equals both current source and the previously accepted fresh
+installation, preserving its Skill/docs, installation and old/new portable replay
+proof. No additional model call or actual user-configuration write was made.
+
+The workflow reports preview-passed and uploadAccepted=false; publication intent,
+npm publish and post-upload acceptance steps are all actually skipped. This is
+not registry installation, provenance/signature acceptance or a published release.
+Retain the complete downloaded artifact and preview-review.json outside source;
+the GitHub artifact currently has 90-day retention. Its location is recorded by
+formal-preview-proof-location.txt in the integration workspace identified by
+/private/tmp/skillfit-014-integration-location.txt. Preserve main b6c804b so any
+future separately authorized publication can promote this exact preview attempt
+and original tarball without repacking. Record this progress-only plan follow-up
+on the existing delivery branch, with final docs/diff review and an independent
+remote-ref comparison; no further PR or main CI merely for status.
+
+Final progress review: only this existing plan changes after the merged source;
+its statuses, run IDs, test counts and package digest match downloaded proof.
+The docs gate against exact main and git diff --check pass. The already recorded
+post-merge npm test covers unchanged code before this status commit. Deliver this
+plan on origin/codex/docs-framework-architecture; independently compare its final
+remote SHA and confirm main remains the reviewed preview source b6c804b.
 
 ## Candidate delivery and preparation progress
 
