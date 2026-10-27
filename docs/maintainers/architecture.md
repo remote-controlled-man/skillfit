@@ -100,12 +100,15 @@ docs/{guides,reference,maintainers,work,schemas,examples,assets}/
 benches/                  reusable task inputs and provenance
 profiles/                 installation inputs
 skills/                   shipped CLI driver
-runs/                     ignored, on-demand experiment workspaces
+dist/                     ignored compiled CLI output
 ```
 
 Each topic has one canonical page; `docs/work/current.md` is the only plan.
 One-off validation/package scratch uses OS temporary directories; release receipts
-use explicit external destinations. An idle checkout needs no generated runs.
+use explicit external destinations. Retained experiment data belongs to its actual
+project/study workspace, outside this source checkout. The default `./runs` is
+relative to the caller's working directory; use `--runs-root` to choose another
+output parent. See [workspace ownership](../guides/experiment-workflow.md#store-process-data-and-analysis).
 The docs index routes readers to task guides, references, maintenance contracts
 and the sole plan. Bench format/claims stay with benches.
 The docs index owns build/version availability; fixed Git snapshots retain retired

@@ -1,27 +1,39 @@
 # Complete your first evaluation
 
-Use a built source checkout for this tutorial; [choose your build](../README.md#choose-your-build)
-explains the published version boundary. Start from the repository root after
-`npm ci` and `npm run build`. This first loop uses fixed synthetic controls and
-makes zero model calls. It proves that the pipeline can recognize those controls;
-it cannot establish a real Skill's benefit or adoption eligibility.
+Build skillfit in its source checkout with `npm ci` and `npm run build`;
+[choose your build](../README.md#choose-your-build) explains the version boundary.
+Then switch to the project/study workspace that owns the experiment:
+
+```bash
+skillfit_source="$PWD"
+cd /path/to/your/workspace
+```
+
+Capture `skillfit_source` in the built source checkout and replace the workspace
+placeholder with an existing directory. Every relative input/output below belongs
+to that workspace; the compiled CLI and bundled controls stay in the checkout.
+For one-off development validation, use a fresh OS temporary workspace instead.
+This first loop uses fixed synthetic controls and makes zero model calls. It
+proves that the pipeline can recognize those controls; it cannot establish a real
+Skill's benefit or adoption eligibility.
 
 ## 1. Preview fixed controls
 
 Choose a fresh run group and an export directory that does not exist:
 
 ```bash
-node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs/first-study/batches --run-group first-controls --json --dry-run
+node "$skillfit_source/dist/cli.js" bench self-test "$skillfit_source/benches/_self-test/example" --runs-root ./runs/first-study/batches --run-group first-controls --json --dry-run
 ```
 
 The [outer workspace](experiment-workflow.md#store-process-data-and-analysis) groups
-this tutorial's batches and exports under ignored `runs/first-study/`; the CLI
-creates only the needed output paths. Inspect the control suites and `plan.sha256`.
+this tutorial's batches and exports under workspace-relative `runs/first-study/`;
+exclude generated outputs from that project's Git history. The CLI creates only
+the needed output paths. Inspect the control suites and `plan.sha256`.
 Preview creates no run directory and executes no verifier, oracle or agent. Copy the returned digest into the
 next command, keeping the same inputs and output group:
 
 ```bash
-node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs/first-study/batches --run-group first-controls --json --plan-sha <plan.sha256>
+node "$skillfit_source/dist/cli.js" bench self-test "$skillfit_source/benches/_self-test/example" --runs-root ./runs/first-study/batches --run-group first-controls --json --plan-sha <plan.sha256>
 ```
 
 Do not enter the angle-bracket placeholder literally. A changed input needs a
@@ -35,8 +47,8 @@ checks. Expected benefit/harm verdicts are effective/ineffective, the null is
 inconclusive, and the controlled error is stopped. Read a native suite directory:
 
 ```bash
-node dist/cli.js report eval ./runs/first-study/batches/first-controls/known-benefit
-node dist/cli.js report eval ./runs/first-study/batches/first-controls/known-benefit --json
+node "$skillfit_source/dist/cli.js" report eval ./runs/first-study/batches/first-controls/known-benefit
+node "$skillfit_source/dist/cli.js" report eval ./runs/first-study/batches/first-controls/known-benefit --json
 ```
 
 The benefit control has six discordant pairs and exact p = 0.03125. Its observed
@@ -49,7 +61,7 @@ saved outcomes, unknown usage and errors.
 ## 3. Export and reproduce without model calls
 
 ```bash
-node dist/cli.js report eval ./runs/first-study/batches/first-controls/known-benefit --export ./runs/first-study/exports/first-controls --yes
+node "$skillfit_source/dist/cli.js" report eval ./runs/first-study/batches/first-controls/known-benefit --export ./runs/first-study/exports/first-controls --yes
 node ./runs/first-study/exports/first-controls/reproduce.mjs
 ```
 
@@ -66,10 +78,10 @@ suite; do not delete individual indexed files to save space.
 Create a fresh teaching case, then replace it with an independent real task:
 
 ```bash
-node dist/cli.js bench init ./my-bench --kind command --dry-run
-node dist/cli.js bench init ./my-bench --kind command --yes
-node dist/cli.js bench check ./my-bench --json
-node dist/cli.js eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs/first-study/batches --run-group first-real --json --dry-run
+node "$skillfit_source/dist/cli.js" bench init ./my-bench --kind command --dry-run
+node "$skillfit_source/dist/cli.js" bench init ./my-bench --kind command --yes
+node "$skillfit_source/dist/cli.js" bench check ./my-bench --json
+node "$skillfit_source/dist/cli.js" eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs/first-study/batches --run-group first-real --json --dry-run
 ```
 
 Replace `./my-skill` with an existing Skill directory. These commands still make

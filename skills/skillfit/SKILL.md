@@ -12,6 +12,8 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 
 Check availability with `npx skillfit@0.14.0 --version`, or `node dist/cli.js --version` inside a clone.
 If neither works, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
+For source-only commands below, set `skillfit_source` to the absolute path of a
+built checkout, then run from the project/study workspace that owns the outputs.
 The evaluation workflow requires 0.12.0 or newer for Git-bench/layout,
 ordinary CLI costs, API-failure evidence, bundled names and recorded case drafting.
 Earlier versions lack some of these fixes; inspect the installed version before using new flags.
@@ -44,7 +46,7 @@ do not substitute that older package for an example requiring 0.14.0 features.
 | "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
 | "这个 MCP / AGENTS.md 真的有帮助吗" | Preview `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3 --dry-run`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/docs/guides/experiment-workflow.md#rules-and-mcp-overlays) |
 | "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]`; default schema 1 stays unrecorded; source supports explicit `--schema-version 2` with [claims](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/benches/README.md#claims-and-measurement-scope) |
-| "花钱前确认流水线能测到预期对照" | 0.14.0 / reviewed source: preview `node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs --run-group controls-001 --json --dry-run`, then confirm with `--plan-sha <plan.sha256>`; read [self-test](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/docs/guides/bench-authoring.md#test-known-controls) for controls, limits and fresh output rules |
+| "花钱前确认流水线能测到预期对照" | 0.14.0 / reviewed source: preview `node "$skillfit_source/dist/cli.js" bench self-test "$skillfit_source/benches/_self-test/example" --runs-root ./runs --run-group controls-001 --json --dry-run` from the owning workspace, then confirm with `--plan-sha <plan.sha256>`; read [self-test](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/docs/guides/bench-authoring.md#test-known-controls) for controls, limits and fresh output rules |
 | "做代码修改 case" | `bench init <dir> --kind command --dry-run`, then apply within the authorized scope; replace the teaching case with the real fixture, prompt, verifier and oracle |
 | "给 Agent 看 case 校验失败原因" | `bench check <dir> --json` — offline gate IDs, evidence and remediation; this is the integrity result, not calibration |
 | "先测 case 难度" | Version 0.11.0: `bench check <dir> --calibrate --agent <id> --task <id> --trials 1 --max-calls 1 --run-group <fresh-name> --json --dry-run`; calibrate only within authorized spending |
@@ -193,7 +195,11 @@ historical adoption requirement; a declaration mismatch is an integrity error.
   which writes a fresh local replay directory. Export calls no model; running
   `reproduce.mjs` executes trusted verifiers. Review project data before sharing.
 - `mcp check` starts the configured local server and performs discovery only; it never calls a tool.
-- `eval` writes under the declared runs root (`runs/` by default, gitignored).
+- `eval` writes under the declared runs root (`runs/` by default).
+  Run from the project/study workspace that owns the experiment; relative output
+  paths follow that working directory. Keep retained studies outside the skillfit
+  source checkout; source-development validation uses OS temporary directories.
+  Exclude outputs from that project's Git history; the CLI does not edit its ignore rules.
   Keep derived analysis/scratch outside sealed batches; never edit/prune indexed
   receipts. Follow the [workflow](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/docs/guides/experiment-workflow.md#retain-and-clean-up)
   for explicit manual retention/cleanup. This CLI has no automatic GC or generic
