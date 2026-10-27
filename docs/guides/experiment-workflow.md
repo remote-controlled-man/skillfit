@@ -141,8 +141,13 @@ their sealed inputs and original runtime; replay does not start a new paid exper
 
 ## Store process data and analysis
 
-Use an ignored outer workspace; only batch directories have the native CLI
-layout. For example, select `--runs-root ./runs/my-study/batches` and an explicit
+Run skillfit from the project/study workspace that owns the experiment. Relative
+paths, including the default `./runs`, resolve from that working directory, not
+from skillfit's installation or source checkout. Source builds are tools: invoke
+their compiled CLI by absolute path when working elsewhere.
+
+Use an outer study workspace, ignored when it is inside a Git project; only batch
+directories have the native CLI layout. For example, select `--runs-root ./runs/my-study/batches` and an explicit
 fresh `--run-group dev-001` or `validation-001` when previewing/confirming:
 
 ```text
@@ -160,9 +165,11 @@ This is a convention using existing paths, not a new format or required set of
 folders. Create only what is needed. Local inputs/outputs remain out of Git;
 reusable benches and source methods belong to their existing owners. Ignored
 storage is not a backup or a public delivery location.
+Exclude generated outputs from the owning project's Git history; skillfit does
+not edit that project's ignore rules.
 
-`runs/` is generated local data, not a maintained source module. It can be empty
-when no experiment needs local records. Use one named workspace for an actual
+`runs/` is generated data in the owning workspace, not a skillfit source module.
+Keep retained studies outside the skillfit source checkout. Use one named workspace for an actual
 study; do not mix source clones, package installations, build logs or release
 verification into it. One-off validation scratch uses OS temporary directories;
 ordinary `dist/` and `node_modules/` keep their existing project locations.

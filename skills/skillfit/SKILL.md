@@ -193,7 +193,11 @@ historical adoption requirement; a declaration mismatch is an integrity error.
   which writes a fresh local replay directory. Export calls no model; running
   `reproduce.mjs` executes trusted verifiers. Review project data before sharing.
 - `mcp check` starts the configured local server and performs discovery only; it never calls a tool.
-- `eval` writes under the declared runs root (`runs/` by default, gitignored).
+- `eval` writes under the declared runs root (`runs/` by default).
+  Run from the project/study workspace that owns the experiment; relative output
+  paths follow that working directory. Keep retained studies outside the skillfit
+  source checkout; source-development validation uses OS temporary directories.
+  Exclude outputs from that project's Git history; the CLI does not edit its ignore rules.
   Keep derived analysis/scratch outside sealed batches; never edit/prune indexed
   receipts. Follow the [workflow](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/docs/guides/experiment-workflow.md#retain-and-clean-up)
   for explicit manual retention/cleanup. This CLI has no automatic GC or generic

@@ -2,7 +2,14 @@
 
 ## Status
 
-- Current task: R7 durable release-proof delivery and documentation housekeeping
+- Current task: R8 study/workspace separation and current guidance are complete.
+  The complete ponytail study is retained at
+  ~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 with all 481 files
+  unchanged. Reading and moved replay pass with the old path absent; source runs
+  remains absent after tutorial and full offline checks. dist stays build output;
+  CLI defaults/formats are unchanged. No new model calls,
+  npm publication, PR, remote CI, GC or workspace-management mechanism.
+  R7 durable release-proof delivery and documentation housekeeping
   are complete. One external 0.14.0 delivery is retained and verified; the existing
   release manual and this sole plan form the reviewed final branch delivery. No new PR,
   remote CI, npm publication, automatic cleanup or real experiment. Documentation
@@ -71,6 +78,10 @@
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| R8a | Inventory study ownership and migration baseline | Complete | Source contains one stopped study, 481 ordinary files/2,444,971 bytes and no links/special files. Freeze every file hash/mode and native report; confirm no active study executor. Native identity, two completed calls, costs and original failure must remain unchanged. |
+| R8b | Move the complete study to its owning workspace; after R8a | Complete; byte-identical move and replay passed | Use fresh ~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 as this study's working directory, not a new global output default. Move all bytes intact with collision checks and rollback on verification failure. With old source path absent, read/audit, export and actually replay a moved portable package offline. Preserve all indexed native files and historical launchers, never rewrite old paths/hashes or restart the stopped pilot. |
+| R8c | Correct current source/workspace guidance; after R8b | Complete; existing guidance corrected | Update only existing agent/architecture/workflow/tutorial/driver guidance and this plan. Explain caller-workspace ./runs versus source dist, source-dev OS temporary work and external release receipts. Make tutorial commands execute from the actual workspace with the compiled CLI addressed explicitly; keep public flags/defaults, native layout and historical evidence unchanged. No new page or framework. |
+| R8d | Verify examples and deliver; after R8c | Complete; tutorial, replay and offline checks passed | Execute the changed zero-model tutorial in a fresh OS temporary workspace, verify native/report/export/moved replay and unchanged checkout inputs. Run docs/anchors and repository-required npm test before commit; confirm source runs stays absent, study hashes/meaning unchanged and private lab untouched. Commit/push only reviewed existing guidance on the original branch, no PR/remote CI/npm upload. |
 | R7a | Retain verified 0.14.0 delivery outside temporary storage | Complete; copied bytes and records verified | Copy the complete original publication artifact, 18 hash-linked recovery receipts and existing failure/run/recovery observations into fresh ~/Documents/skillfit-releases/0.14.0. Preserve exact bytes, reject collisions/symlinks and verify the copied original tarball plus standalone records. No repository evidence/archive tree or new storage mechanism. |
 | R7b | Correct existing release guidance; after R7a | Complete; existing manual corrected | Replace stale candidate/latest-version claims with version-neutral guidance in the existing release manual. Preserve original published documents, commands, history and links; record the durable proof location and actual verification here. No new page, version bump or package publication. |
 | R7c | Review, verify and deliver housekeeping; after R7b | Complete; reviewed branch delivery | Run docs against actual main, inspect facts/diff and verify retained records at the final path. Complete repository-required offline checks before commit. Commit only the manual and this plan, push the existing branch non-force with no open PR, compare remote refs, and leave main 7514936 unchanged for the next normal integration. |
@@ -128,6 +139,67 @@
 | M7 | Exact main CI, tree/deletion verification and final status; after M6 | Complete | Main run 40294723010 passed all eight jobs on 655bccaa384bbc3d0dc5602e76efa63968272ece. Existing source-CI collection validated three full OS receipts; source tree equals the reviewed candidate and all 1,989 deletions remain. This sole-plan follow-up incorporates main into the retained delivery branch, preserving six consumed pins. Verify the final pushed ref independently in the handoff; no new PR or CI run solely for status. |
 
 ## Checked integration and preview progress
+
+R8 authorized on 2026-10-27: the user asks to choose and implement the appropriate
+placement. dist is owned compiled output and remains in the source checkout.
+The sole runs/ponytail-efficiency-20261026 directory is an older study whose
+launcher hard-codes the source checkout and its output path. CLI defaults already
+resolve ./runs from the caller's current directory; no application change is
+needed. The old tutorial's repository-root instructions blur those two owners.
+
+R8a complete: frozen inventory contains 481 ordinary files/2,444,971 bytes,
+including all 337 indexed native artifacts, with no symlinks/special files.
+The existing CLI reads the baseline successfully as stopped/EXECUTION_FAILED:
+two calls started/finished of 16 planned; frozen global Skill change caused the
+original stop. No matching active study executor is present. Historical outer
+launchers/seals and saved paths are observations and remain byte-identical;
+this migration does not authorize rerunning or repairing the old live study.
+Use existing read/export/replay interfaces, preserve all costs/unknowns and create
+only disposable verification exports. Migration proof is outside source at the
+workspace identified by /private/tmp/skillfit-workspace-move-location.txt.
+
+R8b complete: moved the entire study atomically to
+~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 after another active
+executor/collision/hash check. All 481 files, permissions and historical paths
+remain unchanged. With the old source path absent, the CLI's native report is
+identical after normalizing only the study location. Native offline replay,
+export preview/apply, moved portable integrity verification and actual replay
+all exit successfully. The original study stays stopped with two calls retained;
+this migration made zero model calls. Removed the empty checkout runs parent.
+Historical launchers/seals remain evidence, not an instruction to resume the old
+pilot. No aliases, path rewriting, application/default change or new mechanism.
+
+R8c complete: current agent, architecture, workflow and driver guidance now
+separate caller-owned experiment outputs from source-owned dist. The existing
+first-evaluation tutorial captures the compiled source path before switching
+into the actual workspace; its controls use an explicit source path and its
+relative inputs/runs/exports stay in that workspace. Documentation adds no new
+page, flag, output schema, folder requirement or automatic deletion service.
+
+R8d tutorial acceptance: executed all six Bash blocks in a fresh OS temporary
+workspace with spaces in its path, outside the source checkout. All four
+synthetic controls pass with 27 simulated invocations and zero real model/Agent
+calls. Preview creates no runs; report and export succeed; moved replay verifies
+and runs after deleting the disposable original control batch. Teaching bench
+preview/create/check and real-eval dry-run also succeed without executing a model.
+No checkout runs directory appears. Removed owned tutorial scratch after success;
+temporary verification exports are not retained as another permanent study.
+
+R8d complete: full npm test passes 1,073 tests, zero fail/cancel/skip (66,370 ms).
+Docs against actual main 7514936 and diff checks pass. After the full suite,
+source runs is still absent, dist/cli.js exists, and all 481 relocated file hashes
+still match the baseline. One integrated OCR-guided review manually covers all
+six Markdown/instruction paths filtered by extension; no open findings. All
+agent safety/authorization rules, native formats, statistics, source code, CLI
+flags/defaults and historical observations are unchanged. The owning project's
+ignore rules remain its responsibility; the CLI does not edit them implicitly.
+
+Deliver only these six existing guidance/plan files on the original source branch
+and verify its remote SHA; preserve main 7514936 for the next normal authorized
+integration. No new documentation, experiment, workspace registry, automatic
+cleanup, paid call, PR, remote CI or npm publication was introduced. Temporary
+migration/tutorial exports were reclaimed after their independent replay checks;
+the one retained native study remains complete in its actual durable workspace.
 
 R7 authorized on 2026-10-27: the user accepts lightweight closeout of the three
 identified delivery details. Main remains 7514936 and the existing branch is
