@@ -2,12 +2,12 @@
 
 ## Status
 
-- Current task: R9 reviews and integrates 9244d61 plus the unmerged R6/R7
-  closeout in one authorized PR, existing CI, protected merge and main CI.
-  R9a is complete: corrected the driver's remaining source-relative self-test
-  example and verified external records, replay and all 1,073 offline tests.
-  One reviewed PR and its exact-main acceptance remain. No application/default
-  change, new model call or npm workflow/publication is authorized.
+- Current task: R9 review and integration are complete. PR #61 merges 9244d61
+  and the preceding R6/R7 closeout as main df3dedc; PR/main CI each passed all
+  eight jobs, and exact-main full three-OS receipts are verified. Corrected the
+  driver's remaining source-relative self-test example and verified external
+  records, moved replay and all 1,073 local offline tests. No open review findings,
+  application/default change, new model call or npm workflow/publication.
   R8 study/workspace separation and current guidance are complete.
   The complete ponytail study is retained at
   ~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 with all 481 files
@@ -19,8 +19,9 @@
   are complete. One external 0.14.0 delivery is retained and verified; the existing
   release manual and this sole plan form the reviewed branch delivery. R7 introduced
   no PR, remote CI, npm publication, automatic cleanup or real experiment. Documentation
-  and final plan state will join main through this user-authorized R9 PR;
-  preserve protected-main rules throughout.
+  joined main through the user-authorized R9 PR. Final CI observations
+  are delivered on the retained source branch without a status-only PR/CI cycle;
+  protected-main rules are preserved.
   R6 review and integration of repair 5f3c0ec are complete through
   PR #60 and main 7514936. Both PR/main CI passed all eight jobs. No npm
   publication, workflow dispatch, repack or new release is authorized in R6.
@@ -43,7 +44,7 @@
   remaining runtime acceptance gap. R7's complete 0.14.0 delivery is now saved
   and verified at ~/Documents/skillfit-releases/0.14.0; the existing release
   manual no longer claims candidate status. All local closeout checks passed.
-  R9 now authorizes protected-main documentation synchronization in one PR.
+  R9 completed protected-main documentation synchronization in one PR.
   Never upload 0.14.0 again.
   Defer automatic deletion: do not add it to this release's execution steps;
   revisit only if an owned disposable temporary-directory leak is evidenced.
@@ -89,8 +90,8 @@
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
 | R9a | Review cumulative closeout and external records | Complete; one example omission fixed, no open findings | Freeze main 7514936/head 9244d61 and account for all seven existing Markdown files. Correct the remaining driver command's workspace ambiguity, execute it outside source, verify 481 study files/modes and 33 release files/18 receipts, and read/export/replay with the old path absent. Check docs and npm test; no new model calls or native changes. |
-| R9b | Deliver one combined closeout PR; after R9a | In progress; local acceptance passed | Push reviewed documentation and original-plan follow-up non-force, create/attach one PR and wait for all eight existing CI jobs plus security on the exact head. Existing classification is full for this scope; do not change workflows, weaken checks or push progress-only updates during CI. No npm workflow. |
-| R9c | Merge and verify exact-main closeout; after R9b | Pending | Normal protected merge with checked head and clean message; require identical merged tree and original publication/study ancestry, all eight automatic main checks and same-attempt full three-OS receipts. Confirm source runs absent and retained bytes unchanged; record final status in this original plan without another CI-only PR or npm upload. |
+| R9b | Deliver one combined closeout PR; after R9a | Complete; all PR checks passed | Push reviewed documentation and original-plan follow-up non-force, create/attach one PR and wait for all eight existing CI jobs plus security on the exact head. Existing classification is full for this scope; do not change workflows, weaken checks or push progress-only updates during CI. No npm workflow. |
+| R9c | Merge and verify exact-main closeout; after R9b | Complete; main CI and full three-OS receipts passed | Normal protected merge with checked head and clean message; require identical merged tree and original publication/study ancestry, all eight automatic main checks and same-attempt full three-OS receipts. Confirm source runs absent and retained bytes unchanged; record final status in this original plan without another CI-only PR or npm upload. |
 | R8a | Inventory study ownership and migration baseline | Complete | Source contains one stopped study, 481 ordinary files/2,444,971 bytes and no links/special files. Freeze every file hash/mode and native report; confirm no active study executor. Native identity, two completed calls, costs and original failure must remain unchanged. |
 | R8b | Move the complete study to its owning workspace; after R8a | Complete; byte-identical move and replay passed | Use fresh ~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 as this study's working directory, not a new global output default. Move all bytes intact with collision checks and rollback on verification failure. With old source path absent, read/audit, export and actually replay a moved portable package offline. Preserve all indexed native files and historical launchers, never rewrite old paths/hashes or restart the stopped pilot. |
 | R8c | Correct current source/workspace guidance; after R8b | Complete; existing guidance corrected | Update only existing agent/architecture/workflow/tutorial/driver guidance and this plan. Explain caller-workspace ./runs versus source dist, source-dev OS temporary work and external release receipts. Make tutorial commands execute from the actual workspace with the compiled CLI addressed explicitly; keep public flags/defaults, native layout and historical evidence unchanged. No new page or framework. |
@@ -185,6 +186,50 @@ review findings. Proof is external at the workspace identified by
 /private/tmp/skillfit-closeout-integration-location.txt. Commit the reviewed driver
 example and this original-plan follow-up before the single PR; keep subsequent
 progress local while checks run.
+
+R9b delivered: reviewed follow-up 5bb1f01fa0cf8648ae9fca9e98edf133f9668016
+is pushed non-force and remote identity matches. Created and attached the single
+combined [PR #61](https://github.com/remote-controlled-man/skillfit/pull/61),
+four commits/seven existing Markdown paths, against main 7514936. Existing PR
+CI 40452169975 runs on that exact head. Keep this progress local until PR/main
+checks complete; do not dispatch workflows or push progress-only updates.
+
+R9b complete: existing PR CI 40452169975/1 passes all eight jobs on unchanged
+5bb1f01, including Windows (12m41s), macOS and Ubuntu; security passes too.
+The final guard confirms OPEN/CLEAN/MERGEABLE against unchanged main 7514936,
+all nine checks SUCCESS, and all seven committed file hashes match the reviewed
+inputs. No CI rerun or progress-only push. Proceed with normal protected merge
+of this exact head, preserving consumed history and using an explicit message.
+
+R9c merged: normal protected merge of PR #61 succeeded as
+df3dedc32bdc3863e3177f97e76b209ce822833c. Its entire tree equals reviewed head
+5bb1f01; prior main 7514936, original publication source b6c804b, consumed source
+c9522dd and reviewed workspace change 9244d61 remain ancestors. Fast-forwarded
+the retained local branch while preserving only this sole-plan progress follow-up.
+Automatic main push CI 40453464788 runs on df3dedc, attempt 1. Await all eight
+checks and same-attempt full three-OS receipts. No manual workflow, extra PR,
+CI rerun, npm upload or new model calls.
+
+R9c complete: automatic main push CI
+[40453464788](https://github.com/remote-controlled-man/skillfit/actions/runs/40453464788),
+attempt 1, passes all eight jobs on exact source df3dedc. Existing
+collectSourceCi/validateCiEvidence verifies the same-attempt full three-OS
+receipts: Ubuntu/macOS each pass all 1,073 tests; Windows passes 1,069 of 1,070
+with one existing platform skip and zero failures/cancellations (12m24s).
+All retained study files/modes and release-file hashes still match their
+baselines after merge, and source runs remains absent. No runtime code,
+workflow, defaults, published archive or historical observation changed in R9.
+
+R9 final delivery: R6/R7/R8 guidance and accumulated closeout are on protected
+main; the only remaining diff is this original plan's actual progress/results.
+Reviewed that follow-up against the verified PR/main identities, retained-byte
+proof and executed checks; no open findings. Docs against main df3dedc and diff
+checks pass. Reuse the unchanged full offline and CI acceptance; do not repeat
+them just for status text. Commit/push this plan-only follow-up on the retained
+codex/docs-framework-architecture branch and compare remote refs, keeping main
+df3dedc unchanged. No extra PR, CI rerun, npm workflow/upload or model call.
+Complete main evidence is under main-source-ci in the existing external R9
+proof workspace. Calibration and automatic deletion remain deferred as agreed.
 
 R8 authorized on 2026-10-27: the user asks to choose and implement the appropriate
 placement. dist is owned compiled output and remains in the source checkout.
