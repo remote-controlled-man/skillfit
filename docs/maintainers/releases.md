@@ -1,9 +1,11 @@
 # Release procedure
 
-Current source prepares the 0.14.0 package beyond npm 0.13.1. A version
-entry does not establish registry publication or identify the exact source checkout. See the [changelog](../../CHANGELOG.md)
-and [fixed 0.13.1 record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md)
-for published behavior. This guide operates the existing
+This guide covers preparing, publishing and verifying a reviewed npm package.
+A source version entry alone does not establish registry publication; use the
+registry and verified release receipts to identify the delivered package and source.
+See the [changelog](../../CHANGELOG.md) for package changes and the
+[fixed 0.13.1 record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md)
+for that historical release. This guide operates the existing
 [npm release workflow](https://github.com/remote-controlled-man/skillfit/actions/workflows/npm-release.yml);
 its [definition](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/.github/workflows/npm-release.yml)
 and release tools enforce the steps below. Dispatch only within explicit release

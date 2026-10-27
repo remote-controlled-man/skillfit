@@ -2,7 +2,13 @@
 
 ## Status
 
-- Current task: R6 review and integration of repair 5f3c0ec are complete through
+- Current task: R7 durable release-proof delivery and documentation housekeeping
+  are complete. One external 0.14.0 delivery is retained and verified; the existing
+  release manual and this sole plan form the reviewed final branch delivery. No new PR,
+  remote CI, npm publication, automatic cleanup or real experiment. Documentation
+  and final plan state will join main with the next normal authorized change;
+  do not bypass protected-main rules just for this housekeeping.
+  R6 review and integration of repair 5f3c0ec are complete through
   PR #60 and main 7514936. Both PR/main CI passed all eight jobs. No npm
   publication, workflow dispatch, repack or new release is authorized in R6.
   R4 publication/registry acceptance are complete through verification-only
@@ -21,7 +27,11 @@
   installed files match the reviewed package/source. Source-tool repair is now
   merged through PR #60 as main 7514936. Its tree equals checked head 63ae1e7;
   main CI 40440668681/1 and its full three-OS receipts are verified. R6 has no
-  remaining acceptance gap. Never upload 0.14.0 again.
+  remaining runtime acceptance gap. R7's complete 0.14.0 delivery is now saved
+  and verified at ~/Documents/skillfit-releases/0.14.0; the existing release
+  manual no longer claims candidate status. All local closeout checks passed.
+  Protected-main documentation synchronization remains intentionally deferred
+  to the next normal authorized integration. Never upload 0.14.0 again.
   Defer automatic deletion: do not add it to this release's execution steps;
   revisit only if an owned disposable temporary-directory leak is evidenced.
   There is no new cleanup service, timer or runs expiry requirement.
@@ -47,6 +57,9 @@
   publish again, add automatic deletion, run paid experiments or create another
   unrelated PR. Update this sole plan after each phase without restarting CI
   merely for progress text.
+  R7 is documentation/delivery housekeeping only: use the existing source branch,
+  defer its protected-main integration to the next normal authorized PR, and keep
+  the original package, failed publication run and successful recovery distinct.
 - Source baseline: c9522ddea4c181056f1065e04f3ee0f69845146a, clean at this phase's
   start. At that point the remote delivery branch was 8d8ff24c7adddb0cc1e7f3653a56baddeefef363;
   remote main was 655bccaa384bbc3d0dc5602e76efa63968272ece. Official npm
@@ -58,6 +71,9 @@
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| R7a | Retain verified 0.14.0 delivery outside temporary storage | Complete; copied bytes and records verified | Copy the complete original publication artifact, 18 hash-linked recovery receipts and existing failure/run/recovery observations into fresh ~/Documents/skillfit-releases/0.14.0. Preserve exact bytes, reject collisions/symlinks and verify the copied original tarball plus standalone records. No repository evidence/archive tree or new storage mechanism. |
+| R7b | Correct existing release guidance; after R7a | Complete; existing manual corrected | Replace stale candidate/latest-version claims with version-neutral guidance in the existing release manual. Preserve original published documents, commands, history and links; record the durable proof location and actual verification here. No new page, version bump or package publication. |
+| R7c | Review, verify and deliver housekeeping; after R7b | Complete; reviewed branch delivery | Run docs against actual main, inspect facts/diff and verify retained records at the final path. Complete repository-required offline checks before commit. Commit only the manual and this plan, push the existing branch non-force with no open PR, compare remote refs, and leave main 7514936 unchanged for the next normal integration. |
 | R6a | Review 5f3c0ec and exact integration scope | Complete; no open findings | Freeze main b6c804b and head 5f3c0ec. Review all three paths, including the plan filtered by OCR, static-link initialization, public verify/recover entries and original recovery receipts. Run focused release checks, docs against actual main and npm test; retain unchanged 1,079-file package and fixed publication source. |
 | R6b | Deliver one reviewed repair PR; after R6a | Complete; all PR checks passed | Commit only original-plan authorization/progress, push non-force, create and attach one PR. Wait for all eight unchanged CI jobs and security on the exact head, with no progress-only push/retry during CI. No npm workflow dispatch. |
 | R6c | Merge repair and verify exact-main CI; after R6b | Complete; main CI and full three-OS receipts passed | Use a normal protected merge with an explicit clean message and checked head. Verify merged tree, consumed ancestry and unchanged published bytes, then require all eight automatic main jobs and same-attempt full three-OS receipts. Update/deliver final plan status on the existing branch, verify remote refs and retain original release failure/recovery truth. Never republish 0.14.0. |
@@ -112,6 +128,56 @@
 | M7 | Exact main CI, tree/deletion verification and final status; after M6 | Complete | Main run 40294723010 passed all eight jobs on 655bccaa384bbc3d0dc5602e76efa63968272ece. Existing source-CI collection validated three full OS receipts; source tree equals the reviewed candidate and all 1,989 deletions remain. This sole-plan follow-up incorporates main into the retained delivery branch, preserving six consumed pins. Verify the final pushed ref independently in the handoff; no new PR or CI run solely for status. |
 
 ## Checked integration and preview progress
+
+R7 authorized on 2026-10-27: the user accepts lightweight closeout of the three
+identified delivery details. Main remains 7514936 and the existing branch is
+a5baa3e, clean with no open PR. All R6 runtime/CI acceptance is complete; the
+remaining work is durable receipt retention and existing-document cleanup.
+The only complete successful recovery receipts are still under the OS temporary
+integration workspace, while the original failed workflow artifact lacks them.
+Use a fresh versioned directory under ~/Documents/skillfit-releases, retaining
+the complete original artifact separately from the successful standalone records.
+No original data is deleted or overwritten. Final docs/plan synchronization into
+protected main rides the next normal authorized change, not another standalone
+PR/CI cycle. This closeout adds no documentation system, archive catalog or GC.
+
+R7a complete: saved the fresh durable delivery at
+~/Documents/skillfit-releases/0.14.0 (33 files, 1,191,816 bytes). original-run/
+retains the entire original failed workflow artifact, including the original
+908,113-byte tarball and pack metadata. records/ retains the complete successful
+protocol-3 recovery bundle; original run metadata/failure log, recovery state and
+publication review remain separate observations. Every copied byte matches its
+source. Existing reviewedArchive validates the original SHA-256
+ba495eafeb58b3d741390d88493014d70fca1f4aba4a2d842df2a893238cde03,
+version and 1,079-file inventory; the actual release-records CLI verifies all
+18 receipts with zero writes or publications. All six recovery stages passed,
+the original failure is intact, and no existing source or destination was deleted
+or overwritten. Delivery no longer depends on OS temporary-folder retention.
+
+R7b complete: replaced the existing release manual's stale current-candidate/npm
+version introduction with version-neutral publication/receipt guidance. Historical
+0.13.1 links, executable commands, headings and release rules are unchanged.
+No maintained document, schema, storage service, package or runtime was added.
+Final progress and this existing document will be delivered on the same branch;
+their main synchronization remains for the next normal authorized integration.
+
+R7c closeout verified: npm test passes 1,073 tests with zero fail/cancel/skip
+(69,137 ms); docs against actual main 7514936 and diff checks pass. At the durable
+destination, all 33 copied files match their source hashes, the original archive
+passes size/SHA-512/SHA-256 checks and all 18 standalone receipts verify again.
+Manual review confirms only the release guide introduction and this existing
+plan change; all guide commands, headings and procedure body are byte-identical.
+No runtime, dependency, version, workflow, historical package or private lab edit.
+
+Deliver the two reviewed documentation files non-force on the existing branch;
+independently compare its final remote SHA and unchanged main in the handoff.
+No extra PR or remote CI is warranted for this housekeeping. Final plan state
+and guide changes deliberately await the next normal main integration; this is
+an explicit delivery boundary, not a remaining runtime or receipt-retention gap.
+Calibration, live Agent/backend verification and automatic deletion remain outside
+this completed engineering/closeout scope. Source-only review/check logs stay in
+the OS temporary workspace identified by /private/tmp/skillfit-release-closeout-location.txt;
+the actual release delivery is the durable Documents directory above.
 
 R6 authorized on 2026-10-27: the user requests a careful review of 5f3c0ec,
 one repair PR, necessary CI, merge after success and post-merge main CI. This
