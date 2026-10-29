@@ -39,11 +39,36 @@ npx skillfit@0.14.0 --help
 npx skillfit@0.14.0 doctor
 ```
 
-需要 Node.js 22+。以上两条命令均离线执行，不调用模型。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
+需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出八个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
+
+## 花钱之前先看一份真实报告
+
+不需要 agent CLI、不需要登录、不调用模型。以下命令读取包内自带的 bench，几秒即可跑完：
+
+```bash
+npx skillfit@0.14.0 bench check code-review
+npx skillfit@0.14.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.14.0 report eval ./runs/controls-001/existing-mock-arms
+```
+
+`bench check` 用已知正确与已知错误的答案去跑内置 verifier，你可以直接看到 harness 的鉴别力：oracle 通过、空输出失败、mock 基线失败、mock 实验组通过。`bench self-test` 接着在合成对照上驱动完整的配对流水线——grader、精确 McNemar 判定、配对 bootstrap 区间、审计——再由 `report eval` 渲染出来。那份报告带有 **Synthetic harness run** 横幅：它证明流水线可用，不证明任何 Skill 有收益。给 self-test 加上 `--dry-run` 可只打印计划、不写任何文件。
 
 ## 用 npm 开始
 
-在项目目录执行，将 `./my-skill` 替换为包含自己 `SKILL.md` 的目录：
+在项目目录执行，指向你真正在用的 Skill——任何含 `SKILL.md` 且带 `name` 与 `description` frontmatter 的目录都可以。把下面的示例存成 `my-skill/SKILL.md`，也就是 `eval` 命令引用的那个路径：
+
+```markdown
+---
+name: my-skill
+description: When to load this skill, in one sentence
+---
+
+# My skill
+
+The instructions the agent should follow.
+```
+
+然后脚手架一个 case 并预览评测：
 
 ```bash
 npx skillfit@0.14.0 bench init my-bench --kind command --dry-run

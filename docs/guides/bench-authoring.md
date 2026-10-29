@@ -118,6 +118,13 @@ node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs -
 node dist/cli.js bench self-test benches/_self-test/example --runs-root ./runs --run-group controls-001 --json --plan-sha <plan.sha256>
 ```
 
+The `benches/_self-test/example` path above is relative to a source checkout. From
+an installed package, resolve it through the package root — for npm,
+`"$(npm root)/skillfit/benches/_self-test/example"` — because a nested name is
+always read as a path and never as a bundled bench name. Top-level bundled benches
+are addressable by name alone, so `bench self-test code-review --suite
+existing-mock-arms` runs that bench's retained mock arms without any path.
+
 Substitute the reviewed digest. JSON execution requires it and a fresh group;
 `--yes` cannot bypass it. Preview runs no graders and creates no output. Both
 commands must use identical inputs/settings. Changes need another preview.
