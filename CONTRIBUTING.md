@@ -36,6 +36,7 @@ and relevant versions. Use [SECURITY.md](SECURITY.md) for private security repor
 - Run `npm test` for code/build changes and before any commit. Tests are `node:test`, offline, and never call a real model API or agent CLI — use `MockExecutor`, injected executors, or injected fs roots.
 - Verdict semantics and the statistical protocol are frozen in [docs/reference/metrics.md](docs/reference/metrics.md); change the doc and the code together.
 - Follow [architecture and maintenance](docs/maintainers/architecture.md) for module boundaries, document ownership and version scope. Update the canonical guide and its affected dependents. Migrate current links when consolidating pages and link the exact historical snapshot for old explanations; preserve bilingual README blocks and frozen evidence bytes. Documentation-only changes need facts, links and diff review; code/build changes require the offline suite.
+- One page owns each fact. A sentence long enough to carry a claim must not appear verbatim in two maintained pages — `documentation-owners.test.mjs` fails the build and names both files. Link the owner instead; a sentence that links is exempt, since pointing is the compliant form.
 - PRs must describe *observable* changes: what the CLI printed/did before and after.
 - AI-generated PRs are welcome, but say so, and you are responsible for having run the code. Unverifiable PRs will be closed without review.
 - **Never run `git clean -fdx` in your clone** if you keep a local `workspace4skills/` lab directory — it deletes ignored directories.

@@ -67,3 +67,37 @@ test('the limitation owner keeps the anchor other pages link to', () => {
     assert.match(metrics, limit, 'the five repeated limits must stay owned in one section');
   }
 });
+
+/**
+ * The rows above only cover facts someone remembered to list, while copying is the
+ * common contributor move, so this derives the check from the tree instead: a
+ * sentence long enough to carry a claim must live in one page. Verbatim only -- a
+ * paraphrased restatement still depends on review, which is why the version-neutral
+ * wording rule exists separately.
+ */
+const CLAIM_LENGTH = 70;
+
+const claims = file => readFileSync(join(ROOT, file), 'utf8')
+  .replace(/```[\s\S]*?```/g, ' ')
+  .replace(/^#{1,6} .*$/gm, ' ')
+  .split(/(?<=[.!?。])\s+/)
+  .map(raw => raw.replace(/\s+/g, ' ').replace(/[*_`]/g, '').trim())
+  // A sentence carrying a link points at the owner, which is the compliant form;
+  // many pages may point at one owner alike. Appending a link to dodge this is a
+  // review matter, not a mechanical one.
+  .filter(text => text.length >= CLAIM_LENGTH && !text.includes(']('));
+
+test('no maintained page restates another page sentence for sentence', () => {
+  const stated = new Map();
+  for (const file of maintained()) {
+    for (const claim of claims(file)) {
+      if (!stated.has(claim)) stated.set(claim, new Set());
+      stated.get(claim).add(file);
+    }
+  }
+  const restated = [...stated]
+    .filter(([, files]) => files.size > 1)
+    .map(([claim, files]) => `${[...files].sort().join(' and ')} both state: "${claim.slice(0, 90)}"`);
+  assert.deepEqual(restated, [],
+    'one page owns each fact; link the owner instead of restating it');
+});
