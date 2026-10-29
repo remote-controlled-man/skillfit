@@ -12,7 +12,12 @@ const scaffold = (root, bin) => {
   if (bin) writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'skillfit', version: '0.0.0', bin }));
 };
 
-const executable = path => (lstatSync(path).mode & 0o111) !== 0;
+/**
+ * Windows has no exec bit: npm resolves bins by extension through .cmd shims, and
+ * chmod 0755 there only clears the read-only flag. Assert what each platform means
+ * by "runnable" so the linked-install regression stays covered everywhere.
+ */
+const runnable = path => (lstatSync(path).mode & (process.platform === 'win32' ? 0o200 : 0o111)) !== 0;
 
 test('build replaces stale output only after successful compilation and refuses symlink output', () => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-build-test-'));
@@ -34,26 +39,31 @@ test('build replaces stale output only after successful compilation and refuses 
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test('build marks every declared bin executable for linked and source installs', () => {
+test('build marks every declared bin runnable for linked and source installs', () => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-build-bin-'));
   try {
     scaffold(root, { skillfit: 'dist/main.js' });
     build(root);
-    assert.equal(executable(join(root, 'dist/main.js')), true, 'a linked install must not fail with EACCES');
+    assert.equal(runnable(join(root, 'dist/main.js')), true, 'a linked install must not fail with EACCES');
     // A rebuild over an existing dist keeps the bit, since tsc emits 0644.
     build(root);
-    assert.equal(executable(join(root, 'dist/main.js')), true);
+    assert.equal(runnable(join(root, 'dist/main.js')), true);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test('build accepts a string bin and refuses one the compiler did not produce', () => {
-  const root = mkdtempSync(join(tmpdir(), 'skillfit-build-bin-bad-'));
+test('build accepts a string bin', () => {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-build-bin-string-'));
   try {
     scaffold(root, 'dist/main.js');
     build(root);
-    assert.equal(executable(join(root, 'dist/main.js')), true);
-    rmSync(join(root, 'dist'), { recursive: true });
-    writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'skillfit', version: '0.0.0', bin: { skillfit: 'dist/absent.js' } }));
+    assert.equal(runnable(join(root, 'dist/main.js')), true);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('build refuses a declared bin the compiler did not produce', () => {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-build-bin-bad-'));
+  try {
+    scaffold(root, { skillfit: 'dist/absent.js' });
     assert.throws(() => build(root), /bin "skillfit" -> "dist\/absent\.js" was not produced/);
     assert.equal(existsSync(join(root, 'dist')), false, 'a refused build leaves no partial output');
   } finally { rmSync(root, { recursive: true, force: true }); }
