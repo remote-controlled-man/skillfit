@@ -253,7 +253,7 @@ the five measures and final/partial/unknown coverage below. Judge `passes`
 counts successfully parsed grading calls, so the combined `passes` is not a task
 success rate and must not be used as the denominator of Agent cost per success.
 
-Every judge order saves a version-1 `skillfit.judge-call` receipt under
+Every judge order saves a version-1 `skillfit.judge-call` [receipt](../schemas/judge-call.schema.json) under
 `<task>/judge-trial-<n>/call-1.json` or `call-2.json`. It retains the anonymous
 prompt and hash, output, available raw output, executor, invocation/error state,
 token coverage and monotonic elapsed interval. Invalid grading JSON still costs

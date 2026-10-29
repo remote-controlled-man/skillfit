@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkDocumentation, readDocumentationBaseline } from './check-docs.mjs';
+import { checkDocumentation } from './check-docs.mjs';
 import { RELEASE_DOCUMENTS } from './recipes/release-docs-smoke.mjs';
 
 const sha = value => /^[a-f0-9]{40}$/.test(value ?? '') && !/^0+$/.test(value);
@@ -58,7 +58,7 @@ function localFile(root, file) {
 
 export function inspectRecordChanges(root, changes) {
   assert.equal(classifyChanges(changes), 'records', 'Only classified records can use targeted validation');
-  const documentation = checkDocumentation(root, { changes });
+  const documentation = checkDocumentation(root);
   assert.deepEqual(documentation.errors, [], documentation.errors.join('\n'));
   return inspectLegacyRecordChanges(root, changes);
 }
@@ -89,20 +89,11 @@ export function inspectLegacyRecordChanges(root, changes) {
   return { files: files.length, references, currentDocuments: RELEASE_DOCUMENTS.length };
 }
 
-function documentationForScope(root, scope) {
+function documentationForScope(root) {
   try {
-    // Retain the legacy reason interpretation for older local scope records.
-    const knownBaseline = sha(scope.base) && scope.diffAvailable !== false && scope.reason !== UNKNOWN_DIFF_REASON;
-    const context = knownBaseline ? readDocumentationBaseline(root, scope.base, scope.changes) : { changes: scope.changes ?? [] };
-    const result = checkDocumentation(root, context);
-    if (!knownBaseline) {
-      result.anchorBaseline = 'unavailable';
-      result.manualReviews.push({ path: 'Git baseline', responsibility: 'Compare old paths/fragments when the exact baseline is available.', status: 'not-machine-verified' });
-    }
-    return result;
+    return checkDocumentation(root);
   } catch (error) {
-    return { schemaVersion: 1, kind: 'skillfit.documentation-check', baseline: scope.base ?? null, anchorBaseline: 'not-compared',
-      files: [], errors: [error.message], impacts: [], manualReviews: [] };
+    return { schemaVersion: 2, kind: 'skillfit.documentation-check', files: [], errors: [error.message] };
   }
 }
 
@@ -137,10 +128,10 @@ function main(mode) {
   } else if (mode === 'documentation' || mode === 'test' || mode === 'minimum') {
     const scope = json(join(dir, 'scope.json'));
     if (mode !== 'minimum') {
-      const documentation = documentationForScope(root, scope);
+      const documentation = documentationForScope(root);
       save(join(dir, 'documentation.json'), documentation);
       assert.deepEqual(documentation.errors, [], 'Documentation gate failed; see documentation.json\n' + documentation.errors.join('\n'));
-      console.log(`Documentation gate: ${documentation.files.length} files; anchors ${documentation.anchorBaseline}; ${documentation.impacts.length} topics require manual review.`);
+      console.log(`Documentation gate: ${documentation.files.length} files, ${documentation.errors.length} errors.`);
       if (mode === 'documentation') return;
     }
     const run = (command, args) => spawnSync(command, args, { encoding: 'utf8', shell: process.platform === 'win32' && command === 'npm',
@@ -153,7 +144,7 @@ function main(mode) {
     }
     const result = mode === 'minimum' ? run(process.execPath,
       ['--test', '--test-reporter=tap', 'tools/verify/node-minimum.test.mjs']) : scope.scope === 'full' ? run('npm', ['test']) : run(process.execPath,
-      ['--test', '--test-reporter=tap', 'tools/verify/check-package.test.mjs', 'tools/verify/check-docs.test.mjs', 'tools/verify/documentation-registry.test.mjs', 'tools/verify/check-release-docs.test.mjs', 'tools/verify/ci-scope.test.mjs']);
+      ['--test', '--test-reporter=tap', 'tools/verify/check-package.test.mjs', 'tools/verify/check-docs.test.mjs', 'tools/verify/check-release-docs.test.mjs', 'tools/verify/ci-scope.test.mjs']);
     const output = (result.stdout ?? '') + (result.stderr ?? '');
     writeFileSync(join(dir, 'tests.log'), output, { flag: 'wx' });
     let counts = null;

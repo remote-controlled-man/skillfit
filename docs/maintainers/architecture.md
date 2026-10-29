@@ -350,8 +350,8 @@ Follow AGENTS.md and CONTRIBUTING.md. Run `npm run build`, `npm test` and releva
 local checks with offline executors/temporary roots. Matrix capability/path changes
 need an official source and verifiedAt bump; statistical changes update metrics
 and code together. README.md is English truth; README.zh-CN.md mirrors sections,
-commands, badges and demo blocks. The registry maps topics to source/tests/guides;
-update the canonical topic and affected guides, retaining fixed links to old text.
+commands, badges and demo blocks. One page owns each topic; link to that owner
+instead of restating the fact, and update affected guides when it changes.
 
 ## Release preparation
 

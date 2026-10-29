@@ -50,10 +50,10 @@ or confirmation flow.
 
 For documentation, update the existing page that owns the topic and its affected
 links. Keep the English and Chinese READMEs aligned, including identical badges
-and command/demo blocks. Run `node tools/verify/check-docs.mjs` for links, versions
-and bilingual structure; check facts and execute changed examples too. When
-moving or renaming sections, use `--base <full-base-commit>` to check old anchors.
-This gate does not check arbitrary external URL availability or factual claims.
+and command/demo blocks. Run `node tools/verify/check-docs.mjs` for links, anchors,
+version-sensitive link pinning, repository layout and bilingual structure; check
+facts and execute changed examples too. This gate does not check arbitrary external
+URL availability or factual claims.
 
 ## Submitting evidence
 

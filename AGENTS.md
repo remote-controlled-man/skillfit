@@ -38,7 +38,7 @@ an absolute path to this checkout's `dist/cli.js`; building here does not make
 the source checkout the experiment's working directory.
 
 - Run `npm test` before delivering code/build changes and before any commit. Tests use `node:test` and stay offline: use `MockExecutor`, injected executors or injected fs roots instead of real model APIs or agent CLIs.
-- For documentation-only edits, run `node tools/verify/check-docs.mjs`, check facts and the diff, and execute changed examples. For moved/renamed sections, add `--base <full-base-commit>` to check old paths/anchors. This does not verify external URL availability or factual accuracy. No lint or formatter script is configured.
+- For documentation-only edits, run `node tools/verify/check-docs.mjs`, check facts and the diff, and execute changed examples. It checks links, anchors, version-sensitive link pinning, repository layout and README bilingual parity. This does not verify external URL availability or factual accuracy. No lint or formatter script is configured.
 - For bench changes, follow [docs/guides/bench-authoring.md](docs/guides/bench-authoring.md) and run `node dist/cli.js bench check <bench-dir>`. See [.github/workflows/ci.yml](.github/workflows/ci.yml) for additional checks relevant to the affected behavior.
 - Fix failures caused by the change and rerun affected checks. Report actual results, pre-existing failures, and unavailable checks; do not weaken assertions or claim a skipped check passed. PRs follow [CONTRIBUTING.md](CONTRIBUTING.md), including observable before/after behavior and AI disclosure.
 

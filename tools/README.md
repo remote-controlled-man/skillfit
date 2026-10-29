@@ -6,7 +6,7 @@ they do not call a live agent or change personal configuration.
 
 | Task | Entry point |
 | --- | --- |
-| Documentation registry, links and bilingual entry points | `node tools/verify/check-docs.mjs` (`--json`, `--base <exact-commit-SHA>`) |
+| Documentation links, anchors, layout and bilingual entry points | `node tools/verify/check-docs.mjs` (`--json`) |
 | Module roles and runtime dependencies | `node tools/verify/check-architecture.mjs` |
 | Contributed bench integrity | `node tools/verify/check-contrib-benches.mjs` |
 | npm inventory, retained recipes and size bounds | `node tools/verify/check-package.mjs <pack.json>` |

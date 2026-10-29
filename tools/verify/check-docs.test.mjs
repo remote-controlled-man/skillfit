@@ -5,11 +5,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { checkDocumentation, inspectRepositoryLayout, documentationFiles, inspectDocumentation, inspectBenchCatalog, markdownAnchors, markdownLinks, readDocumentationBaseline } from './check-docs.mjs';
+import { checkDocumentation, inspectRepositoryLayout, documentationFiles, inspectDocumentation, inspectBenchCatalog, markdownAnchors, markdownLinks } from './check-docs.mjs';
 import { RELEASE_DOCUMENTS } from './recipes/release-docs-smoke.mjs';
 
-function governedFixture(t) {
-  const root = mkdtempSync(join(tmpdir(), 'skillfit-governed-docs-'));
+function documentedFixture(t) {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-docs-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const put = (path, text) => { mkdirSync(join(root, path, '..'), { recursive: true }); writeFileSync(join(root, path), text); };
   for (const path of RELEASE_DOCUMENTS) put(path, `# Entry\nRun npx skillfit@0.13.1.\n${path.startsWith('README') ? '[Changelog](CHANGELOG.md)' : ''}\n`);
@@ -17,12 +17,6 @@ function governedFixture(t) {
   put('docs/maintainers/releases.md', '# Release\n');
   put('package.json', '{"name":"skillfit","version":"0.13.1"}');
   put('docs/work/current.md', '# Current\n');
-  put('docs/maintainers/history.md', '# History\n[Historical broken link](missing.md)\n');
-  const policy = { schemaVersion: 1, documents: [...RELEASE_DOCUMENTS, 'CHANGELOG.md', 'docs/maintainers/releases.md', 'docs/work/current.md', 'docs/maintainers/history.md'].map(path => ({
-    path, kind: 'record', lifecycle: path.endsWith('history.md') ? 'historical' : path.endsWith('/releases.md') ? 'frozen' : 'maintained',
-    audience: ['maintainer'], owner: 'development', scope: [{ kind: 'source', ref: 'working-tree' }], topics: [], checks: ['docs-links'],
-  })), topics: {}, exclusions: [] };
-  put('tools/verify/documentation-policy.json', JSON.stringify(policy));
   return { root, put };
 }
 
@@ -98,10 +92,30 @@ test('documentation links cannot follow directory aliases into private or extern
   assert.match(inspectDocumentation(root, ['docs/private-alias/private.md'])[0], /source leaves the public documentation scope/);
 });
 
-test('current maintained documentation passes the shared registry, link and entry-contract gate offline', () => {
-  assert.deepEqual(checkDocumentation().errors, []);
-  assert.ok(documentationFiles().includes('docs/README.md'));
-  assert.ok(documentationFiles().includes('docs/maintainers/architecture.md'));
+test('discovery treats bench task inputs as data and refuses directory aliases', t => {
+  const root = mkdtempSync(join(tmpdir(), 'skillfit-doc-discovery-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const put = (path, text) => { mkdirSync(join(root, path, '..'), { recursive: true }); writeFileSync(join(root, path), text); };
+  put('benches/contrib/example/README.md', '# Case\n');
+  for (const kind of ['tasks', 'prompts', 'fixtures', 'ground-truth']) put(`benches/contrib/example/${kind}/case.md`, '# Frozen input\n');
+  put('benches/debugging/ground-truth/answer.md', '# Answer\n');
+  put('benches/_self-test/target/SKILL.md', '# Synthetic target\n');
+  put('benches/_self-test/example/prompts/control.md', '# Control\n');
+  put('docs/guides/task.md', '# Guide\n');
+  assert.deepEqual(documentationFiles(root), ['benches/contrib/example/README.md', 'docs/guides/task.md']);
+  mkdirSync(join(root, 'private'), { recursive: true });
+  put('private/secret.md', '# Secret\n');
+  symlinkSync(join(root, 'private'), join(root, 'docs/alias'), 'junction');
+  assert.throws(() => documentationFiles(root), /docs\/alias: alias is not admitted/);
+});
+
+test('current maintained documentation passes the link, layout, catalog and parity gate offline', () => {
+  const result = checkDocumentation();
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.kind, 'skillfit.documentation-check');
+  assert.ok(result.files.includes('docs/README.md'));
+  assert.ok(result.files.includes('docs/maintainers/architecture.md'));
+  assert.ok(result.files.includes('docs/work/current.md'));
 });
 
 test('README languages preserve section levels and every command/demo block', () => {
@@ -115,144 +129,22 @@ test('README languages preserve section levels and every command/demo block', ()
   for (const text of [english, chinese]) assert.match(text, /\(docs\/README\.md\)/);
 });
 
-test('the shared gate checks active plans by default and historical bodies only when explicitly changed', t => {
-  const f = governedFixture(t);
-  assert.deepEqual(checkDocumentation(f.root).errors, []);
-  f.put('docs/work/current.md', '# Current\n[Broken](missing.md)\n');
-  assert.match(checkDocumentation(f.root).errors.join('\n'), /current.md.*missing target/);
-  f.put('docs/work/current.md', '# Current\n');
-  assert.match(checkDocumentation(f.root, { changes: [{ path: 'docs/maintainers/history.md', status: 'M' }] }).errors.join('\n'), /history.md.*missing target/);
-});
-
 test('standalone gating rejects bilingual structure, command and badge drift and stale released commands', t => {
-  const f = governedFixture(t), english = readFileSync(join(f.root, 'README.md'), 'utf8');
+  const f = documentedFixture(t), english = readFileSync(join(f.root, 'README.md'), 'utf8');
+  assert.deepEqual(checkDocumentation(f.root).errors, []);
   for (const [extra, diagnostic] of [['\n## Extra\n', /README.*section/], ['\n```bash\nnode changed.js\n```\n', /README.*command\/demo/], ['\n![badge](https://img.shields.io/example)\n', /README.*badge/]]) {
     f.put('README.zh-CN.md', english + extra);
     assert.match(checkDocumentation(f.root).errors.join('\n'), diagnostic);
   }
   f.put('README.zh-CN.md', english);
-  const path = 'skills/skillfit/SKILL.md';
-  f.put(path, 'npx skillfit@0.12.0 --help\n');
+  f.put('skills/skillfit/SKILL.md', 'npx skillfit@0.12.0 --help\n');
   assert.match(checkDocumentation(f.root).errors.join('\n'), /Stale package command.*skills\/skillfit/);
 });
 
-test('old paths and fragments require retained headings or explicit compatibility aliases', t => {
-  const f = governedFixture(t), previousDocuments = new Map([['docs/work/current.md', '# Current\n## Original\n']]);
-  f.put('docs/work/current.md', '# Current\n## Renamed\n');
-  const failed = checkDocumentation(f.root, { previousDocuments });
-  assert.match(failed.errors.join('\n'), /current.md#original.*restore.*alias/);
-  assert.equal(failed.anchorMigrations.find(m => m.from.endsWith('#original')).status, 'missing');
-  f.put('docs/work/current.md', '# Current\n<a id="original"></a>\n## Renamed\n');
-  const passed = checkDocumentation(f.root, { previousDocuments });
-  assert.deepEqual(passed.errors, []);
-  assert.equal(passed.anchorBaseline, 'compared');
-  assert.equal(passed.anchorMigrations.length, 2);
-  assert.equal(checkDocumentation(f.root).anchorBaseline, 'not-provided');
-  const removed = checkDocumentation(f.root, { previousDocuments: new Map([['docs/removed.md', '# Removed\n'], ['docs/empty.md', 'No heading\n']]) });
-  assert.match(removed.errors.join('\n'), /removed.md.*restore.*compatibility/);
-  assert.deepEqual(removed.anchorMigrations, [
-    { from: 'docs/removed.md#removed', to: null, status: 'missing' },
-    { from: 'docs/empty.md', to: null, status: 'missing' },
-  ]);
-});
-
-test('cumulative main integration preserves publication-era paths and index headings offline', () => {
-  const root = fileURLToPath(new URL('../..', import.meta.url));
-  const result = checkDocumentation(root, {
-    baseline: '3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850',
-    changes: [
-      { path: 'docs/architecture.md', status: 'D' },
-      { path: 'evidence/README.md', status: 'D' },
-    ],
-    // Recorded public names, not Git lookups: shallow checkouts need no old objects.
-    previousDocuments: new Map([
-      ['docs/README.md', '# skillfit documentation\n## Start here\n'],
-      ['benches/README.md', '# skillfit benches\n## What the harness records\n'],
-      ['docs/architecture.md', '# Architecture\n'],
-      ['evidence/README.md', '# Evidence\n'],
-    ]),
-  });
-  assert.deepEqual(result.errors, []);
-  assert.ok(result.anchorMigrations.length >= 6);
-  assert.ok(result.anchorMigrations.every(row => row.status !== 'missing'));
-});
-
-test('source changes identify affected authority, dependents and fixed checks without requiring a cosmetic doc edit', t => {
-  const f = governedFixture(t), policy = JSON.parse(readFileSync(join(f.root, 'tools/verify/documentation-policy.json'), 'utf8'));
-  f.put('src/engine.ts', 'export const version = 1;');
-  policy.documents.find(d => d.path === 'docs/work/current.md').topics = ['planning'];
-  policy.documents.find(d => d.path === 'README.md').topics = ['planning'];
-  policy.topics.planning = { canonical: 'docs/work/current.md#current', sources: ['src/engine.ts'], schemas: [], dependents: ['README.md'], checks: ['docs-links'] };
-  f.put('tools/verify/documentation-policy.json', JSON.stringify(policy));
-  const result = checkDocumentation(f.root, { changes: [{ path: 'src/engine.ts', status: 'M' }, { path: 'src/new.ts', status: 'A' }] });
-  assert.deepEqual(result.errors, []);
-  assert.equal(result.impacts[0].topic, 'planning');
-  assert.equal(result.impacts[0].canonical, 'docs/work/current.md#current');
-  assert.equal(result.impacts[0].owner, 'development');
-  assert.deepEqual(result.impacts[0].dependents, ['README.md']);
-  assert.deepEqual(result.impacts[0].changed, ['src/engine.ts']);
-  assert.ok(result.impacts[0].checks.some(c => c.id === 'docs-links' && c.files.includes('tools/verify/check-docs.test.mjs')));
-  assert.equal(result.impacts[0].status, 'review-required');
-  assert.deepEqual(result.unmappedChanges, ['src/new.ts']);
-});
-
-test('baseline loading excludes historical Bench inputs while retaining removed dataset cards', t => {
-  const f = governedFixture(t), base = 'c'.repeat(40), requested = [];
-  const prefix = 'benches/contrib/example/';
-  const data = ['fixtures/case/README.md', 'prompts/case.md', 'ground-truth/case.md'].map(path => prefix + path);
-  const card = prefix + 'README.md';
-  const policy = JSON.parse(readFileSync(join(f.root, 'tools/verify/documentation-policy.json'), 'utf8'));
-  policy.exclusions = ['fixtures/', 'prompts/', 'ground-truth/'].map(path => ({
-    path: prefix + path, reason: 'Frozen task input', owner: 'bench-authoring', verification: 'bench-contracts',
-  }));
-  const git = args => {
-    requested.push(args);
-    if (args[0] !== 'show') return '';
-    if (args[1] === base + ':tools/verify/documentation-policy.json') return JSON.stringify(policy);
-    assert.equal(args[1], base + ':' + card, 'never read historical task inputs as prose');
-    return '# Example dataset\n';
-  };
-  const changes = [...data, card].map(path => ({ path, status: 'D' }));
-  const loaded = readDocumentationBaseline(f.root, base, changes, git);
-  assert.deepEqual([...loaded.previousDocuments], [[card, '# Example dataset\n']]);
-  assert.ok(requested.every(args => !data.some(path => args.includes(base + ':' + path))));
-  const checked = checkDocumentation(f.root, loaded);
-  assert.deepEqual(checked.errors, [card + ': old path removed; restore a compatibility page.']);
-  assert.deepEqual(checked.anchorMigrations.map(row => row.from), [card + '#example-dataset']);
-});
-
-test('Git baseline loading requests only public non-excluded Markdown and fails on unavailable requested evidence', t => {
-  const f = governedFixture(t), base = 'a'.repeat(40), requested = [];
-  const changes = [{ path: 'docs/work/current.md', status: 'M' }, { path: 'src/engine.ts', status: 'M' }, { path: 'workspace4skills/private.md', status: 'M' }];
-  const git = args => {
-    requested.push(args.join(' '));
-    if (args[0] !== 'show') return base;
-    return args[1] === base + ':tools/verify/documentation-policy.json' ? '{"exclusions":[]}' : '# Current\n';
-  };
-  const result = readDocumentationBaseline(f.root, base, changes, git);
-  assert.deepEqual([...result.previousDocuments], [['docs/work/current.md', '# Current\n']]);
-  assert.ok(requested.every(command => !command.includes('workspace4skills') && !command.includes('src/engine')));
-  assert.throws(() => readDocumentationBaseline(f.root, base, changes, () => { throw Error('missing baseline'); }), /baseline/);
-  assert.throws(() => readDocumentationBaseline(f.root, 'HEAD', changes, git), /exact.*SHA/);
-});
-
-test('baselines predating the registry still check documents and available policy read failures remain errors', t => {
-  const f = governedFixture(t), base = 'd'.repeat(40), file = 'docs/removed.md';
-  const policySource = base + ':tools/verify/documentation-policy.json';
-  const changes = [{ path: file, status: 'D' }];
-  const oldGit = args => {
-    if (args[0] === 'cat-file' && args[2] === policySource) throw Error('policy did not exist');
-    if (args[0] === 'show') { assert.equal(args[1], base + ':' + file); return '# Removed\n'; }
-    return '';
-  };
-  const loaded = readDocumentationBaseline(f.root, base, changes, oldGit);
-  assert.deepEqual([...loaded.previousDocuments], [[file, '# Removed\n']]);
-  assert.match(checkDocumentation(f.root, loaded).errors.join('\n'), /removed.md.*restore a compatibility page/);
-  const failedGit = args => {
-    if (args[0] === 'show' && args[1] === policySource) throw Error('policy read failed');
-    return '';
-  };
-  assert.throws(() => readDocumentationBaseline(f.root, base, changes, failedGit), /policy read failed/);
+test('a broken link in a discovered page fails the gate with its path and line', t => {
+  const f = documentedFixture(t);
+  f.put('docs/work/current.md', '# Current\n[Broken](missing.md)\n');
+  assert.match(checkDocumentation(f.root).errors.join('\n'), /docs\/work\/current\.md:2: missing target: missing\.md/);
 });
 
 test('the standalone command emits one structured gate result through a directory alias', t => {
@@ -265,9 +157,9 @@ test('the standalone command emits one structured gate result through a director
   assert.equal(result.kind, 'skillfit.documentation-check');
   assert.deepEqual(result.errors, []);
   assert.ok(result.files.includes('docs/work/current.md'));
-  assert.equal(result.anchorBaseline, 'not-provided');
+  assert.deepEqual(Object.keys(result).sort(), ['errors', 'files', 'kind', 'schemaVersion']);
+  assert.equal(spawnSync(process.execPath, [join(root, 'repo/tools/verify/check-docs.mjs'), '--base', 'x'], { encoding: 'utf8' }).status, 2);
 });
-
 
 test('bench catalog covers actual contrib manifests and rejects missing or invented entries', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-bench-catalog-'));
@@ -283,35 +175,9 @@ test('bench catalog covers actual contrib manifests and rejects missing or inven
   assert.match(inspectBenchCatalog(root).join('\n'), /unknown.*gone/i);
   writeFileSync(index, '[Real](real-case/README.md)\n');
   assert.deepEqual(inspectBenchCatalog(root), []);
-  writeFileSync(index, '[Real](real-case/README.md)\n[Duplicate](real-case/README.md)\n');
+  writeFileSync(index, '[Real](real-case/README.md)\n[Dup](real-case/README.md)\n');
   assert.match(inspectBenchCatalog(root).join('\n'), /duplicate.*real-case/i);
 });
-
-test('rewritten sections can point to their exact fixed source snapshot', t => {
-  const f = governedFixture(t), baseline = 'a'.repeat(40), path = 'docs/work/current.md';
-  f.put(path, `# Current\n## New\n[Previous source](https://github.com/remote-controlled-man/skillfit/blob/${baseline}/${path}).\n`);
-  const result = checkDocumentation(f.root, { baseline, previousDocuments: new Map([[path, '# Current\n## Original\n']]) });
-  assert.deepEqual(result.errors, []);
-  assert.deepEqual(result.anchorMigrations.find(row => row.from.endsWith('#original')), {
-    from: path + '#original', to: `https://github.com/remote-controlled-man/skillfit/blob/${baseline}/${path}#original`, status: 'archived',
-  });
-});
-
-test('deleted pages require an exact archived tree and migrated live links', t => {
-  const f = governedFixture(t), baseline = 'b'.repeat(40), path = 'docs/maintainers/history.md';
-  const policyFile = join(f.root, 'tools/verify/documentation-policy.json');
-  const policy = JSON.parse(readFileSync(policyFile, 'utf8')); policy.documents = policy.documents.filter(row => row.path !== path);
-  writeFileSync(policyFile, JSON.stringify(policy)); rmSync(join(f.root, path));
-  const options = { baseline, changes: [{ path, status: 'D' }], previousDocuments: new Map([[path, '# History\n']]) };
-  assert.match(checkDocumentation(f.root, options).errors.join('\n'), /old path removed/);
-  const archive = join(f.root, 'docs/README.md');
-  writeFileSync(archive, readFileSync(archive, 'utf8') + `\n[History](https://github.com/remote-controlled-man/skillfit/tree/${baseline}/docs).\n`);
-  const passed = checkDocumentation(f.root, options); assert.deepEqual(passed.errors, []);
-  assert.equal(passed.anchorMigrations[0].status, 'archived');
-  f.put('docs/work/current.md', '# Current\n[Broken](history.md)\n');
-  assert.ok(checkDocumentation(f.root, options).errors.some(error => error.includes('history.md')));
-});
-
 
 test('repository admission rejects flat pages, extra plans, executable docs and unpacked evidence', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-layout-'));
