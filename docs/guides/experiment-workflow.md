@@ -102,26 +102,26 @@ reads the latest identity/workspace-bound cumulative local Token snapshot and
 compares it with the budget remaining after earlier completed calls. It never
 adds repeated snapshots. At a reached line it stops the managed process tree,
 retains partial usage/source and `SPENDING_BUDGET_REACHED`, and skips grading and
-later calls. Output includes provider-reported reasoning tokens; cached input is
-part of total input, and uncached input is total minus cached input.
+later calls. Output includes provider-reported reasoning tokens;
+[cache arithmetic](../reference/evaluation-reports.md#cache-and-coverage) owns how
+cached and uncached input relate.
 
-The local session format is internal and best-effort. Updates may lag; missing,
-invalid or stale observations are unknown, not zero. Before a reliable update,
-including network waits, no Token cutoff can be guaranteed. In-flight work can
-overshoot, and a stopped receipt is a lower bound, not a complete bill. Missing
-final usage still stops subsequent calls. Public Codex JSON usage appears at
+The local session format is internal and best-effort: updates may lag, and missing,
+invalid or stale observations stay unknown. Public Codex JSON usage appears at
 `turn.completed` ([official non-interactive documentation](https://learn.chatgpt.com/docs/non-interactive-mode)).
 A disabled Agent deadline keeps timing diagnostics without aborting on elapsed
 waiting or clock-observation gaps. Manual cancellation, terminal CLI/network
-failure, output bounds and separate verifier/tool timeouts still apply. Time is
-not a measure of active model computation.
+failure, output bounds and separate verifier/tool timeouts still apply.
+[Stopping semantics](../reference/metrics.md#costs-budgets-and-stopping) owns
+overshoot, lower-bound receipts and the rule that elapsed time is not active
+model computation.
 
 ## Executor capabilities
 
 This table describes current skillfit adapters, verified offline against the
 [matrix](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/src/matrix/agents.json)
-and adapter fixtures. It does not attest today's installed vendor CLIs, login
-or a provider backend. Sampling remains unpinned: no temperature/seed is sent.
+and adapter fixtures. It does not attest today's installed vendor CLIs, login or a
+provider backend, and [sampling remains unpinned](../reference/metrics.md#unit-of-analysis).
 
 | Executor / delivery modes | Trigger observation | Token/cache reader | Spending budget | CLI version / public reported model | Verification scope |
 | --- | --- | --- | --- | --- | --- |
@@ -198,13 +198,12 @@ storage is not a backup or a public delivery location.
 Exclude generated outputs from the owning project's Git history; skillfit does
 not edit that project's ignore rules.
 
-`runs/` is generated data in the owning workspace, not a skillfit source module.
-Keep retained studies outside the skillfit source checkout. Use one named workspace for an actual
-study; do not mix source clones, package installations, build logs or release
-verification into it. One-off validation scratch uses OS temporary directories;
-ordinary `dist/` and `node_modules/` keep their existing project locations.
-Release receipts use their explicit external destination. Create neither a placeholder
-README nor another archive/catalog to make an empty output directory persist.
+`runs/` is generated data in that owning workspace, not a skillfit source module.
+Use one named workspace for an actual study; do not mix source clones, package
+installations, build logs or release verification into it. One-off validation
+scratch uses OS temporary directories, and release receipts use their explicit
+external destination. Create neither a placeholder README nor another
+archive/catalog to make an empty output directory persist.
 
 | Data | Where and what to retain |
 | --- | --- |

@@ -262,19 +262,11 @@ control channel. Test built, installed and relocated packages, not only source i
 | Current work | One ordered plan; replace status/results and link prior details instead of appending transcripts. |
 
 The [experiment workflow](../guides/experiment-workflow.md#store-process-data-and-analysis)
-owns the outer workspace, the observed/derived process-data rules and the explicit
-manual retention/cleanup procedure. Completion status and retention intent are
-separate, and no automatic cleanup, telemetry facility or shared storage platform is
-implied. Current export copies native inputs/runtime and does not automatically
-package external analysis; a sealed transcript or trial workspace is not scratch.
-
-Agents supplies observable facts, Execution attaches invocation context, Records owns
-saved formats, Measurement derives metrics and CLI presents them. New raw process
-observations require versioned reader/writer support. Release proofs establish
-package delivery while Runs establish scoped task observations, so release acceptance
-checks installed behavior and current portable replay, never old personal studies. A
-failed Run stays in its explicit workspace without creating a new source page,
-catalog or mandatory release check.
+owns the outer workspace, the observed/derived process-data rules and the manual
+retention/cleanup procedure. Two boundaries stay here because they are module
+ownership rather than procedure: a sealed transcript or trial workspace is not
+scratch, and a failed Run stays in its explicit workspace without creating a new
+source page, catalog or mandatory release check.
 
 ## Growth controls
 

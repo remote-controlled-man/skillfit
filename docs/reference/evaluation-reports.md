@@ -90,8 +90,6 @@ the current CLI applies the current integrity checks.
 
 ## Calibration and trigger reports
 
-Version 0.11.0 recognizes baseline calibration and trigger runs; the immutable
-npm 0.10.1 archive is unchanged.
 Markdown and JSON use the same read-only dispatcher:
 
 ```bash
@@ -140,26 +138,25 @@ mode, source warnings and the distinction between a `SKILL.md` read and a Skill
 invocation stay visible. Historical input/output token aggregates are not a
 complete cost population; absent cache/final-usage evidence remains unknown.
 
-Standalone historical single-arm summaries return `evidence.verified: false`
-with scope `saved-summary-only`. Version 0.11.0 can audit sealed native single-arm
-receipts with scope `single-arm-native`; `evidence.verified` reports the actual
-inventory/ledger/input/receipt check result. Both return `acceptance.decision: "inconclusive"`,
-`eligibleForUpgrade: false`, `automaticUpgrade: false`. Parsing a consistent
-summary is not a paired native audit, independent validation or adoption decision.
-Verifying single-arm evidence does not establish an A/B effect. They do not enter the paired efficacy protocol. The existing request-based
-revision component and paired report JSON contract remain unchanged.
+Standalone historical single-arm summaries return `evidence.verified: false` with
+scope `saved-summary-only`; sealed native single-arm receipts can be audited with
+scope `single-arm-native`, where `evidence.verified` reports the actual
+inventory/ledger/input/receipt check result. Parsing a consistent summary is not a
+paired native audit, independent validation or adoption decision, and neither scope
+enters the paired efficacy protocol. The request-based revision component and the
+paired report JSON contract are unchanged.
 
 `--policy` and external `--records` remain paired-report options. Sealed native
-single-arm reports now accept `--replay` and an optional matching `--bench` only
-with replay. Regrading uses disposable saved deliveries. Trigger metrics are
-recomputed from retained observations; saved detection booleans are reused, not
-redetected by a new parser. Changed
-deliveries, fingerprints and verdicts fail verification. Calibration/trigger
-exports retain the original compiled implementation and reject older runtimes
-without single-arm replay support; see [portable packages](#contents-and-machine-contract).
-Successful rendering exits 0; invalid human inputs exit 1, while invalid JSON
-reports use the existing error envelope and exit 2. Saved input files are never
-rewritten, and reading any of these reports makes zero model or agent CLI calls.
+single-arm reports accept `--replay` and an optional matching `--bench` only with
+replay. Regrading uses disposable saved deliveries. Trigger metrics are recomputed
+from retained observations; saved detection booleans are reused, not redetected by
+a new parser. Changed deliveries, fingerprints and verdicts fail verification.
+Calibration/trigger exports retain the original compiled implementation and reject
+older runtimes without single-arm replay support; see
+[portable packages](#contents-and-machine-contract). Successful rendering exits 0;
+invalid human inputs exit 1, while invalid JSON reports use the existing error
+envelope and exit 2. Saved input files are never rewritten, and reading any of
+these reports makes zero model or agent CLI calls.
 
 ### Trigger observation protocol v2
 
@@ -210,17 +207,16 @@ terminal summary and `report eval <manifest.json>` show the same cost tables.
 Reading a report makes no model call and does not change the manifest or verdict.
 
 This page owns invocation populations, denominators and final/partial/unknown
-coverage. [Planning](../guides/experiment-workflow.md) owns the optional,
-five-field spending-budget format and deadline settings;
+coverage. [Planning](../guides/experiment-workflow.md#bound-calls-and-spending)
+owns the spending-budget format and deadline settings, and
 [metrics](metrics.md#costs-budgets-and-stopping) owns stopping semantics across
-paired, calibration, trigger and judge calls. Version 0.11.0 exposes these
-shared controls; absolute stop lines are separate from relative adoption caps
-and provider invoices. Current source additionally supports explicit null time
-limits with Token-only observation; this is not in npm 0.14.0. Interrupted
-receipts can carry `budgetStop: "SPENDING_BUDGET_REACHED"` with partial usage,
-without becoming graded or completed evidence. Current adapter readers and
-spending-budget limitations
-belong to the [capability table](../guides/experiment-workflow.md).
+paired, calibration, trigger and judge calls. Absolute stop lines are separate from
+relative adoption caps and provider invoices. Explicit null time limits with
+Token-only observation are a current-source addition, not in the published npm
+0.14.0 package. Interrupted receipts can carry
+`budgetStop: "SPENDING_BUDGET_REACHED"` with partial usage, without becoming graded
+or completed evidence. Adapter readers and their spending-budget limitations belong
+to the [capability table](../guides/experiment-workflow.md#executor-capabilities).
 
 Native paired condition summaries may include `tokenCoverage.input/output`: the
 number of surviving graded trials with final recorded usage for each field.
@@ -290,19 +286,19 @@ pair as an execution error; see [execution timing](../guides/experiment-workflow
 
 ### Cache and coverage
 
-Version 0.12.0 reads matrix-defined JSON streams in ordinary CLI eval and
-CLI judging too, independently of Skill-trigger detection. Codex inject, rules and
-MCP comparisons can retain the same per-turn counters as installed/trigger mode.
-Only assistant text is graded; raw stream evidence and partial failure counters
-are retained separately. Ordinary parsing does not fabricate a trigger flag.
-Offline `USAGE_CAPABILITY` checks block strict spending budgets when an adapter is
-known to lack required counters, including an enabled judge. API and injected
-executors retain unknown offline coverage; actual missing counters still stop
-after an invocation, with no retry or guessed cache zeros. The
-[capability table](../guides/experiment-workflow.md) distinguishes
-Codex's complete reader set from Kimi's missing cache partition and Claude's
-missing token reader. Historical receipts
-remain unchanged; this does not recover token counts from old plain-text runs.
+Matrix-defined JSON streams are read in ordinary CLI eval and CLI judging too,
+independently of Skill-trigger detection. Codex inject, rules and MCP comparisons
+can retain the same per-turn counters as installed/trigger mode. Only assistant
+text is graded; raw stream evidence and partial failure counters are retained
+separately. Ordinary parsing does not fabricate a trigger flag. Offline
+`USAGE_CAPABILITY` checks block strict spending budgets when an adapter is known to
+lack required counters, including an enabled judge. API and injected executors
+retain unknown offline coverage; actual missing counters still stop after an
+invocation, with no retry or guessed cache zeros. The
+[capability table](../guides/experiment-workflow.md#executor-capabilities)
+distinguishes Codex's complete reader set from Kimi's missing cache partition and
+Claude's missing token reader. Historical receipts remain unchanged; this does not
+recover token counts from old plain-text runs.
 
 Cached input is the cache-read subset already included in input; adding it to
 input would double-count. `uncachedInput = input - cachedInput` only when both
@@ -316,9 +312,9 @@ is recorded as zero. Other executors can supply cache counts through the same
 optional `TokenUsage.cachedInput` field. Existing surfaces without such counts
 continue to report unknown cache coverage.
 
-In 0.10.1, the Chat Completions API executor reads
-`usage.prompt_tokens_details.cached_tokens` into `TokenUsage.cachedInput`, as
-documented by the [official OpenAI API reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create).
+The Chat Completions API executor reads `usage.prompt_tokens_details.cached_tokens`
+into `TokenUsage.cachedInput`, as documented by the
+[official OpenAI API reference](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create).
 It requires a nonnegative safe integer no greater than a valid input total.
 An explicit zero is preserved; missing, malformed, fractional, negative or
 incompatible cache counts remain unknown. Input already includes cached tokens;
@@ -408,31 +404,27 @@ is already included in output and is not added again. Recovery stays `partial`;
 unrecorded pending work/retries and final billing remain unknown. Every execution
 error remains excluded from quality and prevents adoption. Previously frozen
 receipts are never rewritten; later metadata corrections belong in a separately
-dated supplement. The implementation was calibrated against eight completed
-0.162.0-alpha.17.2 calls and recovered lower bounds for three failed calls.
-
+dated supplement.
 
 ## Portable replay
 
-skillfit 0.10.0 introduced paired native exports without a judge. Source after
-npm 0.10.1 also exports native calibration, trigger and paired runs with a judge
-to a fresh directory.
-The package contains unchanged receipts, original pinned inputs, the compiled
-implementation used by the experiment and a dependency-free replay entry point.
-Export and replay make zero model calls. Replay executes trusted local verifiers.
-Current-source model-identity additions retain per-call public IDs, source locations
-and unknown coverage after relocation. They do not backfill legacy data or prove
-the backend's identity; see [model identity contract](metrics.md#public-model-identity-per-invocation).
-Frozen historical packages keep their own
-runtime and detection/identity interpretation.
+Export writes a fresh directory for paired, calibration and trigger runs, with or
+without a judge. The package contains unchanged receipts, original pinned inputs,
+the compiled implementation used by the experiment and a dependency-free replay
+entry point. Export and replay make zero model calls. Replay executes trusted
+local verifiers. Current-source model-identity additions retain per-call public
+IDs, source locations and unknown coverage after relocation. They do not backfill
+legacy data or prove the backend's identity; see
+[model identity contract](metrics.md#public-model-identity-per-invocation). Frozen
+historical packages keep their own runtime and detection/identity interpretation.
 
-Current-source [measurementScope 1](../../benches/README.md#frozen-scope-and-evidence)
-is retained across paired, trigger and calibration exports. New scope is checked
-against the original sealed bench, selected task order and native/reviewed plans.
-Today's external bench cannot fill or broaden it; new scope without its required
-sealed declarations fails rather than taking the historical recovery route.
-Legacy missing metadata stays unrecorded. Current-reader audit and the package's
-pinned `reproduce.mjs` each interpret saved evidence with their own runtime.
+[Frozen measurement scope](#frozen-measurement-scope) is retained across paired,
+trigger and calibration exports: new scope is checked against the original sealed
+bench, selected task order and native/reviewed plans, and scope without its
+required sealed declarations fails rather than taking the historical recovery
+route. Legacy missing metadata stays unrecorded. Current-reader audit and the
+package's pinned `reproduce.mjs` each interpret saved evidence with their own
+runtime.
 
 For [self-test controls](../guides/bench-authoring.md#test-known-controls), export a native
 suite directory, not its wrapper. It retains a null requested claim, mock identity,
@@ -460,8 +452,8 @@ Runtimes predating that cancellation support cannot be exported by this build.
 
 The source must have sealed native evidence. A completed manifest must pass the
 native evidence audit. Missing, changed or linked native artifacts reject export.
-Version 0.10.1 [seals inputs before dispatch](../guides/experiment-workflow.md)
-and exports those copies even after original bench/Skill/request directories change
+Inputs are [sealed before dispatch](../guides/experiment-workflow.md) and those
+copies are exported even after the original bench/Skill/request directories change
 or disappear. A declared but damaged snapshot is an error, never a silent fallback.
 Older runs without snapshots still need matching original or recovered bench,
 complete candidate/baseline resources, compiled implementation and original request.
@@ -493,10 +485,9 @@ The descriptor uses `schemaVersion: 1`, `kind: "skillfit.replay-package"`,
 `files` map. It inventories every payload file except itself and Git internals.
 New exports add `evaluationType: "paired" | "calibration" | "trigger"`, checked
 against the frozen native plan. Older v1 descriptors without that field remain
-readable.
-Extra, changed, missing and unsafe paths fail verification. Checksums establish
-consistency with this index, not publisher identity; retain a trusted external
-copy of the descriptor or its hash for provenance.
+readable. Extra, changed, missing and unsafe paths fail verification. Checksums
+establish consistency with this index, not publisher identity; retain a trusted
+external copy of the descriptor or its hash for provenance.
 
 Export JSON uses `kind: "skillfit.eval-export"`, status `planned` or `exported`,
 source/destination, native plan/status, inputs, payload-file count, source-byte
@@ -516,7 +507,8 @@ in the native plan and JSON assessment's `inputSnapshot.cost`.
 Stopped or incomplete native runs can be exported with their partial/unknown
 spending and remain stopped/incomplete and ineligible. An offline replay reproduces
 saved outcomes and accounting; it creates no new observations, independent holdout
-or upgrade authorization. Statistical and acceptance policies are unchanged.
+or upgrade authorization, and it cannot turn partial usage into a complete total or
+invent unfinished task metrics. Statistical and acceptance policies are unchanged.
 
 Calibration and trigger exports verify the single-arm plan, session, ledger,
 receipts, task summaries and available usage. Replay regrades saved deliveries in
@@ -531,15 +523,9 @@ cannot produce an executable replay package; export explains that limitation
 instead of replacing the original implementation with newer code.
 
 Paired judge exports require separately sealed review-call receipts and full
-invocation accounting. Replay audits retained judge outputs, scores and costs;
-it does not call the judge again. Primary Agent costs and additional judge costs
-remain separate, with a combined invocation population. Historical judge runs
-without those receipts retain unknown judge/combined costs in reports and cannot
-claim a complete portable export.
+invocation accounting; a run without them cannot claim a complete portable export.
+Replay behavior and the unknown-cost rule are in [all executor roles](#all-executor-roles).
 
-Missing invocation receipts in stopped single-arm runs remain unknown usage;
-available final and partial counters are retained as recorded. Replay cannot
-turn partial usage into a complete total or invent unfinished task metrics.
 Legacy/redacted public archives retain their dated replay recipes and cannot be
 relabeled as complete native exports.
 
@@ -548,5 +534,3 @@ review those contents before sharing. Global configuration/Skill trees are not
 copied automatically, but paths and fingerprints already recorded in native plans
 remain visible. Redaction changes the indexed package; keep the original evidence
 and publish any reviewed redacted derivative with its own explicit recipe.
-
-
