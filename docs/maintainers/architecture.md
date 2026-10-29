@@ -60,13 +60,15 @@ contracts, calculation, mechanisms, integration, evidence, execution, applicatio
 entry, configuration or installation. Runtime and type dependencies are checked
 separately; unknown or overlapping owners, private imports, unresolved targets,
 runtime cycles and stale exceptions fail, and there are currently no role
-exceptions. The bounded AST check rejects direct I/O and implicit
-environment/clock/random reads in pure roles, UI/exit in Application, host policy
-in Shared, Resource writes and vendor `wireShape` access outside Agents. It follows
-immutable aliases, destructuring, imported aliases and lexical shadowing — not
-arbitrary callbacks, reflection, mutable aliases or general interprocedural
-effects. A passing gate proves these rules, not that every responsibility has the
-right owner.
+exceptions. Compiled tests are scanned by the same private-import rule: a test may
+reach into the module it belongs to, but crosses every other module only through
+that module's declared caller interface. The bounded AST check rejects direct I/O
+and implicit environment/clock/random reads in pure roles, UI/exit in Application,
+host policy in Shared, Resource writes and vendor `wireShape` access outside Agents.
+It follows immutable aliases, destructuring, imported aliases and lexical
+shadowing — not arbitrary callbacks, reflection, mutable aliases or general
+interprocedural effects. A passing gate proves these rules, not that every
+responsibility has the right owner.
 
 ## Invariants
 
@@ -300,6 +302,7 @@ locality and leverage, not more directories, justify a seam.
 | One page per topic and one plan | Readers and agents find the owner instead of reconciling copies | A fact must be linked, never restated |
 | Formats and identity owned independently of paths and versions | A moved module or renamed file must not invalidate an approval or a sealed record | Version dispatch has to stay explicit |
 | Checks enforce imports, effects, admission and destinations — not file counts | A count gate punishes depth, which is the point of a seam | Responsibility ownership still needs human review |
+| Tests cross other modules only through their declared interface | A test importing another module's private file pins its internals as firmly as a production import, and this rule did not cover tests at all | Crossings that predate the rule are recorded as debt rows, and a row that stops matching a live violation fails the build, so the ledger can only shrink |
 | Restatement is caught by diffing the corpus against itself, not by a hand-kept list | A registry of owned facts only covers what someone remembered to enter, which is why the 2,124-line policy file was retired; the duplicate detector derives from the tree and needs no upkeep | Verbatim matches only, so a paraphrased copy still depends on review |
 | No maintained page states which version the registry currently serves | Four pages each restated it and all four drifted the day 0.14.0 shipped. Gating version tokens instead would need allowances for the six non-current versions the release documents legitimately carry as feature minimums and superseded-release pointers, rebuilding the retired registry | Write version-neutral wording and let the registry answer; the pinned `skillfit@<version>` commands remain gated against `package.json` |
 
