@@ -39,11 +39,36 @@ npx skillfit@0.14.0 --help
 npx skillfit@0.14.0 doctor
 ```
 
-Requires Node.js 22+. Both commands above are offline and make no model calls. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
+Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the eight commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
+
+## See a real report before you spend
+
+No agent CLI, no login, no model calls. These read the benches shipped inside the package and take a few seconds:
+
+```bash
+npx skillfit@0.14.0 bench check code-review
+npx skillfit@0.14.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.14.0 report eval ./runs/controls-001/existing-mock-arms
+```
+
+`bench check` runs the bundled verifiers against known-good and known-bad answers, so you can watch the harness discriminate: the oracle passes, an empty output fails, a mock baseline fails and a mock treatment passes. `bench self-test` then drives the complete paired pipeline — grader, exact McNemar verdict, paired-bootstrap intervals, audit — on synthetic controls, and `report eval` renders it. That report is banner-marked **Synthetic harness run**: it proves the pipeline works, not that any Skill helps. Add `--dry-run` to the self-test to print its plan and write nothing.
 
 ## First run with npm
 
-In your project directory, replace `./my-skill` with a directory containing your `SKILL.md`:
+In your project directory, point at a Skill you actually use — any directory holding a `SKILL.md` with `name` and `description` frontmatter. Save the example below as `my-skill/SKILL.md`, which is what the `eval` command refers to:
+
+```markdown
+---
+name: my-skill
+description: When to load this skill, in one sentence
+---
+
+# My skill
+
+The instructions the agent should follow.
+```
+
+Then scaffold a case and preview an evaluation:
 
 ```bash
 npx skillfit@0.14.0 bench init my-bench --kind command --dry-run
