@@ -16,7 +16,30 @@ load-bearing facts already appear below: the external receipt and study location
 no-republish rule all live in this Status block or the plan table, and the one
 fact that did not (the registry publication timestamp) was promoted here first.
 
-- Current task T1: explicit Token-first control is implemented and verified
+- Current task T2: verify the repaired source and standalone workspace without
+  model calls, fix any reproduced compatibility gap, and commit the scoped
+  verified source changes as requested. The initial offline reproduction lost
+  valid Codex cumulative counters after a `token_count` notice with `info: null`.
+  Reuse the existing reader/executor tests: ignore only absent
+  counter notices, keep malformed numeric/identity/monotonicity refusals, and
+  prove partial recovery plus during-call stopping before final review. Do not
+  restart old studies, refresh their frozen runtime, modify global configuration
+  or commit retained experiment data. The standalone workspace remains separate.
+  T2 verification: the regression failed before the fix; all 14 adapter tests
+  now pass, including failed-child recovery and the four live Token stop lines.
+  The original timeout log yields partial input/cache/output 169015/161920/1759
+  through both explicit-home and CODEX_HOME paths; its saved files are unchanged.
+  Final npm test: 1,080 pass, zero fail/cancel/skip. The first restricted run's
+  sole failure was the fake HTTP listener's EPERM; the complete local-permission
+  rerun passed. CLI doctor has zero failures and one unrelated Claude import
+  warning; the installed skillfit command links to this rebuilt checkout.
+  Standalone verification passes 33 tests without skips, four case controls and
+  three native permission profiles. One integrated OCR review covers all three
+  changed files (one selected, two manually included), no unresolved findings;
+  Codex supplied the review, without an independent model. New model calls: zero.
+  Real activation/effectiveness remains untested; stopped studies remain incomplete.
+
+- Previous task T1: explicit Token-first control is implemented and verified
   offline. Preserve
   legacy omitted/numeric deadlines and five-number budget semantics. An explicit
   `executorTimeoutSeconds: null` disables the Agent deadline; an explicit
@@ -179,6 +202,7 @@ fact that did not (the registry publication timestamp) was promoted here first.
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| T2 | Verify source/workspace and close empty-notice regression | Complete; regression, offline suite, native workspace and integrated review passed | Valid counters survive empty notices before/between/after snapshots; malformed counters and wrong identities remain unknown. Exercise failed CLI recovery and all four during-call Token stop lines using fake children; run full npm test, CLI doctor, standalone checks and one final integrated review before the authorized scoped commit. No model calls or historical-record changes. |
 | T1a | Review compatibility and declare Token-first acceptance | Complete; source/counter/stop paths reviewed | Explicit null is additive; omitted and positive settings retain normalization. Reuse the existing run seam and receipt mechanisms; keep frozen old requests and evidence unchanged. |
 | T1b | Implement explicit disabled Agent deadline and Token-only request; after T1a | Complete; legacy/null parsing and support refusal tested | Test first: parse/preview null, preserve legacy numeric defaults, reject invalid and unsupported execution surfaces before calls. Record timing with a null deadline; keep cancellation, output bounds and local verifier/tool timeouts. |
 | T1c | Enforce Token stop lines during supported calls; after T1b | Complete; all four Token lines, cumulative accounting, cancellation and moved stopped replay passed | Offline fake Codex processes only: cumulative updates replace the current-call snapshot; add settled earlier calls once. Stop the tree at a reliable reached update, retain partial counters/source and a typed spending stop; no next call or grading of interrupted output. Cover no counters, identity mismatch, invalid/regressed counters and normal completion/cancellation. |

@@ -52,6 +52,8 @@ export function probeCodexPartialUsage(options: {
       }
       if (event?.type !== 'event_msg' || event.payload?.type !== 'token_count') continue;
       if (!identity) return undefined;
+      // Notices without counters do not invalidate earlier or later snapshots.
+      if (event.payload.info === null || event.payload.info === undefined) continue;
       const usage = event.payload.info?.total_token_usage;
       const values = [usage?.input_tokens, usage?.cached_input_tokens, usage?.output_tokens];
       if (values.some(value => !Number.isSafeInteger(value) || value < 0) || usage.cached_input_tokens > usage.input_tokens) return undefined;

@@ -43,10 +43,29 @@ test('wrong or stale identity, future counters and ambiguous files never borrow 
   assert.equal(probeCodexPartialUsage(f.options), undefined);
 });
 
+test('empty counter notices do not discard valid cumulative snapshots or invent usage', t => {
+  const f = setup(t);
+  const notice = { timestamp: new Date(f.now + 10).toISOString(), type: 'event_msg',
+    payload: { type: 'token_count', info: null } };
+  f.save([f.meta, notice]);
+  assert.equal(probeCodexPartialUsage(f.options), undefined);
+  const absent = { ...notice, payload: { type: 'token_count' } };
+  f.save([f.meta, notice, f.usage(100, 60, 20), absent, f.usage(150, 90, 30), notice]);
+  const result = probeCodexPartialUsage(f.options);
+  assert.deepEqual(result?.tokens, { input: 150, cachedInput: 90, output: 30 });
+  assert.match(result!.evidence.scope, /Partial/);
+  assert.deepEqual(probeCodexPartialUsage({ ...f.options, homeDir: undefined,
+    env: { TEST_SESSION_HOME: f.root } })?.tokens, result?.tokens);
+});
+
 test('malformed partitions, decreasing counters and missing public thread identity remain unknown', t => {
   const f = setup(t);
   for (const events of [[f.meta, f.usage(100, 101)], [f.meta, f.usage(1.5)], [f.meta, f.usage(100), f.usage(99)], [f.usage(), f.meta]]) {
     f.save(events); assert.equal(probeCodexPartialUsage(f.options), undefined);
+  }
+  for (const total of [null, {}, { input_tokens: 100, output_tokens: 20 }]) {
+    f.save([f.meta, f.usage(), { ...f.usage(), payload: { type: 'token_count', info: { total_token_usage: total } } }]);
+    assert.equal(probeCodexPartialUsage(f.options), undefined);
   }
   f.save([f.meta, f.usage()]); assert.equal(probeCodexPartialUsage({ ...f.options, stdout: 'not a public JSON thread' }), undefined);
   assert.equal(probeCodexPartialUsage({ ...f.options, stdout: f.options.stdout + '\n' + JSON.stringify({ type: 'thread.started', thread_id: '22222222-2222-4222-8222-222222222222' }) }), undefined);
@@ -54,7 +73,8 @@ test('malformed partitions, decreasing counters and missing public thread identi
 });
 
 test('a failed fake CLI keeps partial local usage and numeric provenance without invoking a model', async t => {
-  const f = setup(t); f.save([f.meta, f.usage(100, 60, 20, f.now)]);
+  const f = setup(t), notice = { ...f.usage(0, 0, 0, f.now), payload: { type: 'token_count', info: null } };
+  f.save([f.meta, notice, f.usage(100, 60, 20, f.now), notice]);
   const child = `console.log(JSON.stringify({type:'thread.started',thread_id:${JSON.stringify(ID)}}));process.exitCode=1;`;
   const executor = new CliExecutor({ argv: [process.execPath, '-e', child], shell: false, triggerSkillName: 'offline-fixture',
     partialUsageFromSessionLog: true, sessions, homeDir: f.root });
@@ -81,7 +101,8 @@ const liveLimits = { input: 1000, cachedInput: 1000, uncachedInput: 1000, output
 for (const [metric, limit] of [['input', 100], ['cachedInput', 60], ['uncachedInput', 40], ['output', 20]] as const) {
   test(`a live ${metric} stop kills an offline child and retains a partial source-bound receipt`, async t => {
     const f = setup(t), controller = new AbortController();
-    const script = `const fs=require('node:fs');const events=${JSON.stringify([f.meta, f.usage(100, 60, 20, f.now)])};
+    const notice = { ...f.usage(0, 0, 0, f.now), payload: { type: 'token_count', info: null } };
+    const script = `const fs=require('node:fs');const events=${JSON.stringify([f.meta, notice, f.usage(100, 60, 20, f.now), notice])};
       fs.writeFileSync(${JSON.stringify(f.file)},events.map(e=>JSON.stringify({...e,timestamp:new Date().toISOString()})).join('\\n')+'\\n');
       console.log(JSON.stringify({type:'thread.started',thread_id:${JSON.stringify(ID)}}));setInterval(()=>{},10000);`;
     const executor = new CliExecutor({ argv: [process.execPath, '-e', script], shell: false,
