@@ -7,10 +7,10 @@
   partial receipts and portable replay. Omitted/numeric settings retain their
   previous semantics; observation is best-effort rather than a billing hard cap.
 
-## 0.14.0 — evaluation contracts and maintainable Bench inputs
+## 0.14.0 — evaluation contracts and maintainable Bench inputs (2026-10-27)
 
-This entry describes the prepared source/package contents; publication status is
-verified separately through the [release procedure](docs/maintainers/releases.md).
+Publication is verified through the [release procedure](docs/maintainers/releases.md);
+acceptance receipts are retained outside this repository.
 
 - Add offline synthetic controls (`bench self-test` protocol 1) and explicit
   Bench schema 2 claims with frozen measurementScope 1. Keep schema 1 and old

@@ -138,7 +138,7 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. The [case authoring guide](docs/guides/bench-authoring.md) covers both paths, verifier requirements and offline validation.
 
-Before live spending, the 0.14.0 package or a reviewed source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility. This entry is not available in published npm 0.13.1.
+Before live spending, the 0.14.0 package or a reviewed source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility.
 
 List and inspect cases, or preview an edit. `--yes` applies a validated change with a backup; removal keeps case files. Select a smaller run with repeated `--task`:
 
@@ -276,7 +276,7 @@ A bench is `bench.json`, fixtures and deterministic verifiers. Use the [bench au
 
 ## Our own data
 
-We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pairs, Codex CLI, frozen 2026-07 baseline). One showed a limited regression-test artifact signal in 2/3 treated runs; no Skill showed a robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set, and a run the report labels indicative is not an installation recommendation:
+We ran skillfit's harness on 8 popular workflow skills from the public catalog — four from `mattpocock/skills` and four from `addyosmani/agent-skills`, each at the commit pinned in [codex-upstream-sources.json](profiles/codex-upstream-sources.json) — over 24 baseline/treatment pairs on Codex CLI against a frozen 2026-07 baseline. One showed a limited regression-test artifact signal in 2/3 treated runs; no Skill showed a robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set, and a run the report labels indicative is not an installation recommendation:
 
 | Skill | Quality Δ | Input tokens | Verdict |
 |---|---:|---:|---|
@@ -287,7 +287,7 @@ We ran skillfit's harness on 8 popular workflow skills (24 baseline/treatment pa
 | `security-and-hardening` | 0.00pp | +27.4% | No measurable gain, highest cost |
 | 3 more | 0.00pp | +14.7~17.0% | No measurable gain |
 
-These are observed outcomes on the recorded tasks, not tests of every workflow claim. Regression-test artifacts do not establish process order, and 0.00pp cannot exclude an unmeasured process effect. A saturated baseline limits observed quality headroom; it does not automatically discard a task for an efficiency comparison with complete costs and no observed regression.
+These are observed outcomes on the recorded tasks, not tests of every workflow claim. **The harness requested patches rather than giving the agent a writable workspace, so process-level behavior such as red-green-refactor sequencing was not observable — and `tdd`, `diagnosing-bugs` and `code-review` are process skills.** The quality column is therefore a null result with a known hole in it rather than a refutation; the cost column does not depend on process observation. Regression-test artifacts do not establish process order, and 0.00pp cannot exclude an unmeasured process effect. A saturated baseline (6 of the 8 baselines were already at 100%) limits observed quality headroom; it does not automatically discard a task for an efficiency comparison with complete costs and no observed regression.
 
 See the [original study records](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md) and [archived debugging study](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) for dated scope and available records. These author-run records do not establish independent third-party live reproduction; offline replay verifies saved observations.
 

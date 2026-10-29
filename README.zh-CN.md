@@ -135,7 +135,7 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 用 `bench add --freeze` 记录失败，或用 `--from-commit` 导入修复。[case 编写指南](docs/guides/bench-authoring.md)说明这两条路径、verifier 要求和离线校验。
 
-真实花费前，0.14.0 包或已审查的源码构建可以通过 [bench self-test](docs/guides/bench-authoring.md#test-known-controls) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。已发布 npm 0.13.1 尚无此入口。
+真实花费前，0.14.0 包或已审查的源码构建可以通过 [bench self-test](docs/guides/bench-authoring.md#test-known-controls) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。
 
 列出、查看 case 或预览修改。`--yes` 会备份并应用通过验证的变更；移除注册仍保留 case 文件。重复 `--task` 选择较小的运行范围：
 
@@ -271,7 +271,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 ## 我们自己的数据
 
-我们用 skillfit 的 harness 测了 8 个流行的工作流 skill（24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线）。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置。报告标成 indicative 的运行也不是安装建议：
+我们用 skillfit 的 harness 测了公开目录里的 8 个流行工作流 skill——4 个来自 `mattpocock/skills`，4 个来自 `addyosmani/agent-skills`，各自固定在 [codex-upstream-sources.json](profiles/codex-upstream-sources.json) 所记录的 commit——共 24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置。报告标成 indicative 的运行也不是安装建议：
 
 | Skill | 质量差值 | 输入 token | 结论 |
 |---|---:|---:|---|
@@ -282,7 +282,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 | `security-and-hardening` | 0.00pp | +27.4% | 无可测增益，成本最高 |
 | 其余 3 个 | 0.00pp | +14.7~17.0% | 无可测增益 |
 
-这些是所记录任务上的结果，不是对所有工作流声称的检验。回归测试产物不能证明过程顺序，0.00pp 也不能排除未测量的过程效应。基线饱和限制已观察到的质量提升空间，但完整成本且无已观察回归时，不会自动排除该任务的效率比较价值。
+这些是所记录任务上的结果，不是对所有工作流声称的检验。**harness 索取的是补丁，而不是给 agent 一个可写工作区，因此红-绿-重构这类过程行为不可观测——而 `tdd`、`diagnosing-bugs` 和 `code-review` 正是过程型 skill。**所以质量这一列是带已知缺口的零结果，不是反驳；成本这一列不依赖过程观测。回归测试产物不能证明过程顺序，0.00pp 也不能排除未测量的过程效应。基线饱和（8 个基线中有 6 个本来就是 100%）限制已观察到的质量提升空间，但完整成本且无已观察回归时，不会自动排除该任务的效率比较价值。
 
 参见[原始研究记录](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md)与[已归档调试研究](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)，了解各日期报告的范围和可用记录。这些作者运行记录不能建立第三方独立真实复现；离线 replay 验证的是已保存观测。
 

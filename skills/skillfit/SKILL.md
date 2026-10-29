@@ -19,18 +19,19 @@ ordinary CLI costs, API-failure evidence, bundled names and recorded case drafti
 Earlier versions lack some of these fixes; inspect the installed version before using new flags.
 The 0.14.0 package adds numerical, trigger-observation and per-call
 model-identity corrections, self-test protocol 1 and bench schema 2 /
-measurementScope 1. npm 0.13.1 does not include these additions. Registry
-availability is separate from source preparation; if 0.14.0 is unavailable,
-use the reviewed implementing source snapshot. Read the
+measurementScope 1; 0.13.1 and earlier lack them. Registry availability is
+separate from source preparation, so inspect the installed version and fall back
+to the reviewed implementing source snapshot when a 0.14.0 package is
+unavailable. Read the
 [capability table](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/docs/guides/experiment-workflow.md#executor-capabilities)
-before promising a mode, strict budget or model provenance. A package version
-string does not prove the checkout's new behavior is released.
+before promising a mode, strict budget or model provenance, and check the
+installed version before relying on a flag a later release added.
 
 Source links in this standalone driver use the
 [reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/c9522ddea4c181056f1065e04f3ee0f69845146a). They do not follow main.
 This snapshot predates the 0.14.0 version bump and may still print 0.13.1; the
 full commit, not that earlier version label, identifies its implementation.
-For published npm 0.13.1 behavior, use its
+For a superseded release such as 0.13.1, use its
 [original documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs);
 do not substitute that older package for an example requiring 0.14.0 features.
 
