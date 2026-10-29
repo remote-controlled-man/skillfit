@@ -307,6 +307,76 @@ export function architectureErrors(files, options) {
   return options ? errors.concat(roleErrors(files, options), businessErrors(files, options)) : errors;
 }
 
+/** Test modules are not runtime edges; they are scanned only by the interface rule below. */
+export function testModules(root = DIST) {
+  const files = new Map();
+  const walk = dir => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.isFile() && entry.name.endsWith('.test.js')) {
+        files.set(relative(root, path).split(sep).join('/'), readFileSync(path, 'utf8'));
+      }
+    }
+  };
+  walk(root); return files;
+}
+
+/**
+ * A test may reach into the module it belongs to, but must cross every other module
+ * through that module's declared interface. Dependency direction is deliberately not
+ * enforced here: a test legitimately exercises a module from outside its production
+ * dependency graph, and forcing the direction would push integration tests into
+ * whichever module happens to sit lowest. A test with no subject module inherits no
+ * owner, so every module it touches must be public; registering it records the scope
+ * gap without exempting its imports. Recorded debt is reported rather than silently
+ * skipped, and a row that stops matching a live violation fails the build, so the
+ * list can only shrink.
+ */
+export function testInterfaceErrors(tests, prodFiles, policy) {
+  const modules = policy.businessModules;
+  if (!modules) return { errors: [], debts: 0, unowned: 0 }; // Role-check fixtures carry no business owners.
+  const ownerOf = file => {
+    const matches = Object.entries(modules).filter(([, rule]) => rule.files?.includes(file) || rule.prefixes?.some(prefix => file.startsWith(prefix)));
+    return matches.length === 1 ? matches[0][0] : null;
+  };
+  const hits = [];
+  for (const [file, source] of tests) {
+    // Ownership comes from the module under test, not from the test's own path, so a
+    // test filed beside the wrong module is still judged against the right interface.
+    const own = ownerOf(file.replace(/\.test\.js$/, '.js'));
+    if (!own) hits.push({ from: file, to: null });
+    for (const edge of dependencyEdges(source, file)) {
+      if (!edge.specifier.startsWith('.')) continue;
+      const target = posix.normalize(posix.join(posix.dirname(file), edge.specifier));
+      if (!prodFiles.has(target)) continue;
+      const targetOwner = ownerOf(target);
+      // Compatibility entries are re-export shims with no public files of their own;
+      // importing one is importing the real interface by its stable replay path.
+      if (!targetOwner || targetOwner === own || targetOwner === 'compatibility') continue;
+      if (!modules[targetOwner].publicFiles.includes(target)) hits.push({ from: file, to: target });
+    }
+  }
+  const debts = new Map((policy.testInterface?.debts ?? []).map(row => [`${row.from}->${row.to}`, row]));
+  const unowned = new Map((policy.testInterface?.unowned ?? []).map(row => [row.file, row]));
+  const errors = [];
+  let liveDebts = 0, liveUnowned = 0;
+  for (const hit of hits) {
+    if (hit.to === null) {
+      liveUnowned++;
+      if (!unowned.has(hit.from)) errors.push(`${hit.from}: test has no subject module to inherit an owner from; register it under testInterface.unowned with a reason, owner and removalTask.`);
+      else unowned.delete(hit.from);
+      continue;
+    }
+    const key = `${hit.from}->${hit.to}`;
+    if (!debts.has(key)) errors.push(`${hit.from}: crosses into private ${hit.to}; use that module's public interface, or record the debt with reason, owner and removalTask.`);
+    else { liveDebts++; debts.delete(key); }
+  }
+  for (const [key, row] of debts) errors.push(`${row.from}: stale test-interface debt for ${row.to}; the violation is gone, remove the row.`);
+  for (const [file, row] of unowned) errors.push(`${file}: stale unowned-test entry (${row.reason}); the test now has a subject module, remove the row.`);
+  return { errors, debts: liveDebts, unowned: liveUnowned };
+}
+
 /** Only active compiled modules; pinned evidence and tests are not runtime edges. */
 export function compiledModules(root = DIST) {
   const files = new Map();
@@ -341,8 +411,12 @@ export function sourceModules(root = SOURCE) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const modules = compiledModules(), sources = sourceModules(), policy = readArchitecturePolicy();
   const errors = architectureErrors(modules, { policy, sources });
+  const tests = testModules(), interfaces = testInterfaceErrors(tests, modules, policy);
+  errors.push(...interfaces.errors);
   for (const error of errors) console.error(error);
-  console.log(`Architecture: ${modules.size} active modules, ${sources.size} source modules, ${errors.length} violations; ${policy.exceptions.length} owned legacy exception(s).`);
+  console.log(`Architecture: ${modules.size} active modules, ${sources.size} source modules, ${tests.size} test modules, ${errors.length} violations; ${policy.exceptions.length} owned legacy exception(s), ${interfaces.debts} test-interface debt(s), ${interfaces.unowned} unowned test(s).`);
   for (const row of policy.exceptions) console.log(`DEBT ${row.from} -> ${row.to} (${row.kind}): ${row.reason} Owner: ${row.owner}; remove by: ${row.removalTask}.`);
+  for (const row of policy.testInterface?.debts ?? []) console.log(`DEBT(test) ${row.from} -> ${row.to}: ${row.reason} Owner: ${row.owner}; remove by: ${row.removalTask}.`);
+  for (const row of policy.testInterface?.unowned ?? []) console.log(`DEBT(test-scope) ${row.file}: ${row.reason} Owner: ${row.owner}; remove by: ${row.removalTask}.`);
   if (errors.length) process.exitCode = 1;
 }

@@ -780,5 +780,277 @@
       ],
       "publicFiles": []
     }
+  },
+  "testInterface": {
+    "debts": [
+      {
+        "from": "bench/gates/verifier.test.js",
+        "to": "evaluation/execution/paired.js",
+        "reason": "bench test reaches into evaluation's private evaluation/execution/paired.js",
+        "owner": "bench",
+        "removalTask": "import the paired-execution helper from evaluation publicFiles, or expose it there"
+      },
+      {
+        "from": "cli/bench.test.js",
+        "to": "evaluation/execution/paired.js",
+        "reason": "cli test reaches into evaluation's private evaluation/execution/paired.js",
+        "owner": "cli",
+        "removalTask": "import the paired-execution helper from evaluation publicFiles, or expose it there"
+      },
+      {
+        "from": "cli/eval-cli-usage.test.js",
+        "to": "agents/adapters/cli.js",
+        "reason": "cli test reaches into agents's private agents/adapters/cli.js",
+        "owner": "cli",
+        "removalTask": "inject an Executor double instead of importing the concrete CLI adapter"
+      },
+      {
+        "from": "cli/eval-export-modes.test.js",
+        "to": "evaluation/records/session.js",
+        "reason": "cli test reaches into evaluation's private evaluation/records/session.js",
+        "owner": "cli",
+        "removalTask": "construct run records through evaluation publicFiles"
+      },
+      {
+        "from": "cli/eval-measurement-scope.test.js",
+        "to": "evaluation/measurement/policy.js",
+        "reason": "cli test reaches into evaluation's private evaluation/measurement/policy.js",
+        "owner": "cli",
+        "removalTask": "parse the acceptance policy through evaluation publicFiles"
+      },
+      {
+        "from": "cli/eval-model-identity.test.js",
+        "to": "agents/adapters/api.js",
+        "reason": "cli test reaches into agents's private agents/adapters/api.js",
+        "owner": "cli",
+        "removalTask": "inject an Executor double instead of importing the concrete API adapter"
+      },
+      {
+        "from": "cli/eval-preflight.test.js",
+        "to": "evaluation/execution/mock-executor.js",
+        "reason": "cli test reaches into evaluation's private evaluation/execution/mock-executor.js",
+        "owner": "cli",
+        "removalTask": "publish MockExecutor as an evaluation test interface or move it out of production source"
+      },
+      {
+        "from": "cli/eval-trigger-observation.test.js",
+        "to": "agents/adapters/cli.js",
+        "reason": "cli test reaches into agents's private agents/adapters/cli.js",
+        "owner": "cli",
+        "removalTask": "inject an Executor double instead of importing the concrete CLI adapter"
+      },
+      {
+        "from": "cli/eval.test.js",
+        "to": "evaluation/execution/mock-executor.js",
+        "reason": "cli test reaches into evaluation's private evaluation/execution/mock-executor.js",
+        "owner": "cli",
+        "removalTask": "publish MockExecutor as an evaluation test interface or move it out of production source"
+      },
+      {
+        "from": "cli/evaluation-report.test.js",
+        "to": "evaluation/records/session.js",
+        "reason": "cli test reaches into evaluation's private evaluation/records/session.js",
+        "owner": "cli",
+        "removalTask": "construct run records through evaluation publicFiles"
+      },
+      {
+        "from": "commands/bench-source.test.js",
+        "to": "cli/bench-source.js",
+        "reason": "test with no subject module reaches into cli's private cli/bench-source.js",
+        "owner": "compatibility",
+        "removalTask": "drive bench sourcing through its cli entry"
+      },
+      {
+        "from": "commands/eval-api-failure.test.js",
+        "to": "agents/adapters/api.js",
+        "reason": "test with no subject module reaches into agents's private agents/adapters/api.js",
+        "owner": "compatibility",
+        "removalTask": "inject an Executor double instead of importing the concrete API adapter"
+      },
+      {
+        "from": "commands/eval-layout.test.js",
+        "to": "evaluation/targets/output-layout.js",
+        "reason": "test with no subject module reaches into evaluation's private evaluation/targets/output-layout.js",
+        "owner": "compatibility",
+        "removalTask": "resolve the output layout through evaluation publicFiles"
+      },
+      {
+        "from": "evaluation/application/export.test.js",
+        "to": "cli/eval-component.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-component.js",
+        "owner": "evaluation",
+        "removalTask": "drive the component through its documented JSON request entry rather than importing it"
+      },
+      {
+        "from": "evaluation/application/self-test.test.js",
+        "to": "agents/adapters/api.js",
+        "reason": "evaluation test reaches into agents's private agents/adapters/api.js",
+        "owner": "evaluation",
+        "removalTask": "inject an Executor double instead of importing the concrete API adapter"
+      },
+      {
+        "from": "evaluation/application/self-test.test.js",
+        "to": "agents/adapters/cli.js",
+        "reason": "evaluation test reaches into agents's private agents/adapters/cli.js",
+        "owner": "evaluation",
+        "removalTask": "inject an Executor double instead of importing the concrete CLI adapter"
+      },
+      {
+        "from": "evaluation/bench-claims.test.js",
+        "to": "cli/bench-manage.js",
+        "reason": "evaluation test reaches into cli's private cli/bench-manage.js",
+        "owner": "evaluation",
+        "removalTask": "drive bench management through its cli entry"
+      },
+      {
+        "from": "evaluation/bench-claims.test.js",
+        "to": "cli/eval-component.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-component.js",
+        "owner": "evaluation",
+        "removalTask": "drive the component through its documented JSON request entry rather than importing it"
+      },
+      {
+        "from": "evaluation/bench-claims.test.js",
+        "to": "cli/eval-plan.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-plan.js",
+        "owner": "evaluation",
+        "removalTask": "assert on the plan the entry point returns rather than importing the plan builder"
+      },
+      {
+        "from": "evaluation/eval-application.test.js",
+        "to": "cli/eval-component.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-component.js",
+        "owner": "evaluation",
+        "removalTask": "drive the component through its documented JSON request entry rather than importing it"
+      },
+      {
+        "from": "evaluation/eval-application.test.js",
+        "to": "cli/eval-preflight-error.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-preflight-error.js",
+        "owner": "evaluation",
+        "removalTask": "assert the error shape through the entry point that raises it"
+      },
+      {
+        "from": "evaluation/eval-application.test.js",
+        "to": "cli/eval-preflight.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-preflight.js",
+        "owner": "evaluation",
+        "removalTask": "assert preflight through the entry point that produces it"
+      },
+      {
+        "from": "evaluation/eval-application.test.js",
+        "to": "cli/eval-single-arm-report.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-single-arm-report.js",
+        "owner": "evaluation",
+        "removalTask": "render single-arm output through the cli entry"
+      },
+      {
+        "from": "evaluation/eval-component.test.js",
+        "to": "cli/eval-component.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-component.js",
+        "owner": "evaluation",
+        "removalTask": "drive the component through its documented JSON request entry rather than importing it"
+      },
+      {
+        "from": "evaluation/execution/activation.test.js",
+        "to": "cli/trigger-summary.js",
+        "reason": "evaluation test reaches into cli's private cli/trigger-summary.js",
+        "owner": "evaluation",
+        "removalTask": "render the trigger summary through the cli entry"
+      },
+      {
+        "from": "evaluation/execution/budget.test.js",
+        "to": "cli/eval-component.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-component.js",
+        "owner": "evaluation",
+        "removalTask": "drive the component through its documented JSON request entry rather than importing it"
+      },
+      {
+        "from": "evaluation/execution/paired.test.js",
+        "to": "cli/eval-report.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-report.js",
+        "owner": "evaluation",
+        "removalTask": "render the saved report through the cli entry the test already drives, instead of importing the renderer"
+      },
+      {
+        "from": "evaluation/measurement/costs.test.js",
+        "to": "cli/eval-report.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-report.js",
+        "owner": "evaluation",
+        "removalTask": "render the saved report through the cli entry the test already drives, instead of importing the renderer"
+      },
+      {
+        "from": "evaluation/skill-revision.test.js",
+        "to": "cli/eval-report.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-report.js",
+        "owner": "evaluation",
+        "removalTask": "render the saved report through the cli entry the test already drives, instead of importing the renderer"
+      },
+      {
+        "from": "evaluation/targets/skill.test.js",
+        "to": "cli/eval-report.js",
+        "reason": "evaluation test reaches into cli's private cli/eval-report.js",
+        "owner": "evaluation",
+        "removalTask": "render the saved report through the cli entry the test already drives, instead of importing the renderer"
+      },
+      {
+        "from": "harness/verifier-timeout.test.js",
+        "to": "cli/bench-manage.js",
+        "reason": "test with no subject module reaches into cli's private cli/bench-manage.js",
+        "owner": "compatibility",
+        "removalTask": "drive bench management through its cli entry"
+      },
+      {
+        "from": "harness/verifier-timeout.test.js",
+        "to": "evaluation/execution/paired.js",
+        "reason": "test with no subject module reaches into evaluation's private evaluation/execution/paired.js",
+        "owner": "compatibility",
+        "removalTask": "import the paired-execution helper from evaluation publicFiles, or expose it there"
+      }
+    ],
+    "unowned": [
+      {
+        "file": "commands/bench-draft.test.js",
+        "reason": "exercises a shipped installed recipe, not a compiled source module",
+        "owner": "compatibility",
+        "removalTask": "keep: recipe tests have no compiled subject by design"
+      },
+      {
+        "file": "commands/bench-source.test.js",
+        "reason": "exercises a shipped installed recipe, not a compiled source module",
+        "owner": "compatibility",
+        "removalTask": "keep: recipe tests have no compiled subject by design"
+      },
+      {
+        "file": "commands/eval-api-failure.test.js",
+        "reason": "exercises a shipped installed recipe, not a compiled source module",
+        "owner": "compatibility",
+        "removalTask": "keep: recipe tests have no compiled subject by design"
+      },
+      {
+        "file": "commands/eval-layout.test.js",
+        "reason": "exercises a shipped installed recipe, not a compiled source module",
+        "owner": "compatibility",
+        "removalTask": "keep: recipe tests have no compiled subject by design"
+      },
+      {
+        "file": "docs.test.js",
+        "reason": "repository-level documentation contract with no single subject module",
+        "owner": "repository",
+        "removalTask": "keep: documentation contract is repository-scoped by design"
+      },
+      {
+        "file": "harness/bench-location.test.js",
+        "reason": "tests bench/location.ts but is filed under the compatibility tree",
+        "owner": "compatibility",
+        "removalTask": "move the test beside its subject module so it inherits an owner"
+      },
+      {
+        "file": "harness/verifier-timeout.test.js",
+        "reason": "tests verifier timeout behaviour but is filed under the compatibility tree",
+        "owner": "compatibility",
+        "removalTask": "move the test beside its subject module so it inherits an owner"
+      }
+    ]
   }
 }

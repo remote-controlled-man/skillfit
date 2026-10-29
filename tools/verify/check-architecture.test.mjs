@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { posix } from 'node:path';
-import { architectureErrors, compiledModules, runtimeImports, sourceModules, readArchitecturePolicy } from './check-architecture.mjs';
+import { architectureErrors, compiledModules, runtimeImports, sourceModules, testInterfaceErrors, testModules, readArchitecturePolicy } from './check-architecture.mjs';
 
 test('runtime edges include static, re-export and literal dynamic imports, excluding text and types', () => {
   assert.deepEqual(runtimeImports(`
@@ -196,4 +196,79 @@ test('business ownership blocks Bench orchestration, private adapters and shared
     const files = compiledModules(); files.set(entry, files.get(entry) + '\n' + injected);
     assert.ok(architectureErrors(files, { policy }).some(error => error.includes(entry) && expected.test(error)), `${entry}: ${expected}`);
   }
+});
+
+const INTERFACE_PROD = new Set(['bench/authoring.js', 'bench/internal.js', 'evaluation/application/read.js',
+  'evaluation/measurement/tally.js', 'evaluation/measurement/private.js', 'compatibility/replay.js']);
+const interfacePolicy = () => ({
+  businessModules: {
+    bench: { prefixes: ['bench/'], dependencies: ['evaluation'], publicFiles: ['bench/authoring.js'] },
+    evaluation: { prefixes: ['evaluation/'], dependencies: [], publicFiles: ['evaluation/application/read.js'] },
+    compatibility: { prefixes: ['compatibility/'], dependencies: ['evaluation'], publicFiles: [] },
+  },
+  testInterface: { debts: [], unowned: [] },
+});
+
+test('a test crosses other modules only through their declared interface', () => {
+  const policy = interfacePolicy();
+  // Its own module stays reachable privately; a test-only helper is not a production module at all.
+  assert.deepEqual(testInterfaceErrors(new Map([['bench/authoring.test.js', `
+    import './internal.js';
+    import '../evaluation/application/read.js';
+    import '../compatibility/replay.js';
+    import './fixtures/local.js';
+    import { test } from 'node:test';
+  `]]), INTERFACE_PROD, policy), { errors: [], debts: 0, unowned: 0 });
+  const crossing = testInterfaceErrors(new Map([['bench/authoring.test.js', "import '../evaluation/measurement/private.js';"]]), INTERFACE_PROD, policy);
+  assert.equal(crossing.errors.length, 1);
+  assert.match(crossing.errors[0], /^bench\/authoring\.test\.js: crosses into private evaluation\/measurement\/private\.js/);
+  assert.deepEqual(testInterfaceErrors(new Map([['bench/a.test.js', "import '../evaluation/measurement/private.js';"]]), INTERFACE_PROD, {}),
+    { errors: [], debts: 0, unowned: 0 }, 'role-only fixtures register no business owner');
+});
+
+test('recorded test-interface debt is counted per edge and expires when the violation goes', () => {
+  const policy = { ...interfacePolicy(), testInterface: { debts: [{ from: 'bench/authoring.test.js', to: 'evaluation/measurement/private.js',
+    reason: 'asserts the private tally shape', owner: 'bench', removalTask: 'expose the tally' }], unowned: [] } };
+  const tests = new Map([['bench/authoring.test.js', "import '../evaluation/measurement/private.js'; import '../evaluation/measurement/tally.js';"]]);
+  const owed = testInterfaceErrors(tests, INTERFACE_PROD, policy);
+  assert.equal(owed.debts, 1);
+  assert.equal(owed.errors.length, 1);
+  assert.match(owed.errors[0], /crosses into private evaluation\/measurement\/tally\.js/, 'a row covers one edge, not the whole file');
+  tests.set('bench/authoring.test.js', '');
+  assert.match(testInterfaceErrors(tests, INTERFACE_PROD, policy).errors.join('\n'),
+    /stale test-interface debt for evaluation\/measurement\/private\.js; the violation is gone/);
+});
+
+test('a test with no subject module is registered for scope, not exempted from the interface', () => {
+  const tests = new Map([['commands/recipe.test.js', "import '../evaluation/measurement/private.js';"]]);
+  assert.match(testInterfaceErrors(tests, INTERFACE_PROD, interfacePolicy()).errors.join('\n'),
+    /commands\/recipe\.test\.js: test has no subject module to inherit an owner from/);
+  const policy = { ...interfacePolicy(), testInterface: { debts: [], unowned: [{ file: 'commands/recipe.test.js',
+    reason: 'drives a shipped recipe', owner: 'compatibility', removalTask: 'keep' }] } };
+  const scoped = testInterfaceErrors(tests, INTERFACE_PROD, policy);
+  assert.equal(scoped.unowned, 1);
+  assert.match(scoped.errors.join('\n'), /crosses into private evaluation\/measurement\/private\.js/,
+    'registering the scope gap must not open a bypass around the interface rule');
+  const owned = { ...policy, businessModules: { ...policy.businessModules,
+    compatibility: { ...policy.businessModules.compatibility, prefixes: ['compatibility/', 'commands/'] } } };
+  const errors = testInterfaceErrors(tests, INTERFACE_PROD, owned).errors;
+  assert.ok(errors.some(error => /stale unowned-test entry/.test(error)), errors.join('\n'));
+  assert.ok(!errors.some(error => /no subject module/.test(error)));
+});
+
+test('the shipped tree matches its ledger exactly and a new crossing is caught', () => {
+  const policy = readArchitecturePolicy(), prod = compiledModules(), tests = testModules();
+  assert.ok(tests.size > 0);
+  const live = testInterfaceErrors(tests, prod, policy);
+  assert.deepEqual(live.errors, []);
+  assert.equal(live.debts, policy.testInterface.debts.length, 'every recorded debt row is still live');
+  assert.equal(live.unowned, policy.testInterface.unowned.length, 'every recorded scope row is still live');
+  const target = 'evaluation/execution/paired.js';
+  assert.ok(!policy.businessModules.evaluation.publicFiles.includes(target), 'the injected target must be private');
+  const owed = new Set(policy.testInterface.debts.map(row => `${row.from}->${row.to}`));
+  const entry = [...tests.keys()].find(file => file.startsWith('bench/') && !owed.has(`${file}->${target}`));
+  assert.ok(entry, 'a bench test that does not already owe the injected edge');
+  const injected = new Map(tests);
+  injected.set(entry, injected.get(entry) + `\nimport '${posix.relative(posix.dirname(entry), target)}';\n`);
+  assert.ok(testInterfaceErrors(injected, prod, policy).errors.some(error => error.includes(entry) && error.includes(`private ${target}`)), entry);
 });
