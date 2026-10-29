@@ -120,7 +120,22 @@ test('legacy live entries retain default console progress while application plan
   for (const [runGroup, run] of [['raw', runEval], ['cli', runEvalCli]] as const) {
     lines.length = 0;
     await run({ ...options, runGroup });
-    assert.ok(lines.some(args => String(args[0]).startsWith('Case preflight: ready')), `${runGroup}: default case progress`);
-    assert.ok(lines.some(args => String(args[0]).includes('Experiment plan')), `${runGroup}: default presentation`);
+    const printed = lines.map(args => String(args[0]));
+    assert.ok(printed.some(line => line.startsWith('Case preflight: ready')), `${runGroup}: default case progress`);
+    assert.ok(printed.some(line => line.includes('Experiment plan')), `${runGroup}: default presentation`);
+    // A paid run must never read as a preview. The plan header, the output line and the
+    // closing line all differ between the two, and none of them may be produced by
+    // stripping preview wording after the fact.
+    const plan = printed.find(line => line.startsWith('Experiment plan'));
+    assert.ok(plan, `${runGroup}: a live run prints its plan`);
+    assert.equal(plan.split('\n')[0], 'Experiment plan', `${runGroup}: a live run is not a dry run`);
+    assert.ok(plan.includes('\nCalls    :'), `${runGroup}: a live plan ends with its call budget`);
+    const joined = printed.join('\n');
+    assert.ok(!joined.includes('(dry run)'), `${runGroup}: no dry-run label survives into a live plan`);
+    assert.ok(!joined.includes('(not created)'), `${runGroup}: a live run creates its output directory`);
+    assert.ok(!joined.includes('Dry run — nothing was written.'),
+      `${runGroup}: a live run must not claim nothing was written`);
+    assert.match(joined, /Calls    : \d+ planned; ceiling \d+/,
+      `${runGroup}: a live plan states its call budget where a preview disclaims writing`);
   }
 });
