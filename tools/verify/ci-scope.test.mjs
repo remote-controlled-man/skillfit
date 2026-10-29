@@ -9,13 +9,6 @@ import { spawnSync } from 'node:child_process';
 import { RELEASE_DOCUMENTS } from './recipes/release-docs-smoke.mjs';
 
 const sha = 'a'.repeat(40), row = (path, status = 'A', mode = '100644') => ({ path, status, mode });
-function registerDocuments(root, paths, historical = []) {
-  const policy = { schemaVersion: 1, documents: [...new Set(paths)].map(path => ({ path, kind: 'record',
-    lifecycle: historical.includes(path) ? 'historical' : 'maintained', audience: ['maintainer'], owner: 'development',
-    scope: [{ kind: 'source', ref: 'working-tree' }], topics: [], checks: ['docs-links'] })), topics: {}, exclusions: [] };
-  mkdirSync(join(root, 'tools/verify'), { recursive: true });
-  writeFileSync(join(root, 'tools/verify/documentation-policy.json'), JSON.stringify(policy));
-}
 test('only regular release bookkeeping enters targeted CI', () => {
   const allowed = [row('docs/plans/2026-10-21-release.md', 'M'), row('docs/releases/0.14.0.md', 'M'), row('docs/releases/0.14.0-verification.json'), row('docs/releases/0.14.0-signatures.txt')];
   assert.equal(classifyChanges(allowed), 'records');
@@ -24,7 +17,7 @@ test('only regular release bookkeeping enters targeted CI', () => {
     assert.equal(classifyChanges([...allowed, entry]), 'full', entry.path);
   }
   assert.equal(classifyChanges([]), 'full');
-  for (const path of ['tools/verify/documentation-policy.json', 'tools/verify/documentation-registry.mjs', 'docs/decisions/new.md', 'docs/new/guide.md', 'docs/README.md']) assert.equal(classifyChanges([row(path)]), 'full', path);
+  for (const path of ['tools/verify/check-docs.mjs', 'tools/verify/architecture-policy.json', 'docs/decisions/new.md', 'docs/new/guide.md', 'docs/README.md']) assert.equal(classifyChanges([row(path)]), 'full', path);
 });
 test('unknown, incomplete and unavailable diff bases fail closed to full CI', () => {
   for (const [event, body] of [['push', { before: '0'.repeat(40) }], ['pull_request', {}], ['workflow_dispatch', {}]]) assert.equal(scopeForEvent(event, body, sha).scope, 'full');
@@ -70,7 +63,6 @@ test('record validation rejects malformed JSON, escaping references and altered 
   for (const file of ['AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'benches/README.md', 'benches/contrib/README.md', 'tools/README.md']) writeFileSync(join(root, file), 'Fixture.');
   writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'skillfit', version: '0.13.1' }));
   writeFileSync(join(root, 'docs/releases/0.13.1.md'), '# Release');
-  registerDocuments(root, ['AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'benches/README.md', 'benches/contrib/README.md', 'tools/README.md', ...RELEASE_DOCUMENTS, 'docs/releases/0.13.1.md']);
   const file = 'docs/releases/0.14.0-verification.json', target = join(root, file);
   writeFileSync(join(root, 'docs/releases/0.14.0-result.json'), '{}');
   const hash = createHash('sha256').update('{}').digest('hex');
@@ -90,7 +82,7 @@ test('record validation rejects malformed JSON, escaping references and altered 
 
 });
 
-test('CI documentation precheck retains a failing receipt for an explicitly changed historical record', t => {
+test('CI documentation precheck fails on any discovered broken link and retains the receipt', t => {
   const root = mkdtempSync(join(tmpdir(), 'skillfit-ci-documentation-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const docs = [...RELEASE_DOCUMENTS, 'CHANGELOG.md', 'docs/maintainers/releases.md', 'docs/maintainers/history.md'];
@@ -99,11 +91,10 @@ test('CI documentation precheck retains a failing receipt for an explicitly chan
     writeFileSync(join(root, path), path.startsWith('README') ? 'npx skillfit@0.13.1 [Changelog](CHANGELOG.md)\n' : 'npx skillfit@0.13.1\n');
   }
   writeFileSync(join(root, 'package.json'), '{"name":"skillfit","version":"0.13.1"}');
-  registerDocuments(root, docs, ['docs/maintainers/history.md']);
   writeFileSync(join(root, 'docs/maintainers/history.md'), '# History\n[Bad](missing.md)\n');
-  const runGate = (mode, scope, label, scopeRecord) => {
+  const runGate = (mode, scope, label) => {
     const dir = join(root, label); mkdirSync(dir);
-    writeFileSync(join(dir, 'scope.json'), JSON.stringify(scopeRecord ?? { scope, base: null, changes: [row('docs/maintainers/history.md', 'M')] }));
+    writeFileSync(join(dir, 'scope.json'), JSON.stringify({ scope, base: null, changes: [row('docs/maintainers/history.md', 'M')] }));
     const run = spawnSync(process.execPath, [join(import.meta.dirname, 'ci-scope.mjs'), mode], {
       cwd: root, encoding: 'utf8', env: { ...process.env, SKILLFIT_CI_DIR: dir },
     });
@@ -112,20 +103,15 @@ test('CI documentation precheck retains a failing receipt for an explicitly chan
   for (const [mode, scope] of [['documentation', 'records'], ['test', 'full'], ['test', 'records']]) {
     const { run, dir, receipt } = runGate(mode, scope, mode + '-' + scope);
     assert.notEqual(run.status, 0);
-    assert.match(receipt.errors.join('\n'), /history.md.*missing target/);
+    assert.match(receipt.errors.join('\n'), /history\.md:2: missing target: missing\.md/);
     assert.ok(receipt.files.includes('docs/maintainers/history.md'));
-    assert.equal(receipt.anchorBaseline, 'unavailable');
     assert.equal(existsSync(join(dir, 'tests.log')), false, 'gate failure prevents either test population from starting');
   }
   writeFileSync(join(root, 'docs/maintainers/history.md'), '# History\n');
   const passed = runGate('documentation', 'records', 'repaired');
   assert.equal(passed.run.status, 0, passed.run.stderr);
   assert.deepEqual(passed.receipt.errors, []);
-  const unavailable = scopeForEvent('push', { before: sha }, sha, () => { throw Error('shallow baseline'); });
-  const fallback = runGate('documentation', 'full', 'unknown-valid-sha', unavailable);
-  assert.equal(fallback.run.status, 0, fallback.run.stderr);
-  assert.equal(fallback.receipt.anchorBaseline, 'unavailable');
-  assert.deepEqual(fallback.receipt.errors, []);
+  assert.deepEqual(Object.keys(passed.receipt).sort(), ['errors', 'files', 'kind', 'schemaVersion']);
 });
 
 

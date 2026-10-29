@@ -20,7 +20,7 @@ export interface EvalRequest {
   agent: string;
   purpose: 'development' | 'validation';
   pairOrder: PairOrder;
-  executorTimeoutSeconds: number;
+  executorTimeoutSeconds: number | null;
   trials: number;
   maxCalls: number;
   spendingBudget?: SpendingBudget;

@@ -19,18 +19,19 @@ ordinary CLI costs, API-failure evidence, bundled names and recorded case drafti
 Earlier versions lack some of these fixes; inspect the installed version before using new flags.
 The 0.14.0 package adds numerical, trigger-observation and per-call
 model-identity corrections, self-test protocol 1 and bench schema 2 /
-measurementScope 1. npm 0.13.1 does not include these additions. Registry
-availability is separate from source preparation; if 0.14.0 is unavailable,
-use the reviewed implementing source snapshot. Read the
+measurementScope 1; 0.13.1 and earlier lack them. Registry availability is
+separate from source preparation, so inspect the installed version and fall back
+to the reviewed implementing source snapshot when a 0.14.0 package is
+unavailable. Read the
 [capability table](https://github.com/remote-controlled-man/skillfit/blob/c9522ddea4c181056f1065e04f3ee0f69845146a/docs/guides/experiment-workflow.md#executor-capabilities)
-before promising a mode, strict budget or model provenance. A package version
-string does not prove the checkout's new behavior is released.
+before promising a mode, strict budget or model provenance, and check the
+installed version before relying on a flag a later release added.
 
 Source links in this standalone driver use the
 [reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/c9522ddea4c181056f1065e04f3ee0f69845146a). They do not follow main.
 This snapshot predates the 0.14.0 version bump and may still print 0.13.1; the
 full commit, not that earlier version label, identifies its implementation.
-For published npm 0.13.1 behavior, use its
+For a superseded release such as 0.13.1, use its
 [original documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs);
 do not substitute that older package for an example requiring 0.14.0 features.
 
@@ -137,7 +138,7 @@ Missing usage or an incomplete batch cannot authorize adoption under either obje
 Optional request `spendingBudget` (0.10.0+) sets whole-batch stop lines. The object
 is optional; once supplied, **all five fields are mandatory**: input, cachedInput,
 uncachedInput, output and durationSeconds. Token limits must be positive safe
-integers; seconds must be positive finite numbers within the parser's safe-number bound.
+integers; numeric seconds must be positive finite numbers within the parser's safe-number bound.
 Reaching a line or losing complete final usage stops subsequent calls. An in-flight
 call can overshoot; do not treat it as a provider hard cap or retry permission.
 In version 0.11.0, those stops include optional ordinary-eval judge calls.
@@ -146,6 +147,19 @@ judge receipts remain unknown. An explicitly enabled API judge without
 credentials fails instead of silently disabling judging. Ctrl+C/SIGTERM stop
 managed work and retain records; do not retry, replace or expand stopped calls
 without a fresh authorized plan.
+
+Current source also accepts explicit budget `durationSeconds: null` for
+Token-only stopping, and `executorTimeoutSeconds: null` (CLI `none`) to disable
+the Agent deadline. This is not in published npm 0.14.0; check the actual runtime
+before using it. Omission and positive values preserve legacy behavior.
+Token-only mode requires a supported during-call reader on every role (currently
+Codex only). It checks latest matched cumulative local counters against remaining
+whole-batch limits; snapshots are never added repeatedly. Reaching a line stops
+the process, retains partial usage/source, skips grading and blocks later calls.
+Internal local logs may lag or be unavailable: unknown is never zero, and no
+precise cutoff or final billing completeness is guaranteed. Keep finite call
+ceilings and manual cancellation; retain separate tool/verifier deadlines. A
+source change does not authorize another paid experiment or resume stopped runs.
 
 Since 0.12.0, ordinary CLI usage parsing is independent of trigger
 detection. Inspect `USAGE_CAPABILITY`: known missing adapter counters block a

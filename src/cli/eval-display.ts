@@ -1,3 +1,4 @@
+import { executorDeadlineLabel } from '../agents/timeout.js';
 import { join } from 'node:path';
 import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from "../evaluation/measurement/report.js";
 import type { TriggerManifest } from '../evaluation/execution/activation.js';
@@ -118,8 +119,8 @@ export function evaluationPlanLines(resolved: ResolvedEvalInputs): string[] {
     log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(competitors.length ? `Compete  : ${competitors.map(entry => entry.name).join(', ')}` : 'Compete  : alone (recall is an upper bound)');
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (agent calls only)`);
-    log(`Agent deadline: ${executorTimeoutSeconds}s per invocation`);
-    if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; checked between calls, in-flight overshoot remains possible`);
+    log(`Agent deadline: ${executorDeadlineLabel(executorTimeoutSeconds)} per invocation`);
+    if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; ${spendingBudget.durationSeconds === null ? 'checked during calls using delayed local Token snapshots; unknown updates cannot guarantee a cutoff' : 'checked between calls'}, in-flight overshoot remains possible`);
   } else {
     log(measurementScopeText(scope));
     log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget, promptEstimate));
@@ -127,8 +128,8 @@ export function evaluationPlanLines(resolved: ResolvedEvalInputs): string[] {
     log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
     log(`Pair order: ${pairOrder}; arms remain adjacent`);
-    if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; checked between calls, in-flight overshoot remains possible`);
-    log(`Agent deadline: ${executorTimeoutSeconds}s per invocation in both arms`);
+    if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; ${spendingBudget.durationSeconds === null ? 'checked during calls using delayed local Token snapshots; unknown updates cannot guarantee a cutoff' : 'checked between calls'}, in-flight overshoot remains possible`);
+    log(`Agent deadline: ${executorDeadlineLabel(executorTimeoutSeconds)} per invocation in both arms`);
     if (skillInstallDir) {
       log('Tool     : native untracked-file diff helper in both arms (version 1; environment correction)');
       log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);

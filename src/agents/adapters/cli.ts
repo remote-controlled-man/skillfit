@@ -10,14 +10,14 @@ import { probeCodexPartialUsage } from "./codex-usage.js";
 import { ExecutorFailure, type TokenUsage } from "../contracts.js";
 import { ExecutionDeadline, type ExecutionClock } from "../../shared/timing.js";
 import { currentSignal as evaluationSignal } from "../../shared/cancellation.js";
-import type { Executor, ExecutorDescriptor, ExecutorResult } from "../contracts.js";
+import type { Executor, ExecutorDescriptor, ExecutorResult, ExecutorRunOptions } from "../contracts.js";
 import { TriggerObserver, triggerDetection, type StreamWireShape, type DetectionOptions } from "../observation/trigger-detection.js";
 
 export interface CliExecutorOptions {
   modelIdentitySurface?: 'claude-assistant';
   argv: string[];
   label?: string;
-  timeoutMs?: number;
+  timeoutMs?: number | null;
   shell?: boolean;
   env?: NodeJS.ProcessEnv;
   promptVia?: 'stdin' | 'file';
@@ -86,7 +86,7 @@ export class CliExecutor implements Executor {
   private readonly modelIdentitySurface?: 'claude-assistant';
   private readonly argv: string[];
   private readonly label: string;
-  private readonly timeoutMs: number;
+  private readonly timeoutMs: number | null;
   private readonly shell: boolean;
   private readonly env?: NodeJS.ProcessEnv;
   private readonly promptVia: 'stdin' | 'file';
@@ -115,7 +115,7 @@ export class CliExecutor implements Executor {
     this.modelIdentitySurface = options.modelIdentitySurface;
     this.argv = [...options.argv];
     this.label = options.label ?? options.argv[0] ?? 'cli';
-    this.timeoutMs = options.timeoutMs ?? DEFAULT_CLI_TIMEOUT_MS;
+    this.timeoutMs = options.timeoutMs === undefined ? DEFAULT_CLI_TIMEOUT_MS : options.timeoutMs;
     this.shell = options.shell ?? true;
     this.env = options.env;
     this.promptVia = options.promptVia ?? 'stdin';
@@ -136,7 +136,7 @@ export class CliExecutor implements Executor {
     new ExecutionDeadline(this.timeoutMs, this.clock);
   }
 
-  static forAgent(agentId: string, opts?: { triggerSkillName?: string; triggerSkillIdentities?: string[]; triggerSkillPaths?: string[]; trustProjectConfig?: boolean; timeoutMs?: number }): CliExecutor {
+  static forAgent(agentId: string, opts?: { triggerSkillName?: string; triggerSkillIdentities?: string[]; triggerSkillPaths?: string[]; trustProjectConfig?: boolean; timeoutMs?: number | null }): CliExecutor {
     const agent = getAgent(agentId);
     const headless = agent.headless;
     const projectTrustConfigArg = opts?.trustProjectConfig ? headless.projectTrustConfigArg : undefined;
@@ -175,6 +175,10 @@ export class CliExecutor implements Executor {
     });
   }
 
+  get supportsLiveTokenBudget(): boolean {
+    return this.streamJson && this.wireShape === 'codex-items' && this.partialUsageFromSessionLog && this.sessions?.wireShape === 'codex-rollout';
+  }
+
   describe(): ExecutorDescriptor {
     // The headless CLI surfaces in the matrix expose no seed or temperature knob.
     return {
@@ -188,7 +192,10 @@ export class CliExecutor implements Executor {
     };
   }
 
-  run(prompt: string, workdir: string): Promise<ExecutorResult> {
+  run(prompt: string, workdir: string, options?: ExecutorRunOptions): Promise<ExecutorResult> {
+    if ((options?.tokenBudget && !this.supportsLiveTokenBudget) || (this.timeoutMs === null && !options?.tokenBudget)) {
+      return Promise.reject(new ExecutorFailure('Token-only/no-deadline execution requires supported during-call Token limits.', { output: '' }, false));
+    }
     const signal = evaluationSignal();
     if (signal?.aborted) return Promise.reject(new ExecutorFailure(String(signal.reason), { output: '' }, false));
     const startedAtMs = Date.now();
@@ -230,6 +237,7 @@ export class CliExecutor implements Executor {
       let timedOut = false;
       let overflow = false;
       let stopping = false;
+      let budgetSnapshot: ReturnType<typeof probeCodexPartialUsage>;
       let drainTimer: NodeJS.Timeout | undefined;
       const parseResult = (succeeded = false): ExecutorResult => ({
         modelIdentity: observedModelIdentity(stdout, this.describe().modelIntent, this.modelIdentitySurface),
@@ -242,15 +250,17 @@ export class CliExecutor implements Executor {
         const result = parseResult();
         if (this.partialUsageFromSessionLog && this.sessions) {
           const snapshot = probeCodexPartialUsage({ sessions: this.sessions, stdout, workdir, startedAtMs,
-            finishedAtMs: Date.now(), homeDir: this.homeDir, env: { ...process.env, ...this.env } });
-          // Never replace a more complete public counter with a smaller local snapshot.
+            finishedAtMs: Date.now(), homeDir: this.homeDir, env: { ...process.env, ...this.env } }) ?? budgetSnapshot;
+          // Read once more after termination: retain observed in-flight overshoot, never
+          // replace a more complete public counter with a smaller local snapshot.
           if (snapshot && (['input', 'cachedInput', 'output'] as const).every(key => (snapshot.tokens[key] ?? 0) >= (result.tokens?.[key] ?? 0))) {
             result.tokens = snapshot.tokens; result.usageEvidence = snapshot.evidence;
           }
         }
+        if (budgetSnapshot) result.budgetStop = 'SPENDING_BUDGET_REACHED';
         return new ExecutorFailure(message, { ...result, usageStatus: 'partial' });
       };
-      const stopMessage = (): string => signal?.aborted ? (signal.reason as Error).message : overflow
+      const stopMessage = (): string => budgetSnapshot ? 'SPENDING_BUDGET_REACHED: reliable cumulative Token usage reached a stop line; retained usage is partial.' : signal?.aborted ? (signal.reason as Error).message : overflow
         ? `"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`
         : deadline.timingError ? `"${command}" execution timing anomaly: ${deadline.timingError}`
           : `"${command}" timed out after ${this.timeoutMs}ms`;
@@ -270,14 +280,26 @@ export class CliExecutor implements Executor {
       };
       const checkDeadline = (terminate = true): void => {
         deadline.observe();
-        if (!timedOut && !deadline.timingError && !deadline.exceeded) return;
+        if (this.timeoutMs === null || (!timedOut && !deadline.timingError && !deadline.exceeded)) return;
         timedOut ||= deadline.exceeded && deadline.timingError === null;
         if (terminate) stopChild();
       };
-      const timer = setTimeout(() => {
+      const timer = this.timeoutMs === null ? undefined : setTimeout(() => {
         checkDeadline();
       }, this.timeoutMs);
-      const heartbeat = setInterval(() => checkDeadline(), deadline.heartbeatMs);
+      const checkTokenBudget = (): void => {
+        if (stopping || !options?.tokenBudget || !this.sessions) return;
+        const snapshot = probeCodexPartialUsage({ sessions: this.sessions, stdout, workdir, startedAtMs,
+          finishedAtMs: Date.now(), homeDir: this.homeDir, env: { ...process.env, ...this.env } });
+        if (!snapshot) return; // Missing/stale observations never imply zero or final usage.
+        const { input, cachedInput, output } = snapshot.tokens;
+        if (input === undefined || cachedInput === undefined || output === undefined) return;
+        const values = { input, cachedInput, uncachedInput: input - cachedInput, output };
+        if ((Object.keys(values) as (keyof typeof values)[]).some(key => values[key] >= options.tokenBudget![key])) {
+          budgetSnapshot = snapshot; stopChild();
+        }
+      };
+      const heartbeat = setInterval(() => { checkDeadline(); checkTokenBudget(); }, deadline.heartbeatMs);
       const onAbort = (): void => stopChild();
       const clearTimers = (): void => {
         clearTimeout(timer); clearInterval(heartbeat); clearTimeout(drainTimer);
@@ -304,7 +326,7 @@ export class CliExecutor implements Executor {
       child.on('close', (code) => {
         checkDeadline(false);
         clearTimers();
-        if (signal?.aborted) {
+        if (budgetSnapshot || signal?.aborted) {
           rejectPromise(failure(stopMessage()));
           return;
         }
@@ -312,7 +334,7 @@ export class CliExecutor implements Executor {
           rejectPromise(failure(`"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`));
           return;
         }
-        if (deadline.timingError) {
+        if (this.timeoutMs !== null && deadline.timingError) {
           rejectPromise(failure(`"${command}" execution timing anomaly: ${deadline.timingError}`));
           return;
         }

@@ -61,7 +61,10 @@ define their interpretation. Plans freeze the choice and native audit checks
 the ledger; historical absence stays unrecorded.
 
 `executorTimeoutSeconds` is optional (integer 1–3600, request default 600), bound
-into the preview/native plan for both arms and checked against receipts.
+into the preview/native plan for both arms and checked against receipts. Current
+source additionally accepts explicit null with Token-only spending limits on a
+supported adapter, disabling this deadline without changing elapsed diagnostics.
+The published 0.14.0 package does not support this source addition.
 See [planning](../guides/experiment-workflow.md) for defaults and fresh-batch
 requirements, and [timing](../guides/experiment-workflow.md) for retained timeout evidence.
 
@@ -246,8 +249,6 @@ not signatures or independent provider attestations. Use trusted bench definitio
 and retain/share an external copy of evidence hashes for provenance.
 
 
-Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/reference/eval-component.md).
-
 ## Positional CLI option summary
 
 Generated from the CLI's help and option declarations. Request defaults remain
@@ -269,7 +270,7 @@ After editing CLI definitions, build and regenerate with
 | `--trials <n>` | Repetitions per condition for eval (integer 1–20; default: 5) |
 | `--max-calls <n>` | Call ceiling for eval / bench check --calibrate / bench add --decompose Also controls baseline calibration repetitions |
 | `--pair-order <order>` | Paired eval: baseline-first (default) \| balanced |
-| `--executor-timeout-seconds <n>` | Eval/calibration/drafting: executor deadline (integer 1–3600) |
+| `--executor-timeout-seconds <n\|none>` | Eval/calibration/drafting: executor deadline (integer 1–3600; none requires Token-only budget) |
 | `--spending-budget <file>` | Eval/calibration/drafting: input, cachedInput, uncachedInput, output, durationSeconds stop lines |
 | `--runs-root <dir>` | Eval/calibration/drafting/self-test output parent (default: ./runs) |
 | `--run-group <name>` | Fresh record group; reuse its name when confirming an eval preview |

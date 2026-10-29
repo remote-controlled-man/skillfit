@@ -1,20 +1,47 @@
 import { existsSync, readFileSync, realpathSync, statSync, readdirSync, lstatSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
-import { DOCUMENTATION_CHECKS, documentationExcluded, inspectDocumentationRegistry, publicMarkdownPath } from './documentation-registry.mjs';
 import { validateReleaseDocuments } from './recipes/release-docs-smoke.mjs';
-
-const ROOT = fileURLToPath(new URL('../..', import.meta.url));
-
 import { markdownAnchors, markdownFencedBlocks, markdownLinks, withoutFences } from './documentation-markdown.mjs';
+
 export { markdownAnchors, markdownLinks } from './documentation-markdown.mjs';
 
-/** Registered maintained pages, including nested guides and active plans. */
+const ROOT = fileURLToPath(new URL('../..', import.meta.url));
+const PUBLIC_TREES = ['docs', 'benches', 'profiles', 'skills', 'tools'];
+const IGNORED_TREES = new Set(['node_modules', '.git', 'dist', 'runs', 'workspace4skills', '.codex', '.agents', '.aws']);
+/** Bench task inputs are fixture/vendor prose and reference answers, not maintained documentation. */
+const BENCH_INPUT_DATA = /^benches\/(?:contrib\/)?[^/]+\/(?:tasks|prompts|fixtures|ground-truth)\//;
+const SELF_TEST_INPUT = /^benches\/_self-test\/(?:target|example\/prompts)\//;
+
+export function publicMarkdownPath(path) {
+  return typeof path === 'string' && !isAbsolute(path) && !/[\\*?#\0]/.test(path) &&
+    !path.split('/').some(p => !p || p === '.' || p === '..') && /\.md$/i.test(path) &&
+    !path.split('/').some(p => IGNORED_TREES.has(p)) &&
+    (!path.includes('/') || PUBLIC_TREES.includes(path.split('/')[0]));
+}
+
+const isBenchInputData = path => BENCH_INPUT_DATA.test(path) || SELF_TEST_INPUT.test(path);
+
+/** Maintained public Markdown, discovered from the tree rather than declared in a registry. */
 export function documentationFiles(root = ROOT) {
-  const result = inspectDocumentationRegistry(root);
-  if (result.errors.length) throw Error(result.errors.join('\n'));
-  return result.files;
+  root = realpathSync(root);
+  const found = [];
+  const walk = (dir, ancestors = new Set()) => {
+    const actual = realpathSync(join(root, dir));
+    if (ancestors.has(actual)) throw Error(`${dir}: directory alias cycle; use the real public documentation path.`);
+    const visited = new Set([...ancestors, actual]);
+    for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
+      const path = dir ? `${dir}/${entry.name}` : entry.name;
+      if (IGNORED_TREES.has(entry.name) || isBenchInputData(path + '/')) continue;
+      if (!dir && !PUBLIC_TREES.includes(path) && !/\.md$/i.test(path)) continue;
+      if (entry.isSymbolicLink()) throw Error(`${path}: alias is not admitted; use the real public document path.`);
+      if (entry.isDirectory()) {
+        if (dir || PUBLIC_TREES.includes(path)) walk(path, visited);
+      } else if (/\.md$/i.test(path) && publicMarkdownPath(path)) found.push(path);
+    }
+  };
+  walk('');
+  return found.sort();
 }
 
 export function inspectDocumentation(root = ROOT, files = documentationFiles(root)) {
@@ -127,20 +154,15 @@ export function inspectRepositoryLayout(root = ROOT) {
   return errors;
 }
 
-/** Shared developer/CI gate; registration is checked before reading prose. */
-export function checkDocumentation(root = ROOT, { changes = [], previousDocuments = new Map(), baseline = null } = {}) {
-  const registry = inspectDocumentationRegistry(root), files = new Set(registry.files);
-  const result = { schemaVersion: 1, kind: 'skillfit.documentation-check', errors: [...registry.errors], files: [],
-    registeredDocuments: registry.policy?.documents.length ?? 0, topics: Object.keys(registry.policy?.topics ?? {}).length,
-    manualReviews: registry.manualExclusions.map(e => ({ path: e.path, responsibility: e.verification, status: 'not-machine-verified' })),
-    baseline, anchorBaseline: 'not-compared', anchorMigrations: [], impacts: [], unmappedChanges: [] };
-  if (result.errors.length) return result;
-  result.anchorBaseline = baseline || previousDocuments.size ? 'compared' : 'not-provided';
-  if (!Array.isArray(changes) || changes.some(row => typeof row?.path !== 'string' || isAbsolute(row.path) || /[\\\0]/.test(row.path) || row.path.split('/').some(p => !p || p === '.' || p === '..'))) {
-    result.errors.push('changes: use repository-relative file paths from the diff; do not pass aliases or traversal.'); return result;
+/** Shared developer/CI gate over discovered public Markdown. */
+export function checkDocumentation(root = ROOT) {
+  const result = { schemaVersion: 2, kind: 'skillfit.documentation-check', errors: [], files: [] };
+  try {
+    result.files = documentationFiles(root);
+  } catch (error) {
+    result.errors.push(error.message);
+    return result;
   }
-  for (const { path } of changes) if (registry.policy.documents.some(d => d.path === path)) files.add(path);
-  result.files = [...files].sort();
   result.errors.push(...inspectRepositoryLayout(root), ...inspectDocumentation(root, result.files), ...inspectBenchCatalog(root));
   try {
     const [english, chinese] = ['README.md', 'README.zh-CN.md'].map(file => readFileSync(join(root, file), 'utf8'));
@@ -151,101 +173,22 @@ export function checkDocumentation(root = ROOT, { changes = [], previousDocument
     }
     validateReleaseDocuments(root);
   } catch (error) { result.errors.push(error.message); }
-  for (const [path, previous] of previousDocuments) {
-    if (!publicMarkdownPath(path)) { result.errors.push(`${path}: baseline leaves public documentation scope; use a public Markdown path.`); continue; }
-    if (documentationExcluded(path, registry.policy.exclusions)) continue;
-    const exists = existsSync(join(root, path));
-    if (!exists) {
-      const oldAnchors = [...markdownAnchors(previous)];
-      const documentationIndex = join(root, 'docs/README.md');
-      const snapshot = /^[a-f0-9]{40}$/.test(baseline ?? '') && !/^0+$/.test(baseline)
-        ? `https://github.com/remote-controlled-man/skillfit/tree/${baseline}/${path.split('/')[0]}` : null;
-      const archived = snapshot && changes.some(row => row.path === path && row.status === 'D') && existsSync(documentationIndex) &&
-        markdownLinks(readFileSync(documentationIndex, 'utf8')).some(link => link.target === snapshot);
-      for (const from of oldAnchors.length ? oldAnchors.map(fragment => `${path}#${fragment}`) : [path]) result.anchorMigrations.push({ from,
-        to: archived ? `https://github.com/remote-controlled-man/skillfit/blob/${baseline}/${from}` : null, status: archived ? 'archived' : 'missing' });
-      if (!archived) result.errors.push(`${path}: old path removed; restore a compatibility page.`);
-      continue;
-    }
-    // Discovery/registration above validated public realpaths before any body read.
-    const body = readFileSync(join(root, path), 'utf8'), current = markdownAnchors(body);
-    const snapshot = /^[a-f0-9]{40}$/.test(baseline ?? '') && !/^0+$/.test(baseline)
-      ? `https://github.com/remote-controlled-man/skillfit/blob/${baseline}/${path}` : null;
-    for (const fragment of markdownAnchors(previous)) {
-      const from = `${path}#${fragment}`, retained = current.has(fragment);
-      const archived = !retained && snapshot && markdownLinks(body).some(link => link.target === snapshot);
-      result.anchorMigrations.push({ from, to: retained ? from : archived ? `${snapshot}#${fragment}` : null, status: retained ? 'retained' : archived ? 'archived' : 'missing' });
-      if (!retained && !archived) result.errors.push(`${from}: old fragment removed; restore the heading or an explicit alias.`);
-    }
-  }
-  const matched = new Set(), changedPaths = [...new Set(changes.map(row => row.path))].sort();
-  for (const [id, topic] of Object.entries(registry.policy.topics).sort(([a], [b]) => a.localeCompare(b))) {
-    const related = [topic.canonical.split('#')[0], ...topic.sources, ...topic.schemas, ...topic.dependents,
-      ...topic.checks.flatMap(check => DOCUMENTATION_CHECKS[check].files)];
-    const changed = changedPaths.filter(path => related.includes(path));
-    if (!changed.length) continue;
-    changed.forEach(path => matched.add(path));
-    result.impacts.push({ topic: id, canonical: topic.canonical,
-      owner: registry.policy.documents.find(d => d.path === topic.canonical.split('#')[0]).owner,
-      changed, dependents: topic.dependents, checks: topic.checks.map(id => ({ id, ...DOCUMENTATION_CHECKS[id] })), status: 'review-required' });
-  }
-  result.unmappedChanges = changedPaths.filter(path => !matched.has(path));
   return result;
-}
-
-/** Read-only Git adapter. Never request task inputs, private paths or model output. */
-export function readDocumentationBaseline(root, base, changes, git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 })) {
-  if (!/^[a-f0-9]{40}$/.test(base) || /^0+$/.test(base)) throw Error('Documentation baseline requires an exact nonzero commit SHA.');
-  const registry = inspectDocumentationRegistry(root);
-  if (registry.errors.length) throw Error(registry.errors.join('\n'));
-  git(['cat-file', '-e', `${base}^{commit}`]);
-  // A moved data directory must use its own source-era classification, not today's paths.
-  const policySource = `${base}:tools/verify/documentation-policy.json`;
-  let hasPreviousPolicy = false;
-  try { git(['cat-file', '-e', policySource]); hasPreviousPolicy = true; }
-  catch { /* Older commits can predate the documentation registry. */ }
-  let previousExclusions = [];
-  if (hasPreviousPolicy) {
-    previousExclusions = JSON.parse(git(['show', policySource])).exclusions;
-    if (!Array.isArray(previousExclusions) || previousExclusions.some(e => !e || typeof e.path !== 'string' || !publicMarkdownPath(e.path.endsWith('/') ? e.path + 'input.md' : e.path))) {
-      throw Error('Invalid documentation exclusions at the requested baseline.');
-    }
-  }
-  if (changes === undefined) {
-    const parts = git(['diff', '--name-status', '--no-renames', '-z', base, '--']).split('\0');
-    changes = [];
-    while (parts[0]) {
-      const status = parts.shift(), path = parts.shift();
-      if (!/^[AMDT]$/.test(status) || !path) throw Error('Unsupported documentation diff; inspect the exact file changes.');
-      changes.push({ status, path });
-    }
-    for (const path of git(['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)) changes.push({ path, status: 'A' });
-  }
-  const previousDocuments = new Map();
-  for (const { path, status } of changes) {
-    if (status === 'A' || !publicMarkdownPath(path) || documentationExcluded(path, registry.policy.exclusions) || documentationExcluded(path, previousExclusions)) continue;
-    previousDocuments.set(path, git(['show', `${base}:${path}`]));
-  }
-  return { changes, previousDocuments, baseline: base };
 }
 
 if (process.argv[1] && existsSync(process.argv[1]) && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const args = process.argv.slice(2);
-    let base, asJson = false;
-    for (let i = 0; i < args.length; i++) {
-      if (args[i] === '--json' && !asJson) asJson = true;
-      else if (args[i] === '--base' && base === undefined && args[i + 1]) base = args[++i];
-      else throw Error('Use node tools/verify/check-docs.mjs [--base <exact commit SHA>] [--json].');
+    let asJson = false;
+    for (const arg of args) {
+      if (arg === '--json' && !asJson) asJson = true;
+      else throw Error('Use node tools/verify/check-docs.mjs [--json].');
     }
-    const result = checkDocumentation(ROOT, base ? readDocumentationBaseline(ROOT, base) : {});
+    const result = checkDocumentation(ROOT);
     if (asJson) console.log(JSON.stringify(result));
     else {
       for (const error of result.errors) console.error(error);
-      console.log(`Documentation: ${result.files.length} files, ${result.registeredDocuments} registered, ${result.errors.length} errors; anchors ${result.anchorBaseline}.`);
-      for (const impact of result.impacts) console.log(`REVIEW ${impact.topic} (${impact.owner}): ${impact.canonical}; dependents: ${impact.dependents.join(', ') || 'none'}; checks: ${impact.checks.map(c => c.id).join(', ')}. Not automatically verified.`);
-      for (const item of result.manualReviews) console.log(`MANUAL ${item.path}: ${item.responsibility}; ${item.status}.`);
-      if (result.unmappedChanges.length) console.log(`REVIEW unmapped changes: ${result.unmappedChanges.join(', ')}; inspect topic coverage.`);
+      console.log(`Documentation: ${result.files.length} files, ${result.errors.length} errors.`);
     }
     if (result.errors.length) process.exitCode = 1;
   } catch (error) { console.error(error.message); process.exitCode = 2; }

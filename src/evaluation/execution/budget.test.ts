@@ -1,5 +1,7 @@
+import { spawnSync } from 'node:child_process';
+import { exportEvaluation } from '../application/export.js';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { test, type TestContext } from 'node:test';
@@ -180,4 +182,66 @@ test('a stop line reached only by the final declared call permits no extra call 
   assert.equal(f.calls(), 4); assert.equal(result.status, 'completed');
   assert.ok('spendingBudget' in result); assert.ok(result.spendingBudget);
   assert.deepEqual(result.spendingBudget.latestState!.reached, ['input']); assert.equal(result.evidence.verified, true);
+});
+
+
+test('explicit null duration selects Token-only limits without changing old normalization', () => {
+  const budget = { ...limits, durationSeconds: null };
+  assert.deepEqual(parseSpendingBudget(budget), budget);
+  const state = spendingBudgetState(parseSpendingBudget(budget), [observation({ durationSeconds: 999999 })]);
+  assert.equal(state.reason, null);
+  assert.deepEqual(parseSpendingBudget(limits), limits);
+  const f = { schemaVersion: 1, baselineSkill: null, candidateSkill: '.', bench: '.', agent: 'codex',
+    purpose: 'development', trials: 1, maxCalls: 2, runsRoot: 'runs', runGroup: 'tokens' };
+  assert.equal(parseEvalRequest({ ...f, executorTimeoutSeconds: null, spendingBudget: budget }, '/tmp').executorTimeoutSeconds, null);
+  assert.equal(parseEvalRequest(f, '/tmp').executorTimeoutSeconds, 600);
+});
+
+
+test('Token-only and disabled deadlines refuse unsupported executors before dispatch', async t => {
+  const f = setup(t);
+  for (const executorTimeoutSeconds of [null, 600]) {
+    writeFileSync(f.request, JSON.stringify({ ...f.body, executorTimeoutSeconds,
+      spendingBudget: { ...limits, durationSeconds: null } }));
+    await assert.rejects(runEvalComponent(f.request, { ...f.options, dryRun: true }), /during-call|Token-only/);
+    assert.equal(f.calls(), 0); assert.equal(existsSync(f.directory), false);
+  }
+  writeFileSync(f.request, JSON.stringify({ ...f.body, executorTimeoutSeconds: null }));
+  await assert.rejects(runEvalComponent(f.request, { ...f.options, dryRun: true }), /Token-only/);
+});
+
+
+test('live budgets subtract settled calls once and preserve interrupted receipts through moved replay', async t => {
+  const f = setup(t); const original = f.options.executor.run;
+  const remaining: number[] = [];
+  Object.defineProperty(f.options.executor, 'supportsLiveTokenBudget', { value: true });
+  f.options.executor.run = async (prompt, workdir, options) => {
+    remaining.push(options!.tokenBudget!.input);
+    const result = await original(prompt, workdir);
+    if (remaining.length === 2) throw new ExecutorFailure('SPENDING_BUDGET_REACHED: offline live stop', {
+      ...result, usageStatus: 'partial', budgetStop: 'SPENDING_BUDGET_REACHED' });
+    return result;
+  };
+  writeFileSync(f.request, JSON.stringify({ ...f.body, executorTimeoutSeconds: null,
+    spendingBudget: { ...limits, input: 20, durationSeconds: null } }));
+  const result = await execute(f);
+  assert.equal(f.calls(), 2); assert.deepEqual(remaining, [20, 10]);
+  assert.equal(result.status, 'stopped'); assert.equal(result.acceptance.eligibleForUpgrade, false);
+  assert.ok('spendingBudget' in result && result.spendingBudget);
+  assert.equal(result.spendingBudget.latestState!.reason, 'SPENDING_BUDGET_REACHED');
+  assert.equal(result.spendingBudget.latestState!.metrics.input.knownTotal, 20);
+  assert.equal(result.spendingBudget.latestState!.metrics.input.coverage.partial, 1);
+  const receiptPath = join(f.directory, 'first/treatment/trial-1/_result.json');
+  const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+  assert.equal(receipt.budgetStop, 'SPENDING_BUDGET_REACHED'); assert.equal(receipt.verifierExitCode, null);
+  assert.equal(existsSync(join(f.directory, 'first/treatment/trial-1/_verifier.txt')), false);
+  const hash = sha256File(receiptPath), output = join(f.root, 'portable');
+  await exportEvaluation(f.directory, output, { yes: true, log: () => {} });
+  const moved = join(f.root, 'moved'); renameSync(output, moved);
+  const replay = spawnSync(process.execPath, [join(moved, 'reproduce.mjs')], { encoding: 'utf8', timeout: 30000 });
+  assert.equal(replay.status, 0, replay.stderr);
+  const data = JSON.parse(replay.stdout); assert.equal(data.status, 'stopped');
+  assert.equal(data.session.stopCode, 'SPENDING_BUDGET_REACHED');
+  assert.deepEqual(data.spendingBudget, result.spendingBudget);
+  assert.equal(f.calls(), 2); assert.equal(sha256File(receiptPath), hash);
 });

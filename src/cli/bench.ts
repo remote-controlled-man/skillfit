@@ -1,3 +1,4 @@
+import { executorDeadlineLabel } from '../agents/timeout.js';
 
 import { measurementScope, measurementScopeText, type MeasurementScope } from "../evaluation/measurement/scope.js";
 import { inspectBenchIntegrity } from "../bench/gates/check.js";
@@ -95,7 +96,7 @@ async function runBenchCheckWithinInterrupts(options: BenchCheckOptions, strictC
     log(renderAgentEnvironment(calibration.plan.agentPreflight));
     if (options.calibrate && options.calibrate.dryRun) {
       push('CALIBRATION', 'INFO', `calibration executor: ${calibration.plan.executor?.detail ?? calibration.plan.executor?.model ?? 'unavailable'}`);
-      push('CALIBRATION', 'INFO', `calibration plan: ${bench.tasks.length} task(s) × ${calibration.plan.trials} baseline run(s), input ${calibration.plan.inputMode}; ${calibration.plan.plannedCalls} calls, ceiling ${calibration.plan.maxCalls}; deadline ${calibration.plan.executorTimeoutSeconds}s; no verifier, oracle or agent started and no run directory created`);
+      push('CALIBRATION', 'INFO', `calibration plan: ${bench.tasks.length} task(s) × ${calibration.plan.trials} baseline run(s), input ${calibration.plan.inputMode}; ${calibration.plan.plannedCalls} calls, ceiling ${calibration.plan.maxCalls}; deadline ${executorDeadlineLabel(calibration.plan.executorTimeoutSeconds)}; no verifier, oracle or agent started and no run directory created`);
       push('CALIBRATION', 'INFO', `Plan SHA-256: ${calibration.plan.planSha256}; fresh output ${calibration.plan.outputDir}`);
       return finish(dir, checks, log, true, identity, scope);
     }

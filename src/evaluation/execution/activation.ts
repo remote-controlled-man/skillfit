@@ -15,11 +15,11 @@ import { createTrialWorkspace, engagementError, gitInit } from "../targets/works
 import { runVerifier, verifierFailure, verifierLogFor } from "../../bench/gates/verifier.js";
 import { throwIfCancelled as throwIfEvaluationInterrupted } from "../../shared/cancellation.js";
 import { ExecutorFailure } from "../../agents/contracts.js";
-import { createSpendingBudgetRecorder, type SpendingBudget } from "./budget.js";
+import { createSpendingBudgetRecorder, assertTokenBudgetSupport, type SpendingBudget } from "./budget.js";
 import type { ExecutionTiming } from "../../shared/timing.js";
 import { verdictFromOutput, type VerifierCheck } from "../../bench/gates/summary.js";
 import type { Bench } from "../../bench/contracts.js";
-import type { Executor, ExecutorDescriptor, TokenUsage } from "../../agents/contracts.js";
+import type { Executor, ExecutorDescriptor, TokenUsage, ExecutorRunOptions } from "../../agents/contracts.js";
 import type { SkillBundle } from "../../resources/contracts.js";
 
 export interface TriggerCompetitor {
@@ -81,6 +81,7 @@ async function runTriggerTrial(
   taskId: string,
   trial: number,
   installedSkill: InstalledSkillFingerprint,
+  runOptions?: ExecutorRunOptions,
 ): Promise<TriggerTrialRecord> {
   throwIfEvaluationInterrupted();
   const task = plan.bench.tasks.find((t) => t.id === taskId);
@@ -123,6 +124,7 @@ async function runTriggerTrial(
   let tokens: TokenUsage | null = null;
   let failedUsage: TriggerTrialRecord['usageStatus'];
   let triggered: boolean | null = null;
+  let budgetStop: TriggerTrialRecord['budgetStop'];
   let executorInvoked = false;
   let executionTiming: ExecutionTiming | undefined;
   const detection = plan.triggerDetection;
@@ -141,7 +143,7 @@ async function runTriggerTrial(
       throw new Error('Benchmark Git initialization or reflog verification failed; trigger task was not executed.');
     }
     executorInvoked = true;
-    const result = await plan.executor.run(prompt, runDir);
+    const result = await plan.executor.run(prompt, runDir, runOptions);
     output = result.output;
     rawOutput = result.rawOutput ?? null;
     modelIdentity = identityForResult(result, plan.executor.describe());
@@ -155,6 +157,7 @@ async function runTriggerTrial(
     error = (executorError as Error).message;
     triggered = null;
     if (executorError instanceof ExecutorFailure) {
+      budgetStop = executorError.result.budgetStop;
       executorInvoked = executorError.executorInvoked;
       output = executorError.result.output;
       rawOutput = executorError.result.rawOutput ?? null;
@@ -215,6 +218,7 @@ async function runTriggerTrial(
     score,
     checks,
     error,
+    ...(budgetStop ? { budgetStop } : {}),
     tokens,
     ...(failedUsage ? { usageStatus: failedUsage } : {}),
   };
@@ -308,6 +312,7 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
   if (plan.executor.describe().kind === 'mock') {
     throw new Error('Trigger mode requires a real CLI executor with trigger detection; the mock executor cannot invoke skills.');
   }
+  assertTokenBudgetSupport([plan.executor], undefined, plan.spendingBudget);
   const groupDir = join(plan.runsRoot, plan.runGroup);
   if (existsSync(groupDir)) {
     if (plan.session?.groupDir !== resolve(groupDir)) throw new Error(`Run group directory already exists: ${groupDir}`);
@@ -334,8 +339,8 @@ export async function runTriggerExperiment(plan: TriggerPlan): Promise<TriggerMa
       throwIfEvaluationInterrupted();
       plan.log?.(`Running ${task.id} / installed / trial ${trial}…`);
       const identity = { taskId: task.id, trial, condition: 'installed' as const };
-      budget.before(identity);
-      const outcome = await runTriggerTrial(plan, task.id, trial, installedSkill);
+      const runOptions = budget.before(identity);
+      const outcome = await runTriggerTrial(plan, task.id, trial, installedSkill, runOptions);
       records.push(outcome); allRecords.push(outcome);
       budget.after(identity, { ...outcome, executorInvoked: outcome.executorInvoked ?? false, usageStatus: outcome.usageStatus ?? 'unknown' });
       throwIfEvaluationInterrupted();

@@ -27,7 +27,7 @@ export class MockExecutor implements Executor {
     return { kind: 'mock', model: 'mock', detail: `marker:${this.markerFile}`, sampling: null };
   }
 
-  run(prompt: string, workdir: string): Promise<ExecutorResult> {
+  run(prompt: string, workdir: string, _options?: import("../../agents/contracts.js").ExecutorRunOptions): Promise<ExecutorResult> {
     const marker = this.readMarker(workdir);
     const condition = prompt.includes('<skill name=') ? 'treatment' : 'baseline';
     const behavior = condition === 'treatment' ? marker.treatment : marker.baseline;

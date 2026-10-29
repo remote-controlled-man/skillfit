@@ -9,7 +9,12 @@ export interface TokenUsage {
 }
 
 
+export interface TokenBudgetLimits { input: number; cachedInput: number; uncachedInput: number; output: number }
+export interface ExecutorRunOptions { tokenBudget?: TokenBudgetLimits }
+
 export interface ExecutorResult {
+  /** An interrupted invocation, never a graded failure or final usage receipt. */
+  budgetStop?: 'SPENDING_BUDGET_REACHED';
   modelIdentity?: ModelIdentity;
   output: string;
   tokens?: TokenUsage;
@@ -63,7 +68,8 @@ export interface ExecutorDescriptor {
 
 
 export interface Executor {
-  run(prompt: string, workdir: string): Promise<ExecutorResult>;
+  readonly supportsLiveTokenBudget?: boolean;
+  run(prompt: string, workdir: string, options?: ExecutorRunOptions): Promise<ExecutorResult>;
   describe(): ExecutorDescriptor;
 }
 

@@ -4,10 +4,15 @@
 
 # skillfit
 
-**在自己的任务上测量配置的结果、成本与触发情况。**
+**给 agent 配置做 A/B 测试。**
 
-为**你的** agent 比较 Skill、规则文件或 MCP 配置与基线的差异——<br/>
-再依据记录的证据及其边界决定启用什么。
+我们把 8 个流行的 workflow skill 放进 24 组基线/实验配对，对照冻结的<br/>
+Codex CLI 基线：每一个都多花 **9–27% 的 input token**，而没有一个展现出<br/>
+稳健的任务质量收益 —— [完整表格与其边界](#我们自己的数据)。
+
+skillfit 把这套配对实验跑在**你自己的**任务上：确定性 verifier、精确 McNemar<br/>
+判定、配对 bootstrap 区间和触发率 —— 让"这个 skill 感觉有用"变成带日期、<br/>
+可回放、且写明边界的证据。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
@@ -34,7 +39,7 @@ npx skillfit@0.14.0 --help
 npx skillfit@0.14.0 doctor
 ```
 
-需要 Node.js 22+。以上命令面向 0.14.0 包，npm 会在该版本可用时下载；下面的 case 校验和预览不调用模型。源码运行和旧版文档入口见[选择构建](docs/README.md#choose-your-build)。
+需要 Node.js 22+。以上两条命令均离线执行，不调用模型。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
 
 ## 用 npm 开始
 
@@ -69,20 +74,16 @@ node dist/cli.js install --agent codex --dry-run
 
 校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
 
-0.14.0 包包含文档中标为**当前源码**的测量功能和修正；较早的 npm 0.13.1 不包含这些新增能力。注册表发布状态与源码准备分开验证。
-
-其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益。不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。
-
-上面的固定 npm 版本命令面向 0.14.0。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
+0.14.0 包包含文档中标为**当前源码**的测量功能，其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益，不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
 
 配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。8×5 是规模/采用下限，不是每项 bench 内精确检验判定的起点，也不保证统计功效。sampling 未固定，目前没有经验证的 MDE 规划器。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/guides/experiment-workflow.md#bound-calls-and-spending)。
 
 ## 为什么
 
-安装一份配置，并不能说明它是否有助于你的任务。已有研究说明了测量的必要性：
+安装一份配置，并不能说明它是否有助于你的任务。三项已发表的结果说明了直觉与测量能差多远：
 
-- 精选 Skill 在 87 个任务、18 种模型与执行框架组合中，平均提升通过率 **+16.6pp**；收益随组合而变化（[SkillsBench v4](https://arxiv.org/abs/2602.12670v4)）。
-- LLM 生成的 context 文件未带来统计显著的成功率提升，平均推理成本在 **SWE-bench 上增加 20%、CTXbench 上增加 23%**（[Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3)）。
+- 精选 Skill 在 87 个任务、18 种模型与执行框架组合中，把平均通过率从 **33.9% 提升到 50.5%（+16.6pp）**——但组合层面的收益跨度为 **+4.1pp 到 +25.7pp**，所以这个总量对**你的**配置几乎说明不了什么（[SkillsBench v4](https://arxiv.org/abs/2602.12670v4)）。
+- LLM 生成的仓库 context 文件让 agent **明显更贵，却没有变得更好**：成本在 **SWE-bench 上升 20%、CTXbench 上升 23%**（p < 0.001%），而解决率变化为 −0.5% 与 −2%、无显著效应（p = 87% 与 37%），并在 8 个设置中有 5 个出现下降（[Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3) §4.2）。
 - Snyk 在 2026 年 2 月 5 日的研究中发现，扫描的 **3,984 个公开 Skill 中有 36.82% 存在至少一种安全问题**（[ToxicSkills 研究结果](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)）。
 
 skillfit 提供配对 A/B 实验、确定性 verifier、统计判定和触发率测量。这些研究解释了工具的用途，不能验证 skillfit 本身，也不能预测你的任务会获得多少收益。
@@ -134,7 +135,7 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 用 `bench add --freeze` 记录失败，或用 `--from-commit` 导入修复。[case 编写指南](docs/guides/bench-authoring.md)说明这两条路径、verifier 要求和离线校验。
 
-真实花费前，0.14.0 包或已审查的源码构建可以通过 [bench self-test](docs/guides/bench-authoring.md#test-known-controls) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。已发布 npm 0.13.1 尚无此入口。
+真实花费前，0.14.0 包或已审查的源码构建可以通过 [bench self-test](docs/guides/bench-authoring.md#test-known-controls) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。
 
 列出、查看 case 或预览修改。`--yes` 会备份并应用通过验证的变更；移除注册仍保留 case 文件。重复 `--task` 选择较小的运行范围：
 
@@ -270,7 +271,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 ## 我们自己的数据
 
-我们用 skillfit 的 harness 测了 8 个流行的工作流 skill（24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线）。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置。报告标成 indicative 的运行也不是安装建议：
+我们用 skillfit 的 harness 测了公开目录里的 8 个流行工作流 skill——4 个来自 `mattpocock/skills`，4 个来自 `addyosmani/agent-skills`，各自固定在 [codex-upstream-sources.json](profiles/codex-upstream-sources.json) 所记录的 commit——共 24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置。报告标成 indicative 的运行也不是安装建议：
 
 | Skill | 质量差值 | 输入 token | 结论 |
 |---|---:|---:|---|
@@ -281,7 +282,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 | `security-and-hardening` | 0.00pp | +27.4% | 无可测增益，成本最高 |
 | 其余 3 个 | 0.00pp | +14.7~17.0% | 无可测增益 |
 
-这些是所记录任务上的结果，不是对所有工作流声称的检验。回归测试产物不能证明过程顺序，0.00pp 也不能排除未测量的过程效应。基线饱和限制已观察到的质量提升空间，但完整成本且无已观察回归时，不会自动排除该任务的效率比较价值。
+这些是所记录任务上的结果，不是对所有工作流声称的检验。**harness 索取的是补丁，而不是给 agent 一个可写工作区，因此红-绿-重构这类过程行为不可观测——而 `tdd`、`diagnosing-bugs` 和 `code-review` 正是过程型 skill。**所以质量这一列是带已知缺口的零结果，不是反驳；成本这一列不依赖过程观测。回归测试产物不能证明过程顺序，0.00pp 也不能排除未测量的过程效应。基线饱和（8 个基线中有 6 个本来就是 100%）限制已观察到的质量提升空间，但完整成本且无已观察回归时，不会自动排除该任务的效率比较价值。
 
 参见[原始研究记录](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md)与[已归档调试研究](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)，了解各日期报告的范围和可用记录。这些作者运行记录不能建立第三方独立真实复现；离线 replay 验证的是已保存观测。
 

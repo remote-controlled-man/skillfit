@@ -196,9 +196,9 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
             assert.equal(sha256File(member(root, `${task.id}/${arm}/trial-${trial}/${NATIVE_DIFF_PATH}`)), record(details.nativeDiffTool, 'native diff tool').sha256, 'Delivered native diff tool changed.');
           }
           if (details.executorTimeoutSeconds !== undefined && r.executorInvoked && plan.injectedExecutor === false && report.executor.kind === 'cli') {
-            assert.ok(typeof details.executorTimeoutSeconds === 'number' && Number.isSafeInteger(details.executorTimeoutSeconds) && details.executorTimeoutSeconds >= 1 && details.executorTimeoutSeconds <= 3600);
+            assert.ok(details.executorTimeoutSeconds === null || typeof details.executorTimeoutSeconds === 'number' && Number.isSafeInteger(details.executorTimeoutSeconds) && details.executorTimeoutSeconds >= 1 && details.executorTimeoutSeconds <= 3600);
             const actualTiming = record(record(r.timing, 'CLI timing').execution, 'CLI execution timing');
-            assert.equal(actualTiming.timeoutMs, details.executorTimeoutSeconds * 1000, 'CLI deadline differs from the native plan.');
+            assert.equal(actualTiming.timeoutMs, (details.executorTimeoutSeconds === null ? null : details.executorTimeoutSeconds * 1000), 'CLI deadline differs from the native plan.');
           }
           if (raw.component !== undefined && record(raw.component, 'component').synthetic === false && r.error === null) {
             const timing = record(r.timing, 'CLI timing');
@@ -273,7 +273,7 @@ export async function auditEvaluation(value: unknown, runDir: string, options: {
             assert.equal(call.firstCondition, order[callIndex - 1]); assert.equal(call.error, null);
             assert.deepEqual(call.executor, raw.judge, 'Judge receipt executor differs from frozen metadata.');
             if (details.executorTimeoutSeconds !== undefined && plan.injectedExecutor === false && record(raw.judge, 'judge').kind === 'cli') {
-              assert.equal(record(call.timing.execution, 'judge execution timing').timeoutMs, Number(details.executorTimeoutSeconds) * 1000, 'Judge deadline differs from the native plan.');
+              assert.equal(record(call.timing.execution, 'judge execution timing').timeoutMs, (details.executorTimeoutSeconds === null ? null : Number(details.executorTimeoutSeconds) * 1000), 'Judge deadline differs from the native plan.');
             }
             const nonce = call.prompt.match(/<<<BEGIN ANSWER A ([0-9a-f]{16})>>>/)?.[1]; assert.ok(nonce, 'Judge prompt anonymity nonce is missing.');
             const benchSource = inputSnapshot?.roots.get('bench'); assert.ok(benchSource, 'Judge prompt auditing requires the sealed bench input.');

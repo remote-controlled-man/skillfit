@@ -229,7 +229,7 @@ export class ExperimentSession {
       const identity = identityForResult(result, executor.describe());
       return { ...result, modelIdentity: { ...identity, configured: role === 'agent' && executor.describe().kind === 'cli' ? this.configuredModel : identity.configured } };
     };
-    return { describe: () => executor.describe(), run: async (prompt, workdir) => {
+    return { supportsLiveTokenBudget: executor.supportsLiveTokenBudget, describe: () => executor.describe(), run: async (prompt, workdir, options) => {
       try {
         this.check();
         if (this.callsStarted >= Math.min(this.plannedCalls, this.maxCalls)) { this.stopReason = 'Declared call ceiling reached; no further calls.'; throw new Error(this.stopReason); }
@@ -240,7 +240,7 @@ export class ExperimentSession {
       const ledger = join(this.groupDir, '_calls.jsonl');
       appendFileSync(ledger, JSON.stringify({ event: 'started', call, role, workdir, at: new Date().toISOString(), promptSha256: sha256Text(prompt) }) + '\n');
       try {
-        const result = annotate(await executor.run(prompt, workdir));
+        const result = annotate(await executor.run(prompt, workdir, options));
         this.callsFinished++;
         appendFileSync(ledger, JSON.stringify({ event: 'finished', call, at: new Date().toISOString() }) + '\n');
         try { this.check(); } catch {

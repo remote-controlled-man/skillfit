@@ -3,10 +3,8 @@
 This is the current source contract for what skillfit measures and how it
 computes verdicts. The **v2 statistical protocol** is frozen at 2026-09-23;
 additive evidence/operational contracts do not change its formulas, thresholds,
-paired exclusions or historical interpretations. The 0.14.0 package
-includes numerical, trigger, model-identity, self-test and bench-claim additions
-beyond npm 0.13.1. Registry availability is verified separately; see the
-[build/version entry](../README.md#choose-your-build). See the
+paired exclusions or historical interpretations. Version and registry availability
+follow the [build/version entry](../README.md#choose-your-build). See the
 [capability table](../guides/experiment-workflow.md) for
 implemented readers and verification scope, and [revision history](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/metrics-history.md)
 for the former chronological additions. Changes to this contract need a reasoned
@@ -507,8 +505,15 @@ cost caps. A duration-only guard is unsupported.
 
 The same guard applies to paired eval, trigger, calibration and both optional
 judge orders. All invoked primary/judge spending counts, including failures and
-excluded partners. Reaching any line prevents the **next** call; one in-flight
-call can overshoot. Missing/partial/invalid final usage or an execution/guard error
+excluded partners. With a positive duration limit, reaching any line prevents
+the **next** call;
+one in-flight call can overshoot. With explicit `durationSeconds: null`, a
+supported adapter also checks cumulative Token updates during the call and
+interrupts at an observed reached line. Snapshots replace the current-call
+observation; earlier settled calls are counted once. Observation delay and
+in-flight work still permit overshoot. A live stop retains `budgetStop` and
+partial source-bound usage, skips grading and seals a stopped prefix.
+Missing/partial/invalid final usage or an execution/guard error
 stops further calls and retains known/unknown costs. No retries, replacement
 samples or automatic expansion follow. A final predeclared call may complete the
 cohort at a line with complete evidence. Completed audits replay chronological
@@ -518,7 +523,12 @@ adoption thresholds or provider invoices.
 Known missing token/cache readers block strict budgets before primary or judge
 calls; offline-unknown coverage still needs complete final counters at runtime.
 Adapter-specific support belongs to the [capability table](../guides/experiment-workflow.md#executor-capabilities).
-This describes skillfit's readers, not vendor capability guarantees.
+Token-only mode requires during-call observation on every role; current support
+is Codex only. Explicit null disables the separate Agent deadline only with a
+Token-only budget. Omitted/numeric settings preserve legacy semantics.
+This describes skillfit's readers, not vendor capability guarantees or precise
+billing caps. Unknown local updates cannot enforce a cutoff until reliable usage
+arrives; complete final usage remains required for completed evidence.
 
 SIGINT/SIGTERM stops subsequent dispatches and managed active processes, retaining
 receipts and sealing the stopped prefix. Interrupted execution is ungraded;
@@ -643,10 +653,13 @@ and [drafting records](../guides/bench-authoring.md).
   installed-version/authentication validation and third-party live reproduction.
   Current repository evidence does not establish an independent third-party live
   reproduction; author runs and offline replay must be labeled accordingly.
+- Missing, invalid or stale usage never becomes zero or final, and an unknown
+  observation cannot enforce a stop line.
+  [Costs, budgets and stopping](#costs-budgets-and-stopping) owns the coverage
+  states, delayed lower bounds and overshoot rules; other pages link here instead
+  of restating them.
 
 skillfit reports observations on a pinned task mixture and available model
 identity. Whether to enable a configuration also requires representative tasks,
 independent validation, complete costs and the chosen policy's gates. It cannot
 promise a conclusive quality verdict for every budget or workflow claim.
-
-Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/metrics.md).

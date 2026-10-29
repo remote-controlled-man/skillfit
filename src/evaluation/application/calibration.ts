@@ -1,3 +1,5 @@
+import { assertTokenBudgetSupport } from '../../agents/call-budget.js';
+import { executorTimeoutMs, executorDeadlineLabel } from '../../agents/timeout.js';
 import { RUNTIME_ROOT } from '../../shared/package-root.js';
 import { measurementScope, assertScopeMatches, type MeasurementScope } from "../measurement/scope.js";
 import { modelIdentities } from "../../agents/observation/model-identity.js";
@@ -41,7 +43,7 @@ export interface BenchCheckCalibrateOptions {
   runsRoot?: string;
   runGroup?: string;
   spendingBudget?: SpendingBudget;
-  executorTimeoutSeconds?: number;
+  executorTimeoutSeconds?: number | null;
   reviewedPlanSha256?: string;
 }
 
@@ -57,7 +59,7 @@ export interface BenchCalibrationPreview {
   trials: number;
   plannedCalls: number;
   maxCalls: number;
-  executorTimeoutSeconds: number;
+  executorTimeoutSeconds: number | null;
   spendingBudget?: SpendingBudget;
   runGroup: string;
   runsRoot: string;
@@ -102,7 +104,7 @@ export function resolveCalibrationInputs(input: CalibrationInput, dependencies: 
   let executor: Executor | null = null, resolutionError: string | undefined, capabilityError: string | undefined;
   try {
     executor = options.executor ?? (definition ? createAgentExecutor(definition.id, {
-      timeoutMs: executorTimeoutSeconds * 1000,
+      timeoutMs: executorTimeoutMs(executorTimeoutSeconds),
       observedSkill: { name: 'calibration-none' },
     }) : null);
   } catch (error) { resolutionError = (error as Error).message; }
@@ -114,6 +116,7 @@ export function resolveCalibrationInputs(input: CalibrationInput, dependencies: 
       }
     }
   } catch (error) { capabilityError = (error as Error).message; }
+  assertTokenBudgetSupport([executor], executorTimeoutSeconds, spendingBudget);
   const inspect = () => inspectAgentEnvironment({ roles: [{ role: 'agent', definition, executor: executor?.describe() ?? null,
     injected: options.executor !== undefined, resolutionError: resolutionError ?? (!executor ? '--calibrate needs --agent (a CLI executor for real runs)' : undefined) }],
     mode: 'inject', target: emptySkill(bench.dir), capabilityError,
@@ -213,15 +216,15 @@ export async function executeCalibration(prepared: PreparedCalibration, casePref
     const runPlan: ExperimentPlan = { bench, target: emptySkill(emptySkillDir), inputMode: plan.inputMode,
       executor: session.wrap(executor, 'agent'), trials: plan.trials, runsRoot: plan.runsRoot, runGroup: plan.runGroup, log };
     const budget = createSpendingBudgetRecorder({ budget: plan.spendingBudget, groupDir: session.groupDir });
-    push('INFO', `calibration: ${plan.trials} run(s) per task with no skill installed (baseline difficulty; input ${plan.inputMode}); ${plan.plannedCalls} calls, ceiling ${plan.maxCalls}; deadline ${plan.executorTimeoutSeconds}s`);
+    push('INFO', `calibration: ${plan.trials} run(s) per task with no skill installed (baseline difficulty; input ${plan.inputMode}); ${plan.plannedCalls} calls, ceiling ${plan.maxCalls}; deadline ${executorDeadlineLabel(plan.executorTimeoutSeconds)}`);
     let discriminative = 0, tasksRun = 0;
     for (const [taskIndex, task] of bench.tasks.entries()) {
       const taskResult = taskResults[taskIndex]!;
       for (let trial = 1; trial <= plan.trials; trial++) {
         throwIfEvaluationInterrupted();
         const identity = { taskId: task.id, condition: 'baseline' as const, trial };
-        budget.before(identity);
-        const outcome = await runTrial(runPlan, task.id, 'baseline', trial);
+        const runOptions = budget.before(identity);
+        const outcome = await runTrial(runPlan, task.id, 'baseline', trial, runOptions);
         outcomes.push(outcome);
         if (outcome.error !== null) taskResult.errors++;
         else { taskResult.completed++; if (outcome.passed) taskResult.passes++; }

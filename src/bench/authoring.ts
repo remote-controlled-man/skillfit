@@ -1,3 +1,4 @@
+import { executorDeadlineLabel } from '../agents/timeout.js';
 import { parseBenchClaims } from "./claims.js";
 import { spawnSync } from 'node:child_process';
 import { copyFixture, runOracleGate } from "./gates/check.js";
@@ -473,7 +474,7 @@ function prepareAdd(options: BenchAddOptions, now: () => Date): PreparedBenchCha
   const before: string[] = [], preview: string[] = [];
   if (claims) before.push(`Claims: ${claims.join(', ')} (schema 2 design support; not proof of validity or efficacy).`);
   if (draft) {
-    before.push(`Draft plan: 1 call; ceiling ${draft.plan.maxCalls}; executor deadline ${draft.plan.executorTimeoutSeconds}s; no automatic retry.`);
+    before.push(`Draft plan: 1 call; ceiling ${draft.plan.maxCalls}; executor deadline ${executorDeadlineLabel(draft.plan.executorTimeoutSeconds)}; no automatic retry.`);
     before.push(`Draft records: ${draft.dir}`);
     before.push(`Spending limits: ${draft.plan.spendingBudget ? JSON.stringify(draft.plan.spendingBudget) : 'not set; token/cache usage may remain unknown'}. Authentication: unknown offline.`);
   }

@@ -110,5 +110,3 @@ With live spending separately authorized, follow
 and execute the real plan. The [component contract](../reference/eval-component.md)
 owns JSON request fields and adoption gates; [metrics](../reference/metrics.md)
 owns the statistical meaning and its limits.
-
-Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/guides/first-real-eval.md).
