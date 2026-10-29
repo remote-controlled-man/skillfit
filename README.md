@@ -4,10 +4,15 @@
 
 # skillfit
 
-**Measure configuration outcomes, costs and activation on your own tasks.**
+**A/B testing for agent configuration.**
 
-Compare a skill, rules file, or MCP setup with a baseline for *your* agent —<br/>
-then use the recorded evidence and its limits to decide what to enable.
+We put 8 popular workflow skills through 24 baseline/treatment pairs against a<br/>
+frozen Codex CLI baseline: every one cost **9–27% more input tokens**, and none<br/>
+showed a robust task-quality gain — [full table and its limits](#our-own-data).
+
+skillfit runs that paired experiment on *your* tasks, with deterministic verifiers,<br/>
+an exact McNemar verdict, paired-bootstrap intervals and trigger rates — so "this<br/>
+skill feels useful" becomes dated, replayable evidence with its limits stated.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
@@ -34,7 +39,7 @@ npx skillfit@0.14.0 --help
 npx skillfit@0.14.0 doctor
 ```
 
-Requires Node.js 22+. These commands target the 0.14.0 package; npm may download it when available. The case checks and previews make no model calls. [Choose your build](docs/README.md#choose-your-build) for source execution and older release documentation.
+Requires Node.js 22+. Both commands above are offline and make no model calls. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
 
 ## First run with npm
 
@@ -72,20 +77,16 @@ node dist/cli.js install --agent codex --dry-run
 
 The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
 
-The 0.14.0 package includes the measurement features and corrections described as **current source**; earlier npm 0.13.1 does not include these additions. Registry publication is verified separately from source preparation.
-
-This includes [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit. Unsupported schema 2 targets refuse before verifier, oracle or model calls.
-
-The pinned npm commands above target 0.14.0. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+The 0.14.0 package carries the measurement features described as **current source**, including [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit, and unsupported schema 2 targets refuse before verifier, oracle or model calls. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
 
 Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
 
 ## Why
 
-Installing a configuration does not show whether it helps your tasks. Published studies illustrate why measurement matters:
+Installing a configuration does not show whether it helps your tasks. Three published results show how far intuition drifts from measurement:
 
-- Curated Skills raised average pass rates by **+16.6pp** across 87 tasks and 18 model–harness configurations; gains varied by configuration ([SkillsBench v4](https://arxiv.org/abs/2602.12670v4)).
-- LLM-generated context files showed no statistically significant success-rate improvement, while increasing average inference cost by **20% on SWE-bench and 23% on CTXbench** ([Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3)).
+- Curated Skills raised the average pass rate from **33.9% to 50.5% (+16.6pp)** across 87 tasks and 18 model–harness configurations — but configuration-level gains ranged from **+4.1pp to +25.7pp**, so the aggregate says little about *your* setup ([SkillsBench v4](https://arxiv.org/abs/2602.12670v4)).
+- LLM-generated repository context files made agents **significantly more expensive without making them better**: cost rose **20% on SWE-bench and 23% on CTXbench** (p < 0.001%), while resolution rate moved −0.5% and −2% with no significant effect (p = 87% and 37%), and dropped in 5 of 8 settings ([Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3), §4.2).
 - **36.82% of 3,984 scanned public Skills** had at least one security issue in Snyk’s February 5, 2026 study ([ToxicSkills findings](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)).
 
 skillfit provides paired A/B experiments with deterministic verifiers, statistical verdicts and trigger-rate measurement. These studies motivate the tool; they do not validate skillfit or predict gains on your tasks.
