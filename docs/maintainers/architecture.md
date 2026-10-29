@@ -1,15 +1,16 @@
 # skillfit architecture
 
 skillfit is one TypeScript/Node >=22 ESM CLI with zero runtime dependencies.
-This page explains the current system and the contracts changes must preserve.
-Execution order, progress and validation live only in the
-source-only `docs/work/current.md` (not shipped in npm).
+This page explains the current system, the boundaries between its modules and the
+contracts a change must preserve. It is not a runbook: commands and contributor
+setup live in [AGENTS.md](https://github.com/remote-controlled-man/skillfit/blob/main/AGENTS.md)
+and [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md),
+execution order and progress live only in the source-only `docs/work/current.md`,
+statistical meaning lives in [metrics](../reference/metrics.md), and publication
+gates live in [the release procedure](releases.md).
 [Build/version availability](../README.md#choose-your-build) is separate.
 
-Start with the map, module owners and workflows. Use the later compatibility,
-retention and extension rules when changing one of those modules.
-
-## Architecture at a glance
+## System at a glance
 
 ```mermaid
 flowchart TD
@@ -31,14 +32,10 @@ flowchart TD
 ```
 
 Arrows show selected caller relationships, not every allowed import. Shared
-mechanisms sit below business modules. Evaluation never calls the real
-Configuration writer: temporary Target delivery has different write policy.
-
-Agent environment facts and health collection belong to Agents; doctor formats
-the report and Records fingerprints declared files. Records owns typed, validated
-Session details without changing saved formats. Trigger text is rendered in CLI;
-presentation does not load the experiment scheduler. These responsibilities are
-checked through caller regressions and the current plan's local acceptance.
+mechanisms sit below business modules. Agent environment facts and health
+collection belong to Agents; doctor formats the report and Records fingerprints
+declared files. Trigger text is rendered in CLI, so presentation never loads the
+experiment scheduler.
 
 ## Modules and dependency roles
 
@@ -54,26 +51,73 @@ checked through caller regressions and the current plan's local acceptance.
 | Shared | Explicit-input process/path/hash mechanisms. No business imports, discovery, UI, exit or policy text. |
 
 Within Evaluation, Application coordinates Execution, Targets, Records and
-Measurement. Measurement is pure; Records owns saved codecs, sealing, audit and
-readers, not another live scheduler. Calibration and control self-test belong to
-Evaluation even when the CLI command starts with `bench`.
+Measurement. Calibration and control self-test belong to Evaluation even when the
+CLI command starts with `bench`.
 
 [Architecture policy](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/tools/verify/architecture-policy.json)
-registers each active file once by business owner and technical role: contracts,
-calculation, mechanisms, integration, evidence, execution, application, entry,
-configuration or installation. Runtime and type dependencies are checked
-separately. Unknown/overlapping owners, private imports, unresolved targets,
-runtime cycles and stale exceptions fail; there are no legacy role exceptions.
+registers each active file once by business owner and one of ten technical roles:
+contracts, calculation, mechanisms, integration, evidence, execution, application,
+entry, configuration or installation. Runtime and type dependencies are checked
+separately; unknown or overlapping owners, private imports, unresolved targets,
+runtime cycles and stale exceptions fail, and there are currently no role
+exceptions. The bounded AST check rejects direct I/O and implicit
+environment/clock/random reads in pure roles, UI/exit in Application, host policy
+in Shared, Resource writes and vendor `wireShape` access outside Agents. It follows
+immutable aliases, destructuring, imported aliases and lexical shadowing — not
+arbitrary callbacks, reflection, mutable aliases or general interprocedural
+effects. A passing gate proves these rules, not that every responsibility has the
+right owner.
 
-The bounded AST check rejects direct I/O and implicit environment/clock/random
-reads in pure roles, UI/exit in Application, host policy in Shared, Resource
-writes and vendor wireShape access outside Agents. It follows immutable aliases,
-destructuring, imported aliases and lexical shadowing, not arbitrary callbacks,
-reflection, mutable aliases or general interprocedural effects. Literal and
-verified finite dynamic targets join dependency checks. A passing gate proves
-these rules, not that every responsibility has the right owner.
+## Invariants
 
-<a id="target-source-and-document-structure"></a>
+- Evaluation never calls the real Configuration writer; temporary Target delivery has a different write policy.
+- Business modules never import CLI or Composition; CLI owns OS signal listeners, exit behavior and prompts.
+- Shared takes explicit inputs only: no discovery, UI, exit or policy text.
+- Measurement is pure; Records owns saved codecs, sealing, audit and readers, and is not a second scheduler.
+- Agent-specific paths and behaviors come from `src/matrix/agents.json`, never command-local constants.
+- Real configuration writers plan, support dry runs, confirm or accept `--yes`, back up, verify and roll back.
+- Fresh run/bundle/bench outputs reject collisions instead of overwriting; evaluation fixtures are disposable copies.
+- Unknown stays unknown. A missing observation never becomes zero, final or a free invocation.
+- Report, statistical verdict and adoption are three distinct outcomes; synthetic runs never authorize adoption.
+- Published bytes remain immutable at fixed Git commits; corrections link the original observation.
+- Saved formats verify original bytes before decoding; an unknown version fails clearly rather than being inferred.
+- New formats ship readers first; old archives keep their original readers and runtimes.
+- Never clean ignored workspaces wholesale — `workspace4skills/` is a private lab.
+- Registrations belong to owners and are wired once, not found by runtime scanning.
+- No universal runner, store, global type bag or context/container.
+
+## Evaluation lifecycle
+
+```mermaid
+sequenceDiagram
+  participant C as CLI
+  participant A as Application
+  participant T as Targets
+  participant X as Execution
+  participant R as Records
+  C->>A: resolveEvalInputs — no run, grader or model call
+  A-->>C: preview binding inputs, implementation digest and policy context
+  C->>A: confirm, or bind planSha256 for a JSON request
+  A->>A: recheck inputs, environment, implementation and collisions
+  A->>T: freeze and deliver the temporary treatment
+  A->>X: run local case gates, then bounded explicit calls
+  X-->>R: record every invocation, available cost and observed identity
+  R-->>C: seal completed, stopped or incomplete facts
+```
+
+A changed implementation requires a fresh reviewed plan. JSON requests bind the
+digest; ordinary text CLI keeps its existing confirmation contract. Case gates run
+before a paid call or fresh session. Calibration keeps an independent baseline plan
+and `planSha256`; trigger keeps single-arm interpretation. Run and authoring hosts
+own stop, cost-retention and sealing policy, while Shared processes receive
+cancellation/deadline inputs and preserve argv/cwd/env, output bounds, errors and
+descendant cleanup. The narrow asynchronous signal scope is not a global business
+context, and a sealed stopped result survives host interruption.
+
+`resolveEvalInputs` and `buildEvalPlan` live in `src/evaluation/application/planning.ts`,
+`executeEvalPlan` in `application/evaluation.ts` and `readEvaluation` in
+`records/read.ts`. They are internal interfaces: a new caller uses the same explicit
+public operation and never parses CLI stdout or invokes a dry-run branch to plan.
 
 ## Source and document structure
 
@@ -102,76 +146,47 @@ skills/                   shipped CLI driver
 dist/                     ignored compiled CLI output
 ```
 
-Each topic has one canonical page; `docs/work/current.md` is the only plan.
-One-off validation/package scratch uses OS temporary directories; release receipts
-use explicit external destinations. Retained experiment data belongs to its actual
-project/study workspace, outside this source checkout. The default `./runs` is
-relative to the caller's working directory; use `--runs-root` to choose another
-output parent. See [workspace ownership](../guides/experiment-workflow.md#store-process-data-and-analysis).
-The docs index routes readers to task guides, references, maintenance contracts
-and the sole plan. Bench format/claims stay with benches.
-The docs index owns build/version availability; fixed Git snapshots retain retired
-paths. CLI owns help and parser declarations in `src/cli/definition.ts`;
-`tools/verify/cli-reference.mjs` derives selected reference rows and local tests
-reject drift. Schemas and runnable fixtures remain testable contracts. Do not reproduce every
-subfolder in every module or collect business types in Shared. Builds compile
-into an owned temporary directory before replacing dist, removing stale modules
-while preserving the last successful build on compilation failure. Distribution
-roots come from one package-layout helper, with explicit caller overrides.
+Each topic has one canonical page and `docs/work/current.md` is the only plan; the
+[docs index](../README.md) routes readers and owns build/version availability.
+Bench format and claims stay with [benches](../../benches/README.md). CLI owns help
+and parser declarations in `src/cli/definition.ts`, and `tools/verify/cli-reference.mjs`
+derives selected reference rows so local tests reject drift. Do not reproduce every
+subfolder in every module or collect business types in Shared. Builds compile into an
+owned temporary directory before replacing `dist`, removing stale modules while
+preserving the last successful build on compilation failure; distribution roots come
+from one package-layout helper with explicit caller overrides.
 
-## Evaluation lifecycle
-
-1. Resolve inputs and executor descriptions without a run, grader or model call.
-2. Build a preview binding inputs, implementation digest and request/policy/
-   self-test context. Changed implementation requires a fresh reviewed plan.
-3. Preserve entry-specific confirmation: JSON requests bind the digest;
-   ordinary text CLI retains its existing confirmation contract.
-4. Recheck inputs, environment, implementation and collisions. Run case gates
-   before a paid call or fresh session.
-5. Record every attempted agent/judge/drafter invocation, available costs,
-   configured intent and observed model identity. Unknown stays unknown.
-6. Seal completed/stopped/incomplete facts. Report, verdict and adoption are
-   distinct; synthetic runs never authorize adoption.
-
-`resolveEvalInputs`, `buildEvalPlan`, `executeEvalPlan` and `readEvaluation` are
-internal interfaces. Calibration keeps its independent baseline plan and
-`planSha256`; trigger keeps single-arm interpretation. CLI owns signal listeners;
-run/authoring hosts own stop, cost retention and sealing policy. Shared processes
-receive cancellation/deadline inputs and preserve argv/cwd/env, output bounds,
-errors and descendant cleanup. The narrow asynchronous signal scope is not a
-global business context. A sealed stopped result survives host interruption.
+One-off validation and package scratch uses OS temporary directories, release
+receipts use explicit external destinations, and retained experiment data belongs to
+its own project/study workspace outside this checkout. The default `./runs` resolves
+from the caller's working directory; `--runs-root` chooses another parent. See
+[workspace ownership](../guides/experiment-workflow.md#store-process-data-and-analysis).
 
 ## Bench authoring
 
-`prepareBenchChange` plans init/add/edit/remove with source/target fingerprints,
-without UI, verifier or model calls. `draftBenchChange` is separately authorized
-and bounded, retaining costs/identity/failures. `applyBenchChange` rechecks inputs,
+`prepareBenchChange` plans init/add/edit/remove with source and target fingerprints,
+without UI, verifier or model calls. `draftBenchChange` is separately authorized and
+bounded, retaining costs, identity and failures. `applyBenchChange` rechecks inputs,
 validates, backs up and rolls back. Public previews cannot mutate private write
-bytes. Rejected post-draft apply still finalizes its summary; partial starter
-writes remove only owned files. Edit/remove preserve unregistered task files.
+bytes; a rejected post-draft apply still finalizes its summary; partial starter writes
+remove only owned files; edit and remove preserve unregistered task files.
 
-`src/bench/templates.ts` owns starter content and the shared task-path convention;
-authoring uses it for init/freeze/from-commit/draft. New and contributed tasks keep
-prompt, fixture and private reference under `tasks/<id>/`; real shared graders
-remain once at dataset level. `bench.json` is the executable index. Loading,
-gates, saved records and replay consume its paths rather than a directory name.
-Legacy bundled teaching layouts stay readable. Reorganization changes the
-current Bench hash; saved observations keep their original sealed identities.
+`src/bench/templates.ts` owns starter content and the shared task-path convention.
+New and contributed tasks keep prompt, fixture and private reference under
+`tasks/<id>/`, real shared graders remain once at dataset level, and `bench.json` is
+the executable index — loading, gates, saved records and replay consume its paths
+rather than a directory name. Legacy bundled teaching layouts stay readable.
+Reorganizing changes the current Bench hash while saved observations keep their
+original sealed identities.
 
 ## Write and evidence contracts
 
-Real configuration writers plan, support dry runs, confirm or accept `--yes`,
-back up existing targets, verify and roll back write/validation failure. Existing
-explicit upstream fetch during Configuration selection/preview is preserved.
-Fresh run/bundle/bench outputs instead reject collisions; evaluation fixtures are
-disposable copies. Repository edits use Git review/checks. Never clean ignored
-workspaces wholesale: `workspace4skills/` is a private lab.
-
-Published bytes remain at fixed Git commits. Current source has no repository
-archive catalog/restorer or mandatory historical-study release stage. Preserve
-current saved-result readers and portable replay, including their original
-runtime requirements. [Metrics](../reference/metrics.md) owns verdict/statistical
-semantics; [Bench format](../../benches/README.md) owns reusable task inputs.
+Real configuration writers follow the invariant above; explicit upstream fetch during
+Configuration selection/preview is preserved. Repository edits use Git review and
+checks rather than the installer's backup and confirmation flow. Current source keeps
+no repository archive catalog or restorer and no mandatory historical-study release
+stage, but preserves current saved-result readers and portable replay with their
+original runtime requirements.
 
 ## Domain terms and owners
 
@@ -189,56 +204,53 @@ semantics; [Bench format](../../benches/README.md) owns reusable task inputs.
 ## Extension contracts and effects
 
 Experiment design, Resource kind, delivery, claim and synthetic control are
-independent axes. Validate supported combinations before dispatch; do not make
-one mode enum govern every axis or change legacy public mode strings, JSON
-order, defaults or entry-specific confirmation to simplify the implementation.
-Agent adapters own wire/session/identity decoding. Declared capability, locally
-checked availability and actual call coverage differ; missing usage still stops
-under strict budget. Both primary/judge requirements enter preflight. New
-observations retain hashes and final/partial/unknown scope; configured identity
-never substitutes for served identity.
+independent axes. Validate supported combinations before dispatch; do not make one
+mode enum govern every axis, and do not change legacy public mode strings, JSON
+order, defaults or entry-specific confirmation to simplify an implementation. Agent
+adapters own wire/session/identity decoding. Declared capability, locally checked
+availability and actual call coverage differ, and missing usage still stops under a
+strict budget; both primary and judge requirements enter preflight. New observations
+retain hashes and final/partial/unknown scope, and configured identity never
+substitutes for served identity.
 
 | Operation | Effects |
 | --- | --- |
-| Evaluation prepare | Read and return fingerprinted plan; no grader/model dispatch or run creation. |
+| Evaluation prepare | Read and return a fingerprinted plan; no grader/model dispatch or run creation. |
 | Evaluation execute | Recheck confirmed inputs, run local gates, make bounded explicit calls, seal terminal/partial facts. |
 | Records read/replay/export | Verify bytes before reading; explicit replay runs trusted pinned/local graders, never Agents. Export previews and writes a fresh external destination. |
 | Bench load/gate/draft/apply | Load does not grade; gates run tools; drafting is separately authorized; apply rechecks and preserves rollback. |
 | Configuration prepare/apply | Selection may explicitly fetch upstream; no target write before confirmation; apply backs up, verifies and rolls back. |
 
 Preview, failure, cancellation and repeated apply are interface contracts.
-Registrations belong to owners and are wired once, not found by runtime scanning.
-Do not introduce a universal runner, store, global type bag or context/container.
 
 ## Format, identity and replay compatibility
 
 Records owns kind/version dispatch through `src/evaluation/records/formats.ts`,
-including the explicit legacy summary adapter and replay runtime requirements.
-Readers, exporter, portable validation and serialized launcher share it. Paired
-and single-arm audits remain independent. Supported formats: native plan/summary v1, paired manifest v4
-and portable descriptor v1 keep their meanings. Unknown versions fail clearly;
-legacy filename/field inference stays in legacy adapters. Verify original bytes
-before decoding; normalization cannot prove an original digest. Missing legacy
-claims/usage/identity stay unrecorded, without today's metadata filling gaps.
+including the explicit legacy summary adapter and replay runtime requirements;
+readers, exporter, portable validation and the serialized launcher share it, and
+paired and single-arm audits remain independent. Current saved versions are plan,
+session, artifacts and portable package at 1, with paired summaries at 4 and
+calibration/trigger summaries at 1. Legacy filename/field inference stays in legacy
+adapters, and missing legacy claims/usage/identity stay unrecorded rather than
+being filled from today's metadata.
 
 Resource hash, plan digest, implementation digest, format version, statistical
 protocol and npm version identify different things. Fingerprint all relevant
-runtime; moving modules must not exclude them to retain an old approval. Pure
-rendering may change presentation, never observations or recorded interpretation.
-An alternative assessment identifies its own policy/implementation.
+runtime; a moved module must not drop out of the fingerprint to retain an old
+approval. Pure rendering may change presentation, never observations or recorded
+interpretation, and an alternative assessment identifies its own policy and
+implementation.
 
 Installed recipes and generated replay launchers depend on paths such as
-`harness/interruption.js`. Keep their exact-contract delegates and same error
-class identity, not duplicate implementations. They are compatibility interfaces,
-not extension points. Removal needs explicit reader/format migration. New formats
-ship readers first; old archives retain their original readers and runtimes.
-New Session details use a Records-owned typed writer contract. Behavior-driving
-flags and implementation identities are validated before writes/probes; legacy
-readers keep their recorded fields and inference rules. The current writer must
-not use an untyped metadata dictionary as a control channel.
-Test built, installed and relocated packages, not only source imports.
+`harness/interruption.js`. Keep their exact-contract delegates and the same error
+class identity rather than duplicate implementations: they are compatibility
+interfaces, not extension points, and removal needs an explicit reader/format
+migration. New Session details use a Records-owned typed writer contract, and
+behavior-driving flags and implementation identities are validated before
+writes/probes. The current writer must not use an untyped metadata dictionary as a
+control channel. Test built, installed and relocated packages, not only source imports.
 
-## Artifact lifecycle and admission to main
+## Artifact lifecycle
 
 | Artifact | Owner and retention |
 | --- | --- |
@@ -250,110 +262,62 @@ Test built, installed and relocated packages, not only source imports.
 | Current work | One ordered plan; replace status/results and link prior details instead of appending transcripts. |
 
 The [experiment workflow](../guides/experiment-workflow.md#store-process-data-and-analysis)
-owns the outer workspace, observed/derived process-data rules and explicit manual
-retention/cleanup procedure. Completion status and retention intent are separate.
-No automatic cleanup, custom telemetry facility or shared storage platform is
+owns the outer workspace, the observed/derived process-data rules and the explicit
+manual retention/cleanup procedure. Completion status and retention intent are
+separate, and no automatic cleanup, telemetry facility or shared storage platform is
 implied. Current export copies native inputs/runtime and does not automatically
-package external analysis. A sealed transcript or trial workspace is not scratch.
+package external analysis; a sealed transcript or trial workspace is not scratch.
 
-Agents supplies observable facts, Execution attaches invocation context, Records
-owns saved formats, Measurement derives metrics and CLI presents them. New raw
-process observations require versioned reader/writer support; do not add an untyped
-control dictionary. Reuse existing owners when a real measurement need appears.
+Agents supplies observable facts, Execution attaches invocation context, Records owns
+saved formats, Measurement derives metrics and CLI presents them. New raw process
+observations require versioned reader/writer support. Release proofs establish
+package delivery while Runs establish scoped task observations, so release acceptance
+checks installed behavior and current portable replay, never old personal studies. A
+failed Run stays in its explicit workspace without creating a new source page,
+catalog or mandatory release check.
 
-Release proofs establish package delivery; Runs establish scoped task observations.
-Release acceptance checks installed behavior/current portable replay, never old
-personal studies. A failed Run stays in its explicit workspace without creating
-a new source page/catalog or mandatory release check. Retained standalone
-packages stay self-contained; copies are not removed by editing sealed indices.
+## Growth controls
 
-## Growth controls and extension acceptance
-
-Existing checks enforce purpose/ownership, one plan, no executable recipes in
-docs, no generated trees in source/npm and explicit writer destinations. Version/
-Skill checks require no per-version page. Registering a file does not justify it;
-a new page needs a recurring task/contract and owner. Verify actual package
-contents and dependency closure. No universal file/line-count gate is imposed.
+Existing checks enforce purpose/ownership, one plan, no executable recipes in docs,
+no generated trees in source or npm, and explicit writer destinations. Version and
+Skill checks require no per-version page. Registering a file does not justify it: a
+new page needs a recurring task or contract and an owner. Verify actual package
+contents and dependency closure. No universal file or line-count gate is imposed.
 
 | Change | Expected locality and acceptance |
 | --- | --- |
 | Agent with existing contracts | Matrix/adapter and contract fixtures; no vendor branches in planner/Usage. Unsupported capabilities refuse before calls. |
-| Resource variant | Resources and temporary Target delivery tests; no measurement or real-config transaction change. New public kind needs schema/capability work. |
-| Report or metric | Display in presentation; metric in Measurement when facts exist. New facts/meaning need protocol/read support. |
+| Resource variant | Resources and temporary Target delivery tests; no measurement or real-config transaction change. A new public kind needs schema/capability work. |
+| Report or metric | Display in presentation; metric in Measurement when the facts exist. New facts or meaning need protocol/read support. |
 | Experiment design | Execution, Application wiring and declared measurement/read support; no forced paired/single-arm unification. |
 | Historical reader/transport | Records/legacy with consumed compatibility fixtures; no old-byte rewrite or live execution. |
-| Existing use case's new caller | Same explicit public operation; never parse CLI stdout or invoke its dry-run branch to plan. |
 
 These are acceptance scenarios, not a plugin system. Test normal, unsupported,
-missing-counter, failure/abort and historical cases through caller interfaces;
+missing-counter, failure/abort and historical cases through caller interfaces, and
 retain installed/CLI/replay checks. Depth means behavior behind a small interface;
 locality and leverage, not more directories, justify a seam.
 
-<a id="repository-framework-design-for-the-next-migration"></a>
-<a id="problem-and-requirements"></a>
+## Key decisions
 
-## Design rationale and requirements
+| Decision | Why | Cost |
+| --- | --- | --- |
+| Modular CLI with explicit contracts | One business owner and a small interface per module closes the ownership and writer-admission gaps a pruned flat source leaves open | Import, effect and package checks must stay green |
+| Not multiple packages or an artifact platform | No independent consumers, release owners or measured volume justify the operations, authentication and versioning overhead | Revisit when real independent ownership appears |
+| Zero runtime dependencies | The shipped CLI stays self-contained and auditable | Reimplement mechanisms Node already provides |
+| Generated attempts, reports, receipts and frozen run copies stay external to source and npm | Source stays reviewable and published bytes stay immutable | No archive catalog or restorer; old studies live only at fixed commits |
+| One page per topic and one plan | Readers and agents find the owner instead of reconciling copies | A fact must be linked, never restated |
+| Formats and identity owned independently of paths and versions | A moved module or renamed file must not invalidate an approval or a sealed record | Version dispatch has to stay explicit |
+| Checks enforce imports, effects, admission and destinations — not file counts | A count gate punishes depth, which is the point of a seam | Responsibility ownership still needs human review |
 
-The modular CLI is selected for FR1–FR8 below. It keeps one toolchain and existing
-operators without a hosted throughput target or speculative platform budget.
-Cross-module compatibility and retention choices belong here; migration progress
-belongs to the plan. The original [dependency](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/decisions/0002-layering-and-shared-execution.md),
+The original [dependency](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/decisions/0002-layering-and-shared-execution.md),
 [confirmation](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/decisions/0003-plan-confirm-execute-separation.md)
 and [documentation](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/decisions/0001-document-authority-and-history.md)
-decisions remain fixed historical sources.
+records remain fixed historical sources.
 
-- FR1: One business owner and small interface per module; no global domain types.
-- FR2: One page per topic and one plan; use the existing reader-task owners.
-- FR3: Generated attempts/reports/receipts and frozen run copies stay external to source/npm.
-- FR4: Preserve exact history, unknown/failure accounting and explicit offline replay.
-- FR5: One package/toolchain, zero runtime dependencies, current CLI/config contracts.
-- FR6: Existing checks enforce imports/effects/admission/destinations, not file counts.
-- FR7: Formats, identity and compatibility have owners independent of paths/version.
-- FR8: Representative extensions verify locality; new protocols may require redesign.
+## Non-goals
 
-<a id="alternatives-rollout-and-rollback"></a>
-
-## Alternatives and change safety
-
-| Approach | Trade-off |
-| --- | --- |
-| Pruned flat source | Cheapest immediate cleanup; ownership and writer-admission gaps remain. |
-| Modular CLI with explicit contracts and external artifacts | Selected for FR1–FR8; requires import/package/compatibility checks. |
-| Multiple packages and artifact platform | Useful with independent consumers/release owners; current needs do not justify operations/authentication/versioning overhead. |
-
-Revisit package/storage choices when actual independent ownership or measured
-volume/durability requires it. No architecture guarantees arbitrary future
-experiments, public kinds or distributed execution without new contracts.
-
-Apply the current plan in dependency order. The first changed historical hash,
-missing runtime entry or unexplained relevant local failure stops the slice.
-Preserve the last verified source and unrelated work; roll back only owned local
-changes. After immutable publication, correct forward under a linked identity.
-Final integration verifies the installed CLI and current saved-result/export/
-portable replay contracts. Changed code requires fresh confirmation for new Runs.
-
-Pre-mortem: writers repopulate docs (detect tracked-root writes; gate destinations),
-Shared gains host policy (detect signal/exit/business imports; pass explicit inputs),
-or moves break replay (detect missing launcher imports; test installed/relocated
-packages). The release operator retains complete proofs beyond expiring workflow
-artifacts. These checks cannot replace
-review of responsibility ownership.
-
-Non-goals: new statistical thresholds, paid research, microservices, plugin loading
-or destructive workspace cleanup. No extra storage platform or retention job is
-planned; concrete new public formats/protocols need compatibility design.
-
-## Development and documentation
-
-Follow AGENTS.md and CONTRIBUTING.md. Run `npm run build`, `npm test` and relevant
-local checks with offline executors/temporary roots. Matrix capability/path changes
-need an official source and verifiedAt bump; statistical changes update metrics
-and code together. README.md is English truth; README.zh-CN.md mirrors sections,
-commands, badges and demo blocks. One page owns each topic; link to that owner
-instead of restating the fact, and update affected guides when it changes.
-
-## Release preparation
-
-[The release procedure](releases.md) owns source/CI/package/registry publication
-gates and original receipts. Publication and live calls require separate explicit
-authorization; local refactor approval authorizes neither. Do not republish a version.
+New statistical thresholds, paid research, microservices, plugin loading and
+destructive workspace cleanup. No extra storage platform or retention job is
+planned. A concrete new public format or protocol needs its own compatibility
+design, and no current guarantee extends to arbitrary future experiments, public
+kinds or distributed execution.
