@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add explicit Token-only budgets and disabled Agent deadlines on supported
+  Codex execution. Check cumulative local usage during calls; retain interrupted
+  partial receipts and portable replay. Omitted/numeric settings retain their
+  previous semantics; observation is best-effort rather than a billing hard cap.
+
 ## 0.14.0 — evaluation contracts and maintainable Bench inputs
 
 This entry describes the prepared source/package contents; publication status is

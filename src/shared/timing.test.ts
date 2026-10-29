@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ExecutionDeadline } from "./timing.js";
 
-function fake(timeoutMs = 600_000) {
+function fake(timeoutMs: number | null = 600_000) {
   const time = { wall: 0, mono: 0 };
   const deadline = new ExecutionDeadline(timeoutMs, { wallNow: () => time.wall, monotonicNow: () => time.mono });
   return { time, deadline };
@@ -50,4 +50,14 @@ test('normal deadline records actual timeout firing and termination delay withou
 
 test('invalid timeout values cannot silently become a one-millisecond Node timer', () => {
   for (const n of [0, -1, Infinity, NaN, 1.5, 2_147_483_648]) assert.throws(() => fake(n), /timeoutMs/);
+});
+
+
+test('an explicit null deadline keeps elapsed diagnostics without expiring', () => {
+  const { time, deadline } = fake(null);
+  time.wall = time.mono = 3_600_000; deadline.observe();
+  assert.equal(deadline.exceeded, false);
+  assert.equal(deadline.snapshot().timeoutMs, null);
+  assert.equal(deadline.snapshot().elapsedMs, 3_600_000);
+  assert.equal(deadline.snapshot().timeoutFiredAfterMs, null);
 });

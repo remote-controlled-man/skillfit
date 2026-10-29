@@ -10,6 +10,7 @@ import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from ".
 import { summarizeCosts } from "./costs.js";
 
 export interface TrialOutcome {
+  budgetStop?: 'SPENDING_BUDGET_REACHED';
   modelIdentity?: ModelIdentity;
   taskId: string;
   condition: Condition;

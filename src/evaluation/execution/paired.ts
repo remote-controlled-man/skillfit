@@ -1,3 +1,4 @@
+import type { ExecutorRunOptions } from '../../agents/contracts.js';
 import { withSampling } from "../../agents/contracts.js";
 export { withSampling } from '../../agents/contracts.js';
 import { measurementScope, requestedClaimFor, assertBenchClaimSupported } from "../measurement/scope.js";
@@ -33,7 +34,7 @@ import { ExecutorFailure } from "../../agents/contracts.js";
 import { executionClock, type ExecutionClock, type ExecutionTiming } from "../../shared/timing.js";
 import type { ComponentMetadata } from '../measurement/policy.js';
 import { verdictFromOutput, type VerifierCheck } from "../../bench/gates/summary.js";
-import { createSpendingBudgetRecorder, parseSpendingBudget, type SpendingBudget } from "./budget.js";
+import { createSpendingBudgetRecorder, assertTokenBudgetSupport, parseSpendingBudget, type SpendingBudget } from "./budget.js";
 import { summarizeInvocationCosts } from "../measurement/invocation-costs.js";
 
 export interface ExperimentPlan {
@@ -64,6 +65,7 @@ export async function runTrial(
   taskId: string,
   condition: Condition,
   trial: number,
+  runOptions?: ExecutorRunOptions,
 ): Promise<TrialOutcome> {
   throwIfEvaluationInterrupted();
   const { bench, executor } = plan;
@@ -127,13 +129,14 @@ export async function runTrial(
   let modelIdentity: ModelIdentity | undefined;
   let skillTriggered: boolean | null = null;
   let executorInvoked = false;
+  let budgetStop: TrialOutcome['budgetStop'];
   let usageStatus: TrialOutcome['usageStatus'] = 'unknown';
   try {
     if (!gitInitialized && task.verifierKind === 'command') {
       throw new Error('Benchmark Git initialization or reflog verification failed; command task was not executed.');
     }
     executorInvoked = true;
-    const result = await executor.run(prompt, runDir);
+    const result = await executor.run(prompt, runDir, runOptions);
     output = result.output;
     tokens = result.tokens ?? null;
     rawOutput = result.rawOutput ?? null;
@@ -147,6 +150,7 @@ export async function runTrial(
   } catch (executorError) {
     error = (executorError as Error).message;
     if (executorError instanceof ExecutorFailure) {
+      budgetStop = executorError.result.budgetStop;
       executorInvoked = executorError.executorInvoked;
       output = executorError.result.output;
       tokens = executorError.result.tokens ?? null;
@@ -210,6 +214,7 @@ export async function runTrial(
     executorInvoked,
     modelIdentity: modelIdentity ?? unknownModelIdentity(executor.describe().modelIntent),
     usageStatus,
+    ...(budgetStop ? { budgetStop } : {}),
     ...(usageEvidence ? { usageEvidence } : {}),
     gitInitialized,
     ...(plan.skillInstallDir ? { skillTriggered } : {}),
@@ -304,6 +309,7 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
   assertBenchClaimSupported(scope);
   if (plan.stopOnExecutionError && plan.executor.describe().kind !== 'mock') throw new Error('stopOnExecutionError requires an offline mock executor.');
   const budget = plan.spendingBudget === undefined ? undefined : parseSpendingBudget(plan.spendingBudget);
+  assertTokenBudgetSupport([plan.executor, plan.judge ?? null], undefined, budget);
   assertInputModeSupported(plan.inputMode ?? 'snapshot', plan.executor);
   const pairOrder = plan.pairOrder ?? 'baseline-first';
   if (pairOrder !== 'baseline-first' && pairOrder !== 'balanced') throw new Error('pairOrder must be baseline-first or balanced.');
@@ -346,9 +352,9 @@ export async function runExperiment(plan: ExperimentPlan): Promise<RunManifest> 
     for (let trial = 1; trial <= plan.trials; trial++) {
       for (const condition of pairConditions(pairOrder, taskIndex, trial)) {
         throwIfEvaluationInterrupted();
-        budgetRecorder.before({ taskId: task.id, condition, trial });
+        const runOptions = budgetRecorder.before({ taskId: task.id, condition, trial });
         plan.log?.(`Running ${task.id} / ${condition} / trial ${trial}…`);
-        const outcome = await runTrial(plan, task.id, condition, trial);
+        const outcome = await runTrial(plan, task.id, condition, trial, runOptions);
         outcomes[condition].push(outcome);
         allOutcomes[condition].push(outcome);
         budgetRecorder.after({ taskId: task.id, condition, trial }, outcome);

@@ -6,6 +6,7 @@ import type { VerifierCheck } from "../../bench/gates/summary.js";
 import type { TokenUsage } from "../../agents/contracts.js";
 
 export interface TriggerTrialRecord {
+  budgetStop?: 'SPENDING_BUDGET_REACHED';
   modelIdentity?: ModelIdentity;
   taskId: string;
   trial: number;

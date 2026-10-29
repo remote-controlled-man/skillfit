@@ -5,7 +5,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ExecutorFailure, type Executor, type TokenUsage, type UsageEvidence } from "../../agents/contracts.js";
+import { ExecutorFailure, type Executor, type TokenUsage, type UsageEvidence, type ExecutorRunOptions } from "../../agents/contracts.js";
 import { type Condition } from "../../resources/contracts.js";
 import { executionClock, type ExecutionClock, type ExecutionTiming } from "../../shared/timing.js";
 import { throwIfCancelled as throwIfEvaluationInterrupted } from "../../shared/cancellation.js";
@@ -27,7 +27,7 @@ export async function judgePair(
     taskId?: string;
     trial?: number;
     clock?: ExecutionClock;
-    beforeCall?: (callIndex: 1 | 2) => void;
+    beforeCall?: (callIndex: 1 | 2) => ExecutorRunOptions | void;
     onCall?: (receipt: JudgeCallReceipt) => void;
   },
 ): Promise<JudgeResult> {
@@ -41,7 +41,7 @@ export async function judgePair(
   try {
     const call = async (firstCondition: Condition, callIndex: 1 | 2) => {
       throwIfEvaluationInterrupted();
-      args.beforeCall?.(callIndex);
+      const runOptions = args.beforeCall?.(callIndex) || undefined;
       const judgeDir = mkdtempSync(join(tmpdir(), 'skillfit-judge-'));
       try {
         const answerA = firstCondition === 'baseline' ? args.baselineOutput : args.treatmentOutput;
@@ -54,9 +54,10 @@ export async function judgePair(
         let usageStatus: JudgeCallReceipt['usageStatus'] = 'unknown', execution: ExecutionTiming | null = null;
         let executorInvoked = true, error: string | null = null, scores: JudgeCallReceipt['scores'] = null;
         let usageEvidence: UsageEvidence | undefined;
+        let budgetStop: JudgeCallReceipt['budgetStop'];
         let modelIdentity: ModelIdentity | undefined;
         try {
-          const result = await judge.run(prompt, judgeDir);
+          const result = await judge.run(prompt, judgeDir, runOptions);
           output = result.output; rawOutput = result.rawOutput ?? null; tokens = result.tokens ?? null;
           usageStatus = result.usageStatus ?? (tokens ? 'final' : 'unknown'); execution = result.executionTiming ?? null;
           usageEvidence = result.usageEvidence; modelIdentity = identityForResult(result, judge.describe());
@@ -64,6 +65,7 @@ export async function judgePair(
         } catch (failure) {
           error = (failure as Error).message;
           if (failure instanceof ExecutorFailure) {
+            budgetStop = failure.result.budgetStop;
             executorInvoked = failure.executorInvoked;
             output = failure.result.output; rawOutput = failure.result.rawOutput ?? null; tokens = failure.result.tokens ?? null;
             usageStatus = failure.result.usageStatus ?? (tokens ? 'partial' : 'unknown');
@@ -85,7 +87,7 @@ export async function judgePair(
           startedAt: new Date(startedWall).toISOString(), finishedAt: new Date(finishedWall).toISOString(), durationSeconds,
           timing: { clock: 'performance.now', wallDurationSeconds: (finishedWall - startedWall) / 1000, execution },
           modelIdentity: modelIdentity ?? unknownModelIdentity(judge.describe().modelIntent),
-          executorInvoked, error, passed: error === null, tokens, usageStatus, ...(usageEvidence ? { usageEvidence } : {}), scores };
+          ...(budgetStop ? { budgetStop } : {}), executorInvoked, error, passed: error === null, tokens, usageStatus, ...(usageEvidence ? { usageEvidence } : {}), scores };
         calls.push(receipt);
         // Persist before propagating a parse/execution error, cancellation or budget stop.
         args.onCall?.(receipt);

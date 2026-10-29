@@ -507,8 +507,15 @@ cost caps. A duration-only guard is unsupported.
 
 The same guard applies to paired eval, trigger, calibration and both optional
 judge orders. All invoked primary/judge spending counts, including failures and
-excluded partners. Reaching any line prevents the **next** call; one in-flight
-call can overshoot. Missing/partial/invalid final usage or an execution/guard error
+excluded partners. With a positive duration limit, reaching any line prevents
+the **next** call;
+one in-flight call can overshoot. With explicit `durationSeconds: null`, a
+supported adapter also checks cumulative Token updates during the call and
+interrupts at an observed reached line. Snapshots replace the current-call
+observation; earlier settled calls are counted once. Observation delay and
+in-flight work still permit overshoot. A live stop retains `budgetStop` and
+partial source-bound usage, skips grading and seals a stopped prefix.
+Missing/partial/invalid final usage or an execution/guard error
 stops further calls and retains known/unknown costs. No retries, replacement
 samples or automatic expansion follow. A final predeclared call may complete the
 cohort at a line with complete evidence. Completed audits replay chronological
@@ -518,7 +525,12 @@ adoption thresholds or provider invoices.
 Known missing token/cache readers block strict budgets before primary or judge
 calls; offline-unknown coverage still needs complete final counters at runtime.
 Adapter-specific support belongs to the [capability table](../guides/experiment-workflow.md#executor-capabilities).
-This describes skillfit's readers, not vendor capability guarantees.
+Token-only mode requires during-call observation on every role; current support
+is Codex only. Explicit null disables the separate Agent deadline only with a
+Token-only budget. Omitted/numeric settings preserve legacy semantics.
+This describes skillfit's readers, not vendor capability guarantees or precise
+billing caps. Unknown local updates cannot enforce a cutoff until reliable usage
+arrives; complete final usage remains required for completed evidence.
 
 SIGINT/SIGTERM stops subsequent dispatches and managed active processes, retaining
 receipts and sealing the stopped prefix. Interrupted execution is ungraded;

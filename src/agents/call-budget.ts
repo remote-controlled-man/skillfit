@@ -1,9 +1,11 @@
+import type { Executor, ExecutorRunOptions, TokenBudgetLimits } from './contracts.js';
 import { COST_METRICS, invocationPopulation, type CostMetric, type CostObservation } from './accounting.js';
 import { appendFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** Whole-cohort stop lines, distinct from relative adoption-policy cost caps. */
-export type SpendingBudget = Record<CostMetric, number>;
+export type TokenBudget = TokenBudgetLimits;
+export type SpendingBudget = TokenBudget & { durationSeconds: number | null };
 export type SpendingStopCode = 'EXECUTION_FAILED' | 'FINAL_USAGE_MISSING' | 'SPENDING_BUDGET_REACHED';
 
 /** Only controlled budget diagnostics may be copied into a durable session stop reason. */
@@ -30,12 +32,13 @@ export function parseSpendingBudget(value: unknown): SpendingBudget {
   if (Object.keys(input).some(key => !COST_METRICS.includes(key as CostMetric))) throw new Error('spendingBudget has unknown fields.');
   return Object.fromEntries(COST_METRICS.map(metric => {
     const amount = input[metric];
+    if (metric === 'durationSeconds' && amount === null) return [metric, null];
     if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 || amount > Number.MAX_SAFE_INTEGER ||
         (metric !== 'durationSeconds' && !Number.isSafeInteger(amount))) {
       throw new Error(`spendingBudget.${metric} must be a positive ${metric === 'durationSeconds' ? 'finite number' : 'safe integer'}.`);
     }
     return [metric, amount];
-  })) as SpendingBudget;
+  })) as unknown as SpendingBudget;
 }
 
 export function spendingBudgetState(limits: SpendingBudget, observations: readonly CostObservation[]) {
@@ -44,10 +47,11 @@ export function spendingBudgetState(limits: SpendingBudget, observations: readon
     input: counter(row.tokens.input), cachedInput: counter(row.tokens.cachedInput), output: counter(row.tokens.output),
   } : null }));
   const population = invocationPopulation(normalized.filter(row => row.executorInvoked));
-  const reached = COST_METRICS.filter(metric => population.metrics[metric].knownTotal >= limits[metric]);
+  const reached = COST_METRICS.filter(metric => limits[metric] !== null && population.metrics[metric].knownTotal >= limits[metric]);
   const incomplete = COST_METRICS.filter(metric => population.metrics[metric].coverage.final !== population.runs);
   const executionFailed = observations.some(row => row.error !== null);
-  const reason: SpendingStopCode | null = executionFailed ? 'EXECUTION_FAILED' : incomplete.length ? 'FINAL_USAGE_MISSING' : reached.length ? 'SPENDING_BUDGET_REACHED' : null;
+  const liveStop = limits.durationSeconds === null && reached.length > 0 && observations.some(row => row.budgetStop === 'SPENDING_BUDGET_REACHED');
+  const reason: SpendingStopCode | null = liveStop ? 'SPENDING_BUDGET_REACHED' : executionFailed ? 'EXECUTION_FAILED' : incomplete.length ? 'FINAL_USAGE_MISSING' : reached.length ? 'SPENDING_BUDGET_REACHED' : null;
   return { schemaVersion: 1 as const, invocations: population.runs, metrics: population.metrics, reached, incomplete, reason };
 }
 
@@ -68,14 +72,28 @@ export function createSpendingBudgetRecorder(options: { budget?: SpendingBudget;
     return state;
   };
   return {
-    before(identity: BudgetCallIdentity): void {
+    before(identity: BudgetCallIdentity): ExecutorRunOptions | undefined {
       const state = event('before-call', identity);
       if (state) assertSpendingCanContinue(state);
+      if (state && options.budget?.durationSeconds === null) {
+        const tokenBudget = Object.fromEntries((['input', 'cachedInput', 'uncachedInput', 'output'] as const).map(metric =>
+          [metric, options.budget![metric] - state.metrics[metric].knownTotal])) as unknown as TokenBudget;
+        return { tokenBudget };
+      }
     },
     after(identity: BudgetCallIdentity, observation: CostObservation): void {
       observations.push(observation);
       const state = event('after-call', identity);
-      if (state && (state.incomplete.length || state.reason === 'EXECUTION_FAILED')) assertSpendingCanContinue(state);
+      if (state && (state.incomplete.length || state.reason === 'EXECUTION_FAILED' || observation.budgetStop !== undefined)) assertSpendingCanContinue(state);
     },
   };
+}
+
+
+/** Capability is checked before dispatch for every role; no implicit unlimited fallback. */
+export function assertTokenBudgetSupport(executors: readonly (Executor | null)[], timeout: number | null | undefined, budget?: SpendingBudget): void {
+  if (timeout === null && budget?.durationSeconds !== null) throw new Error('Disabling the Agent deadline requires explicit Token-only spending limits (durationSeconds: null).');
+  if (budget?.durationSeconds === null && executors.some(executor => executor && !executor.supportsLiveTokenBudget)) {
+    throw new Error('Token-only spending limits require during-call usage observation on every executor role; this adapter does not support it.');
+  }
 }

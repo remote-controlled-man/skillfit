@@ -31,7 +31,7 @@ export interface EvalPreview {
   agentPreflight: AgentEnvironmentPreflight;
   inputSnapshot: typeof INPUT_SNAPSHOT_POLICY;
   pairOrder?: PairOrder;
-  executorTimeoutSeconds?: number;
+  executorTimeoutSeconds?: number | null;
   nativeDiffTool?: NativeDiffDescriptor;
   spendingBudget?: SpendingBudget;
   installedFingerprint?: { sha256: string; files: string[] };
@@ -51,7 +51,7 @@ export interface EvalOptions {
   taskIds?: string[];
   trials?: number;
   pairOrder?: PairOrder;
-  executorTimeoutSeconds?: number;
+  executorTimeoutSeconds?: number | null;
   maxCalls?: number;
   spendingBudget?: SpendingBudget;
   sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;

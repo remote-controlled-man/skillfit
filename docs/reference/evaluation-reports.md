@@ -215,7 +215,11 @@ five-field spending-budget format and deadline settings;
 [metrics](metrics.md#costs-budgets-and-stopping) owns stopping semantics across
 paired, calibration, trigger and judge calls. Version 0.11.0 exposes these
 shared controls; absolute stop lines are separate from relative adoption caps
-and provider invoices. Current adapter readers and strict-budget limitations
+and provider invoices. Current source additionally supports explicit null time
+limits with Token-only observation; this is not in npm 0.14.0. Interrupted
+receipts can carry `budgetStop: "SPENDING_BUDGET_REACHED"` with partial usage,
+without becoming graded or completed evidence. Current adapter readers and
+spending-budget limitations
 belong to the [capability table](../guides/experiment-workflow.md).
 
 Native paired condition summaries may include `tokenCoverage.input/output`: the

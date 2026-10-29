@@ -2,6 +2,7 @@ import type { TokenUsage } from './contracts.js';
 export const COST_METRICS = ['input', 'cachedInput', 'uncachedInput', 'output', 'durationSeconds'] as const;
 export type CostMetric = typeof COST_METRICS[number];
 export interface CostObservation {
+  budgetStop?: 'SPENDING_BUDGET_REACHED';
   executorInvoked: boolean;
   passed: boolean;
   error: string | null;

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { executorTimeoutArgument, executorDeadlineLabel } from '../agents/timeout.js';
 import { parseArgs } from 'node:util';
 import { CLI_OPTIONS, USAGE } from './definition.js';
 import { resolve } from 'node:path';
@@ -208,7 +209,7 @@ async function main(): Promise<void> {
         maxCalls,
         trials,
         spendingBudget,
-        executorTimeoutSeconds: values['executor-timeout-seconds'] === undefined ? undefined : Number(values['executor-timeout-seconds']),
+        executorTimeoutSeconds: executorTimeoutArgument(values['executor-timeout-seconds']),
         pairOrder: values['pair-order'] as 'baseline-first' | 'balanced' | undefined,
         runsRoot: values['runs-root'] === undefined ? undefined : resolve(values['runs-root']),
         runGroup: values['run-group'],
@@ -306,7 +307,7 @@ async function main(): Promise<void> {
             dryRun: values['dry-run'] ?? false,
             runsRoot: values['runs-root'] === undefined ? undefined : resolve(values['runs-root']),
             runGroup: values['run-group'],
-            executorTimeoutSeconds: values['executor-timeout-seconds'] === undefined ? undefined : Number(values['executor-timeout-seconds']),
+            executorTimeoutSeconds: executorTimeoutArgument(values['executor-timeout-seconds']),
             spendingBudget: values['spending-budget'] === undefined ? undefined : parseSpendingBudget(readComponentJson(resolve(values['spending-budget'])).value),
             reviewedPlanSha256: values['plan-sha'] };
           const plan = prepareBenchCalibration({ dir: positionals[2], taskIds: values.task, calibrate });
@@ -317,7 +318,7 @@ async function main(): Promise<void> {
               console.log(`calibration executor: ${plan.executor?.detail ?? plan.executor?.model ?? 'unresolved'}`);
               console.log(`calibration plan: ${plan.bench.taskIds.length} task(s) × ${plan.trials} baseline run(s), input ${plan.inputMode}; ${plan.plannedCalls} calls, ceiling ${plan.maxCalls}`);
               console.log(`Agent environment: ${plan.agentPreflight.status}; login remains offline unknown`);
-              console.log(`Executor deadline: ${plan.executorTimeoutSeconds}s; output ${plan.outputDir}`);
+              console.log(`Executor deadline: ${executorDeadlineLabel(plan.executorTimeoutSeconds)}; output ${plan.outputDir}`);
               if (plan.spendingBudget) console.log(`Spending stop lines: ${JSON.stringify(plan.spendingBudget)}`);
               console.log(`Plan SHA: ${plan.planSha256}`);
               console.log('Dry run: no verifier, oracle or agent started; nothing written.');
@@ -391,7 +392,7 @@ async function main(): Promise<void> {
           runsRoot: values['runs-root'],
           runGroup: values['run-group'],
           spendingBudget: values['spending-budget'] === undefined ? undefined : parseSpendingBudget(readComponentJson(resolve(values['spending-budget'])).value),
-          executorTimeoutSeconds: values['executor-timeout-seconds'] === undefined ? undefined : Number(values['executor-timeout-seconds']),
+          executorTimeoutSeconds: executorTimeoutArgument(values['executor-timeout-seconds']),
           shouldTrigger: shouldTrigger === undefined ? undefined : shouldTrigger === 'yes',
         });
         return;

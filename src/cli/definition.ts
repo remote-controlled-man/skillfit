@@ -37,7 +37,7 @@ Options:
   --plan-sha <hash>   Confirm an eval/calibration/self-test dry-run plan (also needs --run-group)
   --json             Machine output for bench check/self-test/list/show/edit/remove, report, eval and calibration
   --spending-budget <file>  Eval/calibration/drafting: input, cachedInput, uncachedInput, output, durationSeconds stop lines
-  --executor-timeout-seconds <n>  Eval/calibration/drafting: executor deadline (integer 1–3600)
+  --executor-timeout-seconds <n|none>  Eval/calibration/drafting: executor deadline (integer 1–3600; none requires Token-only budget)
   --pair-order <order>  Paired eval: baseline-first (default) | balanced
   --runs-root <dir>   Eval/calibration/drafting/self-test output parent (default: ./runs)
   --run-group <name>  Fresh record group; reuse its name when confirming an eval preview

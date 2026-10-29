@@ -23,7 +23,7 @@ export interface SessionDetails {
   trials?: number;
   executor?: ExecutorDescriptor;
   judge?: ExecutorDescriptor | null;
-  executorTimeoutSeconds?: number;
+  executorTimeoutSeconds?: number | null;
   spendingBudget?: SpendingBudget;
   taskIds?: string[];
   agentPreflight?: AgentEnvironmentPreflight;

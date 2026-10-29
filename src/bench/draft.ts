@@ -1,3 +1,5 @@
+import { assertTokenBudgetSupport } from '../agents/call-budget.js';
+import { executorTimeoutMs } from '../agents/timeout.js';
 import { probeVersion, validateCallBudget } from '../agents/call-limits.js';
 import { modelIdentities, identityForResult, type ModelCall } from "../agents/observation/model-identity.js";
 import { createHash, randomUUID } from 'node:crypto';
@@ -25,7 +27,7 @@ export interface BenchDraftOptions {
   versionProbe?: (argv: string[]) => string | null;
   maxCalls?: number;
   spendingBudget?: SpendingBudget;
-  executorTimeoutSeconds?: number;
+  executorTimeoutSeconds?: number | null;
   verifierTimeoutSeconds?: number;
   runsRoot?: string;
   runGroup?: string;
@@ -61,7 +63,8 @@ export class BenchDraftSession {
       const missing = ['input', 'cachedInput', 'output'].filter(metric => !agentTokenCounters(agent).includes(metric));
       if (budget && missing.length) throw new Error(`Draft spending limits require unavailable CLI counters: ${missing.join(', ')}. No calls started.`);
     }
-    this.executor = options.executor ?? createAgentExecutor(options.agent!, { timeoutMs: timeout * 1000 });
+    this.executor = options.executor ?? createAgentExecutor(options.agent!, { timeoutMs: executorTimeoutMs(timeout) });
+    assertTokenBudgetSupport([this.executor], timeout, budget);
     this.clock = options.clock ?? executionClock;
     const group = options.runGroup ?? `draft-${Date.now()}-${randomUUID().slice(0, 8)}`;
     if (!RUN_GROUP_PATTERN.test(group)) throw new Error('Invalid draft --run-group.');
@@ -101,17 +104,17 @@ export class BenchDraftSession {
     }
     const expectedFixture = hashFileSet(join(this.dir, '_inputs/fixture'), this.files.map(file => file.rel));
     const identity = { taskId: this.taskId, trial: 1, role: 'drafter' as const };
-    this.budget.before(identity);
+    const runOptions = this.budget.before(identity);
     throwIfEvaluationInterrupted();
     this.callsStarted++;
     const startedAt = this.clock.wallNow(), start = this.clock.monotonicNow();
     appendFileSync(join(this.dir, '_calls.jsonl'), JSON.stringify({ event: 'started', at: new Date(startedAt).toISOString(), ...identity }) + '\n');
     let result: ExecutorResult = { output: '' }, failure: unknown;
-    try { result = await this.executor.run(this.prompt, this.workspace); }
+    try { result = await this.executor.run(this.prompt, this.workspace, runOptions); }
     catch (error) { failure = error; if (error instanceof ExecutorFailure) result = error.result; }
     const durationSeconds = Math.max(0, (this.clock.monotonicNow() - start) / 1000);
     const invoked = !(failure instanceof ExecutorFailure && !failure.executorInvoked);
-    const observation: CostObservation = { executorInvoked: invoked, passed: false,
+    const observation: CostObservation = { ...(result.budgetStop ? { budgetStop: result.budgetStop } : {}), executorInvoked: invoked, passed: false,
       error: failure || result.guardError ? 'Draft executor failed.' : evaluationSignal()?.aborted ? 'Draft interrupted.' : null,
       durationSeconds, tokens: result.tokens ?? null, usageStatus: result.usageStatus ?? (result.tokens ? 'final' : 'unknown') };
     this.observations.push(observation);

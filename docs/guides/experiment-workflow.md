@@ -67,24 +67,54 @@ node dist/cli.js eval ./my-skill --mode installed --bench ./my-bench --task my-t
 
 `--max-calls` caps attempted calls, including an enabled judge. Refusal before
 dispatch differs from an invoked failure. No automatic retry or model upgrade is
-implicit. CLI deadlines default to 600 seconds; API defaults to 120. The explicit
+implicit. Omitted CLI deadlines retain 600 seconds; API defaults to 120. The explicit
 executor deadline also applies to an ordinary-eval judge with its own timer.
 Verifier deadlines are separate. Wall timestamps identify events; monotonic
 clocks measure elapsed duration, which is not provider billing time.
 
-An optional `--spending-budget ./budget.json` freezes all five positive limits:
+An optional `--spending-budget ./budget.json` freezes all five stop-line fields:
 
 ```json
 {"input":100000,"cachedInput":100000,"uncachedInput":100000,"output":10000,"durationSeconds":1200}
 ```
 
 Choose actual limits before authorizing spending. All fields are required;
-tokens are safe integers, seconds finite and at most Number.MAX_SAFE_INTEGER.
+tokens are positive safe integers; numeric seconds are positive, finite and at most Number.MAX_SAFE_INTEGER.
 There is no duration-only strict budget. Both primary and judge need supported
 readers and complete final counters on each invocation. Missing/partial usage
 stops further calls; it is never filled with zero. Editing the budget file cannot
 adjust an active run. Replanning without a strict budget does not authorize cost
 or convert unknown counters into observations.
+
+For Token-first work in the current source, set budget `durationSeconds` to `null`
+and request `executorTimeoutSeconds` to `null` (ordinary CLI flag:
+`--executor-timeout-seconds none`). Both nulls are explicit: omission preserves
+legacy deadlines; a positive duration preserves legacy between-call stopping.
+For example, `{"input":1200000,"cachedInput":1050000,"uncachedInput":200000,"output":30000,"durationSeconds":null}`
+sets four Token stop lines without a time stop line. Choose the limits for the
+actual study and retain `maxCalls`; the numbers here do not authorize spending.
+This source feature is not in the already published npm 0.14.0 package.
+
+Token-only execution requires during-call usage observation on **every** executor
+role. Currently only the Codex adapter supports it, including a Codex judge or
+drafter. Other adapters refuse before dispatch. About once a second, the adapter
+reads the latest identity/workspace-bound cumulative local Token snapshot and
+compares it with the budget remaining after earlier completed calls. It never
+adds repeated snapshots. At a reached line it stops the managed process tree,
+retains partial usage/source and `SPENDING_BUDGET_REACHED`, and skips grading and
+later calls. Output includes provider-reported reasoning tokens; cached input is
+part of total input, and uncached input is total minus cached input.
+
+The local session format is internal and best-effort. Updates may lag; missing,
+invalid or stale observations are unknown, not zero. Before a reliable update,
+including network waits, no Token cutoff can be guaranteed. In-flight work can
+overshoot, and a stopped receipt is a lower bound, not a complete bill. Missing
+final usage still stops subsequent calls. Public Codex JSON usage appears at
+`turn.completed` ([official non-interactive documentation](https://learn.chatgpt.com/docs/non-interactive-mode)).
+A disabled Agent deadline keeps timing diagnostics without aborting on elapsed
+waiting or clock-observation gaps. Manual cancellation, terminal CLI/network
+failure, output bounds and separate verifier/tool timeouts still apply. Time is
+not a measure of active model computation.
 
 ## Executor capabilities
 
@@ -93,12 +123,12 @@ This table describes current skillfit adapters, verified offline against the
 and adapter fixtures. It does not attest today's installed vendor CLIs, login
 or a provider backend. Sampling remains unpinned: no temperature/seed is sent.
 
-| Executor / delivery modes | Trigger observation | Token/cache reader | Strict five-field spendingBudget | CLI version / public reported model | Verification scope |
+| Executor / delivery modes | Trigger observation | Token/cache reader | Spending budget | CLI version / public reported model | Verification scope |
 | --- | --- | --- | --- | --- | --- |
-| Codex CLI: paired inject/installed, rules/MCP overlays, calibration, trigger; optional judge/drafter | Literal read command against registered `SKILL.md` paths, not a native Skill event | Per-turn input, cached input, output; uncached input by subtraction; failed-call recovery stays partial | Adapter has the required readers; every actual call still needs complete final usage, including an enabled judge | Matrix `--version` probe during execution preparation; allowlisted configured model only, reported model unrecorded | Current factory, parser, guards and replay exercised offline; PATH presence/fixtures do not attest installed-version flags or login |
+| Codex CLI: paired inject/installed, rules/MCP overlays, calibration, trigger; optional judge/drafter | Literal read command against registered `SKILL.md` paths, not a native Skill event | Per-turn input, cached input, output; uncached input by subtraction; failed-call recovery stays partial | Numeric duration: between-call stop lines. Null duration: during-call cumulative observation, with delayed/unknown updates; every completed call still needs complete final usage, including an enabled judge | Matrix `--version` probe during execution preparation; allowlisted configured model only, reported model unrecorded | Current factory, parser, guards and replay exercised offline; PATH presence/fixtures do not attest installed-version flags or login |
 | Kimi Code CLI: same modes | Exact designated `Skill` argument in flat tool-call events | Input/output from matched local session usage; no cached-input partition | Blocked before calls: cachedInput unavailable | Matrix `--version` probe; no confirmed public model reader, reported model unrecorded | Offline factory/parser fixtures; current real CLI/authentication not verified in this remediation |
 | Claude Code CLI: same modes | Exact registered directory/frontmatter Skill identity in content-block events; stream-json entrance connected | No token reader implemented | Blocked before calls: input, cachedInput and output unavailable | Matrix `--version` probe; public assistant `message.model` IDs and source lines retained | Entry point tested with Node-only fake subprocesses, including failures and portable replay; real CLI/authentication unverified |
-| Chat Completions API: paired inject/snapshot; optional judge/drafter | No native trigger or installed/workspace/config-overlay delivery | Response input/output and explicit cached tokens; absent/invalid fields remain unknown | UNKNOWN offline; permitted to start, then missing/partial final counters stop further calls | No CLI version; configured/requested model and response `/model` recorded separately | Injected HTTP responses and offline replay; no provider/network validation |
+| Chat Completions API: paired inject/snapshot; optional judge/drafter | No native trigger or installed/workspace/config-overlay delivery | Response input/output and explicit cached tokens; absent/invalid fields remain unknown | Numeric duration: UNKNOWN offline; missing/partial final counters stop further calls. Token-only/no-deadline mode unavailable | No CLI version; configured/requested model and response `/model` recorded separately | Injected HTTP responses and offline replay; no provider/network validation |
 
 
 Trigger is single-arm; calibration is baseline-only. Optional judges apply to

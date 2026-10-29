@@ -1,3 +1,4 @@
+import { assertTokenBudgetSupport } from '../../agents/call-budget.js';
 import { RUNTIME_ROOT } from '../../shared/package-root.js';
 import { resolveExecutor, resolveJudge, installedObservation, createAgentExecutor, DEFAULT_API_TIMEOUT_MS } from "../../agents/execution.js";
 import { measurementScope, requestedClaimFor, assertBenchClaimSupported } from "../measurement/scope.js";
@@ -22,7 +23,7 @@ import type { Bench } from "../../bench/contracts.js";
 import type { EvaluationTarget, SkillBundle } from "../../resources/contracts.js";
 import type { Executor } from "../../agents/contracts.js";
 import type { InputMode } from "../measurement/paired-contract.js";
-import { parseExecutorTimeoutSeconds } from '../../agents/timeout.js';
+import { parseExecutorTimeoutSeconds, executorTimeoutMs } from '../../agents/timeout.js';
 import { parsePairOrder } from '../measurement/policy.js';
 import { parseSpendingBudget } from "../execution/budget.js";
 import { INPUT_SNAPSHOT_POLICY } from "../records/input-snapshot.js";
@@ -128,12 +129,13 @@ function resolveTriggerInputs(options: EvalOptions, bench: Bench, skill: SkillBu
       const identities = alias && /^[a-z0-9][a-z0-9-]{0,63}(?::[a-z0-9][a-z0-9-]{0,63})?$/.test(alias) ? [alias] : [];
       executor = createAgentExecutor(options.agent, { observedSkill: { required: true, name: skill.name, identities,
         ...(options.skillInstallDir ? { paths: [`${validateSkillInstallDir(options.skillInstallDir)}/${skill.name}/SKILL.md`] } : {}) },
-        timeoutMs: executorTimeoutSeconds * 1000 });
+        timeoutMs: executorTimeoutMs(executorTimeoutSeconds) });
     } catch (error) {
       resolutionError = (error as Error).message;
       log(`Note: ${(error as Error).message}`);
     }
   }
+  assertTokenBudgetSupport([executor], executorTimeoutSeconds, spendingBudget);
   const agent = options.agent ? getAgent(options.agent) : null;
   const installDir = options.skillInstallDir ?? agent?.skills.projectDirs[0];
   const runsRoot = options.runsRoot ?? resolve('runs');
@@ -176,8 +178,8 @@ function resolveTriggerInputs(options: EvalOptions, bench: Bench, skill: SkillBu
     promptEstimate: { baseline: Math.ceil(promptBytes / 4), treatment: Math.ceil(skill.payload.length / 4) }, competitors };
 }
 export function resolveEvalInputs(options: EvalOptions, dependencies: EvalResolutionDependencies = {}): ResolvedEvalInputs {
-  const executorTimeoutSeconds = parseExecutorTimeoutSeconds(options.executorTimeoutSeconds ??
-    (!options.agent && !options.executor ? DEFAULT_API_TIMEOUT_MS / 1000 : undefined));
+  const executorTimeoutSeconds = parseExecutorTimeoutSeconds(options.executorTimeoutSeconds === undefined
+    ? (!options.agent && !options.executor ? DEFAULT_API_TIMEOUT_MS / 1000 : undefined) : options.executorTimeoutSeconds);
   const notes: string[] = [], log = (line: string) => notes.push(line);
   const env = dependencies.env ?? process.env;
   const installed = options.mode === 'installed';
@@ -284,6 +286,7 @@ export function resolveEvalInputs(options: EvalOptions, dependencies: EvalResolu
   const agentPreflight = inspect();
   if (capabilityError) assertAgentEnvironment(agentPreflight);
   const spendingBudget = options.spendingBudget === undefined ? undefined : parseSpendingBudget(options.spendingBudget);
+  assertTokenBudgetSupport([executor, judge], executorTimeoutSeconds, spendingBudget);
   if (options.judgeAgent && options.judgeAgent === options.agent) {
     log('Warning: judge and executor are the same agent — self-preference bias risk (docs/reference/metrics.md L4).');
   }

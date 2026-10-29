@@ -2,7 +2,82 @@
 
 ## Status
 
-- Current task: R9 review and integration are complete. PR #61 merges 9244d61
+- Current task T1: explicit Token-first control is implemented and verified
+  offline. Preserve
+  legacy omitted/numeric deadlines and five-number budget semantics. An explicit
+  `executorTimeoutSeconds: null` disables the Agent deadline; an explicit
+  `spendingBudget.durationSeconds: null` selects Token-only, during-call stop
+  lines on supported Codex usage observation. Retain elapsed timing, finite call
+  ceilings, manual cancellation, process cleanup and verifier/tool deadlines.
+  Local cumulative counters are delayed lower bounds, not a provider billing
+  hard cap. Missing counters never become zero or final usage. No new model
+  call, study restart, maintained document, dependency, commit, CI or publication.
+  T1 progress: explicit-null parsing/CLI preview and legacy refusals pass; four
+  live Token lines, cumulative replacement, preceding-call subtraction, manual
+  cancellation and moved partial-record replay pass offline. The first full
+  suite exposed two error-label compatibility regressions; restored the original
+  executorTimeoutSeconds label and both affected CLI regressions pass. Historical
+  pilot-001/pilot-002 native read/export/moved verification and reproduction pass
+  with zero model calls; all 326 files/modes in each group are unchanged. Temporary
+  proof: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-t1-history-xdw1vmii/result.json.
+  Final npm test: 1,088 pass, zero fail/cancel/skip (72.245 seconds), including
+  package/install and saved-replay checks. The integrated review accounts for
+  all 38 changed paths (27 OCR-selected, 11 manually included docs/tests), zero
+  skipped paths and no unresolved product findings; Codex performed the review
+  using OCR rules, without an independent model/reviewer. It hardened the
+  no-deadline fake-process cleanup and timestamps; all 13 affected adapter tests
+  pass after that test-only change. Production code is unchanged from the full
+  passing suite. Review inputs/results are in OS temporary skillfit-t1-review-cozxmca6.
+  Final docs/anchor, architecture and diff checks pass; no new tracked file or
+  source runs directory. This completes T1's source/offline scope, not P2/P3's
+  still-incomplete real paired experiment. No commit/push/release or paid retry.
+  T1 plan review: use the existing executor run seam, numeric-only Codex session
+  reader, budget recorder and cancellation path. Retain a reached live
+  counter/source in the existing partial receipt and budget events, without
+  adding per-update files or a telemetry store.
+  Require the live observation capability for Token-only/no-deadline execution;
+  reject unsupported combinations before dispatch. P2/P3 remain stopped and
+  immutable; their intended paired experiment is still incomplete.
+
+- Previous P3 attempt ran one authorized, more permissive pilot-002 pair
+  after a fresh preview: same frozen inputs, model/global settings and graders;
+  trials=1/maxCalls=2, executor deadline=600 seconds. Whole-batch stop lines:
+  input=1,200,000, cachedInput=1,050,000, uncachedInput=200,000, output=30,000,
+  durationSeconds=1,200. These include a margin above P2's observed partial
+  trajectory; they are between-call stop lines, not a provider billing hard cap.
+  P3a passed: ready preview, unchanged inputs/runtime/settings, saved login and
+  old-record baseline verified. P3b stopped after its first baseline call reached
+  600 seconds, with no token stop line reached; the treatment was not invoked.
+  The stream also logged six connection/reconnect errors, including TLS EOF and
+  waiting for network, during review. P3c passed stopped-record reproduction
+  and post-stop 8/8 grading on a copy; the intended completed pair remains
+  incomplete. No new paid attempt. Keep
+  pilot-001 stopped and immutable; no automatic retry, extra cohort, global
+  settings/code change, new document, commit, CI or publication.
+  Previous P2 executed the user's authorized fixed pilot-001 batch, then
+  reads/audits its records and verifies disposable portable replay if supported.
+  Keep P1's exact request/digest, four-call ceiling, five spending stop lines and
+  240-second executor deadline; no retries, replacement calls, extra models,
+  calibration, new document, source change, commit or remote CI. P2a passed:
+  saved ChatGPT login is present; request, 23 input files/modes and exact ready
+  preview were unchanged. P2b stopped after the first baseline call hit its
+  240-second deadline; 1/4 calls attempted, no treatment call or paired result.
+  Partial recovered input/cache also exceeded their stop lines. No retry.
+  P2c passed stopped-record read/export and moved portable verification/replay
+  without new model calls; all 326 native files stayed unchanged. The intended
+  completed four-call workflow remains incomplete; no quality/Skill conclusion.
+  Preparation P1 produced one real-pilot proposal and zero-model-call preview
+  in its owning workspace. Reuse oss-normalize-url/query-shape and the existing
+  repository's vibe-coding candidate; two balanced paired trials mean four Agent
+  invocations. Initial ponytail preview was blocked by an existing global Skill
+  conflict; retain that observation here and do not change global configuration.
+  P1a-P1c preparation is complete: frozen input copies and request, passed
+  offline Bench gates and ready dry-run, four proposed Agent calls with five
+  spending stop lines. No model/Agent CLI invocation or run output was created.
+  P1 did not authorize live execution; P2 now supplies that bounded authority.
+  Actual CLI flags/backend remain unverified until attempted. No maintained document, mechanism, calibration,
+  commit or CI is added.
+  R9 review and integration are complete. PR #61 merges 9244d61
   and the preceding R6/R7 closeout as main df3dedc; PR/main CI each passed all
   eight jobs, and exact-main full three-OS receipts are verified. Corrected the
   driver's remaining source-relative self-test example and verified external
@@ -89,6 +164,19 @@
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| T1a | Review compatibility and declare Token-first acceptance | Complete; source/counter/stop paths reviewed | Explicit null is additive; omitted and positive settings retain normalization. Reuse the existing run seam and receipt mechanisms; keep frozen old requests and evidence unchanged. |
+| T1b | Implement explicit disabled Agent deadline and Token-only request; after T1a | Complete; legacy/null parsing and support refusal tested | Test first: parse/preview null, preserve legacy numeric defaults, reject invalid and unsupported execution surfaces before calls. Record timing with a null deadline; keep cancellation, output bounds and local verifier/tool timeouts. |
+| T1c | Enforce Token stop lines during supported calls; after T1b | Complete; all four Token lines, cumulative accounting, cancellation and moved stopped replay passed | Offline fake Codex processes only: cumulative updates replace the current-call snapshot; add settled earlier calls once. Stop the tree at a reliable reached update, retain partial counters/source and a typed spending stop; no next call or grading of interrupted output. Cover no counters, identity mismatch, invalid/regressed counters and normal completion/cancellation. |
+| T1d | Verify docs, historical readers/replay and final inputs; after T1c | Complete; 1,088 offline tests, historical replay and 38-path review passed | Update existing spending-control owners, schema, generated help/reference, driver and Unreleased entry; no new document. Run full offline npm test, docs and architecture gates; verify historical request normalization and read/export/moved replay without changing retained bytes. Complete one integrated review and update actual results here. No real models or remote delivery. |
+| P3a | Declare wider finite limits and review a fresh preview | Complete; ready unchanged-input preview reviewed | User authorized more leeway after the P2 retrospective. Reuse the same 23 frozen input files, Bench/grader, configured model/effort/service tier and development policy. Fresh request-relaxed.json/preview-relaxed.json, runGroup=pilot-002, one trial/two calls, 600-second deadline and the five explicit stop lines above. Check nested readiness, saved login, exact hashes, old-record invariance and fresh output. |
+| P3b | Execute the one newly authorized pair; after P3a | Stopped after 1/2 calls; completed pair remains incomplete | Use only the reviewed digest/request once. Keep both conditions' real outcomes, errors, timing and complete/partial usage; no retries or replacement. No additional cohort if stopped. One pair is a workflow pilot, not efficacy/adoption validation; do not pool P2's stopped baseline. |
+| P3c | Verify actual record, grades, costs and portable replay; after P3b | Complete for stopped evidence; real pair remains incomplete | Read native evidence and reproduce a moved complete temporary export offline. Check request/policy/runtime bindings, preserved raw files and actual coverage; retain incomplete results honestly. Remove only owned redundant replay scratch, update this existing plan and run docs/diff checks. No extra model calls, maintained document or remote delivery. |
+| P2a | Verify live prerequisites and exact approved preview; after P1 | Complete; saved login and frozen preview verified | User authorized this fixed small real run on 2026-10-28. Check saved login status without logging in or exposing credentials; re-preview the unchanged request and require P1's exact digest, ready nested environment, frozen input bytes and absent pilot-001 output. Keep all four-call/token/time limits. |
+| P2b | Execute one bounded real batch; after P2a | Stopped after 1/4 calls; execution incomplete, no retry | Confirm only the stored request/digest from the actual workspace, once. Retain its native records/stdout/stderr, grades, actual usage and any error/stop. No retries, replacement, scope/budget expansion, old-study restart, judge/calibration/drafter/subagent calls or global configuration edits. A stopped batch remains stopped. |
+| P2c | Read native evidence and test saved delivery; after P2b | Complete for stopped records; four-call outcome remains incomplete | Use saved read/audit and a fresh disposable portable export/replay with zero new model calls. Preserve raw failures/unknowns and intact native indexed files. Record actual grades/costs, replay result and limits here; remove only owned duplicate replay scratch after verification. Do not turn this development pilot into efficacy/adoption evidence. Run docs/diff checks; no new maintained documents or publication. |
+| P1a | Select an existing Bench and bound the pilot question | Complete; initial global conflict identified, final candidate selected | Reuse oss-normalize-url/query-shape (one real defect, 21 files/80,732 bytes, no external dependencies) and the existing repository vibe-coding Skill, which applies to this regression task. The initial ponytail dry-run was planned but its nested environment was blocked by global-name contamination; do not rename it or bypass that guard. Development pilot only: verify installed paired execution, regression grading, costs and later saved replay; no efficacy, efficiency, activation or adoption claim. Inspect current contracts and trusted offline graders. |
+| P1b | Freeze minimal inputs and check them offline; after P1a | Complete; exact copies and offline gates passed | Create one fresh owning workspace outside source/old studies, preserve all copied Bench/Skill bytes and licenses, and keep the request plus observed preview/check JSON there. No new prose document or generic storage layer. Run offline Bench gates on that copy; confirm no source runs and no real-model dispatch. |
+| P1c | Preview exact calls/budget and record acceptance; after P1b | Complete; ready dry-run, zero model/Agent calls | Request development/installed workspace delivery, no harness-installed baseline Skill, Codex, query-shape, two balanced trials, maxCalls=4, no judge/calibration/drafting. Propose all five spending stop lines and a 240-second executor deadline; execute only --dry-run, check nested readiness, frozen hashes, exact workspace paths and absent run output. Record digest, caveats, retention and docs checks in this plan. P1 authorized no live calls; subsequent P2 authorization is recorded separately. |
 | R9a | Review cumulative closeout and external records | Complete; one example omission fixed, no open findings | Freeze main 7514936/head 9244d61 and account for all seven existing Markdown files. Correct the remaining driver command's workspace ambiguity, execute it outside source, verify 481 study files/modes and 33 release files/18 receipts, and read/export/replay with the old path absent. Check docs and npm test; no new model calls or native changes. |
 | R9b | Deliver one combined closeout PR; after R9a | Complete; all PR checks passed | Push reviewed documentation and original-plan follow-up non-force, create/attach one PR and wait for all eight existing CI jobs plus security on the exact head. Existing classification is full for this scope; do not change workflows, weaken checks or push progress-only updates during CI. No npm workflow. |
 | R9c | Merge and verify exact-main closeout; after R9b | Complete; main CI and full three-OS receipts passed | Normal protected merge with checked head and clean message; require identical merged tree and original publication/study ancestry, all eight automatic main checks and same-attempt full three-OS receipts. Confirm source runs absent and retained bytes unchanged; record final status in this original plan without another CI-only PR or npm upload. |
@@ -151,6 +239,232 @@
 | M6 | One temporary integration branch and existing CI; after M5 | Complete; PR #57 merged as 655bcca | Retained source 5a3c9c8 and initial integration b5a052e have identical trees. Final candidate 153c014 adds only M6a's package-test envelope and plan updates; all 1,989 deletions remain. Final PR CI passed all eight jobs. Merged with explicit clean title/body, without protection, workflow/platform, publication or real experiment changes. |
 | M6a | Diagnose and verify Windows package-test timeout; within M6 | Complete | Original Windows timeout preserved. Local suite: 1,068 pass, zero fail/cancel/skip. Final actual Windows CI: 1,065 tests, 1,064 pass, zero fail/cancel and one existing platform skip; offline install completed in 48,429 ms within the bounded 120-second envelope. Product deadlines and all assertions are unchanged; no claim of deterministic Windows reproduction on macOS. |
 | M7 | Exact main CI, tree/deletion verification and final status; after M6 | Complete | Main run 40294723010 passed all eight jobs on 655bccaa384bbc3d0dc5602e76efa63968272ece. Existing source-CI collection validated three full OS receipts; source tree equals the reviewed candidate and all 1,989 deletions remain. This sole-plan follow-up incorporates main into the retained delivery branch, preserving six consumed pins. Verify the final pushed ref independently in the handoff; no new PR or CI run solely for status. |
+
+## Real-pilot preparation (P1)
+
+Authorized on 2026-10-28: prepare the proposal and dry-run only, in the actual
+workspace; update this existing plan. No real model calls or calibration.
+
+Question: can the installed/workspace paired path handle a real local bug fix,
+retain regression grades/costs and later support saved read/export/replay?
+This is a development workflow pilot. One task/two trials cannot establish
+Skill efficacy or savings; keep the default conservative adoption policy.
+
+Selected inputs: oss-normalize-url/query-shape (21 files/80,732 bytes, one real
+upstream defect, protected assets and offline regression gates) and the existing
+repository vibe-coding bundle (two files). Its bug-fix/test-first loop fits the
+task. Initial ponytail dry-run was status=planned but nested environment=blocked
+by GLOBAL_SKILL_CONFLICT at ~/.agents/skills/ponytail and ~/.codex/skills/ponytail.
+That preview made zero model/CLI calls and remained memory-only. Selecting the
+existing vibe-coding bundle avoids that conflict without renaming a Skill,
+changing global configuration or adding isolation machinery. Inherited global
+instructions/other Skills remain shared and not fully isolated.
+
+Actual workspace: ~/Documents/skillfit-workspaces/query-shape-pilot-20261028.
+At P1 completion only inputs/bench, inputs/vibe-coding, request.json,
+bench-check.json and preview.json existed. All 23 copied input-file SHA-256/modes match their sources;
+existing licenses/resources are retained. No new maintained Markdown or runner.
+Proposed native output is ./runs/pilot-001; workspace runs/ and source runs/
+were absent at P1 completion. Old stopped studies and published records are untouched.
+
+Design: baselineSkill=null (no harness-installed Skill), Codex, installed
+workspace delivery, query-shape only, purpose=development, two balanced trials.
+1 task x 2 trials x 2 arms = 4 planned/maximum Agent invocations. No judge,
+drafter, calibration or extra model/subagent calls. Each Agent invocation may
+contain multiple internal model/tool turns; four is not a provider-request cap.
+
+| Proposed whole-batch stop line | Limit |
+| --- | --- |
+| input | 240,000 tokens, including cached input |
+| cachedInput | 200,000 tokens |
+| uncachedInput | 80,000 tokens |
+| output | 12,000 tokens |
+| durationSeconds | 1,200 seconds of accumulated Agent execution |
+
+Per-invocation executor deadline: 240 seconds. These are proposed stop lines,
+not usage or a monetary quote; model/billing rates are unconfirmed. Checks run
+between calls; in-flight work may overshoot, and missing/partial usage stops
+further calls. No retry, replacement or automatic budget expansion.
+
+P1b verified: Node v24.21.0, skillfit 0.14.0 from source checkout 7e47dc0.
+The copied Bench's offline gate has five passes, zero failures, one INFO and one
+warning. NOP fails, reference repair passes all eight facets, and the retained
+regression fails on original/passes on reference. Missing trigger-negative
+controls is retained as a warning: this paired pilot makes no activation claim.
+Difficulty remains uncalibrated; no schema/claim or policy override was added.
+
+P1c verified: eval --request ./request.json --dry-run from the actual workspace,
+using the absolute source CLI path, returns planned with nested environment=ready
+(four PASS, one UNKNOWN for authentication, one INFO for limited global scan).
+Recorded preflight modelCalls=0/cliInvocations=0. Repeating that same dry-run is
+byte-identical; request limits, four calls, paths and frozen inputs agree.
+casePreflight/inputSnapshot remain pending as designed: live execution must
+repeat gates/sealing before spending. Schema-1 measurementScope remains
+legacy-unrecorded. Actual CLI flags, login and served model remain unverified.
+
+- Plan SHA-256: 8758519ab04ec3d2358cf16b1187fa1f8fac2fed97f90a54f56e85442d930aaa.
+- Implementation: 6e94715c917cbda71f592a260129c985efa7a6d919106a4459f6cb9dd8392ee7.
+- Bench: af474475292f1699dcbdc0317b99badd49f4a6ca73a3706aea1df58067025afd.
+- Candidate bundle: d28beeede405e7a2f1a05c4f9364c87e82d2b3b89660c4c0f09754dfdfcf5338.
+
+P1 authorized no live execution. Subsequent P2 authorization covers this request
+and budget; check saved login status and current preview digest first. Any input/runtime/
+environment change requires a fresh preview. Do not restart the old pilot.
+P2 acceptance is one bounded batch, honest grades/costs including stops,
+native audit and disposable portable replay; none of that live work occurred in P1.
+
+Retain this one proposal and its inputs while under review. An obsolete unused
+proposal can be removed as a whole workspace after checking consumers. An
+executed batch stays complete while its costs, interpretation or replay depend
+on it, including failures. Keep temporary values in memory; create no derived
+or export copy without a consumer. No automatic cleanup or additional ledger.
+Final doc/anchor and diff checks pass. Git changes only this existing plan;
+no source/config change, new document, commit, PR, remote CI or npm publication.
+
+## Real-pilot execution (P2)
+
+Authorized on 2026-10-28: execute the fixed P1 request once, within its unchanged
+four-call ceiling, five spending stop lines and 240-second executor deadline.
+P2a passed: saved ChatGPT login is present (not a new login or credential dump),
+the repeated preview is identical/ready, all 23 input files/modes match and the
+native destination is fresh. Confirmation used the exact P1 preview digest.
+
+P2b stopped: CLI exit 2, status=stopped/EXECUTION_FAILED. Only the first baseline
+Agent call started/finished; it timed out at 240.044 seconds. No treatment call
+or remaining three calls started, no final manifest/paired quality result exists,
+and acceptance is inconclusive/ineligible. This is not a completed experiment or
+an efficacy result. No retry, replacement or budget/timeout increase occurred.
+The trial receipt's error is \"codex\" timed out after 240000ms.
+
+| Recovered spending | Known partial token lower bound |
+| --- | --- |
+| input (includes cached) | 302,555 |
+| cachedInput | 255,616 |
+| uncachedInput | 46,939 |
+| output | 6,656 |
+
+Elapsed duration is final at 240.044 seconds; token coverage is partial for this
+failed invocation, not a complete bill. Both input/cache stop lines were reached
+inside the in-flight call; the existing between-call guard preserved usage and
+started no further calls. Configured model is gpt-6.1-sol; the served model is
+unrecorded. The transcript has 14 completed local commands, including five
+Skill/guidance reads and four test commands (exit 1,1,0,0), and two added test
+files remain in the stopped workspace. Those tool observations do not replace
+final grading or establish why every part of the 240 seconds was spent.
+
+P2c verified: saved report --json --replay preserves the stopped prefix/costs;
+native evidence correctly remains unverified as a completed paired result
+because no final manifest exists. Export preview/apply to a fresh OS temporary
+destination succeeded. After moving the package, verify-only validates all 565
+package files and actual offline reproduction preserves status=stopped, exact
+session/partial costs/budget/model declarations, inconclusive/ineligible outcome
+and modelCalls=0. It proves portable stopped evidence, not a completed comparison.
+All 326 native file hashes/modes are unchanged; no active pilot Agent remains.
+
+Retain only this one native group at
+~/Documents/skillfit-workspaces/query-shape-pilot-20261028/runs/pilot-001,
+its unchanged request/preview/input copies and original execution.json /
+execution.stderr.log. The per-trial error/result/transcript are native indexed
+records and remain intact. Removed the owned disposable export and rebuildable
+outer report after checks; no permanent duplicate delivery or new Markdown.
+Temporary check outputs are at skillfit-query-shape-replay-fmn9_kxm under the OS
+temporary directory. Source runs remains absent; old studies/records are untouched.
+
+The live four-call goal remains incomplete. Before any future paid attempt,
+review the retained execution/overhead and declare a fresh preview and spending
+scope; do not silently loosen this request or reuse pilot-001. No new live
+attempt is authorized by this stopped result. Docs/diff checks pass; only this
+original plan changes in Git, with no source/config changes, commit, PR, CI or
+npm publication. Stopping/accounting/read/export/reproduction worked; completed
+paired grading is the remaining acceptance gap.
+
+P2 retrospective (no new model calls): the receipt-matched local event log puts
+the first regression failure at 59 seconds, implementation/focused pass at 172,
+all 11 local tests passing at 233, and timeout at 240. Ten recorded tool batches
+span 1.793 seconds in total; gaps also include model/transport/scheduling and
+cannot be separately attributed. Ten usage increments sum exactly to 302,555
+input tokens; 84.49% of that known subtotal is cached. On a disposable copy,
+the unchanged Bench verifier passes all eight facets after the stop; this does
+not replace P2's missing final manifest or change its stopped status. Recorded
+configured settings are gpt-6.1-sol/xhigh/default, unchanged before P3.
+
+## Wider real-pilot attempt (P3)
+
+Authorized on 2026-10-28 after the retrospective: grant the proposed small
+pilot more time and token headroom. The new goal is one completed baseline /
+vibe-coding pair on query-shape in the same actual workspace; P2's uncompleted
+four-call cohort remains separate. Keep inherited common configuration and
+the original grader; do not lower checks, change model/effort or modify global
+rules. One trial uses the retained balanced setting but cannot counterbalance
+order across multiple pairs. No statistical efficacy/adoption claim.
+
+Use request-relaxed.json and preview-relaxed.json alongside the original files,
+with fresh ./runs/pilot-002. Raise the executor deadline from 240 to the existing
+600-second CLI default. Whole-batch input/cache/noncache/output stop lines are
+1,200,000/1,050,000/200,000/30,000 tokens, with accumulated Agent duration 1,200
+seconds and maxCalls=2. The input figure includes cached input; each stop line
+is independent. This allows roughly twice two observed partial P2 calls for
+cumulative input, plus bounded headroom for completion. Token usage and elapsed
+time are not a monetary quote. In-flight work can overshoot; unknown/partial
+final usage or any execution error stops further dispatch. One new attempt only.
+
+P3a passed: source CLI 0.14.0 is available; request-relaxed.json changes only
+trials, maxCalls, executorTimeoutSeconds, runGroup and spendingBudget. Preview
+983308b69b4d2bf9368acd199bf3281415555ccfbec4fc12e707e88049c71d6f is planned
+with nested environment=ready and two calls. Re-preview is identical; original
+Bench/candidate/implementation fingerprints and gpt-6.1-sol/xhigh/default
+settings match P2. Saved login is present. Freeze all 326 old native file hashes/
+modes plus original request/preview hashes externally before the new run;
+pilot-002 is fresh. Start only the reviewed new digest; no new model calls yet.
+
+P3b stopped: exit 2/status=stopped/EXECUTION_FAILED after the first baseline
+Agent call timed out at 600.041 seconds. CallsStarted/Finished=1 of 2 planned;
+the treatment never started and no final manifest/paired result exists. No token
+stop line was reached. Known partial token lower bounds are input=783,019,
+cachedInput=746,112, uncachedInput=36,907, output=12,747; elapsed duration is
+final, token coverage is partial. Keep these observations separate from P2.
+
+The captured stream additionally records six error events at transcript lines
+60-66: TLS close_notify/handshake EOF, repeated reconnect attempts and waiting
+for network, after OCR rule retrieval and before further review changes. It
+subsequently resumed work. The local session matches the receipt thread/counter
+hash; its last review-check command started at 582.8 seconds, with no final
+assistant message or turn.completed before timeout. Monotonic/wall timing shows
+no clock anomaly. Network interruption is an observed contributor, not proof of
+an OpenAI outage or a measurement of time lost solely to networking. Do not
+attribute this attempt entirely to the executor deadline or keep increasing it.
+There was no host-level experiment retry; Codex's own stream reconnects occurred
+inside that one Agent invocation. Its separate stream retry setting is documented
+in the [official configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+
+P3c passed: the model's final local suite had 20 passing tests, and an unchanged
+Bench verifier run afterward on a disposable copy passes all eight facets.
+That post-stop check does not convert the original result into a completed
+pair. Native stopped read and export preview/apply succeeded; after moving the
+temporary package, all 565 files verify and offline reproduction preserves the
+exact session, costs/budget/model declarations, stopped/inconclusive/ineligible
+result and modelCalls=0. Both 326-file native groups and the original request /
+preview hashes remain unchanged. Removed only owned duplicate verification
+delivery/scratch; retained raw execution-relaxed.json and its stderr next to
+the new request/preview. Proof is in OS temporary skillfit-pilot-002-check-e23di2cn.
+
+Read-only connectivity check: default provider=openai, no custom base URL,
+proxy environment variables or custom CA environment variables were configured.
+A public ChatGPT HEAD request completed TLS verification (curl status 403,
+verify_result=0, 2.755 seconds), without a model request. This tests current
+basic connectivity only; it does not prove long-stream reliability or identify
+which network component reset the earlier stream. No proxy/global/credential
+configuration was modified. Prioritize that connection investigation before
+any further paid cohort, and require a new reviewed preview/spending scope.
+
+P3 remains incomplete as a real paired pilot. No retry, P4/model dispatch,
+calibration, relaxed grader, core-code change, extra maintained document, commit,
+PR, CI or publication. Source runs remains absent; old evidence is intact.
+Docs/diff checks pass. Across P2/P3 there are two attempted baseline Agent
+invocations and no treatment; their known partial token lower bounds total
+input=1,085,574, cachedInput=1,001,728, uncachedInput=83,846, output=19,403.
+This is descriptive accounting of stopped attempts, not a pooled quality cohort
+or complete bill.
 
 ## Checked integration and preview progress
 
