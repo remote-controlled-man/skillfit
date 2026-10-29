@@ -28,5 +28,5 @@ replaces timing sleeps. Each grader and known-correct oracle runs offline.
 Difficulty and baseline saturation require live calibration; none of these
 tasks measures negative Skill routing.
 
-Tasks are grouped under `tasks/<id>/`; `bench.json` owns membership and commands.
-The upstream ISC notices are retained.
+See the [bench directory layout](../../README.md#bench-directory-layout) for task
+grouping and manifest ownership. The upstream ISC notices are retained.

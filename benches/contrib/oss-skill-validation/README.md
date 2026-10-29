@@ -28,5 +28,6 @@ in two repositories. Statistical scale alone does not establish broad debugging
 improvement or absence of future harm. The bench has no negative routing cases;
 it evaluates installed revision outcomes rather than trigger precision.
 
-Tasks are grouped under `tasks/<id>/`; `bench.json` owns membership and commands.
-Shared grading code stays in `verifiers/`. MIT source notices are retained.
+See the [bench directory layout](../../README.md#bench-directory-layout) for task
+grouping and manifest ownership. Shared grading code stays in `verifiers/`. MIT
+source notices are retained.
