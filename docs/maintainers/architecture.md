@@ -4,8 +4,7 @@ skillfit is one TypeScript/Node >=22 ESM CLI with zero runtime dependencies.
 This page explains the current system and the contracts changes must preserve.
 Execution order, progress and validation live only in the
 source-only `docs/work/current.md` (not shipped in npm).
-This is the architecture of the 0.14.0 package and current source;
-[build/version availability](../README.md#choose-your-build) is separate.
+[Build/version availability](../README.md#choose-your-build) is separate.
 
 Start with the map, module owners and workflows. Use the later compatibility,
 retention and extension rules when changing one of those modules.
@@ -358,5 +357,3 @@ instead of restating the fact, and update affected guides when it changes.
 [The release procedure](releases.md) owns source/CI/package/registry publication
 gates and original receipts. Publication and live calls require separate explicit
 authorization; local refactor approval authorizes neither. Do not republish a version.
-
-Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/architecture.md).

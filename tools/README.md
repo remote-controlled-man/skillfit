@@ -39,6 +39,4 @@ Old study procedures remain at their [fixed source](https://github.com/remote-co
 Current tools have no historical-study restore or rerun dependency. Product
 report/export/replay remains under Evaluation Records and its current tests.
 
-Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/scripts/README.md).
-
 <a id="historical-experiments"></a>

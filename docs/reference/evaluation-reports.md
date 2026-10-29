@@ -422,9 +422,8 @@ implementation used by the experiment and a dependency-free replay entry point.
 Export and replay make zero model calls. Replay executes trusted local verifiers.
 Current-source model-identity additions retain per-call public IDs, source locations
 and unknown coverage after relocation. They do not backfill legacy data or prove
-the backend's identity; see [model identity contract](metrics.md#public-model-identity-per-invocation). These additions
-belong to the 0.14.0 package, beyond npm 0.13.1; registry availability
-is separate. Frozen historical packages keep their own
+the backend's identity; see [model identity contract](metrics.md#public-model-identity-per-invocation).
+Frozen historical packages keep their own
 runtime and detection/identity interpretation.
 
 Current-source [measurementScope 1](../../benches/README.md#frozen-scope-and-evidence)
@@ -438,7 +437,7 @@ pinned `reproduce.mjs` each interpret saved evidence with their own runtime.
 For [self-test controls](../guides/bench-authoring.md#test-known-controls), export a native
 suite directory, not its wrapper. It retains a null requested claim, mock identity,
 unknown provider usage and ineligibility; replay executes saved verifiers, not
-control actions or an executor. These contracts are included in the 0.14.0 package, beyond npm 0.13.1.
+control actions or an executor.
 
 ### Preview, export and move
 
@@ -551,5 +550,3 @@ remain visible. Redaction changes the indexed package; keep the original evidenc
 and publish any reviewed redacted derivative with its own explicit recipe.
 
 
-
-Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/reference/evaluation-reports.md).

@@ -379,5 +379,3 @@ statistical protocol used for Skill experiments applies.
 Useful cases check task outcomes, correct/false tool selection, errors, observable
 costs and confirmation behavior. Prefer a disposable fixture server for repeatable
 outcomes. An experiment does not authorize side effects in external systems.
-
-Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/guides/experiment-workflow.md).

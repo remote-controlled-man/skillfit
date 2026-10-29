@@ -181,5 +181,3 @@ Before contributing, use the [contributed bench rules](../../benches/contrib/REA
 state real origin, review frozen bytes and ground truth, run offline gates and
 controls, explain remaining warnings, and distinguish any authorized live
 calibration from offline checks.
-
-Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/guides/bench-authoring.md).

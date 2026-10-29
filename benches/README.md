@@ -251,6 +251,4 @@ regression continue to block it. Activation requires representative positive
 and negative labels plus actual detection coverage. These diagnostics are not
 MDE estimates, power guarantees or trajectory-level scoring.
 
-Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/benches/README.md).
-
 Publication-era Bench documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/benches/README.md).

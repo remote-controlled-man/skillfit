@@ -3,10 +3,8 @@
 This is the current source contract for what skillfit measures and how it
 computes verdicts. The **v2 statistical protocol** is frozen at 2026-09-23;
 additive evidence/operational contracts do not change its formulas, thresholds,
-paired exclusions or historical interpretations. The 0.14.0 package
-includes numerical, trigger, model-identity, self-test and bench-claim additions
-beyond npm 0.13.1. Registry availability is verified separately; see the
-[build/version entry](../README.md#choose-your-build). See the
+paired exclusions or historical interpretations. Version and registry availability
+follow the [build/version entry](../README.md#choose-your-build). See the
 [capability table](../guides/experiment-workflow.md) for
 implemented readers and verification scope, and [revision history](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/metrics-history.md)
 for the former chronological additions. Changes to this contract need a reasoned
@@ -655,10 +653,13 @@ and [drafting records](../guides/bench-authoring.md).
   installed-version/authentication validation and third-party live reproduction.
   Current repository evidence does not establish an independent third-party live
   reproduction; author runs and offline replay must be labeled accordingly.
+- Missing, invalid or stale usage never becomes zero or final, and an unknown
+  observation cannot enforce a stop line.
+  [Costs, budgets and stopping](#costs-budgets-and-stopping) owns the coverage
+  states, delayed lower bounds and overshoot rules; other pages link here instead
+  of restating them.
 
 skillfit reports observations on a pinned task mixture and available model
 identity. Whether to enable a configuration also requires representative tasks,
 independent validation, complete costs and the chosen policy's gates. It cannot
 promise a conclusive quality verdict for every budget or workflow claim.
-
-Previous source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/metrics.md).

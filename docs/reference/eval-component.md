@@ -249,8 +249,6 @@ not signatures or independent provider attestations. Use trusted bench definitio
 and retain/share an external copy of evidence hashes for provenance.
 
 
-Earlier source documentation: [fixed snapshot](https://github.com/remote-controlled-man/skillfit/blob/4ec83672b69799bc62613c381f6b12ba8f3f3068/docs/reference/eval-component.md).
-
 ## Positional CLI option summary
 
 Generated from the CLI's help and option declarations. Request defaults remain
