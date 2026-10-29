@@ -16,6 +16,16 @@ function formatK(value: number): string {
   return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value);
 }
 
+/**
+ * Which run the plan text describes. A preview writes nothing; a dispatch is about
+ * to spend, so it states the call budget in the slot where a preview disclaims writing.
+ * State travels as this parameter rather than as substrings a caller strips afterwards.
+ */
+type PlanView = { mode: 'preview' } | { mode: 'live'; plannedCalls: number; maxCalls: number };
+
+const callsLine = (view: Extract<PlanView, { mode: 'live' }>) =>
+  `Calls    : ${view.plannedCalls} planned; ceiling ${view.maxCalls}`;
+
 function renderPlan(
   bench: Bench,
   target: EvaluationTarget,
@@ -27,9 +37,10 @@ function renderPlan(
   inputMode: InputMode,
   baselineTarget: EvaluationTarget | undefined,
   estimate: { baseline: number; treatment: number },
+  view: PlanView,
 ): string {
   const lines: string[] = [];
-  lines.push('Experiment plan (dry run)');
+  lines.push(view.mode === 'preview' ? 'Experiment plan (dry run)' : 'Experiment plan');
   lines.push(`Target   : ${target.name} (${target.kind}, ${target.files.length} files, bundle sha256 ${target.sha256.slice(0, 12)}…)`);
   if (baselineTarget) {
     lines.push(`Baseline : ${baselineTarget.name} (${baselineTarget.files.length} files, bundle sha256 ${baselineTarget.sha256.slice(0, 12)}…)`);
@@ -60,8 +71,8 @@ function renderPlan(
   for (const task of bench.tasks) {
     lines.push(`- ${task.id}: fixture ${task.fixture}, verifier \`${task.verifier}\`${task.rubric ? `, rubric ${task.rubric}` : ''}`);
   }
-  lines.push(`Output   : ${join(runsRoot, runGroup)} (not created)`);
-  lines.push('Dry run — nothing was written.');
+  lines.push(`Output   : ${join(runsRoot, runGroup)}${view.mode === 'preview' ? ' (not created)' : ''}`);
+  lines.push(view.mode === 'preview' ? 'Dry run — nothing was written.' : callsLine(view));
   return lines.join('\n');
 }
 
@@ -74,9 +85,10 @@ function renderTriggerPlan(
   runGroup: string,
   installDir: string | undefined,
   estimate: { baseline: number; treatment: number },
+  view: PlanView,
 ): string {
   const lines: string[] = [];
-  lines.push('Trigger experiment plan (dry run)');
+  lines.push(view.mode === 'preview' ? 'Trigger experiment plan (dry run)' : 'Trigger experiment plan');
   lines.push(`Skill    : ${skill.name} (${skill.files.length} files, bundle sha256 ${skill.sha256.slice(0, 12)}…)`);
   lines.push(`           installed into ${installDir ?? 'unresolved'} of each run directory — never injected into the prompt`);
   lines.push(`Bench    : ${bench.name} @ ${bench.dir}`);
@@ -102,8 +114,8 @@ function renderTriggerPlan(
           : 'should NOT trigger (negative control)';
     lines.push(`- ${task.id}: ${label}`);
   }
-  lines.push(`Output   : ${join(runsRoot, runGroup)} (not created)`);
-  lines.push('Dry run — nothing was written.');
+  lines.push(`Output   : ${join(runsRoot, runGroup)}${view.mode === 'preview' ? ' (not created)' : ''}`);
+  lines.push(view.mode === 'preview' ? 'Dry run — nothing was written.' : callsLine(view));
   return lines.join('\n');
 }
 
@@ -114,7 +126,7 @@ export function evaluationPlanLines(resolved: ResolvedEvalInputs): string[] {
   const result = [...resolved.notes], log = (line: string) => result.push(line);
   if (resolved.preview.mode === 'trigger') {
     log(measurementScopeText(scope));
-    log(renderTriggerPlan(bench, target as SkillBundle, executor, trials, runsRoot, runGroup, skillInstallDir, promptEstimate));
+    log(renderTriggerPlan(bench, target as SkillBundle, executor, trials, runsRoot, runGroup, skillInstallDir, promptEstimate, { mode: 'preview' }));
     log(renderAgentEnvironment(agentPreflight));
     log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(competitors.length ? `Compete  : ${competitors.map(entry => entry.name).join(', ')}` : 'Compete  : alone (recall is an upper bound)');
@@ -123,7 +135,7 @@ export function evaluationPlanLines(resolved: ResolvedEvalInputs): string[] {
     if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; ${spendingBudget.durationSeconds === null ? 'checked during calls using delayed local Token snapshots; unknown updates cannot guarantee a cutoff' : 'checked between calls'}, in-flight overshoot remains possible`);
   } else {
     log(measurementScopeText(scope));
-    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget, promptEstimate));
+    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget, promptEstimate, { mode: 'preview' }));
     log(renderAgentEnvironment(agentPreflight));
     log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
@@ -147,10 +159,11 @@ export function evaluationPresentation(log?: (line: string) => void): EvalPresen
     dispatch: resolved => {
       const { bench, target, baselineTarget, executor, judge, trials, runsRoot, runGroup, inputMode, skillInstallDir, promptEstimate, competitors } = resolved;
       const { agentPreflight, plannedCalls, maxCalls } = resolved.preview;
+      const view = { mode: 'live', plannedCalls, maxCalls } as const;
       if (resolved.preview.mode === 'trigger') {
-        output(renderTriggerPlan(bench, target as SkillBundle, executor, trials, runsRoot, runGroup, skillInstallDir, promptEstimate).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+        output(renderTriggerPlan(bench, target as SkillBundle, executor, trials, runsRoot, runGroup, skillInstallDir, promptEstimate, view));
         output(competitors.length ? `Compete  : ${competitors.map(entry => entry.name).join(', ')}` : 'Compete  : alone (recall is an upper bound)');
-      } else output(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget, promptEstimate).replace(' (dry run)', '').replace(' (not created)', '').replace('Dry run — nothing was written.', `Calls    : ${plannedCalls} planned; ceiling ${maxCalls}`));
+      } else output(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget, promptEstimate, view));
       output(renderAgentEnvironment(agentPreflight));
     },
     completed: (manifest, resolved) => output('mode' in manifest
