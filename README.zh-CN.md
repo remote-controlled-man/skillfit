@@ -10,7 +10,7 @@
 Codex CLI 基线：每一个都多花 **9–27% 的 input token**，而没有一个展现出<br/>
 稳健的任务质量收益 —— [完整表格与其边界](#我们自己的数据)。
 
-skillfit 把这套配对实验跑在**你自己的**任务上：确定性 verifier、精确 McNemar<br/>
+skillfit 把这套配对评测跑在**你自己的**任务上：确定性 verifier、精确 McNemar<br/>
 判定、配对 bootstrap 区间和触发率 —— 让"这个 skill 感觉有用"变成带日期、<br/>
 可回放、且写明边界的证据。
 
