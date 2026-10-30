@@ -10,7 +10,7 @@ We put 8 popular workflow skills through 24 baseline/treatment pairs against a<b
 frozen Codex CLI baseline: every one cost **9–27% more input tokens**, and none<br/>
 showed a robust task-quality gain — [full table and its limits](#our-own-data).
 
-skillfit runs that paired experiment on *your* tasks, with deterministic verifiers,<br/>
+skillfit runs that paired evaluation on *your* tasks, with deterministic verifiers,<br/>
 an exact McNemar verdict, paired-bootstrap intervals and trigger rates — so "this<br/>
 skill feels useful" becomes dated, replayable evidence with its limits stated.
 

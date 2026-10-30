@@ -1,7 +1,7 @@
 {
   "name": "skillfit",
   "version": "0.14.0",
-  "description": "A/B testing for agent configuration: paired experiments for Skills, rules and MCP setups, with deterministic verifiers and replayable evidence.",
+  "description": "A/B testing for agent configuration: paired evaluation of Skills, rules and MCP setups, with deterministic verifiers and replayable evidence.",
   "type": "module",
   "bin": {
     "skillfit": "dist/cli.js"
