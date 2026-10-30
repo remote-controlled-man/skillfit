@@ -344,15 +344,6 @@ async function main(): Promise<void> {
         const report = await runBenchCheck({
           dir: positionals[2],
           log: values.json ? () => {} : undefined,
-          calibrate: values.calibrate
-            ? {
-                agent: values.agent,
-                inputMode,
-                maxCalls,
-                dryRun: values['dry-run'] ?? false,
-                trials,
-              }
-            : false,
         });
         if (values.json) console.log(JSON.stringify(benchCheckJson(report), null, 2));
         if (report.failures > 0) process.exitCode = 1;
