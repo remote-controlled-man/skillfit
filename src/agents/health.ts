@@ -6,7 +6,7 @@ import path from 'node:path';
 import { getAgent, loadMatrix, skillUserDirSpecs, type AgentDef } from './matrix.js';
 import { parseFrontmatter } from "../resources/frontmatter.js";
 
-const CLAUDE_MD_MAX_LINES = 200;
+const NATIVE_RULES_MAX_LINES = 200;
 const AGENTS_MD_MAX_BYTES = 32 * 1024;
 const SKILL_COUNT_WARN_THRESHOLD = 10;
 const MCP_SERVER_WARN_THRESHOLD = 10;
@@ -177,8 +177,11 @@ function checkRules(agent: AgentDef, ctx: Ctx): Check[] {
     }
     const stats = `${countLines(content)} lines, ${formatBytes(stat.size)}`;
     const name = path.basename(resolved);
-    if (name.toUpperCase() === 'CLAUDE.MD' && countLines(content) > CLAUDE_MD_MAX_LINES) {
-      checks.push(check('WARN', `${label} — ${stats} — exceeds ${CLAUDE_MD_MAX_LINES} lines; long memory files dilute every prompt`));
+    // The same matrix question bridgeChecks asks: an agent that does not read AGENTS.md
+    // natively has one memory file of its own, sized by lines rather than by the
+    // AGENTS.md byte budget below.
+    if (!agent.rules.readsAgentsMd && countLines(content) > NATIVE_RULES_MAX_LINES) {
+      checks.push(check('WARN', `${label} — ${stats} — exceeds ${NATIVE_RULES_MAX_LINES} lines; long memory files dilute every prompt`));
     } else if (isAgentsMdName(name) && stat.size > AGENTS_MD_MAX_BYTES) {
       checks.push(check('WARN', `${label} — ${stats} — exceeds the ${AGENTS_MD_MAX_BYTES / 1024} KiB AGENTS.md budget; the agent may truncate it`));
     } else {

@@ -17,13 +17,14 @@ interface UsageEventUsage {
   output?: number;
 }
 
-function sessionsRoot(homeDir: string | undefined, env: NodeJS.ProcessEnv): string {
+/** No declared session directory means no observation, not a guessed path. */
+function sessionsRoot(homeDir: string | undefined, env: NodeJS.ProcessEnv): string | null {
   const sessions = getAgent('kimi-code').sessions;
-  const fallback = '.kimi-code/sessions';
-  const relative = sessions?.dir.startsWith('~/') ? sessions.dir.slice(2) : (sessions?.dir ?? fallback);
+  if (sessions?.dir === undefined) return null;
+  const relative = sessions.dir.startsWith('~/') ? sessions.dir.slice(2) : sessions.dir;
   // An injected home is a fixture root. Do not let the process environment redirect the read.
   if (homeDir !== undefined) return join(homeDir, relative);
-  const override = sessions?.homeOverride;
+  const override = sessions.homeOverride;
   const overrideRoot = override === undefined ? undefined : env[override.env];
   if (override && overrideRoot) return join(overrideRoot, override.relativePath);
   return join(homedir(), relative);
@@ -40,7 +41,7 @@ export async function probeKimiSessionUsage(
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<SessionUsage | undefined> {
   const root = sessionsRoot(homeDir, env);
-  if (!existsSync(root)) return undefined;
+  if (root === null || !existsSync(root)) return undefined;
   const suffix = `_${workDirKeyHash(workdir)}`;
   let buckets;
   try {
