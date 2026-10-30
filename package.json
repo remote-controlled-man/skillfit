@@ -1,7 +1,7 @@
 {
   "name": "skillfit",
   "version": "0.14.0",
-  "description": "Evidence-driven configuration for AI coding agents: measure which skills, rules and MCP servers actually help \u2014 then install only those.",
+  "description": "A/B testing for agent configuration: paired experiments for Skills, rules and MCP setups, with deterministic verifiers and replayable evidence.",
   "type": "module",
   "bin": {
     "skillfit": "dist/cli.js"

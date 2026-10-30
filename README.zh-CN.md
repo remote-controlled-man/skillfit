@@ -53,6 +53,18 @@ npx skillfit@0.14.0 report eval ./runs/controls-001/existing-mock-arms
 
 `bench check` 用已知正确与已知错误的答案去跑内置 verifier，你可以直接看到 harness 的鉴别力：oracle 通过、空输出失败、mock 基线失败、mock 实验组通过。`bench self-test` 接着在合成对照上驱动完整的配对流水线——grader、精确 McNemar 判定、配对 bootstrap 区间、审计——再由 `report eval` 渲染出来。那份报告带有 **Synthetic harness run** 横幅：它证明流水线可用，不证明任何 Skill 有收益。给 self-test 加上 `--dry-run` 可只打印计划、不写任何文件。
 
+## 为什么
+
+安装一份配置，并不能说明它是否有助于你的任务。三项已发表的结果说明了直觉与测量能差多远：
+
+- 精选 Skill 在 87 个任务、18 种模型与执行框架组合中，把平均通过率从 **33.9% 提升到 50.5%（+16.6pp）**——但组合层面的收益跨度为 **+4.1pp 到 +25.7pp**，所以这个总量对**你的**配置几乎说明不了什么（[SkillsBench v4](https://arxiv.org/abs/2602.12670v4)）。
+- LLM 生成的仓库 context 文件让 agent **明显更贵，却没有变得更好**：成本在 **SWE-bench 上升 20%、CTXbench 上升 23%**（p < 0.001%），而解决率变化为 −0.5% 与 −2%、无显著效应（p = 87% 与 37%），并在 8 个设置中有 5 个出现下降（[Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3) §4.2）。
+- Snyk 在 2026 年 2 月 5 日的研究中发现，扫描的 **3,984 个公开 Skill 中有 36.82% 存在至少一种安全问题**（[ToxicSkills 研究结果](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)）。
+
+skillfit 提供配对 A/B 实验、确定性 verifier、统计判定和触发率测量。这些研究解释了工具的用途，不能验证 skillfit 本身，也不能预测你的任务会获得多少收益。
+
+围绕你自己的任务编写 case：固定初始文件、写下任务请求、定义正确结果必须满足的条件。内置 bench 用来教格式；CLI 负责运行你的 case、对比结果和成本、保存证据。参见[case 编写指南](docs/guides/bench-authoring.md)。
+
 ## 用 npm 开始
 
 在项目目录执行，指向你真正在用的 Skill——任何含 `SKILL.md` 且带 `name` 与 `description` frontmatter 的目录都可以。把下面的示例存成 `my-skill/SKILL.md`，也就是 `eval` 命令引用的那个路径：
@@ -78,42 +90,6 @@ npx skillfit@0.14.0 eval ./my-skill --bench ./my-bench --mode installed --agent 
 ```
 
 测收益前先把教学用 fixture、prompt、verifier 和 oracle 换成真实任务。预览声明两次调用，实际不调用。检查 `plan.evaluation.agentPreflight.status`；离线登录状态仍未知。case 与运行记录分开放。继续阅读[第一次真实评测](docs/guides/first-real-eval.md)。
-
-### 从源码运行
-
-下面固定已审查的实现快照，便于复现这套操作。它包含本文描述的行为，记录时间早于 0.14.0 版本号更新。开发当前工作树时按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。后续 `node dist/cli.js` 示例需要先构建源码：
-
-```bash
-git clone https://github.com/remote-controlled-man/skillfit.git
-cd skillfit
-git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
-npm ci
-npm run build
-node dist/cli.js --help
-node dist/cli.js bench check benches/code-review
-node dist/cli.js bench check benches/debugging
-node dist/cli.js doctor
-node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
-node dist/cli.js install --agent codex --dry-run
-```
-
-校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
-
-0.14.0 包包含文档中标为**当前源码**的测量功能，其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益，不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
-
-配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。8×5 是规模/采用下限，不是每项 bench 内精确检验判定的起点，也不保证统计功效。sampling 未固定，目前没有经验证的 MDE 规划器。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/guides/experiment-workflow.md#bound-calls-and-spending)。
-
-## 为什么
-
-安装一份配置，并不能说明它是否有助于你的任务。三项已发表的结果说明了直觉与测量能差多远：
-
-- 精选 Skill 在 87 个任务、18 种模型与执行框架组合中，把平均通过率从 **33.9% 提升到 50.5%（+16.6pp）**——但组合层面的收益跨度为 **+4.1pp 到 +25.7pp**，所以这个总量对**你的**配置几乎说明不了什么（[SkillsBench v4](https://arxiv.org/abs/2602.12670v4)）。
-- LLM 生成的仓库 context 文件让 agent **明显更贵，却没有变得更好**：成本在 **SWE-bench 上升 20%、CTXbench 上升 23%**（p < 0.001%），而解决率变化为 −0.5% 与 −2%、无显著效应（p = 87% 与 37%），并在 8 个设置中有 5 个出现下降（[Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3) §4.2）。
-- Snyk 在 2026 年 2 月 5 日的研究中发现，扫描的 **3,984 个公开 Skill 中有 36.82% 存在至少一种安全问题**（[ToxicSkills 研究结果](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)）。
-
-skillfit 提供配对 A/B 实验、确定性 verifier、统计判定和触发率测量。这些研究解释了工具的用途，不能验证 skillfit 本身，也不能预测你的任务会获得多少收益。
-
-围绕你自己的任务编写 case：固定初始文件、写下任务请求、定义正确结果必须满足的条件。内置 bench 用来教格式；CLI 负责运行你的 case、对比结果和成本、保存证据。参见[case 编写指南](docs/guides/bench-authoring.md)。
 
 ## 你能得到什么
 
@@ -144,7 +120,33 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 
 9 次相关任务执行只记录到 1 次触发。表中的通过数来自同一已安装组，不是无 Skill 基线；这项单臂观测不能说明加载 Skill 是否改善结果。
 
-<sub>2026-09-22 在 Kimi Code 上针对当时的 4 任务 `code-review` bench 抓取。该 bench 之后新增了第 5 个任务；上面四行指标是用那次运行记录的每任务计数重新渲染的——运行是真实的，格式是当前的。</sub>
+<sub>2026-09-22 从源码检出在 Kimi Code 上针对当时的 4 任务 `code-review` bench 抓取。该 bench 之后新增了第 5 个任务；上面四行指标是用那次运行记录的每任务计数重新渲染的——运行是真实的，格式是当前的。</sub>
+
+## 本文往下都在源码轨道上运行
+
+上面的 npm 命令在任何目录都能跑。从这里往下，示例都写成 `node dist/cli.js …`，在仓库根目录运行，这样示例就能直接引用 skillfit 自带的 bench、示例 manifest 和 `skills/` 目录。构建一次即可：
+
+```bash
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
+npm ci
+npm run build
+node dist/cli.js --help
+node dist/cli.js bench check benches/code-review
+node dist/cli.js bench check benches/debugging
+node dist/cli.js doctor
+node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+node dist/cli.js install --agent codex --dry-run
+```
+
+该 detached commit 钉住本页描述的那份已审阅实现，它早于 0.14.0 版本号变更。要在自己的检出上开发，请按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。
+
+校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
+
+0.14.0 包包含文档中标为**当前源码**的测量功能，其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益，不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
+
+配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。8×5 是规模/采用下限，不是每项 bench 内精确检验判定的起点，也不保证统计功效。sampling 未固定，目前没有经验证的 MDE 规划器。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/guides/experiment-workflow.md#bound-calls-and-spending)。
 
 ## 创建自己的 case
 
@@ -324,9 +326,11 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 ## Roadmap
 
-参见[更新记录](CHANGELOG.md)和[发布流程](docs/maintainers/releases.md)。
+**下一步：** 在本项目不拥有的任务上做真实环境验证，并增加更多 Agent CLI 适配器。目前没有经过验证的最小可检测效应规划器，因此调用预算是用户自己的决定。
 
-当前适配器与 trigger 的验证边界见[能力表](docs/guides/experiment-workflow.md#executor-capabilities)，实施待办见当前工作计划。后续工作包括真实环境验证和增加 Agent 适配器。[原始研究记录](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md)与[调试研究状态](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)保留当前结论的限制。67 个 Skill 的目录和 13 个 Skill 的入门集均未作为集合评测。
+**尚未测量：** 67 个 Skill 的目录和 13 个 Skill 的入门集都未作为集合评测；内置 bench 用来教格式，不用来确立模型质量。适配器与 trigger 的验证边界见[能力表](docs/guides/experiment-workflow.md#executor-capabilities)。
+
+已发布的行为和日期以[更新记录](CHANGELOG.md)为准，发布由[发布流程](docs/maintainers/releases.md)负责。
 
 ## 获取帮助
 

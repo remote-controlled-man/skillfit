@@ -53,6 +53,18 @@ npx skillfit@0.14.0 report eval ./runs/controls-001/existing-mock-arms
 
 `bench check` runs the bundled verifiers against known-good and known-bad answers, so you can watch the harness discriminate: the oracle passes, an empty output fails, a mock baseline fails and a mock treatment passes. `bench self-test` then drives the complete paired pipeline — grader, exact McNemar verdict, paired-bootstrap intervals, audit — on synthetic controls, and `report eval` renders it. That report is banner-marked **Synthetic harness run**: it proves the pipeline works, not that any Skill helps. Add `--dry-run` to the self-test to print its plan and write nothing.
 
+## Why
+
+Installing a configuration does not show whether it helps your tasks. Three published results show how far intuition drifts from measurement:
+
+- Curated Skills raised the average pass rate from **33.9% to 50.5% (+16.6pp)** across 87 tasks and 18 model–harness configurations — but configuration-level gains ranged from **+4.1pp to +25.7pp**, so the aggregate says little about *your* setup ([SkillsBench v4](https://arxiv.org/abs/2602.12670v4)).
+- LLM-generated repository context files made agents **significantly more expensive without making them better**: cost rose **20% on SWE-bench and 23% on CTXbench** (p < 0.001%), while resolution rate moved −0.5% and −2% with no significant effect (p = 87% and 37%), and dropped in 5 of 8 settings ([Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3), §4.2).
+- **36.82% of 3,984 scanned public Skills** had at least one security issue in Snyk’s February 5, 2026 study ([ToxicSkills findings](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)).
+
+skillfit provides paired A/B experiments with deterministic verifiers, statistical verdicts and trigger-rate measurement. These studies motivate the tool; they do not validate skillfit or predict gains on your tasks.
+
+Build cases around your own tasks: pin the starting files, write the request, and define what a correct result must do. The bundled benches teach the format; the CLI runs your cases, compares outcomes and costs, and preserves evidence. See the [case authoring guide](docs/guides/bench-authoring.md).
+
 ## First run with npm
 
 In your project directory, point at a Skill you actually use — any directory holding a `SKILL.md` with `name` and `description` frontmatter. Save the example below as `my-skill/SKILL.md`, which is what the `eval` command refers to:
@@ -78,45 +90,6 @@ npx skillfit@0.14.0 eval ./my-skill --bench ./my-bench --mode installed --agent 
 ```
 
 Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
-
-### Run from source
-
-For a reproducible source walkthrough, build the reviewed implementation snapshot
-below. It contains the behavior described here and predates the 0.14.0 version bump.
-For development on your checkout, follow [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
-The remaining `node dist/cli.js` examples require a source build:
-
-```bash
-git clone https://github.com/remote-controlled-man/skillfit.git
-cd skillfit
-git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
-npm ci
-npm run build
-node dist/cli.js --help
-node dist/cli.js bench check benches/code-review
-node dist/cli.js bench check benches/debugging
-node dist/cli.js doctor
-node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
-node dist/cli.js install --agent codex --dry-run
-```
-
-The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
-
-The 0.14.0 package carries the measurement features described as **current source**, including [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit, and unsupported schema 2 targets refuse before verifier, oracle or model calls. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
-
-Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
-
-## Why
-
-Installing a configuration does not show whether it helps your tasks. Three published results show how far intuition drifts from measurement:
-
-- Curated Skills raised the average pass rate from **33.9% to 50.5% (+16.6pp)** across 87 tasks and 18 model–harness configurations — but configuration-level gains ranged from **+4.1pp to +25.7pp**, so the aggregate says little about *your* setup ([SkillsBench v4](https://arxiv.org/abs/2602.12670v4)).
-- LLM-generated repository context files made agents **significantly more expensive without making them better**: cost rose **20% on SWE-bench and 23% on CTXbench** (p < 0.001%), while resolution rate moved −0.5% and −2% with no significant effect (p = 87% and 37%), and dropped in 5 of 8 settings ([Evaluating AGENTS.md v3](https://arxiv.org/abs/2602.11988v3), §4.2).
-- **36.82% of 3,984 scanned public Skills** had at least one security issue in Snyk’s February 5, 2026 study ([ToxicSkills findings](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)).
-
-skillfit provides paired A/B experiments with deterministic verifiers, statistical verdicts and trigger-rate measurement. These studies motivate the tool; they do not validate skillfit or predict gains on your tasks.
-
-Build cases around your own tasks: pin the starting files, write the request, and define what a correct result must do. The bundled benches teach the format; the CLI runs your cases, compares outcomes and costs, and preserves evidence. See the [case authoring guide](docs/guides/bench-authoring.md).
 
 ## What you get
 
@@ -147,7 +120,38 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 
 The run recorded one activation in nine in-domain trials. The table's pass counts belong to that same installed arm; they are not a no-Skill baseline. This single-arm observation cannot show whether loading the Skill improves outcomes.
 
-<sub>Captured 2026-09-22 on Kimi Code against the four-task `code-review` bench. The bench has since gained a fifth task; the four metric lines above are re-rendered from that run's recorded per-task counts, so the run is real and the formatting is current.</sub>
+<sub>Captured 2026-09-22 on Kimi Code from a source checkout, against the four-task `code-review` bench. The bench has since gained a fifth task; the four metric lines above are re-rendered from that run's recorded per-task counts, so the run is real and the formatting is current.</sub>
+
+## Running the rest of this page from source
+
+The npm commands above run from any directory. Everything below is written as
+`node dist/cli.js …` and runs from the repository root, so the examples can point
+at skillfit's own benches, example manifests and `skills/` directory. Build that
+checkout once:
+
+```bash
+git clone https://github.com/remote-controlled-man/skillfit.git
+cd skillfit
+git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
+npm ci
+npm run build
+node dist/cli.js --help
+node dist/cli.js bench check benches/code-review
+node dist/cli.js bench check benches/debugging
+node dist/cli.js doctor
+node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-run
+node dist/cli.js install --agent codex --dry-run
+```
+
+The detached commit pins the reviewed implementation this page describes; it
+predates the 0.14.0 version bump. For development on your own checkout, follow
+[CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
+
+The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
+
+The 0.14.0 package carries the measurement features described as **current source**, including [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit, and unsupported schema 2 targets refuse before verifier, oracle or model calls. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+
+Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
 
 ## Build your own cases
 
@@ -329,9 +333,11 @@ Not affiliated with Anthropic, OpenAI, Moonshot AI, or any agent vendor. Evaluat
 
 ## Roadmap
 
-See the [changelog](CHANGELOG.md) and [release procedure](docs/maintainers/releases.md).
+**Next:** live validation on tasks this project does not own, and adapters for more agent CLIs. No validated minimum-detectable-effect planner exists, so choosing a call budget stays a user decision.
 
-See the [capability table](docs/guides/experiment-workflow.md#executor-capabilities) for current adapter and trigger verification limits, and the current work plan for pending implementation. Later work includes live validation and additional agent adapters. The [original study records](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md) and [debugging study status](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) retain the limits of current results. The 67-Skill catalog and 13-Skill starter set are not evaluated as sets.
+**Not yet measured:** the 67-Skill catalog and the 13-Skill starter set are not evaluated as sets, and bundled benches teach the format rather than establish model quality. Adapter and trigger-verification limits are in the [capability table](docs/guides/experiment-workflow.md#executor-capabilities).
+
+Released behavior and dates live in the [changelog](CHANGELOG.md); the [release procedure](docs/maintainers/releases.md) owns publication.
 
 ## Getting help
 
