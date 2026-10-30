@@ -122,9 +122,12 @@ the request during a run stops further calls and preserves settled receipts.
 Stdout contains one JSON document. Execution diagnostics go to stderr. Success
 responses use `schemaVersion: 1`, `kind: "skillfit.eval-result"`:
 
-The [response schema](../schemas/eval-result.schema.json) defines the envelope and
-decision invariants. Different statuses omit fields whose evidence is unavailable;
-callers should retain unknown/new fields for forward-compatible reporting.
+The [response schema](../schemas/eval-result.schema.json) defines the envelope,
+which fields each status requires, and the decision constraints on `acceptance`,
+`costs` and `error`. It does not describe the inner shape of every recorded
+field; the code that builds and reads a result enforces those. Different
+statuses omit fields whose evidence is unavailable; callers should retain
+unknown/new fields for forward-compatible reporting.
 
 | Field | Meaning |
 |---|---|
