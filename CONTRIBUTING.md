@@ -28,7 +28,7 @@ and relevant versions. Use [SECURITY.md](SECURITY.md) for private security repor
 
 1. **A bench from your real workflow.** Read the [bench authoring guide](docs/guides/bench-authoring.md) for scaffolding with `bench init`, capturing failures with `bench add --freeze` and importing fixes with `bench add --from-commit`. Run `node dist/cli.js bench check <bench-dir>` offline before submitting a reusable task under `benches/contrib/<name>/`. Follow the [format and self-containment rules](benches/README.md). Calibration is separate: `--calibrate` calls a real agent, can cost money and is not an offline contribution prerequisite. Preview and authorize any live work separately.
 2. **Reproductions.** Share a configuration and reviewed saved-run manifest that others can inspect and replay; report agreement, disagreement and unknowns. A new live run is optional and can incur model costs. Use the [experiment workflow](docs/guides/experiment-workflow.md) for execution and retention, and the [report reference](docs/reference/evaluation-reports.md) for portable offline replay.
-3. **Agent matrix corrections.** Vendor config surfaces change fast. If `src/matrix/agents.json` is stale, a PR with the official docs link and a `verifiedAt` bump is always welcome.
+3. **Agent matrix corrections.** Vendor config surfaces change fast. If `src/matrix/agents.json` is stale, a PR with the official docs link and a `verifiedAt` bump is always welcome. Every test run checks the matrix against [its schema](src/matrix/agents.schema.json), so a misspelled or unexpected field fails the build instead of being ignored.
 
 ## Ground rules
 
