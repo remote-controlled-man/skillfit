@@ -154,7 +154,14 @@ export function evaluationPlanLines(resolved: ResolvedEvalInputs): string[] {
 export function evaluationPresentation(log?: (line: string) => void): EvalPresentation {
   const output = log ?? (() => {});
   return {
-    preview: (resolved, sha256) => { for (const line of evaluationPlanLines(resolved)) output(line); output(`Plan SHA : ${sha256}`); },
+    preview: (resolved, sha256) => {
+      for (const line of evaluationPlanLines(resolved)) output(line);
+      output(`Plan SHA : ${sha256}`);
+      // The preview is where a reader decides whether to spend. Name the exact next
+      // command per mode: JSON execution refuses to start without the plan hash, and
+      // text execution confirms interactively.
+      output(`Next     : text mode omits --dry-run and confirms interactively; JSON mode requires --plan-sha ${sha256} --run-group ${resolved.runGroup}.`);
+    },
     resolved: resolved => { for (const note of resolved.notes) output(note); },
     dispatch: resolved => {
       const { bench, target, baselineTarget, executor, judge, trials, runsRoot, runGroup, inputMode, skillInstallDir, promptEstimate, competitors } = resolved;

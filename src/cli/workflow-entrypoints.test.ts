@@ -106,3 +106,14 @@ test('an explicitly enabled API judge without credentials blocks rather than sil
     await assert.rejects(runEval(base), AgentPreflightFailed); assert.equal(f.calls(), 0); assert.equal(existsSync(base.runsRoot!), false);
   } finally { names.forEach((name, i) => { if (previous[i] === undefined) delete process.env[name]; else process.env[name] = previous[i]; }); }
 });
+
+test('a dry-run plan names the exact command that executes it', async t => {
+  const f = fixture(t);
+  const lines: string[] = [];
+  await runEvalCli({ ...f.base, dryRun: true, log: line => lines.push(line) });
+  const output = lines.join('\n');
+  assert.match(output, /Plan SHA : [0-9a-f]{64}/);
+  assert.match(output,
+    /Next\s+: text mode omits --dry-run and confirms interactively; JSON mode requires --plan-sha [0-9a-f]{64} --run-group trigger\./);
+  assert.equal(f.calls(), 0, 'naming the next command must not start a call');
+});
