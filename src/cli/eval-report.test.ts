@@ -477,3 +477,23 @@ test('revision report rejects incompatible baseline identities and preserves leg
   }
   assert.throws(() => parseEvalReport({ ...value, skillDelivery: undefined }), /requires two installed Skill/);
 });
+
+test('report eval names a missing saved run instead of surfacing a raw filesystem error', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'skillfit-missing-report-'));
+  try {
+    const missing = join(dir, 'absent');
+    const cli = fileURLToPath(new URL("./main.js", import.meta.url));
+    const text = spawnSync(process.execPath, [cli, 'report', 'eval', missing], { encoding: 'utf8' });
+    assert.equal(text.status, 1);
+    assert.match(text.stderr, /No saved evaluation at .*absent: expected a run directory containing manifest\.json/);
+    assert.doesNotMatch(text.stderr, /ENOENT/);
+    const json = spawnSync(process.execPath, [cli, 'report', 'eval', missing, '--json'], { encoding: 'utf8' });
+    assert.equal(json.status, 2);
+    const envelope = JSON.parse(json.stdout);
+    assert.equal(envelope.kind, 'skillfit.eval-error');
+    assert.equal(envelope.error.code, 'INVALID_OR_FAILED_EVALUATION');
+    assert.match(envelope.error.message, /No saved evaluation at .*absent/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

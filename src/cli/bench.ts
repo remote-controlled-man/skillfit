@@ -144,7 +144,12 @@ function finish(
   const passes = checks.filter((c) => c.status === 'PASS').length;
   log('');
   log(`Summary: ${passes} passed, ${warnings} warning(s), ${failures} failure(s)`);
-  if (!calibrated) {
+  // Advice to spend money must never follow a failed check: a bench that does not
+  // load cannot be calibrated, and the reader would be told to pay for a run that
+  // cannot produce a valid comparison.
+  if (failures > 0) {
+    log('Next: fix the failures above and re-run this check. Repairing a bench needs no agent call.');
+  } else if (!calibrated) {
     log('Next: calibrate difficulty against a real agent —');
     log(`  skillfit eval <skill-path> --bench ${dir} --agent <id> --trials 5`);
     log('  quality-improvement target: baseline pass rate 30–70%; --calibrate warns outside 10–90% (docs/reference/metrics.md L0).');
