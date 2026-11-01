@@ -21,6 +21,9 @@ export async function readEvaluation(path: string, options: EvalReportOptions = 
 }
 
 async function readSavedEvaluation(path: string, options: EvalReportOptions) {
+  if (!existsSync(resolve(path))) {
+    throw new Error(`No saved evaluation at ${resolve(path)}: expected a run directory containing manifest.json, a saved manifest file, or a portable package directory.`);
+  }
   if (statSync(resolve(path)).isDirectory() && existsSync(join(resolve(path), 'replay-package.json'))) {
     if (options.recordsPath || options.benchDir) throw new Error('Portable packages already pin their run and bench; external overrides are not allowed.');
     const metadata = verifyReplayPackage(resolve(path));

@@ -1502,3 +1502,22 @@ test('bench add refuses source changes during confirmation without writing a tas
   assert.equal(readFileSync(join(dir, 'bench.json'), 'utf8'), before);
   assert.ok(!existsSync(join(dir, 'tasks/captured/fixture')));
 });
+
+test('a failed bench check never advises a paid calibration run', async (t) => {
+  const cwd = tmp(t, 'skillfit-bench-failed-hint-');
+  const broken = join(cwd, 'broken');
+  mkdirSync(broken);
+  writeFileSync(join(broken, 'bench.json'), '{');
+  const failed = collector();
+  const report = await runBenchCheck({ dir: broken, log: failed.log });
+  assert.ok(report.failures > 0);
+  const failureOutput = failed.lines.join('\n');
+  assert.match(failureOutput, /fix the failures above and re-run this check/);
+  assert.ok(!failureOutput.includes('calibrate difficulty against a real agent'),
+    'a bench that does not load must not be offered a step that spends money');
+  const scaffolded = await runBenchInit({ cwd, yes: true, log: () => {} });
+  assert.ok(scaffolded);
+  const healthy = collector();
+  await runBenchCheck({ dir: scaffolded.dir, log: healthy.log });
+  assert.match(healthy.lines.join('\n'), /calibrate difficulty against a real agent/);
+});
