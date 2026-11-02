@@ -99,7 +99,21 @@ supply the treatment to both arms. Use a controlled profile and record inherited
 configuration; skillfit does not remove user configuration. Agent readiness
 checks do not prove authentication or absence of hidden exposure.
 
-A one-task preview is a smoke test. The adoption scale requirement is
+A one-task preview is a smoke test. If your bench holds at least two distinct
+tasks — which means authoring a second one you would actually run — a **pilot**
+comes before the full scale: two tasks × three trials per condition is 12 agent
+executions, selected with repeated `--task`. It exercises the whole loop on a
+cost you can absorb — real sessions, grading, a paired verdict, a saved report —
+and it surfaces broken fixtures, prompts and verifiers while they are still
+cheap to fix.
+
+A pilot is not a smaller version of the answer. With two tasks and three trials
+only very large effects are detectable, so every result at that scale carries the
+*indicative* label defined by the
+[verdict protocol](../reference/metrics.md#verdict-protocol-what-effective-means).
+Report a pilot as design feedback; never present it as adoption evidence.
+
+The adoption scale requirement is
 **8 distinct tasks × 5 trials per condition**: **80 agent executions** on an
 eight-task bench, before optional judge calls. Five trials are a starting point,
 not a power guarantee. Predeclare representative tasks, sample size, claim and
