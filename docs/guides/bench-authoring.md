@@ -105,7 +105,7 @@ before real execution. Fixed outputs do not prove a Skill helps a live agent.
 ## Test known controls
 
 Full-pipeline controls use the separate `bench self-test` protocol 1 included
-in the 0.14.0 package and the reviewed implementing source build.
+in the 0.15.0 package and the reviewed implementing source build.
 Declare them in `controls.json` using the
 [controls schema](../schemas/bench-controls.schema.json) and
 [teaching example](../../benches/_self-test/example/controls.json).
