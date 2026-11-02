@@ -635,7 +635,10 @@ function gitShow(repo: string, ref: string, path: string): Buffer {
     maxBuffer: 64 * 1024 * 1024,
   });
   if (result.status !== 0 || result.stdout === undefined) {
-    throw new Error(`git show ${ref}:${path} failed in ${repo}`);
+    // A bare "failed" left a Windows CI failure undiagnosable: git's own message and
+    // a spawn error both arrive here, and neither was reported.
+    const reason = result.error ? String(result.error) : (result.stderr?.toString().trim() || `exit ${result.status}`);
+    throw new Error(`git show ${ref}:${path} failed in ${repo}: ${reason}`);
   }
   return result.stdout as Buffer;
 }
