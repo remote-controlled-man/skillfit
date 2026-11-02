@@ -157,6 +157,11 @@ export class ExperimentSession {
         }
         // Installed directory aliases are normal; pin their resolved contents and their inventory.
         for (const entry of readdirSync(root)) {
+          // Dot-directories are managed by the agent CLI itself: Codex rewrites
+          // ~/.codex/skills/.system during a session. They are not the user's baseline,
+          // and pinning them aborts a live run on the CLI's own housekeeping. The CLI
+          // version, which is what such a sync follows from, is checked before every call.
+          if (entry.startsWith('.')) continue;
           const path = realpathSync(join(root, entry));
           if (lstatSync(path).isDirectory()) this.inputs.push(pin('global Skill', path));
           else this.configs.push(configState(path, undefined, this.workspaces));
@@ -203,7 +208,19 @@ export class ExperimentSession {
       for (const alias of this.workspaceAliases) if (physicalPath(alias.logical) !== alias.physical) {
         throw new Error(`Declared workspace alias changed: ${alias.logical}; no further calls.`);
       }
-      for (const input of this.inputs) if (pin(input.label, input.root, input.exclude).sha256 !== input.sha256) throw new Error(`Frozen ${input.label} input changed; no further calls.`);
+      for (const input of this.inputs) {
+        const current = pin(input.label, input.root, input.exclude);
+        if (current.sha256 === input.sha256) continue;
+        const before = new Set(input.files), after = new Set(current.files);
+        const listed = [
+          ...current.files.filter(file => !before.has(file)).map(file => `+${file}`),
+          ...input.files.filter(file => !after.has(file)).map(file => `-${file}`),
+        ];
+        const drift = listed.length
+          ? `added/removed: ${listed.slice(0, 3).join(', ')}${listed.length > 3 ? `, +${listed.length - 3} more` : ''}`
+          : 'file contents changed';
+        throw new Error(`Frozen ${input.label} input changed at ${input.root} (${drift}); no further calls.`);
+      }
       for (const config of this.configs) {
         const current = configState(config.path, config.trust, this.trustWorkspaces);
         if (current.state !== config.state || current.sha256 !== config.sha256) throw new Error(`Agent configuration changed: ${config.path}; no further calls.`);

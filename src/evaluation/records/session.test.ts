@@ -80,10 +80,37 @@ test('a changed frozen input retains returned output but blocks subsequent calls
     calls++; writeFileSync(join(s.benchDir, 'prompt.md'), 'changed'); return { output: 'returned', rawOutput: 'retained' };
   } }, 'agent');
   const result = await guarded.run('first', s.root);
-  assert.match(result.guardError!, /Frozen bench input changed/);
+  assert.match(result.guardError!, /Frozen bench input changed at .*bench \(file contents changed\)/);
   assert.equal(result.output, 'returned'); assert.equal(result.rawOutput, 'retained');
   await assert.rejects(() => guarded.run('second', s.root), /Frozen bench input changed/);
   session.finish(); assert.equal(calls, 1); assert.equal(session.summary().status, 'stopped');
+});
+
+test('a drift report names the root and the added files', t => {
+  const s = setup(t), session = new ExperimentSession(s.options);
+  writeFileSync(join(s.benchDir, 'extra-fixture.md'), 'added after planning\n');
+  assert.throws(() => session.check(), /Frozen bench input changed at .*bench \(added\/removed: \+extra-fixture\.md\)/);
+  session.finish();
+});
+
+test('an agent-managed dot-directory is not frozen as user baseline, and real skill drift still stops', t => {
+  const s = setup(t), profile = join(s.root, 'profile');
+  mkdirSync(join(profile, 'skills', '.system', 'bundled'), { recursive: true });
+  mkdirSync(join(profile, 'skills', 'user-skill'));
+  writeFileSync(join(profile, 'config.toml'), 'model = "offline"\n');
+  const manifest = (name: string, body: string) => `---\nname: ${name}\ndescription: fixture\n---\n${body}\n`;
+  writeFileSync(join(profile, 'skills', '.system', 'bundled', 'SKILL.md'), manifest('bundled', 'agent-managed'));
+  writeFileSync(join(profile, 'skills', 'user-skill', 'SKILL.md'), manifest('user-skill', 'user baseline'));
+  const session = new ExperimentSession({ ...s.options, agent: 'codex', homeDir: join(s.root, 'home'),
+    env: { CODEX_HOME: profile }, versionProbe: () => 'codex-cli 1.2.3' });
+  const roots = (JSON.parse(readFileSync(join(s.groupDir, '_plan.json'), 'utf8')).inputs as { root: string }[]).map(input => input.root);
+  assert.ok(!roots.some(root => root.includes('.system')), 'the agent rewrites its bundled skills during a session; they are not user baseline');
+  assert.ok(roots.some(root => root.endsWith('user-skill')), 'user-installed skills stay pinned');
+  writeFileSync(join(profile, 'skills', '.system', 'bundled', 'SKILL.md'), manifest('bundled', 'resynced by the CLI'));
+  session.check();
+  writeFileSync(join(profile, 'skills', 'user-skill', 'SKILL.md'), manifest('user-skill', 'edited mid-run'));
+  assert.throws(() => session.check(), /Frozen global Skill input changed at .*user-skill/);
+  session.finish();
 });
 
 test('input snapshots exist and are bound before dispatch; modifying one stops further calls with usage retained', async t => {
