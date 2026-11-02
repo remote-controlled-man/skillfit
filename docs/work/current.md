@@ -16,7 +16,23 @@ load-bearing facts already appear below: the external receipt and study location
 no-republish rule all live in this Status block or the plan table, and the one
 fact that did not (the registry publication timestamp) was promoted here first.
 
-- Current task T2: verify the repaired source and standalone workspace without
+- Current task T3: post-release usability pass over the first-run path. Walk the
+  README onboarding as a stranger, fix only defects that reproduce against the
+  built CLI, and leave the frozen statistical protocol and the 8 × 5 adoption
+  floor untouched. Landed: a failing `bench check` no longer advises a paid run
+  and says the repair is offline; a missing saved run names its input instead of
+  raising raw ENOENT; the eval dry run prints the exact text and JSON commands
+  that execute its plan; the first-evaluation guide names a 12-execution pilot
+  tier between the smoke test and the adoption floor. Each defect was reproduced
+  before the change and the corrected path re-executed after it. Verification:
+  1,092 offline tests, documentation and architecture gates clean, every change
+  merged through protected main with its three-OS push receipt. No npm
+  publication, workflow dispatch or model call. Two findings were checked and
+  deliberately left alone: `SKILL.md` frontmatter is required in installed mode
+  and optional in inject mode by design, and the application-level `runEval` dry
+  run still prints no plan SHA while the CLI path does.
+
+- Previous task T2: verify the repaired source and standalone workspace without
   model calls, fix any reproduced compatibility gap, and commit the scoped
   verified source changes as requested. The initial offline reproduction lost
   valid Codex cumulative counters after a `token_count` notice with `info: null`.
@@ -202,6 +218,7 @@ fact that did not (the registry publication timestamp) was promoted here first.
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| T3 | Post-release usability pass on the first-run path | Complete; four CLI and guide fixes, 1,092 offline tests, three-OS main CI per merge | Reproduce every defect against the built CLI before changing it; keep the statistical protocol and the 8 × 5 adoption floor unchanged; report checks that could not be run rather than inferring them. No npm publication or model call. |
 | T2 | Verify source/workspace and close empty-notice regression | Complete; regression, offline suite, native workspace and integrated review passed | Valid counters survive empty notices before/between/after snapshots; malformed counters and wrong identities remain unknown. Exercise failed CLI recovery and all four during-call Token stop lines using fake children; run full npm test, CLI doctor, standalone checks and one final integrated review before the authorized scoped commit. No model calls or historical-record changes. |
 | T1a | Review compatibility and declare Token-first acceptance | Complete; source/counter/stop paths reviewed | Explicit null is additive; omitted and positive settings retain normalization. Reuse the existing run seam and receipt mechanisms; keep frozen old requests and evidence unchanged. |
 | T1b | Implement explicit disabled Agent deadline and Token-only request; after T1a | Complete; legacy/null parsing and support refusal tested | Test first: parse/preview null, preserve legacy numeric defaults, reject invalid and unsupported execution surfaces before calls. Record timing with a null deadline; keep cancellation, output bounds and local verifier/tool timeouts. |
