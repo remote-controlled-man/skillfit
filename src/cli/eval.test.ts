@@ -124,7 +124,7 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /review-r1: fixture fixtures\/review-r1, verifier `node verifiers\/seeded-bugs\.mjs`/);
   assert.match(output, /5 task\(s\) × 2 conditions × 3 = 30 runs/);
   assert.match(output, /Scale\s+: below 8 tasks × 5 trials per condition/);
-  assert.match(output, /Est\. cost: ~[\d.k]+ prompt-tokens\/run baseline, ~[\d.k]+ treatment \(estimate, before replies\)/);
+  assert.match(output, /Est\. prompt: ~[\d.k]+ tokens\/run baseline, ~[\d.k]+ treatment \(the initial prompt only\)/);
   assert.match(output, /Dry run — nothing was written\./);
 });
 
@@ -134,7 +134,7 @@ test('workspace dry-run reports disk presentation and only estimates the initial
   await runEval({ skillPath: makeSkill(t), bench: BUNDLED_CODE_REVIEW, inputMode: 'workspace',
     dryRun: true, yes: true, executor: new MockExecutor(), runsRoot, log });
   assert.match(lines.join('\n'), /workspace files on disk \(no inline repository snapshot\)/);
-  assert.match(lines.join('\n'), /initial prompt only; agent file reads and replies are not estimated/);
+  assert.match(lines.join('\n'), /a live session reads far more than this; set --spending-budget or --max-calls from a pilot/);
   assert.ok(!existsSync(runsRoot));
 });
 

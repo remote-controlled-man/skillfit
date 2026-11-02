@@ -53,9 +53,14 @@ function renderPlan(
   lines.push(`           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`);
   lines.push(`Input    : ${inputMode === 'workspace' ? 'workspace files on disk (no inline repository snapshot)' : 'inline repository snapshot'}`);
   lines.push(
-    `Est. cost: ~${formatK(estimate.baseline)} prompt-tokens/run baseline, ~${formatK(estimate.treatment)} treatment (estimate, before replies)`,
+    `Est. prompt: ~${formatK(estimate.baseline)} tokens/run baseline, ~${formatK(estimate.treatment)} treatment (the initial prompt only)`,
   );
-  if (inputMode === 'workspace') lines.push('           initial prompt only; agent file reads and replies are not estimated');
+  // Calling this "cost" invited a spending budget three orders of magnitude too
+  // small: a measured OSS-task CLI session reached 0.7-1.0M input tokens per call
+  // against a ~600-token prompt. The line now says what it measures and what it is not.
+  lines.push(inputMode === 'workspace'
+    ? '             a live session reads far more than this; set --spending-budget or --max-calls from a pilot'
+    : '             agent file reads and replies are not included; this is not a budget');
   const descriptor = executor?.describe();
   lines.push(
     `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ''}` : 'unresolved (pass --agent or set SKILLFIT_API_KEY)'}`,
@@ -100,8 +105,9 @@ function renderTriggerPlan(
   {
     const bodyTokens = estimate.treatment;
     lines.push(
-      `Est. cost: ~${formatK(estimate.baseline)} prompt-tokens/run; skill body ~${formatK(bodyTokens)} loads only if triggered (estimate, before replies)`,
+      `Est. prompt: ~${formatK(estimate.baseline)} tokens/run; skill body ~${formatK(bodyTokens)} loads only if triggered (the initial prompt only)`,
     );
+    lines.push('             a live session reads far more than this; set --spending-budget or --max-calls from a pilot');
   }
   lines.push(`Trials   : ${trials} per task (single arm: skill installed)`);
   lines.push('Tasks    :');
