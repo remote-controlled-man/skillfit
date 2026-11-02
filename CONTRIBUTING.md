@@ -2,6 +2,9 @@
 
 Thanks for helping make agent configuration evidence-driven.
 
+Participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md); report
+unacceptable behavior through the contact on the repository profile.
+
 ## Development setup
 
 Use Node.js 22+, npm and Git. Run these commands from the repository root on

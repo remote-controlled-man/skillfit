@@ -71,8 +71,8 @@ fact that did not (the registry publication timestamp) was promoted here first.
   suite exposed two error-label compatibility regressions; restored the original
   executorTimeoutSeconds label and both affected CLI regressions pass. Historical
   pilot-001/pilot-002 native read/export/moved verification and reproduction pass
-  with zero model calls; all 326 files/modes in each group are unchanged. Temporary
-  proof: /var/folders/4t/l1rh16096gnd19k20pxhc5lr0000gn/T/skillfit-t1-history-xdw1vmii/result.json.
+  with zero model calls; all 326 files/modes in each group are unchanged. Its
+  temporary proof stays in OS temporary storage and is not a durable record.
   Final npm test: 1,088 pass, zero fail/cancel/skip (72.245 seconds), including
   package/install and saved-replay checks. The integrated review accounts for
   all 38 changed paths (27 OCR-selected, 11 manually included docs/tests), zero
