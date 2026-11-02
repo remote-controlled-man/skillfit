@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Runtime dependencies are forbidden; devDependencies are the whole npm surface.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    allow:
+      - dependency-type: development
+    open-pull-requests-limit: 3
+
+  # Workflow actions are pinned by full commit SHA; keep those pins current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
