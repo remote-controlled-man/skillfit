@@ -33,7 +33,7 @@ jobs:
           SKILLFIT_API_MODEL: ${{ vars.SKILLFIT_API_MODEL }}
         run: node dist/cli.js eval profiles/recommended/skills/commit-message --bench code-review --trials 2 --yes
       - name: Upload the manifest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: skillfit-watch-${{ github.run_id }}
           path: runs/
