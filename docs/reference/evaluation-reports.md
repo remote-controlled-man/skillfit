@@ -212,8 +212,8 @@ owns the spending-budget format and deadline settings, and
 [metrics](metrics.md#costs-budgets-and-stopping) owns stopping semantics across
 paired, calibration, trigger and judge calls. Absolute stop lines are separate from
 relative adoption caps and provider invoices. Explicit null time limits with
-Token-only observation are a current-source addition, not in the published npm
-0.14.0 package. Interrupted receipts can carry
+Token-only observation are in the 0.15.0 package; 0.14.0 and earlier lack them.
+Interrupted receipts can carry
 `budgetStop: "SPENDING_BUDGET_REACHED"` with partial usage, without becoming graded
 or completed evidence. Adapter readers and their spending-budget limitations belong
 to the [capability table](../guides/experiment-workflow.md#executor-capabilities).

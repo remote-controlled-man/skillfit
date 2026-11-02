@@ -1,11 +1,25 @@
 # Changelog
 
-## Unreleased
+## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
+
+Publication is verified through the [release procedure](docs/maintainers/releases.md);
+acceptance receipts are retained outside this repository.
 
 - Add explicit Token-only budgets and disabled Agent deadlines on supported
   Codex execution. Check cumulative local usage during calls; retain interrupted
   partial receipts and portable replay. Omitted/numeric settings retain their
   previous semantics; observation is best-effort rather than a billing hard cap.
+- The eval dry run names the command that executes the plan, its preview no longer
+  reports a prompt count as a cost, and a bench that fails its check no longer
+  advises a paid run. A live plan states its own wording.
+- Stop recording the agent's own bundled Skills as the user baseline in installed
+  trigger runs, and retain Codex usage across empty counter notices.
+- Report why `git show` failed instead of only that it did, and mark the published
+  bin executable so an npm reader gets a working entry point without a clone.
+- Replace the documentation policy registry with tree discovery: the same thirty-four
+  maintained pages are checked, without a hand-maintained topic and ownership map.
+  One page owns each fact, enforced by a corpus check that fails when a sentence is
+  restated in two maintained pages.
 
 ## 0.14.0 — evaluation contracts and maintainable Bench inputs (2026-10-27)
 

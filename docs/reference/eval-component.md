@@ -64,7 +64,7 @@ the ledger; historical absence stays unrecorded.
 into the preview/native plan for both arms and checked against receipts. Current
 source additionally accepts explicit null with Token-only spending limits on a
 supported adapter, disabling this deadline without changing elapsed diagnostics.
-The published 0.14.0 package does not support this source addition.
+The 0.15.0 package supports this addition; 0.14.0 and earlier do not.
 See [planning](../guides/experiment-workflow.md) for defaults and fresh-batch
 requirements, and [timing](../guides/experiment-workflow.md) for retained timeout evidence.
 

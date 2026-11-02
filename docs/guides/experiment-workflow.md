@@ -93,7 +93,7 @@ legacy deadlines; a positive duration preserves legacy between-call stopping.
 For example, `{"input":1200000,"cachedInput":1050000,"uncachedInput":200000,"output":30000,"durationSeconds":null}`
 sets four Token stop lines without a time stop line. Choose the limits for the
 actual study and retain `maxCalls`; the numbers here do not authorize spending.
-This source feature is not in the already published npm 0.14.0 package.
+This feature is in the 0.15.0 package.
 
 Token-only execution requires during-call usage observation on **every** executor
 role. Currently only the Codex adapter supports it, including a Codex judge or

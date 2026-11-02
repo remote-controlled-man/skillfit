@@ -35,8 +35,8 @@ skillfit 把这套配对评测跑在**你自己的**任务上：确定性 verifi
 ## 安装
 
 ```bash
-npx skillfit@0.14.0 --help
-npx skillfit@0.14.0 doctor
+npx skillfit@0.15.0 --help
+npx skillfit@0.15.0 doctor
 ```
 
 需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出八个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
@@ -46,9 +46,9 @@ npx skillfit@0.14.0 doctor
 不需要 agent CLI、不需要登录、不调用模型。以下命令读取包内自带的 bench，几秒即可跑完：
 
 ```bash
-npx skillfit@0.14.0 bench check code-review
-npx skillfit@0.14.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.14.0 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.15.0 bench check code-review
+npx skillfit@0.15.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.15.0 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 `bench check` 用已知正确与已知错误的答案去跑内置 verifier，你可以直接看到 harness 的鉴别力：oracle 通过、空输出失败、mock 基线失败、mock 实验组通过。`bench self-test` 接着在合成对照上驱动完整的配对流水线——grader、精确 McNemar 判定、配对 bootstrap 区间、审计——再由 `report eval` 渲染出来。那份报告带有 **Synthetic harness run** 横幅：它证明流水线可用，不证明任何 Skill 有收益。给 self-test 加上 `--dry-run` 可只打印计划、不写任何文件。
@@ -83,10 +83,10 @@ The instructions the agent should follow.
 然后脚手架一个 case 并预览评测：
 
 ```bash
-npx skillfit@0.14.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.14.0 bench init my-bench --kind command --yes
-npx skillfit@0.14.0 bench check ./my-bench --json
-npx skillfit@0.14.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.15.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.15.0 bench init my-bench --kind command --yes
+npx skillfit@0.15.0 bench check ./my-bench --json
+npx skillfit@0.15.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 测收益前先把教学用 fixture、prompt、verifier 和 oracle 换成真实任务。预览声明两次调用，实际不调用。检查 `plan.evaluation.agentPreflight.status`；离线登录状态仍未知。case 与运行记录分开放。继续阅读[第一次真实评测](docs/guides/first-real-eval.md)。
@@ -129,7 +129,7 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
+git switch --detach 146eb9b10e3325dd2055f7348b0a39a18a3b87cc
 npm ci
 npm run build
 node dist/cli.js --help
@@ -140,11 +140,11 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-该 detached commit 钉住本页描述的那份已审阅实现，它早于 0.14.0 版本号变更。要在自己的检出上开发，请按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。
+该 detached commit 钉住本页描述的那份已审阅实现，它早于 0.15.0 版本号变更。要在自己的检出上开发，请按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。
 
 校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
 
-0.14.0 包包含文档中标为**当前源码**的测量功能，其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益，不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
+0.15.0 包包含文档中标为**当前源码**的测量功能，其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益，不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
 
 配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。8×5 是规模/采用下限，不是每项 bench 内精确检验判定的起点，也不保证统计功效。sampling 未固定，目前没有经验证的 MDE 规划器。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/guides/experiment-workflow.md#bound-calls-and-spending)。
 
@@ -162,7 +162,7 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 用 `bench add --freeze` 记录失败，或用 `--from-commit` 导入修复。[case 编写指南](docs/guides/bench-authoring.md)说明这两条路径、verifier 要求和离线校验。
 
-真实花费前，0.14.0 包或已审查的源码构建可以通过 [bench self-test](docs/guides/bench-authoring.md#test-known-controls) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。
+真实花费前，0.15.0 包或已审查的源码构建可以通过 [bench self-test](docs/guides/bench-authoring.md#test-known-controls) 运行预先声明的正向、有害、零效果和错误 synthetic 对照。它不调用模型，检查的是配对流水线；不能建立模型质量、真实任务的统计功效或采用资格。
 
 列出、查看 case 或预览修改。`--yes` 会备份并应用通过验证的变更；移除注册仍保留 case 文件。重复 `--task` 选择较小的运行范围：
 

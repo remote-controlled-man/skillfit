@@ -35,8 +35,8 @@ skill feels useful" becomes dated, replayable evidence with its limits stated.
 ## Install
 
 ```bash
-npx skillfit@0.14.0 --help
-npx skillfit@0.14.0 doctor
+npx skillfit@0.15.0 --help
+npx skillfit@0.15.0 doctor
 ```
 
 Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the eight commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
@@ -46,9 +46,9 @@ Requires Node.js 22+. Both commands above are offline and make no model calls: `
 No agent CLI, no login, no model calls. These read the benches shipped inside the package and take a few seconds:
 
 ```bash
-npx skillfit@0.14.0 bench check code-review
-npx skillfit@0.14.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.14.0 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.15.0 bench check code-review
+npx skillfit@0.15.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.15.0 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 `bench check` runs the bundled verifiers against known-good and known-bad answers, so you can watch the harness discriminate: the oracle passes, an empty output fails, a mock baseline fails and a mock treatment passes. `bench self-test` then drives the complete paired pipeline — grader, exact McNemar verdict, paired-bootstrap intervals, audit — on synthetic controls, and `report eval` renders it. That report is banner-marked **Synthetic harness run**: it proves the pipeline works, not that any Skill helps. Add `--dry-run` to the self-test to print its plan and write nothing.
@@ -83,10 +83,10 @@ The instructions the agent should follow.
 Then scaffold a case and preview an evaluation:
 
 ```bash
-npx skillfit@0.14.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.14.0 bench init my-bench --kind command --yes
-npx skillfit@0.14.0 bench check ./my-bench --json
-npx skillfit@0.14.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.15.0 bench init my-bench --kind command --dry-run
+npx skillfit@0.15.0 bench init my-bench --kind command --yes
+npx skillfit@0.15.0 bench check ./my-bench --json
+npx skillfit@0.15.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
@@ -132,7 +132,7 @@ checkout once:
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach c9522ddea4c181056f1065e04f3ee0f69845146a
+git switch --detach 146eb9b10e3325dd2055f7348b0a39a18a3b87cc
 npm ci
 npm run build
 node dist/cli.js --help
@@ -144,12 +144,12 @@ node dist/cli.js install --agent codex --dry-run
 ```
 
 The detached commit pins the reviewed implementation this page describes; it
-predates the 0.14.0 version bump. For development on your own checkout, follow
+predates the 0.15.0 version bump. For development on your own checkout, follow
 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
 
 The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
 
-The 0.14.0 package carries the measurement features described as **current source**, including [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit, and unsupported schema 2 targets refuse before verifier, oracle or model calls. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+The 0.15.0 package carries the measurement features described as **current source**, including [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit, and unsupported schema 2 targets refuse before verifier, oracle or model calls. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
 
 Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
 
@@ -167,7 +167,7 @@ node dist/cli.js eval skills/skillfit --bench my-bench --agent codex --input wor
 
 Use `bench add --freeze` to capture a failure or `--from-commit` to import a fix. The [case authoring guide](docs/guides/bench-authoring.md) covers both paths, verifier requirements and offline validation.
 
-Before live spending, the 0.14.0 package or a reviewed source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility.
+Before live spending, the 0.15.0 package or a reviewed source build can run [bench self-test](docs/guides/bench-authoring.md#test-known-controls) with predeclared synthetic benefit, harm, null and error controls. It checks the paired pipeline without model calls; it does not establish model quality, statistical power for your real tasks or adoption eligibility.
 
 List and inspect cases, or preview an edit. `--yes` applies a validated change with a backup; removal keeps case files. Select a smaller run with repeated `--task`:
 

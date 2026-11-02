@@ -2,15 +2,15 @@
 
 ## Choose your build
 
-These pages describe the **0.14.0 package and current source**; source guides use
+These pages describe the **0.15.0 package and current source**; source guides use
 Node >=22, `npm run build` and `node dist/cli.js`. The pinned
-`npx skillfit@0.14.0` commands name the version these pages describe; the registry
+`npx skillfit@0.15.0` commands name the version these pages describe; the registry
 is the source of truth for what is currently published. Superseded releases keep
 their own documentation: see the
 [0.13.1 documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs)
 and its [publication record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md).
 Standalone driver links and unshipped source references use the
-[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/c9522ddea4c181056f1065e04f3ee0f69845146a),
+[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/146eb9b10e3325dd2055f7348b0a39a18a3b87cc),
 which predates the version bump and may still print 0.13.1.
 
 ## Find your task
