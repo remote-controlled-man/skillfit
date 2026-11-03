@@ -7,6 +7,14 @@ updates:
       interval: weekly
     allow:
       - dependency-type: development
+    ignore:
+      # engines is >=22 and node-minimum CI runs Node 22.0.0, so types must not cross a
+      # Node major: the compiler would accept APIs Node 22 does not have and CI would pass.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # A compiler major needs its own review and a package.json range change, not a bump.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 3
 
   # Workflow actions are pinned by full commit SHA; keep those pins current.
