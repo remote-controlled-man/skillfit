@@ -466,18 +466,29 @@ test('CliExecutor kills the whole process tree when a trial times out', async (t
   // shell defaults to true, which is the case that matters: child.kill() reaches the shell and the
   // agent it started carries on running.
   const executor = new CliExecutor({ argv: [process.execPath, sleeper], timeoutMs: 3_000 });
-  await assert.rejects(executor.run('ignored', dir), /timed out/);
+  let rejection: Error | undefined;
+  await assert.rejects(executor.run('ignored', dir), (error: Error) => {
+    rejection = error;
+    return /timed out/.test(error.message);
+  });
 
   const pid = Number(readFileSync(marker, 'utf8'));
   assert.ok(Number.isFinite(pid) && pid > 0, 'the grandchild recorded its pid before the timeout');
-  await new Promise((resolve) => setTimeout(resolve, 2_000));
-  let alive = true;
-  try {
-    process.kill(pid, 0);
-  } catch {
-    alive = false;
-  }
-  assert.equal(alive, false, 'the agent process must not outlive the timeout and keep spending tokens');
+  const alive = (): boolean => {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  // Bounded poll, not one fixed sample: Windows releases a terminated pid only once every handle
+  // closes, so a single 2s check can report a process that is already dead. The bound still fails
+  // if the tree genuinely survives, and the rejection message now carries the kill outcome.
+  const giveUpAt = Date.now() + 5_000;
+  while (alive() && Date.now() < giveUpAt) await new Promise((resolve) => setTimeout(resolve, 100));
+  assert.equal(alive(), false,
+    `the agent process must not outlive the timeout and keep spending tokens${rejection ? ` — ${rejection.message}` : ''}`);
 });
 
 test('CliExecutor rejects when the child exits before draining stdin', async (t) => {

@@ -16,6 +16,9 @@ acceptance receipts are retained outside this repository.
   trigger runs, and retain Codex usage across empty counter notices.
 - Report why `git show` failed instead of only that it did, and mark the published
   bin executable so an npm reader gets a working entry point without a clone.
+- Report a process-tree kill that did not take effect instead of discarding
+  `taskkill`'s exit status, so a stopped agent cannot outlive its timeout on Windows
+  without saying so.
 - Replace the documentation policy registry with tree discovery: the same thirty-four
   maintained pages are checked, without a hand-maintained topic and ownership map.
   One page owns each fact, enforced by a corpus check that fails when a sentence is
