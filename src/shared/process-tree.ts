@@ -29,6 +29,10 @@ export function killTree(child: ChildProcess): KillTreeOutcome {
   }
   if (process.platform === 'win32') {
     const result = spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { encoding: 'utf8', windowsHide: true });
+    if (result.status === null) {
+      const detail = (result.error?.message ?? '').trim();
+      return { ok: false, detail: `taskkill did not run${detail ? `: ${detail}` : ''}` };
+    }
     if (result.status === 0) return { ok: true };
     // taskkill documents 128 as "process not found": the tree is already gone, which is the goal.
     if (result.status === 128) return { ok: true, detail: 'already gone' };
