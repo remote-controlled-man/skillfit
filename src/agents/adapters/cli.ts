@@ -260,15 +260,20 @@ export class CliExecutor implements Executor {
         if (budgetSnapshot) result.budgetStop = 'SPENDING_BUDGET_REACHED';
         return new ExecutorFailure(message, { ...result, usageStatus: 'partial' });
       };
-      const stopMessage = (): string => budgetSnapshot ? 'SPENDING_BUDGET_REACHED: reliable cumulative Token usage reached a stop line; retained usage is partial.' : signal?.aborted ? (signal.reason as Error).message : overflow
-        ? `"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`
-        : deadline.timingError ? `"${command}" execution timing anomaly: ${deadline.timingError}`
-          : `"${command}" timed out after ${this.timeoutMs}ms`;
+      let killDetail: string | undefined;
+      const stopMessage = (): string => {
+        const reason = budgetSnapshot ? 'SPENDING_BUDGET_REACHED: reliable cumulative Token usage reached a stop line; retained usage is partial.' : signal?.aborted ? (signal.reason as Error).message : overflow
+          ? `"${command}" produced more than ${MAX_AGENT_OUTPUT_BYTES} bytes of output`
+          : deadline.timingError ? `"${command}" execution timing anomaly: ${deadline.timingError}`
+            : `"${command}" timed out after ${this.timeoutMs}ms`;
+        return killDetail === undefined ? reason : `${reason} (process tree kill failed: ${killDetail})`;
+      };
       const stopChild = (): void => {
         if (stopping) return;
         stopping = true;
         deadline.markTermination(timedOut);
-        killTree(child);
+        const kill = killTree(child);
+        if (!kill.ok) killDetail = kill.detail;
         // A descendant that escaped the process group can retain a pipe after its parent dies.
         // Bound pipe draining too; the normal close handler still collects output first.
         drainTimer = setTimeout(() => {
@@ -380,8 +385,8 @@ export class CliExecutor implements Executor {
           if (stopping) return;
           clearTimers();
           deadline.observe();
-          killTree(child);
-          rejectPromise(failure(`Failed to write the prompt to "${command}" on stdin: ${error.message}`));
+          const kill = killTree(child);
+          rejectPromise(failure(`Failed to write the prompt to "${command}" on stdin: ${error.message}${kill.ok ? '' : ` (process tree kill failed: ${kill.detail})`}`));
         });
         child.stdin.write(prompt, 'utf8');
       }
