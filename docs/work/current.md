@@ -12,9 +12,19 @@ narrative. Nothing was discarded — the retiring commit's parent holds every by
 and `docs/work/` may not gain a sibling archive because check-docs requires the
 sole plan to be updated in place. Before retiring a section, confirm its
 load-bearing facts already appear below: the external receipt and study locations,
-`npm latest=0.14.0`, the 18 receipts, the 1,079 packaged files and the
+`npm latest=0.15.0`, the 21 receipts, the 1,077 packaged files and the
 no-republish rule all live in this Status block or the plan table, and the one
 fact that did not (the registry publication timestamp) was promoted here first.
+
+- Release 0.15.0 is published and verified. Source `f506681` was main at
+  publication; npm `publishedAt` 2026-11-03T08:39:19.739Z; tarball SHA-256
+  `1073161cfd45e4f0c49cf463291cc18de536b554a2da7de866224cb10a762c2d`; 1,077
+  packaged files. Reviewed preview 41603752277/1 and publication run
+  41604553472/1 both succeeded; the registry's published integrity equals the
+  reviewed preview, all six acceptance stages passed, and the repository's record
+  verifier reports 21 receipts with 0 writes and 0 publishes. The complete
+  delivery is retained at `~/Documents/skillfit-releases/0.15.0`. Tag `v0.15.0`
+  and the GitHub Release mark this source commit. Never upload 0.15.0 again.
 
 - Current task T3: post-release usability pass over the first-run path. Walk the
   README onboarding as a stranger, fix only defects that reproduce against the
