@@ -78,7 +78,10 @@ An optional `--spending-budget ./budget.json` freezes all five stop-line fields:
 {"input":100000,"cachedInput":100000,"uncachedInput":100000,"output":10000,"durationSeconds":1200}
 ```
 
-Choose actual limits before authorizing spending. All fields are required;
+Choose actual limits before authorizing spending, and size them from a pilot rather
+than from the preview's prompt count: a measured workspace session on an OSS task
+consumed 0.6–1.0M input tokens per call, about 92% cached, against an initial prompt
+of roughly 600 tokens. All fields are required;
 tokens are positive safe integers; numeric seconds are positive, finite and at most Number.MAX_SAFE_INTEGER.
 There is no duration-only strict budget. Both primary and judge need supported
 readers and complete final counters on each invocation. Missing/partial usage
