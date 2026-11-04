@@ -16,20 +16,59 @@ skillfit 在同一批任务上比较基线组与实验组，并报告变化及�
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[文档目录](docs/README.md) · [快速开始](#花钱之前先看一份真实报告) · [边界](#边界) · [Bench 指南](benches/README.md) · [评测报告](docs/reference/evaluation-reports.md) · [贡献](#贡献)
+[文档目录](docs/README.md) · [快速开始](#先看已经装上的) · [边界](#边界) · [Bench 指南](benches/README.md) · [评测报告](docs/reference/evaluation-reports.md) · [贡献](#贡献)
 
 </div>
 
 ---
+
+## 先看已经装上的
+
+`report` 和 `doctor` 只读这台机器，不调用模型。
+
+```bash
+npx skillfit@0.15.1 report
+npx skillfit@0.15.1 doctor
+```
+
+```console
+$ npx skillfit@0.15.1 report --agent codex
+
+codex — 280 session(s), 280 transcript(s)
+  skill                          FIRES  SESSIONS  LAST SEEN
+  prflow                         85     19        2026-11-04
+  code-review                    76     37        2026-11-04
+  open-code-review-delegate      76     37        2026-11-04
+  ponytail                       71     26        2026-11-04
+  tdd                            57     25        2026-11-04
+  diagnosing-bugs                31     19        2026-11-04
+  codebase-design                21     8         2026-11-04
+  awesome-design-doc             11     4         2026-11-04
+  improve-codebase-architecture  6      5         2026-11-04
+  vibe-coding                    6      4         2026-11-03
+  to-spec                        5      2         2026-11-04
+  ponytail-debt                  1      1         2026-10-29
+  domain-modeling                0      0         —
+  grill-with-docs                0      0         —
+  grilling                       0      0         —
+  setup-matt-pocock-skills       0      0         —
+  to-tickets                     0      0         —
+  installed: 17, observed firing: 12, no observed fire: 5
+  no observed fire in retained history: domain-modeling, grill-with-docs, grilling, setup-matt-pocock-skills, to-tickets
+
+Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in retained history.
+```
+
+摘自 2026-11-04 的一份 Codex 历史。五个已安装 Skill 没有触发记录，这只是优先处理的信号，安装日期并不知道。`prflow` 是项目里的 Skill。Codex 会话记下了项目目录，所以它算作已安装。省略的目录体积那一行只统计用户目录。
 
 ## 花钱之前先看一份真实报告
 
 不需要 agent CLI、不需要登录、不调用模型。以下命令读取包内自带的 bench，几秒即可跑完：
 
 ```bash
-npx skillfit@0.15.0 bench check code-review
-npx skillfit@0.15.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.15.0 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.15.1 bench check code-review
+npx skillfit@0.15.1 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.15.1 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 <p align="center">
@@ -49,8 +88,8 @@ npx skillfit@0.15.0 report eval ./runs/controls-001/existing-mock-arms
 ## 安装
 
 ```bash
-npx skillfit@0.15.0 --help
-npx skillfit@0.15.0 doctor
+npx skillfit@0.15.1 --help
+npx skillfit@0.15.1 doctor
 ```
 
 需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出八个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
@@ -89,10 +128,10 @@ The instructions the agent should follow.
 然后脚手架一个 case 并预览评测：
 
 ```bash
-npx skillfit@0.15.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.15.0 bench init my-bench --kind command --yes
-npx skillfit@0.15.0 bench check ./my-bench --json
-npx skillfit@0.15.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.15.1 bench init my-bench --kind command --dry-run
+npx skillfit@0.15.1 bench init my-bench --kind command --yes
+npx skillfit@0.15.1 bench check ./my-bench --json
+npx skillfit@0.15.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 测收益前先把教学用 fixture、prompt、verifier 和 oracle 换成真实任务。预览声明两次调用，实际不调用。检查 `plan.evaluation.agentPreflight.status`；离线登录状态仍未知。case 与运行记录分开放。继续阅读[第一次真实评测](docs/guides/first-real-eval.md)。

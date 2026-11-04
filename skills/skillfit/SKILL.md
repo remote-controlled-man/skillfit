@@ -10,14 +10,14 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 
 ## Prerequisites
 
-Check availability with `npx skillfit@0.15.0 --version`, or `node dist/cli.js --version` inside a clone.
+Check availability with `npx skillfit@0.15.1 --version`, or `node dist/cli.js --version` inside a clone.
 If neither works, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
 For source-only commands below, set `skillfit_source` to the absolute path of a
 built checkout, then run from the project/study workspace that owns the outputs.
 The evaluation workflow requires 0.12.0 or newer for Git-bench/layout,
 ordinary CLI costs, API-failure evidence, bundled names and recorded case drafting.
 Earlier versions lack some of these fixes; inspect the installed version before using new flags.
-The 0.15.0 package adds explicit Token-only budgets and disabled Agent deadlines,
+The 0.15.1 package counts symlinked skill directories and, for Codex, skills in the project directory a session records. The 0.15.0 package adds explicit Token-only budgets and disabled Agent deadlines,
 plus the earlier numerical, trigger-observation and per-call model-identity
 corrections, self-test protocol 1 and bench schema 2 / measurementScope 1; 0.13.1
 and earlier lack them. Registry availability is

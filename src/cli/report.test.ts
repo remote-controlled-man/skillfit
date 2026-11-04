@@ -113,7 +113,7 @@ test("renderReceipts lists every installed skill and summarizes other SKILL.md r
   assert.doesNotMatch(output, /^\s+v4\s+2/m);
   assert.match(
     output,
-    /2 other SKILL\.md name\(s\) read outside the user skill directories: v4 \(2\), stray \(1\)/,
+    /2 other SKILL\.md name\(s\) read outside installed skill directories: v4 \(2\), stray \(1\)/,
   );
   assert.match(output, /installed: 4, observed firing: 2, no observed fire: 2/);
 });

@@ -55,6 +55,15 @@ export function extractSkillNames(event: Record<string, unknown>, cfg: AgentSess
   return names;
 }
 
+/** Codex rollout files record the session directory on `session_meta`. Other wires do not. */
+export function sessionMetaCwd(event: Record<string, unknown>): string | undefined {
+  if (event["type"] !== "session_meta") return undefined;
+  const payload = event["payload"];
+  if (typeof payload !== "object" || payload === null) return undefined;
+  const cwd = (payload as Record<string, unknown>)["cwd"];
+  return typeof cwd === "string" && cwd !== "" ? cwd : undefined;
+}
+
 export function sessionKey(relPath: string, cfg: AgentSessions): string {
   const parts = relPath.split("/");
   if (cfg.wireShape === "flat-tool-call") {

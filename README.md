@@ -16,20 +16,59 @@ skillfit compares a baseline and a treatment on the same tasks and reports what 
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[Documentation](docs/README.md) · [Quick start](#see-a-real-report-before-you-spend) · [Limits](#limits) · [Bench guide](benches/README.md) · [Reports](docs/reference/evaluation-reports.md) · [Contributing](#contributing)
+[Documentation](docs/README.md) · [Quick start](#see-what-is-already-installed) · [Limits](#limits) · [Bench guide](benches/README.md) · [Reports](docs/reference/evaluation-reports.md) · [Contributing](#contributing)
 
 </div>
 
 ---
+
+## See what is already installed
+
+`report` and `doctor` read this machine and do not call a model.
+
+```bash
+npx skillfit@0.15.1 report
+npx skillfit@0.15.1 doctor
+```
+
+```console
+$ npx skillfit@0.15.1 report --agent codex
+
+codex — 280 session(s), 280 transcript(s)
+  skill                          FIRES  SESSIONS  LAST SEEN
+  prflow                         85     19        2026-11-04
+  code-review                    76     37        2026-11-04
+  open-code-review-delegate      76     37        2026-11-04
+  ponytail                       71     26        2026-11-04
+  tdd                            57     25        2026-11-04
+  diagnosing-bugs                31     19        2026-11-04
+  codebase-design                21     8         2026-11-04
+  awesome-design-doc             11     4         2026-11-04
+  improve-codebase-architecture  6      5         2026-11-04
+  vibe-coding                    6      4         2026-11-03
+  to-spec                        5      2         2026-11-04
+  ponytail-debt                  1      1         2026-10-29
+  domain-modeling                0      0         —
+  grill-with-docs                0      0         —
+  grilling                       0      0         —
+  setup-matt-pocock-skills       0      0         —
+  to-tickets                     0      0         —
+  installed: 17, observed firing: 12, no observed fire: 5
+  no observed fire in retained history: domain-modeling, grill-with-docs, grilling, setup-matt-pocock-skills, to-tickets
+
+Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in retained history.
+```
+
+Captured 2026-11-04 from one Codex history. Five installed skills have no observed fire; that is a priority signal, and install dates are unavailable. `prflow` is a project skill. Codex sessions record the project directory, so that skill counts as installed. The omitted catalog-size line covers the user catalog only.
 
 ## See a real report before you spend
 
 No agent CLI, no login, no model calls. These read the benches shipped inside the package and take a few seconds:
 
 ```bash
-npx skillfit@0.15.0 bench check code-review
-npx skillfit@0.15.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.15.0 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.15.1 bench check code-review
+npx skillfit@0.15.1 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.15.1 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 <p align="center">
@@ -49,8 +88,8 @@ Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent exe
 ## Install
 
 ```bash
-npx skillfit@0.15.0 --help
-npx skillfit@0.15.0 doctor
+npx skillfit@0.15.1 --help
+npx skillfit@0.15.1 doctor
 ```
 
 Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the eight commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
@@ -89,10 +128,10 @@ The instructions the agent should follow.
 Then scaffold a case and preview an evaluation:
 
 ```bash
-npx skillfit@0.15.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.15.0 bench init my-bench --kind command --yes
-npx skillfit@0.15.0 bench check ./my-bench --json
-npx skillfit@0.15.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.15.1 bench init my-bench --kind command --dry-run
+npx skillfit@0.15.1 bench init my-bench --kind command --yes
+npx skillfit@0.15.1 bench check ./my-bench --json
+npx skillfit@0.15.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
