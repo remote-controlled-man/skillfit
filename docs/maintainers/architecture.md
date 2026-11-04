@@ -5,7 +5,7 @@ This page explains the current system, the boundaries between its modules and th
 contracts a change must preserve. It is not a runbook: commands and contributor
 setup live in [AGENTS.md](https://github.com/remote-controlled-man/skillfit/blob/main/AGENTS.md)
 and [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md),
-execution order and progress live only in the source-only `docs/work/current.md`,
+planned work lives in [GitHub milestones](https://github.com/remote-controlled-man/skillfit/milestones),
 statistical meaning lives in [metrics](../reference/metrics.md), and publication
 gates live in [the release procedure](releases.md).
 [Build/version availability](../README.md#choose-your-build) is separate.
@@ -141,14 +141,14 @@ src/
   commands/ + harness/    retained recipe/replay delegates and six test entries
 
 tools/{verify,release}/
-docs/{guides,reference,maintainers,work,schemas,examples,assets}/
+docs/{guides,reference,maintainers,schemas,examples,assets}/
 benches/                  reusable task inputs and provenance
 profiles/                 installation inputs
 skills/                   shipped CLI driver
 dist/                     ignored compiled CLI output
 ```
 
-Each topic has one canonical page and `docs/work/current.md` is the only plan; the
+Each topic has one canonical page, and no plan or progress log is kept under `docs/`; the
 [docs index](../README.md) routes readers and owns build/version availability.
 Bench format and claims stay with [benches](../../benches/README.md). CLI owns help
 and parser declarations in `src/cli/definition.ts`, and `tools/verify/cli-reference.mjs`

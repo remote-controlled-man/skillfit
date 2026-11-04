@@ -351,7 +351,7 @@ Check the [documentation](docs/README.md) for the build you use. For bugs or que
 
 Follow [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md). Useful contributions include real-workflow cases, reproducible evidence and matrix corrections. [Security reports](https://github.com/remote-controlled-man/skillfit/blob/main/SECURITY.md) have a separate channel.
 
-For development handoff, use [architecture and maintenance](docs/maintainers/architecture.md). Active progress is recorded in the source-only `docs/work/current.md`; that plan is excluded from npm.
+For development handoff, use [architecture and maintenance](docs/maintainers/architecture.md). Planned work is in [GitHub milestones](https://github.com/remote-controlled-man/skillfit/milestones).
 
 ## License
 

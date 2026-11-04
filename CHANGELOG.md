@@ -27,6 +27,9 @@
 - Biome formats `src` and `tools` at a 100-column width. CI rejects format
   drift. Biome is a devDependency, so the shipped CLI still has zero runtime
   dependencies.
+- The maintainer's working plan is no longer kept in the repository. Planned
+  work is tracked in GitHub milestones, and the docs check rejects files under
+  `docs/work/`.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 
