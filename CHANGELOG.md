@@ -7,6 +7,10 @@
   installed skills, so `report` printed no never-fired list or catalog size.
   `doctor` warns about a broken link and no longer reports one linked skill in
   two directories as diverging copies.
+- The text `report` table lists every installed skill, with `0` for skills that
+  never fired. Names read from other `SKILL.md` paths, such as project skills
+  or files opened during other work, are summarized on one separate line.
+  JSON output is unchanged.
 - Security reports go to private vulnerability reporting, and conduct reports
   go to the mailbox already published in the repository history. The GitHub
   profile is no longer the reporting route.

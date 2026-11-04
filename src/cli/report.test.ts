@@ -100,6 +100,43 @@ test("renderReceipts counts each skill once across agents in the Overall line", 
   assert.match(output, /installed: 4, observed firing: 2, no observed fire: 2/);
 });
 
+test("renderReceipts lists every installed skill and summarizes other SKILL.md reads apart", () => {
+  const [receipt] = fixtureReceipts();
+  assert.ok(receipt);
+  receipt.skills.push(
+    { name: "v4", fires: 2, sessionCount: 1, lastSeen: Date.parse("2026-10-29T00:00:00Z") },
+    { name: "stray", fires: 1, sessionCount: 1, lastSeen: Date.parse("2026-10-29T00:00:00Z") },
+  );
+  const output = renderReceipts([receipt]);
+  assert.match(output, /diagnosing-bugs\s+4\s+3\s+2026-09-19/);
+  assert.match(output, /^\s+alpha\s+0\s+0\s+—$/m);
+  assert.doesNotMatch(output, /^\s+v4\s+2/m);
+  assert.match(
+    output,
+    /2 other SKILL\.md name\(s\) read outside the user skill directories: v4 \(2\), stray \(1\)/,
+  );
+  assert.match(output, /installed: 4, observed firing: 2, no observed fire: 2/);
+});
+
+test("renderReceipts keeps every read in the table when no user skill is installed", () => {
+  const output = renderReceipts([
+    {
+      agentId: "codex",
+      sessionsDir: "/home/x/.codex/sessions",
+      present: true,
+      sessionsFound: 1,
+      transcriptsRead: 1,
+      skills: [{ name: "project-skill", fires: 2, sessionCount: 1, lastSeen: 0 }],
+      installed: [],
+      installedCount: 0,
+      neverFired: [],
+      tax: { descTokensTotal: 0, bodyTokensMedian: 0, heaviest: [] },
+    },
+  ]);
+  assert.match(output, /^\s+project-skill\s+2\s+1\s+/m);
+  assert.doesNotMatch(output, /outside the user skill directories/);
+});
+
 test("renderReceipts handles agents without history and without sessions config", () => {
   const output = renderReceipts([
     {
