@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Questions and ideas
+    url: https://github.com/remote-controlled-man/skillfit/discussions
+    about: Ask how to use skillfit or discuss an idea before opening an issue.
   - name: Bench format & contribution contract
     url: https://github.com/remote-controlled-man/skillfit/tree/main/benches
     about: Read this before submitting a bench or a PR that adds tasks.

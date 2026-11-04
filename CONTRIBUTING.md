@@ -30,8 +30,22 @@ Biome is a devDependency, so the shipped CLI still has zero runtime dependencies
 2. Pick an issue labeled `good first issue`.
 3. For a documentation-only change, run `node tools/verify/check-docs.mjs`.
 4. If that check says a sentence is repeated, link the page that owns the fact instead of copying it.
+5. Title the pull request as described in [commit messages and pull request titles](#commit-messages-and-pull-request-titles).
 
 Architecture, test and restatement gates stay as they are.
+
+## Commit messages and pull request titles
+
+External pull requests are squash-merged, so the PR title becomes the commit
+subject on `main`. Write it as `type(scope): subject`:
+
+- `type` is one of `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`, `chore` or `revert`.
+- `scope` is optional and names the area, such as `cli`, `report`, `bench`, `agents` or `matrix`.
+- The subject is an imperative phrase with no trailing period, for example `fix(report): count symlinked skills`. The whole title stays within 100 characters.
+- Add `!` before the colon when a CLI flag, output, manifest or schema contract breaks, and describe the break in the PR body.
+
+The `PR title` check runs `tools/verify/pr-title.mjs` on every pull request.
+Commits inside your branch are not checked.
 
 For a bug, search [existing issues](https://github.com/remote-controlled-man/skillfit/issues)
 and use the bug-report template with a minimal reproduction, expected/actual output
@@ -46,6 +60,7 @@ and relevant versions. Use [SECURITY.md](SECURITY.md) for private security repor
 ## Ground rules
 
 - **Zero runtime dependencies** is a hard rule. Discuss in an issue before proposing one.
+- `install`, `setup` and `bundle` accept fixes, not new features. They write to users' agent configuration; new work goes to the read-only audit and evaluation commands.
 - Run `npm test` for code/build changes and before any commit. Tests are `node:test`, offline, and never call a real model API or agent CLI — use `MockExecutor`, injected executors, or injected fs roots.
 - Verdict semantics and the statistical protocol are frozen in [docs/reference/metrics.md](docs/reference/metrics.md); change the doc and the code together.
 - Follow [architecture and maintenance](docs/maintainers/architecture.md) for module boundaries, document ownership and version scope. Update the canonical guide and its affected dependents. Migrate current links when consolidating pages and link the exact historical snapshot for old explanations; preserve bilingual README blocks and frozen evidence bytes. Documentation-only changes need facts, links and diff review; code/build changes require the offline suite.
@@ -65,7 +80,9 @@ or confirmation flow.
 
 For documentation, update the existing page that owns the topic and its affected
 links. Keep the English and Chinese READMEs aligned, including identical badges
-and command/demo blocks. Run `node tools/verify/check-docs.mjs` for links, anchors,
+and command/demo blocks. If you only edit `README.md`, say so in the PR; a
+maintainer adds the matching `README.zh-CN.md` change to your branch, and the
+docs check fails until both match. Run `node tools/verify/check-docs.mjs` for links, anchors,
 version-sensitive link pinning, repository layout and bilingual structure; check
 facts and execute changed examples too. This gate does not check arbitrary external
 URL availability or factual claims.

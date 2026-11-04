@@ -24,6 +24,9 @@
   owned by the architecture page.
 - CONTRIBUTING explains a ten-minute first pull request for issues labeled
   `good first issue`.
+- Pull request titles follow `type(scope): subject` and become the squash
+  commit subject. A `PR title` check enforces the format. Issue forms add a
+  feature request, and questions go to Discussions.
 - Biome formats `src` and `tools` at a 100-column width. CI rejects format
   drift. Biome is a devDependency, so the shipped CLI still has zero runtime
   dependencies.
