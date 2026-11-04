@@ -2,9 +2,9 @@
 
 ## Choose your build
 
-These pages describe the **0.15.1 package and current source**; source guides use
+These pages describe the **0.15.2 package and current source**; source guides use
 Node >=22, `npm run build` and `node dist/cli.js`. The pinned
-`npx skillfit@0.15.1` commands name the version these pages describe; the registry
+`npx skillfit@0.15.2` commands name the version these pages describe; the registry
 is the source of truth for what is currently published. Superseded releases keep
 their own documentation: see the
 [0.13.1 documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs)
