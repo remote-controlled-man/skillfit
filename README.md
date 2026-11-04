@@ -6,14 +6,7 @@
 
 **A/B testing for agent configuration.**
 
-A pilot ran 8 workflow skills for 3 treated runs each, against a<br/>
-frozen Codex CLI baseline. That is below the 8×5 indicative bar.<br/>
-Every skill cost **9–27% more input tokens**, and the patch harness<br/>
-could not observe process behavior — [full table and its limits](#our-own-data).
-
-skillfit runs that paired evaluation on *your* tasks, with deterministic verifiers,<br/>
-an exact McNemar verdict, paired-bootstrap intervals and trigger rates — so "this<br/>
-skill feels useful" becomes dated, replayable evidence with its limits stated.
+skillfit compares a baseline and a treatment on the same tasks and reports what changed, including the limits of that result.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
@@ -23,24 +16,11 @@ skill feels useful" becomes dated, replayable evidence with its limits stated.
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[Documentation](docs/README.md) · [Quick start](#first-run-with-npm) · [Bench guide](benches/README.md) · [Reports](docs/reference/evaluation-reports.md) · [Contributing](#contributing)
+[Documentation](docs/README.md) · [Quick start](#see-a-real-report-before-you-spend) · [Limits](#limits) · [Bench guide](benches/README.md) · [Reports](docs/reference/evaluation-reports.md) · [Contributing](#contributing)
 
 </div>
 
-<p align="center">
-  <img src="docs/assets/skillfit-flow.en.svg" alt="The same task runs with baseline and treatment configurations before skillfit compares outcomes, token use, and uncertainty" width="100%" />
-</p>
-
 ---
-
-## Install
-
-```bash
-npx skillfit@0.15.0 --help
-npx skillfit@0.15.0 doctor
-```
-
-Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the eight commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
 
 ## See a real report before you spend
 
@@ -52,7 +32,28 @@ npx skillfit@0.15.0 bench self-test code-review --suite existing-mock-arms --run
 npx skillfit@0.15.0 report eval ./runs/controls-001/existing-mock-arms
 ```
 
+<p align="center">
+  <img src="docs/assets/skillfit-report.svg" alt="Two groups of bars and a comparison mark, with no words" width="720" />
+</p>
+
 `bench check` runs the bundled verifiers against known-good and known-bad answers, so you can watch the harness discriminate: the oracle passes, an empty output fails, a mock baseline fails and a mock treatment passes. `bench self-test` then drives the complete paired pipeline — grader, exact McNemar verdict, paired-bootstrap intervals, audit — on synthetic controls, and `report eval` renders it. That report is banner-marked **Synthetic harness run**: it proves the pipeline works, not that any Skill helps. Add `--dry-run` to the self-test to print its plan and write nothing.
+
+## Limits
+
+A pilot ran 8 workflow skills for 3 treated runs each, against a frozen Codex CLI baseline. That is below the 8×5 indicative bar. Every skill cost **9–27% more input tokens**, and the patch harness could not observe process behavior. The [full table](#our-own-data) keeps those task-level numbers.
+
+The 0.15.0 package carries the measurement features described as **current source**, including [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit, and unsupported schema 2 targets refuse before verifier, oracle or model calls. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
+
+Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
+
+## Install
+
+```bash
+npx skillfit@0.15.0 --help
+npx skillfit@0.15.0 doctor
+```
+
+Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the eight commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
 
 ## Why
 
@@ -63,6 +64,10 @@ Installing a configuration does not show whether it helps your tasks. Three publ
 - **36.82% of 3,984 scanned public Skills** had at least one security issue in Snyk’s February 5, 2026 study ([ToxicSkills findings](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)).
 
 skillfit provides paired A/B experiments with deterministic verifiers, statistical verdicts and trigger-rate measurement. These studies motivate the tool; they do not validate skillfit or predict gains on your tasks.
+
+<p align="center">
+  <img src="docs/assets/skillfit-flow.en.svg" alt="The same task runs with baseline and treatment configurations before skillfit compares outcomes, token use, and uncertainty" width="100%" />
+</p>
 
 Build cases around your own tasks: pin the starting files, write the request, and define what a correct result must do. The bundled benches teach the format; the CLI runs your cases, compares outcomes and costs, and preserves evidence. See the [case authoring guide](docs/guides/bench-authoring.md).
 
@@ -150,9 +155,7 @@ For development on your own checkout, follow
 
 The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
 
-The 0.15.0 package carries the measurement features described as **current source**, including [offline self-test protocol 1](docs/guides/bench-authoring.md#test-known-controls) and explicit [bench schema 2 / frozen measurementScope 1](benches/README.md#claims-and-measurement-scope). Schema 1 remains compatible and unrecorded; declarations do not prove that a bench can measure benefit, and unsupported schema 2 targets refuse before verifier, oracle or model calls. The [capability table](docs/guides/experiment-workflow.md#executor-capabilities) describes adapter support; [metrics](docs/reference/metrics.md#public-model-identity-per-invocation) defines per-call model identity and unknown legacy evidence.
-
-Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent executions before optional judges. The 8×5 scale/adoption floor is not a minimum for every within-bench exact-test verdict or a power guarantee. Sampling is unpinned, and no validated MDE planner is available. Preview the count and set `--max-calls` before spending. See [bounded experiments](docs/guides/experiment-workflow.md).
+Schema, measurement scope and the adoption floor are collected in [Limits](#limits).
 
 ## Build your own cases
 

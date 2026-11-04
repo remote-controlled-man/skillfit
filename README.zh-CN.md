@@ -6,14 +6,7 @@
 
 **给 agent 配置做 A/B 测试。**
 
-这是一次试点：8 个 workflow skill，每个 3 次实验运行，对照冻结的<br/>
-Codex CLI 基线。样本量低于 8×5 的 indicative 门槛。<br/>
-每一个都多花 **9–27% 的 input token**，而且补丁式 harness<br/>
-观察不到过程行为 —— [完整表格与其边界](#我们自己的数据)。
-
-skillfit 把这套配对评测跑在**你自己的**任务上：确定性 verifier、精确 McNemar<br/>
-判定、配对 bootstrap 区间和触发率 —— 让"这个 skill 感觉有用"变成带日期、<br/>
-可回放、且写明边界的证据。
+skillfit 在同一批任务上比较基线组与实验组，并报告变化及其边界。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
@@ -23,24 +16,11 @@ skillfit 把这套配对评测跑在**你自己的**任务上：确定性 verifi
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[文档目录](docs/README.md) · [快速开始](#用-npm-开始) · [Bench 指南](benches/README.md) · [评测报告](docs/reference/evaluation-reports.md) · [贡献](#贡献)
+[文档目录](docs/README.md) · [快速开始](#花钱之前先看一份真实报告) · [边界](#边界) · [Bench 指南](benches/README.md) · [评测报告](docs/reference/evaluation-reports.md) · [贡献](#贡献)
 
 </div>
 
-<p align="center">
-  <img src="docs/assets/skillfit-flow.zh-CN.svg" alt="同一个任务分别使用基线组和实验组配置运行，再比较结果、Token 消耗与不确定性" width="100%" />
-</p>
-
 ---
-
-## 安装
-
-```bash
-npx skillfit@0.15.0 --help
-npx skillfit@0.15.0 doctor
-```
-
-需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出八个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
 
 ## 花钱之前先看一份真实报告
 
@@ -52,7 +32,28 @@ npx skillfit@0.15.0 bench self-test code-review --suite existing-mock-arms --run
 npx skillfit@0.15.0 report eval ./runs/controls-001/existing-mock-arms
 ```
 
+<p align="center">
+  <img src="docs/assets/skillfit-report.svg" alt="两组柱和一枚比较标记，图中没有文字" width="720" />
+</p>
+
 `bench check` 用已知正确与已知错误的答案去跑内置 verifier，你可以直接看到 harness 的鉴别力：oracle 通过、空输出失败、mock 基线失败、mock 实验组通过。`bench self-test` 接着在合成对照上驱动完整的配对流水线——grader、精确 McNemar 判定、配对 bootstrap 区间、审计——再由 `report eval` 渲染出来。那份报告带有 **Synthetic harness run** 横幅：它证明流水线可用，不证明任何 Skill 有收益。给 self-test 加上 `--dry-run` 可只打印计划、不写任何文件。
+
+## 边界
+
+这是一次试点：8 个 workflow skill，每个 3 次实验运行，对照冻结的 Codex CLI 基线。样本量低于 8×5 的 indicative 门槛。每一个都多花 **9–27% 的 input token**，而且补丁式 harness 观察不到过程行为。[完整表格](#我们自己的数据)保留这些逐任务数字。
+
+0.15.0 包包含文档中标为**当前源码**的测量功能，其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益，不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
+
+配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。8×5 是规模/采用下限，不是每项 bench 内精确检验判定的起点，也不保证统计功效。sampling 未固定，目前没有经验证的 MDE 规划器。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/guides/experiment-workflow.md#bound-calls-and-spending)。
+
+## 安装
+
+```bash
+npx skillfit@0.15.0 --help
+npx skillfit@0.15.0 doctor
+```
+
+需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出八个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
 
 ## 为什么
 
@@ -63,6 +64,10 @@ npx skillfit@0.15.0 report eval ./runs/controls-001/existing-mock-arms
 - Snyk 在 2026 年 2 月 5 日的研究中发现，扫描的 **3,984 个公开 Skill 中有 36.82% 存在至少一种安全问题**（[ToxicSkills 研究结果](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)）。
 
 skillfit 提供配对 A/B 实验、确定性 verifier、统计判定和触发率测量。这些研究解释了工具的用途，不能验证 skillfit 本身，也不能预测你的任务会获得多少收益。
+
+<p align="center">
+  <img src="docs/assets/skillfit-flow.zh-CN.svg" alt="同一个任务分别使用基线组和实验组配置运行，再比较结果、Token 消耗与不确定性" width="100%" />
+</p>
 
 围绕你自己的任务编写 case：固定初始文件、写下任务请求、定义正确结果必须满足的条件。内置 bench 用来教格式；CLI 负责运行你的 case、对比结果和成本、保存证据。参见[case 编写指南](docs/guides/bench-authoring.md)。
 
@@ -145,9 +150,7 @@ node dist/cli.js install --agent codex --dry-run
 
 校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
 
-0.15.0 包包含文档中标为**当前源码**的测量功能，其中包括[离线自检协议 1](docs/guides/bench-authoring.md#test-known-controls)和显式选择的 [bench schema 2 / 冻结 measurementScope 1](benches/README.md#claims-and-measurement-scope)。schema 1 保持兼容且未记录声明；声明本身不证明 bench 能测出收益，不支持的 schema 2 目标会在 verifier、oracle 或模型调用前被拒绝。[能力表](docs/guides/experiment-workflow.md#executor-capabilities)说明适配器支持范围；[测量契约](docs/reference/metrics.md#public-model-identity-per-invocation)定义逐调用模型身份和旧数据的未知证据。
-
-配对评测默认**5 次每组**：8 个任务会执行 80 次 agent，尚未包括可选 judge。8×5 是规模/采用下限，不是每项 bench 内精确检验判定的起点，也不保证统计功效。sampling 未固定，目前没有经验证的 MDE 规划器。花费前预览次数并设置 `--max-calls`。参见[有界实验流程](docs/guides/experiment-workflow.md#bound-calls-and-spending)。
+Schema、测量范围和采用下限集中在[边界](#边界)。
 
 ## 创建自己的 case
 

@@ -8,6 +8,9 @@
 - The README's opening skill study is labeled a 3-run pilot, below the 8×5
   indicative bar, with its process-observation limit. The source quickstart
   detaches at the 0.15.0 commit.
+- The README opens with one sentence, the three offline report commands, and a
+  text-free report figure. The pilot label, schema notes and adoption floor
+  sit in one Limits section.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 
