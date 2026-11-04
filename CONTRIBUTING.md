@@ -44,7 +44,11 @@ subject on `main`. Write it as `type(scope): subject`:
 - The subject is an imperative phrase with no trailing period, for example `fix(report): count symlinked skills`. The whole title stays within 100 characters.
 - Add `!` before the colon when a CLI flag, output, manifest or schema contract breaks, and describe the break in the PR body.
 
-The `PR title` check runs `tools/verify/pr-title.mjs` on every pull request.
+Issue titles use the same format. A bug report starts with `fix`, a feature
+request with `feat`, and an evidence submission with `docs`. The `bug` and
+`evidence` labels stay on the issue; they are not title types.
+
+The `PR title` and `Issue title` checks run `tools/verify/pr-title.mjs`.
 Commits inside your branch are not checked.
 
 For a bug, search [existing issues](https://github.com/remote-controlled-man/skillfit/issues)

@@ -3,6 +3,10 @@ description: Propose a change to what skillfit does
 title: "feat: "
 labels: [enhancement]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Start the title with `feat(scope):`, the same format as a pull request.
   - type: textarea
     id: problem
     attributes:

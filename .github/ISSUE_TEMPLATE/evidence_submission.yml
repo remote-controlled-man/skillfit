@@ -1,11 +1,12 @@
 name: Evidence submission
 description: Reproduce an experiment (or share a new one) with a reproducible configuration
-title: "evidence: "
+title: "docs: "
 labels: [evidence]
 body:
   - type: markdown
     attributes:
       value: |
+        Title the issue `docs(scope): subject`, the same format as a pull request. This form adds the evidence label.
         We do not accept unverifiable numbers ("skill X gave me +20%"). Submit the reproducible
         **configuration** and a pinned manifest. CI checks benches offline; a live-agent rerun is
         separate and depends on available credentials and cost. Remove secrets and private paths.
