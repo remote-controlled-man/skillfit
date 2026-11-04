@@ -3,7 +3,14 @@ import {
   resolveAgentRulePath as resolveRulePath,
 } from "./environment.js";
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync, type Dirent, type Stats } from "node:fs";
+import {
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  type Dirent,
+  type Stats,
+} from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { getAgent, loadMatrix, skillUserDirSpecs, type AgentDef } from "./matrix.js";
@@ -236,6 +243,15 @@ function checkRules(agent: AgentDef, ctx: Ctx): Check[] {
 interface SkillLocation {
   shared: string[];
   private: string[];
+  targets: Set<string>;
+}
+
+function realPath(p: string): string {
+  try {
+    return realpathSync(p);
+  } catch {
+    return p;
+  }
 }
 
 function skillSummaryCheck(presentDirs: number, valid: number): Check {
@@ -255,7 +271,7 @@ function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
     seen.add(resolved);
     dirs.push({ spec, resolved });
   }
-  let valid = 0;
+  const validTargets = new Set<string>();
   let presentDirs = 0;
   const locations = new Map<string, SkillLocation>();
   for (const { spec, resolved } of dirs) {
@@ -271,12 +287,20 @@ function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
     presentDirs++;
     const bucket = sharedDirs.has(resolved) ? "shared" : "private";
     for (const entry of entries) {
-      if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
-      const location = locations.get(entry.name) ?? { shared: [], private: [] };
-      location[bucket].push(spec);
-      locations.set(entry.name, location);
+      if (entry.name.startsWith(".")) continue;
       const label = `${spec}/${entry.name}`;
-      const skillFile = path.join(resolved, entry.name, SKILL_FILE);
+      const entryPath = path.join(resolved, entry.name);
+      if (entry.isSymbolicLink() && statOrNull(entryPath) === null) {
+        checks.push(check("WARN", `${label} — broken symlink; the agent cannot load it`));
+        continue;
+      }
+      if (!isDirectory(entryPath)) continue;
+      const target = realPath(entryPath);
+      const location = locations.get(entry.name) ?? { shared: [], private: [], targets: new Set() };
+      location[bucket].push(spec);
+      location.targets.add(target);
+      locations.set(entry.name, location);
+      const skillFile = path.join(entryPath, SKILL_FILE);
       if (!isFile(skillFile)) {
         checks.push(
           check("WARN", `${label} — no ${SKILL_FILE}; directory is not a loadable skill`),
@@ -289,9 +313,10 @@ function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
         checks.push(check("WARN", `${label}/${SKILL_FILE} — ${error}`));
         continue;
       }
-      valid++;
+      validTargets.add(target);
     }
   }
+  const valid = validTargets.size;
   checks.push(skillSummaryCheck(presentDirs, valid));
   if (valid > SKILL_COUNT_WARN_THRESHOLD) {
     checks.push(
@@ -302,7 +327,7 @@ function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
     );
   }
   for (const [name, location] of locations) {
-    if (location.shared.length > 0 && location.private.length > 0) {
+    if (location.shared.length > 0 && location.private.length > 0 && location.targets.size > 1) {
       checks.push(
         check(
           "WARN",

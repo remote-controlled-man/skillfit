@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { after, test } from "node:test";
@@ -309,6 +309,43 @@ test("skill name conflicts between shared and private dirs are flagged", () => {
     ),
   );
   assert.ok(!checks.some((c) => c.message.includes('"shared-only" exists in both')));
+});
+
+test("skills reached through a directory symlink are validated, and a broken link is reported", () => {
+  const home = tempDir();
+  const store = tempDir();
+  writeSkill(store, "store", "linked", VALID_SKILL_MD);
+  writeSkill(store, "store", "gone", VALID_SKILL_MD);
+  const skills = path.join(home, ".claude", "skills");
+  mkdirSync(skills, { recursive: true });
+  symlinkSync(path.join(store, "store", "linked"), path.join(skills, "linked"), "junction");
+  symlinkSync(path.join(store, "store", "gone"), path.join(skills, "gone"), "junction");
+  rmSync(path.join(store, "store", "gone"), { recursive: true });
+  const checks = healthChecks(
+    collectDoctorReport(makeOptions(home, tempDir(), { agent: "claude-code" })),
+    "claude-code",
+    "Skills",
+  );
+  assert.ok(hasCheck(checks, "PASS", /1 valid skill/));
+  assert.ok(hasCheck(checks, "WARN", /gone — broken symlink/));
+});
+
+test("one skill linked into shared and private dirs is counted once and is not a conflict", () => {
+  const home = tempDir();
+  const store = tempDir();
+  writeSkill(store, "store", "same", VALID_SKILL_MD);
+  for (const dir of [".kimi-code/skills", ".agents/skills"]) {
+    const parent = path.join(home, ...dir.split("/"));
+    mkdirSync(parent, { recursive: true });
+    symlinkSync(path.join(store, "store", "same"), path.join(parent, "same"), "junction");
+  }
+  const checks = healthChecks(
+    collectDoctorReport(makeOptions(home, tempDir(), { agent: "kimi-code" })),
+    "kimi-code",
+    "Skills",
+  );
+  assert.ok(hasCheck(checks, "PASS", /1 valid skill/));
+  assert.ok(!checks.some((c) => c.message.includes('"same" exists in both')));
 });
 
 test("invalid JSON MCP config is a FAIL", () => {

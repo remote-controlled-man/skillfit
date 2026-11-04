@@ -11,9 +11,10 @@ export function installedUserSkills(
   for (const dirPattern of skillUserDirSpecs(agent, env)) {
     const dir = resolveHome(dirPattern, homeDir);
     if (!existsSync(dir)) continue;
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (entry.isDirectory() && existsSync(join(dir, entry.name, "SKILL.md"))) {
-        if (!skills.has(entry.name)) skills.set(entry.name, join(dir, entry.name));
+    for (const name of readdirSync(dir)) {
+      // existsSync follows symlinks, so linked skill directories count and broken links do not.
+      if (existsSync(join(dir, name, "SKILL.md")) && !skills.has(name)) {
+        skills.set(name, join(dir, name));
       }
     }
   }

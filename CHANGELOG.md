@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `doctor` and `report` count skills installed through a directory symlink,
+  as skill managers such as cc-switch create them. Before, both reported no
+  installed skills, so `report` printed no never-fired list or catalog size.
+  `doctor` warns about a broken link and no longer reports one linked skill in
+  two directories as diverging copies.
 - Security reports go to private vulnerability reporting, and conduct reports
   go to the mailbox already published in the repository history. The GitHub
   profile is no longer the reporting route.
