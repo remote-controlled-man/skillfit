@@ -128,6 +128,36 @@ test('runEval --dry-run prints the plan and writes nothing', async (t) => {
   assert.match(output, /Dry run — nothing was written\./);
 });
 
+test('a dry-run of a skill or AGENTS.md rules directory prints calls and token stop lines without spending', async (t) => {
+  const budget = { input: 1000, cachedInput: 800, uncachedInput: 200, output: 100, durationSeconds: 60 };
+  const targets: Array<{ skillPath: string; executor: Executor }> = [
+    { skillPath: makeSkill(t), executor: new MockExecutor() },
+    {
+      skillPath: makeConfigExperiment(t, 'rules', 'AGENTS.md'),
+      executor: { describe: () => ({ kind: 'cli', model: 'offline', sampling: null }), run: async () => { throw new Error('dry-run must not invoke an executor'); } },
+    },
+  ];
+  for (const target of targets) {
+    let calls = 0;
+    const executor: Executor = {
+      describe: () => target.executor.describe(),
+      run: async (prompt, workdir, options) => { calls++; return target.executor.run(prompt, workdir, options); },
+    };
+    const { lines, log } = collector();
+    const result = await runEval({
+      skillPath: target.skillPath, bench: BUNDLED_CODE_REVIEW, trials: 1, dryRun: true, yes: true,
+      executor, spendingBudget: budget, runsRoot: join(tmp(t, 'skillfit-preview-cost-'), 'runs'), log,
+    });
+    assert.equal(result, null);
+    assert.equal(calls, 0);
+    const output = lines.join('\n');
+    assert.match(output, /Calls\s+:\s+\d+ planned/);
+    assert.match(output, /Spending stop lines: \{.*"input":1000/);
+    assert.match(output, /the initial prompt only/);
+    assert.doesNotMatch(output, /\$|\bUSD\b|\bdollars?\b/i);
+  }
+});
+
 test('workspace dry-run reports disk presentation and only estimates the initial prompt', async (t) => {
   const runsRoot = join(tmp(t, 'skillfit-workspace-plan-'), 'runs');
   const { lines, log } = collector();

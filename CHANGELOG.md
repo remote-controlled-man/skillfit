@@ -14,6 +14,9 @@
 - `skillfit --help` lists the eight commands. `skillfit <command> --help`
   lists that command's options. A flag used on the wrong command still names
   the command that accepts it.
+- An eval dry-run of a Skill directory or an AGENTS.md rules directory prints
+  the planned call count and, with a spending budget, the token stop lines.
+  It does not print a dollar price or call a model.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 
