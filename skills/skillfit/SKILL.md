@@ -10,7 +10,7 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 
 ## Prerequisites
 
-Check availability with `npx skillfit@0.15.1 --version`, or `node dist/cli.js --version` inside a clone.
+Check availability with `npx skillfit@0.15.2 --version`, or `node dist/cli.js --version` inside a clone.
 If neither works, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
 For source-only commands below, set `skillfit_source` to the absolute path of a
 built checkout, then run from the project/study workspace that owns the outputs.

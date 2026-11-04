@@ -27,12 +27,12 @@ skillfit compares a baseline and a treatment on the same tasks and reports what 
 `report` and `doctor` read this machine and do not call a model.
 
 ```bash
-npx skillfit@0.15.1 report
-npx skillfit@0.15.1 doctor
+npx skillfit@0.15.2 report
+npx skillfit@0.15.2 doctor
 ```
 
 ```console
-$ npx skillfit@0.15.1 report --agent codex
+$ npx skillfit@0.15.2 report --agent codex
 
 codex — 280 session(s), 280 transcript(s)
   skill                          FIRES  SESSIONS  LAST SEEN
@@ -66,9 +66,9 @@ Captured 2026-11-04 from one Codex history. Five installed skills have no observ
 No agent CLI, no login, no model calls. These read the benches shipped inside the package and take a few seconds:
 
 ```bash
-npx skillfit@0.15.1 bench check code-review
-npx skillfit@0.15.1 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.15.1 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.15.2 bench check code-review
+npx skillfit@0.15.2 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.15.2 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 <p align="center">
@@ -88,8 +88,8 @@ Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent exe
 ## Install
 
 ```bash
-npx skillfit@0.15.1 --help
-npx skillfit@0.15.1 doctor
+npx skillfit@0.15.2 --help
+npx skillfit@0.15.2 doctor
 ```
 
 Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the eight commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
@@ -128,10 +128,10 @@ The instructions the agent should follow.
 Then scaffold a case and preview an evaluation:
 
 ```bash
-npx skillfit@0.15.1 bench init my-bench --kind command --dry-run
-npx skillfit@0.15.1 bench init my-bench --kind command --yes
-npx skillfit@0.15.1 bench check ./my-bench --json
-npx skillfit@0.15.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.15.2 bench init my-bench --kind command --dry-run
+npx skillfit@0.15.2 bench init my-bench --kind command --yes
+npx skillfit@0.15.2 bench check ./my-bench --json
+npx skillfit@0.15.2 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).

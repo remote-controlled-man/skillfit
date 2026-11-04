@@ -239,7 +239,7 @@ async function main(mode, packFile) {
       maxBuffer: 8 * 1024 * 1024,
     });
   assert.equal(cli(["--version"]).trim(), pkg.version);
-  assert.match(cli(["--help"]), /--request/);
+  assert.match(cli(["eval", "--help"]), /--request/);
   const preview = JSON.parse(
     cli(["eval", "--request", join(installed, "docs/examples/eval-request.json"), "--dry-run"]),
   );

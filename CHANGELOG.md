@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.15.2 — Release acceptance matches the shipped help (2026-11-04)
+
+- Registry install acceptance reads `--request` from `eval --help`. The
+  top-level help index no longer lists every flag.
+- The frozen 0.11.0 feature recipe pin matches the bytes formatted when Biome
+  was adopted. 0.15.1 is published; its acceptance stopped at that pin, and
+  that version was not uploaded again.
+
 ## 0.15.1 — A free local audit (2026-11-04)
 
 - Codex `report` counts skills in the project directory recorded on the
