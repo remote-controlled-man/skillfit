@@ -1,12 +1,12 @@
-import { randomUUID } from 'node:crypto';
-import { constants, existsSync, promises as fs } from 'node:fs';
-import * as path from 'node:path';
+import { randomUUID } from "node:crypto";
+import { constants, existsSync, promises as fs } from "node:fs";
+import * as path from "node:path";
 import { BACKUP_SUFFIX } from "./constants.js";
 
 export interface FileWrite {
   path: string;
   content: string | Buffer;
-  backup: 'none' | 'first' | 'previous';
+  backup: "none" | "first" | "previous";
 }
 
 export interface WrittenFile {
@@ -22,7 +22,10 @@ interface StagedWrite {
 }
 
 /** Stage every write before replacing any target; rollback is best effort, not crash atomicity. */
-export async function executeTransaction(files: readonly FileWrite[], validate: () => Promise<void>): Promise<WrittenFile[]> {
+export async function executeTransaction(
+  files: readonly FileWrite[],
+  validate: () => Promise<void>,
+): Promise<WrittenFile[]> {
   const staged: StagedWrite[] = [];
   try {
     for (const file of files) {
@@ -33,9 +36,9 @@ export async function executeTransaction(files: readonly FileWrite[], validate: 
       const entry: StagedWrite = { target: file.path, tmp, restore, backedUp: null };
       staged.push(entry);
       if (restore) await fs.copyFile(file.path, restore);
-      if (file.backup !== 'none') {
+      if (file.backup !== "none") {
         // Metadata may track the previous version; user content keeps the first original.
-        if (file.backup === 'previous') {
+        if (file.backup === "previous") {
           await fs.copyFile(file.path, file.path + BACKUP_SUFFIX);
           entry.backedUp = file.path + BACKUP_SUFFIX;
         } else {
@@ -64,7 +67,9 @@ export async function executeTransaction(files: readonly FileWrite[], validate: 
         if (entry.restore) await fs.copyFile(entry.restore, entry.target);
         else await fs.rm(entry.target, { force: true });
       } catch (rollbackError) {
-        const recovery = entry.restore ? `recovery copy retained at ${entry.restore}` : 'new target remains; no previous file to restore';
+        const recovery = entry.restore
+          ? `recovery copy retained at ${entry.restore}`
+          : "new target remains; no previous file to restore";
         rollbackFailures.push(`${entry.target}: ${(rollbackError as Error).message} (${recovery})`);
         preserveRestores.add(entry.target);
       }
@@ -75,22 +80,31 @@ export async function executeTransaction(files: readonly FileWrite[], validate: 
 
   const cleanupFailures = await cleanupStaged(staged);
   if (cleanupFailures.length > 0) {
-    throw new Error(`Install files were validated, but cleanup failed for ${cleanupFailures.join('; ')}`);
+    throw new Error(
+      `Install files were validated, but cleanup failed for ${cleanupFailures.join("; ")}`,
+    );
   }
   return staged.map(({ target, backedUp }) => ({ target, backedUp }));
 }
 
-function transactionFailure(error: unknown, rollbackFailures: string[], cleanupFailures: string[]): unknown {
+function transactionFailure(
+  error: unknown,
+  rollbackFailures: string[],
+  cleanupFailures: string[],
+): unknown {
   if (rollbackFailures.length === 0 && cleanupFailures.length === 0) return error;
   const details = [`Install failed (${error instanceof Error ? error.message : String(error)})`];
   if (rollbackFailures.length > 0) {
-    details.push(`rollback failed for ${rollbackFailures.join('; ')}`);
+    details.push(`rollback failed for ${rollbackFailures.join("; ")}`);
   }
-  if (cleanupFailures.length > 0) details.push(`cleanup failed for ${cleanupFailures.join('; ')}`);
-  return new Error(details.join('; '), { cause: error });
+  if (cleanupFailures.length > 0) details.push(`cleanup failed for ${cleanupFailures.join("; ")}`);
+  return new Error(details.join("; "), { cause: error });
 }
 
-async function cleanupStaged(staged: StagedWrite[], preserveRestores: Set<string> = new Set()): Promise<string[]> {
+async function cleanupStaged(
+  staged: StagedWrite[],
+  preserveRestores: Set<string> = new Set(),
+): Promise<string[]> {
   const failures: string[] = [];
   for (const entry of staged) {
     const files = [entry.tmp];
@@ -117,8 +131,7 @@ async function backupOnce(target: string): Promise<string | null> {
     await fs.copyFile(target, backup, constants.COPYFILE_EXCL);
     return backup;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'EEXIST') return null;
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") return null;
     throw error;
   }
 }
-

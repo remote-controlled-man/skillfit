@@ -1,29 +1,36 @@
-import { MOCK_MARKER_FILE } from './constants.js';
+import { MOCK_MARKER_FILE } from "./constants.js";
 
 /** New authoring groups task inputs; readers still accept any valid manifest paths. */
 export function taskFilePaths(taskId: string) {
   const root = `tasks/${taskId}`;
   return {
-    fixture: `${root}/fixture`, prompt: `${root}/prompt.md`, promptTrigger: `${root}/prompt.trigger.md`,
-    verifier: `${root}/verify.mjs`, oracle: `${root}/reference/oracle.mjs`, rubric: `${root}/reference/answer.md`,
+    fixture: `${root}/fixture`,
+    prompt: `${root}/prompt.md`,
+    promptTrigger: `${root}/prompt.trigger.md`,
+    verifier: `${root}/verify.mjs`,
+    oracle: `${root}/reference/oracle.mjs`,
+    rubric: `${root}/reference/answer.md`,
   };
 }
 
-export function benchTemplateFiles(benchName: string, kind: 'output' | 'command'): Record<string, string> {
-  return kind === 'command' ? commandTemplateFiles(benchName) : outputTemplateFiles(benchName);
+export function benchTemplateFiles(
+  benchName: string,
+  kind: "output" | "command",
+): Record<string, string> {
+  return kind === "command" ? commandTemplateFiles(benchName) : outputTemplateFiles(benchName);
 }
 
 function outputTemplateFiles(benchName: string): Record<string, string> {
-  const files = taskFilePaths('example-task');
+  const files = taskFilePaths("example-task");
   return {
-    'bench.json': `${JSON.stringify(
+    "bench.json": `${JSON.stringify(
       {
         schemaVersion: 1,
         name: benchName,
-        description: 'Describe what real-work tasks this bench measures.',
+        description: "Describe what real-work tasks this bench measures.",
         tasks: [
           {
-            id: 'example-task',
+            id: "example-task",
             fixture: files.fixture,
             prompt: files.prompt,
             promptTrigger: files.promptTrigger,
@@ -44,9 +51,9 @@ The repository snapshot below contains \`answer.txt\`. Reply with its exact cont
 
 The repository in your current working directory contains \`answer.txt\`. Reply with its exact contents and nothing else.
 `,
-    [`${files.fixture}/answer.txt`]: 'skillfit-ok\n',
+    [`${files.fixture}/answer.txt`]: "skillfit-ok\n",
     [`${files.fixture}/${MOCK_MARKER_FILE}`]: `${JSON.stringify(
-      { baseline: { output: 'skillfit-ok' }, treatment: { output: 'skillfit-ok' } },
+      { baseline: { output: "skillfit-ok" }, treatment: { output: "skillfit-ok" } },
       null,
       2,
     )}\n`,
@@ -104,10 +111,9 @@ a real task from your own work:
   };
 }
 
-
 /** A dependency-free teaching case; users replace it with their own real task. */
 export function commandTemplateFiles(benchName: string): Record<string, string> {
-  const files = taskFilePaths('example-task');
+  const files = taskFilePaths("example-task");
   const prompt = `# Repair the addition function
 
 The repository in your current working directory exports \`add(a, b)\` from
@@ -116,27 +122,41 @@ and fractions, but currently subtracts them. Fix the implementation and run
 \`node --test test.mjs\`. Keep \`package.json\` and \`test.mjs\` unchanged.
 `;
   return {
-    'bench.json': JSON.stringify({
-      schemaVersion: 1,
-      name: benchName,
-      description: 'Teaching case for file edits; replace with a real task from your work.',
-      tasks: [{
-        id: 'example-task',
-        fixture: files.fixture,
-        prompt: files.prompt,
-        promptTrigger: files.promptTrigger,
-        verifierKind: 'command',
-        verifier: `node ${files.verifier}`,
-        oracle: `node ${files.oracle}`,
-        rubric: files.rubric,
-      }],
-    }, null, 2) + '\n',
+    "bench.json":
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          name: benchName,
+          description: "Teaching case for file edits; replace with a real task from your work.",
+          tasks: [
+            {
+              id: "example-task",
+              fixture: files.fixture,
+              prompt: files.prompt,
+              promptTrigger: files.promptTrigger,
+              verifierKind: "command",
+              verifier: `node ${files.verifier}`,
+              oracle: `node ${files.oracle}`,
+              rubric: files.rubric,
+            },
+          ],
+        },
+        null,
+        2,
+      ) + "\n",
     [files.prompt]: prompt,
     [files.promptTrigger]: prompt,
-    [`${files.fixture}/package.json`]: JSON.stringify({
-      private: true, type: 'module', scripts: { test: 'node --test test.mjs' },
-    }, null, 2) + '\n',
-    [`${files.fixture}/index.js`]: 'export function add(a, b) { return a - b; }\n',
+    [`${files.fixture}/package.json`]:
+      JSON.stringify(
+        {
+          private: true,
+          type: "module",
+          scripts: { test: "node --test test.mjs" },
+        },
+        null,
+        2,
+      ) + "\n",
+    [`${files.fixture}/index.js`]: "export function add(a, b) { return a - b; }\n",
     [`${files.fixture}/test.mjs`]: `import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { add } from './index.js';
@@ -191,7 +211,7 @@ const passed = checks.every(check => check.pass);
 console.log(JSON.stringify({ passed, checks }));
 process.exitCode = passed ? 0 : 1;
 `,
-    ['tasks/example-task/probe.mjs']: `import { pathToFileURL } from 'node:url';
+    ["tasks/example-task/probe.mjs"]: `import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 
 const { add } = await import(pathToFileURL(join(process.argv[2], 'index.js')).href);

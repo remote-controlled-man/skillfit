@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+- Security reports go to private vulnerability reporting, and conduct reports
+  go to the mailbox already published in the repository history. The GitHub
+  profile is no longer the reporting route.
+- The README's opening skill study is labeled a 3-run pilot, below the 8×5
+  indicative bar, with its process-observation limit. The source quickstart
+  detaches at the 0.15.0 commit.
+- The README opens with one sentence, the three offline report commands, and a
+  text-free report figure. The pilot label, schema notes and adoption floor
+  sit in one Limits section.
+- `skillfit --help` lists the eight commands. `skillfit <command> --help`
+  lists that command's options. A flag used on the wrong command still names
+  the command that accepts it.
+- An eval dry-run of a Skill directory or an AGENTS.md rules directory prints
+  the planned call count and, with a spending budget, the token stop lines.
+  It does not print a dollar price or call a model.
+- The npm package keeps the teaching benches and omits `benches/contrib`.
+  Those contributed benches stay in the git repository.
+- Release cadence: a patch whenever a correctness or security fix needs one,
+  and a minor no more than once every 14 days. Saved format versions stay
+  owned by the architecture page.
+- CONTRIBUTING explains a ten-minute first pull request for issues labeled
+  `good first issue`.
+- Biome formats `src` and `tools` at a 100-column width. CI rejects format
+  drift. Biome is a devDependency, so the shipped CLI still has zero runtime
+  dependencies.
+
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 
 Publication is verified through the [release procedure](docs/maintainers/releases.md);

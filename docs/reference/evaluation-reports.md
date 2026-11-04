@@ -4,7 +4,9 @@ This reference defines saved result fields, cost populations and portable format
 For commands and sharing steps, follow [evaluation workflow](../guides/experiment-workflow.md#read-share-and-reproduce).
 [Choose your build](../README.md#choose-your-build) before using version-specific contracts.
 Human and JSON reports read the same saved bytes; they never rescan the current
-environment to invent historical usage, identity or claims.
+environment to invent historical usage, identity or claims. Saved format
+versions stay owned by the
+[architecture page](../maintainers/architecture.md#format-identity-and-replay-compatibility).
 
 ## Frozen measurement scope
 

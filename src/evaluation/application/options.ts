@@ -1,4 +1,4 @@
-import type { AcceptancePolicy, ComponentMetadata } from '../measurement/policy.js';
+import type { AcceptancePolicy, ComponentMetadata } from "../measurement/policy.js";
 import type { MeasurementScope } from "../measurement/scope.js";
 import type { TriggerDetection } from "../../agents/observation/trigger-contract.js";
 import type { NativeDiffDescriptor } from "../targets/native-diff.js";
@@ -10,24 +10,30 @@ import type { SpendingBudget } from "../execution/budget.js";
 import type { AgentEnvironmentPreflight } from "../../agents/preflight.js";
 import type { CASE_PREFLIGHT_POLICY } from "./preflight-error.js";
 import type { INPUT_SNAPSHOT_POLICY } from "../records/input-snapshot.js";
-import type { EvalRequest } from './request.js';
+import type { EvalRequest } from "./request.js";
 import type { ControlSuite } from "../../bench/controls.js";
 
 export interface EvalPreview {
   measurementScope?: MeasurementScope;
-  mode: 'inject' | 'installed' | 'trigger';
-  target: { kind: EvaluationTarget['kind']; name: string; sourceDir: string; sha256: string; files: string[] };
+  mode: "inject" | "installed" | "trigger";
+  target: {
+    kind: EvaluationTarget["kind"];
+    name: string;
+    sourceDir: string;
+    sha256: string;
+    files: string[];
+  };
   baseline: { name: string; sourceDir: string; sha256: string; files: string[] } | null;
   bench: { name: string; dir: string; sha256: string; taskIds: string[] };
-  executor: ReturnType<Executor['describe']> | null;
-  judge: ReturnType<Executor['describe']> | null;
+  executor: ReturnType<Executor["describe"]> | null;
+  judge: ReturnType<Executor["describe"]> | null;
   inputMode: InputMode;
   installDir: string | null;
   trials: number;
   plannedCalls: number;
   maxCalls: number;
   outputDir: string;
-  casePreflight: typeof CASE_PREFLIGHT_POLICY & { status: 'pending' };
+  casePreflight: typeof CASE_PREFLIGHT_POLICY & { status: "pending" };
   agentPreflight: AgentEnvironmentPreflight;
   inputSnapshot: typeof INPUT_SNAPSHOT_POLICY;
   pairOrder?: PairOrder;
@@ -35,8 +41,11 @@ export interface EvalPreview {
   nativeDiffTool?: NativeDiffDescriptor;
   spendingBudget?: SpendingBudget;
   installedFingerprint?: { sha256: string; files: string[] };
-  competition?: { mode: 'alone' | 'installed'; skills: { name: string; sourceDir: string; sha256: string }[] };
-  detection?: 'skill-tool' | 'skill-read' | 'unrecorded';
+  competition?: {
+    mode: "alone" | "installed";
+    skills: { name: string; sourceDir: string; sha256: string }[];
+  };
+  detection?: "skill-tool" | "skill-read" | "unrecorded";
   triggerDetection?: TriggerDetection;
 }
 
@@ -54,10 +63,10 @@ export interface EvalOptions {
   executorTimeoutSeconds?: number | null;
   maxCalls?: number;
   spendingBudget?: SpendingBudget;
-  sessionOptions?: Pick<SessionOptions, 'homeDir' | 'env' | 'versionProbe'>;
+  sessionOptions?: Pick<SessionOptions, "homeDir" | "env" | "versionProbe">;
   agent?: string;
   judgeAgent?: string;
-  mode?: 'inject' | 'installed' | 'trigger';
+  mode?: "inject" | "installed" | "trigger";
   inputMode?: InputMode;
   dryRun: boolean;
   yes: boolean;
@@ -72,7 +81,7 @@ export interface EvalOptions {
   onPlan?: (plan: EvalPreview) => void;
   component?: ComponentMetadata;
   reviewedPlan?: ReviewedEvalPlan;
-  guardFiles?: SessionOptions['guardFiles'];
+  guardFiles?: SessionOptions["guardFiles"];
   /** Internal offline self-test: retain the first error receipt, then seal a stopped prefix. */
   stopOnExecutionError?: true;
 }
@@ -81,7 +90,7 @@ export const DEFAULT_EVAL_TRIALS = 5;
 
 export interface ReviewedEvalPlan {
   schemaVersion: 1;
-  kind: 'skillfit.eval-plan';
+  kind: "skillfit.eval-plan";
   implementationSha256: string;
   evaluation: EvalPreview;
   sha256: string;
@@ -89,19 +98,32 @@ export interface ReviewedEvalPlan {
 
 /** The discriminator is internal; only fields retain their legacy wire representation. */
 export type EvalPlanContext<T extends object = object> = {
-  kind: 'legacy' | 'ordinary' | 'component' | 'self-test';
+  kind: "legacy" | "ordinary" | "component" | "self-test";
   fields: T;
 };
-export type ComponentPlanContext = { kind: 'component'; fields: { request: EvalRequest; requestSha256: string; policySha256: string } };
-export type SelfTestPlanContext = { kind: 'self-test'; fields: { selfTest: { schemaVersion: number; controlsSha256: string; suite: ControlSuite; stopOnExecutionError: boolean } } };
-export type { EvalReportOptions } from '../records/contracts.js';
+export type ComponentPlanContext = {
+  kind: "component";
+  fields: { request: EvalRequest; requestSha256: string; policySha256: string };
+};
+export type SelfTestPlanContext = {
+  kind: "self-test";
+  fields: {
+    selfTest: {
+      schemaVersion: number;
+      controlsSha256: string;
+      suite: ControlSuite;
+      stopOnExecutionError: boolean;
+    };
+  };
+};
+export type { EvalReportOptions } from "../records/contracts.js";
 
 export interface ComponentRunOptions {
   dryRun: boolean;
   expectedPlanSha256?: string;
   /** Test-only injection; always synthetic and cannot authorize adoption. */
-  executor?: EvalOptions['executor'];
-  sessionOptions?: EvalOptions['sessionOptions'];
+  executor?: EvalOptions["executor"];
+  sessionOptions?: EvalOptions["sessionOptions"];
   skillInstallDir?: string;
   log?: (line: string) => void;
 }

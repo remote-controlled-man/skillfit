@@ -1,8 +1,7 @@
-export type Condition = 'baseline' | 'treatment';
-
+export type Condition = "baseline" | "treatment";
 
 export interface SkillBundle {
-  kind: 'skill';
+  kind: "skill";
   name: string;
   sourceDir: string;
   files: string[];
@@ -11,9 +10,7 @@ export interface SkillBundle {
   overlays: Partial<Record<Condition, string>>;
 }
 
-
-export type EvaluationTargetKind = 'skill' | 'rules' | 'mcp';
-
+export type EvaluationTargetKind = "skill" | "rules" | "mcp";
 
 /**
  * The one variable changed between paired experiment arms.

@@ -1,7 +1,12 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { MOCK_MARKER_FILE } from "../../bench/constants.js";
-import type { Executor, ExecutorDescriptor, ExecutorResult, TokenUsage } from "../../agents/contracts.js";
+import type {
+  Executor,
+  ExecutorDescriptor,
+  ExecutorResult,
+  TokenUsage,
+} from "../../agents/contracts.js";
 
 interface MockBehavior {
   output?: string;
@@ -24,14 +29,18 @@ export class MockExecutor implements Executor {
   constructor(private readonly markerFile: string = MOCK_MARKER_FILE) {}
 
   describe(): ExecutorDescriptor {
-    return { kind: 'mock', model: 'mock', detail: `marker:${this.markerFile}`, sampling: null };
+    return { kind: "mock", model: "mock", detail: `marker:${this.markerFile}`, sampling: null };
   }
 
-  run(prompt: string, workdir: string, _options?: import("../../agents/contracts.js").ExecutorRunOptions): Promise<ExecutorResult> {
+  run(
+    prompt: string,
+    workdir: string,
+    _options?: import("../../agents/contracts.js").ExecutorRunOptions,
+  ): Promise<ExecutorResult> {
     const marker = this.readMarker(workdir);
-    const condition = prompt.includes('<skill name=') ? 'treatment' : 'baseline';
-    const behavior = condition === 'treatment' ? marker.treatment : marker.baseline;
-    const output = behavior?.output ?? '';
+    const condition = prompt.includes("<skill name=") ? "treatment" : "baseline";
+    const behavior = condition === "treatment" ? marker.treatment : marker.baseline;
+    const output = behavior?.output ?? "";
     return Promise.resolve({
       output,
       tokens: behavior?.tokens ?? estimateTokens(prompt, output),
@@ -41,6 +50,6 @@ export class MockExecutor implements Executor {
   private readMarker(workdir: string): MockMarker {
     const path = join(workdir, this.markerFile);
     if (!existsSync(path)) return {};
-    return JSON.parse(readFileSync(path, 'utf8')) as MockMarker;
+    return JSON.parse(readFileSync(path, "utf8")) as MockMarker;
   }
 }

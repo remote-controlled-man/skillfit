@@ -1,18 +1,46 @@
-import { buildJudgePrompt as buildProtocolPrompt, judgeOrder, parseJudgeScores, JudgePairFailure, type JudgeCallReceipt, type JudgeResult } from "../measurement/judge-protocol.js";
-export { judgeOrder, parseJudgeScores, JudgePairFailure, type JudgeCallReceipt, type JudgeResult } from "../measurement/judge-protocol.js";
-import { unknownModelIdentity, identityForResult, type ModelIdentity } from "../../agents/observation/model-identity.js";
-import { createHash, randomBytes } from 'node:crypto';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { ExecutorFailure, type Executor, type TokenUsage, type UsageEvidence, type ExecutorRunOptions } from "../../agents/contracts.js";
+import {
+  buildJudgePrompt as buildProtocolPrompt,
+  judgeOrder,
+  parseJudgeScores,
+  JudgePairFailure,
+  type JudgeCallReceipt,
+  type JudgeResult,
+} from "../measurement/judge-protocol.js";
+export {
+  judgeOrder,
+  parseJudgeScores,
+  JudgePairFailure,
+  type JudgeCallReceipt,
+  type JudgeResult,
+} from "../measurement/judge-protocol.js";
+import {
+  unknownModelIdentity,
+  identityForResult,
+  type ModelIdentity,
+} from "../../agents/observation/model-identity.js";
+import { createHash, randomBytes } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+  ExecutorFailure,
+  type Executor,
+  type TokenUsage,
+  type UsageEvidence,
+  type ExecutorRunOptions,
+} from "../../agents/contracts.js";
 import { type Condition } from "../../resources/contracts.js";
 import { executionClock, type ExecutionClock, type ExecutionTiming } from "../../shared/timing.js";
 import { throwIfCancelled as throwIfEvaluationInterrupted } from "../../shared/cancellation.js";
 
 // The compatibility entry retains its random default; audits supply the retained nonce explicitly.
-export function buildJudgePrompt(taskPromptText: string, rubricText: string | null, answerA: string, answerB: string,
-  nonce: string = randomBytes(8).toString('hex')): string {
+export function buildJudgePrompt(
+  taskPromptText: string,
+  rubricText: string | null,
+  answerA: string,
+  answerB: string,
+  nonce: string = randomBytes(8).toString("hex"),
+): string {
   return buildProtocolPrompt(taskPromptText, rubricText, answerA, answerB, nonce);
 }
 
@@ -42,59 +70,108 @@ export async function judgePair(
     const call = async (firstCondition: Condition, callIndex: 1 | 2) => {
       throwIfEvaluationInterrupted();
       const runOptions = args.beforeCall?.(callIndex) || undefined;
-      const judgeDir = mkdtempSync(join(tmpdir(), 'skillfit-judge-'));
+      const judgeDir = mkdtempSync(join(tmpdir(), "skillfit-judge-"));
       try {
-        const answerA = firstCondition === 'baseline' ? args.baselineOutput : args.treatmentOutput;
-        const answerB = firstCondition === 'baseline' ? args.treatmentOutput : args.baselineOutput;
-        writeFileSync(join(judgeDir, 'answerA.md'), answerA, 'utf8');
-        writeFileSync(join(judgeDir, 'answerB.md'), answerB, 'utf8');
-        const prompt = buildJudgePrompt(args.taskPromptText, args.rubricText ?? null, answerA, answerB);
-        const startedWall = clock.wallNow(), startedMono = clock.monotonicNow();
-        let output = '', rawOutput: string | null = null, tokens: TokenUsage | null = null;
-        let usageStatus: JudgeCallReceipt['usageStatus'] = 'unknown', execution: ExecutionTiming | null = null;
-        let executorInvoked = true, error: string | null = null, scores: JudgeCallReceipt['scores'] = null;
+        const answerA = firstCondition === "baseline" ? args.baselineOutput : args.treatmentOutput;
+        const answerB = firstCondition === "baseline" ? args.treatmentOutput : args.baselineOutput;
+        writeFileSync(join(judgeDir, "answerA.md"), answerA, "utf8");
+        writeFileSync(join(judgeDir, "answerB.md"), answerB, "utf8");
+        const prompt = buildJudgePrompt(
+          args.taskPromptText,
+          args.rubricText ?? null,
+          answerA,
+          answerB,
+        );
+        const startedWall = clock.wallNow(),
+          startedMono = clock.monotonicNow();
+        let output = "",
+          rawOutput: string | null = null,
+          tokens: TokenUsage | null = null;
+        let usageStatus: JudgeCallReceipt["usageStatus"] = "unknown",
+          execution: ExecutionTiming | null = null;
+        let executorInvoked = true,
+          error: string | null = null,
+          scores: JudgeCallReceipt["scores"] = null;
         let usageEvidence: UsageEvidence | undefined;
-        let budgetStop: JudgeCallReceipt['budgetStop'];
+        let budgetStop: JudgeCallReceipt["budgetStop"];
         let modelIdentity: ModelIdentity | undefined;
         try {
           const result = await judge.run(prompt, judgeDir, runOptions);
-          output = result.output; rawOutput = result.rawOutput ?? null; tokens = result.tokens ?? null;
-          usageStatus = result.usageStatus ?? (tokens ? 'final' : 'unknown'); execution = result.executionTiming ?? null;
-          usageEvidence = result.usageEvidence; modelIdentity = identityForResult(result, judge.describe());
+          output = result.output;
+          rawOutput = result.rawOutput ?? null;
+          tokens = result.tokens ?? null;
+          usageStatus = result.usageStatus ?? (tokens ? "final" : "unknown");
+          execution = result.executionTiming ?? null;
+          usageEvidence = result.usageEvidence;
+          modelIdentity = identityForResult(result, judge.describe());
           if (result.guardError) throw new Error(result.guardError);
         } catch (failure) {
           error = (failure as Error).message;
           if (failure instanceof ExecutorFailure) {
             budgetStop = failure.result.budgetStop;
             executorInvoked = failure.executorInvoked;
-            output = failure.result.output; rawOutput = failure.result.rawOutput ?? null; tokens = failure.result.tokens ?? null;
-            usageStatus = failure.result.usageStatus ?? (tokens ? 'partial' : 'unknown');
-            modelIdentity = identityForResult(failure.result, judge.describe()); execution = failure.result.executionTiming ?? null; usageEvidence = failure.result.usageEvidence;
+            output = failure.result.output;
+            rawOutput = failure.result.rawOutput ?? null;
+            tokens = failure.result.tokens ?? null;
+            usageStatus = failure.result.usageStatus ?? (tokens ? "partial" : "unknown");
+            modelIdentity = identityForResult(failure.result, judge.describe());
+            execution = failure.result.executionTiming ?? null;
+            usageEvidence = failure.result.usageEvidence;
           }
         }
-        const finishedWall = clock.wallNow(), durationSeconds = Math.round(clock.monotonicNow() - startedMono) / 1000;
+        const finishedWall = clock.wallNow(),
+          durationSeconds = Math.round(clock.monotonicNow() - startedMono) / 1000;
         if (!error) {
           try {
             const parsed = parseJudgeScores(output);
-            scores = { baseline: firstCondition === 'baseline' ? parsed.a : parsed.b,
-              treatment: firstCondition === 'baseline' ? parsed.b : parsed.a };
-          } catch (failure) { error = (failure as Error).message; }
+            scores = {
+              baseline: firstCondition === "baseline" ? parsed.a : parsed.b,
+              treatment: firstCondition === "baseline" ? parsed.b : parsed.a,
+            };
+          } catch (failure) {
+            error = (failure as Error).message;
+          }
         }
-        const receipt: JudgeCallReceipt = { schemaVersion: 1, kind: 'skillfit.judge-call',
-          taskId: args.taskId ?? 'standalone', trial: args.trial ?? 1, callIndex, seed: args.seed, firstCondition,
-          prompt, promptSha256: createHash('sha256').update(prompt).digest('hex'), output, rawOutput,
+        const receipt: JudgeCallReceipt = {
+          schemaVersion: 1,
+          kind: "skillfit.judge-call",
+          taskId: args.taskId ?? "standalone",
+          trial: args.trial ?? 1,
+          callIndex,
+          seed: args.seed,
+          firstCondition,
+          prompt,
+          promptSha256: createHash("sha256").update(prompt).digest("hex"),
+          output,
+          rawOutput,
           executor: { ...judge.describe(), sampling: judge.describe().sampling ?? null },
-          startedAt: new Date(startedWall).toISOString(), finishedAt: new Date(finishedWall).toISOString(), durationSeconds,
-          timing: { clock: 'performance.now', wallDurationSeconds: (finishedWall - startedWall) / 1000, execution },
+          startedAt: new Date(startedWall).toISOString(),
+          finishedAt: new Date(finishedWall).toISOString(),
+          durationSeconds,
+          timing: {
+            clock: "performance.now",
+            wallDurationSeconds: (finishedWall - startedWall) / 1000,
+            execution,
+          },
           modelIdentity: modelIdentity ?? unknownModelIdentity(judge.describe().modelIntent),
-          ...(budgetStop ? { budgetStop } : {}), executorInvoked, error, passed: error === null, tokens, usageStatus, ...(usageEvidence ? { usageEvidence } : {}), scores };
+          ...(budgetStop ? { budgetStop } : {}),
+          executorInvoked,
+          error,
+          passed: error === null,
+          tokens,
+          usageStatus,
+          ...(usageEvidence ? { usageEvidence } : {}),
+          scores,
+        };
         calls.push(receipt);
         // Persist before propagating a parse/execution error, cancellation or budget stop.
         args.onCall?.(receipt);
         throwIfEvaluationInterrupted();
         if (error) throw new Error(error);
         return { ...scores!, raw: output };
-      } finally { rmSync(judgeDir, { recursive: true, force: true }); }
+      } finally {
+        rmSync(judgeDir, { recursive: true, force: true });
+      }
     };
     const forward = await call(first, 1);
     const reverse = await call(second, 2);
@@ -109,5 +186,7 @@ export async function judgePair(
       raw: `${forward.raw}\n--- reverse order ---\n${reverse.raw}`,
       calls,
     };
-  } catch (error) { throw new JudgePairFailure((error as Error).message, calls, error); }
+  } catch (error) {
+    throw new JudgePairFailure((error as Error).message, calls, error);
+  }
 }

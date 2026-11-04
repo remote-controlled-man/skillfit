@@ -88,6 +88,22 @@ Replace `./my-skill` with an existing Skill directory. These commands still make
 zero model calls. Bench creation writes only the fresh directory; checking runs
 local graders. Review those programs before using an unfamiliar bench.
 
+The same dry-run can point at a shipped bench and an instructions file you
+already have. A rules directory holds `skillfit-experiment.json` plus
+`treatment/AGENTS.md`. Pass `--spending-budget` only when that file contains
+all five stop lines. The text plan prints `Calls` and, when a budget is set,
+`Spending stop lines`. `Est. prompt` counts the initial prompt only. No dollar
+figure is printed. A `--max-calls` ceiling below that printed count is refused
+before a model call.
+
+```bash
+cat > ./budget.json <<'EOF'
+{"input":100000,"cachedInput":100000,"uncachedInput":20000,"output":20000,"durationSeconds":600}
+EOF
+node "$skillfit_source/dist/cli.js" eval ./my-skill --bench "$skillfit_source/benches/code-review" --agent codex --trials 1 --spending-budget ./budget.json --runs-root ./runs/first-study/batches --run-group skill-preview --dry-run
+node "$skillfit_source/dist/cli.js" eval ./my-rules --bench "$skillfit_source/benches/code-review" --agent codex --trials 1 --spending-budget ./budget.json --runs-root ./runs/first-study/batches --run-group rules-preview --dry-run
+```
+
 The offline **NOP** gate requires the untouched fixture to fail. An **Oracle**
 gate checks that a reference repair passes; without an oracle, winnability is
 unverified. Neither proves a real agent can solve the case. Follow

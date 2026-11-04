@@ -5,12 +5,18 @@ import { type TokenUsage } from "../../agents/contracts.js";
 import type { ExecutionTiming } from "../../shared/timing.js";
 import type { VerifierCheck } from "../../bench/gates/summary.js";
 import { summarizeJudge, type JudgeResult } from "./judge-protocol.js";
-import { verdictFor, type ConditionStats, type FacetSummary, type RunManifest, type TaskSummary } from "./report.js";
+import {
+  verdictFor,
+  type ConditionStats,
+  type FacetSummary,
+  type RunManifest,
+  type TaskSummary,
+} from "./report.js";
 import { mcnemarExactP, pairedDeltaBootstrapCI, pairedScoreBootstrapCI } from "./statistics.js";
 import { summarizeCosts } from "./costs.js";
 
 export interface TrialOutcome {
-  budgetStop?: 'SPENDING_BUDGET_REACHED';
+  budgetStop?: "SPENDING_BUDGET_REACHED";
   modelIdentity?: ModelIdentity;
   taskId: string;
   condition: Condition;
@@ -20,7 +26,11 @@ export interface TrialOutcome {
   finishedAt: string;
   durationSeconds: number;
   /** Wall timestamps stay available; elapsed cost uses the monotonic clock. */
-  timing?: { clock: 'performance.now'; wallDurationSeconds: number; execution: ExecutionTiming | null };
+  timing?: {
+    clock: "performance.now";
+    wallDurationSeconds: number;
+    execution: ExecutionTiming | null;
+  };
   passed: boolean;
   verifierExitCode: number | null;
   verifierPassed: boolean | null;
@@ -30,7 +40,7 @@ export interface TrialOutcome {
   output: string;
   tokens: TokenUsage | null;
   executorInvoked: boolean;
-  usageStatus: 'final' | 'partial' | 'unknown';
+  usageStatus: "final" | "partial" | "unknown";
   gitInitialized: boolean;
   skillTriggered?: boolean | null;
 }
@@ -40,7 +50,7 @@ function sumTokens(records: TrialOutcome[]): { input: number; output: number } |
   let output = 0;
   let seen = false;
   for (const record of records) {
-    if (!record.tokens || record.usageStatus !== 'final') continue;
+    if (!record.tokens || record.usageStatus !== "final") continue;
     seen = true;
     input += record.tokens.input ?? 0;
     output += record.tokens.output ?? 0;
@@ -84,7 +94,11 @@ function pairedSurvivors(
   return survivors;
 }
 
-function statsFor(records: TrialOutcome[], errors: number, readObservations = false): ConditionStats {
+function statsFor(
+  records: TrialOutcome[],
+  errors: number,
+  readObservations = false,
+): ConditionStats {
   const passes = records.filter((r) => r.passed).length;
   const trials = records.length;
   const scored = records.filter((r) => r.score !== null);
@@ -96,17 +110,24 @@ function statsFor(records: TrialOutcome[], errors: number, readObservations = fa
     passes,
     trials,
     errors,
-    ...(readObservations ? { skillReads: {
-      observed: records.filter(r => r.skillTriggered === true).length,
-      unobserved: records.filter(r => r.skillTriggered === false).length,
-      unknown: records.filter(r => r.skillTriggered == null).length,
-    } } : {}),
+    ...(readObservations
+      ? {
+          skillReads: {
+            observed: records.filter((r) => r.skillTriggered === true).length,
+            unobserved: records.filter((r) => r.skillTriggered === false).length,
+            unknown: records.filter((r) => r.skillTriggered == null).length,
+          },
+        }
+      : {}),
     passRate: trials === 0 ? 0 : passes / trials,
     meanScore,
     tokens: sumTokens(records),
     tokenCoverage: {
-      input: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.input === 'number').length,
-      output: records.filter(r => r.usageStatus === 'final' && typeof r.tokens?.output === 'number').length,
+      input: records.filter((r) => r.usageStatus === "final" && typeof r.tokens?.input === "number")
+        .length,
+      output: records.filter(
+        (r) => r.usageStatus === "final" && typeof r.tokens?.output === "number",
+      ).length,
     },
   };
 }
@@ -138,7 +159,7 @@ function pairedScores(
   for (let index = 0; index < count; index++) {
     const baselineScore = baseline[index];
     const treatmentScore = treatment[index];
-    if (typeof baselineScore !== 'number' || typeof treatmentScore !== 'number') continue;
+    if (typeof baselineScore !== "number" || typeof treatmentScore !== "number") continue;
     left.push(baselineScore);
     right.push(treatmentScore);
   }
@@ -164,7 +185,10 @@ function facetStats(outcomes: Record<Condition, TrialOutcome[]>): FacetSummary[]
       const passes = relevant.filter(
         (r) => r.checks?.find((c) => c.name === name)?.pass === true,
       ).length;
-      return { trials: relevant.length, passRate: relevant.length === 0 ? 0 : passes / relevant.length };
+      return {
+        trials: relevant.length,
+        passRate: relevant.length === 0 ? 0 : passes / relevant.length,
+      };
     };
     const baseline = rateFor(outcomes.baseline);
     const treatment = rateFor(outcomes.treatment);
@@ -208,9 +232,10 @@ function verifierConsistencyNotes(
   return [...notes];
 }
 
-function discordantCounts(
-  outcomeSets: Array<{ baseline: boolean[]; treatment: boolean[] }>,
-): { improved: number; regressed: number } {
+function discordantCounts(outcomeSets: Array<{ baseline: boolean[]; treatment: boolean[] }>): {
+  improved: number;
+  regressed: number;
+} {
   let improved = 0;
   let regressed = 0;
   for (const outcomes of outcomeSets) {
@@ -232,7 +257,11 @@ function summarizeTask(
   readObservations = false,
 ): TaskSummary {
   const baseline = statsFor(survivors.baseline, countErrors(outcomes.baseline), readObservations);
-  const treatment = statsFor(survivors.treatment, countErrors(outcomes.treatment), readObservations);
+  const treatment = statsFor(
+    survivors.treatment,
+    countErrors(outcomes.treatment),
+    readObservations,
+  );
   const flags = {
     baseline: trialFlags(survivors.baseline),
     treatment: trialFlags(survivors.treatment),
@@ -269,10 +298,13 @@ export interface TaskOutcomes {
 }
 
 /** Pure paired calculation; callers retain execution, receipts and lifecycle ownership. */
-export function summarizeExperiment(tasks: TaskOutcomes[], readObservations = false): Pick<RunManifest, 'tasks' | 'overall'> {
+export function summarizeExperiment(
+  tasks: TaskOutcomes[],
+  readObservations = false,
+): Pick<RunManifest, "tasks" | "overall"> {
   const allOutcomes: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
   const allSurvivors: Record<Condition, TrialOutcome[]> = { baseline: [], treatment: [] };
-  const taskSummaries = tasks.map(task => {
+  const taskSummaries = tasks.map((task) => {
     const survivors = pairedSurvivors(task.outcomes);
     for (const condition of CONDITIONS) {
       allOutcomes[condition].push(...task.outcomes[condition]);
@@ -280,8 +312,16 @@ export function summarizeExperiment(tasks: TaskOutcomes[], readObservations = fa
     }
     return summarizeTask(task.id, task.outcomes, survivors, task.judgeResults, readObservations);
   });
-  const overallBaseline = statsFor(allSurvivors.baseline, countErrors(allOutcomes.baseline), readObservations);
-  const overallTreatment = statsFor(allSurvivors.treatment, countErrors(allOutcomes.treatment), readObservations);
+  const overallBaseline = statsFor(
+    allSurvivors.baseline,
+    countErrors(allOutcomes.baseline),
+    readObservations,
+  );
+  const overallTreatment = statsFor(
+    allSurvivors.treatment,
+    countErrors(allOutcomes.treatment),
+    readObservations,
+  );
   const overallDelta = overallTreatment.passRate - overallBaseline.passRate;
   const taskOutcomes = taskSummaries.map((task) => task.outcomes);
   const discordant = discordantCounts(taskOutcomes);

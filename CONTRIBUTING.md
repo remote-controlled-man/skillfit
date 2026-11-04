@@ -3,7 +3,7 @@
 Thanks for helping make agent configuration evidence-driven.
 
 Participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md); report
-unacceptable behavior through the contact on the repository profile.
+unacceptable behavior through its [enforcement contact](CODE_OF_CONDUCT.md#enforcement).
 
 ## Development setup
 
@@ -20,8 +20,18 @@ npm test
 
 The build creates `dist/`; `npm test` rebuilds and runs all offline tests,
 including documentation and package checks. No agent credentials are needed.
-There is no separate lint or formatter script. For module ownership, start with
+There is no separate lint script. Check formatting with `npm run format:check`.
+Biome is a devDependency, so the shipped CLI still has zero runtime dependencies. For module ownership, start with
 [architecture and maintenance](docs/maintainers/architecture.md).
+
+## A ten-minute first pull request
+
+1. Fork and clone the repository.
+2. Pick an issue labeled `good first issue`.
+3. For a documentation-only change, run `node tools/verify/check-docs.mjs`.
+4. If that check says a sentence is repeated, link the page that owns the fact instead of copying it.
+
+Architecture, test and restatement gates stay as they are.
 
 For a bug, search [existing issues](https://github.com/remote-controlled-man/skillfit/issues)
 and use the bug-report template with a minimal reproduction, expected/actual output

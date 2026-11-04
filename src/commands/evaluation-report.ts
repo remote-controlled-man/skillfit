@@ -1,2 +1,2 @@
 // Compatibility entry for pinned replay/installed acceptance; implementation has one owner.
-export * from '../cli/evaluation-report.js';
+export * from "../cli/evaluation-report.js";

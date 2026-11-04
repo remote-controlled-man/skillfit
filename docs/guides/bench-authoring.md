@@ -184,7 +184,7 @@ identity. No retry or model upgrade is implicit. Changes during confirmation
 invalidate preparation. This is authoring assistance, not independent evidence
 for the Skill under test.
 
-Before contributing, use the [contributed bench rules](../../benches/contrib/README.md):
+Before contributing, use the [contributed bench rules](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/benches/contrib/README.md):
 state real origin, review frozen bytes and ground truth, run offline gates and
 controls, explain remaining warnings, and distinguish any authorized live
 calibration from offline checks.

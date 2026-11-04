@@ -1,1 +1,1 @@
-export const BACKUP_SUFFIX = '.skillfit-bak';
+export const BACKUP_SUFFIX = ".skillfit-bak";

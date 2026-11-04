@@ -16,6 +16,16 @@ load-bearing facts already appear below: the external receipt and study location
 no-republish rule all live in this Status block or the plan table, and the one
 fact that did not (the registry publication timestamp) was promoted here first.
 
+- Current task: the open-source follow-up scheduled on 2026-11-04, from the
+  review of the same day. Rows O1–O15 are the top of the execution table.
+  On 2026-11-04 the user authorized every row, including the O2b spend and
+  the O15 post, and then ordered a review against this plan's acceptance
+  rules followed by iterative execution. The same-day review corrected the
+  rows named in Open-source follow-up. Execution proceeds in table order
+  once the preceding row is accepted. O2b still spends nothing until its
+  preview is written here. O14 still waits until O2b is finished. P2 and
+  P3 stay stopped.
+
 - Release 0.15.0 is published and verified. Source `f506681` was main at
   publication; npm `publishedAt` 2026-11-03T08:39:19.739Z; tarball SHA-256
   `1073161cfd45e4f0c49cf463291cc18de536b554a2da7de866224cb10a762c2d`; 1,077
@@ -23,10 +33,10 @@ fact that did not (the registry publication timestamp) was promoted here first.
   41604553472/1 both succeeded; the registry's published integrity equals the
   reviewed preview, all six acceptance stages passed, and the repository's record
   verifier reports 21 receipts with 0 writes and 0 publishes. The complete
-  delivery is retained at `~/Documents/skillfit-releases/0.15.0`. Tag `v0.15.0`
+  delivery is retained at `the 0.15.0 release entry in workspace4skills/path-index.md`. Tag `v0.15.0`
   and the GitHub Release mark this source commit. Never upload 0.15.0 again.
 
-- Current task T3: post-release usability pass over the first-run path. Walk the
+- Previous task T3: post-release usability pass over the first-run path. Walk the
   README onboarding as a stranger, fix only defects that reproduce against the
   built CLI, and leave the frozen statistical protocol and the 8 × 5 adoption
   floor untouched. Landed: a failing `bench check` no longer advises a paid run
@@ -148,7 +158,7 @@ fact that did not (the registry publication timestamp) was promoted here first.
   application/default change, new model call or npm workflow/publication.
   R8 study/workspace separation and current guidance are complete.
   The complete ponytail study is retained at
-  ~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 with all 481 files
+  the ponytail study entry in workspace4skills/path-index.md with all 481 files
   unchanged. Reading and moved replay pass with the old path absent; source runs
   remains absent after tutorial and full offline checks. dist stays build output;
   CLI defaults/formats are unchanged. R8 introduced no new model calls,
@@ -181,7 +191,7 @@ fact that did not (the registry publication timestamp) was promoted here first.
   merged through PR #60 as main 7514936. Its tree equals checked head 63ae1e7;
   main CI 40440668681/1 and its full three-OS receipts are verified. R6 has no
   remaining runtime acceptance gap. R7's complete 0.14.0 delivery is now saved
-  and verified at ~/Documents/skillfit-releases/0.14.0; the existing release
+  and verified at the 0.14.0 release entry in workspace4skills/path-index.md; the existing release
   manual no longer claims candidate status. All local closeout checks passed.
   R9 completed protected-main documentation synchronization in one PR.
   Never upload 0.14.0 again.
@@ -224,10 +234,84 @@ fact that did not (the registry publication timestamp) was promoted here first.
   reserve no version and recheck availability before any future upload.
 
 
+## Open-source follow-up
+
+Scheduled 2026-11-04. One maintainer, weekdays only. Rows run in the table's
+order; a row that overruns pushes the rows after it. Nov 30 is the buffer
+before December. Owners stay where they are: [SECURITY.md](../../SECURITY.md),
+[CODE_OF_CONDUCT.md](../../CODE_OF_CONDUCT.md), [README.md](../../README.md),
+[CONTRIBUTING.md](../../CONTRIBUTING.md), [releases](../maintainers/releases.md),
+[metrics](../reference/metrics.md) and
+[evaluation reports](../reference/evaluation-reports.md).
+
+Authorized 2026-11-04, for every row: the reporting channel, release tags, the
+staging-package deprecation, per-command help, the evaluation preview command,
+the packaged bench set, Discussions and the starter issues, Biome and its
+format-only PR, the O2b spend, publishing the O15 post, and one new agent
+adapter. Two selections stay inside those rows. O15's venue is chosen with the
+draft on 2026-12-07. O14's agent is chosen on 2027-01-04 from Cursor, Gemini
+CLI, Copilot CLI and OpenCode.
+
+Reviewed against this plan's own acceptance rules on 2026-11-04, before
+execution. Corrections, each because the old acceptance could not be met as
+written: security reports and conduct reports cannot share private
+vulnerability reporting; the existing eval dry-run already prints the planned
+call count and budget stop lines, and a price rate times an unknown token
+total is still unknown; per-command help has to keep the generated CLI
+reference green; the saved-version sentence already has an owner; the paid
+rerun has to name an 8-task bench and workspace input; the README rewrite has
+to keep the pilot label; the path note has to live where the docs check does
+not scan it.
+
+O2 closes the first-screen evidence finding. O2b is the authorized paid upgrade
+of that table. Its preview spends nothing and names the skills before any paid
+call. O14 therefore runs 2027-01-04 through 2027-01-07.
+
+Not scheduled: a second maintainer; adapters beyond the single O14 agent;
+`setup` and `bundle` for any agent other than Codex; restarting P2 or P3; a
+repository evidence archive.
+
+## Starter issues
+
+Drafted 2026-11-04 for O7. Opened as #106, #107 and #108, labeled `good first issue`.
+
+1. Correct the `debugging` bench description. `benches/debugging/bench.json` says six command-graded tasks, while the manifest lists eight task ids, including `explain-cache` and `document-queue`. Acceptance: the description matches the task list, and `node dist/cli.js bench check benches/debugging` still reports 0 failures.
+2. Re-check the Claude Code docs links in `src/matrix/agents.json` against the current official docs, including `https://code.claude.com/docs/en/cli-reference` and `https://code.claude.com/docs/en/headless`. Acceptance: each link is the official page, and `verifiedAt` is the date of that check.
+3. Show per-command help in the source quickstart. Both READMEs run `node dist/cli.js --help` in the source checkout block. Add `node dist/cli.js eval --help` to that same fenced block in both languages. Acceptance: the fenced blocks stay identical, and `node tools/verify/check-docs.mjs` passes.
+
+## O2b preview and O15 draft
+
+Recorded 2026-11-04. Both dry-runs used the pinned `mattpocock/skills` commit `d81f3a183412e71a5b1e84ca21bc1a35eea03a60`, `benches/debugging`, Codex, `--input workspace`, and 5 trials. Neither wrote a run or called a model.
+
+| Skill | Calls | Initial prompt estimate |
+| --- | --- | --- |
+| diagnosing-bugs | 80 planned, ceiling 80 | ~1.8k baseline, ~3.9k treatment |
+| tdd | 80 planned, ceiling 80 | ~1.8k baseline, ~3.6k treatment |
+
+Together that is 160 calls. The prompt line is the initial prompt only, not a bill. No token stop line is declared for the live run, because one earlier workspace call used hundreds of thousands of tokens and this preview does not measure that. Live calls stay unstarted until a ceiling is chosen.
+
+O15 draft, not yet posted: skillfit compares a baseline and a treatment on the same tasks. The offline check is `npx skillfit@0.15.0 bench check code-review`, then `bench self-test`, then `report eval`. The project's own 8-skill table is a 3-run pilot below the 8×5 bar, and the patch harness could not observe process behavior. It is not a claim that skills never help.
+
 ## Execution order and acceptance
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| O1 | Make the security and conduct reports reach a person | Complete 2026-11-04. Private vulnerability reporting enabled; docs check 35 files, 0 errors; sentence-ownership test 3 pass. Full npm test not required for this docs-only change | Private vulnerability reporting is enabled, and SECURITY.md sends reports to the repository security advisories form. Conduct reports use the mailbox already published in this repository's git history, named in the Code of Conduct enforcement section. CONTRIBUTING links to that section. The GitHub profile is no longer the reporting route. The change discloses no vulnerability. Docs check passes. |
+| O2 | Make the opening study claim match the frozen protocol; blocks O3 | Complete 2026-11-04 with O4. Docs check passed. The statistical protocol text was not edited | Both READMEs call the opening 8-skill table a pilot: 3 treated runs per skill, below the 8×5 indicative bar, with the recorded process-observation limit. The detailed table and its limits stay. The statistical protocol is unchanged. `node tools/verify/check-docs.mjs` passes. |
+| O4 | Point the source quickstart at the published 0.15.0 commit; with O2 | Complete 2026-11-04. Worktree build of `f506681` printed 0.15.0. Docs check passed | Both READMEs, the docs index and the driver Skill detach at `f506681edd0490a7690f2a96bd5b7e589f0bd5d0`, the commit tag `v0.15.0` names, whose package version is 0.15.0. Version-sensitive links stay full commits. Building that commit prints 0.15.0. Docs check passes. |
+| O13 | Remove home-directory paths from this public plan | Complete 2026-11-04. Seven directories confirmed, note ignored by git and the docs check, docs check 0 errors | `workspace4skills/path-index.md` first holds every absolute home path written here, and each named external directory is confirmed to exist. The docs check already ignores that private-lab tree. This plan then names the note instead of the path. The note stays untracked. Docs check passes. |
+| O9 | Restore release tags and retire the staging package | Partial 2026-11-04. Pushed annotated tags v0.8.0 at a51e212c07a4cf5349f914e3e4c29aff2e6fcf5d and v0.9.0 at 3392482ec7ca5474769305d567f9eb4b86688188 after each package.json matched. Stopped the rest: npm gitHead is absent for 0.0.0-stage, 0.9.1, 0.10.0, 0.10.1, 0.11.0, 0.12.0, 0.13.0 and 0.13.1, so they are not tagged. `npm deprecate skillfit@0.0.0-stage` returned 404 without owner permission. Provenance is still absent for 0.0.0-stage and 0.8.0. v0.14.0 and v0.15.0 were not moved or uploaded | Annotated tags for 0.8.0, 0.9.0, 0.9.1, 0.10.0, 0.10.1, 0.11.0, 0.12.0, 0.13.0 and 0.13.1, each on the commit that was published. A missing `gitHead` stops that version and is recorded, rather than tagging a guess. `npm deprecate` the `0.0.0-stage` release as a staging publish. Do not upload 0.14.0 or 0.15.0 again. Record that provenance cannot be backfilled for `0.0.0-stage` and 0.8.0. |
+| O3 | Rewrite the README first screen; after O2 | Complete 2026-11-04. Docs check 0 errors. No new command. The three offline commands are unchanged | Both READMEs open with one sentence, the three existing offline commands, and one report figure. The figure is text-free and shared, or a localized pair. The O2 pilot labeling remains in the limits section, which also holds the schema, measurement-scope and adoption-floor wording and links the metrics page. Badges, fenced commands and the demo console block stay verbatim across languages. Docs check passes. No new command. |
+| O5 | Give each command its own help | Complete 2026-11-04 on cli/per-command-help, based on docs/readme-first-screen rather than main. 1,095 offline tests passed. CLI reference check passed | `skillfit <command> --help` prints that command's options, and `skillfit --help` is a short index of the eight commands. A flag used on the wrong command keeps its current error text. Tests cover the index, one command's help, and one rejected cross-command flag. `node tools/verify/cli-reference.mjs --check` passes, with each selected flag described once. JSON output is unchanged. |
+| O6 | Show the existing dry-run call count and token stop lines for an instructions file; after O5 | Complete 2026-11-04 on docs/preview-call-count, based on cli/per-command-help rather than main. 1,096 offline tests passed. No new command or saved-record version | No new command and no new saved-record version. The existing eval dry-run of a skill directory, or a rules directory holding AGENTS.md, against a shipped bench prints the planned call count and makes no model call. With `--spending-budget`, the same preview prints those token stop lines. Dollars stay unknown, because a rate times an unmeasured token total is not a price and this row adds no rate field. The prompt-size line stays labeled as the initial prompt only. An offline test uses an injected executor, and the existing first-run guide shows the command. |
+| O12 | Ship the teaching benches and leave contributed benches in git; after O6 | Complete 2026-11-04 on package/omit-contrib-benches, based on docs/preview-call-count rather than main. Packed archive has 0 contrib files. Installed bench check code-review passed. 1,096 offline tests passed | The package file set keeps `benches/code-review`, `benches/debugging` and `benches/_self-test`, and omits `benches/contrib`. Contributed benches remain in the repository. The package-policy required files stay present, and no installed recipe reads `benches/contrib`. `npm pack` and an installed `bench check` of `code-review` prove the split. Packaged first-run commands that name `code-review` still work. |
+| O7 | Open a place for first contributions | Complete 2026-11-04. Discussions enabled. Issues #106, #107 and #108 opened with the good first issue label. This branch is community/starter-issues, based on docs/release-cadence rather than main | Discussions is enabled. Three to five good-first issues are opened, each acceptable as a docs correction, a bench task, or a matrix docs-link check. Draft the issue text in this plan first. |
+| O8 | Add the ten-minute first-PR path; after O7 | Complete 2026-11-04 on docs/first-pr, based on community/starter-issues rather than main. Docs check passed | CONTRIBUTING.md gives the clone, the one check to run, and the good-first-issue label. It says a repeated sentence fails the docs check and the fix is to link the owning page. Architecture, test and restatement gates stay. Docs check passes. |
+| O11 | Add a formatter after the behavior rows; after O5 and O6 have merged | Complete 2026-11-04 on tooling/biome, based on docs/first-pr rather than main. 1,096 offline tests passed after formatting 268 files. `npm run format:check` passed | Add Biome as a devDependency. The PR states the reason: one formatter and no runtime dependency. CI rejects format drift. The format-only PR contains no behavior change. |
+| O10 | Promise the saved-record versions and the release cadence | Complete 2026-11-04 on docs/release-cadence, based on package/omit-contrib-benches rather than main. Docs check passed. The saved-version sentence was not copied | The release procedure records a patch whenever a correctness or security fix needs one, and a minor no more than once every 14 days. The saved-version sentence stays owned by the architecture page. The report reference links to that sentence and does not copy it. No new format and no rewrite of saved bytes. Docs check passes. |
+| O15 | Draft and publish one honest introduction; after O3 and O6 | Draft complete 2026-11-04 in this plan. Posting needs a maintainer login on HN, Reddit, or X | The draft uses the three offline commands and the labeled O2 pilot. Publish to one of HN, Reddit or X. It does not wait for O2b and does not claim a new 8×5 result. |
+| O2b | Replace the pilot table with an 8×5 run of two or three skills | Preview complete 2026-11-04. Zero model calls. Live execution is not started: 160 Codex workspace calls need a token ceiling the prompt estimate does not supply | Use `benches/debugging`, which has 8 tasks, with agent `codex`, `--input workspace` and 5 trials. The preview names two or three skills from the eight in the README study, records 160 calls for two skills or 240 for three, and records a token budget. It spends nothing. Paid calls start only after that preview is written here. Workspace input is required so the run does not repeat the patch-mode process-observation hole. A finished run replaces the README pilot table only when it meets the frozen protocol, with the remaining limits beside the numbers. Do not restart P2 or P3. |
+| O14 | Add exactly one agent adapter; after O2b | Choice 2027-01-04. Implementation through 2027-01-07. Not started. Authorized 2026-11-04 | Choose one of Cursor, Gemini CLI, Copilot CLI or OpenCode from its official docs and a local version check. The matrix gains that agent, a `verifiedAt` bump and the official docs link. Unsupported modes refuse before a call. Tests use an injected executor. `setup` and `bundle` stay Codex-only. The other three agents stay unscheduled. |
 | T3 | Post-release usability pass on the first-run path | Complete; four CLI and guide fixes, 1,092 offline tests, three-OS main CI per merge | Reproduce every defect against the built CLI before changing it; keep the statistical protocol and the 8 × 5 adoption floor unchanged; report checks that could not be run rather than inferring them. No npm publication or model call. |
 | T2 | Verify source/workspace and close empty-notice regression | Complete; regression, offline suite, native workspace and integrated review passed | Valid counters survive empty notices before/between/after snapshots; malformed counters and wrong identities remain unknown. Exercise failed CLI recovery and all four during-call Token stop lines using fake children; run full npm test, CLI doctor, standalone checks and one final integrated review before the authorized scoped commit. No model calls or historical-record changes. |
 | T1a | Review compatibility and declare Token-first acceptance | Complete; source/counter/stop paths reviewed | Explicit null is additive; omitted and positive settings retain normalization. Reuse the existing run seam and receipt mechanisms; keep frozen old requests and evidence unchanged. |
@@ -247,10 +331,10 @@ fact that did not (the registry publication timestamp) was promoted here first.
 | R9b | Deliver one combined closeout PR; after R9a | Complete; all PR checks passed | Push reviewed documentation and original-plan follow-up non-force, create/attach one PR and wait for all eight existing CI jobs plus security on the exact head. Existing classification is full for this scope; do not change workflows, weaken checks or push progress-only updates during CI. No npm workflow. |
 | R9c | Merge and verify exact-main closeout; after R9b | Complete; main CI and full three-OS receipts passed | Normal protected merge with checked head and clean message; require identical merged tree and original publication/study ancestry, all eight automatic main checks and same-attempt full three-OS receipts. Confirm source runs absent and retained bytes unchanged; record final status in this original plan without another CI-only PR or npm upload. |
 | R8a | Inventory study ownership and migration baseline | Complete | Source contains one stopped study, 481 ordinary files/2,444,971 bytes and no links/special files. Freeze every file hash/mode and native report; confirm no active study executor. Native identity, two completed calls, costs and original failure must remain unchanged. |
-| R8b | Move the complete study to its owning workspace; after R8a | Complete; byte-identical move and replay passed | Use fresh ~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 as this study's working directory, not a new global output default. Move all bytes intact with collision checks and rollback on verification failure. With old source path absent, read/audit, export and actually replay a moved portable package offline. Preserve all indexed native files and historical launchers, never rewrite old paths/hashes or restart the stopped pilot. |
+| R8b | Move the complete study to its owning workspace; after R8a | Complete; byte-identical move and replay passed | Use the ponytail study entry in workspace4skills/path-index.md as this study's working directory, not a new global output default. Move all bytes intact with collision checks and rollback on verification failure. With old source path absent, read/audit, export and actually replay a moved portable package offline. Preserve all indexed native files and historical launchers, never rewrite old paths/hashes or restart the stopped pilot. |
 | R8c | Correct current source/workspace guidance; after R8b | Complete; existing guidance corrected | Update only existing agent/architecture/workflow/tutorial/driver guidance and this plan. Explain caller-workspace ./runs versus source dist, source-dev OS temporary work and external release receipts. Make tutorial commands execute from the actual workspace with the compiled CLI addressed explicitly; keep public flags/defaults, native layout and historical evidence unchanged. No new page or framework. |
 | R8d | Verify examples and deliver; after R8c | Complete; tutorial, replay and offline checks passed | Execute the changed zero-model tutorial in a fresh OS temporary workspace, verify native/report/export/moved replay and unchanged checkout inputs. Run docs/anchors and repository-required npm test before commit; confirm source runs stays absent, study hashes/meaning unchanged and private lab untouched. Commit/push only reviewed existing guidance on the original branch, no PR/remote CI/npm upload. |
-| R7a | Retain verified 0.14.0 delivery outside temporary storage | Complete; copied bytes and records verified | Copy the complete original publication artifact, 18 hash-linked recovery receipts and existing failure/run/recovery observations into fresh ~/Documents/skillfit-releases/0.14.0. Preserve exact bytes, reject collisions/symlinks and verify the copied original tarball plus standalone records. No repository evidence/archive tree or new storage mechanism. |
+| R7a | Retain verified 0.14.0 delivery outside temporary storage | Complete; copied bytes and records verified | Copy the complete original publication artifact, 18 hash-linked recovery receipts and existing failure/run/recovery observations into the 0.14.0 release entry in workspace4skills/path-index.md. Preserve exact bytes, reject collisions/symlinks and verify the copied original tarball plus standalone records. No repository evidence/archive tree or new storage mechanism. |
 | R7b | Correct existing release guidance; after R7a | Complete; existing manual corrected | Replace stale candidate/latest-version claims with version-neutral guidance in the existing release manual. Preserve original published documents, commands, history and links; record the durable proof location and actual verification here. No new page, version bump or package publication. |
 | R7c | Review, verify and deliver housekeeping; after R7b | Complete; reviewed branch delivery | Run docs against actual main, inspect facts/diff and verify retained records at the final path. Complete repository-required offline checks before commit. Commit only the manual and this plan, push the existing branch non-force with no open PR, compare remote refs, and leave main 7514936 unchanged for the next normal integration. |
 | R6a | Review 5f3c0ec and exact integration scope | Complete; no open findings | Freeze main b6c804b and head 5f3c0ec. Review all three paths, including the plan filtered by OCR, static-link initialization, public verify/recover entries and original recovery receipts. Run focused release checks, docs against actual main and npm test; retain unchanged 1,079-file package and fixed publication source. |
@@ -320,13 +404,13 @@ Selected inputs: oss-normalize-url/query-shape (21 files/80,732 bytes, one real
 upstream defect, protected assets and offline regression gates) and the existing
 repository vibe-coding bundle (two files). Its bug-fix/test-first loop fits the
 task. Initial ponytail dry-run was status=planned but nested environment=blocked
-by GLOBAL_SKILL_CONFLICT at ~/.agents/skills/ponytail and ~/.codex/skills/ponytail.
+by GLOBAL_SKILL_CONFLICT at the two global ponytail skill directories named in workspace4skills/path-index.md.
 That preview made zero model/CLI calls and remained memory-only. Selecting the
 existing vibe-coding bundle avoids that conflict without renaming a Skill,
 changing global configuration or adding isolation machinery. Inherited global
 instructions/other Skills remain shared and not fully isolated.
 
-Actual workspace: ~/Documents/skillfit-workspaces/query-shape-pilot-20261028.
+Actual workspace: the query-shape pilot entry in workspace4skills/path-index.md.
 At P1 completion only inputs/bench, inputs/vibe-coding, request.json,
 bench-check.json and preview.json existed. All 23 copied input-file SHA-256/modes match their sources;
 existing licenses/resources are retained. No new maintained Markdown or runner.
@@ -428,7 +512,7 @@ and modelCalls=0. It proves portable stopped evidence, not a completed compariso
 All 326 native file hashes/modes are unchanged; no active pilot Agent remains.
 
 Retain only this one native group at
-~/Documents/skillfit-workspaces/query-shape-pilot-20261028/runs/pilot-001,
+the query-shape pilot run entry in workspace4skills/path-index.md,
 its unchanged request/preview/input copies and original execution.json /
 execution.stderr.log. The per-trial error/result/transcript are native indexed
 records and remain intact. Removed the owned disposable export and rebuildable

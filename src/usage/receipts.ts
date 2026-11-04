@@ -1,12 +1,12 @@
-import { installedUserSkills } from '../agents/installed-skills.js';
-export { installedUserSkills } from '../agents/installed-skills.js';
-import { resolveHome, walkGlob } from '../shared/local-files.js';
-export { resolveHome, walkGlob } from '../shared/local-files.js';
+import { installedUserSkills } from "../agents/installed-skills.js";
+export { installedUserSkills } from "../agents/installed-skills.js";
+import { resolveHome, walkGlob } from "../shared/local-files.js";
+export { resolveHome, walkGlob } from "../shared/local-files.js";
 import { extractSkillNames, sessionKey } from "../agents/session-observation.js";
-import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join, relative, resolve } from 'node:path';
-import { createInterface } from 'node:readline';
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { join, relative, resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { agentIds, getAgent, type AgentDef, type AgentSessions } from "../agents/matrix.js";
 
 export interface SkillReceipt {
@@ -44,24 +44,21 @@ export interface ReceiptsOptions {
   env?: NodeJS.ProcessEnv;
 }
 
-async function scanTranscript(
-  file: string,
-  cfg: AgentSessions,
-): Promise<Map<string, number>> {
+async function scanTranscript(file: string, cfg: AgentSessions): Promise<Map<string, number>> {
   const fires = new Map<string, number>();
-  const stream = createReadStream(file, { encoding: 'utf8' });
+  const stream = createReadStream(file, { encoding: "utf8" });
   const rl = createInterface({ input: stream, crlfDelay: Infinity });
   try {
     for await (const line of rl) {
       const trimmed = line.trim();
-      if (trimmed === '' || !trimmed.startsWith('{')) continue;
+      if (trimmed === "" || !trimmed.startsWith("{")) continue;
       let event: unknown;
       try {
         event = JSON.parse(trimmed);
       } catch {
         continue;
       }
-      if (typeof event !== 'object' || event === null) continue;
+      if (typeof event !== "object" || event === null) continue;
       for (const name of extractSkillNames(event as Record<string, unknown>, cfg)) {
         fires.set(name, (fires.get(name) ?? 0) + 1);
       }
@@ -78,17 +75,17 @@ function estimateTokens(text: string): number {
 }
 
 export function measureSkillTax(skillDir: string): SkillTax {
-  const file = join(skillDir, 'SKILL.md');
+  const file = join(skillDir, "SKILL.md");
   const empty = { descTokens: 0, bodyTokens: 0 };
   if (!existsSync(file)) return empty;
-  const text = readFileSync(file, 'utf8');
-  let description = '';
-  if (text.startsWith('---')) {
-    const end = text.indexOf('\n---', 3);
+  const text = readFileSync(file, "utf8");
+  let description = "";
+  if (text.startsWith("---")) {
+    const end = text.indexOf("\n---", 3);
     if (end !== -1) {
       const frontmatter = text.slice(3, end);
       const match = /^description:\s*(.+)$/m.exec(frontmatter);
-      description = match?.[1]?.trim() ?? '';
+      description = match?.[1]?.trim() ?? "";
     }
   }
   return { descTokens: estimateTokens(description), bodyTokens: estimateTokens(text) };
@@ -113,7 +110,7 @@ export async function collectAgentReceipt(
   if (!cfg) {
     return {
       agentId: agent.id,
-      sessionsDir: '',
+      sessionsDir: "",
       present: false,
       sessionsFound: 0,
       transcriptsRead: 0,
@@ -158,7 +155,7 @@ export async function collectAgentReceipt(
   const perSkill = new Map<string, { fires: number; sessions: Set<string>; lastSeen: number }>();
   const allSessions = new Set<string>();
   for (const file of transcripts) {
-    const rel = relative(sessionsDir, file).split('\\').join('/');
+    const rel = relative(sessionsDir, file).split("\\").join("/");
     const session = sessionKey(rel, cfg);
     allSessions.add(session);
     const mtime = statSync(file).mtimeMs;

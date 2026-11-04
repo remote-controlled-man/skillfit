@@ -1,13 +1,13 @@
-import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { agentIds, getAgent } from "../matrix.js";
 import { CliExecutor, quoteShellArg } from "./cli.js";
 import { ExecutorFailure } from "../contracts.js";
-import { performance } from 'node:perf_hooks';
+import { performance } from "node:perf_hooks";
 
 const ECHO_SCRIPT =
   'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write("len:"+d.length))';
@@ -16,446 +16,555 @@ const PASSTHROUGH_SCRIPT =
   'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write(d))';
 
 function toNdjson(events: unknown[]): string {
-  return events.map((event) => JSON.stringify(event)).join('\n');
+  return events.map((event) => JSON.stringify(event)).join("\n");
 }
 
 const KIMI_SKILL_CALL_EVENTS = [
   {
-    role: 'assistant',
+    role: "assistant",
     tool_calls: [
       {
-        type: 'function',
-        id: 'tool_x',
-        function: { name: 'Skill', arguments: JSON.stringify({ skill: 'banana-standards' }) },
+        type: "function",
+        id: "tool_x",
+        function: { name: "Skill", arguments: JSON.stringify({ skill: "banana-standards" }) },
       },
     ],
   },
   {
-    role: 'tool',
-    tool_call_id: 'tool_x',
+    role: "tool",
+    tool_call_id: "tool_x",
     content: 'Skill "banana-standards" loaded inline. Follow its instructions.',
   },
 ];
 
 const KIMI_ASSISTANT_TEXT_EVENTS = [
-  { role: 'assistant', content: 'A ripe banana is stage 5.' },
-  { role: 'assistant', content: 'Stage 6 has brown spots.' },
+  { role: "assistant", content: "A ripe banana is stage 5." },
+  { role: "assistant", content: "Stage 6 has brown spots." },
 ];
 
-test('CliExecutor pipes the prompt over stdin and returns stdout', async () => {
+test("CliExecutor pipes the prompt over stdin and returns stdout", async () => {
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', ECHO_SCRIPT],
+    argv: [process.execPath, "-e", ECHO_SCRIPT],
     shell: false,
   });
-  const result = await executor.run('abcdef', process.cwd());
-  assert.equal(result.output, 'len:6');
+  const result = await executor.run("abcdef", process.cwd());
+  assert.equal(result.output, "len:6");
 });
 
-test('CliExecutor rejects on a non-zero exit code', async () => {
+test("CliExecutor rejects on a non-zero exit code", async () => {
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', 'process.stdin.on("end",()=>{process.stderr.write("boom");process.exitCode=3});process.stdin.resume();'],
+    argv: [
+      process.execPath,
+      "-e",
+      'process.stdin.on("end",()=>{process.stderr.write("boom");process.exitCode=3});process.stdin.resume();',
+    ],
     shell: false,
   });
-  await assert.rejects(() => executor.run('x', process.cwd()), /exited with code 3.*boom/s);
+  await assert.rejects(() => executor.run("x", process.cwd()), /exited with code 3.*boom/s);
 });
 
-test('stream exit failures retain terminal provider errors despite leading plugin warnings', async () => {
+test("stream exit failures retain terminal provider errors despite leading plugin warnings", async () => {
   const transcript = toNdjson([
-    { type: 'error', message: 'Reconnecting after service unavailable' },
-    { type: 'error', message: 'Selected model is at capacity.' },
-    { type: 'turn.failed', error: { message: 'Selected model is at capacity.' } },
+    { type: "error", message: "Reconnecting after service unavailable" },
+    { type: "error", message: "Selected model is at capacity." },
+    { type: "turn.failed", error: { message: "Selected model is at capacity." } },
   ]);
   const script = `process.stdin.resume();process.stderr.write('Plugin startup warning. '.repeat(40));process.stdout.write(${JSON.stringify(transcript)});process.exitCode=1;`;
-  const executor = new CliExecutor({ argv: [process.execPath, '-e', script], shell: false, triggerSkillName: 'example' });
-  try { await executor.run('x', process.cwd()); assert.fail('Expected provider failure'); }
-  catch (error) {
+  const executor = new CliExecutor({
+    argv: [process.execPath, "-e", script],
+    shell: false,
+    triggerSkillName: "example",
+  });
+  try {
+    await executor.run("x", process.cwd());
+    assert.fail("Expected provider failure");
+  } catch (error) {
     assert.ok(error instanceof ExecutorFailure);
     assert.match(error.message, /exited with code 1: Selected model is at capacity/);
     assert.doesNotMatch(error.message, /Plugin startup warning/);
     assert.equal(error.result.rawOutput, transcript);
-    assert.equal(error.result.usageStatus, 'partial');
+    assert.equal(error.result.usageStatus, "partial");
     assert.equal(error.result.tokens, undefined);
     assert.equal(error.result.executionTiming?.timeoutFiredAfterMs, null);
   }
 });
 
-test('CliExecutor rejects when the command cannot be started', async () => {
+test("CliExecutor rejects when the command cannot be started", async () => {
   const executor = new CliExecutor({
-    argv: ['skillfit-definitely-not-a-real-binary-xyz'],
+    argv: ["skillfit-definitely-not-a-real-binary-xyz"],
     shell: false,
   });
-  await assert.rejects(() => executor.run('x', process.cwd()), /Failed to start/);
+  await assert.rejects(() => executor.run("x", process.cwd()), /Failed to start/);
 });
 
-test('CliExecutor.forAgent prefers the structured matrix template even without Skill detection', () => {
+test("CliExecutor.forAgent prefers the structured matrix template even without Skill detection", () => {
   for (const agentId of agentIds()) {
     const headless = getAgent(agentId).headless;
     assert.ok(headless.argv.length > 0, `${agentId} has no headless argv`);
     const executor = CliExecutor.forAgent(agentId);
-    assert.equal(executor.describe().detail, `${agentId}: ${(headless.streamJson?.argv ?? headless.argv).join(' ')}`);
+    assert.equal(
+      executor.describe().detail,
+      `${agentId}: ${(headless.streamJson?.argv ?? headless.argv).join(" ")}`,
+    );
   }
 });
 
-test('Codex paired and trigger runs both use a writable disposable workspace', () => {
-  const headless = getAgent('codex').headless;
-  const paired = CliExecutor.forAgent('codex').describe().detail;
-  const trigger = CliExecutor.forAgent('codex', { triggerSkillName: 'example' }).describe().detail;
+test("Codex paired and trigger runs both use a writable disposable workspace", () => {
+  const headless = getAgent("codex").headless;
+  const paired = CliExecutor.forAgent("codex").describe().detail;
+  const trigger = CliExecutor.forAgent("codex", { triggerSkillName: "example" }).describe().detail;
   for (const argv of [headless.argv, headless.streamJson?.argv]) {
-    assert.ok(argv, 'Codex needs both headless templates');
-    const sandboxIndex = argv.indexOf('--sandbox');
-    assert.ok(sandboxIndex >= 0, 'sandbox mode must be explicit, not inherited from the user config');
-    assert.equal(argv[sandboxIndex + 1], 'workspace-write');
+    assert.ok(argv, "Codex needs both headless templates");
+    const sandboxIndex = argv.indexOf("--sandbox");
+    assert.ok(
+      sandboxIndex >= 0,
+      "sandbox mode must be explicit, not inherited from the user config",
+    );
+    assert.equal(argv[sandboxIndex + 1], "workspace-write");
   }
-  assert.match(paired ?? '', /--sandbox workspace-write/);
-  assert.match(paired ?? '', /--json/);
-  assert.match(trigger ?? '', /--sandbox workspace-write/);
+  assert.match(paired ?? "", /--sandbox workspace-write/);
+  assert.match(paired ?? "", /--json/);
+  assert.match(trigger ?? "", /--sandbox workspace-write/);
 });
 
-test('ordinary structured output retains counters without inventing a Skill detection', async () => {
-  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT], shell: false, streamJson: true });
+test("ordinary structured output retains counters without inventing a Skill detection", async () => {
+  const executor = new CliExecutor({
+    argv: [process.execPath, "-e", PASSTHROUGH_SCRIPT],
+    shell: false,
+    streamJson: true,
+  });
   const transcript = toNdjson([
-    { type: 'item.completed', item: { type: 'agent_message', text: 'A normal answer.' } },
-    { type: 'turn.completed', usage: { input_tokens: 123, cached_input_tokens: 23, output_tokens: 17 } },
-    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 0, output_tokens: 2 } },
+    { type: "item.completed", item: { type: "agent_message", text: "A normal answer." } },
+    {
+      type: "turn.completed",
+      usage: { input_tokens: 123, cached_input_tokens: 23, output_tokens: 17 },
+    },
+    {
+      type: "turn.completed",
+      usage: { input_tokens: 10, cached_input_tokens: 0, output_tokens: 2 },
+    },
   ]);
   const result = await executor.run(transcript, process.cwd());
-  assert.equal(result.output, 'A normal answer.'); assert.equal(result.rawOutput, transcript);
+  assert.equal(result.output, "A normal answer.");
+  assert.equal(result.rawOutput, transcript);
   assert.deepEqual(result.tokens, { input: 133, cachedInput: 23, output: 19 });
-  assert.equal(result.usageStatus, 'final'); assert.equal(result.skillTriggered, undefined);
+  assert.equal(result.usageStatus, "final");
+  assert.equal(result.skillTriggered, undefined);
 });
 
-test('ordinary structured failure retains public counters and diagnostics without a trigger target', async () => {
+test("ordinary structured failure retains public counters and diagnostics without a trigger target", async () => {
   const transcript = toNdjson([
-    { type: 'turn.completed', usage: { input_tokens: 123, cached_input_tokens: 23, output_tokens: 17 } },
-    { type: 'turn.failed', error: { message: 'synthetic stream failure' } },
+    {
+      type: "turn.completed",
+      usage: { input_tokens: 123, cached_input_tokens: 23, output_tokens: 17 },
+    },
+    { type: "turn.failed", error: { message: "synthetic stream failure" } },
   ]);
-  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT + ';process.on("beforeExit",()=>process.exitCode=1)'], shell: false, streamJson: true });
-  await assert.rejects(executor.run(transcript, process.cwd()), error => {
-    assert.ok(error instanceof ExecutorFailure); assert.match(error.message, /synthetic stream failure/);
+  const executor = new CliExecutor({
+    argv: [
+      process.execPath,
+      "-e",
+      PASSTHROUGH_SCRIPT + ';process.on("beforeExit",()=>process.exitCode=1)',
+    ],
+    shell: false,
+    streamJson: true,
+  });
+  await assert.rejects(executor.run(transcript, process.cwd()), (error) => {
+    assert.ok(error instanceof ExecutorFailure);
+    assert.match(error.message, /synthetic stream failure/);
     assert.deepEqual(error.result.tokens, { input: 123, cachedInput: 23, output: 17 });
-    assert.equal(error.result.usageStatus, 'partial'); assert.equal(error.result.rawOutput, transcript);
-    assert.equal(error.result.skillTriggered, undefined); return true;
+    assert.equal(error.result.usageStatus, "partial");
+    assert.equal(error.result.rawOutput, transcript);
+    assert.equal(error.result.skillTriggered, undefined);
+    return true;
   });
 });
 
-test('CliExecutor.forAgent kimi-code passes the prompt as a -p file reference', () => {
-  const headless = getAgent('kimi-code').headless;
-  assert.equal(headless.promptVia, 'file');
+test("CliExecutor.forAgent kimi-code passes the prompt as a -p file reference", () => {
+  const headless = getAgent("kimi-code").headless;
+  assert.equal(headless.promptVia, "file");
   assert.ok(headless.promptFile);
-  assert.equal(headless.argv[1], '-p');
-  assert.ok(headless.argv.some((arg) => arg.includes('{promptFile}')));
+  assert.equal(headless.argv[1], "-p");
+  assert.ok(headless.argv.some((arg) => arg.includes("{promptFile}")));
 });
 
-test('CliExecutor.forAgent forwards deadlines to both ordinary and stream execution without invoking an agent', () => {
-  assert.throws(() => CliExecutor.forAgent('codex', { timeoutMs: 0 }), /timeoutMs/);
-  assert.throws(() => CliExecutor.forAgent('codex', { triggerSkillName: 'offline-deadline-check', timeoutMs: 0 }), /timeoutMs/);
+test("CliExecutor.forAgent forwards deadlines to both ordinary and stream execution without invoking an agent", () => {
+  assert.throws(() => CliExecutor.forAgent("codex", { timeoutMs: 0 }), /timeoutMs/);
+  assert.throws(
+    () =>
+      CliExecutor.forAgent("codex", { triggerSkillName: "offline-deadline-check", timeoutMs: 0 }),
+    /timeoutMs/,
+  );
 });
 
-test('CliExecutor.forAgent rejects unknown agents', () => {
-  assert.throws(() => CliExecutor.forAgent('not-an-agent'), /Unknown agent/);
+test("CliExecutor.forAgent rejects unknown agents", () => {
+  assert.throws(() => CliExecutor.forAgent("not-an-agent"), /Unknown agent/);
 });
 
-test('CliExecutor.forAgent obtains project trust behavior only from the matrix', () => {
-  assert.match(CliExecutor.forAgent('codex', { trustProjectConfig: true }).describe().detail ?? '', /trusts each disposable project/);
-  assert.throws(() => CliExecutor.forAgent('kimi-code', { trustProjectConfig: true }), /no project trust override in the matrix/);
+test("CliExecutor.forAgent obtains project trust behavior only from the matrix", () => {
+  assert.match(
+    CliExecutor.forAgent("codex", { trustProjectConfig: true }).describe().detail ?? "",
+    /trusts each disposable project/,
+  );
+  assert.throws(
+    () => CliExecutor.forAgent("kimi-code", { trustProjectConfig: true }),
+    /no project trust override in the matrix/,
+  );
 });
 
-test('CliExecutor requires a non-empty argv', () => {
+test("CliExecutor requires a non-empty argv", () => {
   assert.throws(() => new CliExecutor({ argv: [] }), /non-empty argv/);
 });
 
-test('CliExecutor file mode writes the prompt file and substitutes {promptFile}', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-'));
+test("CliExecutor file mode writes the prompt file and substitutes {promptFile}", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-cli-"));
   try {
     const executor = new CliExecutor({
       argv: [
         process.execPath,
-        '-e',
+        "-e",
         'process.stdout.write(require("node:fs").readFileSync(process.argv[1],"utf8"))',
-        '{promptFile}',
+        "{promptFile}",
       ],
       shell: false,
-      promptVia: 'file',
-      promptFile: 'task-prompt.txt',
+      promptVia: "file",
+      promptFile: "task-prompt.txt",
     });
-    const prompt = `file-mode prompt ${'x'.repeat(9000)}`;
+    const prompt = `file-mode prompt ${"x".repeat(9000)}`;
     const result = await executor.run(prompt, dir);
     assert.equal(result.output, prompt);
-    assert.equal(readFileSync(join(dir, 'task-prompt.txt'), 'utf8'), prompt);
+    assert.equal(readFileSync(join(dir, "task-prompt.txt"), "utf8"), prompt);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
-test('CliExecutor file mode requires a workdir', async () => {
+test("CliExecutor file mode requires a workdir", async () => {
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', 'process.stdout.write("ok")'],
+    argv: [process.execPath, "-e", 'process.stdout.write("ok")'],
     shell: false,
-    promptVia: 'file',
+    promptVia: "file",
   });
-  await assert.rejects(() => executor.run('x', ''), /requires a workdir/);
+  await assert.rejects(() => executor.run("x", ""), /requires a workdir/);
 });
 
-test('CliExecutor file mode rejects an empty promptFile', () => {
+test("CliExecutor file mode rejects an empty promptFile", () => {
   assert.throws(
-    () => new CliExecutor({ argv: ['x'], promptVia: 'file', promptFile: '' }),
+    () => new CliExecutor({ argv: ["x"], promptVia: "file", promptFile: "" }),
     /non-empty promptFile/,
   );
 });
 
-test('quoteShellArg preserves plain args and groups whitespace or TOML quoted keys', () => {
-  assert.equal(quoteShellArg('kimi'), 'kimi');
-  assert.equal(quoteShellArg('-p'), '-p');
-  assert.equal(quoteShellArg('Read the file'), '"Read the file"');
-  assert.equal(quoteShellArg(''), '""');
+test("quoteShellArg preserves plain args and groups whitespace or TOML quoted keys", () => {
+  assert.equal(quoteShellArg("kimi"), "kimi");
+  assert.equal(quoteShellArg("-p"), "-p");
+  assert.equal(quoteShellArg("Read the file"), '"Read the file"');
+  assert.equal(quoteShellArg(""), '""');
   assert.equal(quoteShellArg('"already quoted"'), '"already quoted"');
-  assert.equal(quoteShellArg('--output-format=stream-json'), '--output-format=stream-json');
+  assert.equal(quoteShellArg("--output-format=stream-json"), "--output-format=stream-json");
   // Backslashes must stay legal: every Windows path in the matrix is full of them.
-  assert.equal(quoteShellArg('C:\\tools\\node.exe'), 'C:\\tools\\node.exe');
+  assert.equal(quoteShellArg("C:\\tools\\node.exe"), "C:\\tools\\node.exe");
   // Parens stay legal too, so a `node -e` expression can still be passed through a shell.
-  assert.equal(quoteShellArg('process.stdout.write(1)'), 'process.stdout.write(1)');
-  assert.equal(quoteShellArg("projects.'/tmp/run'.trust_level='trusted'"), "\"projects.'/tmp/run'.trust_level='trusted'\"");
+  assert.equal(quoteShellArg("process.stdout.write(1)"), "process.stdout.write(1)");
+  assert.equal(
+    quoteShellArg("projects.'/tmp/run'.trust_level='trusted'"),
+    "\"projects.'/tmp/run'.trust_level='trusted'\"",
+  );
 });
 
-test('CliExecutor passes a scoped project trust override as one argument', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'skillfit-trust-'));
+test("CliExecutor passes a scoped project trust override as one argument", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-trust-"));
   try {
-    const script = join(dir, 'argv.mjs');
-    const workdir = join(dir, 'with space');
+    const script = join(dir, "argv.mjs");
+    const workdir = join(dir, "with space");
     mkdirSync(workdir);
-    writeFileSync(script, 'process.stdin.resume();process.stdin.on("end",()=>process.stdout.write(JSON.stringify(process.argv.slice(2))))');
+    writeFileSync(
+      script,
+      'process.stdin.resume();process.stdin.on("end",()=>process.stdout.write(JSON.stringify(process.argv.slice(2))))',
+    );
     const executor = new CliExecutor({
-      argv: [process.execPath, script, '-'],
+      argv: [process.execPath, script, "-"],
       shell: true,
       projectTrustConfigArg: "projects.'{workdir}'.trust_level='trusted'",
     });
-    const result = await executor.run('task', workdir);
-    assert.deepEqual(JSON.parse(result.output), ['-c', `projects.'${workdir}'.trust_level='trusted'`, '-']);
+    const result = await executor.run("task", workdir);
+    assert.deepEqual(JSON.parse(result.output), [
+      "-c",
+      `projects.'${workdir}'.trust_level='trusted'`,
+      "-",
+    ]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
-test('quoteShellArg refuses arguments a shell would interpret', () => {
-  for (const payload of ['a;rm', 'a&&rm', 'a|rm', 'x$(whoami)', 'a`id`', 'a>out', 'a<in', 'a\nb']) {
+test("quoteShellArg refuses arguments a shell would interpret", () => {
+  for (const payload of ["a;rm", "a&&rm", "a|rm", "x$(whoami)", "a`id`", "a>out", "a<in", "a\nb"]) {
     assert.throws(() => quoteShellArg(payload), /shell-unsafe/, `${payload} must be refused`);
   }
-  if (process.platform === 'win32') {
-    for (const payload of ['%TEMP%', '!PATH!', 'a^b']) {
+  if (process.platform === "win32") {
+    for (const payload of ["%TEMP%", "!PATH!", "a^b"]) {
       assert.throws(() => quoteShellArg(payload), /shell-unsafe/, `${payload} must be refused`);
     }
   }
 });
 
-test('CliExecutor with shell keeps a multi-word arg as one argument', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-'));
+test("CliExecutor with shell keeps a multi-word arg as one argument", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-cli-"));
   try {
     const executor = new CliExecutor({
       argv: [
         process.execPath,
-        '-e',
-        'process.stdout.write( JSON.stringify(process.argv.slice(1)) )',
-        'two words',
+        "-e",
+        "process.stdout.write( JSON.stringify(process.argv.slice(1)) )",
+        "two words",
       ],
       shell: true,
     });
-    const result = await executor.run('', dir);
-    assert.deepEqual(JSON.parse(result.output), ['two words']);
+    const result = await executor.run("", dir);
+    assert.deepEqual(JSON.parse(result.output), ["two words"]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
-test('CliExecutor trigger detection detects a Skill tool_call in kimi stream-json', async () => {
+test("CliExecutor trigger detection detects a Skill tool_call in kimi stream-json", async () => {
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    argv: [process.execPath, "-e", PASSTHROUGH_SCRIPT],
     shell: false,
-    triggerSkillName: 'banana-standards',
-    triggerToolName: 'Skill',
+    triggerSkillName: "banana-standards",
+    triggerToolName: "Skill",
   });
   const transcript = toNdjson([
-    { role: 'meta', type: 'system.version', version: '2.0.0' },
+    { role: "meta", type: "system.version", version: "2.0.0" },
     ...KIMI_SKILL_CALL_EVENTS,
     ...KIMI_ASSISTANT_TEXT_EVENTS,
   ]);
   const result = await executor.run(transcript, process.cwd());
   assert.equal(result.skillTriggered, true);
-  assert.equal(result.output, 'A ripe banana is stage 5.\nStage 6 has brown spots.');
+  assert.equal(result.output, "A ripe banana is stage 5.\nStage 6 has brown spots.");
 });
 
-test('CliExecutor trigger detection reports false when no Skill tool_call fires', async () => {
+test("CliExecutor trigger detection reports false when no Skill tool_call fires", async () => {
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    argv: [process.execPath, "-e", PASSTHROUGH_SCRIPT],
     shell: false,
-    triggerSkillName: 'banana-standards',
-    triggerToolName: 'Skill',
+    triggerSkillName: "banana-standards",
+    triggerToolName: "Skill",
   });
   const transcript = toNdjson([
-    { role: 'meta', type: 'system.version', version: '2.0.0' },
+    { role: "meta", type: "system.version", version: "2.0.0" },
     ...KIMI_ASSISTANT_TEXT_EVENTS,
   ]);
   const result = await executor.run(transcript, process.cwd());
   assert.equal(result.skillTriggered, false);
-  assert.equal(result.output, 'A ripe banana is stage 5.\nStage 6 has brown spots.');
+  assert.equal(result.output, "A ripe banana is stage 5.\nStage 6 has brown spots.");
 });
 
-test('CliExecutor trigger detection passes raw output through when stdout is not NDJSON', async () => {
+test("CliExecutor trigger detection passes raw output through when stdout is not NDJSON", async () => {
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    argv: [process.execPath, "-e", PASSTHROUGH_SCRIPT],
     shell: false,
-    triggerSkillName: 'banana-standards',
-    triggerToolName: 'Skill',
+    triggerSkillName: "banana-standards",
+    triggerToolName: "Skill",
   });
-  const plain = 'plain text output, no json here\nanother prose line (not json)';
+  const plain = "plain text output, no json here\nanother prose line (not json)";
   const result = await executor.run(plain, process.cwd());
   assert.equal(result.skillTriggered, undefined);
   assert.equal(result.output, plain);
 });
 
-test('Unrecognized JSON and a truncated stream cannot establish a negative trigger observation', async () => {
-  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT], shell: false,
-    triggerSkillName: 'review', wireShape: 'content-blocks' });
-  for (const transcript of ['{"arbitrary":true}', '{"type":"system","subtype":"init"}',
-    '{"type":"assistant","message":{"content":[{"type":"text","text":"done"}]}}\n{"type":']) {
+test("Unrecognized JSON and a truncated stream cannot establish a negative trigger observation", async () => {
+  const executor = new CliExecutor({
+    argv: [process.execPath, "-e", PASSTHROUGH_SCRIPT],
+    shell: false,
+    triggerSkillName: "review",
+    wireShape: "content-blocks",
+  });
+  for (const transcript of [
+    '{"arbitrary":true}',
+    '{"type":"system","subtype":"init"}',
+    '{"type":"assistant","message":{"content":[{"type":"text","text":"done"}]}}\n{"type":',
+  ]) {
     const result = await executor.run(transcript, process.cwd());
-    assert.equal(result.skillTriggered, undefined); assert.equal(result.triggerEvidence?.status, 'unknown');
-    assert.equal(result.triggerEvidence?.complete, false); assert.equal(result.rawOutput, transcript);
+    assert.equal(result.skillTriggered, undefined);
+    assert.equal(result.triggerEvidence?.status, "unknown");
+    assert.equal(result.triggerEvidence?.complete, false);
+    assert.equal(result.rawOutput, transcript);
   }
 });
 
-test('Failed Codex trigger calls retain positive evidence and partial counters without a complete negative', async () => {
+test("Failed Codex trigger calls retain positive evidence and partial counters without a complete negative", async () => {
   const transcript = toNdjson([
-    { type: 'item.completed', item: { type: 'command_execution', command: 'cat .agents/skills/review/SKILL.md' } },
-    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2 } },
-    { type: 'turn.failed', error: { message: 'offline provider failure' } },
+    {
+      type: "item.completed",
+      item: { type: "command_execution", command: "cat .agents/skills/review/SKILL.md" },
+    },
+    {
+      type: "turn.completed",
+      usage: { input_tokens: 10, cached_input_tokens: 4, output_tokens: 2 },
+    },
+    { type: "turn.failed", error: { message: "offline provider failure" } },
   ]);
-  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT + ';process.on("beforeExit",()=>process.exitCode=1)'], shell: false,
-    triggerSkillName: 'review', wireShape: 'codex-items', triggerSkillPaths: ['.agents/skills/review/SKILL.md'] });
-  await assert.rejects(executor.run(transcript, process.cwd()), error => {
-    assert.ok(error instanceof ExecutorFailure); assert.match(error.message, /offline provider failure/);
-    assert.equal(error.result.skillTriggered, true); assert.equal(error.result.triggerEvidence?.complete, false);
+  const executor = new CliExecutor({
+    argv: [
+      process.execPath,
+      "-e",
+      PASSTHROUGH_SCRIPT + ';process.on("beforeExit",()=>process.exitCode=1)',
+    ],
+    shell: false,
+    triggerSkillName: "review",
+    wireShape: "codex-items",
+    triggerSkillPaths: [".agents/skills/review/SKILL.md"],
+  });
+  await assert.rejects(executor.run(transcript, process.cwd()), (error) => {
+    assert.ok(error instanceof ExecutorFailure);
+    assert.match(error.message, /offline provider failure/);
+    assert.equal(error.result.skillTriggered, true);
+    assert.equal(error.result.triggerEvidence?.complete, false);
     assert.deepEqual(error.result.triggerEvidence?.eventLines, [1]);
     assert.deepEqual(error.result.tokens, { input: 10, cachedInput: 4, output: 2 });
-    assert.equal(error.result.usageStatus, 'partial'); assert.equal(error.result.rawOutput, transcript); return true;
+    assert.equal(error.result.usageStatus, "partial");
+    assert.equal(error.result.rawOutput, transcript);
+    return true;
   });
 });
 
-test('CliExecutor trigger detection understands the claude stream-json assistant shape', async () => {
+test("CliExecutor trigger detection understands the claude stream-json assistant shape", async () => {
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    argv: [process.execPath, "-e", PASSTHROUGH_SCRIPT],
     shell: false,
-    triggerSkillName: 'banana-standards',
-    triggerToolName: 'Skill',
+    triggerSkillName: "banana-standards",
+    triggerToolName: "Skill",
   });
   const transcript = toNdjson([
-    { type: 'system', subtype: 'init' },
+    { type: "system", subtype: "init" },
     {
-      type: 'assistant',
+      type: "assistant",
       message: {
         content: [
-          { type: 'text', text: 'Let me check the skill.' },
-          { type: 'tool_use', name: 'Skill', input: { skill: 'banana-standards' } },
+          { type: "text", text: "Let me check the skill." },
+          { type: "tool_use", name: "Skill", input: { skill: "banana-standards" } },
         ],
       },
     },
     {
-      type: 'assistant',
-      message: { content: [{ type: 'text', text: 'A ripe banana is stage 5.' }] },
+      type: "assistant",
+      message: { content: [{ type: "text", text: "A ripe banana is stage 5." }] },
     },
-    { type: 'result' },
+    { type: "result" },
   ]);
   const result = await executor.run(transcript, process.cwd());
   assert.equal(result.skillTriggered, true);
-  assert.equal(result.output, 'Let me check the skill.\nA ripe banana is stage 5.');
+  assert.equal(result.output, "Let me check the skill.\nA ripe banana is stage 5.");
 });
 
-test('CliExecutor.forAgent with triggerSkillName uses the streamJson template', () => {
-  const streamJson = getAgent('kimi-code').headless.streamJson;
+test("CliExecutor.forAgent with triggerSkillName uses the streamJson template", () => {
+  const streamJson = getAgent("kimi-code").headless.streamJson;
   assert.ok(streamJson);
-  const executor = CliExecutor.forAgent('kimi-code', { triggerSkillName: 'banana-standards' });
-  assert.equal(executor.describe().detail, `kimi-code: ${streamJson.argv.join(' ')}`);
+  const executor = CliExecutor.forAgent("kimi-code", { triggerSkillName: "banana-standards" });
+  assert.equal(executor.describe().detail, `kimi-code: ${streamJson.argv.join(" ")}`);
 });
 
-test('CliExecutor.forAgent with triggerSkillName rejects agents without streamJson', () => {
-  const headless = getAgent('claude-code').headless, saved = headless.streamJson;
+test("CliExecutor.forAgent with triggerSkillName rejects agents without streamJson", () => {
+  const headless = getAgent("claude-code").headless,
+    saved = headless.streamJson;
   try {
     delete headless.streamJson;
-    assert.throws(() => CliExecutor.forAgent('claude-code', { triggerSkillName: 'banana-standards' }), /streamJson/);
-  } finally { headless.streamJson = saved; }
-  assert.match(CliExecutor.forAgent('claude-code', { triggerSkillName: 'banana-standards' }).describe().detail ?? '', /--output-format stream-json --verbose/);
-  const codex = CliExecutor.forAgent('codex', { triggerSkillName: 'banana-standards' });
-  assert.match(codex.describe().detail ?? '', /--json/);
+    assert.throws(
+      () => CliExecutor.forAgent("claude-code", { triggerSkillName: "banana-standards" }),
+      /streamJson/,
+    );
+  } finally {
+    headless.streamJson = saved;
+  }
+  assert.match(
+    CliExecutor.forAgent("claude-code", { triggerSkillName: "banana-standards" }).describe()
+      .detail ?? "",
+    /--output-format stream-json --verbose/,
+  );
+  const codex = CliExecutor.forAgent("codex", { triggerSkillName: "banana-standards" });
+  assert.match(codex.describe().detail ?? "", /--json/);
 });
 
-
-test('CliExecutor parses codex items: text, skill file-read trigger, and token usage', async () => {
+test("CliExecutor parses codex items: text, skill file-read trigger, and token usage", async () => {
   const events = [
-    { type: 'thread.started', thread_id: 't1' },
-    { type: 'turn.started' },
+    { type: "thread.started", thread_id: "t1" },
+    { type: "turn.started" },
     {
-      type: 'item.completed',
+      type: "item.completed",
       item: {
-        id: 'item_1',
-        type: 'command_execution',
-        command: 'powershell -Command "Get-Content -Raw \'C:\\\\repo\\\\.agents\\\\skills\\\\banana-standards\\\\SKILL.md\'"',
-        status: 'completed',
+        id: "item_1",
+        type: "command_execution",
+        command:
+          "powershell -Command \"Get-Content -Raw 'C:\\\\repo\\\\.agents\\\\skills\\\\banana-standards\\\\SKILL.md'\"",
+        status: "completed",
       },
     },
-    { type: 'item.completed', item: { id: 'item_2', type: 'agent_message', text: 'Stage 5, yellow with brown flecks.' } },
     {
-      type: 'turn.completed',
+      type: "item.completed",
+      item: { id: "item_2", type: "agent_message", text: "Stage 5, yellow with brown flecks." },
+    },
+    {
+      type: "turn.completed",
       usage: { input_tokens: 42170, cached_input_tokens: 32896, output_tokens: 272 },
     },
   ];
   const stdinScript =
     'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write(d))';
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', stdinScript],
+    argv: [process.execPath, "-e", stdinScript],
     shell: false,
-    triggerSkillName: 'banana-standards',
-    triggerSkillPaths: ['C:/repo/.agents/skills/banana-standards/SKILL.md'],
+    triggerSkillName: "banana-standards",
+    triggerSkillPaths: ["C:/repo/.agents/skills/banana-standards/SKILL.md"],
   });
-  const ndjson = events.map((event) => JSON.stringify(event)).join('\n') + '\n';
+  const ndjson = events.map((event) => JSON.stringify(event)).join("\n") + "\n";
   const result = await executor.run(ndjson, process.cwd());
-  assert.equal(result.output, 'Stage 5, yellow with brown flecks.');
+  assert.equal(result.output, "Stage 5, yellow with brown flecks.");
   assert.equal(result.skillTriggered, true);
   assert.deepEqual(result.tokens, { input: 42170, cachedInput: 32896, output: 272 });
 });
 
-test('CliExecutor codex shape: no skill-path command means no trigger', async () => {
+test("CliExecutor codex shape: no skill-path command means no trigger", async () => {
   const events = [
-    { type: 'thread.started', thread_id: 'offline-negative' },
-    { type: 'turn.started' },
-    { type: 'item.completed', item: { id: 'i1', type: 'command_execution', command: 'Get-Content README.md' } },
-    { type: 'item.completed', item: { id: 'i2', type: 'agent_message', text: 'Paris' } },
-    { type: 'turn.completed', usage: { input_tokens: 10, output_tokens: 3 } },
+    { type: "thread.started", thread_id: "offline-negative" },
+    { type: "turn.started" },
+    {
+      type: "item.completed",
+      item: { id: "i1", type: "command_execution", command: "Get-Content README.md" },
+    },
+    { type: "item.completed", item: { id: "i2", type: "agent_message", text: "Paris" } },
+    { type: "turn.completed", usage: { input_tokens: 10, output_tokens: 3 } },
   ];
   const stdinScript =
     'let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>process.stdout.write(d))';
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', stdinScript],
+    argv: [process.execPath, "-e", stdinScript],
     shell: false,
-    triggerSkillName: 'banana-standards',
-    triggerSkillPaths: ['.agents/skills/banana-standards/SKILL.md'],
+    triggerSkillName: "banana-standards",
+    triggerSkillPaths: [".agents/skills/banana-standards/SKILL.md"],
   });
-  const result = await executor.run(events.map((event) => JSON.stringify(event)).join('\n'), process.cwd());
-  assert.equal(result.output, 'Paris');
+  const result = await executor.run(
+    events.map((event) => JSON.stringify(event)).join("\n"),
+    process.cwd(),
+  );
+  assert.equal(result.output, "Paris");
   assert.equal(result.skillTriggered, false);
 });
 
-test('CliExecutor kills the whole process tree when a trial times out', async (t) => {
-  const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-tree-'));
-  const marker = join(dir, 'grandchild.pid');
-  const sleeper = join(dir, 'sleeper.cjs');
+test("CliExecutor kills the whole process tree when a trial times out", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-cli-tree-"));
+  const marker = join(dir, "grandchild.pid");
+  const sleeper = join(dir, "sleeper.cjs");
   writeFileSync(
     sleeper,
     `require('fs').writeFileSync(${JSON.stringify(marker)}, String(process.pid));\nsetTimeout(() => {}, 30000);\n`,
-    'utf8',
+    "utf8",
   );
   t.after(() => {
     // Do not leave a 30s orphan behind if the assertion below fails.
     try {
-      const pid = Number(readFileSync(marker, 'utf8'));
+      const pid = Number(readFileSync(marker, "utf8"));
       if (Number.isFinite(pid) && pid > 0) process.kill(pid);
     } catch {
       // already gone
@@ -467,13 +576,13 @@ test('CliExecutor kills the whole process tree when a trial times out', async (t
   // agent it started carries on running.
   const executor = new CliExecutor({ argv: [process.execPath, sleeper], timeoutMs: 3_000 });
   let rejection: Error | undefined;
-  await assert.rejects(executor.run('ignored', dir), (error: Error) => {
+  await assert.rejects(executor.run("ignored", dir), (error: Error) => {
     rejection = error;
     return /timed out/.test(error.message);
   });
 
-  const pid = Number(readFileSync(marker, 'utf8'));
-  assert.ok(Number.isFinite(pid) && pid > 0, 'the grandchild recorded its pid before the timeout');
+  const pid = Number(readFileSync(marker, "utf8"));
+  assert.ok(Number.isFinite(pid) && pid > 0, "the grandchild recorded its pid before the timeout");
   const alive = (): boolean => {
     try {
       process.kill(pid, 0);
@@ -487,74 +596,103 @@ test('CliExecutor kills the whole process tree when a trial times out', async (t
   // if the tree genuinely survives, and the rejection message now carries the kill outcome.
   const giveUpAt = Date.now() + 5_000;
   while (alive() && Date.now() < giveUpAt) await new Promise((resolve) => setTimeout(resolve, 100));
-  assert.equal(alive(), false,
-    `the agent process must not outlive the timeout and keep spending tokens${rejection ? ` — ${rejection.message}` : ''}`);
+  assert.equal(
+    alive(),
+    false,
+    `the agent process must not outlive the timeout and keep spending tokens${rejection ? ` — ${rejection.message}` : ""}`,
+  );
 });
 
-test('CliExecutor rejects when the child exits before draining stdin', async (t) => {
-  const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-epipe-'));
+test("CliExecutor rejects when the child exits before draining stdin", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-cli-epipe-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const instantExit = join(dir, 'instant-exit.cjs');
-  writeFileSync(instantExit, 'process.exit(0);\n', 'utf8');
+  const instantExit = join(dir, "instant-exit.cjs");
+  writeFileSync(instantExit, "process.exit(0);\n", "utf8");
 
   const executor = new CliExecutor({
     argv: [process.execPath, instantExit],
     shell: false,
-    promptVia: 'stdin',
+    promptVia: "stdin",
     timeoutMs: 15_000,
   });
   // Larger than the OS pipe buffer, so the write cannot complete before the child is gone. An
   // unhandled stdin 'error' event would be thrown as an uncaught exception and take the whole test
   // process down; a rejection is what the caller's error path expects.
   await assert.rejects(
-    executor.run('x'.repeat(8 * 1024 * 1024), dir),
+    executor.run("x".repeat(8 * 1024 * 1024), dir),
     /Failed to write the prompt .* on stdin/,
   );
 });
 
-test('CliExecutor accumulates token usage across multiple turns', async () => {
+test("CliExecutor accumulates token usage across multiple turns", async () => {
   const events = [
-    { type: 'item.completed', item: { id: 'i1', type: 'agent_message', text: 'first' } },
-    { type: 'turn.completed', usage: { input_tokens: 1000, output_tokens: 100 } },
-    { type: 'item.completed', item: { id: 'i2', type: 'agent_message', text: 'second' } },
-    { type: 'turn.completed', usage: { input_tokens: 20, output_tokens: 5 } },
+    { type: "item.completed", item: { id: "i1", type: "agent_message", text: "first" } },
+    { type: "turn.completed", usage: { input_tokens: 1000, output_tokens: 100 } },
+    { type: "item.completed", item: { id: "i2", type: "agent_message", text: "second" } },
+    { type: "turn.completed", usage: { input_tokens: 20, output_tokens: 5 } },
     // Available increments remain a lower bound when another completed turn omitted usage.
-    { type: 'turn.completed' },
+    { type: "turn.completed" },
   ];
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT],
+    argv: [process.execPath, "-e", PASSTHROUGH_SCRIPT],
     shell: false,
-    triggerSkillName: 'banana-standards',
+    triggerSkillName: "banana-standards",
   });
   const result = await executor.run(toNdjson(events), process.cwd());
-  assert.deepEqual(result.tokens, { input: 1020, output: 105 }, 'usage records are per-turn increments');
-  assert.equal(result.usageStatus, 'partial', 'missing usage cannot certify a complete total');
-  assert.equal(result.output, 'first\nsecond');
+  assert.deepEqual(
+    result.tokens,
+    { input: 1020, output: 105 },
+    "usage records are per-turn increments",
+  );
+  assert.equal(result.usageStatus, "partial", "missing usage cannot certify a complete total");
+  assert.equal(result.output, "first\nsecond");
 });
 
-test('CliExecutor cache coverage stays unknown if one turn omits cache usage', async () => {
-  const executor = new CliExecutor({ argv: [process.execPath, '-e', PASSTHROUGH_SCRIPT], shell: false, triggerSkillName: 'demo' });
-  const result = await executor.run(toNdjson([
-    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 8, output_tokens: 2 } },
-    { type: 'turn.completed', usage: { input_tokens: 5, output_tokens: 1 } },
-  ]), process.cwd());
+test("CliExecutor cache coverage stays unknown if one turn omits cache usage", async () => {
+  const executor = new CliExecutor({
+    argv: [process.execPath, "-e", PASSTHROUGH_SCRIPT],
+    shell: false,
+    triggerSkillName: "demo",
+  });
+  const result = await executor.run(
+    toNdjson([
+      {
+        type: "turn.completed",
+        usage: { input_tokens: 10, cached_input_tokens: 8, output_tokens: 2 },
+      },
+      { type: "turn.completed", usage: { input_tokens: 5, output_tokens: 1 } },
+    ]),
+    process.cwd(),
+  );
   assert.deepEqual(result.tokens, { input: 15, output: 3 });
-  assert.equal(result.usageStatus, 'final');
-  const invalid = await executor.run(toNdjson([
-    { type: 'turn.completed', usage: { input_tokens: 10, cached_input_tokens: 11, output_tokens: -1 } },
-  ]), process.cwd());
+  assert.equal(result.usageStatus, "final");
+  const invalid = await executor.run(
+    toNdjson([
+      {
+        type: "turn.completed",
+        usage: { input_tokens: 10, cached_input_tokens: 11, output_tokens: -1 },
+      },
+    ]),
+    process.cwd(),
+  );
   assert.deepEqual(invalid.tokens, { input: 10 });
-  assert.equal(invalid.usageStatus, 'partial');
+  assert.equal(invalid.usageStatus, "partial");
 });
 
-test('CliExecutor preserves public transcript usage as a lower bound on timeout', async () => {
-  const script = 'process.stdout.write(JSON.stringify({type:"turn.completed",usage:{input_tokens:10,cached_input_tokens:8,output_tokens:2}})+"\\n");setInterval(()=>{},10000)';
-  const executor = new CliExecutor({ argv: [process.execPath, '-e', script], shell: false, triggerSkillName: 'demo', timeoutMs: 2000 });
-  await assert.rejects(executor.run('prompt', process.cwd()), (error: unknown) => {
+test("CliExecutor preserves public transcript usage as a lower bound on timeout", async () => {
+  const script =
+    'process.stdout.write(JSON.stringify({type:"turn.completed",usage:{input_tokens:10,cached_input_tokens:8,output_tokens:2}})+"\\n");setInterval(()=>{},10000)';
+  const executor = new CliExecutor({
+    argv: [process.execPath, "-e", script],
+    shell: false,
+    triggerSkillName: "demo",
+    timeoutMs: 2000,
+  });
+  await assert.rejects(executor.run("prompt", process.cwd()), (error: unknown) => {
     assert.ok(error instanceof ExecutorFailure);
     assert.match(error.message, /timed out/);
     assert.deepEqual(error.result.tokens, { input: 10, cachedInput: 8, output: 2 });
-    assert.equal(error.result.usageStatus, 'partial');
+    assert.equal(error.result.usageStatus, "partial");
     assert.match(error.result.rawOutput!, /turn.completed/);
     assert.equal(error.result.executionTiming?.anomaly, null);
     assert.ok(error.result.executionTiming!.timeoutFiredAfterMs! >= 2000);
@@ -563,63 +701,99 @@ test('CliExecutor preserves public transcript usage as a lower bound on timeout'
   });
 });
 
-test('CliExecutor kills and preserves partial output on a wall-clock discontinuity', async () => {
+test("CliExecutor kills and preserves partial output on a wall-clock discontinuity", async () => {
   const start = performance.now();
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', 'process.stdout.write(JSON.stringify({type:"turn.completed",usage:{input_tokens:10,output_tokens:2}})+"\\n");setInterval(()=>{},10000)'],
-    shell: false, triggerSkillName: 'demo', timeoutMs: 15_000,
-    clock: { monotonicNow: () => performance.now(), wallNow: () => Date.now() + (performance.now() - start > 1500 ? 2_000_000 : 0) },
+    argv: [
+      process.execPath,
+      "-e",
+      'process.stdout.write(JSON.stringify({type:"turn.completed",usage:{input_tokens:10,output_tokens:2}})+"\\n");setInterval(()=>{},10000)',
+    ],
+    shell: false,
+    triggerSkillName: "demo",
+    timeoutMs: 15_000,
+    clock: {
+      monotonicNow: () => performance.now(),
+      wallNow: () => Date.now() + (performance.now() - start > 1500 ? 2_000_000 : 0),
+    },
   });
-  await assert.rejects(executor.run('prompt', process.cwd()), (error: unknown) => {
+  await assert.rejects(executor.run("prompt", process.cwd()), (error: unknown) => {
     assert.ok(error instanceof ExecutorFailure);
     assert.match(error.message, /execution timing anomaly/);
     assert.deepEqual(error.result.tokens, { input: 10, output: 2 });
-    assert.equal(error.result.usageStatus, 'partial');
+    assert.equal(error.result.usageStatus, "partial");
     assert.ok(error.result.executionTiming!.maxClockSkewMs > 1_000_000);
     return true;
   });
 });
 
-test('CLI output arriving after the deadline cannot pass before the timeout callback runs', async () => {
+test("CLI output arriving after the deadline cannot pass before the timeout callback runs", async () => {
   let advance = 0;
   const start = performance.now();
   const executor = new CliExecutor({
-    argv: [process.execPath, '-e', 'process.stdout.write("done");'], shell: false, timeoutMs: 500,
-    clock: { monotonicNow: () => { advance += 1000; return performance.now() - start + advance; }, wallNow: () => Date.now() + advance },
+    argv: [process.execPath, "-e", 'process.stdout.write("done");'],
+    shell: false,
+    timeoutMs: 500,
+    clock: {
+      monotonicNow: () => {
+        advance += 1000;
+        return performance.now() - start + advance;
+      },
+      wallNow: () => Date.now() + advance,
+    },
   });
-  await assert.rejects(executor.run('prompt', process.cwd()), /timed out/);
+  await assert.rejects(executor.run("prompt", process.cwd()), /timed out/);
 });
 
-test('CLI timeout also bounds draining when an escaped descendant retains stdout', { skip: process.platform === 'win32' }, async (t) => {
-  const dir = mkdtempSync(join(tmpdir(), 'skillfit-cli-drain-'));
-  const marker = join(dir, 'escaped.pid');
-  const escaped = join(dir, 'escaped.cjs');
-  const parent = join(dir, 'parent.cjs');
-  writeFileSync(escaped, `require('node:fs').writeFileSync(${JSON.stringify(marker)}, String(process.pid));process.stdout.write('partial');setInterval(()=>{},10000);`);
-  writeFileSync(parent, `require('node:child_process').spawn(process.execPath, [${JSON.stringify(escaped)}], {detached:true,stdio:['ignore',1,2]}).unref();setInterval(()=>{},10000);`);
+test("CLI timeout also bounds draining when an escaped descendant retains stdout", {
+  skip: process.platform === "win32",
+}, async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-cli-drain-"));
+  const marker = join(dir, "escaped.pid");
+  const escaped = join(dir, "escaped.cjs");
+  const parent = join(dir, "parent.cjs");
+  writeFileSync(
+    escaped,
+    `require('node:fs').writeFileSync(${JSON.stringify(marker)}, String(process.pid));process.stdout.write('partial');setInterval(()=>{},10000);`,
+  );
+  writeFileSync(
+    parent,
+    `require('node:child_process').spawn(process.execPath, [${JSON.stringify(escaped)}], {detached:true,stdio:['ignore',1,2]}).unref();setInterval(()=>{},10000);`,
+  );
   t.after(() => {
-    try { process.kill(-Number(readFileSync(marker, 'utf8')), 'SIGKILL'); } catch { /* gone */ }
+    try {
+      process.kill(-Number(readFileSync(marker, "utf8")), "SIGKILL");
+    } catch {
+      /* gone */
+    }
     rmSync(dir, { recursive: true, force: true });
   });
   const start = performance.now();
-  const executor = new CliExecutor({ argv: [process.execPath, parent], shell: false, timeoutMs: 1000 });
-  await assert.rejects(executor.run('prompt', dir), (error: unknown) => {
+  const executor = new CliExecutor({
+    argv: [process.execPath, parent],
+    shell: false,
+    timeoutMs: 1000,
+  });
+  await assert.rejects(executor.run("prompt", dir), (error: unknown) => {
     assert.ok(error instanceof ExecutorFailure);
     assert.match(error.message, /timed out/);
     assert.match(error.result.output, /partial/);
     assert.ok(error.result.executionTiming!.terminationDelayMs! >= 1900);
     return true;
   });
-  assert.ok(performance.now() - start < 6000, 'retained pipe cannot delay rejection until the escaped process exits');
+  assert.ok(
+    performance.now() - start < 6000,
+    "retained pipe cannot delay rejection until the escaped process exits",
+  );
 });
 
-test('out-of-band token usage is a matrix capability, not an agent id in the harness', () => {
+test("out-of-band token usage is a matrix capability, not an agent id in the harness", () => {
   // kimi-code's headless transcript carries no usable token counts, so they are read from its
   // session log after the run. That used to be `if (this.label === 'kimi-code')` in the executor,
   // which is the one thing AGENTS.md forbids: agent-specific behavior belongs in the matrix.
-  assert.equal(getAgent('kimi-code').headless.usageFromSessionLog, true);
+  assert.equal(getAgent("kimi-code").headless.usageFromSessionLog, true);
   for (const id of agentIds()) {
-    if (id === 'kimi-code') continue;
+    if (id === "kimi-code") continue;
     assert.notEqual(
       getAgent(id).headless.usageFromSessionLog,
       true,
@@ -630,7 +804,7 @@ test('out-of-band token usage is a matrix capability, not an agent id in the har
   // Structural guard, so the rule survives a future edit: the executor module must not name an agent.
   const source = readFileSync(
     fileURLToPath(new URL("../../../src/agents/adapters/cli.ts", import.meta.url)),
-    'utf8',
+    "utf8",
   );
   for (const id of agentIds()) {
     assert.ok(!source.includes(`'${id}'`), `executors/cli.ts hardcodes the agent id "${id}"`);
