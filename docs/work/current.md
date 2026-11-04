@@ -16,6 +16,16 @@ load-bearing facts already appear below: the external receipt and study location
 no-republish rule all live in this Status block or the plan table, and the one
 fact that did not (the registry publication timestamp) was promoted here first.
 
+- Current task: the open-source follow-up scheduled on 2026-11-04, from the
+  review of the same day. Rows O1–O15 are the top of the execution table.
+  On 2026-11-04 the user authorized every row, including the O2b spend and
+  the O15 post, and then ordered a review against this plan's acceptance
+  rules followed by iterative execution. The same-day review corrected the
+  rows named in Open-source follow-up. Execution proceeds in table order
+  once the preceding row is accepted. O2b still spends nothing until its
+  preview is written here. O14 still waits until O2b is finished. P2 and
+  P3 stay stopped.
+
 - Release 0.15.0 is published and verified. Source `f506681` was main at
   publication; npm `publishedAt` 2026-11-03T08:39:19.739Z; tarball SHA-256
   `1073161cfd45e4f0c49cf463291cc18de536b554a2da7de866224cb10a762c2d`; 1,077
@@ -26,7 +36,7 @@ fact that did not (the registry publication timestamp) was promoted here first.
   delivery is retained at `~/Documents/skillfit-releases/0.15.0`. Tag `v0.15.0`
   and the GitHub Release mark this source commit. Never upload 0.15.0 again.
 
-- Current task T3: post-release usability pass over the first-run path. Walk the
+- Previous task T3: post-release usability pass over the first-run path. Walk the
   README onboarding as a stranger, fix only defects that reproduce against the
   built CLI, and leave the frozen statistical protocol and the 8 × 5 adoption
   floor untouched. Landed: a failing `bench check` no longer advises a paid run
@@ -224,10 +234,63 @@ fact that did not (the registry publication timestamp) was promoted here first.
   reserve no version and recheck availability before any future upload.
 
 
+## Open-source follow-up
+
+Scheduled 2026-11-04. One maintainer, weekdays only. Rows run in the table's
+order; a row that overruns pushes the rows after it. Nov 30 is the buffer
+before December. Owners stay where they are: [SECURITY.md](../../SECURITY.md),
+[CODE_OF_CONDUCT.md](../../CODE_OF_CONDUCT.md), [README.md](../../README.md),
+[CONTRIBUTING.md](../../CONTRIBUTING.md), [releases](../maintainers/releases.md),
+[metrics](../reference/metrics.md) and
+[evaluation reports](../reference/evaluation-reports.md).
+
+Authorized 2026-11-04, for every row: the reporting channel, release tags, the
+staging-package deprecation, per-command help, the evaluation preview command,
+the packaged bench set, Discussions and the starter issues, Biome and its
+format-only PR, the O2b spend, publishing the O15 post, and one new agent
+adapter. Two selections stay inside those rows. O15's venue is chosen with the
+draft on 2026-12-07. O14's agent is chosen on 2027-01-04 from Cursor, Gemini
+CLI, Copilot CLI and OpenCode.
+
+Reviewed against this plan's own acceptance rules on 2026-11-04, before
+execution. Corrections, each because the old acceptance could not be met as
+written: security reports and conduct reports cannot share private
+vulnerability reporting; the existing eval dry-run already prints the planned
+call count and budget stop lines, and a price rate times an unknown token
+total is still unknown; per-command help has to keep the generated CLI
+reference green; the saved-version sentence already has an owner; the paid
+rerun has to name an 8-task bench and workspace input; the README rewrite has
+to keep the pilot label; the path note has to live where the docs check does
+not scan it.
+
+O2 closes the first-screen evidence finding. O2b is the authorized paid upgrade
+of that table. Its preview spends nothing and names the skills before any paid
+call. O14 therefore runs 2027-01-04 through 2027-01-07.
+
+Not scheduled: a second maintainer; adapters beyond the single O14 agent;
+`setup` and `bundle` for any agent other than Codex; restarting P2 or P3; a
+repository evidence archive.
+
 ## Execution order and acceptance
 
 | Order | Work / dependency | Status | Acceptance / verification |
 | --- | --- | --- | --- |
+| O1 | Make the security and conduct reports reach a person | Complete 2026-11-04. Private vulnerability reporting enabled; docs check 35 files, 0 errors; sentence-ownership test 3 pass. Full npm test not required for this docs-only change | Private vulnerability reporting is enabled, and SECURITY.md sends reports to the repository security advisories form. Conduct reports use the mailbox already published in this repository's git history, named in the Code of Conduct enforcement section. CONTRIBUTING links to that section. The GitHub profile is no longer the reporting route. The change discloses no vulnerability. Docs check passes. |
+| O2 | Make the opening study claim match the frozen protocol; blocks O3 | Scheduled 2026-11-06, together with O4. Not started. Docs only | Both READMEs call the opening 8-skill table a pilot: 3 treated runs per skill, below the 8×5 indicative bar, with the recorded process-observation limit. The detailed table and its limits stay. The statistical protocol is unchanged. `node tools/verify/check-docs.mjs` passes. |
+| O4 | Point the source quickstart at the published 0.15.0 commit; with O2 | Scheduled 2026-11-06. Not started. Docs only | Both READMEs, the docs index and the driver Skill detach at `f506681edd0490a7690f2a96bd5b7e589f0bd5d0`, the commit tag `v0.15.0` names, whose package version is 0.15.0. Version-sensitive links stay full commits. Building that commit prints 0.15.0. Docs check passes. |
+| O13 | Remove home-directory paths from this public plan | Scheduled 2026-11-09. Not started. Docs only | `workspace4skills/path-index.md` first holds every absolute home path written here, and each named external directory is confirmed to exist. The docs check already ignores that private-lab tree. This plan then names the note instead of the path. The note stays untracked. Docs check passes. |
+| O9 | Restore release tags and retire the staging package | Scheduled 2026-11-09. Not started. Authorized 2026-11-04 | Annotated tags for 0.8.0, 0.9.0, 0.9.1, 0.10.0, 0.10.1, 0.11.0, 0.12.0, 0.13.0 and 0.13.1, each on the commit that was published. A missing `gitHead` stops that version and is recorded, rather than tagging a guess. `npm deprecate` the `0.0.0-stage` release as a staging publish. Do not upload 0.14.0 or 0.15.0 again. Record that provenance cannot be backfilled for `0.0.0-stage` and 0.8.0. |
+| O3 | Rewrite the README first screen; after O2 | Scheduled 2026-11-10 through 2026-11-12. Not started. Docs only | Both READMEs open with one sentence, the three existing offline commands, and one report figure. The figure is text-free and shared, or a localized pair. The O2 pilot labeling remains in the limits section, which also holds the schema, measurement-scope and adoption-floor wording and links the metrics page. Badges, fenced commands and the demo console block stay verbatim across languages. Docs check passes. No new command. |
+| O5 | Give each command its own help | Scheduled 2026-11-13 and 2026-11-16. Not started. Authorized 2026-11-04 | `skillfit <command> --help` prints that command's options, and `skillfit --help` is a short index of the eight commands. A flag used on the wrong command keeps its current error text. Tests cover the index, one command's help, and one rejected cross-command flag. `node tools/verify/cli-reference.mjs --check` passes, with each selected flag described once. JSON output is unchanged. |
+| O6 | Show the existing dry-run call count and token stop lines for an instructions file; after O5 | Scheduled 2026-11-17 through 2026-11-20 and 2026-11-23. Not started. Authorized 2026-11-04 | No new command and no new saved-record version. The existing eval dry-run of a skill directory, or a rules directory holding AGENTS.md, against a shipped bench prints the planned call count and makes no model call. With `--spending-budget`, the same preview prints those token stop lines. Dollars stay unknown, because a rate times an unmeasured token total is not a price and this row adds no rate field. The prompt-size line stays labeled as the initial prompt only. An offline test uses an injected executor, and the existing first-run guide shows the command. |
+| O12 | Ship the teaching benches and leave contributed benches in git; after O6 | Scheduled 2026-11-24 and 2026-11-25. Not started. Authorized 2026-11-04 | The package file set keeps `benches/code-review`, `benches/debugging` and `benches/_self-test`, and omits `benches/contrib`. Contributed benches remain in the repository. The package-policy required files stay present, and no installed recipe reads `benches/contrib`. `npm pack` and an installed `bench check` of `code-review` prove the split. Packaged first-run commands that name `code-review` still work. |
+| O7 | Open a place for first contributions | Scheduled 2026-11-26. Not started. Authorized 2026-11-04 | Discussions is enabled. Three to five good-first issues are opened, each acceptable as a docs correction, a bench task, or a matrix docs-link check. Draft the issue text in this plan first. |
+| O8 | Add the ten-minute first-PR path; after O7 | Scheduled 2026-11-27. Not started. Docs only | CONTRIBUTING.md gives the clone, the one check to run, and the good-first-issue label. It says a repeated sentence fails the docs check and the fix is to link the owning page. Architecture, test and restatement gates stay. Docs check passes. |
+| O11 | Add a formatter after the behavior rows; after O5 and O6 have merged | Scheduled 2026-12-01 through 2026-12-03. Not started. Authorized 2026-11-04 | Add Biome as a devDependency. The PR states the reason: one formatter and no runtime dependency. CI rejects format drift. The format-only PR contains no behavior change. |
+| O10 | Promise the saved-record versions and the release cadence | Scheduled 2026-12-04. Not started. Docs only | The release procedure records a patch whenever a correctness or security fix needs one, and a minor no more than once every 14 days. The saved-version sentence stays owned by the architecture page. The report reference links to that sentence and does not copy it. No new format and no rewrite of saved bytes. Docs check passes. |
+| O15 | Draft and publish one honest introduction; after O3 and O6 | Scheduled 2026-12-07 for the draft. Not started. Publishing authorized 2026-11-04; the venue is chosen with the draft | The draft uses the three offline commands and the labeled O2 pilot. Publish to one of HN, Reddit or X. It does not wait for O2b and does not claim a new 8×5 result. |
+| O2b | Replace the pilot table with an 8×5 run of two or three skills | Preview 2026-12-08 and 2026-12-09. Execution 2026-12-10 through 2026-12-16. Not started. Spend authorized 2026-11-04 | Use `benches/debugging`, which has 8 tasks, with agent `codex`, `--input workspace` and 5 trials. The preview names two or three skills from the eight in the README study, records 160 calls for two skills or 240 for three, and records a token budget. It spends nothing. Paid calls start only after that preview is written here. Workspace input is required so the run does not repeat the patch-mode process-observation hole. A finished run replaces the README pilot table only when it meets the frozen protocol, with the remaining limits beside the numbers. Do not restart P2 or P3. |
+| O14 | Add exactly one agent adapter; after O2b | Choice 2027-01-04. Implementation through 2027-01-07. Not started. Authorized 2026-11-04 | Choose one of Cursor, Gemini CLI, Copilot CLI or OpenCode from its official docs and a local version check. The matrix gains that agent, a `verifiedAt` bump and the official docs link. Unsupported modes refuse before a call. Tests use an injected executor. `setup` and `bundle` stay Codex-only. The other three agents stay unscheduled. |
 | T3 | Post-release usability pass on the first-run path | Complete; four CLI and guide fixes, 1,092 offline tests, three-OS main CI per merge | Reproduce every defect against the built CLI before changing it; keep the statistical protocol and the 8 × 5 adoption floor unchanged; report checks that could not be run rather than inferring them. No npm publication or model call. |
 | T2 | Verify source/workspace and close empty-notice regression | Complete; regression, offline suite, native workspace and integrated review passed | Valid counters survive empty notices before/between/after snapshots; malformed counters and wrong identities remain unknown. Exercise failed CLI recovery and all four during-call Token stop lines using fake children; run full npm test, CLI doctor, standalone checks and one final integrated review before the authorized scoped commit. No model calls or historical-record changes. |
 | T1a | Review compatibility and declare Token-first acceptance | Complete; source/counter/stop paths reviewed | Explicit null is additive; omitted and positive settings retain normalization. Reuse the existing run seam and receipt mechanisms; keep frozen old requests and evidence unchanged. |

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Security reports go to private vulnerability reporting, and conduct reports
+  go to the mailbox already published in the repository history. The GitHub
+  profile is no longer the reporting route.
+
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 
 Publication is verified through the [release procedure](docs/maintainers/releases.md);

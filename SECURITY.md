@@ -16,8 +16,10 @@ skillfit itself ships **zero runtime dependencies**; the supply-chain surface is
 
 ## Reporting a vulnerability
 
-Please do **not** open a public issue for security reports. Email the maintainer via the contact on the
-[repository profile](https://github.com/remote-controlled-man) with:
+Please do **not** open a public issue for security reports. Use
+[private vulnerability reporting](https://github.com/remote-controlled-man/skillfit/security/advisories/new).
+
+If that form is unavailable, email huangshuaidi666@gmail.com. Include:
 
 - a description of the issue and affected versions,
 - a minimal reproduction (a bench, command, or manifest that demonstrates it),

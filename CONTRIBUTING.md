@@ -3,7 +3,7 @@
 Thanks for helping make agent configuration evidence-driven.
 
 Participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md); report
-unacceptable behavior through the contact on the repository profile.
+unacceptable behavior through its [enforcement contact](CODE_OF_CONDUCT.md#enforcement).
 
 ## Development setup
 
