@@ -11,6 +11,9 @@
 - The README opens with one sentence, the three offline report commands, and a
   text-free report figure. The pilot label, schema notes and adoption floor
   sit in one Limits section.
+- `skillfit --help` lists the eight commands. `skillfit <command> --help`
+  lists that command's options. A flag used on the wrong command still names
+  the command that accepts it.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 

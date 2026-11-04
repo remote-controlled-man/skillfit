@@ -2,19 +2,82 @@ import { VERSION } from "../shared/version.js";
 import { DEFAULT_EVAL_TRIALS } from "./eval.js";
 
 // Help and parseArgs declarations share this CLI-owned source.
-export const USAGE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents
+const TITLE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents`;
+const option = (text: string) => text;
+const agent = option('  --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)');
+const judgeAgent = option("  --judge-agent <id>  Drive a paired eval's blind judge (prefer a different family than --agent)");
+const mode = option('  --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)');
+const baselineSkill = option('  --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target');
+const request = option('  --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)');
+const planSha = option("  --plan-sha <hash>   Confirm an eval/calibration/self-test dry-run plan (also needs --run-group)");
+const json = option('  --json             Machine output for bench check/self-test/list/show/edit/remove, report, eval and calibration');
+const spendingBudget = option('  --spending-budget <file>  Eval/calibration/drafting: input, cachedInput, uncachedInput, output, durationSeconds stop lines');
+const executorTimeout = option('  --executor-timeout-seconds <n|none>  Eval/calibration/drafting: executor deadline (integer 1–3600; none requires Token-only budget)');
+const pairOrder = option('  --pair-order <order>  Paired eval: baseline-first (default) | balanced');
+const runsRoot = option('  --runs-root <dir>   Eval/calibration/drafting/self-test output parent (default: ./runs)');
+const runGroup = option("  --run-group <name>  Fresh record group; reuse its name when confirming an eval preview");
+const policy = option('  --policy <path>    With paired report eval, assess against a policy (post-hoc changes cannot authorize adoption)');
+const records = option('  --records <dir>    With paired report eval, use native evidence from this run directory');
+const replay = option('  --replay           With report eval, audit receipts and regrade cloned deliveries; never call a model');
+const exportDir = option('  --export <dir>     With report eval, plan a portable package; --yes writes a fresh destination');
+const inputRoot = option('  --input-root <label=path>  With --export, recover pinned inputs from a matching copy (repeatable)');
+const competeInstalled = option('  --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound');
+const input = option('  --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)');
+const bench = option('  --bench <path>      Bench directory for eval (default: bundled benches)');
+const task = option('  --task <id>        With eval/calibration, select cases (repeatable, manifest order); requests use taskIds');
+const trials = option(`  --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})`);
+const maxCalls = option('  --max-calls <n>     Call ceiling for eval / bench check --calibrate / bench add --decompose\n                     Also controls baseline calibration repetitions');
+const profile = option('  --profile <name>    Profile for install (default: "recommended")');
+const profilePath = option('  --profile-path <dir>  Install a portable profile from a local directory');
+const skill = option('  --skill <name>     With bundle export, include a named installed skill (repeatable)\n                     With setup codex, select a Skill (repeatable)');
+const all = option('  --all              With setup codex, select all catalog Skills (not an efficacy recommendation)');
+const starter = option('  --starter          With setup codex, select the legacy 13-Skill set (not evaluated as a set)');
+const list = option('  --list             With setup codex, list choices without downloading');
+const noRules = option('  --no-rules         With setup codex, skip the global AGENTS.md block');
+const minSessions = option('  --min-sessions <n>  With bundle export, default selection needs this many sessions (default: 2)');
+const upstreamLock = option('  --upstream-lock <path>  With bundle export, fetch listed GitHub Skills at pinned commits during setup');
+const project = option('  --project           Install into the current project instead of user-level config');
+const dryRun = option('  --dry-run           Print the plan without writing anything');
+const strict = option('  --strict            With install --dry-run, exit non-zero on conflicts (for CI gates)');
+const yes = option('  --yes               Non-interactive mode (CI-friendly)');
+const help = option('  --help, -h          Show help');
+const versionFlag = option('  --version, -v       Show version');
+const common = [help, versionFlag].join('\n');
+
+function page(usage: string, options: string, extra = ''): string {
+  const body = [options, common].filter(part => part !== '').join('\n');
+  return `${TITLE}\n\nUsage:\n${usage}\n\nOptions:\n${body}${extra}`;
+}
+
+export const USAGE = `${TITLE}
 
 Usage:
   skillfit doctor [--agent <id>]            Inspect current agent configuration health
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
-  skillfit report eval <summary-or-run-dir>  Read paired, calibration or trigger reports (read-only)
-  skillfit report eval <summary-or-run-dir> --json  Return a typed saved-evidence report for an Agent
-  skillfit report eval <run-dir> --export <new-dir>  Plan a portable offline replay package
-  skillfit eval --request <request.json> --dry-run  Return a pinned JSON plan without calls
-  skillfit eval --request <request.json> --plan-sha <sha256>  Run that plan and return JSON evidence
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
   skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
-  skillfit bench init [dir] [--kind output|command]  Scaffold a text-output or code-editing case
+  skillfit bench <subcommand> [options]     Scaffold, inspect, edit and validate tasks
+  skillfit install [options]                Inspect or apply a managed configuration profile
+  skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance
+  skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile
+
+Run skillfit <command> --help for that command's options.
+${common}
+
+Docs: https://github.com/remote-controlled-man/skillfit
+`;
+
+const COMMAND_HELP: Record<string, string> = {
+  doctor: page('  skillfit doctor [--agent <id>]            Inspect current agent configuration health', agent),
+  report: page(`  skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
+  skillfit report eval <summary-or-run-dir>  Read paired, calibration or trigger reports (read-only)
+  skillfit report eval <summary-or-run-dir> --json  Return a typed saved-evidence report for an Agent
+  skillfit report eval <run-dir> --export <new-dir>  Plan a portable offline replay package`, [agent, json, policy, records, replay, exportDir, inputRoot].join('\n')),
+  eval: page(`  skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
+  skillfit eval --request <request.json> --dry-run  Return a pinned JSON plan without calls
+  skillfit eval --request <request.json> --plan-sha <sha256>  Run that plan and return JSON evidence`, [agent, judgeAgent, mode, baselineSkill, request, planSha, json, spendingBudget, executorTimeout, pairOrder, runsRoot, runGroup, competeInstalled, input, bench, task, trials, maxCalls, dryRun, yes].join('\n')),
+  mcp: page('  skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog', ''),
+  bench: page(`  skillfit bench init [dir] [--kind output|command]  Scaffold a text-output or code-editing case
   skillfit bench check [path-or-name] [--json]  Validate a local/bundled bench offline
   skillfit bench self-test <path-or-name> [--json]  Check declared synthetic controls through the paired pipeline; zero model calls
   skillfit bench check [path-or-name] --calibrate  Plus real baseline-difficulty runs (needs --agent)
@@ -23,52 +86,7 @@ Usage:
   skillfit bench list <path-or-name> [--json]  List local/bundled cases without running verifiers
   skillfit bench show <path-or-name> <task-id> [--json]  Inspect one registered case
   skillfit bench edit <dir> <task-id> --set <field=value>  Plan a manifest edit (apply with --yes)
-  skillfit bench remove <dir> <task-id>     Plan to unregister a case, preserving its files
-  skillfit install [options]                Inspect or apply a managed configuration profile
-  skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance
-  skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile
-
-Options:
-  --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)
-  --judge-agent <id>  Drive a paired eval's blind judge (prefer a different family than --agent)
-  --mode <mode>       Eval mode: inject (default) | installed (paired complete Skill) | trigger (single arm)
-  --baseline-skill <path>  With --mode installed, compare a previous Skill version against the target
-  --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)
-  --plan-sha <hash>   Confirm an eval/calibration/self-test dry-run plan (also needs --run-group)
-  --json             Machine output for bench check/self-test/list/show/edit/remove, report, eval and calibration
-  --spending-budget <file>  Eval/calibration/drafting: input, cachedInput, uncachedInput, output, durationSeconds stop lines
-  --executor-timeout-seconds <n|none>  Eval/calibration/drafting: executor deadline (integer 1–3600; none requires Token-only budget)
-  --pair-order <order>  Paired eval: baseline-first (default) | balanced
-  --runs-root <dir>   Eval/calibration/drafting/self-test output parent (default: ./runs)
-  --run-group <name>  Fresh record group; reuse its name when confirming an eval preview
-  --policy <path>    With paired report eval, assess against a policy (post-hoc changes cannot authorize adoption)
-  --records <dir>    With paired report eval, use native evidence from this run directory
-  --replay           With report eval, audit receipts and regrade cloned deliveries; never call a model
-  --export <dir>     With report eval, plan a portable package; --yes writes a fresh destination
-  --input-root <label=path>  With --export, recover pinned inputs from a matching copy (repeatable)
-  --compete-installed With --mode trigger, copy other user-level Skills into each trial so recall is not an upper bound
-  --input <mode>      Paired eval or baseline calibration: snapshot (default) | workspace (CLI only)
-  --bench <path>      Bench directory for eval (default: bundled benches)
-  --task <id>        With eval/calibration, select cases (repeatable, manifest order); requests use taskIds
-  --trials <n>        Repetitions per condition for eval (integer 1–20; default: ${DEFAULT_EVAL_TRIALS})
-  --max-calls <n>     Call ceiling for eval / bench check --calibrate / bench add --decompose
-                     Also controls baseline calibration repetitions
-  --profile <name>    Profile for install (default: "recommended")
-  --profile-path <dir>  Install a portable profile from a local directory
-  --skill <name>     With bundle export, include a named installed skill (repeatable)
-                     With setup codex, select a Skill (repeatable)
-  --all              With setup codex, select all catalog Skills (not an efficacy recommendation)
-  --starter          With setup codex, select the legacy 13-Skill set (not evaluated as a set)
-  --list             With setup codex, list choices without downloading
-  --no-rules         With setup codex, skip the global AGENTS.md block
-  --min-sessions <n>  With bundle export, default selection needs this many sessions (default: 2)
-  --upstream-lock <path>  With bundle export, fetch listed GitHub Skills at pinned commits during setup
-  --project           Install into the current project instead of user-level config
-  --dry-run           Print the plan without writing anything
-  --strict            With install --dry-run, exit non-zero on conflicts (for CI gates)
-  --yes               Non-interactive mode (CI-friendly)
-  --help, -h          Show help
-  --version, -v       Show version
+  skillfit bench remove <dir> <task-id>     Plan to unregister a case, preserving its files`, [agent, json, trials, maxCalls, input, planSha, runsRoot, runGroup, spendingBudget, executorTimeout, task, dryRun, yes].join('\n'), `
 
 bench init options:
   --schema-version <1|2>  Explicit schema opt-in (default 1; schema 2 starter claims quality)
@@ -106,9 +124,19 @@ bench add --from-commit options:
   --include <dir>        Restrict the fixture to these paths (repeatable; required for large repos)
   --verifier-cmd <cmd>   Override the test command (default: node --test)
   --prompt-file <path>  Use the original issue request instead of the fix commit message
+`),
+  install: page('  skillfit install [options]                Inspect or apply a managed configuration profile', [agent, profile, profilePath, project, dryRun, strict, yes].join('\n')),
+  setup: page('  skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance', [skill, all, starter, list, noRules, dryRun, yes].join('\n')),
+  bundle: page('  skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile', [skill, minSessions, upstreamLock, dryRun, yes].join('\n')),
+};
 
-Docs: https://github.com/remote-controlled-man/skillfit
-`;
+export function helpFor(command: string): string | undefined {
+  return COMMAND_HELP[command];
+}
+
+export function helpCorpus(): string {
+  return Object.values(COMMAND_HELP).join('\n');
+}
 
 export const CLI_OPTIONS = {
   controls: { type: 'string' },

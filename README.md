@@ -301,7 +301,7 @@ For options, including the full 65-Skill upstream catalog via `--upstream-lock`,
 | `setup codex` | Select pinned Skills and global routing guidance; defaults to a preview | Only `--yes` installs; source selection needs network |
 | `bundle` | Export selected local Skills and global guidance for another machine | After confirmation; generated setup previews before installation |
 
-Use `node dist/cli.js --help` for flags and the [configuration guide](docs/guides/selectable-codex.md) for setup options. No observed Skill use is not proof of uselessness. Offline checks and replay still execute trusted local bench code. Installation keeps the first `<file>.skillfit-bak`; rollback handles write/validation failures, while abrupt termination can leave a partial install.
+Use `node dist/cli.js <command> --help` for that command's flags and the [configuration guide](docs/guides/selectable-codex.md) for setup options. No observed Skill use is not proof of uselessness. Offline checks and replay still execute trusted local bench code. Installation keeps the first `<file>.skillfit-bak`; rollback handles write/validation failures, while abrupt termination can leave a partial install.
 
 ### Bring your own bench
 

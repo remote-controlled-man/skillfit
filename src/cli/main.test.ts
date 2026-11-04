@@ -169,3 +169,16 @@ test('API, trigger and judged paired previews bind deadlines and budgets without
   }
   assert.equal(existsSync(join(cwd, 'runs')), false);
 });
+
+test('top-level help indexes eight commands and eval help lists only its options', () => {
+  const index = spawnSync(process.execPath, [CLI, '--help'], { encoding: 'utf8' });
+  assert.equal(index.status, 0);
+  for (const name of ['doctor', 'report', 'eval', 'mcp', 'bench', 'install', 'setup', 'bundle']) {
+    assert.match(index.stdout, new RegExp(`skillfit ${name}\\b`));
+  }
+  assert.doesNotMatch(index.stdout, /--baseline-skill/);
+  const evalHelp = spawnSync(process.execPath, [CLI, 'eval', '--help'], { encoding: 'utf8' });
+  assert.equal(evalHelp.status, 0, evalHelp.stderr);
+  assert.match(evalHelp.stdout, /--baseline-skill <path>/);
+  assert.doesNotMatch(evalHelp.stdout, /--profile <name>/);
+});

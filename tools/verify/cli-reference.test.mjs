@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { CLI_OPTIONS, USAGE } from '../../dist/cli/definition.js';
+import { CLI_OPTIONS, helpCorpus } from '../../dist/cli/definition.js';
 import { cliReference, withCliReference } from './cli-reference.mjs';
 
 test('CLI reference derives real help descriptions without inferring semantic types', () => {
@@ -9,8 +9,8 @@ test('CLI reference derives real help descriptions without inferring semantic ty
   assert.ok(text.includes('| `--trials <n>` | Repetitions per condition for eval (integer 1–20; default: 5) |'));
   assert.ok(text.includes('Also controls baseline calibration repetitions'));
   const { trials, ...missing } = CLI_OPTIONS;
-  assert.throws(() => cliReference(USAGE, missing), /not declared/);
-  assert.throws(() => cliReference(USAGE.replace('  --trials ', '  --unlisted ')), /exactly once/);
+  assert.throws(() => cliReference(helpCorpus(), missing), /not declared/);
+  assert.throws(() => cliReference(helpCorpus().replaceAll('  --trials ', '  --unlisted ')), /exactly once/);
 });
 
 test('reference regeneration detects stale descriptions and refuses ambiguous markers', () => {

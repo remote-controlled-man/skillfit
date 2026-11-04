@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { executorTimeoutArgument, executorDeadlineLabel } from '../agents/timeout.js';
 import { parseArgs } from 'node:util';
-import { CLI_OPTIONS, USAGE } from './definition.js';
+import { CLI_OPTIONS, USAGE, helpFor } from './definition.js';
 import { resolve } from 'node:path';
 import { runBenchAdd, runBenchCheck, runBenchInit, prepareBenchCalibration, runBenchCalibration, type BenchCheckCalibrateOptions } from "./bench.js";
 import { benchCheckError, benchCheckJson } from "./bench-check-report.js";
@@ -59,6 +59,11 @@ async function main(): Promise<void> {
   }
 
   const command = positionals[0];
+  const commandHelp = command === undefined ? undefined : helpFor(command);
+  if (values.help && commandHelp !== undefined) {
+    console.log(commandHelp);
+    return;
+  }
   if (values.help || !command) {
     console.log(USAGE);
     return;

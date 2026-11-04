@@ -294,7 +294,7 @@ node ./personal-codex/setup.mjs --yes
 | `setup codex` | 选择固定版本 Skill 与全局触发指引，默认预览 | 仅 `--yes` 安装；选择源需要网络 |
 | `bundle` | 导出所选本地 Skill 与全局指引，迁移到另一台机器 | 确认后写入；生成的安装器也先预览 |
 
-参数见 `node dist/cli.js --help`，配置选项见[配置指南](docs/guides/selectable-codex.md)。未观察到 Skill 使用不等于无用。离线检查和回放仍会执行可信的本地 bench 代码。安装保留首份 `<file>.skillfit-bak`；回滚处理写入或验证失败，进程突然终止仍可能留下部分安装。
+参数见 `node dist/cli.js <command> --help`，配置选项见[配置指南](docs/guides/selectable-codex.md)。未观察到 Skill 使用不等于无用。离线检查和回放仍会执行可信的本地 bench 代码。安装保留首份 `<file>.skillfit-bak`；回滚处理写入或验证失败，进程突然终止仍可能留下部分安装。
 
 ### 自带 bench
 
