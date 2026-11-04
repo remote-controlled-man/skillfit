@@ -22,6 +22,8 @@
 - Release cadence: a patch whenever a correctness or security fix needs one,
   and a minor no more than once every 14 days. Saved format versions stay
   owned by the architecture page.
+- CONTRIBUTING explains a ten-minute first pull request for issues labeled
+  `good first issue`.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 

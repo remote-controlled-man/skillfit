@@ -23,6 +23,15 @@ including documentation and package checks. No agent credentials are needed.
 There is no separate lint or formatter script. For module ownership, start with
 [architecture and maintenance](docs/maintainers/architecture.md).
 
+## A ten-minute first pull request
+
+1. Fork and clone the repository.
+2. Pick an issue labeled `good first issue`.
+3. For a documentation-only change, run `node tools/verify/check-docs.mjs`.
+4. If that check says a sentence is repeated, link the page that owns the fact instead of copying it.
+
+Architecture, test and restatement gates stay as they are.
+
 For a bug, search [existing issues](https://github.com/remote-controlled-man/skillfit/issues)
 and use the bug-report template with a minimal reproduction, expected/actual output
 and relevant versions. Use [SECURITY.md](SECURITY.md) for private security reports.
