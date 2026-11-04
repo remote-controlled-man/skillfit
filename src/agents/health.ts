@@ -1,9 +1,12 @@
-import { resolveAgentPath as resolveSpecPath, resolveAgentRulePath as resolveRulePath } from './environment.js';
-import { spawnSync } from 'node:child_process';
-import { readdirSync, readFileSync, statSync, type Dirent, type Stats } from 'node:fs';
-import { homedir } from 'node:os';
-import path from 'node:path';
-import { getAgent, loadMatrix, skillUserDirSpecs, type AgentDef } from './matrix.js';
+import {
+  resolveAgentPath as resolveSpecPath,
+  resolveAgentRulePath as resolveRulePath,
+} from "./environment.js";
+import { spawnSync } from "node:child_process";
+import { readdirSync, readFileSync, statSync, type Dirent, type Stats } from "node:fs";
+import { homedir } from "node:os";
+import path from "node:path";
+import { getAgent, loadMatrix, skillUserDirSpecs, type AgentDef } from "./matrix.js";
 import { parseFrontmatter } from "../resources/frontmatter.js";
 
 const NATIVE_RULES_MAX_LINES = 200;
@@ -11,9 +14,9 @@ const AGENTS_MD_MAX_BYTES = 32 * 1024;
 const SKILL_COUNT_WARN_THRESHOLD = 10;
 const MCP_SERVER_WARN_THRESHOLD = 10;
 const WHICH_TIMEOUT_MS = 5000;
-const SKILL_FILE = 'SKILL.md';
+const SKILL_FILE = "SKILL.md";
 
-export type CheckStatus = 'PASS' | 'WARN' | 'FAIL' | 'INFO';
+export type CheckStatus = "PASS" | "WARN" | "FAIL" | "INFO";
 
 export interface Check {
   status: CheckStatus;
@@ -83,7 +86,7 @@ function isDirectory(p: string): boolean {
 
 function readText(p: string): string | null {
   try {
-    return readFileSync(p, 'utf8');
+    return readFileSync(p, "utf8");
   } catch {
     return null;
   }
@@ -98,22 +101,22 @@ function readDir(p: string): Dirent[] | null {
 }
 
 function defaultWhich(binary: string): string | null {
-  const command = process.platform === 'win32' ? 'where' : 'which';
+  const command = process.platform === "win32" ? "where" : "which";
   const result = spawnSync(command, [binary], {
-    encoding: 'utf8',
+    encoding: "utf8",
     timeout: WHICH_TIMEOUT_MS,
     windowsHide: true,
   });
   if (result.error || result.status !== 0) return null;
-  const first = (result.stdout ?? '').split(/\r?\n/).find((line) => line.trim() !== '');
+  const first = (result.stdout ?? "").split(/\r?\n/).find((line) => line.trim() !== "");
   return first?.trim() ?? null;
 }
 
 function skillFrontmatterError(content: string): string | null {
   const fields = parseFrontmatter(content);
-  if (fields === null) return 'missing or malformed YAML frontmatter';
-  const missing = ['name', 'description'].filter((key) => !(fields[key] ?? '').trim());
-  if (missing.length > 0) return `frontmatter missing required field(s): ${missing.join(', ')}`;
+  if (fields === null) return "missing or malformed YAML frontmatter";
+  const missing = ["name", "description"].filter((key) => !(fields[key] ?? "").trim());
+  if (missing.length > 0) return `frontmatter missing required field(s): ${missing.join(", ")}`;
   return null;
 }
 
@@ -133,9 +136,9 @@ function detectAgent(agent: AgentDef, ctx: Ctx): DetectionEntry {
 }
 
 function countLines(content: string): number {
-  if (content === '') return 0;
-  const lines = content.split('\n').length;
-  return content.endsWith('\n') ? lines - 1 : lines;
+  if (content === "") return 0;
+  const lines = content.split("\n").length;
+  return content.endsWith("\n") ? lines - 1 : lines;
 }
 
 function formatBytes(bytes: number): string {
@@ -154,10 +157,20 @@ function bridgeChecks(agent: AgentDef, ctx: Ctx): Check[] {
   for (const spec of agent.rules.projectFiles) {
     const content = readText(resolveSpecPath(spec, ctx));
     if (content?.split(/\r?\n/).some((line) => line.trim() === bridge.importLine)) {
-      return [check('PASS', `project ${bridge.fileName} is bridged into ${spec} via "${bridge.importLine}"`)];
+      return [
+        check(
+          "PASS",
+          `project ${bridge.fileName} is bridged into ${spec} via "${bridge.importLine}"`,
+        ),
+      ];
     }
   }
-  return [check('WARN', `project root has ${bridge.fileName} but ${agent.displayName} does not read it — ${bridge.note}`)];
+  return [
+    check(
+      "WARN",
+      `project root has ${bridge.fileName} but ${agent.displayName} does not read it — ${bridge.note}`,
+    ),
+  ];
 }
 
 function checkRules(agent: AgentDef, ctx: Ctx): Check[] {
@@ -167,12 +180,12 @@ function checkRules(agent: AgentDef, ctx: Ctx): Check[] {
     const label = resolved === resolveSpecPath(spec, ctx) ? spec : resolved;
     const stat = statOrNull(resolved);
     if (stat === null || !stat.isFile()) {
-      checks.push(check('INFO', `${label} — not present`));
+      checks.push(check("INFO", `${label} — not present`));
       continue;
     }
     const content = readText(resolved);
     if (content === null) {
-      checks.push(check('WARN', `${label} — unreadable`));
+      checks.push(check("WARN", `${label} — unreadable`));
       continue;
     }
     const stats = `${countLines(content)} lines, ${formatBytes(stat.size)}`;
@@ -181,11 +194,21 @@ function checkRules(agent: AgentDef, ctx: Ctx): Check[] {
     // natively has one memory file of its own, sized by lines rather than by the
     // AGENTS.md byte budget below.
     if (!agent.rules.readsAgentsMd && countLines(content) > NATIVE_RULES_MAX_LINES) {
-      checks.push(check('WARN', `${label} — ${stats} — exceeds ${NATIVE_RULES_MAX_LINES} lines; long memory files dilute every prompt`));
+      checks.push(
+        check(
+          "WARN",
+          `${label} — ${stats} — exceeds ${NATIVE_RULES_MAX_LINES} lines; long memory files dilute every prompt`,
+        ),
+      );
     } else if (isAgentsMdName(name) && stat.size > AGENTS_MD_MAX_BYTES) {
-      checks.push(check('WARN', `${label} — ${stats} — exceeds the ${AGENTS_MD_MAX_BYTES / 1024} KiB AGENTS.md budget; the agent may truncate it`));
+      checks.push(
+        check(
+          "WARN",
+          `${label} — ${stats} — exceeds the ${AGENTS_MD_MAX_BYTES / 1024} KiB AGENTS.md budget; the agent may truncate it`,
+        ),
+      );
     } else {
-      checks.push(check('PASS', `${label} — ${stats}`));
+      checks.push(check("PASS", `${label} — ${stats}`));
     }
   }
   const homeOverride = agent.rules.userHomeOverride;
@@ -193,15 +216,20 @@ function checkRules(agent: AgentDef, ctx: Ctx): Check[] {
     const envHome = ctx.env[homeOverride.env];
     const home = envHome
       ? path.resolve(envHome)
-      : path.dirname(resolveSpecPath(agent.rules.userFiles[0] ?? '', ctx));
+      : path.dirname(resolveSpecPath(agent.rules.userFiles[0] ?? "", ctx));
     const overridePath = path.join(home, homeOverride.overrideRelativePath);
     const overrideContent = readText(overridePath);
     if (overrideContent !== null && overrideContent.trim().length > 0) {
-      checks.push(check('WARN', `${overridePath} shadows ${path.join(home, homeOverride.relativePath)}; the base global guidance is inactive`));
+      checks.push(
+        check(
+          "WARN",
+          `${overridePath} shadows ${path.join(home, homeOverride.relativePath)}; the base global guidance is inactive`,
+        ),
+      );
     }
   }
   checks.push(...bridgeChecks(agent, ctx));
-  checks.push(check('INFO', `notes: ${agent.rules.notes}`));
+  checks.push(check("INFO", `notes: ${agent.rules.notes}`));
   return checks;
 }
 
@@ -211,9 +239,9 @@ interface SkillLocation {
 }
 
 function skillSummaryCheck(presentDirs: number, valid: number): Check {
-  if (presentDirs === 0) return check('INFO', 'no skills directories present');
-  if (valid === 0) return check('INFO', 'skills directories present but no valid skills found');
-  return check('PASS', `${valid} valid skill(s) across ${presentDirs} director(y/ies)`);
+  if (presentDirs === 0) return check("INFO", "no skills directories present");
+  if (valid === 0) return check("INFO", "skills directories present but no valid skills found");
+  return check("PASS", `${valid} valid skill(s) across ${presentDirs} director(y/ies)`);
 }
 
 function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
@@ -232,31 +260,33 @@ function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
   const locations = new Map<string, SkillLocation>();
   for (const { spec, resolved } of dirs) {
     if (!isDirectory(resolved)) {
-      checks.push(check('INFO', `${spec} — not present`));
+      checks.push(check("INFO", `${spec} — not present`));
       continue;
     }
     const entries = readDir(resolved);
     if (entries === null) {
-      checks.push(check('WARN', `${spec} — unreadable directory`));
+      checks.push(check("WARN", `${spec} — unreadable directory`));
       continue;
     }
     presentDirs++;
-    const bucket = sharedDirs.has(resolved) ? 'shared' : 'private';
+    const bucket = sharedDirs.has(resolved) ? "shared" : "private";
     for (const entry of entries) {
-      if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+      if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
       const location = locations.get(entry.name) ?? { shared: [], private: [] };
       location[bucket].push(spec);
       locations.set(entry.name, location);
       const label = `${spec}/${entry.name}`;
       const skillFile = path.join(resolved, entry.name, SKILL_FILE);
       if (!isFile(skillFile)) {
-        checks.push(check('WARN', `${label} — no ${SKILL_FILE}; directory is not a loadable skill`));
+        checks.push(
+          check("WARN", `${label} — no ${SKILL_FILE}; directory is not a loadable skill`),
+        );
         continue;
       }
       const content = readText(skillFile);
       const error = content === null ? `unreadable ${SKILL_FILE}` : skillFrontmatterError(content);
       if (error !== null) {
-        checks.push(check('WARN', `${label}/${SKILL_FILE} — ${error}`));
+        checks.push(check("WARN", `${label}/${SKILL_FILE} — ${error}`));
         continue;
       }
       valid++;
@@ -264,11 +294,21 @@ function checkSkills(agent: AgentDef, ctx: Ctx): Check[] {
   }
   checks.push(skillSummaryCheck(presentDirs, valid));
   if (valid > SKILL_COUNT_WARN_THRESHOLD) {
-    checks.push(check('WARN', `${valid} skills installed (> ${SKILL_COUNT_WARN_THRESHOLD}) — large catalogs increase routing competition and may consume the agent's description budget; keep only skills with measured benefit`));
+    checks.push(
+      check(
+        "WARN",
+        `${valid} skills installed (> ${SKILL_COUNT_WARN_THRESHOLD}) — large catalogs increase routing competition and may consume the agent's description budget; keep only skills with measured benefit`,
+      ),
+    );
   }
   for (const [name, location] of locations) {
     if (location.shared.length > 0 && location.private.length > 0) {
-      checks.push(check('WARN', `skill "${name}" exists in both shared (${location.shared.join(', ')}) and private (${location.private.join(', ')}) dirs — copies can silently diverge`));
+      checks.push(
+        check(
+          "WARN",
+          `skill "${name}" exists in both shared (${location.shared.join(", ")}) and private (${location.private.join(", ")}) dirs — copies can silently diverge`,
+        ),
+      );
     }
   }
   return checks;
@@ -284,27 +324,29 @@ function parseJson(content: string): JsonOutcome {
   }
 }
 
-type McpServers = { kind: 'missing' } | { kind: 'invalid' } | { kind: 'ok'; names: string[] };
+type McpServers = { kind: "missing" } | { kind: "invalid" } | { kind: "ok"; names: string[] };
 
 function jsonMcpServers(value: unknown): McpServers {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return { kind: 'invalid' };
+  if (typeof value !== "object" || value === null || Array.isArray(value))
+    return { kind: "invalid" };
   const servers = (value as Record<string, unknown>).mcpServers;
-  if (servers === undefined) return { kind: 'missing' };
-  if (typeof servers !== 'object' || servers === null || Array.isArray(servers)) return { kind: 'invalid' };
-  return { kind: 'ok', names: Object.keys(servers) };
+  if (servers === undefined) return { kind: "missing" };
+  if (typeof servers !== "object" || servers === null || Array.isArray(servers))
+    return { kind: "invalid" };
+  return { kind: "ok", names: Object.keys(servers) };
 }
 
 function tomlMcpServerNames(content: string): string[] {
   const names = new Set<string>();
   for (const line of content.split(/\r?\n/)) {
     const match = /^\s*\[mcp_servers\.([A-Za-z0-9_-]+|"[^"]*"|'[^']*')/.exec(line);
-    if (match?.[1] !== undefined) names.add(match[1].replace(/^["']|["']$/g, ''));
+    if (match?.[1] !== undefined) names.add(match[1].replace(/^["']|["']$/g, ""));
   }
   return [...names];
 }
 
 function listNames(names: string[]): string {
-  return names.length === 0 ? '' : `: ${names.join(', ')}`;
+  return names.length === 0 ? "" : `: ${names.join(", ")}`;
 }
 
 function checkMcp(agent: AgentDef, ctx: Ctx): Check[] {
@@ -316,39 +358,61 @@ function checkMcp(agent: AgentDef, ctx: Ctx): Check[] {
     if (seen.has(resolved)) continue;
     seen.add(resolved);
     if (!isFile(resolved)) {
-      checks.push(check('INFO', `${spec} — not present`));
+      checks.push(check("INFO", `${spec} — not present`));
       continue;
     }
     const content = readText(resolved);
     if (content === null) {
-      checks.push(check('WARN', `${spec} — unreadable`));
+      checks.push(check("WARN", `${spec} — unreadable`));
       continue;
     }
-    if (agent.mcp.format === 'json-mcpServers') {
+    if (agent.mcp.format === "json-mcpServers") {
       const outcome = parseJson(content);
       if (!outcome.ok) {
-        checks.push(check('FAIL', `${spec} — invalid JSON (${outcome.error}); the agent cannot load this MCP config`));
+        checks.push(
+          check(
+            "FAIL",
+            `${spec} — invalid JSON (${outcome.error}); the agent cannot load this MCP config`,
+          ),
+        );
         continue;
       }
       const servers = jsonMcpServers(outcome.value);
-      if (servers.kind === 'missing') {
-        checks.push(check('INFO', `${spec} — no "mcpServers" key`));
+      if (servers.kind === "missing") {
+        checks.push(check("INFO", `${spec} — no "mcpServers" key`));
         continue;
       }
-      if (servers.kind === 'invalid') {
-        checks.push(check('FAIL', `${spec} — "mcpServers" is not an object; the agent cannot load this MCP config`));
+      if (servers.kind === "invalid") {
+        checks.push(
+          check(
+            "FAIL",
+            `${spec} — "mcpServers" is not an object; the agent cannot load this MCP config`,
+          ),
+        );
         continue;
       }
       totalServers += servers.names.length;
-      checks.push(check('PASS', `${spec} — ${servers.names.length} MCP server(s)${listNames(servers.names)}`));
+      checks.push(
+        check("PASS", `${spec} — ${servers.names.length} MCP server(s)${listNames(servers.names)}`),
+      );
       continue;
     }
     const names = tomlMcpServerNames(content);
     totalServers += names.length;
-    checks.push(check('INFO', `${spec} — text declares ${names.length} MCP server(s)${listNames(names)} (TOML text scan only; this does not prove the agent loaded or connected them)`));
+    checks.push(
+      check(
+        "INFO",
+        `${spec} — text declares ${names.length} MCP server(s)${listNames(names)} (TOML text scan only; this does not prove the agent loaded or connected them)`,
+      ),
+    );
   }
   if (totalServers > MCP_SERVER_WARN_THRESHOLD) {
-    checks.push(check('WARN', `${totalServers} MCP servers configured (> ${MCP_SERVER_WARN_THRESHOLD}) — tool schemas inflate context and confuse tool choice; keep only servers with measured benefit`));
+    checks.push(
+      check(
+        "WARN",
+        `${totalServers} MCP servers configured (> ${MCP_SERVER_WARN_THRESHOLD}) — tool schemas inflate context and confuse tool choice; keep only servers with measured benefit`,
+      ),
+    );
   }
   return checks;
 }
@@ -359,9 +423,9 @@ function checkAgent(agent: AgentDef, ctx: Ctx, detected: boolean): AgentHealthRe
     displayName: agent.displayName,
     detected,
     sections: [
-      { title: 'Rules', checks: checkRules(agent, ctx) },
-      { title: 'Skills', checks: checkSkills(agent, ctx) },
-      { title: 'MCP', checks: checkMcp(agent, ctx) },
+      { title: "Rules", checks: checkRules(agent, ctx) },
+      { title: "Skills", checks: checkSkills(agent, ctx) },
+      { title: "MCP", checks: checkMcp(agent, ctx) },
     ],
   };
 }
@@ -379,7 +443,9 @@ export function collectDoctorReport(options: DoctorOptions = {}): DoctorReport {
   if (options.agent !== undefined) {
     targets = [getAgent(options.agent)];
   } else {
-    const detectedIds = new Set(detection.filter((entry) => entry.detected).map((entry) => entry.id));
+    const detectedIds = new Set(
+      detection.filter((entry) => entry.detected).map((entry) => entry.id),
+    );
     targets = matrix.agents.filter((agent) => detectedIds.has(agent.id));
   }
   const health = targets.map((agent) =>

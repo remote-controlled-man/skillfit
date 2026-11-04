@@ -1,5 +1,5 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import assert from "node:assert/strict";
+import { test } from "node:test";
 import {
   buildWarnings,
   formatDeltaPp,
@@ -42,7 +42,10 @@ function taskSummary(
 ): TaskSummary {
   const baseline = stats(baselinePasses, trials);
   const treatment = stats(treatmentPasses, trials);
-  const outcomes = { baseline: flags(baselinePasses, trials), treatment: flags(treatmentPasses, trials) };
+  const outcomes = {
+    baseline: flags(baselinePasses, trials),
+    treatment: flags(treatmentPasses, trials),
+  };
   const deltaPassRate = treatment.passRate - baseline.passRate;
   const { verdict, reason } = verdictFor({ ...discordants(outcomes), deltaPassRate });
   return {
@@ -65,13 +68,13 @@ function taskSummary(
   };
 }
 
-function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunManifest, 'warnings'> {
+function manifestWith(tasks: TaskSummary[], executorKind = "mock"): Omit<RunManifest, "warnings"> {
   const trials = tasks[0]?.conditions.baseline.trials ?? 0;
-  const totalPasses = (condition: 'baseline' | 'treatment') =>
+  const totalPasses = (condition: "baseline" | "treatment") =>
     tasks.reduce((sum, task) => sum + task.conditions[condition].passes, 0);
   const totalTrials = tasks.reduce((sum, task) => sum + task.conditions.baseline.trials, 0);
-  const baseline = stats(totalPasses('baseline'), totalTrials);
-  const treatment = stats(totalPasses('treatment'), totalTrials);
+  const baseline = stats(totalPasses("baseline"), totalTrials);
+  const treatment = stats(totalPasses("treatment"), totalTrials);
   const deltaPassRate = treatment.passRate - baseline.passRate;
   const discordant = tasks.reduce(
     (acc, task) => {
@@ -83,10 +86,16 @@ function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunMani
   const { verdict, reason } = verdictFor({ ...discordant, deltaPassRate });
   return {
     schemaVersion: 4,
-    runGroup: 'g',
-    createdAt: '2026-09-19T00:00:00.000Z',
-    target: { kind: 'skill', name: 's', sourceDir: '/s', bundleSha256: 'a'.repeat(64), files: ['SKILL.md'] },
-    bench: { name: 'b', dir: '/b', contentSha256: 'b'.repeat(64), taskCount: tasks.length },
+    runGroup: "g",
+    createdAt: "2026-09-19T00:00:00.000Z",
+    target: {
+      kind: "skill",
+      name: "s",
+      sourceDir: "/s",
+      bundleSha256: "a".repeat(64),
+      files: ["SKILL.md"],
+    },
+    bench: { name: "b", dir: "/b", contentSha256: "b".repeat(64), taskCount: tasks.length },
     executor: { kind: executorKind, model: executorKind },
     judge: null,
     trials,
@@ -108,88 +117,94 @@ function manifestWith(tasks: TaskSummary[], executorKind = 'mock'): Omit<RunMani
   };
 }
 
-test('verdictFor is inconclusive below 6 discordant pairs, however large the delta', () => {
+test("verdictFor is inconclusive below 6 discordant pairs, however large the delta", () => {
   const outcome = verdictFor({ improved: 5, regressed: 0, deltaPassRate: 1 });
-  assert.equal(outcome.verdict, 'inconclusive');
+  assert.equal(outcome.verdict, "inconclusive");
   assert.match(outcome.reason, /only 5 discordant pair/);
 });
 
-test('verdictFor reaches significance at 6 one-sided discordant pairs', () => {
-  assert.equal(verdictFor({ improved: 6, regressed: 0, deltaPassRate: 1 }).verdict, 'effective');
-  assert.equal(verdictFor({ improved: 0, regressed: 6, deltaPassRate: -1 }).verdict, 'ineffective');
+test("verdictFor reaches significance at 6 one-sided discordant pairs", () => {
+  assert.equal(verdictFor({ improved: 6, regressed: 0, deltaPassRate: 1 }).verdict, "effective");
+  assert.equal(verdictFor({ improved: 0, regressed: 6, deltaPassRate: -1 }).verdict, "ineffective");
 });
 
-test('verdictFor rejects balanced discordance and zero delta', () => {
+test("verdictFor rejects balanced discordance and zero delta", () => {
   const balanced = verdictFor({ improved: 3, regressed: 3, deltaPassRate: 0 });
-  assert.equal(balanced.verdict, 'inconclusive');
+  assert.equal(balanced.verdict, "inconclusive");
   assert.match(balanced.reason, /not significant/);
   const lopsidedButWeak = verdictFor({ improved: 5, regressed: 2, deltaPassRate: 0.43 });
-  assert.equal(lopsidedButWeak.verdict, 'inconclusive');
+  assert.equal(lopsidedButWeak.verdict, "inconclusive");
 });
 
-test('buildWarnings flags a bench the baseline already passes', () => {
-  const manifest = manifestWith([taskSummary('easy', 3, 3, 3)], 'api');
+test("buildWarnings flags a bench the baseline already passes", () => {
+  const manifest = manifestWith([taskSummary("easy", 3, 3, 3)], "api");
   const warnings = buildWarnings(manifest);
-  assert.ok(warnings.some((w) => w.includes('"easy"') && w.includes('too easy')));
+  assert.ok(warnings.some((w) => w.includes('"easy"') && w.includes("too easy")));
 });
 
-test('buildWarnings stays quiet about difficulty below the 90% threshold', () => {
-  const manifest = manifestWith([taskSummary('ok', 2, 2, 4)], 'api');
-  assert.ok(!buildWarnings(manifest).some((w) => w.includes('too easy')));
+test("buildWarnings stays quiet about difficulty below the 90% threshold", () => {
+  const manifest = manifestWith([taskSummary("ok", 2, 2, 4)], "api");
+  assert.ok(!buildWarnings(manifest).some((w) => w.includes("too easy")));
 });
 
-test('buildWarnings flags mock executors as synthetic', () => {
-  const manifest = manifestWith([taskSummary('t', 0, 3, 3)], 'mock');
-  assert.ok(buildWarnings(manifest).some((w) => w.includes('synthetic')));
+test("buildWarnings flags mock executors as synthetic", () => {
+  const manifest = manifestWith([taskSummary("t", 0, 3, 3)], "mock");
+  assert.ok(buildWarnings(manifest).some((w) => w.includes("synthetic")));
 });
 
-test('buildWarnings warns when discordant pairs cannot certify anything but huge effects', () => {
-  const manifest = manifestWith([taskSummary('t', 1, 3, 3)], 'api');
-  assert.ok(buildWarnings(manifest).some((w) => w.includes('Only 2 discordant pair')));
+test("buildWarnings warns when discordant pairs cannot certify anything but huge effects", () => {
+  const manifest = manifestWith([taskSummary("t", 1, 3, 3)], "api");
+  assert.ok(buildWarnings(manifest).some((w) => w.includes("Only 2 discordant pair")));
 });
 
-test('renderSummary prints the table, significance block, and indicative scale note', () => {
-  const base = manifestWith([taskSummary('review-r1', 0, 3, 3)]);
+test("renderSummary prints the table, significance block, and indicative scale note", () => {
+  const base = manifestWith([taskSummary("review-r1", 0, 3, 3)]);
   const manifest: RunManifest = { ...base, warnings: buildWarnings(base) };
-  const output = renderSummary(manifest, 'runs/g/manifest.json');
+  const output = renderSummary(manifest, "runs/g/manifest.json");
   assert.match(output, /Target\s+: s \(skill/);
   assert.match(output, /review-r1\s+0\/3 \(0%\)\s+3\/3 \(100%\)\s+\+100pp\s+inconclusive/);
   assert.match(output, /OVERALL/);
-  assert.match(output, /Significance \(overall\): 3 improved vs 0 regressed discordant pair\(s\), McNemar exact p=0\.2500/);
-  assert.match(output, /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[\+100\.0pp, \+100\.0pp\]/);
+  assert.match(
+    output,
+    /Significance \(overall\): 3 improved vs 0 regressed discordant pair\(s\), McNemar exact p=0\.2500/,
+  );
+  assert.match(
+    output,
+    /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[\+100\.0pp, \+100\.0pp\]/,
+  );
   assert.match(output, /Observed Δpass CI half-width: ±0\.0pp/);
   assert.match(output, /interval collapsed.*does not establish zero uncertainty/);
-  assert.ok(!output.includes('resolves effects'));
+  assert.ok(!output.includes("resolves effects"));
   assert.match(output, /Scale: 1 task\(s\) × 3 trials per condition — below the conclusive bar/);
   assert.match(output, /Manifest: runs\/g\/manifest\.json/);
 });
 
-test('renderSummary labels the observed CI half-width without claiming validated resolution', () => {
-  const base = manifestWith([taskSummary('a', 0, 3, 3), taskSummary('b', 1, 3, 3)]);
+test("renderSummary labels the observed CI half-width without claiming validated resolution", () => {
+  const base = manifestWith([taskSummary("a", 0, 3, 3), taskSummary("b", 1, 3, 3)]);
   base.overall.stats.deltaCi = { point: 0.283, lo: -0.044, hi: 0.61, resamples: 2000 };
   const manifest: RunManifest = { ...base, warnings: buildWarnings(base) };
-  const output = renderSummary(manifest, 'runs/g/manifest.json');
+  const output = renderSummary(manifest, "runs/g/manifest.json");
   // Integer rounding printed [-4pp, +61pp], which hides both that the interval straddles zero and
   // how wide it is — the two things a reader needs in order not to over-read the run.
   assert.match(output, /Δpass 95% CI \(paired bootstrap, 2000 resamples\): \[-4\.4pp, \+61\.0pp\]/);
   assert.match(output, /Observed Δpass CI half-width: ±32\.7pp/);
   assert.match(output, /not a validated minimum detectable effect/);
-  assert.ok(!output.includes('resolves effects'));
+  assert.ok(!output.includes("resolves effects"));
 });
 
-test('renderSummary checks completed scale and avoids resolution claims after rounding', () => {
+test("renderSummary checks completed scale and avoids resolution claims after rounding", () => {
   const base = manifestWith(Array.from({ length: 8 }, (_, i) => taskSummary(`task-${i}`, 0, 4, 4)));
   base.trials = 5;
   base.overall.stats.deltaCi = { point: 0, lo: -0.0001, hi: 0.0001, resamples: 2000 };
-  const output = renderSummary({ ...base, warnings: buildWarnings(base) }, 'runs/g/manifest.json');
+  const output = renderSummary({ ...base, warnings: buildWarnings(base) }, "runs/g/manifest.json");
   assert.match(output, /Observed Δpass CI half-width: ±0\.0pp/);
   assert.match(output, /Completed scale: 0 task\(s\) have at least 5 graded pairs/);
   assert.match(output, /results are indicative/);
-  assert.ok(!output.includes('resolves effects'));
+  assert.ok(!output.includes("resolves effects"));
 });
 
-test('renderSummary warns when only the graded-score interval collapses', () => {
-  const tasks = [taskSummary('a', 0, 3, 3), taskSummary('b', 1, 3, 3)];
+test("renderSummary warns when only the graded-score interval collapses", () => {
+  const tasks = [taskSummary("a", 0, 3, 3), taskSummary("b", 1, 3, 3)];
   for (const task of tasks) {
     task.conditions.baseline.meanScore = 0.5;
     task.conditions.treatment.meanScore = 1;
@@ -202,15 +217,15 @@ test('renderSummary warns when only the graded-score interval collapses', () => 
   base.overall.scoreDelta = 0.5;
   base.overall.stats.scoreDeltaCi = { point: 0.5, lo: 0.5, hi: 0.5, resamples: 2000 };
   assert.notEqual(base.overall.stats.deltaCi?.lo, base.overall.stats.deltaCi?.hi);
-  const output = renderSummary({ ...base, warnings: buildWarnings(base) }, 'runs/g/manifest.json');
+  const output = renderSummary({ ...base, warnings: buildWarnings(base) }, "runs/g/manifest.json");
   assert.match(output, /Δscore 95% CI.*\[\+0\.50, \+0\.50\]/);
   assert.match(output, /interval collapsed.*does not establish zero uncertainty/);
 });
 
-test('cost-of-pass requires complete token coverage on both arms', () => {
-  const task = taskSummary('a', 1, 1, 2);
+test("cost-of-pass requires complete token coverage on both arms", () => {
+  const task = taskSummary("a", 1, 1, 2);
   task.tokenDelta = { input: 10, output: 2 };
-  for (const condition of ['baseline', 'treatment'] as const) {
+  for (const condition of ["baseline", "treatment"] as const) {
     task.conditions[condition].tokens = { input: 20, output: 4 };
     task.conditions[condition].tokenCoverage = { input: 1, output: 2 };
   }
@@ -224,60 +239,60 @@ test('cost-of-pass requires complete token coverage on both arms', () => {
   base.overall.conditions.treatment.trials = 2;
   base.overall.conditions.baseline.tokenCoverage = { input: 1, output: 2 };
   base.overall.conditions.treatment.tokenCoverage = { input: 2, output: 2 };
-  const partial = renderSummary({ ...base, warnings: [] }, 'm.json');
-  assert.equal(partial.includes('cost-of-pass'), false);
+  const partial = renderSummary({ ...base, warnings: [] }, "m.json");
+  assert.equal(partial.includes("cost-of-pass"), false);
   base.overall.conditions.baseline.tokenCoverage = { input: 2, output: 2 };
-  const full = renderSummary({ ...base, warnings: [] }, 'm.json');
+  const full = renderSummary({ ...base, warnings: [] }, "m.json");
   assert.match(full, /cost-of-pass ratio \(treatment \/ baseline\): 1\.50/);
 });
 
-test('renderSummary shows a significant overall verdict when discordance suffices', () => {
+test("renderSummary shows a significant overall verdict when discordance suffices", () => {
   const base = manifestWith([
-    taskSummary('a', 0, 3, 3),
-    taskSummary('b', 0, 3, 3),
-    taskSummary('c', 0, 3, 3),
+    taskSummary("a", 0, 3, 3),
+    taskSummary("b", 0, 3, 3),
+    taskSummary("c", 0, 3, 3),
   ]);
   const manifest: RunManifest = { ...base, warnings: buildWarnings(base) };
-  assert.equal(manifest.overall.verdict, 'effective');
-  const output = renderSummary(manifest, 'runs/g/manifest.json');
+  assert.equal(manifest.overall.verdict, "effective");
+  const output = renderSummary(manifest, "runs/g/manifest.json");
   assert.match(output, /OVERALL\s+0\/9 \(0%\)\s+9\/9 \(100%\)\s+\+100pp\s+effective/);
   assert.match(output, /9 improved vs 0 regressed discordant pair\(s\), McNemar exact p=0\.0039/);
 });
 
-test('format helpers', () => {
-  assert.equal(formatPassRate(1, 3), '1/3 (33%)');
-  assert.equal(formatPassRate(0, 0), '0/0 (n/a)');
-  assert.equal(formatDeltaPp(2 / 3), '+67pp');
-  assert.equal(formatDeltaPp(-1 / 3), '-33pp');
-  assert.equal(formatDeltaPp(0), '0pp');
+test("format helpers", () => {
+  assert.equal(formatPassRate(1, 3), "1/3 (33%)");
+  assert.equal(formatPassRate(0, 0), "0/0 (n/a)");
+  assert.equal(formatDeltaPp(2 / 3), "+67pp");
+  assert.equal(formatDeltaPp(-1 / 3), "-33pp");
+  assert.equal(formatDeltaPp(0), "0pp");
   // Interval bounds keep a decimal: the task table does not need it, a CI does.
-  assert.equal(formatPp1(-0.044), '-4.4pp');
-  assert.equal(formatPp1(0.61), '+61.0pp');
-  assert.equal(formatPp1(0), '0.0pp');
-  assert.equal(formatPp1(1), '+100.0pp');
+  assert.equal(formatPp1(-0.044), "-4.4pp");
+  assert.equal(formatPp1(0.61), "+61.0pp");
+  assert.equal(formatPp1(0), "0.0pp");
+  assert.equal(formatPp1(1), "+100.0pp");
 });
 
-test('buildWarnings flags a task the baseline never passes (floor)', () => {
-  const manifest = manifestWith([taskSummary('hard', 0, 3, 3)], 'api');
+test("buildWarnings flags a task the baseline never passes (floor)", () => {
+  const manifest = manifestWith([taskSummary("hard", 0, 3, 3)], "api");
   assert.ok(
-    buildWarnings(manifest).some((w) => w.includes('"hard"') && w.includes('too hard or broken')),
+    buildWarnings(manifest).some((w) => w.includes('"hard"') && w.includes("too hard or broken")),
   );
 });
 
-test('buildWarnings flags a saturated facet', () => {
+test("buildWarnings flags a saturated facet", () => {
   const manifest = manifestWith(
     [
-      taskSummary('t', 2, 2, 4, {
+      taskSummary("t", 2, 2, 4, {
         facets: [
           {
-            name: 'style',
+            name: "style",
             baselinePassRate: 1,
             treatmentPassRate: 1,
             baselineTrials: 4,
             treatmentTrials: 4,
           },
           {
-            name: 'correctness',
+            name: "correctness",
             baselinePassRate: 0.5,
             treatmentPassRate: 0.75,
             baselineTrials: 4,
@@ -286,31 +301,31 @@ test('buildWarnings flags a saturated facet', () => {
         ],
       }),
     ],
-    'api',
+    "api",
   );
   const warnings = buildWarnings(manifest);
-  assert.ok(warnings.some((w) => w.includes('facet "style"') && w.includes('saturated')));
+  assert.ok(warnings.some((w) => w.includes('facet "style"') && w.includes("saturated")));
   assert.ok(!warnings.some((w) => w.includes('facet "correctness"')));
 });
 
-test('buildWarnings surfaces verifier consistency notes', () => {
+test("buildWarnings surfaces verifier consistency notes", () => {
   const manifest = manifestWith(
-    [taskSummary('t', 2, 2, 4, { verifierNotes: ['Task "t": exit code and checks disagree.'] })],
-    'api',
+    [taskSummary("t", 2, 2, 4, { verifierNotes: ['Task "t": exit code and checks disagree.'] })],
+    "api",
   );
-  assert.ok(buildWarnings(manifest).some((w) => w.includes('exit code and checks disagree')));
+  assert.ok(buildWarnings(manifest).some((w) => w.includes("exit code and checks disagree")));
 });
 
-test('renderSummary adds facet score lines only when scores exist', () => {
-  const withoutScores = manifestWith([taskSummary('plain', 1, 3, 3)]);
+test("renderSummary adds facet score lines only when scores exist", () => {
+  const withoutScores = manifestWith([taskSummary("plain", 1, 3, 3)]);
   const plainOutput = renderSummary(
     { ...withoutScores, warnings: buildWarnings(withoutScores) },
-    'runs/g/manifest.json',
+    "runs/g/manifest.json",
   );
-  assert.ok(!plainOutput.includes('Facet scores'));
-  assert.ok(!plainOutput.includes('Δscore 95% CI'));
+  assert.ok(!plainOutput.includes("Facet scores"));
+  assert.ok(!plainOutput.includes("Δscore 95% CI"));
 
-  const scored = taskSummary('scored', 1, 3, 3, {
+  const scored = taskSummary("scored", 1, 3, 3, {
     conditions: {
       baseline: stats(1, 3, 0.5),
       treatment: stats(3, 3, 1),
@@ -318,7 +333,7 @@ test('renderSummary adds facet score lines only when scores exist', () => {
     scoreDelta: 0.5,
     facets: [
       {
-        name: 'finds-bug',
+        name: "finds-bug",
         baselinePassRate: 0.5,
         treatmentPassRate: 1,
         baselineTrials: 3,
@@ -330,7 +345,7 @@ test('renderSummary adds facet score lines only when scores exist', () => {
   withScores.overall.stats.scoreDeltaCi = { point: 0.5, lo: 0.5, hi: 0.5, resamples: 2000 };
   const output = renderSummary(
     { ...withScores, warnings: buildWarnings(withScores) },
-    'runs/g/manifest.json',
+    "runs/g/manifest.json",
   );
   assert.match(output, /Δscore 95% CI \(paired bootstrap, 2000 resamples\): \[\+0\.50, \+0\.50\]/);
   assert.match(output, /Facet scores \(mean checks passed, baseline → treatment\):/);
@@ -338,8 +353,8 @@ test('renderSummary adds facet score lines only when scores exist', () => {
   assert.match(output, /- finds-bug: 50% → 100%/);
 });
 
-test('buildWarnings surfaces excluded executor errors per arm', () => {
-  const summary = taskSummary('flaky', 1, 2, 2);
+test("buildWarnings surfaces excluded executor errors per arm", () => {
+  const summary = taskSummary("flaky", 1, 2, 2);
   const manifest = manifestWith(
     [
       {
@@ -350,17 +365,19 @@ test('buildWarnings surfaces excluded executor errors per arm', () => {
         },
       },
     ],
-    'api',
+    "api",
   );
   const warnings = buildWarnings(manifest);
   assert.ok(
     warnings.some(
-      (w) => w.includes('"flaky" (baseline)') && w.includes('1 trial(s) hit an executor, verifier, or engagement error'),
+      (w) =>
+        w.includes('"flaky" (baseline)') &&
+        w.includes("1 trial(s) hit an executor, verifier, or engagement error"),
     ),
   );
-  assert.ok(warnings.some((w) => w.includes('together with their paired treatment trial(s)')));
+  assert.ok(warnings.some((w) => w.includes("together with their paired treatment trial(s)")));
   assert.ok(
     !warnings.some((w) => w.includes('"flaky" (treatment)')),
-    'an arm with no errors stays quiet',
+    "an arm with no errors stays quiet",
   );
 });

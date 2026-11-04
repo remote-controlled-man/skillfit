@@ -1,17 +1,38 @@
-import { currentSignal } from '../../shared/cancellation.js';
+import { currentSignal } from "../../shared/cancellation.js";
 import { runProcess, type ProcessResult } from "../../shared/process.js";
 import { parseCommand } from "../../shared/command.js";
 import { verifierRuntimeError } from "./error.js";
 import { parseVerifierTimeoutSeconds } from "./timeout.js";
 export type { ProcessResult } from "../../shared/process.js";
 
-export async function runVerifier(benchDir: string, command: string, runDir: string, timeoutSeconds?: number): Promise<ProcessResult> {
+export async function runVerifier(
+  benchDir: string,
+  command: string,
+  runDir: string,
+  timeoutSeconds?: number,
+): Promise<ProcessResult> {
   const timeoutMs = parseVerifierTimeoutSeconds(timeoutSeconds) * 1000;
   let tokens: string[];
-  try { tokens = parseCommand(command); }
-  catch (error) { return { exitCode: null, output: '', error: `VERIFIER_COMMAND_ERROR: ${(error as Error).message}` }; }
-  const result = await runProcess(tokens[0]!, [...tokens.slice(1), runDir], benchDir, timeoutMs, currentSignal());
-  return { ...result, error: result.error ?? verifierRuntimeError(result.output, result.exitCode, benchDir, runDir) };
+  try {
+    tokens = parseCommand(command);
+  } catch (error) {
+    return {
+      exitCode: null,
+      output: "",
+      error: `VERIFIER_COMMAND_ERROR: ${(error as Error).message}`,
+    };
+  }
+  const result = await runProcess(
+    tokens[0]!,
+    [...tokens.slice(1), runDir],
+    benchDir,
+    timeoutMs,
+    currentSignal(),
+  );
+  return {
+    ...result,
+    error: result.error ?? verifierRuntimeError(result.output, result.exitCode, benchDir, runDir),
+  };
 }
 
 export function verifierLogFor(result: ProcessResult): string {
@@ -26,8 +47,8 @@ const SPAWN_FAILURE = /ENOENT|EINVAL|EACCES|EPERM/i;
  * NOP gate it would look like the failure the gate exists to require.
  */
 export function verifierFailure(label: string, command: string, reason: string | null): string {
-  const why = reason ?? 'no exit code';
-  if (why.startsWith('VERIFIER_')) return `${label} failed (${why}): ${command}`;
+  const why = reason ?? "no exit code";
+  if (why.startsWith("VERIFIER_")) return `${label} failed (${why}): ${command}`;
   if (SPAWN_FAILURE.test(why)) {
     return `${label} could not be started (${why}): ${command} — it is spawned without a shell, so the first token must be an executable the OS can start directly ("node verifiers/x.mjs"); to grade with a shell command, wrap it via "bench add --freeze --verifier-cmd"`;
   }

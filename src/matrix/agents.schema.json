@@ -19,7 +19,19 @@
     "agent": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "displayName", "vendor", "detect", "rules", "skills", "mcp", "hooks", "subagents", "headless", "docs"],
+      "required": [
+        "id",
+        "displayName",
+        "vendor",
+        "detect",
+        "rules",
+        "skills",
+        "mcp",
+        "hooks",
+        "subagents",
+        "headless",
+        "docs"
+      ],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "displayName": { "type": "string" },
@@ -147,12 +159,14 @@
         "usageFromSessionLog": { "type": "boolean" },
         "partialUsageFromSessionLog": { "type": "boolean" },
         "streamJson": {
-          "type": "object", "required": ["argv", "wireShape"],
+          "type": "object",
+          "required": ["argv", "wireShape"],
           "properties": {
             "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } },
             "wireShape": { "enum": ["flat-tool-call", "content-blocks", "codex-items"] },
             "modelIdentitySurface": { "enum": ["claude-assistant"] },
-            "triggerToolName": { "type": "string" }, "docs": { "type": "string" }
+            "triggerToolName": { "type": "string" },
+            "docs": { "type": "string" }
           }
         },
         "docs": { "type": "string" }

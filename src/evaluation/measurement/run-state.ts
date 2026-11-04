@@ -1,7 +1,7 @@
-import type { SpendingStopCode } from '../../agents/call-budget.js';
+import type { SpendingStopCode } from "../../agents/call-budget.js";
 export interface ExperimentSummary {
   schemaVersion: 1;
-  status: 'completed' | 'stopped' | 'incomplete';
+  status: "completed" | "stopped" | "incomplete";
   plannedCalls: number;
   maxCalls: number;
   callsStarted: number;

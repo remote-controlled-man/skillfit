@@ -1,12 +1,15 @@
 import { wilson95 } from "./statistics.js";
 import type { ModelIdentity } from "../../agents/observation/model-identity.js";
-import type { TriggerDetection, TriggerEvidence } from "../../agents/observation/trigger-contract.js";
+import type {
+  TriggerDetection,
+  TriggerEvidence,
+} from "../../agents/observation/trigger-contract.js";
 import type { ExecutionTiming } from "../../shared/timing.js";
 import type { VerifierCheck } from "../../bench/gates/summary.js";
 import type { TokenUsage } from "../../agents/contracts.js";
 
 export interface TriggerTrialRecord {
-  budgetStop?: 'SPENDING_BUDGET_REACHED';
+  budgetStop?: "SPENDING_BUDGET_REACHED";
   modelIdentity?: ModelIdentity;
   taskId: string;
   trial: number;
@@ -25,13 +28,13 @@ export interface TriggerTrialRecord {
   checks: VerifierCheck[] | null;
   error: string | null;
   tokens: TokenUsage | null;
-  usageStatus?: 'final' | 'partial' | 'unknown';
+  usageStatus?: "final" | "partial" | "unknown";
 }
 
 export interface TriggerTaskSummary {
   id: string;
   shouldTrigger: boolean;
-  triggerClass?: 'explicit' | 'implicit' | 'contextual';
+  triggerClass?: "explicit" | "implicit" | "contextual";
   runs: number;
   fired: number;
   unknown: number;
@@ -55,14 +58,24 @@ export interface TriggerMetrics {
   f1: number | null;
   positives: { fired: number; runs: number };
   negatives: { fired: number; runs: number };
-  classRecall?: Partial<Record<'explicit' | 'implicit' | 'contextual', { fired: number; runs: number; recall: number | null; recallCi95: { lo: number; hi: number } | null }>>;
+  classRecall?: Partial<
+    Record<
+      "explicit" | "implicit" | "contextual",
+      {
+        fired: number;
+        runs: number;
+        recall: number | null;
+        recallCi95: { lo: number; hi: number } | null;
+      }
+    >
+  >;
   tokens: { input: number; output: number } | null;
 }
 
 export function summarizeTriggerTask(
   taskId: string,
   shouldTrigger: boolean,
-  triggerClass: TriggerTaskSummary['triggerClass'],
+  triggerClass: TriggerTaskSummary["triggerClass"],
   records: TriggerTrialRecord[],
 ): TriggerTaskSummary {
   let input = 0;
@@ -126,9 +139,9 @@ export function triggerMetrics(tasks: TriggerTaskSummary[]): TriggerMetrics {
   };
 }
 
-function classRecall(positives: TriggerTaskSummary[]): TriggerMetrics['classRecall'] {
-  const out: NonNullable<TriggerMetrics['classRecall']> = {};
-  for (const name of ['explicit', 'implicit', 'contextual'] as const) {
+function classRecall(positives: TriggerTaskSummary[]): TriggerMetrics["classRecall"] {
+  const out: NonNullable<TriggerMetrics["classRecall"]> = {};
+  for (const name of ["explicit", "implicit", "contextual"] as const) {
     const rows = positives.filter((task) => task.triggerClass === name);
     const runs = rows.reduce((sum, task) => sum + task.runs, 0);
     if (runs === 0) continue;

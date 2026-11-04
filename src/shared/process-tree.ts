@@ -1,5 +1,5 @@
-import { spawnSync } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
+import { spawnSync } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 
 export interface KillTreeOutcome {
   ok: boolean;
@@ -25,33 +25,39 @@ export function killTree(child: ChildProcess): KillTreeOutcome {
   const pid = child.pid;
   if (pid === undefined) {
     child.kill();
-    return { ok: true, detail: 'no pid; signalled the child handle' };
+    return { ok: true, detail: "no pid; signalled the child handle" };
   }
-  if (process.platform === 'win32') {
-    const result = spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { encoding: 'utf8', windowsHide: true });
+  if (process.platform === "win32") {
+    const result = spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], {
+      encoding: "utf8",
+      windowsHide: true,
+    });
     if (result.status === null) {
-      const detail = (result.error?.message ?? '').trim();
-      return { ok: false, detail: `taskkill did not run${detail ? `: ${detail}` : ''}` };
+      const detail = (result.error?.message ?? "").trim();
+      return { ok: false, detail: `taskkill did not run${detail ? `: ${detail}` : ""}` };
     }
     if (result.status === 0) return { ok: true };
     // taskkill documents 128 as "process not found": the tree is already gone, which is the goal.
-    if (result.status === 128) return { ok: true, detail: 'already gone' };
+    if (result.status === 128) return { ok: true, detail: "already gone" };
     try {
-      child.kill('SIGKILL');
+      child.kill("SIGKILL");
     } catch {
       // already exited
     }
-    const detail = (result.error?.message ?? result.stderr ?? '').trim();
-    return { ok: false, detail: `taskkill exited ${result.status}${detail ? `: ${detail}` : ' with no output'}` };
+    const detail = (result.error?.message ?? result.stderr ?? "").trim();
+    return {
+      ok: false,
+      detail: `taskkill exited ${result.status}${detail ? `: ${detail}` : " with no output"}`,
+    };
   }
   try {
-    process.kill(-pid, 'SIGKILL');
+    process.kill(-pid, "SIGKILL");
     return { ok: true };
   } catch {
     // Not a group leader, or already gone. Fall back to the direct signal.
     try {
-      child.kill('SIGKILL');
-      return { ok: true, detail: 'direct signal; the process group was unavailable' };
+      child.kill("SIGKILL");
+      return { ok: true, detail: "direct signal; the process group was unavailable" };
     } catch (error) {
       return { ok: false, detail: (error as Error).message };
     }
@@ -64,5 +70,5 @@ export function killTree(child: ChildProcess): KillTreeOutcome {
  * traverses by parent pid.
  */
 export function treeSpawnOptions(): { detached: boolean } {
-  return process.platform === 'win32' ? { detached: false } : { detached: true };
+  return process.platform === "win32" ? { detached: false } : { detached: true };
 }

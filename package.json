@@ -39,6 +39,7 @@
     "test": "npm run build && node --test \"dist/**/*.test.js\" \"tools/**/*.test.mjs\"",
     "doctor": "npm run build && node dist/cli.js doctor",
     "check": "npm run build && node --test \"dist/**/*.test.js\" \"tools/**/*.test.mjs\"",
+    "format:check": "biome ci --formatter-enabled=true --linter-enabled=false --assist-enabled=false",
     "prepublishOnly": "npm test"
   },
   "keywords": [
@@ -54,7 +55,8 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.6.0",
-    "@types/node": "^22.0.0"
+    "@biomejs/biome": "2.6.4",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
   }
 }

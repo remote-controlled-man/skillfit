@@ -20,7 +20,7 @@ function unquote(value: string): string {
 }
 
 export function parseFrontmatter(content: string): Record<string, string> | null {
-  const text = content.replace(/^\uFEFF/, '');
+  const text = content.replace(/^\uFEFF/, "");
   const match = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(text);
   if (!match || match[1] === undefined) return null;
   const fields: Record<string, string> = {};
@@ -29,13 +29,13 @@ export function parseFrontmatter(content: string): Record<string, string> | null
   for (const line of match[1].split(/\r?\n/)) {
     const kv = /^([A-Za-z0-9_-]+):(?:[ \t]+(.*))?$/.exec(line);
     if (kv && kv[1] !== undefined) {
-      const raw = (kv[2] ?? '').trim();
+      const raw = (kv[2] ?? "").trim();
       const block = BLOCK_SCALAR.exec(raw);
       if (block) {
-        fields[kv[1]] = '';
+        fields[kv[1]] = "";
         blockKey = kv[1];
         // `|` keeps line breaks; `>` folds them into spaces.
-        blockIsLiteral = block[1] === '|';
+        blockIsLiteral = block[1] === "|";
       } else {
         fields[kv[1]] = unquote(raw);
         blockKey = null;
@@ -43,9 +43,9 @@ export function parseFrontmatter(content: string): Record<string, string> | null
       continue;
     }
     if (blockKey !== null && /^\s+\S/.test(line)) {
-      const prior = fields[blockKey] ?? '';
+      const prior = fields[blockKey] ?? "";
       const piece = line.trim();
-      fields[blockKey] = prior === '' ? piece : `${prior}${blockIsLiteral ? '\n' : ' '}${piece}`;
+      fields[blockKey] = prior === "" ? piece : `${prior}${blockIsLiteral ? "\n" : " "}${piece}`;
       continue;
     }
     blockKey = null;

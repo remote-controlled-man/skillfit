@@ -1,7 +1,8 @@
 /** Read Codex's explicit-only policy from a Skill's agents/openai.yaml metadata. */
 export function isImplicitInvocationDisabled(metadata: string | null): boolean {
   if (metadata === null) return false;
-  const disabled = /(?:^|[\s{,])allow_implicit_invocation:\s*(?:false|"false"|'false')(?=\s*(?:[,}#]|$))/;
+  const disabled =
+    /(?:^|[\s{,])allow_implicit_invocation:\s*(?:false|"false"|'false')(?=\s*(?:[,}#]|$))/;
   let inPolicy = false;
   for (const line of metadata.split(/\r?\n/)) {
     if (/^policy:/.test(line)) {

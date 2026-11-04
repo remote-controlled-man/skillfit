@@ -12,9 +12,9 @@ function parseChecks(raw: unknown): VerifierCheck[] | null {
   if (!Array.isArray(raw)) return null;
   const checks: VerifierCheck[] = [];
   for (const entry of raw) {
-    if (typeof entry !== 'object' || entry === null) continue;
+    if (typeof entry !== "object" || entry === null) continue;
     const { name, pass } = entry as Record<string, unknown>;
-    if (typeof name === 'string' && name.length > 0 && typeof pass === 'boolean') {
+    if (typeof name === "string" && name.length > 0 && typeof pass === "boolean") {
       checks.push({ name, pass });
     }
   }
@@ -22,10 +22,10 @@ function parseChecks(raw: unknown): VerifierCheck[] | null {
 }
 
 function summarize(value: unknown): VerifierSummary | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   const obj = value as Record<string, unknown>;
-  const passed = typeof obj['passed'] === 'boolean' ? obj['passed'] : null;
-  const checks = parseChecks(obj['checks']);
+  const passed = typeof obj["passed"] === "boolean" ? obj["passed"] : null;
+  const checks = parseChecks(obj["checks"]);
   if (passed === null && checks === null) return null;
   return { passed, checks: checks ?? [] };
 }
@@ -33,10 +33,10 @@ function summarize(value: unknown): VerifierSummary | null {
 // The verifier's one-line JSON summary rides on merged stdout+stderr, so scan
 // from the end for the last line that parses as a summary object.
 export function parseVerifierSummary(output: string): VerifierSummary | null {
-  const lines = output.split('\n');
+  const lines = output.split("\n");
   for (let i = lines.length - 1; i >= 0; i--) {
     const line = lines[i]!.trim();
-    if (!line.startsWith('{') || !line.endsWith('}')) continue;
+    if (!line.startsWith("{") || !line.endsWith("}")) continue;
     try {
       const summary = summarize(JSON.parse(line));
       if (summary) return summary;

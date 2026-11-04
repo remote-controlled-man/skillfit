@@ -1,4 +1,4 @@
-import * as readline from 'node:readline';
+import * as readline from "node:readline";
 
 /**
  * Ask a yes/no question on the terminal.
@@ -25,7 +25,7 @@ export function confirm(question: string): Promise<boolean> {
       finish();
       resolvePromise(/^(y|yes)$/i.test(answer.trim()));
     });
-    rl.on('close', () => {
+    rl.on("close", () => {
       if (settled) return;
       finish();
       if (process.stdin.isTTY) {
@@ -33,7 +33,9 @@ export function confirm(question: string): Promise<boolean> {
         return;
       }
       rejectPromise(
-        new Error('No answer on stdin and it is not a terminal — pass --yes to run non-interactively.'),
+        new Error(
+          "No answer on stdin and it is not a terminal — pass --yes to run non-interactively.",
+        ),
       );
     });
   });

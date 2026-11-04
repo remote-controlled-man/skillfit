@@ -1,9 +1,9 @@
 import type { MeasurementScope } from "./scope.js";
 import type { ModelIdentities } from "../../agents/observation/model-identity.js";
-import type { ExperimentSummary } from './run-state.js';
+import type { ExperimentSummary } from "./run-state.js";
 import type { RunCosts } from "./costs.js";
 import type { InvocationCosts } from "./invocation-costs.js";
-export type Verdict = 'effective' | 'ineffective' | 'inconclusive';
+export type Verdict = "effective" | "ineffective" | "inconclusive";
 export interface Counts {
   passes: number;
   trials: number;
@@ -41,8 +41,8 @@ export interface ReportData {
   bench: { name: string; sha256: string; taskCount: number };
   executor: { kind: string; model: string };
   trials: number;
-  inputMode: 'snapshot' | 'workspace' | null;
-  skillDelivery: { mode: 'installed'; installDir: string } | null;
+  inputMode: "snapshot" | "workspace" | null;
+  skillDelivery: { mode: "installed"; installDir: string } | null;
   experiment: ExperimentSummary | null;
   tasks: ReportRow[];
   overall: ReportRow & {

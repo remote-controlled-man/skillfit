@@ -20,7 +20,8 @@ npm test
 
 The build creates `dist/`; `npm test` rebuilds and runs all offline tests,
 including documentation and package checks. No agent credentials are needed.
-There is no separate lint or formatter script. For module ownership, start with
+There is no separate lint script. Check formatting with `npm run format:check`.
+Biome is a devDependency, so the shipped CLI still has zero runtime dependencies. For module ownership, start with
 [architecture and maintenance](docs/maintainers/architecture.md).
 
 ## A ten-minute first pull request

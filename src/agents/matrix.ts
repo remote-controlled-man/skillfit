@@ -1,5 +1,5 @@
-import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { createRequire } from "node:module";
+import { join } from "node:path";
 
 const require = createRequire(import.meta.url);
 
@@ -35,7 +35,7 @@ export interface AgentSkills {
 export interface AgentMcp {
   projectFiles: string[];
   userFiles: string[];
-  format: 'json-mcpServers' | 'toml-mcp_servers';
+  format: "json-mcpServers" | "toml-mcp_servers";
 }
 
 export interface AgentHooks {
@@ -50,20 +50,26 @@ export interface AgentSubagents {
 }
 
 export interface AgentHeadlessStreamJson {
-  modelIdentitySurface?: 'claude-assistant';
+  modelIdentitySurface?: "claude-assistant";
   argv: string[];
   triggerToolName?: string;
-  wireShape?: 'flat-tool-call' | 'content-blocks' | 'codex-items';
+  wireShape?: "flat-tool-call" | "content-blocks" | "codex-items";
   docs?: string;
 }
 
 export interface AgentHeadless {
   runtime?: {
     versionArgv?: string[];
-    settings?: { file: string; format: 'toml' | 'json'; keys: string[]; docs: string; homeOverride?: { env: string; relativePath: string } };
+    settings?: {
+      file: string;
+      format: "toml" | "json";
+      keys: string[];
+      docs: string;
+      homeOverride?: { env: string; relativePath: string };
+    };
   };
   argv: string[];
-  promptVia: 'stdin' | 'file';
+  promptVia: "stdin" | "file";
   promptFile?: string;
   /** CLI config override used only for disposable workspace configuration experiments. */
   projectTrustConfigArg?: string;
@@ -83,10 +89,10 @@ export interface AgentSessions {
   dir: string;
   homeOverride?: { env: string; relativePath: string };
   transcriptGlob: string;
-  wireShape: 'flat-tool-call' | 'content-blocks' | 'codex-rollout';
+  wireShape: "flat-tool-call" | "content-blocks" | "codex-rollout";
   skillToolName?: string;
   skillKey?: string;
-  skillNameAliases?: 'directory-and-frontmatter';
+  skillNameAliases?: "directory-and-frontmatter";
   docs: string | null;
 }
 
@@ -118,7 +124,9 @@ export function loadMatrix(): AgentMatrix {
 export function getAgent(id: string): AgentDef {
   const agent = loadMatrix().agents.find((a) => a.id === id);
   if (!agent) {
-    const known = loadMatrix().agents.map((a) => a.id).join(', ');
+    const known = loadMatrix()
+      .agents.map((a) => a.id)
+      .join(", ");
     throw new Error(`Unknown agent "${id}". Known agents: ${known}`);
   }
   return agent;

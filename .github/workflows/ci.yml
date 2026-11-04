@@ -34,6 +34,7 @@ jobs:
         id: scope
         run: node tools/verify/ci-scope.mjs classify
       - run: npm ci
+      - run: npm run format:check
       - run: node tools/verify/ci-scope.mjs test
       - name: First-run plan (offline, no agent CLI)
         if: steps.scope.outputs.scope == 'full'

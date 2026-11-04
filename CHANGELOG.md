@@ -24,6 +24,9 @@
   owned by the architecture page.
 - CONTRIBUTING explains a ten-minute first pull request for issues labeled
   `good first issue`.
+- Biome formats `src` and `tools` at a 100-column width. CI rejects format
+  drift. Biome is a devDependency, so the shipped CLI still has zero runtime
+  dependencies.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 

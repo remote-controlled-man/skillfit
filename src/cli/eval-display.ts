@@ -1,8 +1,13 @@
-import { executorDeadlineLabel } from '../agents/timeout.js';
-import { join } from 'node:path';
-import { CONCLUSIVE_TASKS, CONCLUSIVE_TRIALS, renderSummary, type RunManifest } from "../evaluation/measurement/report.js";
-import type { TriggerManifest } from '../evaluation/execution/activation.js';
-import { renderTriggerSummary } from './trigger-summary.js';
+import { executorDeadlineLabel } from "../agents/timeout.js";
+import { join } from "node:path";
+import {
+  CONCLUSIVE_TASKS,
+  CONCLUSIVE_TRIALS,
+  renderSummary,
+  type RunManifest,
+} from "../evaluation/measurement/report.js";
+import type { TriggerManifest } from "../evaluation/execution/activation.js";
+import { renderTriggerSummary } from "./trigger-summary.js";
 import { measurementScopeText } from "../evaluation/measurement/scope.js";
 import { renderAgentEnvironment } from "../agents/preflight.js";
 import type { Bench } from "../bench/contracts.js";
@@ -21,9 +26,9 @@ function formatK(value: number): string {
  * to spend, so it states the call budget in the slot where a preview disclaims writing.
  * State travels as this parameter rather than as substrings a caller strips afterwards.
  */
-type PlanView = { mode: 'preview' } | { mode: 'live'; plannedCalls: number; maxCalls: number };
+type PlanView = { mode: "preview" } | { mode: "live"; plannedCalls: number; maxCalls: number };
 
-const callsLine = (view: Extract<PlanView, { mode: 'live' }>) =>
+const callsLine = (view: Extract<PlanView, { mode: "live" }>) =>
   `Calls    : ${view.plannedCalls} planned; ceiling ${view.maxCalls}`;
 
 function renderPlan(
@@ -40,45 +45,72 @@ function renderPlan(
   view: PlanView,
 ): string {
   const lines: string[] = [];
-  lines.push(view.mode === 'preview' ? 'Experiment plan (dry run)' : 'Experiment plan');
-  lines.push(`Target   : ${target.name} (${target.kind}, ${target.files.length} files, bundle sha256 ${target.sha256.slice(0, 12)}…)`);
+  lines.push(view.mode === "preview" ? "Experiment plan (dry run)" : "Experiment plan");
+  lines.push(
+    `Target   : ${target.name} (${target.kind}, ${target.files.length} files, bundle sha256 ${target.sha256.slice(0, 12)}…)`,
+  );
   if (baselineTarget) {
-    lines.push(`Baseline : ${baselineTarget.name} (${baselineTarget.files.length} files, bundle sha256 ${baselineTarget.sha256.slice(0, 12)}…)`);
-    lines.push('Compare  : previous Skill in baseline vs target Skill in treatment; measures revision effects, not benefit over no Skill');
-  } else if (inputMode === 'workspace' && target.kind === 'skill') lines.push('Baseline : no Skill installed by the harness (inherited configuration still applies)');
-  if (target.kind !== 'skill') {
-    lines.push('           applied as project files; treatment material is never injected into the prompt');
+    lines.push(
+      `Baseline : ${baselineTarget.name} (${baselineTarget.files.length} files, bundle sha256 ${baselineTarget.sha256.slice(0, 12)}…)`,
+    );
+    lines.push(
+      "Compare  : previous Skill in baseline vs target Skill in treatment; measures revision effects, not benefit over no Skill",
+    );
+  } else if (inputMode === "workspace" && target.kind === "skill")
+    lines.push(
+      "Baseline : no Skill installed by the harness (inherited configuration still applies)",
+    );
+  if (target.kind !== "skill") {
+    lines.push(
+      "           applied as project files; treatment material is never injected into the prompt",
+    );
   }
   lines.push(`Bench    : ${bench.name} @ ${bench.dir}`);
-  lines.push(`           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`);
-  lines.push(`Input    : ${inputMode === 'workspace' ? 'workspace files on disk (no inline repository snapshot)' : 'inline repository snapshot'}`);
+  lines.push(
+    `           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`,
+  );
+  lines.push(
+    `Input    : ${inputMode === "workspace" ? "workspace files on disk (no inline repository snapshot)" : "inline repository snapshot"}`,
+  );
   lines.push(
     `Est. prompt: ~${formatK(estimate.baseline)} tokens/run baseline, ~${formatK(estimate.treatment)} treatment (the initial prompt only)`,
   );
   // Calling this "cost" invited a spending budget three orders of magnitude too
   // small: a measured OSS-task CLI session reached 0.7-1.0M input tokens per call
   // against a ~600-token prompt. The line now says what it measures and what it is not.
-  lines.push(inputMode === 'workspace'
-    ? '             a live session reads far more than this; set --spending-budget or --max-calls from a pilot'
-    : '             agent file reads and replies are not included; this is not a budget');
+  lines.push(
+    inputMode === "workspace"
+      ? "             a live session reads far more than this; set --spending-budget or --max-calls from a pilot"
+      : "             agent file reads and replies are not included; this is not a budget",
+  );
   const descriptor = executor?.describe();
   lines.push(
-    `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ''}` : 'unresolved (pass --agent or set SKILLFIT_API_KEY)'}`,
+    `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ""}` : "unresolved (pass --agent or set SKILLFIT_API_KEY)"}`,
   );
   const judgeDescriptor = judge?.describe();
-  lines.push(`Judge    : ${judgeDescriptor ? `${judgeDescriptor.kind} (${judgeDescriptor.model})` : 'disabled'}`);
+  lines.push(
+    `Judge    : ${judgeDescriptor ? `${judgeDescriptor.kind} (${judgeDescriptor.model})` : "disabled"}`,
+  );
   const totalRuns = bench.tasks.length * 2 * trials;
-  lines.push(`Trials   : ${trials} per condition (${bench.tasks.length} task(s) × 2 conditions × ${trials} = ${totalRuns} runs)`);
+  lines.push(
+    `Trials   : ${trials} per condition (${bench.tasks.length} task(s) × 2 conditions × ${trials} = ${totalRuns} runs)`,
+  );
   if (bench.tasks.length < CONCLUSIVE_TASKS || trials < CONCLUSIVE_TRIALS) {
-    lines.push(`Scale    : below ${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials per condition; any result will be indicative for broader claims.`);
+    lines.push(
+      `Scale    : below ${CONCLUSIVE_TASKS} tasks × ${CONCLUSIVE_TRIALS} trials per condition; any result will be indicative for broader claims.`,
+    );
   }
-  lines.push('Tasks    :');
+  lines.push("Tasks    :");
   for (const task of bench.tasks) {
-    lines.push(`- ${task.id}: fixture ${task.fixture}, verifier \`${task.verifier}\`${task.rubric ? `, rubric ${task.rubric}` : ''}`);
+    lines.push(
+      `- ${task.id}: fixture ${task.fixture}, verifier \`${task.verifier}\`${task.rubric ? `, rubric ${task.rubric}` : ""}`,
+    );
   }
-  lines.push(`Output   : ${join(runsRoot, runGroup)}${view.mode === 'preview' ? ' (not created)' : ''}`);
-  lines.push(view.mode === 'preview' ? 'Dry run — nothing was written.' : callsLine(view));
-  return lines.join('\n');
+  lines.push(
+    `Output   : ${join(runsRoot, runGroup)}${view.mode === "preview" ? " (not created)" : ""}`,
+  );
+  lines.push(view.mode === "preview" ? "Dry run — nothing was written." : callsLine(view));
+  return lines.join("\n");
 }
 
 function renderTriggerPlan(
@@ -93,65 +125,153 @@ function renderTriggerPlan(
   view: PlanView,
 ): string {
   const lines: string[] = [];
-  lines.push(view.mode === 'preview' ? 'Trigger experiment plan (dry run)' : 'Trigger experiment plan');
-  lines.push(`Skill    : ${skill.name} (${skill.files.length} files, bundle sha256 ${skill.sha256.slice(0, 12)}…)`);
-  lines.push(`           installed into ${installDir ?? 'unresolved'} of each run directory — never injected into the prompt`);
+  lines.push(
+    view.mode === "preview" ? "Trigger experiment plan (dry run)" : "Trigger experiment plan",
+  );
+  lines.push(
+    `Skill    : ${skill.name} (${skill.files.length} files, bundle sha256 ${skill.sha256.slice(0, 12)}…)`,
+  );
+  lines.push(
+    `           installed into ${installDir ?? "unresolved"} of each run directory — never injected into the prompt`,
+  );
   lines.push(`Bench    : ${bench.name} @ ${bench.dir}`);
-  lines.push(`           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`);
+  lines.push(
+    `           ${bench.tasks.length} task(s), content sha256 ${bench.contentSha256.slice(0, 12)}…`,
+  );
   const descriptor = executor?.describe();
   lines.push(
-    `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ''}` : 'unresolved (pass --agent with a streamJson-capable CLI)'}`,
+    `Executor : ${descriptor ? `${descriptor.kind} (${descriptor.model})${descriptor.detail ? ` — ${descriptor.detail}` : ""}` : "unresolved (pass --agent with a streamJson-capable CLI)"}`,
   );
   {
     const bodyTokens = estimate.treatment;
     lines.push(
       `Est. prompt: ~${formatK(estimate.baseline)} tokens/run; skill body ~${formatK(bodyTokens)} loads only if triggered (the initial prompt only)`,
     );
-    lines.push('             a live session reads far more than this; set --spending-budget or --max-calls from a pilot');
+    lines.push(
+      "             a live session reads far more than this; set --spending-budget or --max-calls from a pilot",
+    );
   }
   lines.push(`Trials   : ${trials} per task (single arm: skill installed)`);
-  lines.push('Tasks    :');
+  lines.push("Tasks    :");
   for (const task of bench.tasks) {
     const label =
       task.shouldTrigger === undefined
-        ? 'unlabeled — skipped'
+        ? "unlabeled — skipped"
         : task.shouldTrigger
-          ? 'should trigger'
-          : 'should NOT trigger (negative control)';
+          ? "should trigger"
+          : "should NOT trigger (negative control)";
     lines.push(`- ${task.id}: ${label}`);
   }
-  lines.push(`Output   : ${join(runsRoot, runGroup)}${view.mode === 'preview' ? ' (not created)' : ''}`);
-  lines.push(view.mode === 'preview' ? 'Dry run — nothing was written.' : callsLine(view));
-  return lines.join('\n');
+  lines.push(
+    `Output   : ${join(runsRoot, runGroup)}${view.mode === "preview" ? " (not created)" : ""}`,
+  );
+  lines.push(view.mode === "preview" ? "Dry run — nothing was written." : callsLine(view));
+  return lines.join("\n");
 }
 
 export function evaluationPlanLines(resolved: ResolvedEvalInputs): string[] {
-  const { bench, target, baselineTarget, executor, judge, trials, runsRoot, runGroup, inputMode, skillInstallDir, promptEstimate, competitors } = resolved;
-  const { agentPreflight, plannedCalls, maxCalls, spendingBudget, pairOrder, executorTimeoutSeconds } = resolved.preview;
+  const {
+    bench,
+    target,
+    baselineTarget,
+    executor,
+    judge,
+    trials,
+    runsRoot,
+    runGroup,
+    inputMode,
+    skillInstallDir,
+    promptEstimate,
+    competitors,
+  } = resolved;
+  const {
+    agentPreflight,
+    plannedCalls,
+    maxCalls,
+    spendingBudget,
+    pairOrder,
+    executorTimeoutSeconds,
+  } = resolved.preview;
   const scope = resolved.preview.measurementScope!;
-  const result = [...resolved.notes], log = (line: string) => result.push(line);
-  if (resolved.preview.mode === 'trigger') {
+  const result = [...resolved.notes],
+    log = (line: string) => result.push(line);
+  if (resolved.preview.mode === "trigger") {
     log(measurementScopeText(scope));
-    log(renderTriggerPlan(bench, target as SkillBundle, executor, trials, runsRoot, runGroup, skillInstallDir, promptEstimate, { mode: 'preview' }));
+    log(
+      renderTriggerPlan(
+        bench,
+        target as SkillBundle,
+        executor,
+        trials,
+        runsRoot,
+        runGroup,
+        skillInstallDir,
+        promptEstimate,
+        { mode: "preview" },
+      ),
+    );
     log(renderAgentEnvironment(agentPreflight));
-    log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
-    log(competitors.length ? `Compete  : ${competitors.map(entry => entry.name).join(', ')}` : 'Compete  : alone (recall is an upper bound)');
+    log(
+      "Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.",
+    );
+    log(
+      competitors.length
+        ? `Compete  : ${competitors.map((entry) => entry.name).join(", ")}`
+        : "Compete  : alone (recall is an upper bound)",
+    );
     log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (agent calls only)`);
     log(`Agent deadline: ${executorDeadlineLabel(executorTimeoutSeconds)} per invocation`);
-    if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; ${spendingBudget.durationSeconds === null ? 'checked during calls using delayed local Token snapshots; unknown updates cannot guarantee a cutoff' : 'checked between calls'}, in-flight overshoot remains possible`);
+    if (spendingBudget)
+      log(
+        `Spending stop lines: ${JSON.stringify(spendingBudget)}; ${spendingBudget.durationSeconds === null ? "checked during calls using delayed local Token snapshots; unknown updates cannot guarantee a cutoff" : "checked between calls"}, in-flight overshoot remains possible`,
+      );
   } else {
     log(measurementScopeText(scope));
-    log(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget, promptEstimate, { mode: 'preview' }));
+    log(
+      renderPlan(
+        bench,
+        target,
+        executor,
+        judge,
+        trials,
+        runsRoot,
+        runGroup,
+        inputMode,
+        baselineTarget,
+        promptEstimate,
+        { mode: "preview" },
+      ),
+    );
     log(renderAgentEnvironment(agentPreflight));
-    log('Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.');
-    log(`Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`);
+    log(
+      "Case preflight: pending; required before execution. Dry run does not execute verifiers or oracles.",
+    );
+    log(
+      `Calls    : ${plannedCalls} planned; ceiling ${maxCalls} (includes both judge orders when enabled)`,
+    );
     log(`Pair order: ${pairOrder}; arms remain adjacent`);
-    if (spendingBudget) log(`Spending stop lines: ${JSON.stringify(spendingBudget)}; ${spendingBudget.durationSeconds === null ? 'checked during calls using delayed local Token snapshots; unknown updates cannot guarantee a cutoff' : 'checked between calls'}, in-flight overshoot remains possible`);
-    log(`Agent deadline: ${executorDeadlineLabel(executorTimeoutSeconds)} per invocation in both arms`);
+    if (spendingBudget)
+      log(
+        `Spending stop lines: ${JSON.stringify(spendingBudget)}; ${spendingBudget.durationSeconds === null ? "checked during calls using delayed local Token snapshots; unknown updates cannot guarantee a cutoff" : "checked between calls"}, in-flight overshoot remains possible`,
+      );
+    log(
+      `Agent deadline: ${executorDeadlineLabel(executorTimeoutSeconds)} per invocation in both arms`,
+    );
     if (skillInstallDir) {
-      log('Tool     : native untracked-file diff helper in both arms (version 1; environment correction)');
-      log('Delivery : complete Skill resources installed ' + (baselineTarget ? 'in both conditions' : 'only in treatment') + ' at ' + skillInstallDir + '/' + target.name);
-      log('           identical prompts; native discovery is not guaranteed; inherited configuration still applies');
+      log(
+        "Tool     : native untracked-file diff helper in both arms (version 1; environment correction)",
+      );
+      log(
+        "Delivery : complete Skill resources installed " +
+          (baselineTarget ? "in both conditions" : "only in treatment") +
+          " at " +
+          skillInstallDir +
+          "/" +
+          target.name,
+      );
+      log(
+        "           identical prompts; native discovery is not guaranteed; inherited configuration still applies",
+      );
     }
   }
   return result;
@@ -166,21 +286,78 @@ export function evaluationPresentation(log?: (line: string) => void): EvalPresen
       // The preview is where a reader decides whether to spend. Name the exact next
       // command per mode: JSON execution refuses to start without the plan hash, and
       // text execution confirms interactively.
-      output(`Next     : text mode omits --dry-run and confirms interactively; JSON mode requires --plan-sha ${sha256} --run-group ${resolved.runGroup}.`);
+      output(
+        `Next     : text mode omits --dry-run and confirms interactively; JSON mode requires --plan-sha ${sha256} --run-group ${resolved.runGroup}.`,
+      );
     },
-    resolved: resolved => { for (const note of resolved.notes) output(note); },
-    dispatch: resolved => {
-      const { bench, target, baselineTarget, executor, judge, trials, runsRoot, runGroup, inputMode, skillInstallDir, promptEstimate, competitors } = resolved;
+    resolved: (resolved) => {
+      for (const note of resolved.notes) output(note);
+    },
+    dispatch: (resolved) => {
+      const {
+        bench,
+        target,
+        baselineTarget,
+        executor,
+        judge,
+        trials,
+        runsRoot,
+        runGroup,
+        inputMode,
+        skillInstallDir,
+        promptEstimate,
+        competitors,
+      } = resolved;
       const { agentPreflight, plannedCalls, maxCalls } = resolved.preview;
-      const view = { mode: 'live', plannedCalls, maxCalls } as const;
-      if (resolved.preview.mode === 'trigger') {
-        output(renderTriggerPlan(bench, target as SkillBundle, executor, trials, runsRoot, runGroup, skillInstallDir, promptEstimate, view));
-        output(competitors.length ? `Compete  : ${competitors.map(entry => entry.name).join(', ')}` : 'Compete  : alone (recall is an upper bound)');
-      } else output(renderPlan(bench, target, executor, judge, trials, runsRoot, runGroup, inputMode, baselineTarget, promptEstimate, view));
+      const view = { mode: "live", plannedCalls, maxCalls } as const;
+      if (resolved.preview.mode === "trigger") {
+        output(
+          renderTriggerPlan(
+            bench,
+            target as SkillBundle,
+            executor,
+            trials,
+            runsRoot,
+            runGroup,
+            skillInstallDir,
+            promptEstimate,
+            view,
+          ),
+        );
+        output(
+          competitors.length
+            ? `Compete  : ${competitors.map((entry) => entry.name).join(", ")}`
+            : "Compete  : alone (recall is an upper bound)",
+        );
+      } else
+        output(
+          renderPlan(
+            bench,
+            target,
+            executor,
+            judge,
+            trials,
+            runsRoot,
+            runGroup,
+            inputMode,
+            baselineTarget,
+            promptEstimate,
+            view,
+          ),
+        );
       output(renderAgentEnvironment(agentPreflight));
     },
-    completed: (manifest, resolved) => output('mode' in manifest
-      ? renderTriggerSummary(manifest as TriggerManifest, join(resolved.runsRoot, resolved.runGroup, 'manifest.json'))
-      : renderSummary(manifest as RunManifest, join(resolved.runsRoot, resolved.runGroup, 'manifest.json'))),
+    completed: (manifest, resolved) =>
+      output(
+        "mode" in manifest
+          ? renderTriggerSummary(
+              manifest as TriggerManifest,
+              join(resolved.runsRoot, resolved.runGroup, "manifest.json"),
+            )
+          : renderSummary(
+              manifest as RunManifest,
+              join(resolved.runsRoot, resolved.runGroup, "manifest.json"),
+            ),
+      ),
   };
 }

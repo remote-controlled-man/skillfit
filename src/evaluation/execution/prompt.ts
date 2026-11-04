@@ -1,6 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { MOCK_MARKER_FILE } from '../../bench/constants.js';
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { MOCK_MARKER_FILE } from "../../bench/constants.js";
 import { listFilesRecursive } from "../../shared/hash.js";
 import type { Executor } from "../../agents/contracts.js";
 import type { InputMode } from "../measurement/paired-contract.js";
@@ -25,19 +25,25 @@ const WORKSPACE_INPUT_RULES = `Workspace rules:
 - Your final message is captured to _output.md; summarize changes and checks when the task asks for code changes.`;
 
 export function assertInputModeSupported(inputMode: InputMode, executor: Executor | null): void {
-  if (inputMode !== 'snapshot' && inputMode !== 'workspace') {
+  if (inputMode !== "snapshot" && inputMode !== "workspace") {
     throw new Error(`Unknown input mode: ${inputMode} (expected "snapshot" or "workspace")`);
   }
-  if (inputMode === 'workspace' && executor && !['cli', 'mock'].includes(executor.describe().kind)) {
-    throw new Error('workspace input requires a CLI executor with filesystem access; use --agent <id>.');
+  if (
+    inputMode === "workspace" &&
+    executor &&
+    !["cli", "mock"].includes(executor.describe().kind)
+  ) {
+    throw new Error(
+      "workspace input requires a CLI executor with filesystem access; use --agent <id>.",
+    );
   }
 }
 
 function isVisibleToAgent(rel: string): boolean {
-  const parts = rel.split('/');
-  if (parts.includes('.git')) return false;
+  const parts = rel.split("/");
+  if (parts.includes(".git")) return false;
   const base = parts[parts.length - 1];
-  if (!base || base.startsWith('_')) return false;
+  if (!base || base.startsWith("_")) return false;
   if (base === MOCK_MARKER_FILE) return false;
   return true;
 }
@@ -45,8 +51,8 @@ function isVisibleToAgent(rel: string): boolean {
 export function snapshotRepoFiles(runDir: string): string {
   const files = listFilesRecursive(runDir).filter(isVisibleToAgent);
   return files
-    .map((rel) => `--- repository file: ${rel} ---\n${readFileSync(join(runDir, rel), 'utf8')}`)
-    .join('\n');
+    .map((rel) => `--- repository file: ${rel} ---\n${readFileSync(join(runDir, rel), "utf8")}`)
+    .join("\n");
 }
 
 export function buildTaskPrompt(
@@ -55,13 +61,17 @@ export function buildTaskPrompt(
   skillPayload: string | null,
   opts?: { workspace?: boolean; inputMode?: InputMode },
 ): string {
-  if (opts?.inputMode === 'workspace') {
+  if (opts?.inputMode === "workspace") {
     const sections = [taskPromptText.trimEnd(), WORKSPACE_INPUT_RULES];
     if (skillPayload) sections.push(skillPayload);
-    return `${sections.join('\n\n')}\n`;
+    return `${sections.join("\n\n")}\n`;
   }
-  const sections = [taskPromptText.trimEnd(), opts?.workspace ? WORKSPACE_RULES : ISOLATION_RULES, `Repository snapshot:\n\n${snapshot}`];
+  const sections = [
+    taskPromptText.trimEnd(),
+    opts?.workspace ? WORKSPACE_RULES : ISOLATION_RULES,
+    `Repository snapshot:\n\n${snapshot}`,
+  ];
   if (skillPayload) sections.push(skillPayload);
   sections.push(OUTPUT_CONTRACT);
-  return `${sections.join('\n\n')}\n`;
+  return `${sections.join("\n\n")}\n`;
 }

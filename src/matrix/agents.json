@@ -52,7 +52,10 @@
         "docs": null
       },
       "headless": {
-        "runtime": { "versionArgv": ["claude", "--version"], "docs": "https://code.claude.com/docs/en/cli-reference" },
+        "runtime": {
+          "versionArgv": ["claude", "--version"],
+          "docs": "https://code.claude.com/docs/en/cli-reference"
+        },
         "argv": ["claude", "-p"],
         "promptVia": "stdin",
         "streamJson": {
@@ -83,7 +86,11 @@
       "rules": {
         "projectFiles": ["AGENTS.md", "AGENTS.override.md"],
         "userFiles": ["~/.codex/AGENTS.md"],
-        "userHomeOverride": { "env": "CODEX_HOME", "relativePath": "AGENTS.md", "overrideRelativePath": "AGENTS.override.md" },
+        "userHomeOverride": {
+          "env": "CODEX_HOME",
+          "relativePath": "AGENTS.md",
+          "overrideRelativePath": "AGENTS.override.md"
+        },
         "readsAgentsMd": true,
         "agentsMdBridge": null,
         "notes": "Layered merge home/repo/cwd; ~32 KiB default budget; project-level config.toml only loads for trusted projects."
@@ -92,7 +99,11 @@
         "projectDirs": [".agents/skills"],
         "userDirs": ["~/.agents/skills"],
         "sharedDirs": [".agents/skills", "~/.agents/skills"],
-        "userHomeOverride": { "env": "CODEX_HOME", "relativePath": "skills", "fallback": "~/.codex/skills" }
+        "userHomeOverride": {
+          "env": "CODEX_HOME",
+          "relativePath": "skills",
+          "fallback": "~/.codex/skills"
+        }
       },
       "mcp": {
         "projectFiles": [".codex/config.toml"],
@@ -188,13 +199,25 @@
         "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html"
       },
       "headless": {
-        "runtime": { "versionArgv": ["kimi", "--version"], "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html" },
-        "argv": ["kimi", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
+        "runtime": {
+          "versionArgv": ["kimi", "--version"],
+          "docs": "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html"
+        },
+        "argv": [
+          "kimi",
+          "-p",
+          "Read the file {promptFile} in the current working directory and do exactly what it says."
+        ],
         "promptVia": "file",
         "promptFile": "_prompt.txt",
         "usageFromSessionLog": true,
         "streamJson": {
-          "argv": ["kimi", "--output-format=stream-json", "-p", "Read the file {promptFile} in the current working directory and do exactly what it says."],
+          "argv": [
+            "kimi",
+            "--output-format=stream-json",
+            "-p",
+            "Read the file {promptFile} in the current working directory and do exactly what it says."
+          ],
           "triggerToolName": "Skill",
           "wireShape": "flat-tool-call"
         },

@@ -1,2 +1,2 @@
 // Compatibility entry for pinned replay/installed acceptance; implementation has one owner.
-export * from '../cli/bench.js';
+export * from "../cli/bench.js";

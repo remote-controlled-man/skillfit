@@ -1,8 +1,8 @@
-import { createHash } from 'node:crypto';
-import { createReadStream, existsSync, readdirSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
-import { createInterface } from 'node:readline';
+import { createHash } from "node:crypto";
+import { createReadStream, existsSync, readdirSync, statSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { createInterface } from "node:readline";
 import { getAgent } from "../matrix.js";
 
 export interface SessionUsage {
@@ -19,9 +19,9 @@ interface UsageEventUsage {
 
 /** No declared session directory means no observation, not a guessed path. */
 function sessionsRoot(homeDir: string | undefined, env: NodeJS.ProcessEnv): string | null {
-  const sessions = getAgent('kimi-code').sessions;
+  const sessions = getAgent("kimi-code").sessions;
   if (sessions?.dir === undefined) return null;
-  const relative = sessions.dir.startsWith('~/') ? sessions.dir.slice(2) : sessions.dir;
+  const relative = sessions.dir.startsWith("~/") ? sessions.dir.slice(2) : sessions.dir;
   // An injected home is a fixture root. Do not let the process environment redirect the read.
   if (homeDir !== undefined) return join(homeDir, relative);
   const override = sessions.homeOverride;
@@ -31,7 +31,10 @@ function sessionsRoot(homeDir: string | undefined, env: NodeJS.ProcessEnv): stri
 }
 
 export function workDirKeyHash(workdir: string): string {
-  return createHash('sha256').update(workdir.replaceAll('\\', '/'), 'utf8').digest('hex').slice(0, 12);
+  return createHash("sha256")
+    .update(workdir.replaceAll("\\", "/"), "utf8")
+    .digest("hex")
+    .slice(0, 12);
 }
 
 export async function probeKimiSessionUsage(
@@ -59,7 +62,7 @@ export async function probeKimiSessionUsage(
       continue;
     }
     for (const session of sessions) {
-      const wire = join(root, bucket.name, session.name, 'agents', 'main', 'wire.jsonl');
+      const wire = join(root, bucket.name, session.name, "agents", "main", "wire.jsonl");
       if (!existsSync(wire)) continue;
       const mtime = statSync(wire).mtimeMs;
       if (mtime < startedAtMs - 5000) continue;
@@ -72,26 +75,30 @@ export async function probeKimiSessionUsage(
 }
 
 async function usageFromWire(file: string): Promise<SessionUsage | undefined> {
-  const lines = createInterface({ input: createReadStream(file, { encoding: 'utf8' }), crlfDelay: Infinity });
+  const lines = createInterface({
+    input: createReadStream(file, { encoding: "utf8" }),
+    crlfDelay: Infinity,
+  });
   let input = 0;
   let output = 0;
   let seen = false;
   try {
     for await (const line of lines) {
-      if (!line.includes('usage.record')) continue;
+      if (!line.includes("usage.record")) continue;
       let event: unknown;
       try {
         event = JSON.parse(line);
       } catch {
         continue;
       }
-      if (typeof event !== 'object' || event === null) continue;
+      if (typeof event !== "object" || event === null) continue;
       const record = event as Record<string, unknown>;
-      if (record['type'] !== 'usage.record') continue;
-      const usage = record['usage'] as UsageEventUsage | undefined;
-      if (typeof usage !== 'object' || usage === null) continue;
+      if (record["type"] !== "usage.record") continue;
+      const usage = record["usage"] as UsageEventUsage | undefined;
+      if (typeof usage !== "object" || usage === null) continue;
       seen = true;
-      input += (usage.inputOther ?? 0) + (usage.inputCacheRead ?? 0) + (usage.inputCacheCreation ?? 0);
+      input +=
+        (usage.inputOther ?? 0) + (usage.inputCacheRead ?? 0) + (usage.inputCacheCreation ?? 0);
       output += usage.output ?? 0;
     }
   } finally {

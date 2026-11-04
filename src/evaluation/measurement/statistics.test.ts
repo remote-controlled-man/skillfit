@@ -1,5 +1,5 @@
-import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import assert from "node:assert/strict";
+import { test } from "node:test";
 import {
   MIN_DISCORDANT_FOR_SIGNIFICANCE,
   mcnemarExactP,
@@ -8,7 +8,7 @@ import {
   wilson95,
 } from "./statistics.js";
 
-test('mcnemarExactP matches reference values', () => {
+test("mcnemarExactP matches reference values", () => {
   assert.equal(mcnemarExactP(6, 0), 0.03125);
   assert.equal(mcnemarExactP(5, 0), 0.0625);
   assert.equal(mcnemarExactP(9, 0), 0.00390625);
@@ -19,19 +19,22 @@ test('mcnemarExactP matches reference values', () => {
 /** Independent integer binomial coefficients; truncate at 64 bits before binary64 conversion. */
 function integerReferenceP(b: number, c: number): number {
   const n = b + c;
-  let coefficient = 1n, lowerTail = 1n;
+  let coefficient = 1n,
+    lowerTail = 1n;
   for (let i = 1; i <= Math.min(b, c); i++) {
-    coefficient = coefficient * BigInt(n - i + 1) / BigInt(i);
+    coefficient = (coefficient * BigInt(n - i + 1)) / BigInt(i);
     lowerTail += coefficient;
   }
-  return Math.min(1, Number((2n * lowerTail << 64n) / (1n << BigInt(n))) / 2 ** 64);
+  return Math.min(1, Number(((2n * lowerTail) << 64n) / (1n << BigInt(n))) / 2 ** 64);
 }
 
-test('mcnemarExactP remains accurate across the normal/subnormal and legacy zero boundaries', () => {
+test("mcnemarExactP remains accurate across the normal/subnormal and legacy zero boundaries", () => {
   for (const n of [1022, 1023, 1074, 1075, 1200, 2000, 20000]) {
     for (const offset of [0, 1, 5, 25, 45]) {
-      const b = Math.ceil(n / 2) + offset, c = n - b;
-      const actual = mcnemarExactP(b, c), expected = integerReferenceP(b, c);
+      const b = Math.ceil(n / 2) + offset,
+        c = n - b;
+      const actual = mcnemarExactP(b, c),
+        expected = integerReferenceP(b, c);
       assert.ok(Math.abs(actual - expected) < 5e-13, `${b}/${c}: ${actual} versus ${expected}`);
       assert.equal(actual, mcnemarExactP(c, b));
       assert.ok(actual >= 0 && actual <= 1);
@@ -42,7 +45,7 @@ test('mcnemarExactP remains accurate across the normal/subnormal and legacy zero
   assert.ok(Math.abs(mcnemarExactP(50001, 49999) - integerReferenceP(50001, 49999)) < 5e-13);
 });
 
-test('mcnemarExactP preserves representable tiny tails and permits genuine floating-point underflow', () => {
+test("mcnemarExactP preserves representable tiny tails and permits genuine floating-point underflow", () => {
   for (const n of [1022, 1023, 1074, 1075, 1076, 2000]) {
     assert.equal(mcnemarExactP(n, 0), 2 ** (1 - n));
     assert.equal(mcnemarExactP(0, n), 2 ** (1 - n));
@@ -50,13 +53,16 @@ test('mcnemarExactP preserves representable tiny tails and permits genuine float
   for (const n of [1074, 1075, 1076, 1080, 1085, 1100]) {
     // The two-term integer tail is 2*(1+n)/2^n. Scale from the smallest
     // subnormal to avoid the reference itself losing 2^-n before multiplication.
-    const expected = Number.MIN_VALUE * (n + 1) / 2 ** (n - 1075);
+    const expected = (Number.MIN_VALUE * (n + 1)) / 2 ** (n - 1075);
     const actual = mcnemarExactP(n - 1, 1);
-    assert.ok(Math.abs(actual - expected) <= Number.MIN_VALUE, `${n - 1}/1: ${actual} versus ${expected}`);
+    assert.ok(
+      Math.abs(actual - expected) <= Number.MIN_VALUE,
+      `${n - 1}/1: ${actual} versus ${expected}`,
+    );
   }
 });
 
-test('mcnemarExactP stays monotonic with increasing imbalance at a fixed large pair count', () => {
+test("mcnemarExactP stays monotonic with increasing imbalance at a fixed large pair count", () => {
   let previous = 1;
   for (let b = 600; b <= 1200; b++) {
     const p = mcnemarExactP(b, 1200 - b);
@@ -65,7 +71,7 @@ test('mcnemarExactP stays monotonic with increasing imbalance at a fixed large p
   }
 });
 
-test('mcnemarExactP keeps exact-test decisions on both sides of 0.05', () => {
+test("mcnemarExactP keeps exact-test decisions on both sides of 0.05", () => {
   for (const b of [1043, 1044, 1045, 1046]) {
     const expected = integerReferenceP(b, 2000 - b);
     assert.equal(mcnemarExactP(b, 2000 - b) < 0.05, expected < 0.05);
@@ -74,13 +80,21 @@ test('mcnemarExactP keeps exact-test decisions on both sides of 0.05', () => {
   assert.ok(integerReferenceP(1045, 955) < 0.05);
 });
 
-test('mcnemarExactP rejects invalid or unsafe discordant counts', () => {
-  for (const [b, c] of [[-1, 1], [1, -1], [0.5, 1], [NaN, 1], [1, Infinity], [2 ** 53, 0], [Number.MAX_SAFE_INTEGER, 1]]) {
+test("mcnemarExactP rejects invalid or unsafe discordant counts", () => {
+  for (const [b, c] of [
+    [-1, 1],
+    [1, -1],
+    [0.5, 1],
+    [NaN, 1],
+    [1, Infinity],
+    [2 ** 53, 0],
+    [Number.MAX_SAFE_INTEGER, 1],
+  ]) {
     assert.throws(() => mcnemarExactP(b!, c!), RangeError);
   }
 });
 
-test('mcnemarExactP never increases as discordance grows more one-sided', () => {
+test("mcnemarExactP never increases as discordance grows more one-sided", () => {
   let previous = 1;
   for (let k = 1; k <= 15; k++) {
     const p = mcnemarExactP(k, 0);
@@ -90,7 +104,7 @@ test('mcnemarExactP never increases as discordance grows more one-sided', () => 
   }
 });
 
-test('MIN_DISCORDANT_FOR_SIGNIFICANCE is the first discordant count reaching p < 0.05', () => {
+test("MIN_DISCORDANT_FOR_SIGNIFICANCE is the first discordant count reaching p < 0.05", () => {
   assert.equal(MIN_DISCORDANT_FOR_SIGNIFICANCE, 6);
   assert.ok(mcnemarExactP(MIN_DISCORDANT_FOR_SIGNIFICANCE, 0) < 0.05);
   assert.ok(mcnemarExactP(MIN_DISCORDANT_FOR_SIGNIFICANCE - 1, 0) >= 0.05);
@@ -115,13 +129,13 @@ const SAMPLE_TASKS = [
   task([false, false, false, false, false], [false, true, false, false, true]),
 ];
 
-test('pairedDeltaBootstrapCI is deterministic for a fixed seed', () => {
+test("pairedDeltaBootstrapCI is deterministic for a fixed seed", () => {
   const first = pairedDeltaBootstrapCI(SAMPLE_TASKS);
   const second = pairedDeltaBootstrapCI(SAMPLE_TASKS);
   assert.deepEqual(first, second);
 });
 
-test('pairedDeltaBootstrapCI brackets the pooled delta', () => {
+test("pairedDeltaBootstrapCI brackets the pooled delta", () => {
   const result = pairedDeltaBootstrapCI(SAMPLE_TASKS, { resamples: 500 });
   assert.ok(result !== null);
   assert.equal(result.resamples, 500);
@@ -130,7 +144,7 @@ test('pairedDeltaBootstrapCI brackets the pooled delta', () => {
   assert.ok(result.point <= result.hi);
 });
 
-test('pairedDeltaBootstrapCI returns a positive lower bound when treatment always wins', () => {
+test("pairedDeltaBootstrapCI returns a positive lower bound when treatment always wins", () => {
   const tasks = Array.from({ length: 8 }, () => task([false, false, false], [true, true, true]));
   const result = pairedDeltaBootstrapCI(tasks);
   assert.ok(result !== null);
@@ -138,12 +152,12 @@ test('pairedDeltaBootstrapCI returns a positive lower bound when treatment alway
   assert.ok(result.lo > 0);
 });
 
-test('pairedDeltaBootstrapCI returns null when there are no trials', () => {
+test("pairedDeltaBootstrapCI returns null when there are no trials", () => {
   assert.equal(pairedDeltaBootstrapCI([]), null);
   assert.equal(pairedDeltaBootstrapCI([task([], [])]), null);
 });
 
-test('pairedDeltaBootstrapCI stays finite when some tasks have no graded survivors', () => {
+test("pairedDeltaBootstrapCI stays finite when some tasks have no graded survivors", () => {
   const graded = task([false, true], [true, true]);
   const empty = task([], []);
   for (let seed = 1; seed <= 40; seed++) {
@@ -156,7 +170,7 @@ test('pairedDeltaBootstrapCI stays finite when some tasks have no graded survivo
   }
 });
 
-test('wilson95 handles empty and saturated arms', () => {
+test("wilson95 handles empty and saturated arms", () => {
   assert.deepEqual(wilson95(0, 0), { lo: 0, hi: 1 });
   const zero = wilson95(0, 3);
   assert.equal(zero.lo, 0);
@@ -173,13 +187,13 @@ const SAMPLE_SCORE_TASKS = [
   scoreTask([0, 0.25], [0.5, 0.75]),
 ];
 
-test('pairedScoreBootstrapCI is deterministic for a fixed seed', () => {
+test("pairedScoreBootstrapCI is deterministic for a fixed seed", () => {
   const first = pairedScoreBootstrapCI(SAMPLE_SCORE_TASKS);
   const second = pairedScoreBootstrapCI(SAMPLE_SCORE_TASKS);
   assert.deepEqual(first, second);
 });
 
-test('pairedScoreBootstrapCI brackets the pooled score delta', () => {
+test("pairedScoreBootstrapCI brackets the pooled score delta", () => {
   const result = pairedScoreBootstrapCI(SAMPLE_SCORE_TASKS, { resamples: 500 });
   assert.ok(result !== null);
   assert.equal(result.resamples, 500);
@@ -190,7 +204,7 @@ test('pairedScoreBootstrapCI brackets the pooled score delta', () => {
   assert.ok(result.point <= result.hi);
 });
 
-test('pairedScoreBootstrapCI returns a positive lower bound when treatment always outscores', () => {
+test("pairedScoreBootstrapCI returns a positive lower bound when treatment always outscores", () => {
   const tasks = Array.from({ length: 8 }, () => scoreTask([0.2, 0.4], [0.8, 1]));
   const result = pairedScoreBootstrapCI(tasks);
   assert.ok(result !== null);
@@ -198,7 +212,7 @@ test('pairedScoreBootstrapCI returns a positive lower bound when treatment alway
   assert.ok(result.lo > 0);
 });
 
-test('pairedScoreBootstrapCI matches pairedDeltaBootstrapCI on 0/1 inputs', () => {
+test("pairedScoreBootstrapCI matches pairedDeltaBootstrapCI on 0/1 inputs", () => {
   const asScores = SAMPLE_TASKS.map((t) => ({
     baseline: t.baseline.map((pass) => (pass ? 1 : 0)),
     treatment: t.treatment.map((pass) => (pass ? 1 : 0)),
@@ -206,7 +220,7 @@ test('pairedScoreBootstrapCI matches pairedDeltaBootstrapCI on 0/1 inputs', () =
   assert.deepEqual(pairedScoreBootstrapCI(asScores), pairedDeltaBootstrapCI(SAMPLE_TASKS));
 });
 
-test('pairedScoreBootstrapCI returns null when there are no scored trials', () => {
+test("pairedScoreBootstrapCI returns null when there are no scored trials", () => {
   assert.equal(pairedScoreBootstrapCI([]), null);
   assert.equal(pairedScoreBootstrapCI([scoreTask([], [])]), null);
 });

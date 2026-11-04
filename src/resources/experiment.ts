@@ -1,10 +1,10 @@
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
-import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { collectSkillBundle } from "./skill.js";
 import { hashFileSet, listFilesRecursive } from "../shared/hash.js";
 import type { Condition, EvaluationTarget, EvaluationTargetKind } from "./contracts.js";
 
-export const EXPERIMENT_FILE = 'skillfit-experiment.json';
+export const EXPERIMENT_FILE = "skillfit-experiment.json";
 
 interface ExperimentFile {
   schemaVersion: number;
@@ -17,27 +17,35 @@ interface ExperimentFile {
 function parseExperimentFile(path: string): ExperimentFile {
   let value: unknown;
   try {
-    value = JSON.parse(readFileSync(path, 'utf8'));
+    value = JSON.parse(readFileSync(path, "utf8"));
   } catch (error) {
     throw new Error(`Invalid ${EXPERIMENT_FILE}: ${(error as Error).message}`);
   }
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error(`${EXPERIMENT_FILE} must contain a JSON object`);
   }
   const record = value as Record<string, unknown>;
-  if (record['schemaVersion'] !== 1) {
+  if (record["schemaVersion"] !== 1) {
     throw new Error(`${EXPERIMENT_FILE} schemaVersion must be 1`);
   }
-  if (record['kind'] !== 'rules' && record['kind'] !== 'mcp') {
+  if (record["kind"] !== "rules" && record["kind"] !== "mcp") {
     throw new Error(`${EXPERIMENT_FILE} kind must be "rules" or "mcp"`);
   }
-  if (typeof record['treatment'] !== 'string' || record['treatment'].trim() === '') {
+  if (typeof record["treatment"] !== "string" || record["treatment"].trim() === "") {
     throw new Error(`${EXPERIMENT_FILE} treatment must name a non-empty overlay directory`);
   }
-  if (record['baseline'] !== undefined && (typeof record['baseline'] !== 'string' || record['baseline'].trim() === '')) {
-    throw new Error(`${EXPERIMENT_FILE} baseline must be a non-empty overlay directory when present`);
+  if (
+    record["baseline"] !== undefined &&
+    (typeof record["baseline"] !== "string" || record["baseline"].trim() === "")
+  ) {
+    throw new Error(
+      `${EXPERIMENT_FILE} baseline must be a non-empty overlay directory when present`,
+    );
   }
-  if (record['name'] !== undefined && (typeof record['name'] !== 'string' || record['name'].trim() === '')) {
+  if (
+    record["name"] !== undefined &&
+    (typeof record["name"] !== "string" || record["name"].trim() === "")
+  ) {
     throw new Error(`${EXPERIMENT_FILE} name must be a non-empty string when present`);
   }
   return record as unknown as ExperimentFile;
@@ -49,7 +57,7 @@ function resolveOverlay(root: string, value: string, label: Condition): string {
   }
   const path = resolve(root, value);
   const rel = relative(root, path);
-  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+  if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     throw new Error(`${EXPERIMENT_FILE} ${label} escapes the experiment directory`);
   }
   if (!existsSync(path) || !statSync(path).isDirectory()) {
@@ -58,7 +66,7 @@ function resolveOverlay(root: string, value: string, label: Condition): string {
   const realRoot = realpathSync(root);
   const realPath = realpathSync(path);
   const realRel = relative(realRoot, realPath);
-  if (realRel === '' || realRel === '..' || realRel.startsWith(`..${sep}`) || isAbsolute(realRel)) {
+  if (realRel === "" || realRel === ".." || realRel.startsWith(`..${sep}`) || isAbsolute(realRel)) {
     throw new Error(`${EXPERIMENT_FILE} ${label} escapes or aliases the experiment directory`);
   }
   return path;
@@ -75,15 +83,15 @@ export function collectEvaluationTarget(targetPath: string): EvaluationTarget {
   }
 
   const spec = parseExperimentFile(manifestPath);
-  const treatmentOverlay = resolveOverlay(sourceDir, spec.treatment, 'treatment');
+  const treatmentOverlay = resolveOverlay(sourceDir, spec.treatment, "treatment");
   const overlays: Partial<Record<Condition, string>> = { treatment: treatmentOverlay };
-  if (spec.baseline) overlays.baseline = resolveOverlay(sourceDir, spec.baseline, 'baseline');
+  if (spec.baseline) overlays.baseline = resolveOverlay(sourceDir, spec.baseline, "baseline");
 
   const prefixedFiles = [EXPERIMENT_FILE];
-  for (const condition of ['baseline', 'treatment'] as const) {
+  for (const condition of ["baseline", "treatment"] as const) {
     const overlay = overlays[condition];
     if (!overlay) continue;
-    const prefix = relative(sourceDir, overlay).split(sep).join('/');
+    const prefix = relative(sourceDir, overlay).split(sep).join("/");
     for (const file of listFilesRecursive(overlay)) prefixedFiles.push(`${prefix}/${file}`);
   }
   if (listFilesRecursive(treatmentOverlay).length === 0) {
