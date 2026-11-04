@@ -33,7 +33,7 @@ fact that did not (the registry publication timestamp) was promoted here first.
   41604553472/1 both succeeded; the registry's published integrity equals the
   reviewed preview, all six acceptance stages passed, and the repository's record
   verifier reports 21 receipts with 0 writes and 0 publishes. The complete
-  delivery is retained at `~/Documents/skillfit-releases/0.15.0`. Tag `v0.15.0`
+  delivery is retained at `the 0.15.0 release entry in workspace4skills/path-index.md`. Tag `v0.15.0`
   and the GitHub Release mark this source commit. Never upload 0.15.0 again.
 
 - Previous task T3: post-release usability pass over the first-run path. Walk the
@@ -158,7 +158,7 @@ fact that did not (the registry publication timestamp) was promoted here first.
   application/default change, new model call or npm workflow/publication.
   R8 study/workspace separation and current guidance are complete.
   The complete ponytail study is retained at
-  ~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 with all 481 files
+  the ponytail study entry in workspace4skills/path-index.md with all 481 files
   unchanged. Reading and moved replay pass with the old path absent; source runs
   remains absent after tutorial and full offline checks. dist stays build output;
   CLI defaults/formats are unchanged. R8 introduced no new model calls,
@@ -191,7 +191,7 @@ fact that did not (the registry publication timestamp) was promoted here first.
   merged through PR #60 as main 7514936. Its tree equals checked head 63ae1e7;
   main CI 40440668681/1 and its full three-OS receipts are verified. R6 has no
   remaining runtime acceptance gap. R7's complete 0.14.0 delivery is now saved
-  and verified at ~/Documents/skillfit-releases/0.14.0; the existing release
+  and verified at the 0.14.0 release entry in workspace4skills/path-index.md; the existing release
   manual no longer claims candidate status. All local closeout checks passed.
   R9 completed protected-main documentation synchronization in one PR.
   Never upload 0.14.0 again.
@@ -278,7 +278,7 @@ repository evidence archive.
 | O1 | Make the security and conduct reports reach a person | Complete 2026-11-04. Private vulnerability reporting enabled; docs check 35 files, 0 errors; sentence-ownership test 3 pass. Full npm test not required for this docs-only change | Private vulnerability reporting is enabled, and SECURITY.md sends reports to the repository security advisories form. Conduct reports use the mailbox already published in this repository's git history, named in the Code of Conduct enforcement section. CONTRIBUTING links to that section. The GitHub profile is no longer the reporting route. The change discloses no vulnerability. Docs check passes. |
 | O2 | Make the opening study claim match the frozen protocol; blocks O3 | Complete 2026-11-04 with O4. Docs check passed. The statistical protocol text was not edited | Both READMEs call the opening 8-skill table a pilot: 3 treated runs per skill, below the 8×5 indicative bar, with the recorded process-observation limit. The detailed table and its limits stay. The statistical protocol is unchanged. `node tools/verify/check-docs.mjs` passes. |
 | O4 | Point the source quickstart at the published 0.15.0 commit; with O2 | Complete 2026-11-04. Worktree build of `f506681` printed 0.15.0. Docs check passed | Both READMEs, the docs index and the driver Skill detach at `f506681edd0490a7690f2a96bd5b7e589f0bd5d0`, the commit tag `v0.15.0` names, whose package version is 0.15.0. Version-sensitive links stay full commits. Building that commit prints 0.15.0. Docs check passes. |
-| O13 | Remove home-directory paths from this public plan | Scheduled 2026-11-09. Not started. Docs only | `workspace4skills/path-index.md` first holds every absolute home path written here, and each named external directory is confirmed to exist. The docs check already ignores that private-lab tree. This plan then names the note instead of the path. The note stays untracked. Docs check passes. |
+| O13 | Remove home-directory paths from this public plan | Complete 2026-11-04. Seven directories confirmed, note ignored by git and the docs check, docs check 0 errors | `workspace4skills/path-index.md` first holds every absolute home path written here, and each named external directory is confirmed to exist. The docs check already ignores that private-lab tree. This plan then names the note instead of the path. The note stays untracked. Docs check passes. |
 | O9 | Restore release tags and retire the staging package | Scheduled 2026-11-09. Not started. Authorized 2026-11-04 | Annotated tags for 0.8.0, 0.9.0, 0.9.1, 0.10.0, 0.10.1, 0.11.0, 0.12.0, 0.13.0 and 0.13.1, each on the commit that was published. A missing `gitHead` stops that version and is recorded, rather than tagging a guess. `npm deprecate` the `0.0.0-stage` release as a staging publish. Do not upload 0.14.0 or 0.15.0 again. Record that provenance cannot be backfilled for `0.0.0-stage` and 0.8.0. |
 | O3 | Rewrite the README first screen; after O2 | Scheduled 2026-11-10 through 2026-11-12. Not started. Docs only | Both READMEs open with one sentence, the three existing offline commands, and one report figure. The figure is text-free and shared, or a localized pair. The O2 pilot labeling remains in the limits section, which also holds the schema, measurement-scope and adoption-floor wording and links the metrics page. Badges, fenced commands and the demo console block stay verbatim across languages. Docs check passes. No new command. |
 | O5 | Give each command its own help | Scheduled 2026-11-13 and 2026-11-16. Not started. Authorized 2026-11-04 | `skillfit <command> --help` prints that command's options, and `skillfit --help` is a short index of the eight commands. A flag used on the wrong command keeps its current error text. Tests cover the index, one command's help, and one rejected cross-command flag. `node tools/verify/cli-reference.mjs --check` passes, with each selected flag described once. JSON output is unchanged. |
@@ -310,10 +310,10 @@ repository evidence archive.
 | R9b | Deliver one combined closeout PR; after R9a | Complete; all PR checks passed | Push reviewed documentation and original-plan follow-up non-force, create/attach one PR and wait for all eight existing CI jobs plus security on the exact head. Existing classification is full for this scope; do not change workflows, weaken checks or push progress-only updates during CI. No npm workflow. |
 | R9c | Merge and verify exact-main closeout; after R9b | Complete; main CI and full three-OS receipts passed | Normal protected merge with checked head and clean message; require identical merged tree and original publication/study ancestry, all eight automatic main checks and same-attempt full three-OS receipts. Confirm source runs absent and retained bytes unchanged; record final status in this original plan without another CI-only PR or npm upload. |
 | R8a | Inventory study ownership and migration baseline | Complete | Source contains one stopped study, 481 ordinary files/2,444,971 bytes and no links/special files. Freeze every file hash/mode and native report; confirm no active study executor. Native identity, two completed calls, costs and original failure must remain unchanged. |
-| R8b | Move the complete study to its owning workspace; after R8a | Complete; byte-identical move and replay passed | Use fresh ~/Documents/skillfit-workspaces/ponytail-efficiency-20261026 as this study's working directory, not a new global output default. Move all bytes intact with collision checks and rollback on verification failure. With old source path absent, read/audit, export and actually replay a moved portable package offline. Preserve all indexed native files and historical launchers, never rewrite old paths/hashes or restart the stopped pilot. |
+| R8b | Move the complete study to its owning workspace; after R8a | Complete; byte-identical move and replay passed | Use the ponytail study entry in workspace4skills/path-index.md as this study's working directory, not a new global output default. Move all bytes intact with collision checks and rollback on verification failure. With old source path absent, read/audit, export and actually replay a moved portable package offline. Preserve all indexed native files and historical launchers, never rewrite old paths/hashes or restart the stopped pilot. |
 | R8c | Correct current source/workspace guidance; after R8b | Complete; existing guidance corrected | Update only existing agent/architecture/workflow/tutorial/driver guidance and this plan. Explain caller-workspace ./runs versus source dist, source-dev OS temporary work and external release receipts. Make tutorial commands execute from the actual workspace with the compiled CLI addressed explicitly; keep public flags/defaults, native layout and historical evidence unchanged. No new page or framework. |
 | R8d | Verify examples and deliver; after R8c | Complete; tutorial, replay and offline checks passed | Execute the changed zero-model tutorial in a fresh OS temporary workspace, verify native/report/export/moved replay and unchanged checkout inputs. Run docs/anchors and repository-required npm test before commit; confirm source runs stays absent, study hashes/meaning unchanged and private lab untouched. Commit/push only reviewed existing guidance on the original branch, no PR/remote CI/npm upload. |
-| R7a | Retain verified 0.14.0 delivery outside temporary storage | Complete; copied bytes and records verified | Copy the complete original publication artifact, 18 hash-linked recovery receipts and existing failure/run/recovery observations into fresh ~/Documents/skillfit-releases/0.14.0. Preserve exact bytes, reject collisions/symlinks and verify the copied original tarball plus standalone records. No repository evidence/archive tree or new storage mechanism. |
+| R7a | Retain verified 0.14.0 delivery outside temporary storage | Complete; copied bytes and records verified | Copy the complete original publication artifact, 18 hash-linked recovery receipts and existing failure/run/recovery observations into the 0.14.0 release entry in workspace4skills/path-index.md. Preserve exact bytes, reject collisions/symlinks and verify the copied original tarball plus standalone records. No repository evidence/archive tree or new storage mechanism. |
 | R7b | Correct existing release guidance; after R7a | Complete; existing manual corrected | Replace stale candidate/latest-version claims with version-neutral guidance in the existing release manual. Preserve original published documents, commands, history and links; record the durable proof location and actual verification here. No new page, version bump or package publication. |
 | R7c | Review, verify and deliver housekeeping; after R7b | Complete; reviewed branch delivery | Run docs against actual main, inspect facts/diff and verify retained records at the final path. Complete repository-required offline checks before commit. Commit only the manual and this plan, push the existing branch non-force with no open PR, compare remote refs, and leave main 7514936 unchanged for the next normal integration. |
 | R6a | Review 5f3c0ec and exact integration scope | Complete; no open findings | Freeze main b6c804b and head 5f3c0ec. Review all three paths, including the plan filtered by OCR, static-link initialization, public verify/recover entries and original recovery receipts. Run focused release checks, docs against actual main and npm test; retain unchanged 1,079-file package and fixed publication source. |
@@ -383,13 +383,13 @@ Selected inputs: oss-normalize-url/query-shape (21 files/80,732 bytes, one real
 upstream defect, protected assets and offline regression gates) and the existing
 repository vibe-coding bundle (two files). Its bug-fix/test-first loop fits the
 task. Initial ponytail dry-run was status=planned but nested environment=blocked
-by GLOBAL_SKILL_CONFLICT at ~/.agents/skills/ponytail and ~/.codex/skills/ponytail.
+by GLOBAL_SKILL_CONFLICT at the two global ponytail skill directories named in workspace4skills/path-index.md.
 That preview made zero model/CLI calls and remained memory-only. Selecting the
 existing vibe-coding bundle avoids that conflict without renaming a Skill,
 changing global configuration or adding isolation machinery. Inherited global
 instructions/other Skills remain shared and not fully isolated.
 
-Actual workspace: ~/Documents/skillfit-workspaces/query-shape-pilot-20261028.
+Actual workspace: the query-shape pilot entry in workspace4skills/path-index.md.
 At P1 completion only inputs/bench, inputs/vibe-coding, request.json,
 bench-check.json and preview.json existed. All 23 copied input-file SHA-256/modes match their sources;
 existing licenses/resources are retained. No new maintained Markdown or runner.
@@ -491,7 +491,7 @@ and modelCalls=0. It proves portable stopped evidence, not a completed compariso
 All 326 native file hashes/modes are unchanged; no active pilot Agent remains.
 
 Retain only this one native group at
-~/Documents/skillfit-workspaces/query-shape-pilot-20261028/runs/pilot-001,
+the query-shape pilot run entry in workspace4skills/path-index.md,
 its unchanged request/preview/input copies and original execution.json /
 execution.stderr.log. The per-trial error/result/transcript are native indexed
 records and remain intact. Removed the owned disposable export and rebuildable
