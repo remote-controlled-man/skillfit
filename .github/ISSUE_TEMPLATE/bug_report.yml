@@ -1,8 +1,12 @@
 name: Bug report
 description: Something in skillfit misbehaves
-title: "bug: "
+title: "fix: "
 labels: [bug]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Start the title with `fix(scope):`, the same format as a pull request. This form adds the bug label.
   - type: textarea
     id: summary
     attributes:

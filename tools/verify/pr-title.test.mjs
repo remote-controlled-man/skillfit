@@ -45,3 +45,17 @@ test("the command reads PR_TITLE and exits non-zero with the reason", () => {
   assert.equal(bad.status, 1);
   assert.match(bad.stderr, /CONTRIBUTING\.md/);
 });
+
+test("the command reads ISSUE_TITLE when PR_TITLE is absent", () => {
+  const env = { ...process.env };
+  delete env.PR_TITLE;
+  const run = (title) =>
+    spawnSync(process.execPath, [SCRIPT], {
+      encoding: "utf8",
+      env: { ...env, ISSUE_TITLE: title },
+    });
+  assert.equal(run("fix(report): count symlinked skills").status, 0);
+  const bad = run("bug: something broke");
+  assert.equal(bad.status, 1);
+  assert.match(bad.stderr, /CONTRIBUTING\.md/);
+});
