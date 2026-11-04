@@ -27,12 +27,12 @@ skillfit 在同一批任务上比较基线组与实验组，并报告变化及�
 `report` 和 `doctor` 只读这台机器，不调用模型。
 
 ```bash
-npx skillfit@0.15.2 report
-npx skillfit@0.15.2 doctor
+npx skillfit@0.15.3 report
+npx skillfit@0.15.3 doctor
 ```
 
 ```console
-$ npx skillfit@0.15.2 report --agent codex
+$ npx skillfit@0.15.3 report --agent codex
 
 codex — 280 session(s), 280 transcript(s)
   skill                          FIRES  SESSIONS  LAST SEEN
@@ -66,9 +66,9 @@ Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in r
 不需要 agent CLI、不需要登录、不调用模型。以下命令读取包内自带的 bench，几秒即可跑完：
 
 ```bash
-npx skillfit@0.15.2 bench check code-review
-npx skillfit@0.15.2 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.15.2 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.15.3 bench check code-review
+npx skillfit@0.15.3 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.15.3 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 <p align="center">
@@ -88,8 +88,8 @@ npx skillfit@0.15.2 report eval ./runs/controls-001/existing-mock-arms
 ## 安装
 
 ```bash
-npx skillfit@0.15.2 --help
-npx skillfit@0.15.2 doctor
+npx skillfit@0.15.3 --help
+npx skillfit@0.15.3 doctor
 ```
 
 需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出八个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
@@ -128,10 +128,10 @@ The instructions the agent should follow.
 然后脚手架一个 case 并预览评测：
 
 ```bash
-npx skillfit@0.15.2 bench init my-bench --kind command --dry-run
-npx skillfit@0.15.2 bench init my-bench --kind command --yes
-npx skillfit@0.15.2 bench check ./my-bench --json
-npx skillfit@0.15.2 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.15.3 bench init my-bench --kind command --dry-run
+npx skillfit@0.15.3 bench init my-bench --kind command --yes
+npx skillfit@0.15.3 bench check ./my-bench --json
+npx skillfit@0.15.3 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 测收益前先把教学用 fixture、prompt、verifier 和 oracle 换成真实任务。预览声明两次调用，实际不调用。检查 `plan.evaluation.agentPreflight.status`；离线登录状态仍未知。case 与运行记录分开放。继续阅读[第一次真实评测](docs/guides/first-real-eval.md)。

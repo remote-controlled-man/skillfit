@@ -1,7 +1,12 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
   "files": {
-    "includes": ["src/**", "tools/**/*.mjs", "tools/**/*.js"]
+    "includes": [
+      "src/**",
+      "tools/**/*.mjs",
+      "tools/**/*.js",
+      "!tools/verify/recipes/0.11.0-feature-smoke.mjs"
+    ]
   },
   "formatter": {
     "enabled": true,
