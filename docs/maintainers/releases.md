@@ -13,6 +13,11 @@ authorization; reading or editing this guide does not start a workflow. Run loca
 maintainer commands from the reviewed source checkout: release orchestration
 tools are source-only; the npm package carries installed verification recipes.
 
+## Cadence
+
+Publish a patch whenever a correctness or security fix needs one. Publish a
+minor no more than once every 14 days.
+
 ## Prepare the source
 
 1. Choose a new unpublished version. Update package/lockfile/changelog and current

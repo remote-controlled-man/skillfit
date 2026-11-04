@@ -19,6 +19,9 @@
   It does not print a dollar price or call a model.
 - The npm package keeps the teaching benches and omits `benches/contrib`.
   Those contributed benches stay in the git repository.
+- Release cadence: a patch whenever a correctness or security fix needs one,
+  and a minor no more than once every 14 days. Saved format versions stay
+  owned by the architecture page.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 
