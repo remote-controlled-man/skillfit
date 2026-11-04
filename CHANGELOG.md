@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.15.1 — A free local audit (2026-11-04)
+
+- Codex `report` counts skills in the project directory recorded on the
+  session. A project skill that fired is listed with the installed skills.
+  The catalog-size line stays the user catalog.
 - `doctor` and `report` count skills installed through a directory symlink,
   as skill managers such as cc-switch create them. Before, both reported no
   installed skills, so `report` printed no never-fired list or catalog size.

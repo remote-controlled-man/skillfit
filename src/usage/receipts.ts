@@ -1,8 +1,8 @@
-import { installedUserSkills } from "../agents/installed-skills.js";
-export { installedUserSkills } from "../agents/installed-skills.js";
+import { installedProjectSkills, installedUserSkills } from "../agents/installed-skills.js";
+export { installedProjectSkills, installedUserSkills } from "../agents/installed-skills.js";
 import { resolveHome, walkGlob } from "../shared/local-files.js";
 export { resolveHome, walkGlob } from "../shared/local-files.js";
-import { extractSkillNames, sessionKey } from "../agents/session-observation.js";
+import { extractSkillNames, sessionKey, sessionMetaCwd } from "../agents/session-observation.js";
 import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
@@ -44,8 +44,12 @@ export interface ReceiptsOptions {
   env?: NodeJS.ProcessEnv;
 }
 
-async function scanTranscript(file: string, cfg: AgentSessions): Promise<Map<string, number>> {
+async function scanTranscript(
+  file: string,
+  cfg: AgentSessions,
+): Promise<{ fires: Map<string, number>; cwd?: string }> {
   const fires = new Map<string, number>();
+  let cwd: string | undefined;
   const stream = createReadStream(file, { encoding: "utf8" });
   const rl = createInterface({ input: stream, crlfDelay: Infinity });
   try {
@@ -59,7 +63,9 @@ async function scanTranscript(file: string, cfg: AgentSessions): Promise<Map<str
         continue;
       }
       if (typeof event !== "object" || event === null) continue;
-      for (const name of extractSkillNames(event as Record<string, unknown>, cfg)) {
+      const record = event as Record<string, unknown>;
+      cwd ??= sessionMetaCwd(record);
+      for (const name of extractSkillNames(record, cfg)) {
         fires.set(name, (fires.get(name) ?? 0) + 1);
       }
     }
@@ -67,7 +73,7 @@ async function scanTranscript(file: string, cfg: AgentSessions): Promise<Map<str
     rl.close();
     stream.destroy();
   }
-  return fires;
+  return { fires, cwd };
 }
 
 function estimateTokens(text: string): number {
@@ -154,13 +160,21 @@ export async function collectAgentReceipt(
   const transcripts = walkGlob(sessionsDir, cfg.transcriptGlob);
   const perSkill = new Map<string, { fires: number; sessions: Set<string>; lastSeen: number }>();
   const allSessions = new Set<string>();
+  const installedByName = new Map(installed.map((skill) => [skill.name, skill.dir]));
+  const projectSkillsByCwd = new Map<string, Array<{ name: string; dir: string }>>();
   for (const file of transcripts) {
     const rel = relative(sessionsDir, file).split("\\").join("/");
     const session = sessionKey(rel, cfg);
     allSessions.add(session);
     const mtime = statSync(file).mtimeMs;
-    const fires = await scanTranscript(file, cfg);
-    for (const [name, count] of fires) {
+    const scanned = await scanTranscript(file, cfg);
+    if (scanned.cwd !== undefined && !projectSkillsByCwd.has(scanned.cwd)) {
+      projectSkillsByCwd.set(scanned.cwd, installedProjectSkills(agent, scanned.cwd));
+    }
+    for (const skill of projectSkillsByCwd.get(scanned.cwd ?? "") ?? []) {
+      if (!installedByName.has(skill.name)) installedByName.set(skill.name, skill.dir);
+    }
+    for (const [name, count] of scanned.fires) {
       const entry = perSkill.get(name) ?? { fires: 0, sessions: new Set<string>(), lastSeen: 0 };
       entry.fires += count;
       entry.sessions.add(session);
@@ -183,9 +197,11 @@ export async function collectAgentReceipt(
     sessionsFound: allSessions.size,
     transcriptsRead: transcripts.length,
     skills,
-    installed: installed.map((skill) => skill.name),
-    installedCount: installed.length,
-    neverFired: installed.filter((skill) => !perSkill.has(skill.name)).map((skill) => skill.name),
+    installed: [...installedByName.keys()].sort((a, b) => a.localeCompare(b)),
+    installedCount: installedByName.size,
+    neverFired: [...installedByName.keys()]
+      .filter((name) => !perSkill.has(name))
+      .sort((a, b) => a.localeCompare(b)),
     tax,
   };
 }

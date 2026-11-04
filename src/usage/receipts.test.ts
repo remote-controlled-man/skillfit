@@ -170,6 +170,41 @@ test("collectReceipts reads codex rollouts (custom_tool_call skill-path evidence
   assert.deepEqual(codex.neverFired, ["beta", "codex-only-skill", "never-skill"]);
 });
 
+test("collectReceipts counts project skills from a Codex session_meta cwd", async (t) => {
+  const home = mkdtempSync(join(tmpdir(), "skillfit-receipts-project-"));
+  const project = mkdtempSync(join(tmpdir(), "skillfit-receipts-cwd-"));
+  t.after(() => {
+    rmSync(home, { recursive: true, force: true });
+    rmSync(project, { recursive: true, force: true });
+  });
+  for (const name of ["prflow", "unused"]) {
+    mkdirSync(join(project, ".agents", "skills", name), { recursive: true });
+    writeFileSync(join(project, ".agents", "skills", name, "SKILL.md"), `# ${name}\n`);
+  }
+  const sessions = join(home, ".codex", "sessions", "2026", "11", "04");
+  mkdirSync(sessions, { recursive: true });
+  writeFileSync(
+    join(sessions, "rollout-project.jsonl"),
+    [
+      JSON.stringify({ type: "session_meta", payload: { cwd: project } }),
+      JSON.stringify({
+        type: "response_item",
+        payload: {
+          type: "custom_tool_call",
+          status: "completed",
+          name: "exec",
+          input: `cat ${project}/.agents/skills/prflow/SKILL.md`,
+        },
+      }),
+    ].join("\n"),
+  );
+  const receipt = (await collectReceipts({ homeDir: home, agent: "codex" }))[0];
+  assert.deepEqual(receipt?.installed, ["prflow", "unused"]);
+  assert.equal(receipt?.skills.find((skill) => skill.name === "prflow")?.fires, 1);
+  assert.deepEqual(receipt?.neverFired, ["unused"]);
+  assert.equal(receipt?.tax.descTokensTotal, 0);
+});
+
 test("collectReceipts uses CODEX_HOME for Codex sessions", async (t) => {
   const home = makeHome(t);
   const codexHome = join(home, "alternate-codex");

@@ -71,7 +71,7 @@ function renderAgent(receipt: AgentReceipt, lines: string[]): void {
         ? ` (+${otherReads.length - OTHER_READS_SHOWN} more; --json lists all)`
         : "";
     lines.push(
-      `  ${otherReads.length} other SKILL.md name(s) read outside the user skill directories: ${shown}${more}`,
+      `  ${otherReads.length} other SKILL.md name(s) read outside installed skill directories: ${shown}${more}`,
     );
   }
   lines.push(
