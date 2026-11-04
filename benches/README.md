@@ -3,7 +3,7 @@
 This reference owns task files, claims, verifier and fixture contracts. Follow
 [bench authoring](../docs/guides/bench-authoring.md) to prepare/check cases and
 [evaluation workflow](../docs/guides/experiment-workflow.md) to run or recover them.
-Use the [bench catalog](contrib/README.md) to find retained cases. Built-in cases
+Use the [bench catalog](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/benches/contrib/README.md) to find retained cases. The catalog stays in the git repository and is not part of the npm package. Built-in cases
 teach the format; `_self-test` contains synthetic controls, not efficacy evidence.
 
 ## Input and output lifecycle

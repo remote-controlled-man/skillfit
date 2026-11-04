@@ -17,6 +17,8 @@
 - An eval dry-run of a Skill directory or an AGENTS.md rules directory prints
   the planned call count and, with a spending budget, the token stop lines.
   It does not print a dollar price or call a model.
+- The npm package keeps the teaching benches and omits `benches/contrib`.
+  Those contributed benches stay in the git repository.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 

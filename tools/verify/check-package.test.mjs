@@ -49,6 +49,10 @@ test('actual offline npm package matches the reviewed inventory and active runti
   const entries = JSON.parse(result.stdout);
   assert.equal(entries.length, 1);
   inspectBuiltPackage(entries[0]);
+  assert.equal(entries[0].files.some(file => file.path.startsWith('benches/contrib/')), false);
+  for (const path of ['benches/code-review/bench.json', 'benches/debugging/bench.json', 'benches/_self-test/example/controls.json']) {
+    assert.equal(entries[0].files.some(file => file.path === path), true, path);
+  }
   assert.deepEqual(entries[0].files.map(file => file.path).filter(path => path.startsWith('evidence/')).sort(),
     []);
   const extracted = spawnSync('tar', ['-xzf', join(cache, entries[0].filename), '-C', cache], {
@@ -70,6 +74,12 @@ test('actual offline npm package matches the reviewed inventory and active runti
   assert.equal(binaryHelp.status, 0, `${binaryHelp.error ?? ''}\n${binaryHelp.stderr}`);
   assert.match(binaryHelp.stdout, /skillfit/);
   const installed = join(cache, 'package');
+  assert.equal(existsSync(join(installed, 'benches/contrib')), false);
+  const bundledCheck = spawnSync(process.execPath, [join(installed, 'dist/cli.js'), 'bench', 'check', 'code-review'], {
+    encoding: 'utf8', timeout: 30_000,
+  });
+  assert.equal(bundledCheck.status, 0, `${bundledCheck.error ?? ''}\n${bundledCheck.stderr}\n${bundledCheck.stdout}`);
+  assert.match(bundledCheck.stdout, /0 failure\(s\)/);
   const shipped = new Set(entries[0].files.map(file => file.path));
   const publicDocs = documentationFiles().filter(file => shipped.has(file));
   assert.deepEqual(inspectDocumentation(installed, publicDocs), [], 'Every shipped public page must resolve its local links and anchors');

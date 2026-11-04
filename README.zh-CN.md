@@ -188,7 +188,7 @@ node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input work
 node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
 ```
 
-导入时用 `--prompt-file` 保留 issue 请求，避免修复提交信息泄露答案。参见[真实 OSS 流程](docs/guides/bench-authoring.md)或[固定的 mcp-use 示例](benches/contrib/oss-mcp-use-utf8/README.md)。
+导入时用 `--prompt-file` 保留 issue 请求，避免修复提交信息泄露答案。参见[真实 OSS 流程](docs/guides/bench-authoring.md)或[固定的 mcp-use 示例](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/benches/contrib/oss-mcp-use-utf8/README.md)。
 
 ### 比较 Skill 修订版本
 

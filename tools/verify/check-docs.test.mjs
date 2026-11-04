@@ -175,6 +175,10 @@ test('bench catalog covers actual contrib manifests and rejects missing or inven
   assert.match(inspectBenchCatalog(root).join('\n'), /unknown.*gone/i);
   writeFileSync(index, '[Real](real-case/README.md)\n');
   assert.deepEqual(inspectBenchCatalog(root), []);
+  writeFileSync(join(root, 'benches/README.md'), '[Cases](https://github.com/remote-controlled-man/skillfit/blob/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/benches/contrib/README.md)\n');
+  assert.deepEqual(inspectBenchCatalog(root), []);
+  writeFileSync(join(root, 'benches/README.md'), '[Cases](https://github.com/remote-controlled-man/skillfit/blob/main/benches/contrib/README.md)\n');
+  assert.match(inspectBenchCatalog(root).join('\n'), /link the contrib catalog/);
   writeFileSync(index, '[Real](real-case/README.md)\n[Dup](real-case/README.md)\n');
   assert.match(inspectBenchCatalog(root).join('\n'), /duplicate.*real-case/i);
 });

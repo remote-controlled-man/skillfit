@@ -193,7 +193,7 @@ node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input work
 node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
 ```
 
-Import the issue request with `--prompt-file` so the fix message does not reveal the answer. Follow the [real OSS workflow](docs/guides/bench-authoring.md) or inspect the [pinned mcp-use example](benches/contrib/oss-mcp-use-utf8/README.md).
+Import the issue request with `--prompt-file` so the fix message does not reveal the answer. Follow the [real OSS workflow](docs/guides/bench-authoring.md) or inspect the [pinned mcp-use example](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/benches/contrib/oss-mcp-use-utf8/README.md).
 
 ### Compare Skill revisions
 

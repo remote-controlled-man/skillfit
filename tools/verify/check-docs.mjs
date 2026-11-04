@@ -124,7 +124,8 @@ export function inspectBenchCatalog(root = ROOT) {
   }
   for (const name of actual) if (!listed.has(name)) errors.push(`benches/contrib/README.md: missing bench: ${name}`);
   const entry = join(root, 'benches/README.md');
-  if (actual.size && (!existsSync(entry) || lstatSync(entry).isSymbolicLink() || !markdownLinks(readFileSync(entry, 'utf8')).some(link => link.target === 'contrib/README.md'))) errors.push('benches/README.md: link the contrib catalog');
+  const catalogLink = /^(?:contrib\/README\.md|https:\/\/github\.com\/remote-controlled-man\/skillfit\/blob\/[a-f0-9]{40}\/benches\/contrib\/README\.md)$/i;
+  if (actual.size && (!existsSync(entry) || lstatSync(entry).isSymbolicLink() || !markdownLinks(readFileSync(entry, 'utf8')).some(link => catalogLink.test(link.target)))) errors.push('benches/README.md: link the contrib catalog');
   return errors;
 }
 
