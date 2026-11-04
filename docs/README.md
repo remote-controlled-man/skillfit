@@ -10,8 +10,8 @@ their own documentation: see the
 [0.13.1 documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs)
 and its [publication record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md).
 Standalone driver links and unshipped source references use the
-[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/146eb9b10e3325dd2055f7348b0a39a18a3b87cc),
-which predates the version bump and may still print 0.13.1.
+[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/f506681edd0490a7690f2a96bd5b7e589f0bd5d0),
+the commit tag v0.15.0 names. Building that commit prints 0.15.0.
 
 ## Find your task
 

@@ -6,9 +6,10 @@
 
 **给 agent 配置做 A/B 测试。**
 
-我们把 8 个流行的 workflow skill 放进 24 组基线/实验配对，对照冻结的<br/>
-Codex CLI 基线：每一个都多花 **9–27% 的 input token**，而没有一个展现出<br/>
-稳健的任务质量收益 —— [完整表格与其边界](#我们自己的数据)。
+这是一次试点：8 个 workflow skill，每个 3 次实验运行，对照冻结的<br/>
+Codex CLI 基线。样本量低于 8×5 的 indicative 门槛。<br/>
+每一个都多花 **9–27% 的 input token**，而且补丁式 harness<br/>
+观察不到过程行为 —— [完整表格与其边界](#我们自己的数据)。
 
 skillfit 把这套配对评测跑在**你自己的**任务上：确定性 verifier、精确 McNemar<br/>
 判定、配对 bootstrap 区间和触发率 —— 让"这个 skill 感觉有用"变成带日期、<br/>
@@ -129,7 +130,7 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach 146eb9b10e3325dd2055f7348b0a39a18a3b87cc
+git switch --detach f506681edd0490a7690f2a96bd5b7e589f0bd5d0
 npm ci
 npm run build
 node dist/cli.js --help
@@ -140,7 +141,7 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-该 detached commit 钉住本页描述的那份已审阅实现，它早于 0.15.0 版本号变更。要在自己的检出上开发，请按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。
+该 detached commit 就是 tag v0.15.0 指向的提交。构建后打印 0.15.0。要在自己的检出上开发，请按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。
 
 校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
 
@@ -298,7 +299,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 ## 我们自己的数据
 
-我们用 skillfit 的 harness 测了公开目录里的 8 个流行工作流 skill——4 个来自 `mattpocock/skills`，4 个来自 `addyosmani/agent-skills`，各自固定在 [codex-upstream-sources.json](profiles/codex-upstream-sources.json) 所记录的 commit——共 24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；没有任何一个显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置。报告标成 indicative 的运行也不是安装建议：
+我们用 skillfit 的 harness 测了公开目录里的 8 个流行工作流 skill——4 个来自 `mattpocock/skills`，4 个来自 `addyosmani/agent-skills`，各自固定在 [codex-upstream-sources.json](profiles/codex-upstream-sources.json) 所记录的 commit——共 24 组 baseline/treatment 配对，Codex CLI，2026-07 冻结基线。其中 1 个在 3 次 treatment 中有 2 次出现回归测试资产信号；每个 skill 只有 3 次实验运行，低于 8×5 的 indicative 门槛，这次试点没有显示可靠的任务质量增益。这些实验不能验证当前的 67 个 Skill 目录，也不能验证原来的 13 个整套配置。报告标成 indicative 的运行也不是安装建议：
 
 | Skill | 质量差值 | 输入 token | 结论 |
 |---|---:|---:|---|

@@ -6,9 +6,10 @@
 
 **A/B testing for agent configuration.**
 
-We put 8 popular workflow skills through 24 baseline/treatment pairs against a<br/>
-frozen Codex CLI baseline: every one cost **9–27% more input tokens**, and none<br/>
-showed a robust task-quality gain — [full table and its limits](#our-own-data).
+A pilot ran 8 workflow skills for 3 treated runs each, against a<br/>
+frozen Codex CLI baseline. That is below the 8×5 indicative bar.<br/>
+Every skill cost **9–27% more input tokens**, and the patch harness<br/>
+could not observe process behavior — [full table and its limits](#our-own-data).
 
 skillfit runs that paired evaluation on *your* tasks, with deterministic verifiers,<br/>
 an exact McNemar verdict, paired-bootstrap intervals and trigger rates — so "this<br/>
@@ -132,7 +133,7 @@ checkout once:
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach 146eb9b10e3325dd2055f7348b0a39a18a3b87cc
+git switch --detach f506681edd0490a7690f2a96bd5b7e589f0bd5d0
 npm ci
 npm run build
 node dist/cli.js --help
@@ -143,8 +144,8 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-The detached commit pins the reviewed implementation this page describes; it
-predates the 0.15.0 version bump. For development on your own checkout, follow
+The detached commit is the one tag v0.15.0 names. Building it prints 0.15.0.
+For development on your own checkout, follow
 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
 
 The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
@@ -305,7 +306,7 @@ A bench is `bench.json`, fixtures and deterministic verifiers. Use the [bench au
 
 ## Our own data
 
-We ran skillfit's harness on 8 popular workflow skills from the public catalog — four from `mattpocock/skills` and four from `addyosmani/agent-skills`, each at the commit pinned in [codex-upstream-sources.json](profiles/codex-upstream-sources.json) — over 24 baseline/treatment pairs on Codex CLI against a frozen 2026-07 baseline. One showed a limited regression-test artifact signal in 2/3 treated runs; no Skill showed a robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set, and a run the report labels indicative is not an installation recommendation:
+We ran skillfit's harness on 8 popular workflow skills from the public catalog — four from `mattpocock/skills` and four from `addyosmani/agent-skills`, each at the commit pinned in [codex-upstream-sources.json](profiles/codex-upstream-sources.json) — over 24 baseline/treatment pairs on Codex CLI against a frozen 2026-07 baseline. One showed a limited regression-test artifact signal in 2/3 treated runs; at 3 treated runs per skill, below the 8×5 indicative bar, the pilot shows no robust task-quality gain. These runs do not validate the current 67-Skill catalog or the legacy 13-Skill set, and a run the report labels indicative is not an installation recommendation:
 
 | Skill | Quality Δ | Input tokens | Verdict |
 |---|---:|---:|---|

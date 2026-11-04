@@ -5,6 +5,9 @@
 - Security reports go to private vulnerability reporting, and conduct reports
   go to the mailbox already published in the repository history. The GitHub
   profile is no longer the reporting route.
+- The README's opening skill study is labeled a 3-run pilot, below the 8×5
+  indicative bar, with its process-observation limit. The source quickstart
+  detaches at the 0.15.0 commit.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 
