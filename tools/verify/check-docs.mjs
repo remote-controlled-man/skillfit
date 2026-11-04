@@ -226,12 +226,12 @@ export function inspectRepositoryLayout(root = ROOT) {
     if (file === "docs/.npmignore") return;
     if (/\.(?:m?js|cjs|ts|sh|py)$/.test(file))
       errors.push(`${file}: executable recipes belong to tools`);
-    else if (file.startsWith("docs/work/") && file !== "docs/work/current.md")
-      errors.push(`${file}: update the sole current plan in place`);
+    else if (file.startsWith("docs/work/"))
+      errors.push(`${file}: plans belong in GitHub milestones or the maintainer's private plan`);
     else if (
       file.endsWith(".md") &&
       file !== "docs/README.md" &&
-      !/^docs\/(?:guides|reference|maintainers|work)\/[^/]+\.md$/.test(file)
+      !/^docs\/(?:guides|reference|maintainers)\/[^/]+\.md$/.test(file)
     )
       errors.push(`${file}: flat or unowned documentation topic`);
     else if (!file.endsWith(".md") && !/^docs\/(?:schemas|examples|assets)\//.test(file))

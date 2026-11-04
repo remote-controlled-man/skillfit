@@ -26,7 +26,7 @@ test("only regular release bookkeeping enters targeted CI", () => {
     row("docs/releases/0.14.0-signatures.txt"),
   ];
   assert.equal(classifyChanges(allowed), "records");
-  assert.equal(classifyChanges([row("docs/work/current.md", "M")]), "records");
+  assert.equal(classifyChanges([row("docs/work/current.md", "M")]), "full");
   for (const entry of [
     row("src/cli/main.ts"),
     row("package.json"),

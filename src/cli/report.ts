@@ -1,4 +1,6 @@
-import { collectReceipts, type AgentReceipt } from "../usage/receipts.js";
+import { collectReceipts, type AgentReceipt, type SkillReceipt } from "../usage/receipts.js";
+
+const OTHER_READS_SHOWN = 8;
 
 export interface ReportOptions {
   agent?: string;
@@ -32,10 +34,24 @@ function renderAgent(receipt: AgentReceipt, lines: string[]): void {
   lines.push(
     `${receipt.agentId} — ${receipt.sessionsFound} session(s), ${receipt.transcriptsRead} transcript(s)`,
   );
-  if (receipt.skills.length > 0) {
-    const nameWidth = Math.max(5, ...receipt.skills.map((s) => s.name.length));
+  const installed = new Set(receipt.installed);
+  const installedFired = receipt.skills.filter((skill) => installed.has(skill.name));
+  const rows: SkillReceipt[] =
+    installed.size === 0
+      ? receipt.skills
+      : [
+          ...installedFired,
+          ...receipt.neverFired.map((name) => ({
+            name,
+            fires: 0,
+            sessionCount: 0,
+            lastSeen: null,
+          })),
+        ];
+  if (rows.length > 0) {
+    const nameWidth = Math.max(5, ...rows.map((s) => s.name.length));
     lines.push(`${pad("  skill", nameWidth + 2)}  FIRES  SESSIONS  LAST SEEN`);
-    for (const skill of receipt.skills) {
+    for (const skill of rows) {
       lines.push(
         `  ${pad(skill.name, nameWidth)}  ${pad(String(skill.fires), 5)}  ${pad(String(skill.sessionCount), 8)}  ${day(skill.lastSeen)}`,
       );
@@ -43,8 +59,21 @@ function renderAgent(receipt: AgentReceipt, lines: string[]): void {
   } else {
     lines.push("  (no skill invocations found)");
   }
-  const installed = new Set(receipt.installed);
-  const installedFired = receipt.skills.filter((skill) => installed.has(skill.name));
+  const otherReads =
+    installed.size === 0 ? [] : receipt.skills.filter((s) => !installed.has(s.name));
+  if (otherReads.length > 0) {
+    const shown = otherReads
+      .slice(0, OTHER_READS_SHOWN)
+      .map((skill) => `${skill.name} (${skill.fires})`)
+      .join(", ");
+    const more =
+      otherReads.length > OTHER_READS_SHOWN
+        ? ` (+${otherReads.length - OTHER_READS_SHOWN} more; --json lists all)`
+        : "";
+    lines.push(
+      `  ${otherReads.length} other SKILL.md name(s) read outside the user skill directories: ${shown}${more}`,
+    );
+  }
   lines.push(
     `  installed: ${receipt.installedCount}, observed firing: ${installedFired.length}, no observed fire: ${receipt.neverFired.length}`,
   );

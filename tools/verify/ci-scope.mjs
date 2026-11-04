@@ -26,7 +26,6 @@ export function classifyChanges(changes) {
   if (!changes.length || changes.length > 256) return "full";
   return changes.every(({ status, path, mode }) => {
     if (!["A", "M"].includes(status) || mode !== "100644") return false;
-    if (path === "docs/work/current.md" && status === "M") return true;
     if (/^docs\/plans\/[a-zA-Z0-9._-]+\.md$/.test(path)) return true;
     if (/^docs\/releases\/\d+\.\d+\.\d+\.md$/.test(path)) return true;
     if (

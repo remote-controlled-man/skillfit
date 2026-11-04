@@ -1,8 +1,12 @@
-<!-- Keep this short. CONTRIBUTING.md owns the rules; this only asks for them. -->
+<!-- Keep this short. CONTRIBUTING.md owns the rules; this only asks for them.
+     The title becomes the squash commit subject: "type(scope): subject". -->
+
+Closes #
 
 ## What changed
 
-<!-- One observable improvement. What did the CLI print or do before, and after? -->
+<!-- One observable improvement. What did the CLI print or do before, and after?
+     If a CLI flag, output, manifest or schema contract breaks, say so here and mark the title with "!". -->
 
 ## How you verified it
 

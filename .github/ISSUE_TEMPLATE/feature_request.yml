@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a change to what skillfit does
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The question you could not answer
+      description: What were you trying to find out about your agent configuration, and what did skillfit print or fail to print?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like it to do
+      description: The command you would run and the output you would expect. Say whether it may call a model or must stay offline.
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent CLI(s) involved (if any)
+      description: e.g. codex 0.156.1, claude-code, kimi-code — plus their --version output
+    validations:
+      required: false

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -98,6 +98,27 @@ test("collectReceipts sees Codex skills installed under ~/.codex/skills", async 
   writeFileSync(join(home, ".codex", "skills", "from-codex", "SKILL.md"), "# from-codex\n");
   const receipts = await collectReceipts({ homeDir: home, agent: "codex" });
   assert.deepEqual(receipts[0]?.installed, ["from-codex"]);
+});
+
+test("collectReceipts counts skills installed through a directory symlink and skips a broken one", async (t) => {
+  const home = mkdtempSync(join(tmpdir(), "skillfit-receipts-linked-"));
+  const store = mkdtempSync(join(tmpdir(), "skillfit-receipts-store-"));
+  t.after(() => {
+    rmSync(home, { recursive: true, force: true });
+    rmSync(store, { recursive: true, force: true });
+  });
+  for (const name of ["linked", "gone"]) {
+    mkdirSync(join(store, name));
+    writeFileSync(join(store, name, "SKILL.md"), `# ${name}\n`);
+  }
+  const skills = join(home, ".codex", "skills");
+  mkdirSync(skills, { recursive: true });
+  symlinkSync(join(store, "linked"), join(skills, "linked"), "junction");
+  symlinkSync(join(store, "gone"), join(skills, "gone"), "junction");
+  rmSync(join(store, "gone"), { recursive: true });
+  const receipts = await collectReceipts({ homeDir: home, agent: "codex" });
+  assert.deepEqual(receipts[0]?.installed, ["linked"]);
+  assert.deepEqual(receipts[0]?.neverFired, ["linked"]);
 });
 
 test("collectReceipts handles a home with no session stores at all", async (t) => {

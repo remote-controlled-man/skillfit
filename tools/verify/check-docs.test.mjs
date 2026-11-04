@@ -31,7 +31,6 @@ function documentedFixture(t) {
   put("CHANGELOG.md", "# Changelog\n");
   put("docs/maintainers/releases.md", "# Release\n");
   put("package.json", '{"name":"skillfit","version":"0.13.1"}');
-  put("docs/work/current.md", "# Current\n");
   return { root, put };
 }
 
@@ -159,7 +158,7 @@ test("current maintained documentation passes the link, layout, catalog and pari
   assert.equal(result.kind, "skillfit.documentation-check");
   assert.ok(result.files.includes("docs/README.md"));
   assert.ok(result.files.includes("docs/maintainers/architecture.md"));
-  assert.ok(result.files.includes("docs/work/current.md"));
+  assert.ok(!result.files.some((file) => file.startsWith("docs/work/")));
 });
 
 test("README languages preserve section levels and every command/demo block", () => {
@@ -200,10 +199,10 @@ test("standalone gating rejects bilingual structure, command and badge drift and
 
 test("a broken link in a discovered page fails the gate with its path and line", (t) => {
   const f = documentedFixture(t);
-  f.put("docs/work/current.md", "# Current\n[Broken](missing.md)\n");
+  f.put("docs/guides/example.md", "# Example\n[Broken](missing.md)\n");
   assert.match(
     checkDocumentation(f.root).errors.join("\n"),
-    /docs\/work\/current\.md:2: missing target: missing\.md/,
+    /docs\/guides\/example\.md:2: missing target: missing\.md/,
   );
 });
 
@@ -220,7 +219,7 @@ test("the standalone command emits one structured gate result through a director
   const result = JSON.parse(run.stdout);
   assert.equal(result.kind, "skillfit.documentation-check");
   assert.deepEqual(result.errors, []);
-  assert.ok(result.files.includes("docs/work/current.md"));
+  assert.ok(result.files.includes("docs/README.md"));
   assert.deepEqual(Object.keys(result).sort(), ["errors", "files", "kind", "schemaVersion"]);
   assert.equal(
     spawnSync(process.execPath, [join(root, "repo/tools/verify/check-docs.mjs"), "--base", "x"], {
@@ -263,7 +262,7 @@ test("repository admission rejects flat pages, extra plans, executable docs and 
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const file of [
     "docs/extra.md",
-    "docs/work/old.md",
+    "docs/work/current.md",
     "docs/guides/run.mjs",
     "evidence/study/receipt.json",
   ]) {
@@ -272,7 +271,7 @@ test("repository admission rejects flat pages, extra plans, executable docs and 
   }
   const errors = inspectRepositoryLayout(root);
   assert.equal(errors.length, 4);
-  for (const fragment of ["flat", "sole current plan", "executable", "retired evidence tree"])
+  for (const fragment of ["flat", "plans belong", "executable", "retired evidence tree"])
     assert.ok(
       errors.some((error) => error.includes(fragment)),
       fragment,
@@ -282,12 +281,7 @@ test("repository admission rejects flat pages, extra plans, executable docs and 
 test("admission accepts owned topics and schema inputs without following aliases", (t) => {
   const root = mkdtempSync(join(tmpdir(), "skillfit-layout-valid-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  for (const file of [
-    "docs/README.md",
-    "docs/work/current.md",
-    "docs/guides/task.md",
-    "docs/schemas/example.json",
-  ]) {
+  for (const file of ["docs/README.md", "docs/guides/task.md", "docs/schemas/example.json"]) {
     mkdirSync(join(root, file, ".."), { recursive: true });
     writeFileSync(join(root, file), "owned");
   }

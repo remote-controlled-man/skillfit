@@ -37,8 +37,7 @@ const OWNED_FACTS = [
   },
 ];
 
-const maintained = () =>
-  documentationFiles().filter((file) => file !== "docs/work/current.md" && file !== "CHANGELOG.md");
+const maintained = () => documentationFiles().filter((file) => file !== "CHANGELOG.md");
 
 test("each owned fact appears in prose only where it is allowed", () => {
   const pages = maintained();

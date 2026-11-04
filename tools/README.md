@@ -11,6 +11,7 @@ they do not call a live agent or change personal configuration.
 | Contributed bench integrity | `node tools/verify/check-contrib-benches.mjs` |
 | npm inventory, retained recipes and size bounds | `node tools/verify/check-package.mjs <pack.json>` |
 | Node capability/minimum checks after building | `node --test tools/verify/node-minimum.test.mjs` |
+| Pull request title format | `PR_TITLE="docs: example" node tools/verify/pr-title.mjs` |
 
 [Architecture and maintenance](../docs/maintainers/architecture.md) explains current
 module, documentation and release contracts. `verify/fixtures/` contains only

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `doctor` and `report` count skills installed through a directory symlink,
+  as skill managers such as cc-switch create them. Before, both reported no
+  installed skills, so `report` printed no never-fired list or catalog size.
+  `doctor` warns about a broken link and no longer reports one linked skill in
+  two directories as diverging copies.
+- The text `report` table lists every installed skill, with `0` for skills that
+  never fired. Names read from other `SKILL.md` paths, such as project skills
+  or files opened during other work, are summarized on one separate line.
+  JSON output is unchanged.
 - Security reports go to private vulnerability reporting, and conduct reports
   go to the mailbox already published in the repository history. The GitHub
   profile is no longer the reporting route.
@@ -24,9 +33,15 @@
   owned by the architecture page.
 - CONTRIBUTING explains a ten-minute first pull request for issues labeled
   `good first issue`.
+- Pull request titles follow `type(scope): subject` and become the squash
+  commit subject. A `PR title` check enforces the format. Issue forms add a
+  feature request, and questions go to Discussions.
 - Biome formats `src` and `tools` at a 100-column width. CI rejects format
   drift. Biome is a devDependency, so the shipped CLI still has zero runtime
   dependencies.
+- The maintainer's working plan is no longer kept in the repository. Planned
+  work is tracked in GitHub milestones, and the docs check rejects files under
+  `docs/work/`.
 
 ## 0.15.0 — Token-first budgets and a safer first run (2026-11-02)
 
