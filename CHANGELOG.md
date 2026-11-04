@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.15.3 — Restore the frozen feature recipe (2026-11-04)
+
+- `tools/verify/recipes/0.11.0-feature-smoke.mjs` is back to the bytes published
+  with 0.11.0 and is excluded from Biome. Its public-flag check now reads
+  `eval --help` and `report --help`. 0.15.2 is published; its acceptance
+  stopped because the formatted recipe no longer contained the adaptation
+  text. That version was not uploaded again.
+
 ## 0.15.2 — Release acceptance matches the shipped help (2026-11-04)
 
 - Registry install acceptance reads `--request` from `eval --help`. The

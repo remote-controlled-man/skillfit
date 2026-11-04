@@ -6,9 +6,9 @@ import { join, resolve } from "node:path";
 import { promises as fs } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-// Keep the published 0.11.0 recipe immutable. Biome reformatted it once; the pin
-// is those bytes. Derive the current version and resolve generated script paths
-// through manifests; retain all seven checks.
+// Keep the published 0.11.0 recipe immutable. It is excluded from Biome so a
+// format run cannot move this pin. Derive the current version and resolve
+// generated script paths through manifests; retain all seven checks.
 assert.equal(process.argv.length, 4, "Provide package and fresh output directories.");
 const installed = resolve(process.argv[2]),
   parent = resolve(process.argv[3]);
@@ -21,7 +21,7 @@ assert.equal(
 );
 const original = readFileSync(new URL("0.11.0-feature-smoke.mjs", import.meta.url), "utf8");
 const sourceSha256 = createHash("sha256").update(original).digest("hex");
-assert.equal(sourceSha256, "33b7b9e64764990587b213bd78d6d055eda2c481f200fbf725b14808cd83a6e9");
+assert.equal(sourceSha256, "aeb14d990bc65e05ec1ea7dc42ac6cadbd5af2bf11603430972ccaddbe4ee870");
 let derived = original.replaceAll("0.11.0", version);
 const adaptations = [
   [
@@ -40,6 +40,10 @@ const { runBenchInit, runBenchCalibration } = await load('commands/bench.js');`,
     "[taskScript(bench, 'verifier'), taskScript(bench, 'oracle')]",
   ],
   ["join(broken, 'verifiers/example-task.mjs')", "join(broken, taskScript(broken, 'verifier'))"],
+  [
+    "const help = cli(['--help']).stdout;",
+    "const help = cli(['eval', '--help']).stdout + cli(['report', '--help']).stdout;",
+  ],
 ];
 for (const [before, after] of adaptations) {
   assert.equal(

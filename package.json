@@ -1,6 +1,6 @@
 {
   "name": "skillfit",
-  "version": "0.15.2",
+  "version": "0.15.3",
   "description": "A/B testing for agent configuration: paired evaluation of Skills, rules and MCP setups, with deterministic verifiers and replayable evidence.",
   "type": "module",
   "bin": {
