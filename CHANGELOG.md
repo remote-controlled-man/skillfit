@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.15.4 — Correct review grading and failure diagnostics (2026-11-05)
+
+- The bundled code-review grader recognizes English and Chinese findings about
+  missing tests. A valid coverage finding about `percentOff` earns its proper
+  credit, while incorrect calculation and style allegations still incur penalties.
+- Markdown evaluation reports link to the current metrics reference.
+- Commit mining reports Git's exit status, process error and termination signal
+  alongside stderr, so an empty stderr retains the available failure diagnostics.
+
 ## 0.15.3 — Restore the frozen feature recipe (2026-11-04)
 
 - `tools/verify/recipes/0.11.0-feature-smoke.mjs` is back to the bytes published
