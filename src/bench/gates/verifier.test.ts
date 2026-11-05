@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { test, type TestContext } from "node:test";
 import { parseCommand } from "../../shared/command.js";
 import { runVerifier } from "../../evaluation/execution/paired.js";
 import { loadBench } from "../read.js";
+
+const CODE_REVIEW_BENCH = fileURLToPath(new URL("../../../benches/code-review/", import.meta.url));
 
 function fixture(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), "skillfit-verifier-"));
@@ -17,6 +20,128 @@ function fixture(t: TestContext) {
   const script = join(bench, "check answer.mjs");
   return { root, bench, run, script };
 }
+
+test("bundled review grading accepts Chinese coverage findings for both new exports", async (t) => {
+  const f = fixture(t);
+  writeFileSync(
+    join(f.run, "_output.md"),
+    [
+      "- **medium** — `src/order.js:25`：负数量分支抛出裸 `Error`，违反 §1 和 §5 要求的携带 `INVALID_QUANTITY` 代码的 `AppError`。",
+      "- **medium** — `src/order.js:30`：折扣条件使用 `> 10`，导致数量恰好为 10 的订单行没有获得 §4 要求的 5% 折扣。",
+      "- **medium** — `src/order.js:33`：未打折分支直接返回未经 `roundCents` 处理的价格，例如价格 `1.234`、数量 `1` 时仍返回 `1.234`，违反 §3。",
+      "- **medium** — `src/money.js:5`、`src/order.js:16`：新增导出函数 `percentOff` 和 `applyBulkDiscount` 均未附带 `tests/` 下的单元测试，违反 §2。",
+    ].join("\n"),
+  );
+  const result = await runVerifier(CODE_REVIEW_BENCH, "node verifiers/seeded-bugs.mjs", f.run);
+  assert.equal(result.exitCode, 0, result.output);
+  assert.equal(result.error, null);
+  const grade = JSON.parse(result.output);
+  assert.deepEqual(grade.hits, ["bare-error", "discount-boundary", "missing-tests"]);
+  assert.deepEqual(grade.decoys, []);
+  assert.ok(grade.checks.every((check: { pass: boolean }) => check.pass));
+});
+
+test("bundled review grading requires a coverage claim and still rejects independent decoys", async (t) => {
+  const f = fixture(t);
+  const cases = [
+    {
+      finding: "- medium: src/money.js:5 percentOff and applyBulkDiscount lack tests for rounding.",
+      coverage: true,
+      extra: "",
+      decoys: [],
+    },
+    {
+      finding: "- medium: applyBulkDiscount 需要增加单元测试。",
+      coverage: true,
+      extra: "",
+      decoys: [],
+    },
+    {
+      finding: "- medium: applyBulkDiscount 单元测试覆盖率不足。",
+      coverage: true,
+      extra: "",
+      decoys: [],
+    },
+    {
+      finding: "- medium: applyBulkDiscount 已有单元测试覆盖全部分支。",
+      coverage: false,
+      extra: "",
+      decoys: [],
+    },
+    {
+      finding: "- medium: applyBulkDiscount test coverage.",
+      coverage: false,
+      extra: "",
+      decoys: [],
+    },
+    {
+      finding: "- medium: src/money.js:5 percentOff and applyBulkDiscount have no tests.",
+      coverage: true,
+      extra: "- high: src/money.js:6 percentOff incorrectly calls roundCents.",
+      decoys: ["percentoff"],
+    },
+    {
+      finding: "- medium: applyBulkDiscount has no test coverage.",
+      coverage: true,
+      extra: "- high: src/money.js:6 percentOff should not call roundCents.",
+      decoys: ["percentoff"],
+    },
+    {
+      finding: "- medium: applyBulkDiscount has no test coverage.",
+      coverage: true,
+      extra: "- high: src/money.js:6 percentOff rounds the wrong value.",
+      decoys: ["percentoff"],
+    },
+    {
+      finding: "- medium: applyBulkDiscount has no test coverage.",
+      coverage: true,
+      extra: "- high: src/money.js:6 percentOff has an incorrect formula.",
+      decoys: ["percentoff"],
+    },
+    {
+      finding:
+        "- medium: src/money.js:5 percentOff and applyBulkDiscount have no tests, and percentOff incorrectly calls roundCents.",
+      coverage: true,
+      extra: "",
+      decoys: ["percentoff"],
+    },
+    {
+      finding: "- medium: src/money.js:5 percentOff 和 applyBulkDiscount 都缺少测试。",
+      coverage: true,
+      extra: "- high: src/money.js:6 percentOff 重复调用 roundCents，导致重复舍入。",
+      decoys: ["percentoff"],
+    },
+    {
+      finding: "- medium: applyBulkDiscount 缺少测试。",
+      coverage: true,
+      extra: "- high: src/money.js:6 percentOff 的舍入有问题。",
+      decoys: ["percentoff"],
+    },
+    {
+      finding: "- medium: src/money.js:5 percentOff 和 applyBulkDiscount 都缺少测试。",
+      coverage: true,
+      extra: "- low: src/order.js:22-23 uses an inconsistent C-style loop.",
+      decoys: ["c-style-loop"],
+    },
+  ];
+  for (const example of cases) {
+    writeFileSync(
+      join(f.run, "_output.md"),
+      [
+        "- high: src/order.js:25 throws a bare Error instead of AppError.",
+        "- high: src/order.js:30 uses the wrong boundary instead of >= 10.",
+        example.finding,
+        example.extra,
+      ].join("\n"),
+    );
+    const result = await runVerifier(CODE_REVIEW_BENCH, "node verifiers/seeded-bugs.mjs", f.run);
+    assert.equal(result.error, null);
+    const grade = JSON.parse(result.output);
+    assert.equal(grade.hits.includes("missing-tests"), example.coverage, example.finding);
+    assert.deepEqual(grade.decoys, example.decoys, result.output);
+    assert.equal(result.exitCode, example.coverage && example.decoys.length === 0 ? 0 : 1);
+  }
+});
 
 test("shell-free commands preserve quoted/empty arguments and Windows paths without expansion", () => {
   const cases: [string, string[]][] = [

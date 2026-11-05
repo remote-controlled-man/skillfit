@@ -7,6 +7,17 @@ if (!runDir) {
   process.exit(2);
 }
 
+// Coverage findings may be written in English or Chinese; a topic word alone is not evidence.
+const missingCoverage = [
+  /\b(?:no|lacks?|lacking|missing|without|has no)\b[^.\n]{0,40}\b(?:tests?|coverage|covered)\b/i,
+  /\b(?:should|needs?|must|requires?)\b[^.\n]{0,40}\b(?:tests?|coverage)\b/i,
+  /\buntested\b/i,
+  /\bnot covered\b/i,
+  /(?:没有|缺少|缺乏|缺失|无|未(?:附带|添加|提供|包含|编写|覆盖))[^。！？，；\n]{0,40}(?:测试|覆盖|\btests?\b|\bcoverage\b)/i,
+  /(?:需要|应当|应该|必须)[^。！？，；\n]{0,40}(?:测试|覆盖|\btests?\b|\bcoverage\b)/i,
+  /(?:测试|覆盖率?)(?:缺失|不足)/,
+];
+
 const bugs = [
   {
     id: 'bare-error',
@@ -21,21 +32,25 @@ const bugs = [
   {
     id: 'missing-tests',
     anchor: /applyBulkDiscount/,
-    // A bare /test/i passed on any line that named the function and contained the word "test", so
-    // "applyBulkDiscount test" scored the same as a reasoned coverage finding. Require an actual
-    // claim about missing coverage rather than the topic word.
-    evidence: [
-      /\b(?:no|lacks?|lacking|missing|without|has no)\b[^.\n]{0,40}\b(?:tests?|coverage|covered)\b/i,
-      /\b(?:should|needs?|must|requires?)\b[^.\n]{0,40}\b(?:tests?|coverage)\b/i,
-      /\buntested\b/i,
-      /\bnot covered\b/i,
-    ],
+    evidence: missingCoverage,
   },
 ];
 
 const decoys = [
   { id: 'c-style-loop', anchor: /order\.js/, evidence: [/\b2[23]\b/] },
-  { id: 'percentoff', anchor: /money\.js/, evidence: [/percentOff/] },
+  // percentOff's calculation is correct, but its missing tests violate SPEC §2.
+  {
+    id: 'percentoff',
+    anchor: /money\.js.*percentOff|percentOff.*money\.js/,
+    evidence: [
+      /\b(?:incorrectly|wrongly)\s+(?:calls?|uses?|rounds?|calculates?|computes?|returns?)\b/i,
+      /\b(?:double[- ]rounds?|rounds?\s+(?:again|twice))\b/i,
+      /\b(?:should(?: not)?|must(?: not)?|does not|doesn't|fails? to)\s+(?:round|(?:call|use)\s+`?roundCents)\b/i,
+      /\b(?:returns?|uses?|calls?|rounds?|computes?|calculates?|is|has)\s+(?:(?:the|an?)\s+)?(?:wrong|incorrect|broken|buggy)\b/i,
+      /(?:重复|多次|两次|错误地|不应(?:该)?)(?:调用|使用|舍入|计算)/,
+      /(?:计算|舍入|百分比|公式)(?:错误|有误|有问题|不正确)/,
+    ],
+  },
 ];
 
 const outputPath = path.join(runDir, '_output.md');
