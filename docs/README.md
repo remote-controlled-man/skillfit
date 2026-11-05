@@ -29,8 +29,8 @@ the commit tag v0.15.0 names. Building that commit prints 0.15.0.
 
 CLI `--help` owns flags; [Bench format](../benches/README.md) owns task files and
 claims. JSON schemas, executable examples and SVG assets remain under `schemas/`,
-`examples/` and `assets/`. Planned work is tracked in
-[GitHub milestones](https://github.com/remote-controlled-man/skillfit/milestones).
+`examples/` and `assets/`. See [GitHub Issues](https://github.com/remote-controlled-man/skillfit/issues)
+for public work.
 
 Retired pages, research files and earlier layouts stay in Git history:
 [documentation snapshot](https://github.com/remote-controlled-man/skillfit/tree/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/docs),

@@ -383,7 +383,7 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 
 按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 贡献真实工作 case、可复现证据和矩阵修正。[安全报告](https://github.com/remote-controlled-man/skillfit/blob/main/SECURITY.md)有独立渠道。
 
-开发接手时，阅读[架构与维护](docs/maintainers/architecture.md)。计划中的工作见 [GitHub milestones](https://github.com/remote-controlled-man/skillfit/milestones)。
+开发接手时，阅读[架构与维护](docs/maintainers/architecture.md)。公开任务见 [GitHub Issues](https://github.com/remote-controlled-man/skillfit/issues)。
 
 ## License
 
