@@ -291,6 +291,12 @@ test("report eval renders a v4 manifest without executing an agent or writing a 
     assert.match(markdown, /below the conclusive bar \(8 tasks × 5 trials\)/);
     assert.match(markdown, /&lt;private&gt;/);
     assert.ok(
+      markdown.includes(
+        "[the skillfit metrics protocol](https://github.com/remote-controlled-man/skillfit/blob/main/docs/reference/metrics.md)",
+      ),
+      "the report should link to the current metrics reference",
+    );
+    assert.ok(
       !markdown.includes(dir),
       "the portable report must not include the local manifest directory",
     );
