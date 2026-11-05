@@ -188,7 +188,7 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-The detached commit contains the fixes prepared for 0.15.4, before the version bump. Building it prints 0.15.3.
+The detached commit contains the review-grading, metrics-link and Git-diagnostic fixes before the version bump. Building it prints 0.15.3.
 For development on your own checkout, follow
 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
 

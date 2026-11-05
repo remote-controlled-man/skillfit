@@ -4,6 +4,9 @@
 
 ## 0.15.4 — Correct review grading and failure diagnostics (2026-11-05)
 
+- Fresh Codex profiles can initialize their managed `.system` Skills between
+  calls without falsely stopping an evaluation. User Skill changes and root
+  alias changes still stop the batch.
 - The bundled code-review grader recognizes English and Chinese findings about
   missing tests. A valid coverage finding about `percentOff` earns its proper
   credit, while incorrect calculation and style allegations still incur penalties.

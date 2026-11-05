@@ -30,7 +30,7 @@ installed version before relying on a flag a later release added.
 
 Source links in this standalone driver use the
 [reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/8153989f48ddd0bfddc3816793fabe6a7ac4a737). They do not follow main.
-That snapshot contains the 0.15.4 fixes before the version bump, so its built CLI reports source package version 0.15.3.
+That snapshot contains the review-grading, metrics-link and Git-diagnostic fixes before the version bump, so its built CLI reports source package version 0.15.3.
 For a superseded release such as 0.13.1, use its
 [original documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs);
 do not substitute that older package for an example requiring 0.15.0 features.

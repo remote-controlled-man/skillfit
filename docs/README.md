@@ -11,7 +11,7 @@ their own documentation: see the
 and its [publication record](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/releases/0.13.1.md).
 Standalone driver links and unshipped source references use the
 [reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/8153989f48ddd0bfddc3816793fabe6a7ac4a737),
-which contains the 0.15.4 fixes before the version bump. Building that commit prints 0.15.3.
+which contains the review-grading, metrics-link and Git-diagnostic fixes before the version bump. Building that commit prints 0.15.3.
 
 ## Find your task
 

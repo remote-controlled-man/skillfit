@@ -215,6 +215,84 @@ test("a drift report names the root and the added files", (t) => {
   session.finish();
 });
 
+test("Codex can initialize managed Skills between calls without hiding a new user Skill", async (t) => {
+  for (const initiallyMissing of [true, false]) {
+    await t.test(initiallyMissing ? "missing root" : "empty root", async (t) => {
+      const s = setup(t);
+      const profile = join(s.root, "profile");
+      const skills = join(profile, "skills");
+      mkdirSync(profile);
+      if (!initiallyMissing) mkdirSync(skills);
+      writeFileSync(join(profile, "config.toml"), 'model = "offline"\n');
+      const session = new ExperimentSession({
+        ...s.options,
+        agent: "codex",
+        homeDir: join(s.root, "home"),
+        env: { CODEX_HOME: profile },
+        versionProbe: () => "codex-cli 1.2.3",
+      });
+      let calls = 0;
+      const guarded = session.wrap(
+        {
+          ...s.executor,
+          run: async () => {
+            calls++;
+            mkdirSync(join(skills, ".system", "bundled"), { recursive: true });
+            writeFileSync(join(skills, ".system", "bundled", "SKILL.md"), "managed\n");
+            return { output: "done" };
+          },
+        },
+        "agent",
+      );
+      const first = await guarded.run("first", s.root);
+      assert.equal(first.guardError, undefined);
+      const second = await guarded.run("second", s.root);
+      assert.equal(second.guardError, undefined);
+      assert.equal(calls, 2);
+      rmSync(join(skills, ".system"), { recursive: true });
+      session.check();
+      mkdirSync(join(skills, "new-user-skill"));
+      writeFileSync(join(skills, "new-user-skill", "SKILL.md"), "user baseline\n");
+      assert.throws(() => session.check(), /Global Skill inventory changed/);
+      session.finish();
+    });
+  }
+});
+
+test("managed Skill exclusions preserve other inventory and root-alias guards", async (t) => {
+  for (const change of ["shared-system", "other-hidden", "root-alias"] as const) {
+    await t.test(change, (t) => {
+      const s = setup(t);
+      const home = join(s.root, "home");
+      const profile = join(s.root, "profile");
+      const skills = join(profile, "skills");
+      mkdirSync(skills, { recursive: true });
+      const session = new ExperimentSession({
+        ...s.options,
+        agent: "codex",
+        homeDir: home,
+        env: { CODEX_HOME: profile },
+        versionProbe: () => "offline 1.0",
+      });
+      if (change === "root-alias") {
+        const other = join(s.root, "other");
+        mkdirSync(other);
+        rmSync(skills, { recursive: true });
+        symlinkSync(other, skills, "junction");
+      } else {
+        const added =
+          change === "shared-system"
+            ? join(home, ".agents", "skills", ".system")
+            : join(skills, ".user-skill");
+        mkdirSync(added, { recursive: true });
+        writeFileSync(join(added, "SKILL.md"), "user Skill\n");
+      }
+      assert.throws(() => session.check(), /Global Skill inventory changed/);
+      session.finish();
+    });
+  }
+});
+
 test("an agent-managed dot-directory is not frozen as user baseline, and real skill drift still stops", (t) => {
   const s = setup(t),
     profile = join(s.root, "profile");
