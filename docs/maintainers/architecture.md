@@ -5,7 +5,7 @@ This page explains the current system, the boundaries between its modules and th
 contracts a change must preserve. It is not a runbook: commands and contributor
 setup live in [AGENTS.md](https://github.com/remote-controlled-man/skillfit/blob/main/AGENTS.md)
 and [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md),
-planned work lives in [GitHub milestones](https://github.com/remote-controlled-man/skillfit/milestones),
+public work lives in [GitHub Issues](https://github.com/remote-controlled-man/skillfit/issues),
 statistical meaning lives in [metrics](../reference/metrics.md), and publication
 gates live in [the release procedure](releases.md).
 [Build/version availability](../README.md#choose-your-build) is separate.
