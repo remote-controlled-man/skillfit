@@ -27,12 +27,12 @@ skillfit compares a baseline and a treatment on the same tasks and reports what 
 `report` and `doctor` read this machine and do not call a model.
 
 ```bash
-npx skillfit@0.15.3 report
-npx skillfit@0.15.3 doctor
+npx skillfit@0.15.4 report
+npx skillfit@0.15.4 doctor
 ```
 
 ```console
-$ npx skillfit@0.15.3 report --agent codex
+$ npx skillfit@0.15.4 report --agent codex
 
 codex — 280 session(s), 280 transcript(s)
   skill                          FIRES  SESSIONS  LAST SEEN
@@ -66,9 +66,9 @@ Captured 2026-11-04 from one Codex history. Five installed skills have no observ
 No agent CLI, no login, no model calls. These read the benches shipped inside the package and take a few seconds:
 
 ```bash
-npx skillfit@0.15.3 bench check code-review
-npx skillfit@0.15.3 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.15.3 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.15.4 bench check code-review
+npx skillfit@0.15.4 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.15.4 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 <p align="center">
@@ -88,8 +88,8 @@ Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent exe
 ## Install
 
 ```bash
-npx skillfit@0.15.3 --help
-npx skillfit@0.15.3 doctor
+npx skillfit@0.15.4 --help
+npx skillfit@0.15.4 doctor
 ```
 
 Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the eight commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
@@ -128,10 +128,10 @@ The instructions the agent should follow.
 Then scaffold a case and preview an evaluation:
 
 ```bash
-npx skillfit@0.15.3 bench init my-bench --kind command --dry-run
-npx skillfit@0.15.3 bench init my-bench --kind command --yes
-npx skillfit@0.15.3 bench check ./my-bench --json
-npx skillfit@0.15.3 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.15.4 bench init my-bench --kind command --dry-run
+npx skillfit@0.15.4 bench init my-bench --kind command --yes
+npx skillfit@0.15.4 bench check ./my-bench --json
+npx skillfit@0.15.4 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
@@ -177,7 +177,7 @@ checkout once:
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach f506681edd0490a7690f2a96bd5b7e589f0bd5d0
+git switch --detach 8153989f48ddd0bfddc3816793fabe6a7ac4a737
 npm ci
 npm run build
 node dist/cli.js --help
@@ -188,7 +188,7 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-The detached commit is the one tag v0.15.0 names. Building it prints 0.15.0.
+The detached commit contains the review-grading, metrics-link and Git-diagnostic fixes before the version bump. Building it prints 0.15.3.
 For development on your own checkout, follow
 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
 
@@ -232,7 +232,7 @@ node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input work
 node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
 ```
 
-Import the issue request with `--prompt-file` so the fix message does not reveal the answer. Follow the [real OSS workflow](docs/guides/bench-authoring.md) or inspect the [pinned mcp-use example](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/benches/contrib/oss-mcp-use-utf8/README.md).
+Import the issue request with `--prompt-file` so the fix message does not reveal the answer. Follow the [real OSS workflow](docs/guides/bench-authoring.md) or inspect the [pinned mcp-use example](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/benches/contrib/oss-mcp-use-utf8/README.md).
 
 ### Compare Skill revisions
 

@@ -23,6 +23,7 @@ import {
 import { homedir } from "node:os";
 import {
   readAgentEnvironment,
+  resolveAgentPath,
   normalizeProjectTrust,
   type AgentProjectTrust,
 } from "../../agents/environment.js";
@@ -72,13 +73,13 @@ interface SkillInventory {
   entries: string[];
 }
 
-function skillInventory(root: string): SkillInventory {
-  if (!existsSync(root)) return { root, entries: ["missing"] };
+function skillInventory(root: string, managedSystem = false): SkillInventory {
   return {
     root,
     entries: [
-      realpathSync(root),
-      ...readdirSync(root)
+      physicalPath(root),
+      ...(existsSync(root) ? readdirSync(root) : [])
+        .filter((entry) => !managedSystem || entry !== ".system")
         .sort()
         .map((entry) => {
           const path = join(root, entry);
@@ -150,6 +151,7 @@ export class ExperimentSession {
   private readonly workspaceAliases: { logical: string; physical: string }[];
   private readonly trustWorkspaces: string[];
   private readonly inventories: SkillInventory[] = [];
+  private managedSkillRoot: string | null = null;
   private callsStarted = 0;
   private callsFinished = 0;
   private stopReason: string | null = null;
@@ -235,11 +237,19 @@ export class ExperimentSession {
       const agent = getAgent(options.agent);
       const home = options.homeDir ?? homedir();
       const environment = readAgentEnvironment(agent, { homeDir: home, cwd: process.cwd(), env });
+      const override = agent.skills.userHomeOverride;
+      if (agent.id === "codex" && override) {
+        const spec = env[override.env]
+          ? join(env[override.env]!, override.relativePath)
+          : override.fallback;
+        this.managedSkillRoot = resolveAgentPath(spec, { homeDir: home, cwd: process.cwd(), env });
+      }
       configured = environment.settings.fields;
       for (const file of environment.configFiles)
         this.configs.push(configState(file.path, file.trust, this.trustWorkspaces));
       for (const root of environment.skillRoots) {
-        this.inventories.push(skillInventory(root));
+        // Codex synchronizes .system itself, including on first use of a fresh profile.
+        this.inventories.push(skillInventory(root, root === this.managedSkillRoot));
         if (!existsSync(root)) continue;
         for (const entry of readdirSync(root)) {
           const skillDir = join(root, entry);
@@ -374,7 +384,11 @@ export class ExperimentSession {
           throw new Error(`Agent configuration changed: ${config.path}; no further calls.`);
       }
       for (const inventory of this.inventories)
-        if (JSON.stringify(skillInventory(inventory.root)) !== JSON.stringify(inventory)) {
+        if (
+          JSON.stringify(
+            skillInventory(inventory.root, inventory.root === this.managedSkillRoot),
+          ) !== JSON.stringify(inventory)
+        ) {
           throw new Error(`Global Skill inventory changed: ${inventory.root}; no further calls.`);
         }
     } catch (error) {

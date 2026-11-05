@@ -10,7 +10,7 @@ truth for all numbers; your job is to pick the right command, run it, and interp
 
 ## Prerequisites
 
-Check availability with `npx skillfit@0.15.3 --version`, or `node dist/cli.js --version` inside a clone.
+Check availability with `npx skillfit@0.15.4 --version`, or `node dist/cli.js --version` inside a clone.
 If neither works, tell the user to install from https://github.com/remote-controlled-man/skillfit and stop.
 For source-only commands below, set `skillfit_source` to the absolute path of a
 built checkout, then run from the project/study workspace that owns the outputs.
@@ -24,13 +24,13 @@ and earlier lack them. Registry availability is
 separate from source preparation, so inspect the installed version and fall back
 to the reviewed implementing source snapshot when a 0.15.0 package is
 unavailable. Read the
-[capability table](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/guides/experiment-workflow.md#executor-capabilities)
+[capability table](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/guides/experiment-workflow.md#executor-capabilities)
 before promising a mode, strict budget or model provenance, and check the
 installed version before relying on a flag a later release added.
 
 Source links in this standalone driver use the
-[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/f506681edd0490a7690f2a96bd5b7e589f0bd5d0). They do not follow main.
-That full commit is tag v0.15.0, so the built CLI reports package version 0.15.0.
+[reviewed source snapshot](https://github.com/remote-controlled-man/skillfit/tree/8153989f48ddd0bfddc3816793fabe6a7ac4a737). They do not follow main.
+That snapshot contains the review-grading, metrics-link and Git-diagnostic fixes before the version bump, so its built CLI reports source package version 0.15.3.
 For a superseded release such as 0.13.1, use its
 [original documentation](https://github.com/remote-controlled-man/skillfit/tree/4eaefde80f7e8a6b1e01939d3bd8a8b6418b75d6/docs);
 do not substitute that older package for an example requiring 0.15.0 features.
@@ -42,18 +42,18 @@ do not substitute that older package for an example requiring 0.15.0 features.
 | "我的 skill 有没有被用到 / are my skills used at all" | `skillfit report` — read-only, free, instant; start here |
 | "这个配置健不健康" | `skillfit doctor` — read-only |
 | "这个 skill 值不值得装 / does this skill help" | Preview `skillfit eval <skill-path> --mode installed --bench <bench> --agent <id> --trials 3 --dry-run`, then run within authorized spending |
-| "新版 Skill 是否值得采用 / evaluate a candidate for a Skill evolution workflow" | With npm 0.9.0 or a current checkout, use `eval --request <request.json> --dry-run`; read the [component contract](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/reference/eval-component.md) for inputs and acceptance policy |
+| "新版 Skill 是否值得采用 / evaluate a candidate for a Skill evolution workflow" | With npm 0.9.0 or a current checkout, use `eval --request <request.json> --dry-run`; read the [component contract](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/reference/eval-component.md) for inputs and acceptance policy |
 | "agent 自己想不想得起用它 / does it trigger" | same + `--mode trigger`. Add `--compete-installed` to copy other user Skills; otherwise recall is an upper bound. Codex counts a `SKILL.md` read |
 | "这个 MCP 能不能连上 / is this MCP catalog valid" | `skillfit mcp check <probe.json>` — read-only discovery; calls no tools |
-| "这个 MCP / AGENTS.md 真的有帮助吗" | Preview `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3 --dry-run`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/guides/experiment-workflow.md#rules-and-mcp-overlays) |
-| "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]`; default schema 1 stays unrecorded; source supports explicit `--schema-version 2` with [claims](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/benches/README.md#claims-and-measurement-scope) |
-| "花钱前确认流水线能测到预期对照" | 0.15.0 / reviewed source: preview `node "$skillfit_source/dist/cli.js" bench self-test "$skillfit_source/benches/_self-test/example" --runs-root ./runs --run-group controls-001 --json --dry-run` from the owning workspace, then confirm with `--plan-sha <plan.sha256>`; read [self-test](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/guides/bench-authoring.md#test-known-controls) for controls, limits and fresh output rules |
+| "这个 MCP / AGENTS.md 真的有帮助吗" | Preview `skillfit eval <experiment-dir> --bench <bench> --agent <id> --trials 3 --dry-run`; follow the [configuration experiment guide](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/guides/experiment-workflow.md#rules-and-mcp-overlays) |
+| "建一个 bench" | `skillfit bench init [dir]` then `skillfit bench check [dir]`; default schema 1 stays unrecorded; source supports explicit `--schema-version 2` with [claims](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/benches/README.md#claims-and-measurement-scope) |
+| "花钱前确认流水线能测到预期对照" | 0.15.0 / reviewed source: preview `node "$skillfit_source/dist/cli.js" bench self-test "$skillfit_source/benches/_self-test/example" --runs-root ./runs --run-group controls-001 --json --dry-run` from the owning workspace, then confirm with `--plan-sha <plan.sha256>`; read [self-test](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/guides/bench-authoring.md#test-known-controls) for controls, limits and fresh output rules |
 | "做代码修改 case" | `bench init <dir> --kind command --dry-run`, then apply within the authorized scope; replace the teaching case with the real fixture, prompt, verifier and oracle |
 | "给 Agent 看 case 校验失败原因" | `bench check <dir> --json` — offline gate IDs, evidence and remediation; this is the integrity result, not calibration |
 | "先测 case 难度" | Version 0.11.0: `bench check <dir> --calibrate --agent <id> --task <id> --trials 1 --max-calls 1 --run-group <fresh-name> --json --dry-run`; calibrate only within authorized spending |
 | "查看或管理 case" | `bench list <dir> --json`, `bench show <dir> <id> --json`; preview `bench edit <dir> <id> --set field=value --json` or `bench remove <dir> <id> --json` |
 | "只测几个 case" | Repeat `eval --task <id>` or set request `taskIds`; source also supports task selection for calibration/trigger; preview the selected budget and keep validation independent |
-| "把结果交给另一台机器复现" | Preview `report eval <run-dir> --export <new-dir> --json`, then apply within the authorized scope; read the [portable package contract](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/reference/evaluation-reports.md) for matching inputs, stopped costs and sharing review |
+| "把结果交给另一台机器复现" | Preview `report eval <run-dir> --export <new-dir> --json`, then apply within the authorized scope; read the [portable package contract](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/reference/evaluation-reports.md) for matching inputs, stopped costs and sharing review |
 | "把这次翻车存成任务" | `skillfit bench add <bench> --freeze --task <id> --prompt "..." --verifier-cmd "<cmd>"` |
 | "帮我起草 verifier" | same but `--decompose --agent <id>` — an agent drafts verifier + oracle; admitted only if the NOP + oracle gates pass |
 
@@ -71,13 +71,13 @@ commands and eval; local paths win. Editing still needs an owned local directory
 Git-root benches are supported since 0.12.0, with metadata excluded consistently.
 Keep `--runs-root` outside the bench/Skill/runtime and Git metadata; bad layouts
 are rejected at preview, including aliases. See the
-[first-run guide](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/guides/first-real-eval.md).
+[first-run guide](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/guides/first-real-eval.md).
 
 Since 0.12.0, `--freeze` selects tracked ordinary files inside Git; outside Git,
 explicit `--include <file-or-dir>` selections are required. Narrow large fixtures
 before importing. For `--decompose`, preview and authorize its single call within
 existing spending permission. Failed/interrupted drafts retain costs and inputs;
-never retry implicitly. See [drafting records](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/guides/bench-authoring.md).
+never retry implicitly. See [drafting records](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/guides/bench-authoring.md).
 
 Current-source schema 2 requires explicit `--claim` values for add/freeze/from-commit;
 claims edits use a JSON array and never upgrade schema 1 implicitly. Preview and
@@ -109,7 +109,7 @@ Dry previews execute no verifier/oracle/agent. Inspect the environment's nested
 `status`: a generated `planned` result can still be blocked by a missing CLI.
 Login always remains offline unknown. Live calibration/eval block hard case or
 environment failures; warnings and unknown evidence are not interchangeable.
-See [shared planning](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/guides/experiment-workflow.md).
+See [shared planning](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/guides/experiment-workflow.md).
 
 Calibration has one no-Skill baseline arm and defaults to two trials; trigger
 has one installed arm, defaults to five and skips unlabeled selected tasks.
@@ -216,7 +216,7 @@ historical adoption requirement; a declaration mismatch is an integrity error.
   source checkout; source-development validation uses OS temporary directories.
   Exclude outputs from that project's Git history; the CLI does not edit its ignore rules.
   Keep derived analysis/scratch outside sealed batches; never edit/prune indexed
-  receipts. Follow the [workflow](https://github.com/remote-controlled-man/skillfit/blob/f506681edd0490a7690f2a96bd5b7e589f0bd5d0/docs/guides/experiment-workflow.md#retain-and-clean-up)
+  receipts. Follow the [workflow](https://github.com/remote-controlled-man/skillfit/blob/8153989f48ddd0bfddc3816793fabe6a7ac4a737/docs/guides/experiment-workflow.md#retain-and-clean-up)
   for explicit manual retention/cleanup. This CLI has no automatic GC or generic
   custom process-metric collector.
 - `bench init` / `bench add` show a plan before writing; `bench edit/remove` default
