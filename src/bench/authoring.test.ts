@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import childProcess from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test, type TestContext } from "node:test";
@@ -11,6 +13,60 @@ function root(t: TestContext) {
   const dir = mkdtempSync(join(tmpdir(), "skillfit-authoring-port-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   return dir;
+}
+
+for (const failure of [
+  {
+    name: "spawn error",
+    status: 1,
+    signal: null,
+    error: new Error("spawnSync git EACCES"),
+    stderr: "",
+    expected: /exit 1, Error: spawnSync git EACCES/,
+  },
+  {
+    name: "termination signal",
+    status: null,
+    signal: "SIGTERM" as const,
+    error: undefined,
+    stderr: "git interrupted\n",
+    expected: /git interrupted, exit null, signal SIGTERM/,
+  },
+]) {
+  test(`from-commit preparation reports the Git ${failure.name} and exit status`, (t) => {
+    const cwd = root(t),
+      dir = join(cwd, "case");
+    applyBenchChange(prepareBenchChange({ operation: "init", options: { cwd, dir } }));
+    const spawn = t.mock.method(childProcess, "spawnSync", () => ({
+      pid: 0,
+      output: [null, "", failure.stderr],
+      stdout: "",
+      stderr: failure.stderr,
+      status: failure.status,
+      signal: failure.signal,
+      error: failure.error,
+    }));
+    syncBuiltinESMExports();
+    t.after(() => {
+      spawn.mock.restore();
+      syncBuiltinESMExports();
+    });
+    assert.throws(
+      () =>
+        prepareBenchChange({
+          operation: "add",
+          options: { cwd, benchDir: dir, sourceDir: cwd, fromCommit: "HEAD" },
+        }),
+      (error: unknown) => {
+        assert.ok(error instanceof Error);
+        assert.match(error.message, /git rev-parse --verify HEAD\^\{commit\} failed/);
+        assert.ok(error.message.includes(cwd));
+        assert.match(error.message, failure.expected);
+        return true;
+      },
+    );
+    assert.equal(spawn.mock.callCount(), 1);
+  });
 }
 
 test("authoring preparation exposes a schema-2 starter without creating output or invoking UI", (t) => {

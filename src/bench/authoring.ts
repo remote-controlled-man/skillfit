@@ -800,10 +800,7 @@ const MINED_TEST_PATH = /(^|\/)(tests?|__tests__|spec)(\/|$)|\.(test|spec)\.[cm]
 const MINED_MAX_FILES = 200;
 const MINED_MAX_BYTES = 1024 * 1024;
 
-function gitRun(
-  repo: string,
-  args: string[],
-): { status: number | null; stdout: string; stderr: string } {
+function gitRun(repo: string, args: string[]) {
   // `core.quotePath=false` is what stops git from quoting paths. Without it a non-ASCII path
   // comes back octal-escaped and wrapped in quotes — `"caf\303\251-notes.txt"` — and the later
   // `git show` then fails on a path that does not exist. `-z` on ls-tree alone does not help.
@@ -812,15 +809,21 @@ function gitRun(
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
   });
-  return { status: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+  return { ...result, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
 }
 
 function gitMust(repo: string, args: string[]): string {
   const result = gitRun(repo, args);
   if (result.status !== 0) {
-    throw new Error(
-      `git ${args.join(" ")} failed in ${repo}: ${result.stderr.trim() || `exit ${result.status}`}`,
-    );
+    const details = [
+      result.stderr.trim(),
+      `exit ${result.status}`,
+      result.error ? String(result.error) : "",
+      result.signal ? `signal ${result.signal}` : "",
+    ]
+      .filter(Boolean)
+      .join(", ");
+    throw new Error(`git ${args.join(" ")} failed in ${repo}: ${details}`);
   }
   return result.stdout;
 }
