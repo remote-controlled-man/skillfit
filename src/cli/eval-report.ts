@@ -313,7 +313,7 @@ export function renderEvalMarkdown(report: ReportData): string {
   else lines.push(...report.warnings.map((warning) => `- ${escapeMarkdown(warning)}`));
   lines.push(
     "",
-    "The verdict follows [the skillfit metrics protocol](https://github.com/remote-controlled-man/skillfit/blob/main/docs/metrics.md). Review the pinned manifest before comparing runs.",
+    "The verdict follows [the skillfit metrics protocol](https://github.com/remote-controlled-man/skillfit/blob/main/docs/reference/metrics.md). Review the pinned manifest before comparing runs.",
     "",
   );
   return lines.join("\n");
