@@ -32,11 +32,11 @@ test("the bench authoring guide is linked from every README and every entry poin
   }
 });
 
-test("portable Codex setup is linked and its command block matches across README languages", () => {
+test("portable personal setup is linked and its command block matches across README languages", () => {
   const normalized = (file: string) => read(file).replace(/\r\n/g, "\n");
   const english = normalized("README.md");
   const commandBlock =
-    /```bash\nnode dist\/cli\.js bundle export \.\/personal-codex --dry-run[\s\S]*?node \.\/personal-codex\/setup\.mjs --yes\n```/.exec(
+    /```bash\nnode dist\/cli\.js bundle export \.\/personal-codex --dry-run[\s\S]*?node \.\/personal-codex\/setup\.mjs --yes\nnode dist\/cli\.js bundle export \.\/personal-kimi --agent kimi-code --skill example --mcp docs --dry-run\n```/.exec(
       english,
     )?.[0];
   assert.ok(commandBlock);

@@ -11,6 +11,8 @@ import {
   type BenchSelfTestOptions,
 } from "./evaluation/application/self-test.js";
 import { runInstall as install } from "./configuration/install.js";
+import { runUninstall as uninstall } from "./configuration/uninstall.js";
+import { runMcpApply as mcpApply } from "./configuration/mcp-write.js";
 import { runBundleExport as bundle } from "./configuration/bundle.js";
 import { runCodexSetup as setup } from "./configuration/setup.js";
 
@@ -39,6 +41,20 @@ export function runBenchSelfTest(options: BenchSelfTestOptions) {
 }
 export function runInstall(options: Parameters<typeof install>[0]) {
   return install({
+    ...options,
+    confirm: options.confirm ?? confirm,
+    log: options.log ?? console.log,
+  });
+}
+export function runUninstall(options: Parameters<typeof uninstall>[0]) {
+  return uninstall({
+    ...options,
+    confirm: options.confirm ?? confirm,
+    log: options.log ?? console.log,
+  });
+}
+export function runMcpApply(options: Parameters<typeof mcpApply>[0]) {
+  return mcpApply({
     ...options,
     confirm: options.confirm ?? confirm,
     log: options.log ?? console.log,

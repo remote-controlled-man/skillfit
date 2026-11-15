@@ -66,6 +66,21 @@ test("renderReceipts renders the table, counts, and never-fired list", () => {
   assert.match(output, /prioritization signal, not proof of uselessness/);
 });
 
+test("report distinguishes native Skill events from resource reads and previews evaluation", () => {
+  const receipts = fixtureReceipts();
+  const native = renderReceipts([receipts[0]!]);
+  assert.match(native, /signal: native Skill invocation events/);
+  assert.match(native, /--mode trigger --dry-run/);
+  assert.match(native, /not task-quality outcomes or evidence of benefit/);
+  const codex = {
+    ...receipts[1]!,
+    sessionsDir: "/home/x/.codex/sessions",
+    present: true,
+  };
+  const reads = renderReceipts([codex]);
+  assert.match(reads, /signal: registered SKILL.md read commands; not native Skill events/);
+});
+
 test("renderReceipts counts each skill once across agents in the Overall line", () => {
   const receipts = fixtureReceipts();
   // The same four skills installed for a second agent. `installed` was already deduped across

@@ -5,7 +5,13 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { loadMcpProbeSpec, probeMcpHttp, probeMcpStdio, renderMcpProbe } from "./mcp-probe.js";
+import {
+  loadMcpProbeSpec,
+  probeMcp,
+  probeMcpHttp,
+  probeMcpStdio,
+  renderMcpProbe,
+} from "./mcp-probe.js";
 
 function fixture(
   t: import("node:test").TestContext,
@@ -67,6 +73,28 @@ test("probeMcpStdio negotiates, lists tools, and audits model-facing metadata", 
   ]);
   assert.deepEqual(result.warnings, []);
   assert.match(renderMcpProbe(result), /No tools were called/);
+});
+
+test("probeMcp redacts an exact configured env value from successful retained stderr", async (t) => {
+  const specPath = fixture(t, []);
+  const spec = loadMcpProbeSpec(specPath);
+  assert.equal(spec.transport, "stdio");
+  if (spec.transport !== "stdio") return;
+  spec.env = { MCP_TEST_SECRET: "test-only-retained-secret" };
+  writeFileSync(
+    join(specPath, "..", "server.mjs"),
+    `import readline from 'node:readline';
+const rl = readline.createInterface({ input: process.stdin });
+rl.on('line', line => {
+  const msg = JSON.parse(line);
+  if (msg.id === 1) console.log(JSON.stringify({jsonrpc:'2.0',id:1,result:{protocolVersion:'2025-11-25',capabilities:{tools:{}},serverInfo:{name:'fixture',version:'1.0.0'}}}));
+  if (msg.id === 2) console.log(JSON.stringify({jsonrpc:'2.0',id:2,result:{tools:[]}}));
+});
+process.stderr.write(\`fixture \${process.env.MCP_TEST_SECRET}\\n\`);\n`,
+  );
+  const result = await probeMcp(spec);
+  assert.equal(result.tools.length, 0);
+  assert.equal(result.stderr, "fixture <REDACTED>");
 });
 
 test("probeMcpStdio warns about missing descriptions and annotations", async (t) => {

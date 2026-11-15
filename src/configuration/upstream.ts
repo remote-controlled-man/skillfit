@@ -232,6 +232,9 @@ export async function prepareUpstreamProfile(
         await fs.writeFile(path.join(destination, "rules", "global.md"), options.rulesContent);
       }
     }
+    if (selectedManifest.mcp && selectedManifest.mcp.length > 0) {
+      await copyRegularTree(path.join(source, "mcp"), path.join(destination, "mcp"));
+    }
     for (const skill of selectedManifest.skills ?? []) {
       if (skill.source !== `skills/${skill.name}` || !NAME.test(skill.name))
         throw new Error(`Invalid portable source for ${skill.name}`);

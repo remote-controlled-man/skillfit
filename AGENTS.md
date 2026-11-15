@@ -54,7 +54,7 @@ the source checkout the experiment's working directory.
 
 ## Write scope and protected data
 
-- **CLI configuration writers** (`install`, `setup`, and generated bundle installers): plan before applying, support dry runs, require confirmation or `--yes`, back up existing targets before changing them, and verify after writing. Preserve the installer's rollback on write or validation failure; these safeguards protect users' existing agent configuration.
+- **CLI configuration writers** (`install`, `setup`, `uninstall`, `mcp apply`, and generated bundle installers): plan before applying, support dry runs, require confirmation or `--yes`, back up existing targets before changing them, and verify after writing. Preserve the installer's rollback on write or validation failure; these safeguards protect users' existing agent configuration.
 - **New bench/run/bundle artifacts:** preserve collision checks and existing outputs. A fresh output has no previous content to back up; eval workspaces use disposable fixture copies. Keep these separate from writes to actual user configuration.
 - **Repository source and documentation edits:** use Git diffs and relevant checks, preserving unrelated user work. The configuration-writer backup and confirmation flow does not apply to routine repository edits.
 - `workspace4skills/` at the repository root is the author's gitignored private lab. Keep it out of commits and CI reads. Do not run `git clean -fdx` in this checkout: it deletes ignored directories, including that lab.

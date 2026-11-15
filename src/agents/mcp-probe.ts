@@ -3,6 +3,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { killTree, treeSpawnOptions } from "../shared/process-tree.js";
 import { VERSION } from "../shared/version.js";
+import { resolveAgentPath } from "./environment.js";
+import { getAgent } from "./matrix.js";
 
 const PROTOCOL_VERSION = "2025-11-25";
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -64,15 +66,7 @@ function stringRecord(value: unknown, label: string): Record<string, string> {
   return record as Record<string, string>;
 }
 
-export function loadMcpProbeSpec(path: string): McpProbeSpec {
-  const absolute = resolve(path);
-  if (!existsSync(absolute)) throw new Error(`MCP probe spec not found: ${absolute}`);
-  let value: unknown;
-  try {
-    value = JSON.parse(readFileSync(absolute, "utf8"));
-  } catch (error) {
-    throw new Error(`Invalid MCP probe spec JSON: ${(error as Error).message}`);
-  }
+export function parseMcpProbeSpec(value: unknown, baseDir: string): McpProbeSpec {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error("MCP probe spec must contain a JSON object");
   }
@@ -121,7 +115,7 @@ export function loadMcpProbeSpec(path: string): McpProbeSpec {
   const cwdValue = record["cwd"];
   if (cwdValue !== undefined && typeof cwdValue !== "string")
     throw new Error("MCP probe spec cwd must be a string");
-  const base = dirname(absolute);
+  const base = baseDir;
   const cwd =
     cwdValue === undefined ? base : isAbsolute(cwdValue) ? cwdValue : resolve(base, cwdValue);
   return {
@@ -134,6 +128,148 @@ export function loadMcpProbeSpec(path: string): McpProbeSpec {
     cwd,
     timeoutMs,
   };
+}
+
+export function loadMcpProbeSpec(path: string): McpProbeSpec {
+  const absolute = resolve(path);
+  if (!existsSync(absolute)) throw new Error(`MCP probe spec not found: ${absolute}`);
+  let value: unknown;
+  try {
+    value = JSON.parse(readFileSync(absolute, "utf8"));
+  } catch (error) {
+    throw new Error(`Invalid MCP probe spec JSON: ${(error as Error).message}`);
+  }
+  return parseMcpProbeSpec(value, dirname(absolute));
+}
+
+export interface AgentMcpProbeSelection {
+  agent: string;
+  server: string;
+  project?: boolean;
+  homeDir: string;
+  cwd: string;
+  env?: NodeJS.ProcessEnv;
+}
+
+export interface SelectedAgentMcpProbe {
+  spec: McpProbeSpec;
+  entry: Record<string, unknown>;
+  sourcePath: string;
+  scope: "user" | "project";
+}
+
+export function selectAgentMcpProbe(options: AgentMcpProbeSelection): SelectedAgentMcpProbe {
+  const agent = getAgent(options.agent);
+  const scope = options.project ? "project" : "user";
+  const context = { homeDir: options.homeDir, cwd: options.cwd, env: options.env ?? {} };
+  const sourcePaths = [
+    ...new Set(
+      (options.project ? agent.mcp.projectFiles : agent.mcp.userFiles).map((path) =>
+        resolveAgentPath(path, context),
+      ),
+    ),
+  ].filter((path) => existsSync(path));
+  if (sourcePaths.length === 0)
+    throw new Error(
+      `No ${scope} MCP configuration exists for ${agent.displayName}; no server was started or contacted.`,
+    );
+  if (agent.mcp.format !== "json-mcpServers")
+    throw new Error(
+      `Native ${agent.displayName} MCP format "${agent.mcp.format}" is not supported by real-config mcp check yet; use an explicit probe spec. No server was started or contacted.`,
+    );
+
+  const matches: SelectedAgentMcpProbe[] = [];
+  for (const sourcePath of sourcePaths) {
+    let document: unknown;
+    try {
+      document = JSON.parse(readFileSync(sourcePath, "utf8"));
+    } catch {
+      throw new Error(
+        `Invalid JSON MCP configuration at ${sourcePath}; no server was started or contacted.`,
+      );
+    }
+    if (typeof document !== "object" || document === null || Array.isArray(document))
+      throw new Error(`MCP configuration at ${sourcePath} must contain a JSON object.`);
+    const servers = (document as Record<string, unknown>)["mcpServers"];
+    if (servers === undefined) continue;
+    if (typeof servers !== "object" || servers === null || Array.isArray(servers))
+      throw new Error(`MCP configuration at ${sourcePath} requires an mcpServers object.`);
+    if (!Object.hasOwn(servers, options.server)) continue;
+    const raw = (servers as Record<string, unknown>)[options.server];
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+      throw new Error(`MCP server "${options.server}" at ${sourcePath} must be an object.`);
+    const entry = raw as Record<string, unknown>;
+    const supportedFields = new Set([
+      "type",
+      "transport",
+      "command",
+      "args",
+      "env",
+      "cwd",
+      "url",
+      "headers",
+      "enabled",
+      "disabled",
+      "timeoutMs",
+    ]);
+    const unknownFields = Object.keys(entry).filter((field) => !supportedFields.has(field));
+    if (unknownFields.length > 0)
+      throw new Error(
+        `MCP server "${options.server}" has unsupported field(s): ${unknownFields.join(", ")}; no server was started or contacted.`,
+      );
+    if (entry["enabled"] === false || entry["disabled"] === true)
+      throw new Error(
+        `MCP server "${options.server}" is disabled; no server was started or contacted.`,
+      );
+    if (
+      (entry["enabled"] !== undefined && typeof entry["enabled"] !== "boolean") ||
+      (entry["disabled"] !== undefined && typeof entry["disabled"] !== "boolean")
+    )
+      throw new Error(`MCP server "${options.server}" enabled/disabled fields must be boolean.`);
+    const hasCommand = entry["command"] !== undefined;
+    const hasUrl = entry["url"] !== undefined;
+    if (hasCommand === hasUrl)
+      throw new Error(`MCP server "${options.server}" needs exactly one of command or url.`);
+    const transport = hasUrl ? "http" : "stdio";
+    const declaredTransport = entry["transport"] ?? entry["type"];
+    if (
+      declaredTransport !== undefined &&
+      declaredTransport !== transport &&
+      !(transport === "http" && declaredTransport === "streamable-http")
+    )
+      throw new Error(`MCP server "${options.server}" declares an incompatible transport/type.`);
+    const common = {
+      schemaVersion: 1,
+      name: options.server,
+      transport,
+      ...(entry["timeoutMs"] === undefined ? {} : { timeoutMs: entry["timeoutMs"] }),
+    };
+    const value =
+      transport === "http"
+        ? { ...common, url: entry["url"], headers: entry["headers"] }
+        : {
+            ...common,
+            command: entry["command"],
+            args: entry["args"],
+            env: entry["env"],
+            cwd: entry["cwd"],
+          };
+    matches.push({
+      spec: parseMcpProbeSpec(value, dirname(sourcePath)),
+      entry,
+      sourcePath,
+      scope,
+    });
+  }
+  if (matches.length === 0)
+    throw new Error(
+      `MCP server "${options.server}" was not found in the selected ${scope} ${agent.displayName} configuration; no server was started or contacted.`,
+    );
+  if (matches.length > 1)
+    throw new Error(
+      `MCP server "${options.server}" has ambiguous ${scope} definitions: ${matches.map((match) => match.sourcePath).join(", ")}`,
+    );
+  return matches[0]!;
 }
 
 function windowsSpawn(
@@ -362,8 +498,38 @@ export async function probeMcpHttp(spec: McpHttpProbeSpec): Promise<McpProbeResu
   throw new Error("MCP tools/list pagination did not terminate");
 }
 
+function mcpSecretValues(spec: McpProbeSpec): string[] {
+  const values = new Set<string>();
+  for (const value of Object.values(
+    spec.transport === "stdio" ? (spec.env ?? {}) : (spec.headers ?? {}),
+  )) {
+    if (value !== "") values.add(value);
+  }
+  if (spec.transport === "http") {
+    const url = new URL(spec.url);
+    for (const value of [url.username, url.password, ...url.searchParams.values()]) {
+      if (value !== "") {
+        values.add(value);
+        values.add(encodeURIComponent(value));
+      }
+    }
+  }
+  return [...values].sort((a, b) => b.length - a.length);
+}
+
+function redactMcpText(text: string, secrets: readonly string[]): string {
+  return secrets.reduce((result, secret) => result.split(secret).join("<REDACTED>"), text);
+}
+
 export async function probeMcp(spec: McpProbeSpec): Promise<McpProbeResult> {
-  return spec.transport === "http" ? probeMcpHttp(spec) : probeMcpStdio(spec);
+  const secrets = mcpSecretValues(spec);
+  try {
+    const result = await (spec.transport === "http" ? probeMcpHttp(spec) : probeMcpStdio(spec));
+    return { ...result, stderr: redactMcpText(result.stderr, secrets) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(redactMcpText(message, secrets));
+  }
 }
 
 export async function probeMcpStdio(spec: McpProbeSpec): Promise<McpProbeResult> {

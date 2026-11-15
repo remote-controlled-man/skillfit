@@ -29,7 +29,11 @@ skillfit compares a baseline and a treatment on the same tasks and reports what 
 ```bash
 npx skillfit@0.15.4 report
 npx skillfit@0.15.4 doctor
+npx skillfit@0.15.4 doctor --json
+npx skillfit@0.15.4 doctor --strict
 ```
+
+The JSON output is a `skillfit.doctor-report` [version-1 document](docs/schemas/doctor-report.schema.json) with Agent detection, Rules/Skills/MCP checks and matching summary counts. Findings remain advisory and exit 0 by default; `--strict` explicitly exits 1 when a FAIL exists, while an unknown Agent exits 2. Every doctor mode stays read-only: no model call, MCP connection or configuration write is performed.
 
 ```console
 $ npx skillfit@0.15.4 report --agent codex
@@ -59,7 +63,7 @@ codex — 280 session(s), 280 transcript(s)
 Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in retained history.
 ```
 
-Captured 2026-11-04 from one Codex history. Five installed skills have no observed fire; that is a priority signal, and install dates are unavailable. `prflow` is a project skill. Codex sessions record the project directory, so that skill counts as installed. The omitted catalog-size line covers the user catalog only.
+Captured 2026-11-04 from one Codex history. Five installed skills have no observed fire; that is a priority signal, and install dates are unavailable. `prflow` is a project skill. Codex sessions record the project directory, so that skill counts as installed. The omitted catalog-size line covers the user catalog only. Reports distinguish native Skill events from Codex's registered `SKILL.md` read commands. Missing history is unmeasured, not zero use. Evaluation suggestions start with `--dry-run`; trigger observations are not task-quality outcomes, and usage never automatically uninstalls or upgrades a Skill.
 
 ## See a real report before you spend
 
@@ -92,7 +96,7 @@ npx skillfit@0.15.4 --help
 npx skillfit@0.15.4 doctor
 ```
 
-Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the eight commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
+Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the nine commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
 
 ## Why
 
@@ -313,9 +317,9 @@ node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
 
 See the [selectable setup guide](docs/guides/selectable-codex.md) for source provenance, retired entries and evidence limits.
 
-### Portable Codex setup
+### Portable personal setup
 
-Export user-level Skills observed in at least two Codex sessions and your active global guidance:
+By default, export user-level Skills observed in at least two Codex sessions and your active global guidance. Select `--agent kimi-code` to migrate a Kimi Code configuration instead:
 
 ```bash
 node dist/cli.js bundle export ./personal-codex --dry-run
@@ -323,22 +327,25 @@ node dist/cli.js bundle export ./personal-codex --yes
 # transfer the personal-codex directory to the new machine
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
+node dist/cli.js bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
 ```
 
-For options, including the full 65-Skill upstream catalog via `--upstream-lock`, see [portable setup](docs/guides/selectable-codex.md) and the [source audit](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md).
+Repeated `--mcp` selects JSON declarations without credentials or machine-local paths; native Codex TOML remains unsupported. This migrates between machines for the same Agent, not between Agent formats. For options, including the full 65-Skill upstream catalog via `--upstream-lock`, see [portable setup](docs/guides/selectable-codex.md) and the [source audit](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md).
 
-## The eight commands
+## The nine commands
 
 | Command | What it does | Writes? |
 |---|---|---|
-| `doctor` | Inspect agent configuration, invalid Skills, conflicts and supported MCP declarations | Read-only |
+| `doctor` | Inspect agent configuration, invalid Skills, conflicts and supported MCP declarations | Read-only; `--strict` changes only the exit status |
 | `report` | Summarize observed Skill usage or render saved evaluation results | Only `report eval --export --yes` writes a fresh replay directory |
 | `eval <target>` | Compare a Skill, rules or MCP overlay; trigger mode observes Skill activation | Saves runs; real evaluations call an agent/model |
-| `mcp check <spec>` | Connect to an MCP server and audit `tools/list`; never invoke a tool | No skillfit output files; starts or contacts the server |
+| `mcp check <spec>` | Audit an explicit probe spec or [a server selected from Agent configuration](docs/guides/experiment-workflow.md#inspect-an-mcp-server); never invoke a tool | No configuration writes; starts or contacts the server |
+| `mcp apply` | [Create, update or remove one managed JSON MCP entry](docs/guides/experiment-workflow.md#apply-a-scoped-json-mcp-entry) with preview, backup and rollback | After confirmation; no server or model call |
 | `bench` | Scaffold, inspect, edit and validate tasks; current source also supports offline `self-test` | Edits require confirmation; calibration/drafting call agents and save output; plain checks run local verifiers |
 | `install` | Apply a profile with conflict checks, backups, verification and rollback on failure | After confirmation; preview with `--dry-run`, add `--strict` to fail on conflicts |
+| `uninstall` | Remove selected managed Skills or AGENTS.md rules with drift checks and retained recovery copies | After confirmation; `--dry-run` writes nothing |
 | `setup codex` | Select pinned Skills and global routing guidance; defaults to a preview | Only `--yes` installs; source selection needs network |
-| `bundle` | Export selected local Skills and global guidance for another machine | After confirmation; generated setup previews before installation |
+| `bundle` | Export Codex/Kimi rules, selected Skills and safe JSON MCP declarations for another machine | After confirmation; generated setup previews before installation; no server/model call |
 
 Use `node dist/cli.js <command> --help` for that command's flags and the [configuration guide](docs/guides/selectable-codex.md) for setup options. No observed Skill use is not proof of uselessness. Offline checks and replay still execute trusted local bench code. Installation keeps the first `<file>.skillfit-bak`; rollback handles write/validation failures, while abrupt termination can leave a partial install.
 

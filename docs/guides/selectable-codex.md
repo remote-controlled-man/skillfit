@@ -24,6 +24,24 @@ The 27 Lark Skills come from the official `larksuite/cli` repository. Selecting 
 
 Each file is fetched by commit URL and checked against its SHA-256. A missing file, unexpected content, or invocation-policy mismatch aborts before any Codex configuration is written. The setup command does not call a model. Unmanaged or locally modified same-name Skills produce conflicts rather than silent replacement; previously managed, unchanged Skills can update with a backup. Review the listed paths and decide whether to keep your local edits; the installer never deletes those directories for you. Re-running with the same selection is idempotent.
 
+## Uninstall managed Skills and rules
+
+Current source adds an explicit managed-uninstall operation for Skills and AGENTS.md rules. It uses the existing lockfile and matrix targets rather than arbitrary paths:
+
+```bash
+node dist/cli.js uninstall --agent kimi-code --skill commit-message --dry-run
+node dist/cli.js uninstall --agent codex --skill commit-message --yes
+node dist/cli.js uninstall --agent kimi-code --rules --project --dry-run
+```
+
+Select at least one `--skill` or `--rules`; user scope remains the default and `--project` selects the current project. Dry-run writes nothing. Application requires confirmation or `--yes`, verifies the result and updates the lockfile after the content changes.
+
+A selected Skill must have a matching managed lock entry and unchanged content. Local edits, unexpected files, symlinks, missing records or a changed matrix target produce a conflict rather than deletion. Rules removal checks the managed block fingerprint and preserves all content outside the markers. A missing target only reconciles its lock entry and is not reported as a new deletion.
+
+Managed Skills move to fresh hidden sibling recovery directories instead of being recursively deleted. Managed-only rules files have an equivalent recovery file. Recovery paths are reported and retained after success; they are never overwritten by a later operation. Restoring one is a separate manual decision and must not overwrite a new active target. Hidden recovery directories are not active Skill registrations.
+
+No observed usage, a missing local history or an old last-seen date does not authorize automatic uninstall. This command does not remove MCP entries, plugins, credentials or arbitrary unmanaged files, and it makes no model call. Crash-atomic removal is not claimed; failure tests cover restoration after lock-write failure.
+
 ## What the evidence supports
 
 The 67 entries are a **source and installation catalog**, not a usefulness ranking. Pinning commits, checking hashes, and successfully installing a Skill establish provenance and integrity; they do not establish that the Skill improves an agent's work. Neither the legacy 13-Skill set nor the two skillfit-authored Skills has a paired efficacy result as a set or on the current Codex model.
@@ -43,7 +61,7 @@ The older [`bundle export`](selectable-codex.md) command remains available for s
 
 ## Portable bundles
 
-`skillfit bundle export` captures user-level Skills that Codex has used in at least two distinct local sessions and the active global guidance. It writes a self-contained profile directory with a Node.js installer. The export is a local copy of the files currently installed, so their contents stay fixed when upstream repositories change.
+`skillfit bundle export` defaults to user-level Skills that Codex has used in at least two distinct local sessions and the active global guidance. Pass `--agent kimi-code` to use Kimi Code's user configuration instead. It writes a self-contained profile directory with a Node.js installer for that same Agent; it does not convert between Agent formats. The exported files stay fixed when upstream repositories change.
 
 ```bash
 skillfit bundle export ./personal-codex --dry-run
@@ -51,13 +69,16 @@ skillfit bundle export ./personal-codex --yes
 # transfer the personal-codex directory to the new machine
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
+skillfit bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
 ```
 
 The export includes `profile.json`, `rules/global.md`, each selected Skill directory with its scripts, references, licenses, and other regular files, plus `setup.mjs` and the dependency-free installer runtime. Installer backup and recovery files are omitted. The destination needs Node.js 22 or newer; skillfit does not need to be installed there. Running `node setup.mjs` without flags prints a plan and asks before writing. To choose a specific set instead of usage-based selection, repeat `--skill <name>`. To change the usage threshold, pass `--min-sessions <n>`. A dry run writes nothing. Export refuses an existing destination directory; choose a new name to keep previous snapshots intact. Skills with `agents/openai.yaml` policy `allow_implicit_invocation: false` stay in the bundle and are identified as user-invoked-only in the generated guidance.
 
+Repeat `--mcp <name>` to include selected user-level JSON `mcpServers` declarations. Portable stdio entries cannot have arguments, environment values, an explicit working directory or timeout; HTTP entries cannot have headers, URL userinfo, query, fragment or explicit timeout. Unsupported fields and native Codex TOML are refused before the output is created. These structural limits avoid transferring declared credential fields; they are not general secret detection. Review commands, URLs, rules and Skill bodies before sharing. Installation plans all selected MCP entries together, preserves unrelated configuration, writes one merged JSON document and records each managed entry. Export and installation never start or contact the server.
+
 ### Fetch reviewed upstream Skills on the new machine
 
-Pass `--upstream-lock` to select all GitHub Skills in that lock as commit-pinned source references, plus the lock's `localSkills`. The GitHub Skills need not already be installed on the exporting machine; local Skills are copied from it. Repeated `--skill <name>` flags add further local Skills. The lock lists every upstream file and its SHA-256; setup downloads directly from `raw.githubusercontent.com`, verifies each file and its invocation policy, prepares an isolated local profile, then runs the normal install planner. A missing file, policy conflict, or hash mismatch stops setup before any target file is changed. Setup supports `--dry-run`, `--strict`, and `--yes`. The dry run fetches and verifies upstream files but does not write to the Codex configuration.
+Pass `--upstream-lock` to select all GitHub Skills in that lock as commit-pinned source references, plus the lock's `localSkills`. The GitHub Skills need not already be installed on the exporting machine; local Skills are copied from it. Repeated `--skill <name>` flags add further local Skills. The lock lists every upstream file and its SHA-256; setup downloads directly from `raw.githubusercontent.com`, verifies each file and its invocation policy, prepares an isolated local profile, then runs the normal install planner. A missing file, policy conflict, or hash mismatch stops setup before any target file is changed. Setup supports `--dry-run`, `--strict`, and `--yes`. The dry run fetches and verifies upstream files but does not write to the selected Agent configuration. Portable MCP files are retained during upstream preparation.
 
 ```bash
 skillfit bundle export ./personal-codex --upstream-lock ./profiles/codex-upstream-sources.json --dry-run
@@ -69,6 +90,6 @@ node ./personal-codex/setup.mjs --yes
 
 The included [Codex source lock](../../profiles/codex-upstream-sources.json) identifies 65 public Skills from their authors' GitHub repositories and two locally authored Skills. `edit-article` is pinned to its last available revision because it is absent from the current `mattpocock/skills` tree. The source lock is a reviewed version selection, not a request to follow a moving branch. Refreshing it requires checking the new files and hashes and evaluating affected Skills against suitable benches. For a smaller selection, use [selectable setup](selectable-codex.md). The portable profile still contains personal global guidance and locally authored Skills; review it before sharing.
 
-On installation, skillfit copies Skills to the Codex user skills directory from the [capability matrix](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/src/matrix/agents.json) and writes a managed block to the global `AGENTS.md`. It honors `CODEX_HOME` for global guidance and session history. An active `AGENTS.override.md` would shadow the result, so installation reports a conflict before writing. Existing content outside the managed block is preserved, and modified or extra Skill files cause a conflict instead of being overwritten or silently retained. Re-running the same install skips unchanged content.
+On installation, skillfit copies Skills and writes a managed block to the global `AGENTS.md` at the selected Agent's [capability-matrix](https://github.com/remote-controlled-man/skillfit/blob/ed5eaff7d222de1c73874ce022785fbe89291017/src/matrix/agents.json) targets. Codex honors `CODEX_HOME` for global guidance and session history. An active Codex `AGENTS.override.md` would shadow the result, so installation reports a conflict before writing. Existing content outside the managed block is preserved, and modified or extra Skill files cause a conflict instead of being overwritten or silently retained. Unmanaged or changed MCP entries also block every profile write. Re-running the same install skips unchanged content.
 
-The bundle contains a copy of personal global instructions. Review `rules/global.md` and the Skill files before sharing or storing it in a public repository. The command exports regular user-level Skill directories from `~/.agents/skills` and from `$CODEX_HOME/skills` (default `~/.codex/skills`); it refuses symlinked Skills and files so the bundle cannot follow links outside the selected directory. It does not transfer plugin installations, plugin authentication, MCP connections, or system-bundled Skills. Install those through their own supported setup paths on the destination machine. A new Codex session is needed to check that the installed configuration is loaded.
+The bundle contains a copy of personal global instructions. Review `rules/global.md` and the Skill files before sharing or storing it in a public repository. The command exports regular user-level Skill directories declared by the matrix; it refuses symlinked Skills and files so the bundle cannot follow links outside the selected directory. It does not transfer plugin installations, authentication, session history, recovery copies, system-bundled Skills or live MCP connections. Install other requirements through their own supported setup paths on the destination machine. Start a new session to check that the installed configuration is loaded.

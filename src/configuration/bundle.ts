@@ -5,20 +5,24 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import { getAgent, skillUserDirSpecs } from "../agents/matrix.js";
+import { selectAgentMcpProbe } from "../agents/mcp-probe.js";
 import { collectReceipts } from "../usage/receipts.js";
 import { parseFrontmatter } from "../resources/frontmatter.js";
 import { isImplicitInvocationDisabled } from "../resources/invocation.js";
 import { BACKUP_SUFFIX, loadProfile, MARKER_END, MARKER_START } from "./install.js";
+import { portableMcpSpec } from "./mcp-write.js";
 import { readUpstreamLock, type UpstreamSkill } from "./upstream.js";
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
 export interface BundleExportOptions {
   outputDir: string;
+  agent?: string;
   homeDir?: string;
   env?: NodeJS.ProcessEnv;
   skillNames?: string[];
-  /** Default selection uses skills seen in at least two distinct Codex sessions. */
+  mcpServerNames?: string[];
+  /** Default selection uses skills seen in at least two distinct source-Agent sessions. */
   minSessions?: number;
   dryRun?: boolean;
   yes?: boolean;
@@ -33,19 +37,33 @@ function expandHome(spec: string, homeDir: string): string {
   return spec.startsWith("~/") ? path.join(homeDir, spec.slice(2)) : path.resolve(spec);
 }
 
-function codexRulesFile(homeDir: string, env: NodeJS.ProcessEnv): string {
-  const rules = getAgent("codex").rules;
+async function userRulesFile(
+  agentId: string,
+  homeDir: string,
+  env: NodeJS.ProcessEnv,
+): Promise<string> {
+  const agent = getAgent(agentId);
+  const rules = agent.rules;
   const override = rules.userHomeOverride;
   const envHome = override === undefined ? undefined : env[override.env];
-  if (override !== undefined && envHome) return path.resolve(envHome, override.relativePath);
-  const spec = rules.userFiles[0];
-  if (!spec) throw new Error("Codex has no user-level rules path in the matrix");
-  return expandHome(spec, homeDir);
+  let candidates = rules.userFiles.map((spec) => expandHome(spec, homeDir));
+  if (override !== undefined && envHome)
+    candidates = [path.resolve(envHome, override.relativePath)];
+  if (candidates.length === 0) throw new Error(`${agent.displayName} has no user-level rules path`);
+  const existing: string[] = [];
+  for (const candidate of candidates)
+    if ((await readOptional(candidate)) !== null) existing.push(candidate);
+  if (existing.length > 1)
+    throw new Error(
+      `Multiple user-level rules files exist for ${agent.displayName}; refusing to choose implicitly: ${existing.join(", ")}`,
+    );
+  return existing[0] ?? candidates[0]!;
 }
 
-function codexSkillDirs(homeDir: string, env: NodeJS.ProcessEnv): string[] {
-  const specs = skillUserDirSpecs(getAgent("codex"), env);
-  if (specs.length === 0) throw new Error("Codex has no user-level skills path in the matrix");
+function userSkillDirs(agentId: string, homeDir: string, env: NodeJS.ProcessEnv): string[] {
+  const agent = getAgent(agentId);
+  const specs = skillUserDirSpecs(agent, env);
+  if (specs.length === 0) throw new Error(`${agent.displayName} has no user-level skills path`);
   return specs.map((spec) => expandHome(spec, homeDir));
 }
 
@@ -190,10 +208,11 @@ async function verifyUpstreamExport(
 }
 
 async function defaultUsage(
+  agent: string,
   homeDir: string,
   env: NodeJS.ProcessEnv,
 ): Promise<{ name: string; sessionCount: number }[]> {
-  const receipt = (await collectReceipts({ agent: "codex", homeDir, env }))[0];
+  const receipt = (await collectReceipts({ agent, homeDir, env }))[0];
   const installed = new Set(receipt?.installed ?? []);
   return (
     receipt?.skills
@@ -202,9 +221,10 @@ async function defaultUsage(
   );
 }
 
-/** Create a self-contained profile from user-level Codex skills and active global guidance. */
+/** Create a self-contained profile from user-level Skills and active global guidance. */
 export async function runBundleExport(opts: BundleExportOptions): Promise<void> {
   const log = opts.log ?? (() => {});
+  const sourceAgent = getAgent(opts.agent ?? "codex");
   const homeDir = opts.homeDir ?? os.homedir();
   const env = opts.env ?? (opts.homeDir === undefined ? process.env : {});
   const outputDir = path.resolve(opts.outputDir);
@@ -212,13 +232,13 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
   if (!NAME_PATTERN.test(profileName)) {
     throw new Error("Bundle directory name must use lowercase letters, digits and dashes");
   }
-  const skillDirs = codexSkillDirs(homeDir, env);
+  const skillDirs = userSkillDirs(sourceAgent.id, homeDir, env);
   const upstreamLock = opts.upstreamLockPath
     ? await readUpstreamLock(path.resolve(opts.upstreamLockPath))
     : null;
   const usage =
     opts.skillNames === undefined && !upstreamLock
-      ? await (opts.loadUsage ?? (() => defaultUsage(homeDir, env)))()
+      ? await (opts.loadUsage ?? (() => defaultUsage(sourceAgent.id, homeDir, env)))()
       : [];
   const minSessions = opts.minSessions ?? 2;
   if (!Number.isInteger(minSessions) || minSessions < 1)
@@ -272,18 +292,37 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     sourceFiles.set(name, files);
   }
 
-  const rulesFile = codexRulesFile(homeDir, env);
-  const overrideName = getAgent("codex").rules.userHomeOverride?.overrideRelativePath;
+  const mcpSpecs = [];
+  for (const name of [...new Set(opts.mcpServerNames ?? [])].sort()) {
+    if (!NAME_PATTERN.test(name)) throw new Error(`Invalid portable MCP server name: ${name}`);
+    const selected = selectAgentMcpProbe({
+      agent: sourceAgent.id,
+      server: name,
+      homeDir,
+      cwd: homeDir,
+      env,
+    });
+    mcpSpecs.push({ name, spec: portableMcpSpec(selected.spec, selected.entry) });
+  }
+
+  const rulesFile = await userRulesFile(sourceAgent.id, homeDir, env);
+  const overrideName = sourceAgent.rules.userHomeOverride?.overrideRelativePath;
   const activeOverride = overrideName ? path.join(path.dirname(rulesFile), overrideName) : null;
   const overrideRules = activeOverride ? await readOptional(activeOverride) : null;
   const useOverride = overrideRules !== null && overrideRules.trim().length > 0;
   const sourceRules = useOverride ? overrideRules : await readOptional(rulesFile);
-  const rules = renderRules(sourceRules, names, explicitOnly);
-  log(`Portable Codex profile: ${outputDir}`);
+  const rules = renderRules(
+    sourceRules ?? `# Global ${sourceAgent.displayName} guidance`,
+    names,
+    explicitOnly,
+  );
+  log(`Portable ${sourceAgent.displayName} profile: ${outputDir}`);
   log(
     `Global rules source: ${sourceRules === null ? "generated defaults" : useOverride ? activeOverride : rulesFile}`,
   );
   log(`Skills (${names.length}): ${names.join(", ") || "(none)"}`);
+  if (mcpSpecs.length > 0)
+    log(`MCP declarations (${mcpSpecs.length}): ${mcpSpecs.map((entry) => entry.name).join(", ")}`);
   if (explicitOnly.length > 0)
     log(`User-invoked-only skills (${explicitOnly.length}): ${explicitOnly.join(", ")}`);
   if (skipped.length > 0)
@@ -321,11 +360,14 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
   const manifest = {
     name: profileName,
     version: "1.0.0",
-    description: "Portable Codex setup exported from a user environment.",
-    agents: ["codex"],
+    description: `Portable ${sourceAgent.displayName} setup exported from a user environment.`,
+    agents: [sourceAgent.id],
     scope: "user",
     rules: { template: "rules/global.md" },
     skills: names.map((name) => ({ name, source: `skills/${name}` })),
+    ...(mcpSpecs.length > 0
+      ? { mcp: mcpSpecs.map(({ name }) => ({ name, source: `mcp/${name}.json` })) }
+      : {}),
   };
   const exportedLock = {
     version: 1,
@@ -343,6 +385,11 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     await fs.writeFile(path.join(stage, "rules", "global.md"), rules, "utf8");
     await fs.writeFile(path.join(stage, "profile.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     await fs.writeFile(path.join(stage, "package.json"), '{"private":true,"type":"module"}\n');
+    for (const { name, spec } of mcpSpecs) {
+      const target = path.join(stage, "mcp", `${name}.json`);
+      await fs.mkdir(path.dirname(target), { recursive: true });
+      await fs.writeFile(target, `${JSON.stringify(spec, null, 2)}\n`);
+    }
     if (upstreamLock) {
       await fs.writeFile(
         path.join(stage, "upstream.lock.json"),
@@ -359,7 +406,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
           "const { values } = parseArgs({ args: process.argv.slice(2), options: { 'dry-run': { type: 'boolean' }, yes: { type: 'boolean' }, strict: { type: 'boolean' } } });",
           "const prepared = await prepareUpstreamProfile(profileDir, { log: console.log });",
           "try {",
-          "  await runInstall({ profile: 'portable', profilePath: prepared.profileDir, agent: 'codex', dryRun: values['dry-run'] ?? false, yes: values.yes ?? false, strict: values.strict ?? false });",
+          `  await runInstall({ profile: 'portable', profilePath: prepared.profileDir, agent: ${JSON.stringify(sourceAgent.id)}, dryRun: values['dry-run'] ?? false, yes: values.yes ?? false, strict: values.strict ?? false });`,
           "} finally { await prepared.cleanup(); }",
           "",
         ].join("\n"),
@@ -371,7 +418,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
           "import { fileURLToPath } from 'node:url';",
           "const profileDir = fileURLToPath(new URL('.', import.meta.url));",
           "const cli = fileURLToPath(new URL('./runtime/cli.js', import.meta.url));",
-          "process.argv = [process.argv[0], cli, 'install', '--profile-path', profileDir, '--agent', 'codex', ...process.argv.slice(2)];",
+          `process.argv = [process.argv[0], cli, 'install', '--profile-path', profileDir, '--agent', ${JSON.stringify(sourceAgent.id)}, ...process.argv.slice(2)];`,
           "await import('./runtime/cli.js');",
           "",
         ].join("\n"),

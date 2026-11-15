@@ -5,7 +5,7 @@ import { DEFAULT_EVAL_TRIALS } from "./eval.js";
 const TITLE = `skillfit ${VERSION} — evidence-driven configuration for AI coding agents`;
 const option = (text: string) => text;
 const agent = option(
-  "  --agent <id>        Target agent: claude-code | codex | kimi-code (default: all detected)",
+  "  --agent <id>        Target/source agent: claude-code | codex | kimi-code (default: detected; bundle: codex)",
 );
 const judgeAgent = option(
   "  --judge-agent <id>  Drive a paired eval's blind judge (prefer a different family than --agent)",
@@ -23,7 +23,7 @@ const planSha = option(
   "  --plan-sha <hash>   Confirm an eval/calibration/self-test dry-run plan (also needs --run-group)",
 );
 const json = option(
-  "  --json             Machine output for bench check/self-test/list/show/edit/remove, report, eval and calibration",
+  "  --json             Machine output for doctor, bench check/self-test/list/show/edit/remove, report, eval and calibration",
 );
 const spendingBudget = option(
   "  --spending-budget <file>  Eval/calibration/drafting: input, cachedInput, uncachedInput, output, durationSeconds stop lines",
@@ -76,8 +76,15 @@ const profilePath = option(
   "  --profile-path <dir>  Install a portable profile from a local directory",
 );
 const skill = option(
-  "  --skill <name>     With bundle export, include a named installed skill (repeatable)\n                     With setup codex, select a Skill (repeatable)",
+  "  --skill <name>     With uninstall, select a managed Skill (repeatable)\n                     With bundle export/setup codex, include or select a Skill (repeatable)",
 );
+const server = option(
+  "  --server <name>    With mcp check, select a named server from the Agent configuration",
+);
+const from = option(
+  "  --from <path>      With mcp apply, read a validated probe spec without starting the server",
+);
+const remove = option("  --remove           With mcp apply, remove the selected managed MCP entry");
 const all = option(
   "  --all              With setup codex, select all catalog Skills (not an efficacy recommendation)",
 );
@@ -86,6 +93,12 @@ const starter = option(
 );
 const list = option("  --list             With setup codex, list choices without downloading");
 const noRules = option("  --no-rules         With setup codex, skip the global AGENTS.md block");
+const rules = option(
+  "  --rules            With uninstall, remove the managed AGENTS.md rules block",
+);
+const mcpExport = option(
+  "  --mcp <name>       With bundle export, include a credential-free JSON MCP declaration (repeatable)",
+);
 const minSessions = option(
   "  --min-sessions <n>  With bundle export, default selection needs this many sessions (default: 2)",
 );
@@ -93,11 +106,11 @@ const upstreamLock = option(
   "  --upstream-lock <path>  With bundle export, fetch listed GitHub Skills at pinned commits during setup",
 );
 const project = option(
-  "  --project           Install into the current project instead of user-level config",
+  "  --project           With install/uninstall/mcp selection, use current-project instead of user-level config",
 );
 const dryRun = option("  --dry-run           Print the plan without writing anything");
 const strict = option(
-  "  --strict            With install --dry-run, exit non-zero on conflicts (for CI gates)",
+  "  --strict            With doctor, exit 1 on FAIL findings; with install --dry-run, fail on conflicts",
 );
 const yes = option("  --yes               Non-interactive mode (CI-friendly)");
 const help = option("  --help, -h          Show help");
@@ -112,14 +125,17 @@ function page(usage: string, options: string, extra = ""): string {
 export const USAGE = `${TITLE}
 
 Usage:
-  skillfit doctor [--agent <id>]            Inspect current agent configuration health
+  skillfit doctor [--agent <id>] [--json] [--strict]  Inspect current agent configuration health
   skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
   skillfit eval <target-path> [options]     A/B-test a Skill, rules, or MCP setup against a bench
   skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
+  skillfit mcp check --agent <id> --server <name> [--project] [--dry-run]  Select a server from existing Agent configuration
+  skillfit mcp apply --agent <id> --server <name> (--from <probe.json> | --remove) [--project] [--dry-run] [--yes]  Apply one managed JSON MCP entry without contacting it
   skillfit bench <subcommand> [options]     Scaffold, inspect, edit and validate tasks
   skillfit install [options]                Inspect or apply a managed configuration profile
+  skillfit uninstall [options]              Remove selected managed Skills or AGENTS.md rules
   skillfit setup codex [options]            Select verified upstream Skills and global Codex guidance
-  skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile
+  skillfit bundle export <dir> [options]    Export Codex/Kimi rules, Skills and safe MCP declarations
 
 Run skillfit <command> --help for that command's options.
 ${common}
@@ -129,8 +145,8 @@ Docs: https://github.com/remote-controlled-man/skillfit
 
 const COMMAND_HELP: Record<string, string> = {
   doctor: page(
-    "  skillfit doctor [--agent <id>]            Inspect current agent configuration health",
-    agent,
+    "  skillfit doctor [--agent <id>] [--json] [--strict]  Inspect current agent configuration health",
+    [agent, json, strict].join("\n"),
   ),
   report: page(
     `  skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
@@ -167,8 +183,14 @@ const COMMAND_HELP: Record<string, string> = {
     ].join("\n"),
   ),
   mcp: page(
-    "  skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog",
-    "",
+    `  skillfit mcp check <spec.json>            Handshake with a stdio or Streamable HTTP MCP server and audit its tool catalog
+  skillfit mcp check --agent <id> --server <name> [--project] [--dry-run]  Select a server from existing Agent configuration
+  skillfit mcp apply --agent <id> --server <name> (--from <probe.json> | --remove) [--project] [--dry-run] [--yes]  Apply one managed JSON MCP entry without contacting it`,
+    [agent, server, project, from, remove, dryRun, yes].join("\n"),
+  ),
+  uninstall: page(
+    "  skillfit uninstall --agent <id> (--skill <name> ... | --rules) [--project] [--dry-run] [--yes]",
+    [agent, skill, rules, project, dryRun, yes].join("\n"),
   ),
   bench: page(
     `  skillfit bench init [dir] [--kind output|command]  Scaffold a text-output or code-editing case
@@ -245,8 +267,8 @@ bench add --from-commit options:
     [skill, all, starter, list, noRules, dryRun, yes].join("\n"),
   ),
   bundle: page(
-    "  skillfit bundle export <dir> [options]    Export used Codex skills and global guidance as a portable profile",
-    [skill, minSessions, upstreamLock, dryRun, yes].join("\n"),
+    "  skillfit bundle export <dir> [options]    Export Codex/Kimi rules, Skills and safe MCP declarations",
+    [agent, skill, mcpExport, minSessions, upstreamLock, dryRun, yes].join("\n"),
   ),
 };
 
@@ -283,6 +305,8 @@ export const CLI_OPTIONS = {
   profile: { type: "string" },
   "profile-path": { type: "string" },
   skill: { type: "string", multiple: true },
+  server: { type: "string" },
+  mcp: { type: "string", multiple: true },
   all: { type: "boolean", default: false },
   starter: { type: "boolean", default: false },
   list: { type: "boolean", default: false },
@@ -298,6 +322,8 @@ export const CLI_OPTIONS = {
   "prompt-file": { type: "string" },
   freeze: { type: "boolean", default: false },
   "from-commit": { type: "string" },
+  from: { type: "string" },
+  remove: { type: "boolean", default: false },
   include: { type: "string", multiple: true },
   "source-dir": { type: "string" },
   "verifier-cmd": { type: "string" },
@@ -314,6 +340,7 @@ export const CLI_OPTIONS = {
   json: { type: "boolean", default: false },
   "dry-run": { type: "boolean", default: false },
   project: { type: "boolean", default: false },
+  rules: { type: "boolean", default: false },
   strict: { type: "boolean", default: false },
   yes: { type: "boolean", default: false },
   help: { type: "boolean", short: "h", default: false },
