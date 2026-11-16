@@ -426,7 +426,9 @@ bench, selected task order and native/reviewed plans, and scope without its
 required sealed declarations fails rather than taking the historical recovery
 route. Legacy missing metadata stays unrecorded. Current-reader audit and the
 package's pinned `reproduce.mjs` each interpret saved evidence with their own
-runtime.
+runtime. Paired replay preserves each trial's `condition/trial-N` parent layout in
+its disposable copy, so a verifier that derives the arm from the run directory
+observes the same condition as during native execution.
 
 For [self-test controls](../guides/bench-authoring.md#test-known-controls), export a native
 suite directory, not its wrapper. It retains a null requested claim, mock identity,
