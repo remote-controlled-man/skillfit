@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.16.1 — Preserve native condition paths during replay (2026-11-16)
+
+- Offline paired replay now copies each delivery under its original
+  `condition/trial-N` parent, so command verifiers that derive the arm from the
+  run directory observe the same condition as native execution. Historical
+  records with separate legacy check-name mismatches remain unverified rather
+  than being rewritten or hidden.
+
 ## 0.16.0 — Personal agent configuration maintenance (2026-11-16)
 
 - Add versioned `doctor --json` output and opt-in `doctor --strict` health
