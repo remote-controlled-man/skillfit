@@ -401,6 +401,32 @@ test("component records improvements, regressions and failed-task spending, with
   assert.equal(readFileSync(join(f.root, "old/answer.txt"), "utf8"), "1");
 });
 
+test("paired replay preserves the condition directory used by command verifiers", async (t) => {
+  const f = setup(t);
+  for (const [id, expected] of [
+    ["fix", "2"],
+    ["regression", "1"],
+  ] as const)
+    writeFileSync(
+      join(f.root, "bench", id + ".mjs"),
+      `import{readFileSync}from'node:fs';import{join,basename,dirname}from'node:path';const condition=basename(dirname(process.argv[2]));const valid=['baseline','treatment'].includes(condition);const answer=readFileSync(join(process.argv[2],'answer.txt'),'utf8')===${JSON.stringify(expected)};const pass=answer&&valid;console.log(JSON.stringify({passed:pass,checks:[{name:'public answer',pass:answer},{name:'native condition directory',pass:valid}]}));process.exit(pass?0:1);\n`,
+    );
+  const preview = await runEvalComponent(f.requestPath, { ...f.options, dryRun: true });
+  assert.ok("plan" in preview);
+  const result = await runEvalComponent(f.requestPath, {
+    ...f.options,
+    dryRun: false,
+    expectedPlanSha256: preview.plan.sha256,
+  });
+  assert.equal(result.status, "completed");
+  assert.equal(result.evidence.verified, true);
+  const replay = await reportEvalComponent(f.runDir, { replay: true });
+  assert.ok("quality" in replay);
+  assert.equal(replay.evidence.verified, true, replay.evidence.reasons.join("\n"));
+  assert.equal(replay.evidence.replayedDeliveries, 4);
+  assert.equal(f.calls(), 4);
+});
+
 test("receipt tampering prevents eligibility and is surfaced without rewriting evidence", async (t) => {
   const f = await run(t);
   const path = join(f.runDir, "fix/treatment/trial-1/_result.json");

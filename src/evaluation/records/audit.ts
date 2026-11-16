@@ -467,14 +467,15 @@ export async function auditEvaluation(
             assert.ok(definition);
             const scratch = mkdtempSync(join(tmpdir(), "skillfit-eval-replay-"));
             try {
-              cpSync(join(root, task.id, arm, `trial-${trial}`), scratch, {
+              const replayDir = join(scratch, arm, `trial-${trial}`);
+              cpSync(join(root, task.id, arm, `trial-${trial}`), replayDir, {
                 recursive: true,
                 filter: (path) => basename(path) !== ".git",
               });
               const grade = await runVerifier(
                   bench.dir,
                   definition.verifier,
-                  scratch,
+                  replayDir,
                   definition.verifierTimeoutSeconds,
                 ),
                 summary = verdictFromOutput(grade.output);
