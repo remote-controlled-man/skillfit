@@ -24,7 +24,7 @@ function fixture(t: TestContext) {
   const cwd = join(root, "project");
   mkdirSync(home, { recursive: true });
   mkdirSync(cwd, { recursive: true });
-  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, PATH: "" };
+  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, USERPROFILE: home, PATH: "" };
   delete env.CODEX_HOME;
   delete env.KIMI_CODE_HOME;
   return { root, home, cwd, env };

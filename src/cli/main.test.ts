@@ -459,7 +459,7 @@ test("doctor exposes the same controlled health report as versioned JSON without
   const mcpPath = join(home, ".kimi-code", "mcp.json");
   const mcpBytes = '{"mcpServers":{"docs":{"command":"fake-docs"}}}\n';
   writeFileSync(mcpPath, mcpBytes);
-  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, PATH: "" };
+  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, USERPROFILE: home, PATH: "" };
   delete env.CODEX_HOME;
   delete env.KIMI_CODE_HOME;
   const args = [CLI, "doctor", "--agent", "kimi-code"];
@@ -492,7 +492,7 @@ test("doctor strict mode turns a controlled FAIL finding into exit 1 without cha
   mkdirSync(cwd, { recursive: true });
   const mcpPath = join(home, ".kimi-code", "mcp.json");
   writeFileSync(mcpPath, '{"mcpServers":');
-  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, PATH: "" };
+  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, USERPROFILE: home, PATH: "" };
   delete env.CODEX_HOME;
   delete env.KIMI_CODE_HOME;
   const args = [CLI, "doctor", "--agent", "kimi-code", "--json"];
