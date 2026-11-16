@@ -265,6 +265,202 @@ test("exports and installs Kimi rules, Skills and safe MCP through public instal
   assert.equal(await fs.readFile(lockPath, "utf8"), originalLock);
 });
 
+test("export copies approved Skill symlinks as ordinary files and keeps the default refusal", async (t) => {
+  const { root, home } = await fixture(t);
+  const central = path.join(root, "central-skills");
+  const source = path.join(central, "example");
+  await fs.mkdir(path.join(source, "docs"), { recursive: true });
+  await fs.writeFile(
+    path.join(source, "SKILL.md"),
+    "---\nname: example\ndescription: Shared Skill fixture.\n---\nUse the shared Skill.\n",
+  );
+  await fs.writeFile(path.join(source, "docs", "guide.md"), "Shared guide\n");
+  await fs.writeFile(path.join(source, "license.txt"), "Fixture license\n");
+  await fs.symlink(path.join(source, "docs"), path.join(source, "references"), "dir");
+  await fs.symlink(path.join(source, "license.txt"), path.join(source, "LICENSE"), "file");
+  const linkRoot = path.join(home, ".kimi-code", "skills");
+  await fs.mkdir(linkRoot, { recursive: true });
+  await fs.symlink(source, path.join(linkRoot, "example"), "dir");
+  const options = {
+    agent: "kimi-code",
+    homeDir: home,
+    env: { PATH: "" },
+    skillNames: ["example"],
+    log: () => {},
+  };
+  const refusedOutput = path.join(root, "default-refusal");
+  await assert.rejects(
+    runBundleExport({ ...options, outputDir: refusedOutput, dryRun: true }),
+    /Symlinked skill cannot be exported safely/,
+  );
+  await assert.rejects(fs.stat(refusedOutput), { code: "ENOENT" });
+  const outputDir = path.join(root, "approved-export");
+  await runBundleExport({
+    ...options,
+    outputDir,
+    allowedSkillLinkRoots: [central],
+    yes: true,
+  });
+  for (const [relative, expected] of [
+    [
+      "SKILL.md",
+      "---\nname: example\ndescription: Shared Skill fixture.\n---\nUse the shared Skill.\n",
+    ],
+    ["references/guide.md", "Shared guide\n"],
+    ["LICENSE", "Fixture license\n"],
+  ] as const) {
+    const target = path.join(outputDir, "skills", "example", relative);
+    assert.equal((await fs.lstat(target)).isSymbolicLink(), false);
+    assert.equal(await fs.readFile(target, "utf8"), expected);
+  }
+});
+
+test("CLI previews an explicitly approved Skill symlink without creating a bundle", async (t) => {
+  const { root, home } = await fixture(t);
+  const central = path.join(root, "central-skills");
+  const source = path.join(central, "example");
+  await fs.mkdir(source, { recursive: true });
+  await fs.writeFile(
+    path.join(source, "SKILL.md"),
+    "---\nname: example\ndescription: Shared Skill fixture.\n---\nUse it.\n",
+  );
+  const linkRoot = path.join(home, ".kimi-code", "skills");
+  await fs.mkdir(linkRoot, { recursive: true });
+  await fs.symlink(source, path.join(linkRoot, "example"), "dir");
+  const outputDir = path.join(root, "approved-cli");
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(process.cwd(), "dist/cli/main.js"),
+      "bundle",
+      "export",
+      outputDir,
+      "--agent",
+      "kimi-code",
+      "--skill",
+      "example",
+      "--allow-symlink-root",
+      central,
+      "--dry-run",
+    ],
+    { cwd: root, env: { HOME: home, USERPROFILE: home, PATH: "" }, encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Allowed Skill symlink roots/);
+  assert.match(result.stdout, /Dry run: nothing was written/);
+  await assert.rejects(fs.stat(outputDir), { code: "ENOENT" });
+});
+
+test("export rejects symlink escapes, cycles and overbroad roots before output", async (t) => {
+  async function linked(t: test.TestContext) {
+    const { root, home } = await fixture(t);
+    const central = path.join(root, "central-skills");
+    const source = path.join(central, "example");
+    await fs.mkdir(source, { recursive: true });
+    await fs.writeFile(
+      path.join(source, "SKILL.md"),
+      "---\nname: example\ndescription: Shared Skill fixture.\n---\nUse it.\n",
+    );
+    const linkRoot = path.join(home, ".kimi-code", "skills");
+    await fs.mkdir(linkRoot, { recursive: true });
+    await fs.symlink(source, path.join(linkRoot, "example"), "dir");
+    return { root, home, central, source };
+  }
+  async function assertRefused(options: Parameters<typeof runBundleExport>[0], pattern: RegExp) {
+    await assert.rejects(runBundleExport(options), pattern);
+    await assert.rejects(fs.stat(options.outputDir), { code: "ENOENT" });
+  }
+  await t.test("root target is outside the approved root", async (t) => {
+    const { root, home, central } = await linked(t);
+    const other = path.join(root, "other-root");
+    await fs.mkdir(other);
+    await assertRefused(
+      {
+        outputDir: path.join(root, "outside"),
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: ["example"],
+        allowedSkillLinkRoots: [other],
+        dryRun: true,
+        log: () => {},
+      },
+      /outside --allow-symlink-root/,
+    );
+    assert.equal(central.includes(other), false);
+  });
+  await t.test("nested link escapes the selected Skill", async (t) => {
+    const { root, home, central, source } = await linked(t);
+    await fs.writeFile(path.join(root, "private.txt"), "not exportable\n");
+    await fs.symlink(path.join(root, "private.txt"), path.join(source, "escape"), "file");
+    await assertRefused(
+      {
+        outputDir: path.join(root, "nested-escape"),
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: ["example"],
+        allowedSkillLinkRoots: [central],
+        dryRun: true,
+        log: () => {},
+      },
+      /escapes the selected Skill/,
+    );
+  });
+  await t.test("nested directory link cycles", async (t) => {
+    const { root, home, central, source } = await linked(t);
+    await fs.symlink(source, path.join(source, "loop"), "dir");
+    await assertRefused(
+      {
+        outputDir: path.join(root, "cycle"),
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: ["example"],
+        allowedSkillLinkRoots: [central],
+        dryRun: true,
+        log: () => {},
+      },
+      /cycle/,
+    );
+  });
+  await t.test("home and filesystem roots are too broad", async (t) => {
+    const { root, home, central } = await linked(t);
+    for (const [index, allowed] of [home, path.parse(root).root].entries()) {
+      await assertRefused(
+        {
+          outputDir: path.join(root, `broad-${index}`),
+          agent: "kimi-code",
+          homeDir: home,
+          env: { PATH: "" },
+          skillNames: ["example"],
+          allowedSkillLinkRoots: [allowed],
+          dryRun: true,
+          log: () => {},
+        },
+        /specific Skill source directory/,
+      );
+    }
+    assert.ok(central);
+  });
+  await t.test("an approved root must be a directory", async (t) => {
+    const { root, home, source } = await linked(t);
+    await assertRefused(
+      {
+        outputDir: path.join(root, "file-root"),
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: ["example"],
+        allowedSkillLinkRoots: [path.join(source, "SKILL.md")],
+        dryRun: true,
+        log: () => {},
+      },
+      /not a directory/,
+    );
+  });
+});
+
 test("Kimi export uses shared rules and refuses ambiguous user-level sources", async (t) => {
   const { root, home } = await fixture(t);
   await fs.mkdir(path.join(home, ".agents"), { recursive: true });
@@ -526,6 +722,20 @@ test("export recognizes flow-style and quoted invocation policies", async (t) =>
     const rules = await fs.readFile(path.join(outputDir, "rules", "global.md"), "utf8");
     assert.match(rules, /User-invoked only: `explicit-skill`/);
   }
+});
+
+test("default export dry-run does not require the home to exist", async (t) => {
+  const { root } = await fixture(t);
+  const outputDir = path.join(root, "empty-export");
+  await runBundleExport({
+    outputDir,
+    homeDir: path.join(root, "missing-home"),
+    env: { PATH: "" },
+    skillNames: [],
+    dryRun: true,
+    log: () => {},
+  });
+  await assert.rejects(fs.stat(outputDir), { code: "ENOENT" });
 });
 
 test("export dry-run writes nothing and refuses an existing destination", async (t) => {

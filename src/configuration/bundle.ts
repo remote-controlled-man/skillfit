@@ -21,6 +21,7 @@ export interface BundleExportOptions {
   homeDir?: string;
   env?: NodeJS.ProcessEnv;
   skillNames?: string[];
+  allowedSkillLinkRoots?: string[];
   mcpServerNames?: string[];
   /** Default selection uses skills seen in at least two distinct source-Agent sessions. */
   minSessions?: number;
@@ -152,19 +153,95 @@ async function sha256(file: string): Promise<string> {
     .digest("hex");
 }
 
-async function locateSkill(dirs: string[], name: string): Promise<string | null> {
+function pathInside(root: string, target: string): boolean {
+  const relative = path.relative(root, target);
+  return (
+    relative === "" ||
+    (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative))
+  );
+}
+
+async function approvedSkillLinkRoots(inputs: string[], homeDir: string): Promise<string[]> {
+  const roots = new Set<string>();
+  if (inputs.length === 0) return [];
+  const canonicalHome = await fs.realpath(path.resolve(homeDir));
+  for (const input of inputs) {
+    const root = await fs.realpath(path.resolve(input));
+    if (!(await fs.stat(root)).isDirectory())
+      throw new Error(`--allow-symlink-root is not a directory: ${root}`);
+    if (root === path.parse(root).root || root === canonicalHome)
+      throw new Error(
+        "--allow-symlink-root must name a specific Skill source directory, not a home or filesystem root",
+      );
+    roots.add(root);
+  }
+  return [...roots];
+}
+
+function assertApprovedLinkTarget(target: string, roots: string[]): void {
+  if (!roots.some((root) => pathInside(root, target)))
+    throw new Error(`Skill symlink target is outside --allow-symlink-root: ${target}`);
+}
+
+async function locateSkill(
+  dirs: string[],
+  name: string,
+  allowedRoots: string[],
+): Promise<string | null> {
   for (const dir of dirs) {
     const src = path.join(dir, name);
+    let stat;
     try {
-      if ((await fs.lstat(src)).isSymbolicLink()) {
-        throw new Error(`Symlinked skill cannot be exported safely: ${src}`);
-      }
-      return src;
+      stat = await fs.lstat(src);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw error;
     }
+    if (stat.isSymbolicLink() && allowedRoots.length === 0)
+      throw new Error(`Symlinked skill cannot be exported safely: ${src}`);
+    const target = await fs.realpath(src);
+    if (stat.isSymbolicLink()) assertApprovedLinkTarget(target, allowedRoots);
+    if (!(await fs.stat(target)).isDirectory())
+      throw new Error(`Skill source is not a directory: ${target}`);
+    return target;
   }
   return null;
+}
+
+async function walkSkillFiles(root: string, allowedRoots: string[]): Promise<Map<string, string>> {
+  const files = new Map<string, string>();
+  const visit = async (dir: string, prefix: string, ancestors: ReadonlySet<string>) => {
+    const realDir = await fs.realpath(dir);
+    if (!pathInside(root, realDir)) throw new Error(`Skill directory escapes its root: ${realDir}`);
+    if (ancestors.has(realDir)) throw new Error(`Skill symlink cycle detected at ${realDir}`);
+    const nextAncestors = new Set(ancestors).add(realDir);
+    for (const entry of await fs.readdir(realDir, { withFileTypes: true })) {
+      const absolute = path.join(realDir, entry.name);
+      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isSymbolicLink()) {
+        if (allowedRoots.length === 0)
+          throw new Error(`Symlink in skill cannot be exported safely: ${absolute}`);
+        const target = await fs.realpath(absolute);
+        if (!pathInside(root, target))
+          throw new Error(`Skill symlink escapes the selected Skill: ${target}`);
+        assertApprovedLinkTarget(target, allowedRoots);
+        const stat = await fs.stat(target);
+        if (stat.isDirectory()) await visit(target, relative, nextAncestors);
+        else if (stat.isFile()) files.set(relative, target);
+        else throw new Error(`Unsupported file in Skill: ${target}`);
+      } else if (entry.isDirectory()) {
+        await visit(absolute, relative, nextAncestors);
+      } else if (entry.isFile()) {
+        const target = await fs.realpath(absolute);
+        if (!pathInside(root, target)) throw new Error(`Skill file escapes its root: ${target}`);
+        files.set(relative, target);
+      } else {
+        throw new Error(`Unsupported file in Skill: ${absolute}`);
+      }
+    }
+  };
+  await visit(root, "", new Set());
+  return new Map([...files].sort(([a], [b]) => a.localeCompare(b)));
 }
 
 async function verifyUpstreamExport(
@@ -172,8 +249,7 @@ async function verifyUpstreamExport(
   manifest: object,
   lock: object,
   rules: string,
-  sourceFiles: Map<string, string[]>,
-  skillSources: Map<string, string>,
+  sourceFiles: Map<string, Map<string, string>>,
 ): Promise<void> {
   const actualManifest = JSON.parse(
     await fs.readFile(path.join(dir, "profile.json"), "utf8"),
@@ -194,13 +270,8 @@ async function verifyUpstreamExport(
     throw new Error("Portable export verification failed: setup script is missing");
   }
   for (const [name, files] of sourceFiles) {
-    for (const rel of files) {
-      const source = skillSources.get(name);
-      if (
-        !source ||
-        (await sha256(path.join(dir, "skills", name, rel))) !==
-          (await sha256(path.join(source, rel)))
-      ) {
+    for (const [rel, source] of files) {
+      if ((await sha256(path.join(dir, "skills", name, rel))) !== (await sha256(source))) {
         throw new Error(`Portable export verification failed for ${name}/${rel}`);
       }
     }
@@ -233,6 +304,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     throw new Error("Bundle directory name must use lowercase letters, digits and dashes");
   }
   const skillDirs = userSkillDirs(sourceAgent.id, homeDir, env);
+  const linkRoots = await approvedSkillLinkRoots(opts.allowedSkillLinkRoots ?? [], homeDir);
   const upstreamLock = opts.upstreamLockPath
     ? await readUpstreamLock(path.resolve(opts.upstreamLockPath))
     : null;
@@ -258,8 +330,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
   const names: string[] = [];
   const explicitOnly: string[] = [];
   const skipped: string[] = [];
-  const sourceFiles = new Map<string, string[]>();
-  const skillSources = new Map<string, string>();
+  const sourceFiles = new Map<string, Map<string, string>>();
   const upstreamByName = new Map((upstreamLock?.skills ?? []).map((skill) => [skill.name, skill]));
   const selectedUpstream: UpstreamSkill[] = [];
   for (const name of candidates) {
@@ -271,7 +342,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
       if (remote.explicitOnly) explicitOnly.push(name);
       continue;
     }
-    const src = await locateSkill(skillDirs, name);
+    const src = await locateSkill(skillDirs, name, linkRoots);
     if (src === null) {
       if (opts.skillNames === undefined && !upstreamLock) {
         skipped.push(name);
@@ -279,14 +350,15 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
       }
       throw new Error(`Skill "${name}" is not installed in ${skillDirs.join(", ")}`);
     }
-    const files = (await walkFiles(src)).filter((file) => !isInstallerArtifact(file));
+    const files = new Map(
+      [...(await walkSkillFiles(src, linkRoots))].filter(([file]) => !isInstallerArtifact(file)),
+    );
     const manifest = await readOptional(path.join(src, "SKILL.md"));
     const frontmatter = manifest === null ? null : parseFrontmatter(manifest);
     if (frontmatter?.name !== name || !frontmatter.description) {
       throw new Error(`Skill "${name}" has an invalid SKILL.md`);
     }
     names.push(name);
-    skillSources.set(name, src);
     const codexMetadata = await readOptional(path.join(src, "agents", "openai.yaml"));
     if (isImplicitInvocationDisabled(codexMetadata)) explicitOnly.push(name);
     sourceFiles.set(name, files);
@@ -321,6 +393,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
     `Global rules source: ${sourceRules === null ? "generated defaults" : useOverride ? activeOverride : rulesFile}`,
   );
   log(`Skills (${names.length}): ${names.join(", ") || "(none)"}`);
+  if (linkRoots.length > 0) log(`Allowed Skill symlink roots: ${linkRoots.join(", ")}`);
   if (mcpSpecs.length > 0)
     log(`MCP declarations (${mcpSpecs.length}): ${mcpSpecs.map((entry) => entry.name).join(", ")}`);
   if (explicitOnly.length > 0)
@@ -434,10 +507,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
         throw new Error(`Runtime export verification failed for ${rel}`);
     }
     for (const [name, files] of sourceFiles) {
-      for (const rel of files) {
-        const root = skillSources.get(name);
-        if (!root) throw new Error(`Export is missing the source directory for ${name}`);
-        const src = path.join(root, rel);
+      for (const [rel, src] of files) {
         const dst = path.join(stage, "skills", name, rel);
         await fs.mkdir(path.dirname(dst), { recursive: true });
         await fs.copyFile(src, dst);
@@ -445,8 +515,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
           throw new Error(`Export verification failed for ${name}/${rel}`);
       }
     }
-    if (upstreamLock)
-      await verifyUpstreamExport(stage, manifest, exportedLock, rules, sourceFiles, skillSources);
+    if (upstreamLock) await verifyUpstreamExport(stage, manifest, exportedLock, rules, sourceFiles);
     else await loadProfile(stageRoot, profileName);
     await fs.rename(stage, outputDir);
   } catch (error) {
@@ -455,7 +524,7 @@ export async function runBundleExport(opts: BundleExportOptions): Promise<void> 
   }
   await fs.rmdir(stageRoot);
   if (upstreamLock)
-    await verifyUpstreamExport(outputDir, manifest, exportedLock, rules, sourceFiles, skillSources);
+    await verifyUpstreamExport(outputDir, manifest, exportedLock, rules, sourceFiles);
   else await loadProfile(path.dirname(outputDir), profileName);
   log(
     upstreamLock

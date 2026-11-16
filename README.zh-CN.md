@@ -321,9 +321,10 @@ node dist/cli.js bundle export ./personal-codex --yes
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 node dist/cli.js bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
+node dist/cli.js bundle export ./personal-kimi-linked --agent kimi-code --skill example --allow-symlink-root "$HOME/.local/share/my-skills" --dry-run
 ```
 
-重复 `--mcp` 可选择不含凭据或本机路径的 JSON 声明；原生 Codex TOML 仍不支持。这是同一 Agent 的跨机器迁移，不是 Agent 格式互转。完整 65 个 Skill 的上游目录可使用 `--upstream-lock`；其他选项参见[迁移配置](docs/guides/selectable-codex.md)和[源审计](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md)。
+重复 `--mcp` 可选择不含凭据或本机路径的 JSON 声明；原生 Codex TOML 仍不支持。symlink Skill 默认仍拒绝。只对你批准的精确源目录重复使用 `--allow-symlink-root`；链接必须同时位于所选 Skill 和批准的根目录内，导出结果是普通文件而不是链接。这是同一 Agent 的跨机器迁移，不是 Agent 格式互转。完整 65 个 Skill 的上游目录可使用 `--upstream-lock`；其他选项参见[迁移配置](docs/guides/selectable-codex.md)和[源审计](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md)。
 
 ## 九个命令
 

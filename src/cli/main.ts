@@ -504,7 +504,7 @@ async function main(): Promise<void> {
     case "bundle": {
       if (positionals[1] !== "export" || !positionals[2]) {
         console.error(
-          "Usage: skillfit bundle export <dir> [--agent codex|kimi-code] [--skill <name> ...] [--mcp <name> ...] [--upstream-lock <path>] [--min-sessions <n>] [--dry-run] [--yes]",
+          "Usage: skillfit bundle export <dir> [--agent codex|kimi-code] [--skill <name> ...] [--allow-symlink-root <dir> ...] [--mcp <name> ...] [--upstream-lock <path>] [--min-sessions <n>] [--dry-run] [--yes]",
         );
         process.exitCode = 2;
         return;
@@ -513,6 +513,7 @@ async function main(): Promise<void> {
         outputDir: positionals[2],
         agent: values.agent,
         skillNames: values.skill,
+        allowedSkillLinkRoots: values["allow-symlink-root"],
         mcpServerNames: values.mcp,
         minSessions:
           values["min-sessions"] === undefined ? undefined : Number(values["min-sessions"]),

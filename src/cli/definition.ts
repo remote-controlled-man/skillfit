@@ -96,6 +96,9 @@ const noRules = option("  --no-rules         With setup codex, skip the global A
 const rules = option(
   "  --rules            With uninstall, remove the managed AGENTS.md rules block",
 );
+const allowSymlinkRoot = option(
+  "  --allow-symlink-root <dir>  With bundle export, approve a specific Skill symlink source root (repeatable)",
+);
 const mcpExport = option(
   "  --mcp <name>       With bundle export, include a credential-free JSON MCP declaration (repeatable)",
 );
@@ -268,7 +271,7 @@ bench add --from-commit options:
   ),
   bundle: page(
     "  skillfit bundle export <dir> [options]    Export Codex/Kimi rules, Skills and safe MCP declarations",
-    [agent, skill, mcpExport, minSessions, upstreamLock, dryRun, yes].join("\n"),
+    [agent, skill, allowSymlinkRoot, mcpExport, minSessions, upstreamLock, dryRun, yes].join("\n"),
   ),
 };
 
@@ -305,6 +308,7 @@ export const CLI_OPTIONS = {
   profile: { type: "string" },
   "profile-path": { type: "string" },
   skill: { type: "string", multiple: true },
+  "allow-symlink-root": { type: "string", multiple: true },
   server: { type: "string" },
   mcp: { type: "string", multiple: true },
   all: { type: "boolean", default: false },

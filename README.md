@@ -328,9 +328,10 @@ node dist/cli.js bundle export ./personal-codex --yes
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
 node dist/cli.js bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
+node dist/cli.js bundle export ./personal-kimi-linked --agent kimi-code --skill example --allow-symlink-root "$HOME/.local/share/my-skills" --dry-run
 ```
 
-Repeated `--mcp` selects JSON declarations without credentials or machine-local paths; native Codex TOML remains unsupported. This migrates between machines for the same Agent, not between Agent formats. For options, including the full 65-Skill upstream catalog via `--upstream-lock`, see [portable setup](docs/guides/selectable-codex.md) and the [source audit](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md).
+Repeated `--mcp` selects JSON declarations without credentials or machine-local paths; native Codex TOML remains unsupported. Symlinked Skills stay refused by default. Repeat `--allow-symlink-root` only for precise source directories you approve; links must remain inside the selected Skill and an approved root, and exports contain ordinary files rather than links. This migrates between machines for the same Agent, not between Agent formats. For options, including the full 65-Skill upstream catalog via `--upstream-lock`, see [portable setup](docs/guides/selectable-codex.md) and the [source audit](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md).
 
 ## The nine commands
 
