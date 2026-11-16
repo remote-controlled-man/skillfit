@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## 0.16.0 — Personal agent configuration maintenance (2026-11-16)
+
+- Add versioned `doctor --json` output and opt-in `doctor --strict` health
+  failures. Read-only reports distinguish native Skill events from resource
+  reads and preview bounded evaluations before any model spending.
+- Select real JSON MCP entries for redacted checks, and add `mcp apply` for
+  managed JSON creation, update and removal with backups, verification and
+  rollback. Native Codex TOML remains explicitly unsupported.
+- Add precise managed Skill/rules uninstall with drift checks and retained
+  recovery copies; usage counts never trigger automatic maintenance.
+- Extend portable bundles with explicit Kimi selection, existing Codex defaults,
+  provenance retention and restricted JSON MCP declarations. Migration stays
+  within the same Agent and does not transfer credential-bearing entries.
+- Add repeatable `bundle export --allow-symlink-root` for deliberately shared
+  Skills. Canonical targets and nested links must stay inside approved roots,
+  cycles and escapes fail, and exports contain ordinary files.
+- Keep all runtime dependencies at zero and cover the new behavior with offline
+  tests and real-source temporary export/install validation.
+
 ## 0.15.4 — Correct review grading and failure diagnostics (2026-11-05)
 
 - Fresh Codex profiles can initialize their managed `.system` Skills between
