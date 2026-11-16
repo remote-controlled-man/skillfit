@@ -15,6 +15,32 @@ export interface RunDoctorArgs {
   agent?: string;
   dryRun?: boolean;
   yes?: boolean;
+  json?: boolean;
+  strict?: boolean;
+}
+
+interface DoctorSummary {
+  agents: { detected: number; total: number };
+  checks: { total: number; PASS: number; WARN: number; FAIL: number; INFO: number };
+}
+
+function summarizeDoctorReport(report: DoctorReport): DoctorSummary {
+  const checks = { total: 0, PASS: 0, WARN: 0, FAIL: 0, INFO: 0 };
+  for (const agent of report.health) {
+    for (const section of agent.sections) {
+      for (const item of section.checks) {
+        checks[item.status]++;
+        checks.total++;
+      }
+    }
+  }
+  return {
+    agents: {
+      detected: report.detection.filter((entry) => entry.detected).length,
+      total: report.detection.length,
+    },
+    checks,
+  };
 }
 
 export function formatDoctorReport(report: DoctorReport): string {
@@ -51,35 +77,40 @@ export function formatDoctorReport(report: DoctorReport): string {
       }
     }
   }
-  const counts: Record<CheckStatus, number> = { PASS: 0, WARN: 0, FAIL: 0, INFO: 0 };
-  let total = 0;
-  for (const agent of report.health) {
-    for (const section of agent.sections) {
-      for (const item of section.checks) {
-        counts[item.status]++;
-        total++;
-      }
-    }
-  }
-  const detected = report.detection.filter((entry) => entry.detected).length;
+  const summary = summarizeDoctorReport(report);
   lines.push(
     "",
     "Summary",
     "=======",
-    `${detected}/${report.detection.length} agents detected — ${total} checks: ${counts.PASS} PASS, ${counts.WARN} WARN, ${counts.FAIL} FAIL, ${counts.INFO} INFO`,
-    "Findings are advisory: skillfit doctor is read-only and always exits 0.",
+    `${summary.agents.detected}/${summary.agents.total} agents detected — ${summary.checks.total} checks: ${summary.checks.PASS} PASS, ${summary.checks.WARN} WARN, ${summary.checks.FAIL} FAIL, ${summary.checks.INFO} INFO`,
+    "Findings are advisory by default; skillfit doctor is read-only. Use --strict to exit 1 on FAIL.",
   );
   return lines.join("\n");
+}
+
+export function formatDoctorReportJson(report: DoctorReport): string {
+  return JSON.stringify(
+    {
+      schemaVersion: 1,
+      kind: "skillfit.doctor-report",
+      ...report,
+      summary: summarizeDoctorReport(report),
+    },
+    null,
+    2,
+  );
 }
 
 export async function runDoctor(args: RunDoctorArgs = {}): Promise<void> {
   if (args.agent !== undefined && !agentIds().includes(args.agent)) {
     console.error(`Unknown agent "${args.agent}". Known agents: ${agentIds().join(", ")}`);
-    // A usage error, not a finding. Findings are advisory and always exit 0, but an unrecognised
+    // A usage error, not a finding. Findings are advisory by default, but an unrecognised
     // --agent means the health check never ran, and exiting 0 there lets CI read a typo as a clean
     // bill of health. 2 is this CLI's usage-error code.
     process.exitCode = 2;
     return;
   }
-  console.log(formatDoctorReport(collectDoctorReport({ agent: args.agent })));
+  const report = collectDoctorReport({ agent: args.agent });
+  if (args.strict && summarizeDoctorReport(report).checks.FAIL > 0) process.exitCode = 1;
+  console.log(args.json ? formatDoctorReportJson(report) : formatDoctorReport(report));
 }

@@ -158,6 +158,489 @@ test("exports a portable Codex profile and installs it into a fresh home", async
   );
 });
 
+test("exports and installs Kimi rules, Skills and safe MCP through public installers", async (t) => {
+  const { root, home, targetHome } = await fixture(t);
+  const skill = path.join(home, ".kimi-code", "skills", "example");
+  await fs.mkdir(skill, { recursive: true });
+  await fs.writeFile(
+    path.join(skill, "SKILL.md"),
+    "---\nname: example\ndescription: Handle Kimi examples.\n---\nDo the example.\n",
+  );
+  await fs.writeFile(path.join(skill, "LICENSE"), "Fixture license\n");
+  await fs.mkdir(path.join(home, ".kimi-code"), { recursive: true });
+  await fs.writeFile(path.join(home, ".kimi-code", "AGENTS.md"), "# Kimi personal rules\n");
+  await fs.writeFile(
+    path.join(home, ".kimi-code", "mcp.json"),
+    `${JSON.stringify({
+      mcpServers: {
+        docs: { type: "stdio", command: "must-not-start" },
+        web: { type: "http", url: "https://example.test/mcp" },
+      },
+    })}\n`,
+  );
+  const upstreamLock = path.join(root, "sources.json");
+  await fs.writeFile(
+    upstreamLock,
+    JSON.stringify({ version: 1, skills: [], localSkills: ["example"] }),
+  );
+  const outputDir = path.join(root, "personal-kimi");
+  const exported = spawnSync(
+    process.execPath,
+    [
+      path.join(process.cwd(), "dist/cli/main.js"),
+      "bundle",
+      "export",
+      outputDir,
+      "--agent",
+      "kimi-code",
+      "--skill",
+      "example",
+      "--upstream-lock",
+      upstreamLock,
+      "--mcp",
+      "docs",
+      "--mcp",
+      "web",
+      "--yes",
+    ],
+    { cwd: root, env: { HOME: home, USERPROFILE: home, PATH: "" }, encoding: "utf8" },
+  );
+  assert.equal(exported.status, 0, exported.stderr);
+  const manifest = JSON.parse(await fs.readFile(path.join(outputDir, "profile.json"), "utf8"));
+  assert.deepEqual(manifest.agents, ["kimi-code"]);
+  assert.deepEqual(
+    manifest.mcp.map((entry: { name: string }) => entry.name),
+    ["docs", "web"],
+  );
+  assert.equal(
+    await fs.readFile(path.join(outputDir, "skills", "example", "LICENSE"), "utf8"),
+    "Fixture license\n",
+  );
+  const preview = spawnSync(process.execPath, [path.join(outputDir, "setup.mjs"), "--dry-run"], {
+    cwd: root,
+    env: { HOME: targetHome, USERPROFILE: targetHome, PATH: "" },
+    encoding: "utf8",
+  });
+  assert.equal(preview.status, 0, preview.stderr);
+  assert.match(preview.stdout, /MCP "docs"/);
+  assert.match(preview.stdout, /MCP "web"/);
+  assert.deepEqual(await fs.readdir(targetHome), []);
+  const targetConfig = path.join(targetHome, ".kimi-code", "mcp.json");
+  await fs.mkdir(path.dirname(targetConfig), { recursive: true });
+  await fs.writeFile(
+    targetConfig,
+    '{"mcpServers":{"keep":{"command":"user-owned"}},"other":{"keep":true}}\n',
+  );
+  const targetEnv = { HOME: targetHome, USERPROFILE: targetHome, PATH: "" };
+  const installed = spawnSync(process.execPath, [path.join(outputDir, "setup.mjs"), "--yes"], {
+    cwd: root,
+    env: targetEnv,
+    encoding: "utf8",
+  });
+  assert.equal(installed.status, 0, installed.stderr);
+  assert.match(
+    await fs.readFile(path.join(targetHome, ".kimi-code", "AGENTS.md"), "utf8"),
+    /Kimi personal rules/,
+  );
+  assert.equal(
+    await fs.readFile(path.join(targetHome, ".agents", "skills", "example", "LICENSE"), "utf8"),
+    "Fixture license\n",
+  );
+  const targetMcp = JSON.parse(await fs.readFile(targetConfig, "utf8"));
+  assert.equal(targetMcp.mcpServers.docs.command, "must-not-start");
+  assert.equal(targetMcp.mcpServers.docs.cwd, undefined);
+  assert.equal(targetMcp.mcpServers.web.url, "https://example.test/mcp");
+  assert.deepEqual(targetMcp.mcpServers.keep, { command: "user-owned" });
+  assert.deepEqual(targetMcp.other, { keep: true });
+  const lockPath = path.join(targetHome, "skillfit.lock.json");
+  const originalLock = await fs.readFile(lockPath, "utf8");
+  assert.equal(JSON.parse(originalLock).entries["kimi-code:mcp:docs"].kind, "mcp");
+  const repeated = spawnSync(process.execPath, [path.join(outputDir, "setup.mjs"), "--yes"], {
+    cwd: root,
+    env: targetEnv,
+    encoding: "utf8",
+  });
+  assert.equal(repeated.status, 0, repeated.stderr);
+  assert.match(repeated.stdout, /Everything is up to date/);
+  assert.equal(await fs.readFile(lockPath, "utf8"), originalLock);
+});
+
+test("export copies approved Skill symlinks as ordinary files and keeps the default refusal", async (t) => {
+  const { root, home } = await fixture(t);
+  const central = path.join(root, "central-skills");
+  const source = path.join(central, "example");
+  await fs.mkdir(path.join(source, "docs"), { recursive: true });
+  await fs.writeFile(
+    path.join(source, "SKILL.md"),
+    "---\nname: example\ndescription: Shared Skill fixture.\n---\nUse the shared Skill.\n",
+  );
+  await fs.writeFile(path.join(source, "docs", "guide.md"), "Shared guide\n");
+  await fs.writeFile(path.join(source, "license.txt"), "Fixture license\n");
+  await fs.symlink(path.join(source, "docs"), path.join(source, "references"), "dir");
+  await fs.symlink(path.join(source, "license.txt"), path.join(source, "LICENSE"), "file");
+  const linkRoot = path.join(home, ".kimi-code", "skills");
+  await fs.mkdir(linkRoot, { recursive: true });
+  await fs.symlink(source, path.join(linkRoot, "example"), "dir");
+  const options = {
+    agent: "kimi-code",
+    homeDir: home,
+    env: { PATH: "" },
+    skillNames: ["example"],
+    log: () => {},
+  };
+  const refusedOutput = path.join(root, "default-refusal");
+  await assert.rejects(
+    runBundleExport({ ...options, outputDir: refusedOutput, dryRun: true }),
+    /Symlinked skill cannot be exported safely/,
+  );
+  await assert.rejects(fs.stat(refusedOutput), { code: "ENOENT" });
+  const outputDir = path.join(root, "approved-export");
+  await runBundleExport({
+    ...options,
+    outputDir,
+    allowedSkillLinkRoots: [central],
+    yes: true,
+  });
+  for (const [relative, expected] of [
+    [
+      "SKILL.md",
+      "---\nname: example\ndescription: Shared Skill fixture.\n---\nUse the shared Skill.\n",
+    ],
+    ["references/guide.md", "Shared guide\n"],
+    ["LICENSE", "Fixture license\n"],
+  ] as const) {
+    const target = path.join(outputDir, "skills", "example", relative);
+    assert.equal((await fs.lstat(target)).isSymbolicLink(), false);
+    assert.equal(await fs.readFile(target, "utf8"), expected);
+  }
+});
+
+test("CLI previews an explicitly approved Skill symlink without creating a bundle", async (t) => {
+  const { root, home } = await fixture(t);
+  const central = path.join(root, "central-skills");
+  const source = path.join(central, "example");
+  await fs.mkdir(source, { recursive: true });
+  await fs.writeFile(
+    path.join(source, "SKILL.md"),
+    "---\nname: example\ndescription: Shared Skill fixture.\n---\nUse it.\n",
+  );
+  const linkRoot = path.join(home, ".kimi-code", "skills");
+  await fs.mkdir(linkRoot, { recursive: true });
+  await fs.symlink(source, path.join(linkRoot, "example"), "dir");
+  const outputDir = path.join(root, "approved-cli");
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(process.cwd(), "dist/cli/main.js"),
+      "bundle",
+      "export",
+      outputDir,
+      "--agent",
+      "kimi-code",
+      "--skill",
+      "example",
+      "--allow-symlink-root",
+      central,
+      "--dry-run",
+    ],
+    { cwd: root, env: { HOME: home, USERPROFILE: home, PATH: "" }, encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Allowed Skill symlink roots/);
+  assert.match(result.stdout, /Dry run: nothing was written/);
+  await assert.rejects(fs.stat(outputDir), { code: "ENOENT" });
+});
+
+test("export rejects symlink escapes, cycles and overbroad roots before output", async (t) => {
+  async function linked(t: test.TestContext) {
+    const { root, home } = await fixture(t);
+    const central = path.join(root, "central-skills");
+    const source = path.join(central, "example");
+    await fs.mkdir(source, { recursive: true });
+    await fs.writeFile(
+      path.join(source, "SKILL.md"),
+      "---\nname: example\ndescription: Shared Skill fixture.\n---\nUse it.\n",
+    );
+    const linkRoot = path.join(home, ".kimi-code", "skills");
+    await fs.mkdir(linkRoot, { recursive: true });
+    await fs.symlink(source, path.join(linkRoot, "example"), "dir");
+    return { root, home, central, source };
+  }
+  async function assertRefused(options: Parameters<typeof runBundleExport>[0], pattern: RegExp) {
+    await assert.rejects(runBundleExport(options), pattern);
+    await assert.rejects(fs.stat(options.outputDir), { code: "ENOENT" });
+  }
+  await t.test("root target is outside the approved root", async (t) => {
+    const { root, home, central } = await linked(t);
+    const other = path.join(root, "other-root");
+    await fs.mkdir(other);
+    await assertRefused(
+      {
+        outputDir: path.join(root, "outside"),
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: ["example"],
+        allowedSkillLinkRoots: [other],
+        dryRun: true,
+        log: () => {},
+      },
+      /outside --allow-symlink-root/,
+    );
+    assert.equal(central.includes(other), false);
+  });
+  await t.test("nested link escapes the selected Skill", async (t) => {
+    const { root, home, central, source } = await linked(t);
+    await fs.writeFile(path.join(root, "private.txt"), "not exportable\n");
+    await fs.symlink(path.join(root, "private.txt"), path.join(source, "escape"), "file");
+    await assertRefused(
+      {
+        outputDir: path.join(root, "nested-escape"),
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: ["example"],
+        allowedSkillLinkRoots: [central],
+        dryRun: true,
+        log: () => {},
+      },
+      /escapes the selected Skill/,
+    );
+  });
+  await t.test("nested directory link cycles", async (t) => {
+    const { root, home, central, source } = await linked(t);
+    await fs.symlink(source, path.join(source, "loop"), "dir");
+    await assertRefused(
+      {
+        outputDir: path.join(root, "cycle"),
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: ["example"],
+        allowedSkillLinkRoots: [central],
+        dryRun: true,
+        log: () => {},
+      },
+      /cycle/,
+    );
+  });
+  await t.test("home and filesystem roots are too broad", async (t) => {
+    const { root, home, central } = await linked(t);
+    for (const [index, allowed] of [home, path.parse(root).root].entries()) {
+      await assertRefused(
+        {
+          outputDir: path.join(root, `broad-${index}`),
+          agent: "kimi-code",
+          homeDir: home,
+          env: { PATH: "" },
+          skillNames: ["example"],
+          allowedSkillLinkRoots: [allowed],
+          dryRun: true,
+          log: () => {},
+        },
+        /specific Skill source directory/,
+      );
+    }
+    assert.ok(central);
+  });
+  await t.test("an approved root must be a directory", async (t) => {
+    const { root, home, source } = await linked(t);
+    await assertRefused(
+      {
+        outputDir: path.join(root, "file-root"),
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: ["example"],
+        allowedSkillLinkRoots: [path.join(source, "SKILL.md")],
+        dryRun: true,
+        log: () => {},
+      },
+      /not a directory/,
+    );
+  });
+});
+
+test("Kimi export uses shared rules and refuses ambiguous user-level sources", async (t) => {
+  const { root, home } = await fixture(t);
+  await fs.mkdir(path.join(home, ".agents"), { recursive: true });
+  await fs.writeFile(path.join(home, ".agents", "AGENTS.md"), "# Shared personal rules\n");
+  const outputDir = path.join(root, "shared-kimi");
+  await runBundleExport({
+    outputDir,
+    agent: "kimi-code",
+    homeDir: home,
+    env: { PATH: "" },
+    skillNames: [],
+    yes: true,
+    log: () => {},
+  });
+  assert.match(
+    await fs.readFile(path.join(outputDir, "rules", "global.md"), "utf8"),
+    /Shared personal rules/,
+  );
+  await fs.mkdir(path.join(home, ".kimi-code"), { recursive: true });
+  await fs.writeFile(path.join(home, ".kimi-code", "AGENTS.md"), "# Other rules\n");
+  const ambiguousOutput = path.join(root, "ambiguous-kimi");
+  await assert.rejects(
+    runBundleExport({
+      outputDir: ambiguousOutput,
+      agent: "kimi-code",
+      homeDir: home,
+      env: { PATH: "" },
+      skillNames: [],
+      dryRun: true,
+      log: () => {},
+    }),
+    /Multiple user-level rules files/,
+  );
+  await assert.rejects(fs.stat(ambiguousOutput), { code: "ENOENT" });
+});
+
+test("export refuses credential-bearing and machine-local MCP fields before creating output", async (t) => {
+  const { root, home } = await fixture(t);
+  const configPath = path.join(home, ".kimi-code", "mcp.json");
+  await fs.mkdir(path.dirname(configPath), { recursive: true });
+  const cases: Record<string, unknown>[] = [
+    { command: "server", args: ["--token", "dummy-secret"] },
+    { command: "server", env: { TOKEN: "dummy-secret" } },
+    { command: "server", cwd: home },
+    { command: "server", timeoutMs: 5000 },
+    { url: "https://example.test/mcp", headers: { Authorization: "Bearer dummy-secret" } },
+    { url: "https://example.test/mcp?token=dummy-secret" },
+    { url: "https://user:dummy-secret@example.test/mcp" },
+    { url: "https://example.test/mcp#dummy-secret" },
+  ];
+  for (const [index, entry] of cases.entries()) {
+    const bytes = `${JSON.stringify({ mcpServers: { docs: entry } })}\n`;
+    await fs.writeFile(configPath, bytes);
+    const outputDir = path.join(root, `sensitive-${index}`);
+    const lines: string[] = [];
+    await assert.rejects(
+      runBundleExport({
+        outputDir,
+        agent: "kimi-code",
+        homeDir: home,
+        env: { PATH: "" },
+        skillNames: [],
+        mcpServerNames: ["docs"],
+        yes: true,
+        log: (line) => lines.push(line),
+      }),
+      /portable export/,
+    );
+    await assert.rejects(fs.stat(outputDir), { code: "ENOENT" });
+    assert.equal(await fs.readFile(configPath, "utf8"), bytes);
+    assert.doesNotMatch(lines.join("\n"), /dummy-secret/);
+  }
+});
+
+test("export refuses selected native Codex TOML MCP without creating output", async (t) => {
+  const { root, home } = await fixture(t);
+  const configPath = path.join(home, ".codex", "config.toml");
+  const bytes = '[mcp_servers.docs]\ncommand = "must-not-start"\n';
+  await fs.writeFile(configPath, bytes);
+  const outputDir = path.join(root, "codex-with-mcp");
+  await assert.rejects(
+    runBundleExport({
+      outputDir,
+      homeDir: home,
+      env: { PATH: "" },
+      skillNames: [],
+      mcpServerNames: ["docs"],
+      dryRun: true,
+      log: () => {},
+    }),
+    /toml-mcp_servers/,
+  );
+  await assert.rejects(fs.stat(outputDir), { code: "ENOENT" });
+  assert.equal(await fs.readFile(configPath, "utf8"), bytes);
+});
+
+test("an unmanaged target MCP conflict blocks every profile write", async (t) => {
+  const { root, home, targetHome } = await fixture(t);
+  await fs.mkdir(path.join(home, ".kimi-code"), { recursive: true });
+  await fs.writeFile(
+    path.join(home, ".kimi-code", "mcp.json"),
+    '{"mcpServers":{"docs":{"command":"portable-server"}}}\n',
+  );
+  const outputDir = path.join(root, "portable-kimi");
+  await runBundleExport({
+    outputDir,
+    agent: "kimi-code",
+    homeDir: home,
+    env: { PATH: "" },
+    skillNames: [],
+    mcpServerNames: ["docs"],
+    yes: true,
+    log: () => {},
+  });
+  const targetConfig = path.join(targetHome, ".kimi-code", "mcp.json");
+  await fs.mkdir(path.dirname(targetConfig), { recursive: true });
+  const original = '{"mcpServers":{"docs":{"command":"user-owned"}},"keep":true}\n';
+  await fs.writeFile(targetConfig, original);
+  const options = {
+    profile: "portable",
+    profilePath: outputDir,
+    agent: "kimi-code",
+    homeDir: targetHome,
+    projectDir: root,
+    env: { PATH: "" },
+    log: () => {},
+  };
+  await runInstall({ ...options, dryRun: true });
+  assert.equal(await fs.readFile(targetConfig, "utf8"), original);
+  await assert.rejects(fs.stat(path.join(targetHome, ".kimi-code", "AGENTS.md")), {
+    code: "ENOENT",
+  });
+  await assert.rejects(runInstall({ ...options, yes: true }), /conflict/);
+  assert.equal(await fs.readFile(targetConfig, "utf8"), original);
+  await assert.rejects(fs.stat(path.join(targetHome, "skillfit.lock.json")), { code: "ENOENT" });
+});
+
+test("portable install rejects tampered credentials and an unsupported target before writes", async (t) => {
+  const { root, home, targetHome } = await fixture(t);
+  await fs.mkdir(path.join(home, ".kimi-code"), { recursive: true });
+  await fs.writeFile(
+    path.join(home, ".kimi-code", "mcp.json"),
+    '{"mcpServers":{"docs":{"command":"portable-server"}}}\n',
+  );
+  const outputDir = path.join(root, "portable-kimi");
+  await runBundleExport({
+    outputDir,
+    agent: "kimi-code",
+    homeDir: home,
+    env: { PATH: "" },
+    skillNames: [],
+    mcpServerNames: ["docs"],
+    yes: true,
+    log: () => {},
+  });
+  const options = {
+    profile: "portable",
+    profilePath: outputDir,
+    homeDir: targetHome,
+    projectDir: root,
+    env: { PATH: "" },
+    dryRun: true,
+    log: () => {},
+  };
+  const specPath = path.join(outputDir, "mcp", "docs.json");
+  const specBytes = await fs.readFile(specPath, "utf8");
+  const tampered = JSON.parse(specBytes);
+  tampered.env = { TOKEN: "dummy-secret" };
+  await fs.writeFile(specPath, JSON.stringify(tampered));
+  await assert.rejects(runInstall({ ...options, agent: "kimi-code" }), /env/);
+  assert.deepEqual(await fs.readdir(targetHome), []);
+  await fs.writeFile(specPath, specBytes);
+  const manifestPath = path.join(outputDir, "profile.json");
+  const manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+  manifest.agents = ["codex"];
+  await fs.writeFile(manifestPath, JSON.stringify(manifest));
+  await assert.rejects(runInstall({ ...options, agent: "codex" }), /toml-mcp_servers/);
+  assert.deepEqual(await fs.readdir(targetHome), []);
+});
+
 test("export selects locally installed skills used in multiple sessions by default", async (t) => {
   const { root, home } = await fixture(t);
   for (const name of ["often", "once"]) {
@@ -239,6 +722,20 @@ test("export recognizes flow-style and quoted invocation policies", async (t) =>
     const rules = await fs.readFile(path.join(outputDir, "rules", "global.md"), "utf8");
     assert.match(rules, /User-invoked only: `explicit-skill`/);
   }
+});
+
+test("default export dry-run does not require the home to exist", async (t) => {
+  const { root } = await fixture(t);
+  const outputDir = path.join(root, "empty-export");
+  await runBundleExport({
+    outputDir,
+    homeDir: path.join(root, "missing-home"),
+    env: { PATH: "" },
+    skillNames: [],
+    dryRun: true,
+    log: () => {},
+  });
+  await assert.rejects(fs.stat(outputDir), { code: "ENOENT" });
 });
 
 test("export dry-run writes nothing and refuses an existing destination", async (t) => {

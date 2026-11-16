@@ -25,7 +25,7 @@ import { parseSpendingBudget } from "../evaluation/execution/budget.js";
 import { runEvalReport } from "./eval-report.js";
 import { componentError, runEvalComponent } from "./eval-component.js";
 import { readEvaluationReport } from "./evaluation-report.js";
-import { runInstall } from "../composition.js";
+import { runInstall, runMcpApply, runUninstall } from "../composition.js";
 import { runMcpCheck } from "./mcp.js";
 import { runReport } from "./report.js";
 import { runCodexSetup } from "../composition.js";
@@ -272,7 +272,7 @@ async function main(): Promise<void> {
 
   switch (command) {
     case "doctor":
-      await runDoctor(common);
+      await runDoctor({ ...common, json: values.json ?? false, strict: values.strict ?? false });
       return;
     case "report":
       if (positionals[1] === "eval") {
@@ -411,12 +411,50 @@ async function main(): Promise<void> {
       return;
     }
     case "mcp": {
-      if (positionals[1] !== "check" || !positionals[2]) {
-        console.error("Usage: skillfit mcp check <spec.json> [--dry-run]");
+      const specPath = positionals[2];
+      const server = values.server;
+      if (positionals[1] === "apply") {
+        if (
+          !values.agent ||
+          !server ||
+          (!values.from && !values.remove) ||
+          (values.from !== undefined && values.remove)
+        ) {
+          console.error(
+            "Usage: skillfit mcp apply --agent <id> --server <name> (--from <probe.json> | --remove) [--project] [--dry-run] [--yes]",
+          );
+          process.exitCode = 2;
+          return;
+        }
+        await runMcpApply({
+          ...common,
+          agent: values.agent,
+          server,
+          from: values.from,
+          remove: values.remove ?? false,
+          project: values.project ?? false,
+        });
+        return;
+      }
+      if (
+        positionals[1] !== "check" ||
+        (specPath !== undefined && server !== undefined) ||
+        (specPath === undefined && (!values.agent || !server))
+      ) {
+        console.error(
+          "Usage: skillfit mcp check <spec.json> [--dry-run]\n" +
+            "       skillfit mcp check --agent <id> --server <name> [--project] [--dry-run]",
+        );
         process.exitCode = 2;
         return;
       }
-      await runMcpCheck({ specPath: positionals[2], dryRun: values["dry-run"] ?? false });
+      await runMcpCheck({
+        specPath,
+        agent: values.agent,
+        server,
+        project: values.project ?? false,
+        dryRun: values["dry-run"] ?? false,
+      });
       return;
     }
     case "install":
@@ -426,6 +464,22 @@ async function main(): Promise<void> {
         profilePath: values["profile-path"],
         project: values.project ?? false,
         strict: values.strict ?? false,
+      });
+      return;
+    case "uninstall":
+      if (!values.agent || (!values.skill?.length && !values.rules)) {
+        console.error(
+          "Usage: skillfit uninstall --agent <id> (--skill <name> ... | --rules) [--project] [--dry-run] [--yes]",
+        );
+        process.exitCode = 2;
+        return;
+      }
+      await runUninstall({
+        ...common,
+        agent: values.agent,
+        skills: values.skill,
+        rules: values.rules ?? false,
+        project: values.project ?? false,
       });
       return;
     case "setup":
@@ -450,14 +504,17 @@ async function main(): Promise<void> {
     case "bundle": {
       if (positionals[1] !== "export" || !positionals[2]) {
         console.error(
-          "Usage: skillfit bundle export <dir> [--skill <name> ...] [--upstream-lock <path>] [--min-sessions <n>] [--dry-run] [--yes]",
+          "Usage: skillfit bundle export <dir> [--agent codex|kimi-code] [--skill <name> ...] [--allow-symlink-root <dir> ...] [--mcp <name> ...] [--upstream-lock <path>] [--min-sessions <n>] [--dry-run] [--yes]",
         );
         process.exitCode = 2;
         return;
       }
       await runBundleExport({
         outputDir: positionals[2],
+        agent: values.agent,
         skillNames: values.skill,
+        allowedSkillLinkRoots: values["allow-symlink-root"],
+        mcpServerNames: values.mcp,
         minSessions:
           values["min-sessions"] === undefined ? undefined : Number(values["min-sessions"]),
         upstreamLockPath: values["upstream-lock"],

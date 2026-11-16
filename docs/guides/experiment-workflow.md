@@ -307,9 +307,34 @@ different negotiated protocol version, a missing tools capability, malformed res
 pagination cursors. It never calls a tool. This separates protocol or catalog defects from model
 behavior.
 
+Current source can also select an existing JSON `mcpServers` entry in memory, without creating a secret-bearing probe file:
+
+```bash
+node dist/cli.js mcp check --agent kimi-code --server my-server --dry-run
+node dist/cli.js mcp check --agent kimi-code --server my-server --project --dry-run
+```
+
+Selection uses the matrix-declared user configuration by default; `--project` selects the current project. Do not combine a probe-spec path with `--server`. Stdio `command`/`args`/`env`/`cwd` and HTTP `url`/`headers` are validated without writing the selected values to another file. Unknown fields, disabled entries, missing selections, incompatible transports and multiple matching source definitions fail before process or network effects. Native Codex TOML is not converted by a partial parser; use the explicit probe-spec route above. Doctor's existing TOML text scan still does not prove loading or connectivity.
+
+Dry-run plans withhold argument values and HTTP query values. Live checks redact exact configured env/header values and URL credential/query values from retained stderr and thrown errors. This is not general secret recognition, and arbitrary server-generated or inherited secret text remains a residual risk. No selection, dry-run or live check edits the Agent configuration.
+
 The probe supports newline-delimited stdio and Streamable HTTP. Inspect the
 transport-specific plan before execution; discovery performs network I/O for an
 HTTP server. It never establishes tool effectiveness.
+
+### Apply a scoped JSON MCP entry
+
+Current source supports transactional writes for JSON `mcpServers`, separately from connectivity checks. Use a validated probe spec to create/update one named entry, or remove a managed entry without a spec:
+
+```bash
+node dist/cli.js mcp apply --agent kimi-code --server my-server --from ./my-server.probe.json --dry-run
+node dist/cli.js mcp apply --agent kimi-code --server my-server --from ./my-server.probe.json --yes
+node dist/cli.js mcp apply --agent kimi-code --server my-server --remove --dry-run
+```
+
+`--from` and `--remove` are mutually exclusive; `--project` selects the current project instead of user scope. Plans show the action, target and scope without printing argument, env/header or URL query values. Application requires confirmation or `--yes`, preserves existing backups, verifies target bytes and updates the version-1 lock after content changes. Existing unmanaged or locally changed entries conflict; updates/removals require the current entry to match the managed fingerprint. Other configuration keys and unrelated servers remain intact.
+
+JSON writes preserve unrelated semantic content, not necessarily original JSON whitespace. Native Codex TOML is refused rather than edited with a partial parser; no runtime dependency or general TOML editor is introduced. Applying a change performs no server startup, network connection, tool invocation or model call. Use the separate `mcp check` operation when connectivity is actually intended.
 
 ### Prepare the overlay
 

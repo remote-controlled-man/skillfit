@@ -1,3 +1,4 @@
+import { getAgent } from "../agents/matrix.js";
 import { collectReceipts, type AgentReceipt, type SkillReceipt } from "../usage/receipts.js";
 
 const OTHER_READS_SHOWN = 8;
@@ -33,6 +34,10 @@ function renderAgent(receipt: AgentReceipt, lines: string[]): void {
   }
   lines.push(
     `${receipt.agentId} — ${receipt.sessionsFound} session(s), ${receipt.transcriptsRead} transcript(s)`,
+  );
+  const nativeSignal = getAgent(receipt.agentId).sessions?.skillToolName;
+  lines.push(
+    `  signal: ${nativeSignal ? `native ${nativeSignal} invocation events` : "registered SKILL.md read commands; not native Skill events"}`,
   );
   const installed = new Set(receipt.installed);
   const installedFired = receipt.skills.filter((skill) => installed.has(skill.name));
@@ -115,7 +120,8 @@ export function renderReceipts(receipts: AgentReceipt[]): string {
   );
   if (never.length > 0) {
     lines.push(
-      "Treat this as a prioritization signal, not proof of uselessness: install dates are unavailable. Verify candidates with: skillfit eval <skill> --mode trigger",
+      "Treat this as a prioritization signal, not proof of uselessness: install dates are unavailable.",
+      "Preview a bounded trigger check with: skillfit eval <skill> --mode trigger --dry-run. Trigger observations are not task-quality outcomes or evidence of benefit.",
     );
   }
   return lines.join("\n");

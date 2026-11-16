@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/remote-controlled-man/skillfit/blob/main/docs/schemas/doctor-report.schema.json",
+  "title": "skillfit read-only doctor report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "homeDir", "cwd", "detection", "health", "summary"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "skillfit.doctor-report" },
+    "homeDir": { "type": "string" },
+    "cwd": { "type": "string" },
+    "detection": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "displayName", "detected", "evidence"],
+        "properties": {
+          "id": { "type": "string" },
+          "displayName": { "type": "string" },
+          "detected": { "type": "boolean" },
+          "evidence": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "health": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "displayName", "detected", "sections"],
+        "properties": {
+          "id": { "type": "string" },
+          "displayName": { "type": "string" },
+          "detected": { "type": "boolean" },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title", "checks"],
+              "properties": {
+                "title": { "enum": ["Rules", "Skills", "MCP"] },
+                "checks": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["status", "message"],
+                    "properties": {
+                      "status": { "enum": ["PASS", "WARN", "FAIL", "INFO"] },
+                      "message": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agents", "checks"],
+      "properties": {
+        "agents": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["detected", "total"],
+          "properties": {
+            "detected": { "type": "integer", "minimum": 0 },
+            "total": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["total", "PASS", "WARN", "FAIL", "INFO"],
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "PASS": { "type": "integer", "minimum": 0 },
+            "WARN": { "type": "integer", "minimum": 0 },
+            "FAIL": { "type": "integer", "minimum": 0 },
+            "INFO": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}

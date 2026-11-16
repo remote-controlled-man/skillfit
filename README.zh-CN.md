@@ -29,7 +29,11 @@ skillfit 在同一批任务上比较基线组与实验组，并报告变化及�
 ```bash
 npx skillfit@0.15.4 report
 npx skillfit@0.15.4 doctor
+npx skillfit@0.15.4 doctor --json
+npx skillfit@0.15.4 doctor --strict
 ```
+
+JSON 输出是 `skillfit.doctor-report` [v1 文档](docs/schemas/doctor-report.schema.json)，包含 Agent 检测、Rules/Skills/MCP 检查及一致的汇总计数。默认情况下发现异常仍是建议信息并退出 0；`--strict` 在存在 FAIL 时显式退出 1，未知 Agent 仍退出 2。所有 doctor 模式都保持只读：不调用模型、不连接 MCP，也不修改配置。
 
 ```console
 $ npx skillfit@0.15.4 report --agent codex
@@ -59,7 +63,7 @@ codex — 280 session(s), 280 transcript(s)
 Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in retained history.
 ```
 
-摘自 2026-11-04 的一份 Codex 历史。五个已安装 Skill 没有触发记录，这只是优先处理的信号，安装日期并不知道。`prflow` 是项目里的 Skill。Codex 会话记下了项目目录，所以它算作已安装。省略的目录体积那一行只统计用户目录。
+摘自 2026-11-04 的一份 Codex 历史。五个已安装 Skill 没有触发记录，这只是优先处理的信号，安装日期并不知道。`prflow` 是项目里的 Skill。Codex 会话记下了项目目录，所以它算作已安装。省略的目录体积那一行只统计用户目录。报告会区分原生 Skill 事件与 Codex 对已注册 `SKILL.md` 的读取命令。缺失历史代表未测量，不是零使用。评估建议先使用 `--dry-run`；触发观察不是任务质量结果，使用情况也不会自动卸载或升级 Skill。
 
 ## 花钱之前先看一份真实报告
 
@@ -92,7 +96,7 @@ npx skillfit@0.15.4 --help
 npx skillfit@0.15.4 doctor
 ```
 
-需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出八个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
+需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出九个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
 
 ## 为什么
 
@@ -306,9 +310,9 @@ node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
 
 [可选择配置指南](docs/guides/selectable-codex.md)说明来源、退役条目和证据限制。
 
-### 可迁移的 Codex 配置
+### 可迁移的个人配置
 
-导出至少在两次 Codex 会话中观察到的用户级 Skill 和当前全局指引：
+默认导出至少在两次 Codex 会话中观察到的用户级 Skill 和当前全局指引；使用 `--agent kimi-code` 可改为迁移 Kimi Code 配置：
 
 ```bash
 node dist/cli.js bundle export ./personal-codex --dry-run
@@ -316,22 +320,26 @@ node dist/cli.js bundle export ./personal-codex --yes
 # transfer the personal-codex directory to the new machine
 node ./personal-codex/setup.mjs --dry-run
 node ./personal-codex/setup.mjs --yes
+node dist/cli.js bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
+node dist/cli.js bundle export ./personal-kimi-linked --agent kimi-code --skill example --allow-symlink-root "$HOME/.local/share/my-skills" --dry-run
 ```
 
-完整 65 个 Skill 的上游目录可使用 `--upstream-lock`；其他选项参见[迁移配置](docs/guides/selectable-codex.md)和[源审计](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md)。
+重复 `--mcp` 可选择不含凭据或本机路径的 JSON 声明；原生 Codex TOML 仍不支持。symlink Skill 默认仍拒绝。只对你批准的精确源目录重复使用 `--allow-symlink-root`；链接必须同时位于所选 Skill 和批准的根目录内，导出结果是普通文件而不是链接。这是同一 Agent 的跨机器迁移，不是 Agent 格式互转。完整 65 个 Skill 的上游目录可使用 `--upstream-lock`；其他选项参见[迁移配置](docs/guides/selectable-codex.md)和[源审计](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md)。
 
-## 八个命令
+## 九个命令
 
 | 命令 | 干什么 | 写文件？ |
 |---|---|---|
-| `doctor` | 检查 agent 配置、无效 Skill、冲突和受支持的 MCP 声明 | 只读 |
+| `doctor` | 检查 agent 配置、无效 Skill、冲突和受支持的 MCP 声明 | 只读；`--strict` 只改变退出状态 |
 | `report` | 汇总观察到的 Skill 使用情况，或读取已保存评测结果 | 只有 `report eval --export --yes` 写入全新回放目录 |
 | `eval <target>` | 比较 Skill、规则或 MCP 覆盖层；trigger 模式观察 Skill 触发 | 保存运行记录；真实评测调用 agent/模型 |
-| `mcp check <spec>` | 连接 MCP 服务并检查 `tools/list`，不调用工具 | 不写 skillfit 输出文件；会启动或连接服务 |
+| `mcp check <spec>` | 检查显式 probe spec 或[从 Agent 配置选择的 MCP 服务](docs/guides/experiment-workflow.md#inspect-an-mcp-server)，不调用工具 | 不写配置；会启动或连接服务 |
+| `mcp apply` | [创建、更新或移除一个托管 JSON MCP 条目](docs/guides/experiment-workflow.md#apply-a-scoped-json-mcp-entry)，支持预览、备份与回滚 | 确认后写入；不启动服务或调用模型 |
 | `bench` | 创建、查看、修改和校验任务；当前源码另有离线 `self-test` | 修改需要确认；校准/起草调用 agent 并保存输出；普通检查执行本地 verifier |
 | `install` | 应用 profile，包含冲突检查、备份、写后验证和失败回滚 | 确认后写入；`--dry-run` 预览，加 `--strict` 让冲突失败 |
+| `uninstall` | 卸载选定的托管 Skill 或 AGENTS.md 规则，检查漂移并保留恢复副本 | 确认后写入；`--dry-run` 不写文件 |
 | `setup codex` | 选择固定版本 Skill 与全局触发指引，默认预览 | 仅 `--yes` 安装；选择源需要网络 |
-| `bundle` | 导出所选本地 Skill 与全局指引，迁移到另一台机器 | 确认后写入；生成的安装器也先预览 |
+| `bundle` | 导出 Codex/Kimi 规则、所选 Skill 与安全的 JSON MCP 声明，迁移到另一台机器 | 确认后写入；生成的安装器也先预览；不连接服务或调用模型 |
 
 参数见 `node dist/cli.js <command> --help`，配置选项见[配置指南](docs/guides/selectable-codex.md)。未观察到 Skill 使用不等于无用。离线检查和回放仍会执行可信的本地 bench 代码。安装保留首份 `<file>.skillfit-bak`；回滚处理写入或验证失败，进程突然终止仍可能留下部分安装。
 

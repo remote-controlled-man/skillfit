@@ -262,12 +262,12 @@ After editing CLI definitions, build and regenerate with
 <!-- cli-reference:start -->
 | CLI option | Help description |
 | --- | --- |
-| `--agent <id>` | Target agent: claude-code \| codex \| kimi-code (default: all detected) |
+| `--agent <id>` | Target/source agent: claude-code \| codex \| kimi-code (default: detected; bundle: codex) |
 | `--mode <mode>` | Eval mode: inject (default) \| installed (paired complete Skill) \| trigger (single arm) |
 | `--baseline-skill <path>` | With --mode installed, compare a previous Skill version against the target |
 | `--request <path>` | Version 1 Skill revision request (JSON output; excludes positional eval options) |
 | `--plan-sha <hash>` | Confirm an eval/calibration/self-test dry-run plan (also needs --run-group) |
-| `--json` | Machine output for bench check/self-test/list/show/edit/remove, report, eval and calibration |
+| `--json` | Machine output for doctor, bench check/self-test/list/show/edit/remove, report, eval and calibration |
 | `--bench <path>` | Bench directory for eval (default: bundled benches) |
 | `--task <id>` | With eval/calibration, select cases (repeatable, manifest order); requests use taskIds |
 | `--trials <n>` | Repetitions per condition for eval (integer 1–20; default: 5) |

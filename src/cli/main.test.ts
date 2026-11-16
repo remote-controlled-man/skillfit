@@ -1,6 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -412,10 +420,20 @@ test("API, trigger and judged paired previews bind deadlines and budgets without
   assert.equal(existsSync(join(cwd, "runs")), false);
 });
 
-test("top-level help indexes eight commands and eval help lists only its options", () => {
+test("top-level help indexes every command and eval help lists only its options", () => {
   const index = spawnSync(process.execPath, [CLI, "--help"], { encoding: "utf8" });
   assert.equal(index.status, 0);
-  for (const name of ["doctor", "report", "eval", "mcp", "bench", "install", "setup", "bundle"]) {
+  for (const name of [
+    "doctor",
+    "report",
+    "eval",
+    "mcp",
+    "bench",
+    "install",
+    "uninstall",
+    "setup",
+    "bundle",
+  ]) {
     assert.match(index.stdout, new RegExp(`skillfit ${name}\\b`));
   }
   assert.doesNotMatch(index.stdout, /--baseline-skill/);
@@ -423,4 +441,74 @@ test("top-level help indexes eight commands and eval help lists only its options
   assert.equal(evalHelp.status, 0, evalHelp.stderr);
   assert.match(evalHelp.stdout, /--baseline-skill <path>/);
   assert.doesNotMatch(evalHelp.stdout, /--profile <name>/);
+});
+
+test("doctor exposes the same controlled health report as versioned JSON without writes", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "skillfit-cli-doctor-json-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const home = join(root, "home");
+  const cwd = join(root, "project");
+  mkdirSync(join(home, ".kimi-code", "skills", "demo"), { recursive: true });
+  mkdirSync(cwd, { recursive: true });
+  writeFileSync(join(home, ".kimi-code", "AGENTS.md"), "# User rules\n");
+  writeFileSync(join(cwd, "AGENTS.md"), "# Project rules\n");
+  writeFileSync(
+    join(home, ".kimi-code", "skills", "demo", "SKILL.md"),
+    "---\nname: demo\ndescription: Test the local configuration inventory.\n---\n",
+  );
+  const mcpPath = join(home, ".kimi-code", "mcp.json");
+  const mcpBytes = '{"mcpServers":{"docs":{"command":"fake-docs"}}}\n';
+  writeFileSync(mcpPath, mcpBytes);
+  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, USERPROFILE: home, PATH: "" };
+  delete env.CODEX_HOME;
+  delete env.KIMI_CODE_HOME;
+  const args = [CLI, "doctor", "--agent", "kimi-code"];
+  const text = spawnSync(process.execPath, args, { cwd, env, encoding: "utf8" });
+  const json = spawnSync(process.execPath, [...args, "--json"], { cwd, env, encoding: "utf8" });
+  assert.equal(text.status, 0, text.stderr);
+  assert.equal(json.status, 0, json.stderr);
+  const report = JSON.parse(json.stdout);
+  assert.equal(report.schemaVersion, 1);
+  assert.equal(report.kind, "skillfit.doctor-report");
+  assert.equal(report.summary.agents.detected, 1);
+  assert.equal(report.summary.checks.FAIL, 0);
+  assert.ok(report.summary.checks.total > 0);
+  const health = report.health.find((entry: { id: string }) => entry.id === "kimi-code");
+  assert.deepEqual(
+    health.sections.map((section: { title: string }) => section.title),
+    ["Rules", "Skills", "MCP"],
+  );
+  assert.match(text.stdout, new RegExp(`${report.summary.checks.total} checks:`));
+  assert.equal(readFileSync(mcpPath, "utf8"), mcpBytes);
+  assert.equal(existsSync(join(cwd, "runs")), false);
+});
+
+test("doctor strict mode turns a controlled FAIL finding into exit 1 without changing inputs", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "skillfit-cli-doctor-strict-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const home = join(root, "home");
+  const cwd = join(root, "project");
+  mkdirSync(join(home, ".kimi-code"), { recursive: true });
+  mkdirSync(cwd, { recursive: true });
+  const mcpPath = join(home, ".kimi-code", "mcp.json");
+  writeFileSync(mcpPath, '{"mcpServers":');
+  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, USERPROFILE: home, PATH: "" };
+  delete env.CODEX_HOME;
+  delete env.KIMI_CODE_HOME;
+  const args = [CLI, "doctor", "--agent", "kimi-code", "--json"];
+  const ordinary = spawnSync(process.execPath, args, { cwd, env, encoding: "utf8" });
+  const strict = spawnSync(process.execPath, [...args, "--strict"], {
+    cwd,
+    env,
+    encoding: "utf8",
+  });
+  assert.equal(ordinary.status, 0, ordinary.stderr);
+  assert.equal(JSON.parse(ordinary.stdout).summary.checks.FAIL, 1);
+  assert.equal(strict.status, 1, strict.stderr);
+  const report = JSON.parse(strict.stdout);
+  assert.equal(report.kind, "skillfit.doctor-report");
+  assert.equal(report.summary.checks.FAIL, 1);
+  assert.deepEqual(report, JSON.parse(ordinary.stdout));
+  assert.equal(readFileSync(mcpPath, "utf8"), '{"mcpServers":');
+  assert.equal(existsSync(join(cwd, "runs")), false);
 });

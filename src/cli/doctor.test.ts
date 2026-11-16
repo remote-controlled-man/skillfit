@@ -426,7 +426,8 @@ test("formatDoctorReport renders sections, prefixes and summary", () => {
   assert.match(text, /\[PASS\]/);
   assert.match(text, /Summary/);
   assert.match(text, /1\/3 agents detected/);
-  assert.match(text, /always exits 0/);
+  assert.match(text, /advisory by default/);
+  assert.match(text, /--strict to exit 1 on FAIL/);
 });
 
 test("runDoctor prints the report and never sets an exit code", async () => {

@@ -392,8 +392,11 @@
       "role": "configuration",
       "files": [
         "configuration/install.js",
+        "configuration/lock.js",
+        "configuration/mcp-write.js",
         "configuration/setup.js",
         "configuration/bundle.js",
+        "configuration/uninstall.js",
         "configuration/upstream.js"
       ]
     }
@@ -672,8 +675,11 @@
       ],
       "publicFiles": [
         "configuration/install.js",
+        "configuration/lock.js",
+        "configuration/mcp-write.js",
         "configuration/setup.js",
         "configuration/bundle.js",
+        "configuration/uninstall.js",
         "configuration/upstream.js"
       ]
     },

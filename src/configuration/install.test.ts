@@ -350,6 +350,34 @@ test("kimi-code project scope uses the shared .agents/skills directory", async (
   assert.ok(await exists(path.join(project, "AGENTS.md")));
 });
 
+test("kimi-code user scope installs managed rules and a shared skill idempotently", async (t) => {
+  const { home, project } = await tempDirs(t);
+  const { lines, log } = captureLogs();
+  const options = makeOpts(home, project, { agent: "kimi-code", log });
+  await runInstall(options);
+
+  const rules = await fs.readFile(path.join(home, ".kimi-code", "AGENTS.md"), "utf8");
+  assert.ok(rules.includes(MARKER_START));
+  assert.ok(rules.includes(MARKER_END));
+  assert.match(rules, /red-green-refactor/);
+  const skill = await fs.readFile(
+    path.join(home, ".agents", "skills", "commit-message", "SKILL.md"),
+    "utf8",
+  );
+  assert.equal(parseFrontmatter(skill)?.name, "commit-message");
+  const lock = await readLock(home);
+  assert.deepEqual(Object.keys(lock.entries).sort(), [
+    "kimi-code:rules",
+    "kimi-code:skill:commit-message",
+  ]);
+  assert.equal(await exists(path.join(home, ".codex", "AGENTS.md")), false);
+
+  const before = await snapshot(home);
+  await runInstall(options);
+  assert.deepEqual(await snapshot(home), before);
+  assert.ok(lines.some((line) => line.includes("Everything is up to date")));
+});
+
 test("conflicting foreign skill content aborts the whole install without writes", async (t) => {
   const { home, project } = await tempDirs(t);
   const skillTarget = path.join(home, ".agents", "skills", "commit-message", "SKILL.md");

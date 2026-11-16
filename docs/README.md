@@ -20,7 +20,7 @@ which contains the review-grading, metrics-link and Git-diagnostic fixes before 
 | Learn the complete workflow without model spending | [First evaluation](guides/first-real-eval.md) |
 | Prepare and validate your own cases | [Bench authoring](guides/bench-authoring.md) |
 | Plan/run an experiment, handle stops and retain/clean outputs | [Evaluation workflow](guides/experiment-workflow.md) |
-| Select Skills or move a Codex configuration | [Codex configuration](guides/selectable-codex.md) |
+| Select Skills or move a Codex/Kimi configuration | [Agent configuration](guides/selectable-codex.md) |
 | Integrate JSON requests/results | [Component contract](reference/eval-component.md) |
 | Look up result fields, costs or replay formats | [Report reference](reference/evaluation-reports.md) |
 | Understand statistical verdicts and adoption limits | [Metrics protocol](reference/metrics.md) |

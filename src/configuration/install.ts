@@ -8,12 +8,15 @@ import * as path from "node:path";
 import { getAgent, type AgentDef } from "../agents/matrix.js";
 import { parseFrontmatter } from "../resources/frontmatter.js";
 import { BACKUP_SUFFIX } from "./constants.js";
+import { LOCKFILE_NAME, readLockfile, type ItemKind, type Lockfile, type Scope } from "./lock.js";
+import { loadPortableMcpSpec, planMcpApply } from "./mcp-write.js";
 import { executeTransaction, type FileWrite } from "./transaction.js";
 
 export const MARKER_START = "<!-- SKILLFIT_START -->";
 export const MARKER_END = "<!-- SKILLFIT_END -->";
 export { BACKUP_SUFFIX } from "./constants.js";
-export const LOCKFILE_NAME = "skillfit.lock.json";
+export { LOCKFILE_NAME, readLockfile } from "./lock.js";
+export type { ItemKind, LockEntry, Lockfile, Scope } from "./lock.js";
 
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -40,6 +43,11 @@ export interface ProfileSkill {
   source: string;
 }
 
+export interface ProfileMcp {
+  name: string;
+  source: string;
+}
+
 export interface ProfileManifest {
   name: string;
   version: string;
@@ -48,26 +56,10 @@ export interface ProfileManifest {
   scope?: Scope;
   rules?: { template: string };
   skills?: ProfileSkill[];
+  mcp?: ProfileMcp[];
 }
 
-type Scope = "user" | "project";
-type ItemKind = "rules" | "bridge" | "skill";
 type PlanAction = "create" | "update" | "skip" | "conflict";
-
-interface LockEntry {
-  agent: string;
-  kind: ItemKind;
-  path: string;
-  sha256: string;
-  profile: string;
-  profileVersion: string;
-  installedAt: string;
-}
-
-interface Lockfile {
-  version: 1;
-  entries: Record<string, LockEntry>;
-}
 
 interface PlannedFile {
   path: string;
@@ -116,7 +108,11 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
     for (const skill of manifest.skills ?? []) {
       items.push(await planSkillItem(agent, skill, profileDir, scope, homeDir, projectDir, lock));
     }
+    for (const mcp of manifest.mcp ?? []) {
+      items.push(await planMcpItem(agent, mcp, profileDir, scope, homeDir, projectDir, env));
+    }
   }
+  mergeMcpFiles(items);
 
   printPlan(log, manifest, scope, scopeDir, items);
 
@@ -158,13 +154,21 @@ export async function runInstall(opts: InstallOptions): Promise<void> {
 
   recordEntries(lock, items, manifest, now().toISOString());
   const lockContent = `${JSON.stringify(lock, null, 2)}\n`;
-  const files: FileWrite[] = writes.flatMap((item) =>
-    item.files.map((file) => ({
-      path: file.path,
-      content: file.content,
-      backup: file.backup ? ("first" as const) : ("none" as const),
-    })),
-  );
+  const filesByPath = new Map<string, FileWrite>();
+  for (const item of writes) {
+    for (const file of item.files) {
+      const next: FileWrite = {
+        path: file.path,
+        content: file.content,
+        backup: file.backup ? "first" : "none",
+      };
+      const previous = filesByPath.get(file.path);
+      if (previous && !Buffer.from(previous.content).equals(Buffer.from(next.content)))
+        throw new Error(`Install plan has conflicting writes for ${file.path}`);
+      if (!previous) filesByPath.set(file.path, next);
+    }
+  }
+  const files = [...filesByPath.values()];
   // Metadata is committed last and backs up its immediately previous version.
   files.push({
     path: lockPath,
@@ -256,6 +260,20 @@ function validateManifest(manifest: ProfileManifest, expectedName: string): void
     if (typeof skill.source !== "string")
       throw new Error(`Skill "${skill.name}" must declare a source path`);
   }
+  if (manifest.mcp !== undefined && !Array.isArray(manifest.mcp)) {
+    throw new Error("profile.json mcp must be an array");
+  }
+  const mcpNames = new Set<string>();
+  for (const mcp of manifest.mcp ?? []) {
+    if (typeof mcp !== "object" || mcp === null)
+      throw new Error("profile.json mcp must contain objects");
+    if (!NAME_PATTERN.test(mcp.name))
+      throw new Error(`Invalid MCP name "${mcp.name}" in profile.json`);
+    if (mcpNames.has(mcp.name)) throw new Error(`Duplicate MCP "${mcp.name}" in profile.json`);
+    mcpNames.add(mcp.name);
+    if (typeof mcp.source !== "string")
+      throw new Error(`MCP "${mcp.name}" must declare a source path`);
+  }
 }
 
 async function validateProfileFiles(dir: string, manifest: ProfileManifest): Promise<void> {
@@ -274,6 +292,11 @@ async function validateProfileFiles(dir: string, manifest: ProfileManifest): Pro
     if (fm.name !== skill.name) {
       throw new Error(`Skill "${skill.name}" SKILL.md declares name "${fm.name}"`);
     }
+  }
+  for (const mcp of manifest.mcp ?? []) {
+    const spec = await loadPortableMcpSpec(await safeProfileFile(dir, mcp.source));
+    if (spec.name !== mcp.name)
+      throw new Error(`MCP "${mcp.name}" source declares name "${spec.name}"`);
   }
 }
 
@@ -364,6 +387,14 @@ function extractBlock(content: string, targetPath: string): string | null {
   return content.slice(start, end + MARKER_END.length);
 }
 
+export function removeManagedBlock(content: string): string {
+  const block = extractBlock(content, "managed rules");
+  if (block === null) throw new Error("No skillfit-managed rules block was found");
+  const start = content.indexOf(MARKER_START);
+  const end = content.indexOf(MARKER_END) + MARKER_END.length;
+  return `${content.slice(0, start)}${content.slice(end)}`;
+}
+
 function classifyBlock(
   existing: string | null,
   block: string,
@@ -439,7 +470,7 @@ function resolveScoped(rel: string, scope: Scope, homeDir: string, projectDir: s
   return path.resolve(projectDir, rel);
 }
 
-function rulesTarget(
+export function rulesTarget(
   agent: AgentDef,
   scope: Scope,
   homeDir: string,
@@ -464,7 +495,7 @@ function rulesTarget(
   };
 }
 
-function skillsTargetDir(
+export function skillsTargetDir(
   agent: AgentDef,
   scope: Scope,
   homeDir: string,
@@ -498,19 +529,69 @@ async function readBufferIfExists(p: string): Promise<Buffer | null> {
   }
 }
 
-async function readLockfile(lockPath: string): Promise<Lockfile> {
-  const raw = await readIfExists(lockPath);
-  if (raw === null) return { version: 1, entries: {} };
-  let parsed: Lockfile;
-  try {
-    parsed = JSON.parse(raw) as Lockfile;
-  } catch {
-    throw new Error(`Lockfile at ${lockPath} is not valid JSON; fix or delete it.`);
+async function planMcpItem(
+  agent: AgentDef,
+  mcp: ProfileMcp,
+  profileDir: string,
+  scope: Scope,
+  homeDir: string,
+  projectDir: string,
+  env: NodeJS.ProcessEnv,
+): Promise<PlanItem> {
+  const plan = await planMcpApply({
+    agent: agent.id,
+    server: mcp.name,
+    from: await safeProfileFile(profileDir, mcp.source),
+    portable: true,
+    project: scope === "project",
+    homeDir,
+    projectDir,
+    env,
+    dryRun: true,
+  });
+  if (plan.action === "remove") throw new Error("Profile MCP planning cannot remove an entry");
+  return {
+    agent: agent.id,
+    kind: "mcp",
+    label: `mcp "${mcp.name}"`,
+    targetPath: plan.path,
+    lockKey: plan.lockKey,
+    sha256: plan.entryHash,
+    action: plan.action,
+    detail: `MCP "${mcp.name}": ${plan.detail}`,
+    files:
+      plan.nextContent === undefined
+        ? []
+        : [
+            {
+              path: plan.path,
+              content: plan.nextContent,
+              backup: (await readIfExists(plan.path)) !== null,
+            },
+          ],
+  };
+}
+
+function mergeMcpFiles(items: PlanItem[]): void {
+  const byTarget = new Map<string, PlannedFile[]>();
+  for (const item of items) {
+    if (item.kind !== "mcp") continue;
+    for (const file of item.files) {
+      const files = byTarget.get(file.path) ?? [];
+      files.push(file);
+      byTarget.set(file.path, files);
+    }
   }
-  if (typeof parsed !== "object" || parsed === null || typeof parsed.entries !== "object") {
-    throw new Error(`Lockfile at ${lockPath} has an unexpected shape; fix or delete it.`);
+  for (const files of byTarget.values()) {
+    if (files.length < 2) continue;
+    const documents = files.map(
+      (file) => JSON.parse(String(file.content)) as { mcpServers: Record<string, unknown> },
+    );
+    let servers = { ...documents[0]!.mcpServers };
+    for (const document of documents.slice(1)) servers = { ...servers, ...document.mcpServers };
+    const content = `${JSON.stringify({ ...documents[0], mcpServers: servers }, null, 2)}\n`;
+    for (const file of files) file.content = content;
   }
-  return { version: 1, entries: parsed.entries ?? {} };
 }
 
 async function planRulesItems(
@@ -745,7 +826,7 @@ async function walkFiles(dir: string, prefix = ""): Promise<string[]> {
   return out.sort();
 }
 
-function hashFiles(entries: Map<string, Buffer>): string {
+export function hashFiles(entries: Map<string, Buffer>): string {
   const hash = createHash("sha256");
   for (const [rel, content] of [...entries].sort(([a], [b]) => a.localeCompare(b))) {
     hash.update(rel, "utf8");
@@ -802,7 +883,7 @@ async function validateWrites(writes: PlanItem[]): Promise<string[]> {
       if (!fm?.name || !fm.description) {
         problems.push(`${skillMd}: SKILL.md is missing or its frontmatter lacks name/description`);
       }
-    } else {
+    } else if (item.kind !== "mcp") {
       const content = await readIfExists(item.targetPath);
       if (content === null || !content.includes(MARKER_START) || !content.includes(MARKER_END)) {
         problems.push(`${item.targetPath}: managed block missing after write`);
