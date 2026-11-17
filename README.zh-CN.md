@@ -27,16 +27,16 @@ skillfit 在同一批任务上比较基线组与实验组，并报告变化及�
 `report` 和 `doctor` 只读这台机器，不调用模型。
 
 ```bash
-npx skillfit@0.16.0 report
-npx skillfit@0.16.0 doctor
-npx skillfit@0.16.0 doctor --json
-npx skillfit@0.16.0 doctor --strict
+npx skillfit@0.16.1 report
+npx skillfit@0.16.1 doctor
+npx skillfit@0.16.1 doctor --json
+npx skillfit@0.16.1 doctor --strict
 ```
 
 JSON 输出是 `skillfit.doctor-report` [v1 文档](docs/schemas/doctor-report.schema.json)，包含 Agent 检测、Rules/Skills/MCP 检查及一致的汇总计数。默认情况下发现异常仍是建议信息并退出 0；`--strict` 在存在 FAIL 时显式退出 1，未知 Agent 仍退出 2。所有 doctor 模式都保持只读：不调用模型、不连接 MCP，也不修改配置。
 
 ```console
-$ npx skillfit@0.16.0 report --agent codex
+$ npx skillfit@0.16.1 report --agent codex
 
 codex — 280 session(s), 280 transcript(s)
   skill                          FIRES  SESSIONS  LAST SEEN
@@ -70,9 +70,9 @@ Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in r
 不需要 agent CLI、不需要登录、不调用模型。以下命令读取包内自带的 bench，几秒即可跑完：
 
 ```bash
-npx skillfit@0.16.0 bench check code-review
-npx skillfit@0.16.0 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.16.0 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.16.1 bench check code-review
+npx skillfit@0.16.1 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.16.1 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 <p align="center">
@@ -92,8 +92,8 @@ npx skillfit@0.16.0 report eval ./runs/controls-001/existing-mock-arms
 ## 安装
 
 ```bash
-npx skillfit@0.16.0 --help
-npx skillfit@0.16.0 doctor
+npx skillfit@0.16.1 --help
+npx skillfit@0.16.1 doctor
 ```
 
 需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出九个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
@@ -132,10 +132,10 @@ The instructions the agent should follow.
 然后脚手架一个 case 并预览评测：
 
 ```bash
-npx skillfit@0.16.0 bench init my-bench --kind command --dry-run
-npx skillfit@0.16.0 bench init my-bench --kind command --yes
-npx skillfit@0.16.0 bench check ./my-bench --json
-npx skillfit@0.16.0 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.16.1 bench init my-bench --kind command --dry-run
+npx skillfit@0.16.1 bench init my-bench --kind command --yes
+npx skillfit@0.16.1 bench check ./my-bench --json
+npx skillfit@0.16.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 测收益前先把教学用 fixture、prompt、verifier 和 oracle 换成真实任务。预览声明两次调用，实际不调用。检查 `plan.evaluation.agentPreflight.status`；离线登录状态仍未知。case 与运行记录分开放。继续阅读[第一次真实评测](docs/guides/first-real-eval.md)。
@@ -178,7 +178,7 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach 3656a8975fa29af822a7359d18d0578b415c755b
+git switch --detach 17772db9b2f112a1e25d0284a76cf38860f7790b
 npm ci
 npm run build
 node dist/cli.js --help
@@ -189,7 +189,7 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-该 detached commit 包含审查评分、指标链接和 Git 错误诊断修复，位于版本号更新之前。构建后打印 0.15.3。要在自己的检出上开发，请按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。
+该 detached commit 包含版本比较准备入口和启动修复，位于本次版本号更新之前。构建后打印 0.16.0。要在自己的检出上开发，请按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。
 
 校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
 
@@ -231,7 +231,7 @@ node dist/cli.js eval <skill-dir> --bench <bench-dir> --agent codex --input work
 node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input workspace --trials 3 --dry-run
 ```
 
-导入时用 `--prompt-file` 保留 issue 请求，避免修复提交信息泄露答案。参见[真实 OSS 流程](docs/guides/bench-authoring.md)或[固定的 mcp-use 示例](https://github.com/remote-controlled-man/skillfit/blob/3656a8975fa29af822a7359d18d0578b415c755b/benches/contrib/oss-mcp-use-utf8/README.md)。
+导入时用 `--prompt-file` 保留 issue 请求，避免修复提交信息泄露答案。参见[真实 OSS 流程](docs/guides/bench-authoring.md)或[固定的 mcp-use 示例](https://github.com/remote-controlled-man/skillfit/blob/17772db9b2f112a1e25d0284a76cf38860f7790b/benches/contrib/oss-mcp-use-utf8/README.md)。
 
 ### 比较 Skill 修订版本
 

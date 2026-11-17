@@ -9,8 +9,8 @@ The component never installs or adopts a Skill automatically.
 
 ## Prepare a first revision comparison
 
-In a built checkout that lists `--prepare` in `eval --help`, start from two complete
-versions of one Skill and a real fix commit, including its regression tests:
+With npm 0.16.1 or a built checkout that lists `--prepare` in `eval --help`, start
+from two complete versions of one Skill and a real fix commit, including its regression tests:
 
 ```bash
 skillfit eval ./skill-new --baseline-skill ./skill-old --prepare ./comparison --from-commit <fix-sha> --source-dir ./project --prompt-file ./issue.md --agent codex --dry-run
@@ -44,8 +44,7 @@ skillfit eval --request ./comparison/request.json --plan-sha <sha256-from-previe
 Run only within authorized spending. The separate evaluation preview checks the
 agent environment; a ready workspace does not establish authentication or isolate
 inherited global Skills/rules/MCP. For an already authored bench or larger
-independent validation, use the request contract below. This entry is source-only
-until a release containing `--prepare` is published.
+independent validation, use the request contract below. This preparation entry is included in npm 0.16.1; earlier packages do not provide it.
 
 ## Input and execution
 
