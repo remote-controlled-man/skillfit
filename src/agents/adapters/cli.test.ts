@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -326,6 +327,33 @@ test("CliExecutor with shell keeps a multi-word arg as one argument", async () =
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("shell CLI execution preserves literal arguments when deprecations are fatal", (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit shell invocation "));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const script = join(dir, "echo arguments.mjs");
+  writeFileSync(
+    script,
+    "process.stdout.write(JSON.stringify(process.argv.slice(2)));process.stdin.resume();",
+  );
+  const expected = ["two words", "", "projects.'local path'.trust_level='trusted'"];
+  const runner = `
+    import { CliExecutor } from ${JSON.stringify(new URL("./cli.js", import.meta.url).href)};
+    const executor = new CliExecutor({
+      argv: ${JSON.stringify([process.execPath, script, ...expected])},
+      shell: true,
+    });
+    const result = await executor.run("task", ${JSON.stringify(dir)});
+    process.stdout.write(result.output);
+  `;
+  const result = spawnSync(
+    process.execPath,
+    ["--throw-deprecation", "--input-type=module", "-e", runner],
+    { cwd: dir, encoding: "utf8", timeout: 15000 },
+  );
+  assert.equal(result.status, 0, result.stderr || String(result.error));
+  assert.deepEqual(JSON.parse(result.stdout), expected);
 });
 
 test("CliExecutor trigger detection detects a Skill tool_call in kimi stream-json", async () => {
