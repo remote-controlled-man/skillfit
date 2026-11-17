@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.16.1 — Prepare Skill revision comparisons and fix shell startup (2026-11-17)
+
+- `eval --prepare` creates a fresh comparison workspace from two complete Skill
+  versions, a real fix commit and an issue-style prompt. It snapshots both Skills,
+  imports the parent fixture and hidden regression tests, records the reference
+  fix, runs local integrity gates and writes a balanced two-call development
+  request. Preview writes nothing and calls no model; execution remains separate
+  and requires its dry-run fingerprint and authorized spending.
+- Existing outputs are refused, source drift is rechecked before creation,
+  failed writes remove the new workspace and failed integrity gates retain
+  blocked inputs. Revision adoption policy and verdict semantics are unchanged.
+- Shell-backed agent startup passes its already quoted command line directly to
+  Node, avoiding DEP0190 while preserving literal arguments, empty values and
+  executable paths containing spaces.
+
 ## 0.16.0 — Personal agent configuration maintenance (2026-11-16)
 
 - Add versioned `doctor --json` output and opt-in `doctor --strict` health
