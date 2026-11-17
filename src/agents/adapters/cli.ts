@@ -292,8 +292,10 @@ export class CliExecutor implements Executor {
       return Promise.reject(new Error("CliExecutor has an empty command"));
     }
     const spawnArgv = this.shell ? [command, ...args].map(quoteShellArg) : [command, ...args];
-    const spawnCommand = spawnArgv[0] ?? command;
-    const spawnArgs = spawnArgv.slice(1);
+    // Shell arguments have already been validated and quoted. Supply the command line directly
+    // instead of asking Node to concatenate a separate argv, which is deprecated as DEP0190.
+    const spawnCommand = this.shell ? spawnArgv.join(" ") : (spawnArgv[0] ?? command);
+    const spawnArgs = this.shell ? [] : spawnArgv.slice(1);
     return new Promise((resolvePromise, rejectPromise) => {
       const deadline = new ExecutionDeadline(this.timeoutMs, this.clock);
       const child = spawn(spawnCommand, spawnArgs, {
