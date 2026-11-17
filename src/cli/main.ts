@@ -29,6 +29,7 @@ import { runInstall, runMcpApply, runUninstall } from "../composition.js";
 import { runMcpCheck } from "./mcp.js";
 import { runReport } from "./report.js";
 import { runCodexSetup } from "../composition.js";
+import { prepareSkillRevision } from "../composition.js";
 import { VERSION } from "../shared/version.js";
 
 function jsonBenchCommand(): string | null {
@@ -148,6 +149,68 @@ async function main(): Promise<void> {
   }
   if (values.controls !== undefined || values.suite !== undefined)
     throw new Error("--controls and --suite apply only to bench self-test.");
+  if (values.prepare !== undefined) {
+    if (values.json && !values["dry-run"] && !values.yes)
+      throw new Error("JSON preparation requires --yes; preview first with --dry-run.");
+    if (command !== "eval" || positionals.length !== 2)
+      throw new Error("--prepare requires eval <candidate-skill>.");
+    const allowed = new Set([
+      "prepare",
+      "baseline-skill",
+      "from-commit",
+      "source-dir",
+      "prompt-file",
+      "agent",
+      "include",
+      "verifier-cmd",
+      "spending-budget",
+      "executor-timeout-seconds",
+      "dry-run",
+      "yes",
+      "json",
+    ]);
+    for (const [key, value] of Object.entries(values))
+      if (value !== undefined && value !== false && !allowed.has(key))
+        throw new Error(`--${key} is unsupported with --prepare; no evaluation started.`);
+    if (
+      !values["baseline-skill"] ||
+      !values["from-commit"] ||
+      !values["source-dir"] ||
+      !values["prompt-file"] ||
+      !values.agent
+    )
+      throw new Error(
+        "--prepare requires --baseline-skill, --from-commit, --source-dir, --prompt-file and --agent.",
+      );
+    const result = await prepareSkillRevision({
+      candidateSkill: positionals[1]!,
+      baselineSkill: values["baseline-skill"],
+      workspace: values.prepare,
+      sourceDir: values["source-dir"],
+      fromCommit: values["from-commit"],
+      promptFile: values["prompt-file"],
+      agent: values.agent,
+      include: values.include,
+      verifierCmd: values["verifier-cmd"],
+      dryRun: values["dry-run"],
+      yes: values.yes,
+      spendingBudget:
+        values["spending-budget"] === undefined
+          ? undefined
+          : parseSpendingBudget(readComponentJson(resolve(values["spending-budget"])).value),
+      executorTimeoutSeconds: executorTimeoutArgument(values["executor-timeout-seconds"]),
+      log: (line) => (values.json ? console.error(line) : console.log(line)),
+    });
+    if (values.json) console.log(JSON.stringify(result, null, 2));
+    else {
+      console.log(
+        `Revision workspace: ${result.status}; ${result.files.length} files; 0 model calls.\nRequest: ${result.requestPath}`,
+      );
+      for (const command of result.nextCommands) console.log(`  ${command}`);
+    }
+    if (result.status === "blocked") process.exitCode = 2;
+    return;
+  }
   const calibrationCommand = command === "bench" && positionals[1] === "check" && values.calibrate;
   if (values["baseline-skill"] !== undefined && command !== "eval") {
     throw new Error("--baseline-skill applies only to eval --mode installed.");

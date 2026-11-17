@@ -76,6 +76,21 @@ Keep `--runs-root` outside the bench/Skill/runtime and Git metadata; bad layouts
 are rejected at preview, including aliases. See the
 [first-run guide](https://github.com/remote-controlled-man/skillfit/blob/3656a8975fa29af822a7359d18d0578b415c755b/docs/guides/first-real-eval.md).
 
+For a first revision comparison, check `eval --help` for source-only `--prepare`.
+When available, preview `eval <new-skill> --baseline-skill <old-skill> --prepare
+<fresh-workspace> --from-commit <fix-sha> --source-dir <repo> --prompt-file
+<issue-request> --agent <id> --dry-run`. This validates two complete same-name,
+different-byte Skills and mines the fix plus its tests without model calls.
+Apply within existing local-write authorization using `--yes`; creation executes
+trusted offline verifier/oracle commands, with `--verifier-cmd` retained for later
+runs (default `node --test`). Failed gates retain the workspace as blocked. No
+agent configuration is changed or isolated. The generated request uses one
+balanced development pair with a two-call ceiling; optional spending-budget and
+executor-timeout flags are copied into it. Preview the returned request separately
+and confirm its exact digest only within authorized spending. This entry does not
+prepare independent validation or relax the adoption policy. Do not assume the
+pinned historical source snapshot or npm 0.16.0 contains it.
+
 Since 0.12.0, `--freeze` selects tracked ordinary files inside Git; outside Git,
 explicit `--include <file-or-dir>` selections are required. Narrow large fixtures
 before importing. For `--decompose`, preview and authorize its single call within

@@ -19,6 +19,9 @@ const baselineSkill = option(
 const request = option(
   "  --request <path>    Version 1 Skill revision request (JSON output; excludes positional eval options)",
 );
+const prepare = option(
+  "  --prepare <dir>    Prepare a fresh revision workspace; requires --baseline-skill, --from-commit, --source-dir, --prompt-file and --agent (no model calls)",
+);
 const planSha = option(
   "  --plan-sha <hash>   Confirm an eval/calibration/self-test dry-run plan (also needs --run-group)",
 );
@@ -168,6 +171,7 @@ const COMMAND_HELP: Record<string, string> = {
       mode,
       baselineSkill,
       request,
+      prepare,
       planSha,
       json,
       spendingBudget,
@@ -291,6 +295,7 @@ export const CLI_OPTIONS = {
   mode: { type: "string" },
   "baseline-skill": { type: "string" },
   request: { type: "string" },
+  prepare: { type: "string" },
   "plan-sha": { type: "string" },
   "spending-budget": { type: "string" },
   "executor-timeout-seconds": { type: "string" },

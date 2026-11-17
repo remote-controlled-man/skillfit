@@ -885,7 +885,12 @@ process.exit(result.status ?? 1);
 `;
 }
 
-function prepareFromCommit(options: BenchAddOptions, cwd: string, preparedAt: Date): PreparedAdd {
+function prepareFromCommit(
+  options: BenchAddOptions,
+  cwd: string,
+  preparedAt: Date,
+  reference = false,
+): PreparedAdd {
   const issuePrompt =
     options.prompt ??
     (options.promptFile !== undefined
@@ -978,6 +983,16 @@ function prepareFromCommit(options: BenchAddOptions, cwd: string, preparedAt: Da
     content: gitShow(repo, sha, entry.path),
   }));
   const verifierCmd = options.verifierCmd ?? "node --test";
+  const referenceFiles = reference
+    ? nonTests.map((entry) => {
+        if (isAbsolute(entry.path) || entry.path.split(/[\\/]/).includes(".."))
+          throw new Error(`Invalid reference path: ${entry.path}`);
+        return {
+          path: entry.path,
+          content: entry.status === "D" ? null : gitShow(repo, sha, entry.path).toString("base64"),
+        };
+      })
+    : [];
 
   return {
     defaultTaskId: `fix-${shortSha}`,
@@ -997,6 +1012,20 @@ ${subject}${body !== "" ? `\n\n${body}` : ""}
 - Hidden grading runs the project's tests afterward — make the behavior correct, not merely plausible.`,
     verifierSource: verifierForMinedTests(tests, verifierCmd),
     verifierKind: "command",
+    ...(reference
+      ? {
+          oracleSource: `import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+const root = process.argv[2];
+if (!root) throw new Error('Missing run directory');
+for (const file of ${JSON.stringify(referenceFiles)}) {
+  const target = join(root, file.path);
+  if (file.content === null) rmSync(target, {force: true});
+  else { mkdirSync(dirname(target), {recursive: true}); writeFileSync(target, Buffer.from(file.content, 'base64')); }
+}
+`,
+        }
+      : {}),
     fixtureFiles,
     groundTruth: `# Ground truth — fix-${shortSha}
 
@@ -1158,6 +1187,99 @@ function prepareManagement(options: BenchManageOptions) {
           result.status = "applied";
         }
         return result;
+      },
+    },
+  );
+}
+
+/** Mine a complete, fresh bench without writing a teaching task or invoking a drafter. */
+export function prepareCommitBench(
+  options: Pick<
+    BenchAddOptions,
+    "fromCommit" | "sourceDir" | "promptFile" | "verifierCmd" | "include" | "cwd"
+  > & { dir: string },
+): PreparedBenchChange<{ dir: string }> {
+  if (!options.fromCommit || !options.promptFile)
+    throw new Error("Commit preparation requires --from-commit and an issue-style --prompt-file.");
+  const cwd = options.cwd ?? process.cwd(),
+    dir = resolve(cwd, options.dir),
+    at = new Date();
+  const capture = () => prepareFromCommit(options, cwd, at, true);
+  const source = capture(),
+    fingerprint = sha256Text(JSON.stringify(source));
+  const files = taskFilePaths(source.defaultTaskId);
+  const writes = source.fixtureFiles.map((file) => ({
+    target: join(dir, files.fixture, file.rel),
+    content: file.content as Buffer | string,
+  }));
+  for (const [rel, content] of Object.entries({
+    [files.prompt]: source.promptText,
+    [files.promptTrigger]: source.promptText,
+    [files.verifier]: source.verifierSource,
+    [files.oracle]: source.oracleSource!,
+    [files.rubric]: source.groundTruth.replace(
+      "TODO: summarize the correct fix here so future bench edits stay honest.",
+      "The reference oracle applies the fix commit's non-test file changes; the verifier supplies the commit's tests.",
+    ),
+    "bench.json":
+      JSON.stringify(
+        {
+          schemaVersion: 1,
+          name: basename(dir),
+          tasks: [
+            {
+              id: source.defaultTaskId,
+              fixture: files.fixture,
+              prompt: files.prompt,
+              promptTrigger: files.promptTrigger,
+              verifier: `node ${files.verifier}`,
+              verifierKind: "command",
+              oracle: `node ${files.oracle}`,
+              rubric: files.rubric,
+            },
+          ],
+        },
+        null,
+        2,
+      ) + "\n",
+  }))
+    writes.push({ target: join(dir, rel), content });
+  const assertCurrent = () => {
+    try {
+      lstatSync(dir);
+      throw new Error(`Target directory already exists: ${dir}`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+    if (sha256Text(JSON.stringify(capture())) !== fingerprint)
+      throw new Error("Commit source changed; prepare a fresh plan.");
+  };
+  assertCurrent();
+  return prepared(
+    {
+      operation: "init",
+      dir,
+      writes,
+      sourceSha256: fingerprint,
+      targetSha256: sha256Text(JSON.stringify(writes)),
+      lines: { before: [], preview: [], after: [] },
+      confirmation: `Create commit-derived bench in ${dir}? [y/N] `,
+      draft: false,
+      result: { dir },
+      assertCurrent,
+    },
+    {
+      apply: () => {
+        assertCurrent();
+        mkdirSync(dirname(dir), { recursive: true });
+        mkdirSync(dir);
+        try {
+          applyBenchWrites(dir, writes);
+          return { dir };
+        } catch (error) {
+          rmSync(dir, { recursive: true, force: true });
+          throw error;
+        }
       },
     },
   );

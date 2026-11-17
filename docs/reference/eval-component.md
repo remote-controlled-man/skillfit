@@ -7,6 +7,46 @@ formats and costs, and [metrics](metrics.md) owns statistical meaning.
 Use the [build/version entry](../README.md#choose-your-build) for availability.
 The component never installs or adopts a Skill automatically.
 
+## Prepare a first revision comparison
+
+In a built checkout that lists `--prepare` in `eval --help`, start from two complete
+versions of one Skill and a real fix commit, including its regression tests:
+
+```bash
+skillfit eval ./skill-new --baseline-skill ./skill-old --prepare ./comparison --from-commit <fix-sha> --source-dir ./project --prompt-file ./issue.md --agent codex --dry-run
+```
+
+Use the original issue-style request in `issue.md`; the fix commit's message is
+kept out of the task prompt. Preview validates inputs and lists destination files
+without writing or executing verifier/oracle/model commands. Remove `--dry-run`
+and use `--yes` (or confirm interactively) to create the workspace and run its
+trusted local checks. `--verifier-cmd` defaults to `node --test`; it is retained
+and run with a shell on future checks/evaluations. `--include` narrows the fixture
+to repository directories using the existing commit import limits.
+
+The fresh workspace contains complete `skills/old` and `skills/new` snapshots, a
+commit-derived `bench` and `request.json`. Existing destinations, even empty ones,
+are refused. A write failure removes only the newly created workspace. A failed
+integrity gate instead returns `blocked` and retains inputs for inspection.
+Preparation requires no model call and does not change agent configuration.
+
+The request defaults to one balanced development pair (two task invocations),
+the existing 600-second executor deadline and unchanged adoption policy. Optional
+`--spending-budget <file>` and `--executor-timeout-seconds <n|none>` are copied into
+the request after validation. No token cap is implied when the budget is omitted.
+This small run cannot authorize adoption. Inspect the returned next commands:
+
+```bash
+skillfit eval --request ./comparison/request.json --dry-run
+skillfit eval --request ./comparison/request.json --plan-sha <sha256-from-preview>
+```
+
+Run only within authorized spending. The separate evaluation preview checks the
+agent environment; a ready workspace does not establish authentication or isolate
+inherited global Skills/rules/MCP. For an already authored bench or larger
+independent validation, use the request contract below. This entry is source-only
+until a release containing `--prepare` is published.
+
 ## Input and execution
 
 Save `request.json` outside the evaluated Skill directories. All paths resolve
