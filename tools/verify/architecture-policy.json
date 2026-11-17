@@ -339,7 +339,8 @@
         "evaluation/application/read.js",
         "evaluation/application/evaluation.js",
         "evaluation/application/export.js",
-        "evaluation/application/self-test.js"
+        "evaluation/application/self-test.js",
+        "evaluation/application/preparation.js"
       ]
     },
     {
@@ -715,7 +716,8 @@
         "evaluation/records/single-arm-read.js",
         "evaluation/records/single-arm-replay.js",
         "evaluation/records/replay-package.js",
-        "evaluation/records/single-arm-audit.js"
+        "evaluation/records/single-arm-audit.js",
+        "evaluation/application/preparation.js"
       ]
     },
     "cli": {

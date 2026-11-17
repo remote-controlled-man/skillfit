@@ -15,6 +15,16 @@ import { runUninstall as uninstall } from "./configuration/uninstall.js";
 import { runMcpApply as mcpApply } from "./configuration/mcp-write.js";
 import { runBundleExport as bundle } from "./configuration/bundle.js";
 import { runCodexSetup as setup } from "./configuration/setup.js";
+import {
+  prepareSkillRevision as prepareRevision,
+  type RevisionPreparationOptions,
+} from "./evaluation/application/preparation.js";
+
+export function prepareSkillRevision(options: RevisionPreparationOptions) {
+  return withEvaluationInterrupts(() =>
+    prepareRevision({ ...options, confirm: options.confirm ?? confirm }),
+  );
+}
 
 export function executeEvalPlan(...args: Parameters<typeof evaluation.executeEvalPlan>) {
   return withEvaluationInterrupts(() => evaluation.executeEvalPlan(...args));
