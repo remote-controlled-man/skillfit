@@ -72,7 +72,10 @@ async function fixture(t: TestContext, ids: string[]) {
           usageStatus: "partial",
         });
       return {
-        output: id === "hard" || (id === "mixed" && nth === 2) ? "wrong" : "skillfit-ok",
+        output:
+          id === "hard" || (id === "mixed" && nth === 2) || (id === "improved" && nth === 1)
+            ? "wrong"
+            : "skillfit-ok",
         tokens: { input: 10, cachedInput: 0, output: 1 },
         ...(id === "pos-unknown"
           ? {}
@@ -92,6 +95,176 @@ function observedFiles(run: string, final: string) {
     readFileSync(join(run, path), "utf8"),
   );
 }
+
+test("revision report leads with regressions and connects audited checks to both saved outputs", async (t) => {
+  const f = await fixture(t, ["improved", "easy", "mixed"]);
+  const frontmatter =
+    "---\nname: report-revision\ndescription: Offline revision report fixture.\n---\n";
+  writeFileSync(join(f.skill, "SKILL.md"), frontmatter + "Candidate instructions.\n");
+  const previous = join(f.root, "previous");
+  mkdirSync(previous);
+  writeFileSync(join(previous, "SKILL.md"), frontmatter + "Previous instructions.\n");
+  await runEval({
+    skillPath: f.skill,
+    baselineSkillPath: previous,
+    bench: f.bench,
+    mode: "installed",
+    skillInstallDir: "project-skills",
+    executor: {
+      ...f.executor,
+      describe: () => ({ kind: "mock", model: "offline-revision-report" }),
+    },
+    trials: 1,
+    runsRoot: f.runsRoot,
+    runGroup: "revision",
+    dryRun: false,
+    yes: true,
+    log: () => {},
+  });
+  const run = join(f.runsRoot, "revision");
+  const before = observedFiles(run, "manifest.json");
+  const jsonBefore = f.cli(run, ["--json"]);
+  assert.equal(jsonBefore.status, 0, jsonBefore.stderr);
+  assert.equal(JSON.parse(jsonBefore.stdout).evidence.verified, true);
+  const result = f.cli(run);
+  assert.equal(result.status, 0, result.stderr);
+  const summary = result.stdout.slice(0, result.stdout.indexOf("## Statistical readout"));
+  assert.match(summary, /Graded pass\/fail pairs: 1 improved, 1 regressed, 1 unchanged/);
+  assert.match(summary, /Observed regressions: mixed/);
+  assert.match(summary, /Observed improvements: improved/);
+  assert.match(summary, /No observed change: easy/);
+  assert.ok(summary.indexOf("| mixed |") < summary.indexOf("| improved |"));
+  assert.match(summary, /exact-answer: regressed/);
+  for (const arm of ["baseline", "treatment"]) {
+    const receipt = `mixed/${arm}/trial-1/_result.json`;
+    const output = `mixed/${arm}/trial-1/_output.md`;
+    const verifier = `mixed/${arm}/trial-1/_verifier.txt`;
+    for (const file of [receipt, output, verifier]) {
+      assert.ok(existsSync(join(run, file)));
+      assert.ok(summary.includes(file), `missing evidence reference ${file}`);
+    }
+  }
+  assert.match(summary, /relative to \[run\]/);
+  assert.ok(!result.stdout.includes(f.root));
+  assert.deepEqual(observedFiles(run, "manifest.json"), before);
+  assert.equal(f.cli(run, ["--json"]).stdout, jsonBefore.stdout);
+  assert.equal(f.calls(), 6, "reading reports makes no additional executor calls");
+});
+
+test("comparison summary keeps executor errors out of quality regressions and directs the user to error receipts", async (t) => {
+  const f = await fixture(t, ["neg-error"]);
+  await runEval({
+    skillPath: f.skill,
+    bench: f.bench,
+    executor: f.executor,
+    trials: 1,
+    runsRoot: f.runsRoot,
+    runGroup: "errors",
+    dryRun: false,
+    yes: true,
+    log: () => {},
+  });
+  const run = join(f.runsRoot, "errors");
+  const before = observedFiles(run, "manifest.json");
+  const output = f.cli(run);
+  assert.equal(output.status, 0, output.stderr);
+  const summary = output.stdout.split("## Statistical readout")[0]!;
+  assert.match(summary, /Execution\/verifier errors B\/T: 1\/1/);
+  assert.match(summary, /Next: inspect the execution\/verifier errors/);
+  assert.match(summary, /Observed regressions: none recorded/);
+  assert.match(summary, /Graded pass\/fail pairs: 0 improved, 0 regressed, 0 unchanged/);
+  assert.match(summary, /\| neg-error \| ungraded; execution\/verifier errors/);
+  assert.match(summary, /error \(ungraded\) → not invoked \(ungraded\)/);
+  assert.match(summary, /Not invoked B\/T: 0\/1/);
+  assert.match(summary, /neg-error\/treatment\/trial-1\/_executor-error.txt/);
+  assert.match(summary, /\| Cached input tokens \| unrecorded \| unrecorded \| n\/a/);
+  assert.match(summary, /\| Input tokens \| >= 4 \| unrecorded \| n\/a/);
+  assert.deepEqual(observedFiles(run, "manifest.json"), before);
+  assert.equal(f.calls(), 1);
+});
+
+test("a retained run without a final manifest starts with recovery steps and no invented quality counts", async (t) => {
+  const f = await fixture(t, ["easy"]);
+  await runEval({
+    skillPath: f.skill,
+    bench: f.bench,
+    executor: f.executor,
+    trials: 1,
+    runsRoot: f.runsRoot,
+    runGroup: "retained",
+    dryRun: false,
+    yes: true,
+    log: () => {},
+  });
+  const run = join(f.runsRoot, "retained");
+  rmSync(join(run, "manifest.json"));
+  const files = ["_plan.json", "_session.json", "_calls.jsonl", "_artifacts.json"];
+  const before = files.map((file) => readFileSync(join(run, file), "utf8"));
+  const output = f.cli(run);
+  assert.equal(output.status, 0, output.stderr);
+  assert.match(output.stdout, /## Comparison summary/);
+  assert.match(output.stdout, /Graded comparison: unavailable/);
+  assert.match(output.stdout, /Retained records \(unverified\)/);
+  assert.match(output.stdout, /\[session\]\(_session.json\)/);
+  assert.match(output.stdout, /\[ledger\]\(_calls.jsonl\)/);
+  assert.match(output.stdout, /Next: inspect the retained session, ledger and stop reason/);
+  assert.match(output.stdout, /Acceptance: inconclusive; eligible for upgrade: no/);
+  assert.doesNotMatch(
+    output.stdout,
+    /Observed regressions:|Graded pass\/fail pairs:|Statistical quality verdict:/,
+  );
+  assert.match(output.stdout, /## Retained costs/);
+  assert.deepEqual(
+    files.map((file) => readFileSync(join(run, file), "utf8")),
+    before,
+  );
+  assert.equal(f.calls(), 2);
+});
+
+test("comparison summary exposes per-pair check regressions hidden by unchanged task averages", async (t) => {
+  const f = await fixture(t, ["offsetting-checks"]);
+  writeFileSync(
+    join(f.bench, "tasks/example-task/verify.mjs"),
+    `import {readFileSync} from 'node:fs';import {join} from 'node:path';
+let output='';try{output=readFileSync(join(process.argv[2],'_output.md'),'utf8').trim()}catch{}
+const passed=['a','b','skillfit-ok'].includes(output);
+const checks=[{name:'check-a',pass:output==='a'||output==='skillfit-ok'},{name:'check-b',pass:output==='b'||output==='skillfit-ok'}];
+console.log(JSON.stringify({passed,score:checks.filter(c=>c.pass).length/2,checks}));process.exit(passed?0:1);`,
+  );
+  let calls = 0;
+  await runEval({
+    skillPath: f.skill,
+    bench: f.bench,
+    executor: {
+      describe: () => ({ kind: "stub", model: "offline-offsetting-checks" }),
+      run: async () => ({
+        output: ["a", "b", "b", "a"][calls++]!,
+        tokens: { input: 10, cachedInput: 0, output: 1 },
+      }),
+    },
+    trials: 2,
+    runsRoot: f.runsRoot,
+    runGroup: "offsetting",
+    dryRun: false,
+    yes: true,
+    log: () => {},
+  });
+  const run = join(f.runsRoot, "offsetting");
+  const json = JSON.parse(f.cli(run, ["--json"]).stdout);
+  assert.equal(json.evidence.verified, true);
+  assert.equal(json.quality.tasks[0].scoreDelta, 0);
+  assert.deepEqual(json.quality.tasks[0].regressedFacets, []);
+  assert.equal(json.quality.deltaPassRate, 0);
+  const output = f.cli(run);
+  assert.equal(output.status, 0, output.stderr);
+  const summary = output.stdout.split("## Statistical readout")[0]!;
+  assert.match(summary, /Observed regressions: offsetting-checks/);
+  assert.match(summary, /check-a: regressed/);
+  assert.match(summary, /check-b: regressed/);
+  assert.match(summary, /OBSERVED_PAIR_REGRESSION/);
+  assert.match(summary, /offsetting-checks\/treatment\/trial-2\/_result.json/);
+  assert.equal(calls, 4);
+});
 
 test("completed native calibration uses its own summary, state and difficulty metrics in both formats", async (t) => {
   const f = await fixture(t, ["easy", "hard", "mixed"]);

@@ -8,6 +8,39 @@ environment to invent historical usage, identity or claims. Saved format
 versions stay owned by the
 [architecture page](../maintainers/architecture.md#format-identity-and-replay-compatibility).
 
+## Human comparison summary
+
+Current-source paired human reports start with the saved run state, native audit
+status and existing adoption decision, followed by observed changes. Regressed
+tasks appear before error-only, improved and unchanged tasks. Pass/fail changes,
+named-check changes and score changes remain observations; unchanged outcomes do
+not establish equivalence, and execution/verifier errors are excluded from graded
+pairs rather than counted as quality regressions. An individual audited check
+regression stays visible even when task averages cancel it out.
+Legacy pooled changes without per-task paired outcomes show that task attribution
+is unrecorded instead of reporting no observed regression or improvement.
+
+The compact cost table covers all primary Agent invocations, including errors
+and excluded partners, with final/partial/unknown coverage. Partial totals carry
+`>=` and incomplete coverage suppresses percentage changes; missing usage stays
+unrecorded. Per-success costs and separate judge accounting remain in the detailed
+sections. These descriptive numbers are not a bill or a proven efficiency gain.
+
+Verified native pairs include references to existing receipts, outputs, verifier
+logs and error files. References resolve relative to the native run directory,
+shown as `[run]`; a portable package keeps that directory under `run/`. Local
+absolute run paths are omitted. An unverified or historical aggregate report
+does not infer trial paths or claim that per-trial evidence was verified. Keep
+derived reports outside sealed runs so their artifact inventories remain intact.
+
+Suggested next steps distinguish error recovery, regression inspection, declared
+cost limits, audit findings and a separately planned independent validation.
+Stopped or incomplete runs without a final manifest show recovery steps and
+retained costs without inventing quality counts. Existing session, ledger and
+plan references in that recovery summary are explicitly unverified. Reading a
+report neither resumes a run nor authorizes more calls or automatic adoption. Statistical verdicts,
+adoption policies, saved bytes and the paired JSON contract are unchanged.
+
 ## Frozen measurement scope
 
 Unpublished source records can include optional `measurementScope` v1 in paired,
