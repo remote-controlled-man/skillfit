@@ -4,9 +4,9 @@
 
 # skillfit
 
-**给 agent 配置做 A/B 测试。**
+**比较 Skill 新旧版，决定这版要不要合。**
 
-skillfit 在同一批任务上比较基线组与实验组，并报告变化及其边界。
+skillfit 用新旧两版跑同一批任务，报告任务结果、Token 消耗和耗时的变化。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
@@ -16,56 +16,53 @@ skillfit 在同一批任务上比较基线组与实验组，并报告变化及�
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[文档目录](docs/README.md) · [快速开始](#先看已经装上的) · [边界](#边界) · [Bench 指南](benches/README.md) · [评测报告](docs/reference/evaluation-reports.md) · [贡献](#贡献)
+[文档目录](docs/README.md) · [快速开始](#改了个-skill这版该不该合) · [边界](#边界) · [Bench 指南](benches/README.md) · [评测报告](docs/reference/evaluation-reports.md) · [贡献](#贡献)
 
 </div>
 
 ---
 
-## 先看已经装上的
+## 改了个 Skill，这版该不该合
 
-`report` 和 `doctor` 只读这台机器，不调用模型。
+### `diagnosing-bugs` 的一次真实对比
+
+2026 年 11 月 17 日，Codex 用两版 Skill 各做了一次相同的开发任务，修复一个可复现的 Skillfit 启动问题。两版都通过，报告建议**保留旧版**（`reject`）。新版的总输入下降，但未缓存输入、输出和耗时都超过了允许的增幅。
+
+| 指标 | 旧版 | 新版 | 变化 |
+| --- | ---: | ---: | ---: |
+| 任务通过 | 1/1 | 1/1 | 0 个百分点 |
+| 总输入 Token | 180,100 | 141,845 | −21.2% |
+| 未缓存输入 Token | 11,268 | 22,677 | +101.3% |
+| 输出 Token | 3,628 | 4,701 | +29.6% |
+| 耗时（秒） | 142.309 | 191.288 | +34.4% |
+
+质量的统计判定是 `inconclusive`。这一对结果显示了这次任务的开销差异。要判断质量是否普遍改善，还需要独立验证。[如何读报告](docs/reference/evaluation-reports.md#human-comparison-summary)
+
+### 比较你自己的改动
+
+准备 Node.js 22+、Codex CLI 和两个完整的 Skill 目录。两个版本的内容要有差异，`SKILL.md` 声明的 `name` 须相同。把 `fix_sha` 设为 `./project` 中包含回归测试的真实修复提交，把原始任务请求存入 `./issue.md`。
 
 ```bash
-npx skillfit@0.16.2 report
-npx skillfit@0.16.2 doctor
-npx skillfit@0.16.2 doctor --json
-npx skillfit@0.16.2 doctor --strict
+npx skillfit@0.16.2 eval ./skill-new --baseline-skill ./skill-old --prepare ./comparison --from-commit "$fix_sha" --source-dir ./project --prompt-file ./issue.md --agent codex --dry-run
 ```
 
-JSON 输出是 `skillfit.doctor-report` [v1 文档](docs/schemas/doctor-report.schema.json)，包含 Agent 检测、Rules/Skills/MCP 检查及一致的汇总计数。默认情况下发现异常仍是建议信息并退出 0；`--strict` 在存在 FAIL 时显式退出 1，未知 Agent 仍退出 2。所有 doctor 模式都保持只读：不调用模型、不连接 MCP，也不修改配置。
+检查计划，再把 `--dry-run` 换成 `--yes`，创建 `./comparison` 并执行本地检查。默认用 `node --test` 判分，准备阶段不会调用模型。接着预览生成的评测。
 
-```console
-$ npx skillfit@0.16.2 report --agent codex
-
-codex — 280 session(s), 280 transcript(s)
-  skill                          FIRES  SESSIONS  LAST SEEN
-  prflow                         85     19        2026-11-04
-  code-review                    76     37        2026-11-04
-  open-code-review-delegate      76     37        2026-11-04
-  ponytail                       71     26        2026-11-04
-  tdd                            57     25        2026-11-04
-  diagnosing-bugs                31     19        2026-11-04
-  codebase-design                21     8         2026-11-04
-  awesome-design-doc             11     4         2026-11-04
-  improve-codebase-architecture  6      5         2026-11-04
-  vibe-coding                    6      4         2026-11-03
-  to-spec                        5      2         2026-11-04
-  ponytail-debt                  1      1         2026-10-29
-  domain-modeling                0      0         —
-  grill-with-docs                0      0         —
-  grilling                       0      0         —
-  setup-matt-pocock-skills       0      0         —
-  to-tickets                     0      0         —
-  installed: 17, observed firing: 12, no observed fire: 5
-  no observed fire in retained history: domain-modeling, grill-with-docs, grilling, setup-matt-pocock-skills, to-tickets
-
-Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in retained history.
+```bash
+npx skillfit@0.16.2 eval --request ./comparison/request.json --dry-run
 ```
 
-摘自 2026-11-04 的一份 Codex 历史。五个已安装 Skill 没有触发记录，这只是优先处理的信号，安装日期并不知道。`prflow` 是项目里的 Skill。Codex 会话记下了项目目录，所以它算作已安装。省略的目录体积那一行只统计用户目录。报告会区分原生 Skill 事件与 Codex 对已注册 `SKILL.md` 的读取命令。缺失历史代表未测量，不是零使用。评估建议先使用 `--dry-run`；触发观察不是任务质量结果，使用情况也不会自动卸载或升级 Skill。
+检查 `plan.evaluation.agentPreflight.status` 和两次任务调用的上限，每版各跑一次。预览如果提醒已全局安装同名 Skill，换到没有全局加载该 Skill 的独立 agent 环境。[准备干净的对比环境](docs/guides/first-real-eval.md#4-prepare-a-real-comparison)
 
-## 花钱之前先看一份真实报告
+确认这次开销后，把 `--dry-run` 换成 `--plan-sha`，并传入最新预览里的 `plan.sha256`。运行完成后读取报告，查看采用判断、任务结果和开销。
+
+```bash
+npx skillfit@0.16.2 report eval ./comparison/runs/revision-001
+```
+
+第一对结果可以暴露回归或开销增长。正式判断可采用需要独立验证。[准备评测、设定开销上限与验证](docs/reference/eval-component.md#prepare-a-first-revision-comparison)
+
+## 不调用模型，试跑评测报告
 
 不需要 agent CLI、不需要登录、不调用模型。以下命令读取包内自带的 bench，几秒即可跑完：
 
@@ -93,10 +90,9 @@ npx skillfit@0.16.2 report eval ./runs/controls-001/existing-mock-arms
 
 ```bash
 npx skillfit@0.16.2 --help
-npx skillfit@0.16.2 doctor
 ```
 
-需要 Node.js 22+。以上两条命令均离线执行，不调用模型：`--help` 列出九个命令；`doctor` 是只读健康报告，检测你装了哪些受支持的 agent、检查它们的规则文件，并标出无效或冲突的 Skill。[选择构建](docs/README.md#choose-your-build)是包/源码边界、可用性确认与旧版发布文档的唯一入口。
+需要 Node.js 22+。npm 解析到包后，CLI 帮助在本地运行。[选择构建](docs/README.md#choose-your-build)涵盖 npm 包和源码版本、可用性检查及旧版发布文档。
 
 ## 为什么
 
@@ -114,7 +110,7 @@ skillfit 提供配对 A/B 实验、确定性 verifier、统计判定和触发率
 
 围绕你自己的任务编写 case：固定初始文件、写下任务请求、定义正确结果必须满足的条件。内置 bench 用来教格式；CLI 负责运行你的 case、对比结果和成本、保存证据。参见[case 编写指南](docs/guides/bench-authoring.md)。
 
-## 用 npm 开始
+## 用自己的 case 评估 Skill
 
 在项目目录执行，指向你真正在用的 Skill——任何含 `SKILL.md` 且带 `name` 与 `description` frontmatter 的目录都可以。把下面的示例存成 `my-skill/SKILL.md`，也就是 `eval` 命令引用的那个路径：
 
@@ -171,9 +167,9 @@ F1                  : 0.20 (no CI: a harmonic mean of two proportions has no clo
 
 <sub>2026-09-22 从源码检出在 Kimi Code 上针对当时的 4 任务 `code-review` bench 抓取。该 bench 之后新增了第 5 个任务；上面四行指标是用那次运行记录的每任务计数重新渲染的——运行是真实的，格式是当前的。</sub>
 
-## 本文往下都在源码轨道上运行
+## 运行源码示例
 
-上面的 npm 命令在任何目录都能跑。从这里往下，示例都写成 `node dist/cli.js …`，在仓库根目录运行，这样示例就能直接引用 skillfit 自带的 bench、示例 manifest 和 `skills/` 目录。构建一次即可：
+使用 `node dist/cli.js …` 的示例在仓库根目录运行，可以直接引用 skillfit 自带的 bench、示例 manifest 和 `skills/` 目录。先构建一次：
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
@@ -191,7 +187,7 @@ node dist/cli.js install --agent codex --dry-run
 
 这个固定提交包含版本比较报告改进，构建后显示本次发布前的版本号 0.16.1。要在自己的检出上开发，请按 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md) 操作。
 
-校验离线执行；`doctor` 只读，两种预览都只展示计划。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**；[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、trigger reader、token/cache 限制与验证层级。matrix 声明命令；离线替身不能证明已安装 CLI 的兼容性或登录状态。
+构建后的检查和预览都在离线运行，`doctor` 只读取配置。适配器覆盖 **Claude Code**、**OpenAI Codex CLI** 与 **Kimi Code**。[当前源码能力表](docs/guides/experiment-workflow.md#executor-capabilities)列出模式、触发记录读取、Token 和缓存限制，以及验证范围。
 
 Schema、测量范围和采用下限集中在[边界](#边界)。
 
@@ -233,7 +229,7 @@ node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input works
 
 导入时用 `--prompt-file` 保留 issue 请求，避免修复提交信息泄露答案。参见[真实 OSS 流程](docs/guides/bench-authoring.md)或[固定的 mcp-use 示例](https://github.com/remote-controlled-man/skillfit/blob/17772db9b2f112a1e25d0284a76cf38860f7790b/benches/contrib/oss-mcp-use-utf8/README.md)。
 
-### 比较 Skill 修订版本
+### 用现成的 bench 比较 Skill 修订版本
 
 比较 frontmatter 名称相同、指纹不同的两个完整版本。两组使用相同自然任务请求；修订效果与安装收益分开解释：
 
@@ -298,34 +294,6 @@ node ./exports/my-run/reproduce.mjs
 
 当前源码把任务输入放在 benches，把生成的观测放在显式运行目录。报告、导出和回放使用这些运行记录；旧研究文件留在固定 Git 提交中，不再作为发布前提。
 
-## 可选择的 Codex 配置
-
-先查看 67 个可安装源，再选择与任务相关的 Skill。`--starter` 选择尚未作为集合评测的 13 个 Skill，`--all` 选择全部 67 个。源哈希验证安装完整性，不代表收益。选择上游源需要网络，只有 `--yes` 安装：
-
-```bash
-node dist/cli.js setup codex --list
-node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
-node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
-```
-
-[可选择配置指南](docs/guides/selectable-codex.md)说明来源、退役条目和证据限制。
-
-### 可迁移的个人配置
-
-默认导出至少在两次 Codex 会话中观察到的用户级 Skill 和当前全局指引；使用 `--agent kimi-code` 可改为迁移 Kimi Code 配置：
-
-```bash
-node dist/cli.js bundle export ./personal-codex --dry-run
-node dist/cli.js bundle export ./personal-codex --yes
-# transfer the personal-codex directory to the new machine
-node ./personal-codex/setup.mjs --dry-run
-node ./personal-codex/setup.mjs --yes
-node dist/cli.js bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
-node dist/cli.js bundle export ./personal-kimi-linked --agent kimi-code --skill example --allow-symlink-root "$HOME/.local/share/my-skills" --dry-run
-```
-
-重复 `--mcp` 可选择不含凭据或本机路径的 JSON 声明；原生 Codex TOML 仍不支持。symlink Skill 默认仍拒绝。只对你批准的精确源目录重复使用 `--allow-symlink-root`；链接必须同时位于所选 Skill 和批准的根目录内，导出结果是普通文件而不是链接。这是同一 Agent 的跨机器迁移，不是 Agent 格式互转。完整 65 个 Skill 的上游目录可使用 `--upstream-lock`；其他选项参见[迁移配置](docs/guides/selectable-codex.md)和[源审计](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md)。
-
 ## 九个命令
 
 | 命令 | 干什么 | 写文件？ |
@@ -363,6 +331,77 @@ bench 包含 `bench.json`、fixtures 和确定性 verifier。参见[Bench 编写
 这些是所记录任务上的结果，不是对所有工作流声称的检验。**harness 索取的是补丁，而不是给 agent 一个可写工作区，因此红-绿-重构这类过程行为不可观测——而 `tdd`、`diagnosing-bugs` 和 `code-review` 正是过程型 skill。**所以质量这一列是带已知缺口的零结果，不是反驳；成本这一列不依赖过程观测。回归测试产物不能证明过程顺序，0.00pp 也不能排除未测量的过程效应。基线饱和（8 个基线中有 6 个本来就是 100%）限制已观察到的质量提升空间，但完整成本且无已观察回归时，不会自动排除该任务的效率比较价值。
 
 参见[原始研究记录](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md)与[已归档调试研究](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md)，了解各日期报告的范围和可用记录。这些作者运行记录不能建立第三方独立真实复现；离线 replay 验证的是已保存观测。
+
+## 先看已经装上的
+
+`report` 和 `doctor` 只读这台机器，不调用模型。
+
+```bash
+npx skillfit@0.16.2 report
+npx skillfit@0.16.2 doctor
+npx skillfit@0.16.2 doctor --json
+npx skillfit@0.16.2 doctor --strict
+```
+
+JSON 输出是 `skillfit.doctor-report` [v1 文档](docs/schemas/doctor-report.schema.json)，包含 Agent 检测、Rules/Skills/MCP 检查及一致的汇总计数。默认情况下发现异常仍是建议信息并退出 0；`--strict` 在存在 FAIL 时显式退出 1，未知 Agent 仍退出 2。所有 doctor 模式都保持只读：不调用模型、不连接 MCP，也不修改配置。
+
+```console
+$ npx skillfit@0.16.2 report --agent codex
+
+codex — 280 session(s), 280 transcript(s)
+  skill                          FIRES  SESSIONS  LAST SEEN
+  prflow                         85     19        2026-11-04
+  code-review                    76     37        2026-11-04
+  open-code-review-delegate      76     37        2026-11-04
+  ponytail                       71     26        2026-11-04
+  tdd                            57     25        2026-11-04
+  diagnosing-bugs                31     19        2026-11-04
+  codebase-design                21     8         2026-11-04
+  awesome-design-doc             11     4         2026-11-04
+  improve-codebase-architecture  6      5         2026-11-04
+  vibe-coding                    6      4         2026-11-03
+  to-spec                        5      2         2026-11-04
+  ponytail-debt                  1      1         2026-10-29
+  domain-modeling                0      0         —
+  grill-with-docs                0      0         —
+  grilling                       0      0         —
+  setup-matt-pocock-skills       0      0         —
+  to-tickets                     0      0         —
+  installed: 17, observed firing: 12, no observed fire: 5
+  no observed fire in retained history: domain-modeling, grill-with-docs, grilling, setup-matt-pocock-skills, to-tickets
+
+Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in retained history.
+```
+
+摘自 2026-11-04 的一份 Codex 历史。五个已安装 Skill 没有触发记录，这只是优先处理的信号，安装日期并不知道。`prflow` 是项目里的 Skill。Codex 会话记下了项目目录，所以它算作已安装。省略的目录体积那一行只统计用户目录。报告会区分原生 Skill 事件与 Codex 对已注册 `SKILL.md` 的读取命令。缺失历史代表未测量，不是零使用。评估建议先使用 `--dry-run`；触发观察不是任务质量结果，使用情况也不会自动卸载或升级 Skill。
+
+## 可选择的 Codex 配置
+
+先查看 67 个可安装源，再选择与任务相关的 Skill。`--starter` 选择尚未作为集合评测的 13 个 Skill，`--all` 选择全部 67 个。源哈希验证安装完整性，不代表收益。选择上游源需要网络，只有 `--yes` 安装：
+
+```bash
+node dist/cli.js setup codex --list
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
+```
+
+[可选择配置指南](docs/guides/selectable-codex.md)说明来源、退役条目和证据限制。
+
+### 可迁移的个人配置
+
+默认导出至少在两次 Codex 会话中观察到的用户级 Skill 和当前全局指引；使用 `--agent kimi-code` 可改为迁移 Kimi Code 配置：
+
+```bash
+node dist/cli.js bundle export ./personal-codex --dry-run
+node dist/cli.js bundle export ./personal-codex --yes
+# transfer the personal-codex directory to the new machine
+node ./personal-codex/setup.mjs --dry-run
+node ./personal-codex/setup.mjs --yes
+node dist/cli.js bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
+node dist/cli.js bundle export ./personal-kimi-linked --agent kimi-code --skill example --allow-symlink-root "$HOME/.local/share/my-skills" --dry-run
+```
+
+重复 `--mcp` 可选择不含凭据或本机路径的 JSON 声明；原生 Codex TOML 仍不支持。symlink Skill 默认仍拒绝。只对你批准的精确源目录重复使用 `--allow-symlink-root`；链接必须同时位于所选 Skill 和批准的根目录内，导出结果是普通文件而不是链接。这是同一 Agent 的跨机器迁移，不是 Agent 格式互转。完整 65 个 Skill 的上游目录可使用 `--upstream-lock`；其他选项参见[迁移配置](docs/guides/selectable-codex.md)和[源审计](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md)。
 
 ## 设计原则
 

@@ -4,9 +4,9 @@
 
 # skillfit
 
-**A/B testing for agent configuration.**
+**Decide whether to merge a Skill revision.**
 
-skillfit compares a baseline and a treatment on the same tasks and reports what changed, including the limits of that result.
+skillfit runs the old and new versions on the same tasks and reports what changed in outcomes, token use, and elapsed time.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](package.json)
@@ -16,56 +16,53 @@ skillfit compares a baseline and a treatment on the same tasks and reports what 
 
 [English](README.md) · [简体中文](README.zh-CN.md)
 
-[Documentation](docs/README.md) · [Quick start](#see-what-is-already-installed) · [Limits](#limits) · [Bench guide](benches/README.md) · [Reports](docs/reference/evaluation-reports.md) · [Contributing](#contributing)
+[Documentation](docs/README.md) · [Quick start](#should-you-merge-this-skill-revision) · [Limits](#limits) · [Bench guide](benches/README.md) · [Reports](docs/reference/evaluation-reports.md) · [Contributing](#contributing)
 
 </div>
 
 ---
 
-## See what is already installed
+## Should you merge this Skill revision?
 
-`report` and `doctor` read this machine and do not call a model.
+### A real comparison of `diagnosing-bugs`
+
+In a Codex comparison on November 17, 2026, both versions passed the same development task, a fix for a reproduced Skillfit startup bug. The report recommended **keeping the old version** (`reject`). Total input fell, while uncached input, output, and elapsed time all exceeded the allowed increases.
+
+| Measure | Old | New | Change |
+| --- | ---: | ---: | ---: |
+| Tasks passed | 1/1 | 1/1 | 0 pp |
+| Total input tokens | 180,100 | 141,845 | −21.2% |
+| Uncached input tokens | 11,268 | 22,677 | +101.3% |
+| Output tokens | 3,628 | 4,701 | +29.6% |
+| Elapsed seconds | 142.309 | 191.288 | +34.4% |
+
+The statistical quality verdict was `inconclusive`. One pair shows the cost difference on this task. A conclusion about quality across tasks requires independent validation. [How to read the report](docs/reference/evaluation-reports.md#human-comparison-summary)
+
+### Compare your own revision
+
+With Node.js 22+ and the Codex CLI, have both complete Skill directories ready. The versions must differ and declare the same `name` in `SKILL.md`. Set `fix_sha` to a real fix commit in `./project` that includes the regression tests. Save the original task request in `./issue.md`.
 
 ```bash
-npx skillfit@0.16.2 report
-npx skillfit@0.16.2 doctor
-npx skillfit@0.16.2 doctor --json
-npx skillfit@0.16.2 doctor --strict
+npx skillfit@0.16.2 eval ./skill-new --baseline-skill ./skill-old --prepare ./comparison --from-commit "$fix_sha" --source-dir ./project --prompt-file ./issue.md --agent codex --dry-run
 ```
 
-The JSON output is a `skillfit.doctor-report` [version-1 document](docs/schemas/doctor-report.schema.json) with Agent detection, Rules/Skills/MCP checks and matching summary counts. Findings remain advisory and exit 0 by default; `--strict` explicitly exits 1 when a FAIL exists, while an unknown Agent exits 2. Every doctor mode stays read-only: no model call, MCP connection or configuration write is performed.
+Review the plan, then replace `--dry-run` with `--yes` to create `./comparison` and run the local checks. The verifier defaults to `node --test`. Preparation makes zero model calls. Next, preview the generated evaluation.
 
-```console
-$ npx skillfit@0.16.2 report --agent codex
-
-codex — 280 session(s), 280 transcript(s)
-  skill                          FIRES  SESSIONS  LAST SEEN
-  prflow                         85     19        2026-11-04
-  code-review                    76     37        2026-11-04
-  open-code-review-delegate      76     37        2026-11-04
-  ponytail                       71     26        2026-11-04
-  tdd                            57     25        2026-11-04
-  diagnosing-bugs                31     19        2026-11-04
-  codebase-design                21     8         2026-11-04
-  awesome-design-doc             11     4         2026-11-04
-  improve-codebase-architecture  6      5         2026-11-04
-  vibe-coding                    6      4         2026-11-03
-  to-spec                        5      2         2026-11-04
-  ponytail-debt                  1      1         2026-10-29
-  domain-modeling                0      0         —
-  grill-with-docs                0      0         —
-  grilling                       0      0         —
-  setup-matt-pocock-skills       0      0         —
-  to-tickets                     0      0         —
-  installed: 17, observed firing: 12, no observed fire: 5
-  no observed fire in retained history: domain-modeling, grill-with-docs, grilling, setup-matt-pocock-skills, to-tickets
-
-Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in retained history.
+```bash
+npx skillfit@0.16.2 eval --request ./comparison/request.json --dry-run
 ```
 
-Captured 2026-11-04 from one Codex history. Five installed skills have no observed fire; that is a priority signal, and install dates are unavailable. `prflow` is a project skill. Codex sessions record the project directory, so that skill counts as installed. The omitted catalog-size line covers the user catalog only. Reports distinguish native Skill events from Codex's registered `SKILL.md` read commands. Missing history is unmeasured, not zero use. Evaluation suggestions start with `--dry-run`; trigger observations are not task-quality outcomes, and usage never automatically uninstalls or upgrades a Skill.
+Check `plan.evaluation.agentPreflight.status` and the two-invocation ceiling, one run per version. If preflight flags a globally installed copy, use a separate agent profile where that Skill is absent. [Preparing a clean comparison](docs/guides/first-real-eval.md#4-prepare-a-real-comparison)
 
-## See a real report before you spend
+When you are ready to spend, replace `--dry-run` with `--plan-sha` followed by `plan.sha256` from a fresh preview. Then read the report for the adoption decision, task outcomes, and costs.
+
+```bash
+npx skillfit@0.16.2 report eval ./comparison/runs/revision-001
+```
+
+This first pair can surface a regression or a cost increase. Eligibility to adopt requires independent validation. [Preparation, spending limits, and validation](docs/reference/eval-component.md#prepare-a-first-revision-comparison)
+
+## Try the reporting workflow without model calls
 
 No agent CLI, no login, no model calls. These read the benches shipped inside the package and take a few seconds:
 
@@ -93,10 +90,9 @@ Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent exe
 
 ```bash
 npx skillfit@0.16.2 --help
-npx skillfit@0.16.2 doctor
 ```
 
-Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the nine commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
+Requires Node.js 22+. The CLI help runs locally once npm has resolved the package. [Choose your build](docs/README.md#choose-your-build) covers package and source versions, availability checks, and older releases.
 
 ## Why
 
@@ -114,7 +110,7 @@ skillfit provides paired A/B experiments with deterministic verifiers, statistic
 
 Build cases around your own tasks: pin the starting files, write the request, and define what a correct result must do. The bundled benches teach the format; the CLI runs your cases, compares outcomes and costs, and preserves evidence. See the [case authoring guide](docs/guides/bench-authoring.md).
 
-## First run with npm
+## Evaluate a Skill with your own cases
 
 In your project directory, point at a Skill you actually use — any directory holding a `SKILL.md` with `name` and `description` frontmatter. Save the example below as `my-skill/SKILL.md`, which is what the `eval` command refers to:
 
@@ -171,12 +167,11 @@ The run recorded one activation in nine in-domain trials. The table's pass count
 
 <sub>Captured 2026-09-22 on Kimi Code from a source checkout, against the four-task `code-review` bench. The bench has since gained a fifth task; the four metric lines above are re-rendered from that run's recorded per-task counts, so the run is real and the formatting is current.</sub>
 
-## Running the rest of this page from source
+## Run the source examples
 
-The npm commands above run from any directory. Everything below is written as
-`node dist/cli.js …` and runs from the repository root, so the examples can point
-at skillfit's own benches, example manifests and `skills/` directory. Build that
-checkout once:
+The examples using `node dist/cli.js …` run from the repository root so they can
+point at skillfit's own benches, example manifests, and `skills/` directory.
+Build that checkout once:
 
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
@@ -196,7 +191,7 @@ The detached commit contains the comparison report improvements before the relea
 For development on your own checkout, follow
 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
 
-The checks are offline; `doctor` is read-only and both previews only print plans. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**; see the [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) for modes, trigger readers, token/cache limits and verification scope. The matrix declares commands; offline fixtures do not attest installed CLI compatibility or login.
+After the build, the checks and previews run offline, and `doctor` is read-only. Adapters cover **Claude Code**, **OpenAI Codex CLI** and **Kimi Code**. The [current source capability table](docs/guides/experiment-workflow.md#executor-capabilities) covers modes, trigger readers, token/cache limits, and verification scope.
 
 Schema, measurement scope and the adoption floor are collected in [Limits](#limits).
 
@@ -238,7 +233,7 @@ node dist/cli.js bench check <bench-dir> --calibrate --agent codex --input works
 
 Import the issue request with `--prompt-file` so the fix message does not reveal the answer. Follow the [real OSS workflow](docs/guides/bench-authoring.md) or inspect the [pinned mcp-use example](https://github.com/remote-controlled-man/skillfit/blob/17772db9b2f112a1e25d0284a76cf38860f7790b/benches/contrib/oss-mcp-use-utf8/README.md).
 
-### Compare Skill revisions
+### Compare Skill revisions with an existing bench
 
 Compare two complete versions with the same frontmatter name and different fingerprints. Both arms receive identical natural prompts; revision effects are distinct from installation benefit:
 
@@ -305,34 +300,6 @@ node ./exports/my-run/reproduce.mjs
 
 Current source keeps task inputs in benches and generated observations in explicit run directories. Report/export/replay uses those saved runs; old study files remain at fixed Git commits and are no longer a release prerequisite.
 
-## Selectable Codex setup
-
-Inspect 67 installable sources, then choose Skills relevant to your tasks. `--starter` selects 13 unvalidated-as-a-set Skills; `--all` selects all 67. Source hashes verify installation integrity, not efficacy. Selection needs network access; only `--yes` installs:
-
-```bash
-node dist/cli.js setup codex --list
-node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
-node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
-```
-
-See the [selectable setup guide](docs/guides/selectable-codex.md) for source provenance, retired entries and evidence limits.
-
-### Portable personal setup
-
-By default, export user-level Skills observed in at least two Codex sessions and your active global guidance. Select `--agent kimi-code` to migrate a Kimi Code configuration instead:
-
-```bash
-node dist/cli.js bundle export ./personal-codex --dry-run
-node dist/cli.js bundle export ./personal-codex --yes
-# transfer the personal-codex directory to the new machine
-node ./personal-codex/setup.mjs --dry-run
-node ./personal-codex/setup.mjs --yes
-node dist/cli.js bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
-node dist/cli.js bundle export ./personal-kimi-linked --agent kimi-code --skill example --allow-symlink-root "$HOME/.local/share/my-skills" --dry-run
-```
-
-Repeated `--mcp` selects JSON declarations without credentials or machine-local paths; native Codex TOML remains unsupported. Symlinked Skills stay refused by default. Repeat `--allow-symlink-root` only for precise source directories you approve; links must remain inside the selected Skill and an approved root, and exports contain ordinary files rather than links. This migrates between machines for the same Agent, not between Agent formats. For options, including the full 65-Skill upstream catalog via `--upstream-lock`, see [portable setup](docs/guides/selectable-codex.md) and the [source audit](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md).
-
 ## The nine commands
 
 | Command | What it does | Writes? |
@@ -370,6 +337,77 @@ We ran skillfit's harness on 8 popular workflow skills from the public catalog �
 These are observed outcomes on the recorded tasks, not tests of every workflow claim. **The harness requested patches rather than giving the agent a writable workspace, so process-level behavior such as red-green-refactor sequencing was not observable — and `tdd`, `diagnosing-bugs` and `code-review` are process skills.** The quality column is therefore a null result with a known hole in it rather than a refutation; the cost column does not depend on process observation. Regression-test artifacts do not establish process order, and 0.00pp cannot exclude an unmeasured process effect. A saturated baseline (6 of the 8 baselines were already at 100%) limits observed quality headroom; it does not automatically discard a task for an efficiency comparison with complete costs and no observed regression.
 
 See the [original study records](https://github.com/remote-controlled-man/skillfit/blob/5696bfa32cf28a5fc11d8d5da237f5d070a3cf17/evidence/README.md) and [archived debugging study](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/skill-evaluation-evidence.md) for dated scope and available records. These author-run records do not establish independent third-party live reproduction; offline replay verifies saved observations.
+
+## See what is already installed
+
+`report` and `doctor` read this machine and do not call a model.
+
+```bash
+npx skillfit@0.16.2 report
+npx skillfit@0.16.2 doctor
+npx skillfit@0.16.2 doctor --json
+npx skillfit@0.16.2 doctor --strict
+```
+
+The JSON output is a `skillfit.doctor-report` [version-1 document](docs/schemas/doctor-report.schema.json) with Agent detection, Rules/Skills/MCP checks and matching summary counts. Findings remain advisory and exit 0 by default; `--strict` explicitly exits 1 when a FAIL exists, while an unknown Agent exits 2. Every doctor mode stays read-only: no model call, MCP connection or configuration write is performed.
+
+```console
+$ npx skillfit@0.16.2 report --agent codex
+
+codex — 280 session(s), 280 transcript(s)
+  skill                          FIRES  SESSIONS  LAST SEEN
+  prflow                         85     19        2026-11-04
+  code-review                    76     37        2026-11-04
+  open-code-review-delegate      76     37        2026-11-04
+  ponytail                       71     26        2026-11-04
+  tdd                            57     25        2026-11-04
+  diagnosing-bugs                31     19        2026-11-04
+  codebase-design                21     8         2026-11-04
+  awesome-design-doc             11     4         2026-11-04
+  improve-codebase-architecture  6      5         2026-11-04
+  vibe-coding                    6      4         2026-11-03
+  to-spec                        5      2         2026-11-04
+  ponytail-debt                  1      1         2026-10-29
+  domain-modeling                0      0         —
+  grill-with-docs                0      0         —
+  grilling                       0      0         —
+  setup-matt-pocock-skills       0      0         —
+  to-tickets                     0      0         —
+  installed: 17, observed firing: 12, no observed fire: 5
+  no observed fire in retained history: domain-modeling, grill-with-docs, grilling, setup-matt-pocock-skills, to-tickets
+
+Overall: 17 installed skill(s), 12 observed firing, 5 with no observed fire in retained history.
+```
+
+Captured 2026-11-04 from one Codex history. Five installed skills have no observed fire; that is a priority signal, and install dates are unavailable. `prflow` is a project skill. Codex sessions record the project directory, so that skill counts as installed. The omitted catalog-size line covers the user catalog only. Reports distinguish native Skill events from Codex's registered `SKILL.md` read commands. Missing history is unmeasured, not zero use. Evaluation suggestions start with `--dry-run`; trigger observations are not task-quality outcomes, and usage never automatically uninstalls or upgrades a Skill.
+
+## Selectable Codex setup
+
+Inspect 67 installable sources, then choose Skills relevant to your tasks. `--starter` selects 13 unvalidated-as-a-set Skills; `--all` selects all 67. Source hashes verify installation integrity, not efficacy. Selection needs network access; only `--yes` installs:
+
+```bash
+node dist/cli.js setup codex --list
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs
+node dist/cli.js setup codex --skill vibe-coding --skill diagnosing-bugs --yes
+```
+
+See the [selectable setup guide](docs/guides/selectable-codex.md) for source provenance, retired entries and evidence limits.
+
+### Portable personal setup
+
+By default, export user-level Skills observed in at least two Codex sessions and your active global guidance. Select `--agent kimi-code` to migrate a Kimi Code configuration instead:
+
+```bash
+node dist/cli.js bundle export ./personal-codex --dry-run
+node dist/cli.js bundle export ./personal-codex --yes
+# transfer the personal-codex directory to the new machine
+node ./personal-codex/setup.mjs --dry-run
+node ./personal-codex/setup.mjs --yes
+node dist/cli.js bundle export ./personal-kimi --agent kimi-code --skill example --mcp docs --dry-run
+node dist/cli.js bundle export ./personal-kimi-linked --agent kimi-code --skill example --allow-symlink-root "$HOME/.local/share/my-skills" --dry-run
+```
+
+Repeated `--mcp` selects JSON declarations without credentials or machine-local paths; native Codex TOML remains unsupported. Symlinked Skills stay refused by default. Repeat `--allow-symlink-root` only for precise source directories you approve; links must remain inside the selected Skill and an approved root, and exports contain ordinary files rather than links. This migrates between machines for the same Agent, not between Agent formats. For options, including the full 65-Skill upstream catalog via `--upstream-lock`, see [portable setup](docs/guides/selectable-codex.md) and the [source audit](https://github.com/remote-controlled-man/skillfit/blob/3a3ff415ccef1a3a45d1e2d2cc00d903ab7db850/docs/codex-upstream-audit.md).
 
 ## Design principles
 
