@@ -238,6 +238,99 @@ test("report eval renders cache partitions, per-success regressions and timeout 
   assert.match(output, /Overall verdict: \*\*inconclusive\*\*/);
 });
 
+test("report eval puts observed regressions and adoption blockers before detailed statistics", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-comparison-summary-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const path = join(dir, "manifest.json");
+  const value = costManifest();
+  value["executor"] = { kind: "cli", model: "recorded-offline" };
+  const original = JSON.stringify(value);
+  writeFileSync(path, original);
+  const lines: string[] = [];
+  await runEvalReport(path, (line) => lines.push(line));
+  const output = lines.join("\n");
+  const summary = output.indexOf("## Comparison summary");
+  assert.ok(summary > 0);
+  assert.ok(summary < output.indexOf("## Statistical readout"));
+  const introduction = output.slice(summary, output.indexOf("## Statistical readout"));
+  assert.match(introduction, /Observed regressions: task-1/);
+  assert.match(introduction, /Acceptance: reject; eligible for upgrade: no/);
+  assert.match(introduction, /Evidence: unverified/);
+  assert.match(introduction, /Next: inspect the execution\/verifier errors/);
+  assert.match(introduction, /inspect the regressed tasks and checks before accepting/);
+  assert.match(introduction, /INSUFFICIENT_SCALE/);
+  assert.doesNotMatch(introduction, /trial-\d+\/_result\.json/);
+  assert.equal(readFileSync(path, "utf8"), original);
+});
+
+test("comparison summary separates tied observations from adoption and shows complete invocation cost changes", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-comparison-cost-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const value = manifest();
+  const run = (input: number, output: number, durationSeconds: number): CostObservation => ({
+    executorInvoked: true,
+    passed: true,
+    error: null,
+    durationSeconds,
+    tokens: { input, cachedInput: input / 2, output },
+    usageStatus: "final",
+  });
+  const observations = {
+    baseline: [run(10, 4, 5), run(10, 4, 5)],
+    treatment: [run(8, 6, 3), run(8, 6, 3)],
+  };
+  const conditions = {
+    baseline: { passes: 2, trials: 2, errors: 0 },
+    treatment: { passes: 2, trials: 2, errors: 0 },
+  };
+  const task = (value.tasks as Record<string, unknown>[])[0]!;
+  Object.assign(task, {
+    conditions,
+    deltaPassRate: 0,
+    outcomes: { baseline: [true, true], treatment: [true, true] },
+    costs: summarizeCosts(observations, observations),
+  });
+  Object.assign(value.overall as object, {
+    conditions,
+    deltaPassRate: 0,
+    costs: summarizeCosts(observations, observations),
+    stats: { discordant: { improved: 0, regressed: 0 }, mcnemarP: 1, deltaCi: null },
+  });
+  const path = join(dir, "manifest.json");
+  writeFileSync(path, JSON.stringify(value));
+  const lines: string[] = [];
+  await runEvalReport(path, (line) => lines.push(line));
+  const summary = lines.join("\n").split("## Statistical readout")[0]!;
+  assert.match(summary, /Graded pass\/fail pairs: 0 improved, 0 regressed, 2 unchanged/);
+  assert.match(summary, /No observed change: task-1/);
+  assert.match(summary, /not.*equivalence/);
+  assert.match(summary, /Acceptance: reject; eligible for upgrade: no/);
+  assert.match(summary, /COST_LIMIT_EXCEEDED/);
+  assert.match(summary, /All agent invocations, including errors and excluded partners/);
+  assert.match(summary, /\| Input tokens \| 20 \| 16 \| -20.0% \|/);
+  assert.match(summary, /\| Output tokens \| 8 \| 12 \| \+50.0% \|/);
+  assert.match(summary, /\| Elapsed seconds \| 10.000 \| 6.000 \| -40.0% \|/);
+});
+
+test("legacy pooled regressions stay visible when per-task paired attribution was not recorded", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "skillfit-comparison-legacy-pairs-"));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const path = join(dir, "manifest.json");
+  writeFileSync(path, JSON.stringify(discordantManifest(6, 6, 1, "inconclusive")));
+  const lines: string[] = [];
+  await runEvalReport(path, (line) => lines.push(line));
+  const summary = lines.join("\n").split("## Statistical readout")[0]!;
+  assert.match(
+    summary,
+    /Observed regressions: task-level attribution unrecorded \(6 regressed pass\/fail pairs\)/,
+  );
+  assert.doesNotMatch(summary, /Observed regressions: none recorded/);
+  assert.match(summary, /Pair attribution unrecorded: task-1/);
+  assert.doesNotMatch(summary, /No observed change: task-1/);
+  assert.match(summary, /inspect the regressed tasks and checks/);
+  assert.match(summary, /PAIR_EVIDENCE_MISSING/);
+});
+
 test("report eval rejects contradictory cost counts, coverage, partitions and pooled totals", () => {
   const scenarios = [
     (costs: RunCosts) => {

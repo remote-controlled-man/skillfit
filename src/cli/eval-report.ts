@@ -1,7 +1,7 @@
 import { measurementScopeText } from "../evaluation/measurement/scope.js";
 import { renderModelIdentityLines } from "../agents/observation/model-identity.js";
-import { readFileSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { readEvaluationReport } from "./evaluation-report.js";
 import type { EvalReportOptions } from "./eval-component.js";
 import { agentEnvironmentReportLines } from "../agents/preflight-contract.js";
@@ -12,7 +12,12 @@ import {
   formatP,
   formatPp1,
 } from "../evaluation/measurement/report.js";
-import { renderCostLines } from "../evaluation/measurement/costs.js";
+import {
+  completeCost,
+  renderCostLines,
+  type CostMetric,
+  type CostPopulation,
+} from "../evaluation/measurement/costs.js";
 import { renderInvocationCostLines } from "../evaluation/measurement/invocation-costs.js";
 import {
   parseEvalReport,
@@ -153,15 +158,294 @@ function decisionNotes(report: ReportData): string[] {
   return notes;
 }
 
-export function renderEvalMarkdown(report: ReportData): string {
+type PairedEvaluation = Exclude<
+  Awaited<ReturnType<typeof readEvaluationReport>>,
+  { evaluationType: unknown }
+>;
+type PairedAssessment = Extract<PairedEvaluation, { quality: unknown }>;
+
+function observedTaskChanges(result: PairedAssessment) {
+  // A failed audit can retain partial pairs; only a verified audit supports trial attribution.
+  const pairs = result.evidence.verified ? (result.evidence.pairs ?? []) : [];
+  return result.quality.tasks.map((task) => {
+    const taskPairs = pairs.filter((pair) => pair.taskId === task.id && pair.graded);
+    const checks = (change: "improved" | "regressed") => [
+      ...new Set([
+        ...(change === "regressed" ? task.regressedFacets : task.improvedFacets).map((f) => f.name),
+        ...taskPairs.flatMap((pair) =>
+          pair.changedChecks.filter((c) => c.change === change).map((c) => c.name),
+        ),
+      ]),
+    ];
+    const regressedChecks = checks("regressed"),
+      improvedChecks = checks("improved");
+    const regressed =
+      (task.regressedPairs ?? 0) > 0 ||
+      task.deltaPassRate < 0 ||
+      (task.scoreDelta ?? 0) < 0 ||
+      regressedChecks.length > 0 ||
+      taskPairs.some((pair) => (pair.scoreDelta ?? 0) < 0);
+    const improved =
+      (task.improvedPairs ?? 0) > 0 ||
+      task.deltaPassRate > 0 ||
+      (task.scoreDelta ?? 0) > 0 ||
+      improvedChecks.length > 0 ||
+      taskPairs.some((pair) => (pair.scoreDelta ?? 0) > 0);
+    const errors = task.baseline.errors + task.treatment.errors;
+    const attributed = task.regressedPairs !== null && task.improvedPairs !== null;
+    return { task, regressed, improved, errors, regressedChecks, improvedChecks, attributed };
+  });
+}
+
+function comparisonEvidence(result: PairedAssessment): string[] {
+  if (!result.evidence.verified)
+    return [
+      "Per-trial evidence is unavailable: native evidence is unverified. No trial paths are inferred from aggregate counts.",
+      "",
+    ];
+  const pairs = result.evidence.pairs ?? [];
+  const priority = (pair: (typeof pairs)[number]) =>
+    pair.graded &&
+    ((pair.baseline.passed && !pair.treatment.passed) ||
+      (pair.scoreDelta ?? 0) < 0 ||
+      pair.changedChecks.some((c) => c.change === "regressed"))
+      ? 0
+      : !pair.graded
+        ? 1
+        : 2;
+  const lines = [
+    "## Run evidence",
+    "",
+    "Evidence references are relative to [run], the native run directory (inside a portable package: run/).",
+    "",
+  ];
+  for (const pair of [...pairs].sort((a, b) => priority(a) - priority(b))) {
+    const outcome = (arm: typeof pair.baseline) =>
+      !arm.executorInvoked
+        ? "not invoked (ungraded)"
+        : arm.error !== null
+          ? "error (ungraded)"
+          : arm.passed
+            ? "passed"
+            : "failed";
+    const checks = pair.changedChecks.map((c) => `${escapeMarkdown(c.name)}: ${c.change}`);
+    lines.push(
+      `- **${escapeMarkdown(pair.taskId)} / trial ${pair.trial}**: ${outcome(pair.baseline)} → ${outcome(pair.treatment)}${checks.length ? `; ${checks.join("; ")}` : ""}.`,
+    );
+    for (const arm of ["baseline", "treatment"] as const) {
+      const prefix = `${pair.taskId}/${arm}/trial-${pair.trial}`;
+      const references = [
+        ["receipt", "_result.json"],
+        ["output", "_output.md"],
+        ["verifier", "_verifier.txt"],
+        ["error", "_executor-error.txt"],
+      ].flatMap(([label, file]) => {
+        const relativePath = `${prefix}/${file}`;
+        return existsSync(join(result.evidence.runDir, relativePath))
+          ? [`[${label}](${relativePath})`]
+          : [];
+      });
+      lines.push(`  - ${arm}: ${references.join(" · ")}`);
+    }
+  }
+  return [...lines, ""];
+}
+
+function comparisonCosts(result: PairedAssessment): string[] {
+  const costs = result.costs.populations;
+  if (!costs)
+    return [
+      "### Invocation costs",
+      "",
+      "All-invocation accounting is unrecorded; no complete token or elapsed comparison is inferred.",
+      "",
+    ];
+  const populations = costs.attempts;
+  const total = (population: CostPopulation, metric: CostMetric) => {
+    const measure = population.metrics[metric];
+    if (population.runs === 0 || measure.coverage.final + measure.coverage.partial === 0)
+      return "unrecorded";
+    const value =
+      metric === "durationSeconds" ? measure.knownTotal.toFixed(3) : String(measure.knownTotal);
+    return `${completeCost(population, metric) ? "" : ">= "}${value}`;
+  };
+  const coverage = (population: CostPopulation, metric: CostMetric) => {
+    const value = population.metrics[metric].coverage;
+    return `${value.final}/${value.partial}/${value.unknown}`;
+  };
+  const lines = [
+    "### Invocation costs",
+    "",
+    "All agent invocations, including errors and excluded partners. Coverage is final/partial/unknown; >= marks a lower bound.",
+    `- Invoked B/T: ${populations.baseline.runs}/${populations.treatment.runs}; Not invoked B/T: ${costs.notInvoked.baseline}/${costs.notInvoked.treatment}.`,
+    "",
+    "| Measure | Baseline | Treatment | Observed total change | Coverage B/T |",
+    "|---|---:|---:|---:|---|",
+  ];
+  const metrics: [CostMetric, string][] = [
+    ["input", "Input tokens"],
+    ["cachedInput", "Cached input tokens"],
+    ["uncachedInput", "Uncached input tokens"],
+    ["output", "Output tokens"],
+    ["durationSeconds", "Elapsed seconds"],
+  ];
+  for (const [metric, label] of metrics) {
+    const change = result.costs.changes?.attempts?.[metric]?.totalChangeFraction ?? null;
+    const delta = change === null ? "n/a" : `${change > 0 ? "+" : ""}${(change * 100).toFixed(1)}%`;
+    lines.push(
+      `| ${label} | ${total(populations.baseline, metric)} | ${total(populations.treatment, metric)} | ${delta} | ${coverage(populations.baseline, metric)} / ${coverage(populations.treatment, metric)} |`,
+    );
+  }
+  lines.push(
+    "",
+    "Descriptive totals only, not billing or a statistically established efficiency gain. Per-success measures and separate judge usage remain in Cost accounting below.",
+    "",
+  );
+  return lines;
+}
+
+function suggestedNextSteps(result: PairedEvaluation, hasRegressions: boolean): string[] {
+  const actions: string[] = [];
+  const reasons = new Set(result.acceptance.reasons.map((reason) => reason.code));
+  if (reasons.has("EXECUTION_ERRORS"))
+    actions.push(
+      "inspect the execution/verifier errors and retained receipts; repair the environment or inputs before declaring a fresh run. Keep stopped records intact.",
+    );
+  else if (result.status === "stopped" || result.status === "incomplete")
+    actions.push(
+      "inspect the retained session, ledger and stop reason before planning a fresh run. Keep this run intact; do not append replacement samples.",
+    );
+  if (hasRegressions)
+    actions.push("inspect the regressed tasks and checks before accepting this change.");
+  if (reasons.has("COST_LIMIT_EXCEEDED"))
+    actions.push(
+      "review all-invocation spending per successful task against the declared cost limits.",
+    );
+  if (!result.evidence.verified)
+    actions.push("inspect the audit findings; unverified records cannot authorize adoption.");
+  if (
+    "quality" in result &&
+    (reasons.has("INSUFFICIENT_SCALE") || reasons.has("VALIDATION_NOT_DECLARED"))
+  )
+    actions.push(
+      `plan a separate independent validation with at least ${result.acceptance.policy.minTasks} tasks × ${result.acceptance.policy.minTrialsPerTask} graded pairs per task, frozen before execution. Authorize its spending separately; do not add trials until significance.`,
+    );
+  if (result.acceptance.eligibleForUpgrade)
+    actions.push(
+      "review the candidate within the declared validation scope before any manual adoption.",
+    );
+  return actions.length
+    ? actions
+    : ["review the adoption conditions below before deciding whether to use this change."];
+}
+
+function comparisonSummary(result: PairedEvaluation): string[] {
+  const tasks = "quality" in result ? observedTaskChanges(result) : [];
+  const regressions = tasks.filter((item) => item.regressed);
+  const list = (items: typeof tasks) =>
+    items.length ? items.map(({ task }) => escapeMarkdown(task.id)).join(", ") : "none recorded";
+  const lines = [
+    "## Comparison summary",
+    "",
+    `- State: ${result.status}`,
+    `- Evidence: ${result.evidence.verified ? "verified" : "unverified"}`,
+    `- Acceptance: ${result.acceptance.decision}; eligible for upgrade: ${result.acceptance.eligibleForUpgrade ? "yes" : "no"}; automatic upgrade: no`,
+  ];
+  if (!("quality" in result)) {
+    const records: [string, string][] = [
+      ["session", "_session.json"],
+      ["ledger", "_calls.jsonl"],
+      ["plan", "_plan.json"],
+    ];
+    const references = records.flatMap(([label, file]) =>
+      existsSync(join(result.evidence.runDir, file)) ? [`[${label}](${file})`] : [],
+    );
+    lines.push(
+      "- Graded comparison: unavailable; no completed paired result is retained.",
+      `- Next: ${suggestedNextSteps(result, false)[0]}`,
+      `- Retained records (unverified): ${references.join(" · ") || "none available"}. References are relative to [run], the native run directory.`,
+      "",
+    );
+    return lines;
+  }
+  const hasRegressions = regressions.length > 0 || result.quality.regressedPairs > 0;
+  const observed = (change: "improved" | "regressed") => {
+    const items = tasks.filter((item) => (change === "regressed" ? item.regressed : item.improved));
+    const pairs =
+      change === "regressed" ? result.quality.regressedPairs : result.quality.improvedPairs;
+    if (items.length === 0 && pairs > 0)
+      return `task-level attribution unrecorded (${pairs} ${change} pass/fail pairs)`;
+    return `${list(items)}${pairs > 0 && tasks.some((item) => !item.attributed) ? "; paired attribution incomplete" : ""}`;
+  };
+  lines.push(
+    `- Observed regressions: ${observed("regressed")}`,
+    `- Observed improvements: ${observed("improved")}`,
+    `- No observed change: ${list(tasks.filter((item) => item.attributed && !item.regressed && !item.improved && item.task.baseline.trials > 0))}`,
+    ...(tasks.some((item) => !item.attributed)
+      ? [`- Pair attribution unrecorded: ${list(tasks.filter((item) => !item.attributed))}`]
+      : []),
+    `- Next: ${suggestedNextSteps(result, hasRegressions)[0]}`,
+  );
+  if ("quality" in result) {
+    const quality = result.quality;
+    const pairs = quality.tasks.reduce((count, task) => count + task.baseline.trials, 0);
+    const errors = quality.tasks.reduce(
+      (counts, task) => [counts[0]! + task.baseline.errors, counts[1]! + task.treatment.errors],
+      [0, 0],
+    );
+    lines.push(
+      `- Execution/verifier errors B/T: ${errors[0]}/${errors[1]}; excluded from the quality comparison.`,
+      `- Graded pass/fail pairs: ${quality.improvedPairs} improved, ${quality.regressedPairs} regressed, ${pairs - quality.improvedPairs - quality.regressedPairs} unchanged; error pairs excluded.`,
+      `- Statistical quality verdict: ${quality.statisticalVerdict}. Observed changes alone do not establish a Skill effect or equivalence.`,
+      "",
+      "| Task | Observed change | Pass B/T | Errors B/T | Checks to inspect |",
+      "|---|---|---|---|---|",
+    );
+    const priority = (item: (typeof tasks)[number]) =>
+      item.regressed ? 0 : item.errors ? 1 : item.improved ? 2 : 3;
+    for (const item of [...tasks].sort((a, b) => priority(a) - priority(b))) {
+      const { task } = item;
+      const changes = [item.regressed ? "regressed" : "", item.improved ? "improved" : ""]
+        .filter(Boolean)
+        .join("; ");
+      const checks = [
+        ...item.regressedChecks.map((name) => `${escapeMarkdown(name)}: regressed`),
+        ...item.improvedChecks.map((name) => `${escapeMarkdown(name)}: improved`),
+      ];
+      lines.push(
+        `| ${escapeMarkdown(task.id)} | ${changes || (task.baseline.trials ? (item.attributed ? "no observed change" : "pair attribution unrecorded") : "ungraded")}${item.errors ? "; execution/verifier errors" : ""} | ${task.baseline.passes}/${task.baseline.trials} / ${task.treatment.passes}/${task.treatment.trials} | ${task.baseline.errors}/${task.treatment.errors} | ${checks.join("; ") || "none recorded"} |`,
+      );
+    }
+    lines.push("", ...comparisonCosts(result), ...comparisonEvidence(result));
+  }
+  lines.push(
+    "## Suggested next steps",
+    "",
+    ...suggestedNextSteps(result, hasRegressions).map((step) => `- ${step}`),
+    "",
+    "## Adoption conditions",
+    "",
+    ...result.acceptance.reasons.map(
+      (reason) =>
+        `- \`${reason.code}\`: ${escapeMarkdown(reason.message.replaceAll(result.evidence.runDir, "[run]"))}`,
+    ),
+    "",
+  );
+  return lines;
+}
+
+export function renderEvalMarkdown(
+  report: ReportData,
+  introduction: readonly string[] = [],
+): string {
   const lines = [`# skillfit evaluation: ${escapeMarkdown(report.target.name)}`, ""];
-  lines.push(measurementScopeText(report.measurementScope), "");
   if (report.executor.kind === "mock") {
     lines.push(
       "> **Synthetic harness run.** These numbers do not measure an agent or Skill effect.",
       "",
     );
   }
+  lines.push(...introduction, measurementScopeText(report.measurementScope), "");
   lines.push(
     `- Run: ${escapeMarkdown(report.runGroup)} (${escapeMarkdown(report.createdAt)})`,
     `- Target: ${escapeMarkdown(report.target.kind)}; SHA-256 \`${report.target.sha256}\``,
@@ -337,15 +621,19 @@ export async function runEvalReport(
     if (statSync(path).size > MAX_MANIFEST_BYTES)
       throw new Error(`Evaluation manifest exceeds ${MAX_MANIFEST_BYTES} bytes`);
     lines.push(
-      renderEvalMarkdown({
-        ...parseEvalReport(JSON.parse(readFileSync(path, "utf8"))),
-        modelIdentities: result.modelIdentities,
-      }),
+      renderEvalMarkdown(
+        {
+          ...parseEvalReport(JSON.parse(readFileSync(path, "utf8"))),
+          modelIdentities: result.modelIdentities,
+        },
+        comparisonSummary(result),
+      ),
     );
   } else {
     lines.push(
       `# skillfit evaluation: ${result.status} run`,
       "",
+      ...comparisonSummary(result),
       `- State: ${result.status}`,
       "- No completed paired comparison is available. Retained spending is not a quality verdict.",
     );
