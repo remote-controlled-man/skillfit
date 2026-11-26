@@ -10,7 +10,7 @@ versions stay owned by the
 
 ## Human comparison summary
 
-Current-source paired human reports start with the saved run state, native audit
+Starting in 0.16.2, paired human reports start with the saved run state, native audit
 status and existing adoption decision, followed by observed changes. Regressed
 tasks appear before error-only, improved and unchanged tasks. Pass/fail changes,
 named-check changes and score changes remain observations; unchanged outcomes do

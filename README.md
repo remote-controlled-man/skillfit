@@ -27,16 +27,16 @@ skillfit compares a baseline and a treatment on the same tasks and reports what 
 `report` and `doctor` read this machine and do not call a model.
 
 ```bash
-npx skillfit@0.16.1 report
-npx skillfit@0.16.1 doctor
-npx skillfit@0.16.1 doctor --json
-npx skillfit@0.16.1 doctor --strict
+npx skillfit@0.16.2 report
+npx skillfit@0.16.2 doctor
+npx skillfit@0.16.2 doctor --json
+npx skillfit@0.16.2 doctor --strict
 ```
 
 The JSON output is a `skillfit.doctor-report` [version-1 document](docs/schemas/doctor-report.schema.json) with Agent detection, Rules/Skills/MCP checks and matching summary counts. Findings remain advisory and exit 0 by default; `--strict` explicitly exits 1 when a FAIL exists, while an unknown Agent exits 2. Every doctor mode stays read-only: no model call, MCP connection or configuration write is performed.
 
 ```console
-$ npx skillfit@0.16.1 report --agent codex
+$ npx skillfit@0.16.2 report --agent codex
 
 codex — 280 session(s), 280 transcript(s)
   skill                          FIRES  SESSIONS  LAST SEEN
@@ -70,9 +70,9 @@ Captured 2026-11-04 from one Codex history. Five installed skills have no observ
 No agent CLI, no login, no model calls. These read the benches shipped inside the package and take a few seconds:
 
 ```bash
-npx skillfit@0.16.1 bench check code-review
-npx skillfit@0.16.1 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
-npx skillfit@0.16.1 report eval ./runs/controls-001/existing-mock-arms
+npx skillfit@0.16.2 bench check code-review
+npx skillfit@0.16.2 bench self-test code-review --suite existing-mock-arms --runs-root ./runs --run-group controls-001 --yes
+npx skillfit@0.16.2 report eval ./runs/controls-001/existing-mock-arms
 ```
 
 <p align="center">
@@ -92,8 +92,8 @@ Paired eval defaults to **5 trials per condition**: 8 tasks require 80 agent exe
 ## Install
 
 ```bash
-npx skillfit@0.16.1 --help
-npx skillfit@0.16.1 doctor
+npx skillfit@0.16.2 --help
+npx skillfit@0.16.2 doctor
 ```
 
 Requires Node.js 22+. Both commands above are offline and make no model calls: `--help` lists the nine commands, and `doctor` is a read-only health report that detects which supported agents you have, inspects their rules files, and flags invalid or conflicting Skills. [Choose your build](docs/README.md#choose-your-build) owns the package/source boundary, availability checks and older release documentation.
@@ -132,10 +132,10 @@ The instructions the agent should follow.
 Then scaffold a case and preview an evaluation:
 
 ```bash
-npx skillfit@0.16.1 bench init my-bench --kind command --dry-run
-npx skillfit@0.16.1 bench init my-bench --kind command --yes
-npx skillfit@0.16.1 bench check ./my-bench --json
-npx skillfit@0.16.1 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
+npx skillfit@0.16.2 bench init my-bench --kind command --dry-run
+npx skillfit@0.16.2 bench init my-bench --kind command --yes
+npx skillfit@0.16.2 bench check ./my-bench --json
+npx skillfit@0.16.2 eval ./my-skill --bench ./my-bench --mode installed --agent codex --trials 1 --max-calls 2 --runs-root ./runs --run-group first-eval --json --dry-run
 ```
 
 Replace the teaching fixture, prompt, verifier and oracle before measuring benefit. The preview declares two calls and makes none. Inspect `plan.evaluation.agentPreflight.status`; login remains unknown offline. Keep cases and runs in separate directories. Continue with [your first real evaluation](docs/guides/first-real-eval.md).
@@ -181,7 +181,7 @@ checkout once:
 ```bash
 git clone https://github.com/remote-controlled-man/skillfit.git
 cd skillfit
-git switch --detach 17772db9b2f112a1e25d0284a76cf38860f7790b
+git switch --detach 5511a67639b87a255031676e6e3703f649f25f7d
 npm ci
 npm run build
 node dist/cli.js --help
@@ -192,7 +192,7 @@ node dist/cli.js eval skills/skillfit --bench code-review --agent codex --dry-ru
 node dist/cli.js install --agent codex --dry-run
 ```
 
-The detached commit contains revision preparation and the startup fix before this release bump. Building it prints 0.16.0.
+The detached commit contains the comparison report improvements before the release bump. Building it prints 0.16.1.
 For development on your own checkout, follow
 [CONTRIBUTING.md](https://github.com/remote-controlled-man/skillfit/blob/main/CONTRIBUTING.md).
 
