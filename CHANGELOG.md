@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.16.2 — Explain Skill comparison outcomes and adoption (2026-11-27)
+
+- Paired reports lead with observed changes, runtime errors, and the adoption decision.
+- Find named regressions even when gains offset them in the averages, and open the
+  saved outputs, verifier logs, and receipts for both versions.
+- Review invocation costs and coverage alongside the adoption conditions. For
+  stopped runs, the summary points to the records available for recovery.
+
 ## 0.16.1 — Prepare Skill revision comparisons and fix shell startup (2026-11-17)
 
 - `eval --prepare` creates a fresh comparison workspace from two complete Skill
