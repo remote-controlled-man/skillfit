@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { lstatSync, readFileSync } from "node:fs";
-import { devNull } from "node:os";
 import { isAbsolute, join } from "node:path";
 
 export type Fields = Record<string, unknown>;
@@ -140,7 +139,8 @@ export function snapshot(archive: Archive): Worktree {
         env: {
           ...env,
           GIT_CONFIG_NOSYSTEM: "1",
-          GIT_CONFIG_GLOBAL: devNull,
+          // Git for Windows handles /dev/null itself and can reject Node's device path.
+          GIT_CONFIG_GLOBAL: "/dev/null",
           GIT_NO_REPLACE_OBJECTS: "1",
           GIT_NO_LAZY_FETCH: "1",
           GIT_TERMINAL_PROMPT: "0",

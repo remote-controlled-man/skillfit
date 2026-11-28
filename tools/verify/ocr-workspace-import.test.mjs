@@ -211,10 +211,22 @@ test("OCR history imports tied evidence after relocation and distinguishes failu
     renameSync(original, moved);
     archives.push(moved);
   }
+  // System and user Git configuration must be irrelevant to an archive.
+  const invalidConfig = join(root, ".gitconfig");
+  writeFileSync(invalidConfig, "[invalid config\n");
   const result = spawnSync(
     process.execPath,
     ["dist/cli.js", "report", "ocr-workspace", ...archives, "--json"],
-    { encoding: "utf8" },
+    {
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        HOME: root,
+        USERPROFILE: root,
+        GIT_CONFIG_GLOBAL: invalidConfig,
+        GIT_CONFIG_SYSTEM: invalidConfig,
+      },
+    },
   );
   assert.equal(result.status, 0, result.stderr);
   const report = JSON.parse(result.stdout);
@@ -223,8 +235,8 @@ test("OCR history imports tied evidence after relocation and distinguishes failu
   for (const [i, row] of report.cases.entries()) {
     assert.equal(row.workflow.functional, "passed");
     assert.equal(row.originalProject, identities[i].originalProject);
+    assert.deepEqual(row.finalFiles, identities[i].files, `Git snapshot for ${row.scenario}`);
     assert.equal(row.finalFingerprint, identities[i].fingerprint);
-    assert.deepEqual(row.finalFiles, identities[i].files);
     assert.equal(row.artifacts.setupCalls.length, 2);
   }
   const [
