@@ -243,6 +243,7 @@ async function runTriggerTrial(
       task.verifier,
       runDir,
       task.verifierTimeoutSeconds,
+      "trigger",
     );
     writeFileSync(join(runDir, "_verifier.txt"), verifierLogFor(verifier), "utf8");
     if (verifier.error !== null || verifier.exitCode === null) {

@@ -1,5 +1,6 @@
 import { requestedClaimFor, claimDiagnostics } from "./scope.js";
 import type { ReportData } from "./report-data.js";
+import type { WorkflowSummary } from "../../bench/gates/summary.js";
 import {
   completeCost,
   COST_METRICS,
@@ -28,6 +29,15 @@ export interface EvidenceAudit {
   replayedDeliveries: number;
   replayRequested: boolean;
   policyBound: boolean;
+  workflow?: (WorkflowSummary & {
+    taskId: string;
+    trial: number;
+    arm: "baseline" | "treatment";
+    skillRead: boolean | null;
+    transcript: string | null;
+    verifier: string | null;
+    priorReview: string | null;
+  })[];
   pairs?: {
     taskId: string;
     trial: number;

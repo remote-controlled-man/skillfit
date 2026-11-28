@@ -1,3 +1,4 @@
+import { escapeMarkdown, workflowCells } from "./workflow-report.js";
 import { measurementScopeText } from "../evaluation/measurement/scope.js";
 import { renderModelIdentityLines } from "../agents/observation/model-identity.js";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -28,22 +29,6 @@ import {
 export { parseEvalReport } from "../evaluation/records/manifest.js";
 
 const MAX_MANIFEST_BYTES = 16 * 1024 * 1024;
-
-function escapeMarkdown(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll("\\", "\\\\")
-    .replaceAll("`", "\\`")
-    .replaceAll("*", "\\*")
-    .replaceAll("_", "\\_")
-    .replaceAll("[", "\\[")
-    .replaceAll("]", "\\]")
-    .replaceAll("|", "\\|")
-    .replaceAll("\n", " ")
-    .replaceAll("\r", " ");
-}
 
 function passRate(value: Counts): string {
   return `${value.passes}/${value.trials} (${value.trials === 0 ? "n/a" : `${Math.round((100 * value.passes) / value.trials)}%`})`;
@@ -251,6 +236,33 @@ function comparisonEvidence(result: PairedAssessment): string[] {
   return [...lines, ""];
 }
 
+function workflowEvidence(result: PairedAssessment): string[] {
+  const rows = result.evidence.verified ? result.evidence.workflow : undefined;
+  if (!rows?.length) return [];
+  const link = (name: string, path: string) =>
+    `[${name}](${path.split("/").map(encodeURIComponent).join("/")})`;
+  return [
+    "## Workflow acceptance",
+    "",
+    "Functional checks, Skill reads, and workflow checks have separate evidence. Links are relative to the native run directory.",
+    "",
+    "| Scenario / trial | Function | Skill read | Workflow | Checks | Evidence |",
+    "| --- | --- | --- | --- | --- | --- |",
+    ...rows.map((row) => {
+      const { functional, status, checks } = workflowCells(row);
+      const evidence = [
+        row.verifier && link("verifier", row.verifier),
+        row.transcript && link("command transcript", row.transcript),
+        row.priorReview && link("prior review", row.priorReview),
+        link("workspace", `${row.taskId}/${row.arm}/trial-${row.trial}`),
+      ].filter(Boolean);
+      const read = row.skillRead === null ? "Unknown" : row.skillRead ? "Observed" : "Not observed";
+      return `| ${escapeMarkdown(row.taskId)} / ${row.arm} ${row.trial} | ${functional} | ${read} | ${status} | ${checks} | ${evidence.join(" · ")} |`;
+    }),
+    "",
+  ];
+}
+
 function comparisonCosts(result: PairedAssessment): string[] {
   const costs = result.costs.populations;
   if (!costs)
@@ -416,7 +428,12 @@ function comparisonSummary(result: PairedEvaluation): string[] {
         `| ${escapeMarkdown(task.id)} | ${changes || (task.baseline.trials ? (item.attributed ? "no observed change" : "pair attribution unrecorded") : "ungraded")}${item.errors ? "; execution/verifier errors" : ""} | ${task.baseline.passes}/${task.baseline.trials} / ${task.treatment.passes}/${task.treatment.trials} | ${task.baseline.errors}/${task.treatment.errors} | ${checks.join("; ") || "none recorded"} |`,
       );
     }
-    lines.push("", ...comparisonCosts(result), ...comparisonEvidence(result));
+    lines.push(
+      "",
+      ...workflowEvidence(result),
+      ...comparisonCosts(result),
+      ...comparisonEvidence(result),
+    );
   }
   lines.push(
     "## Suggested next steps",

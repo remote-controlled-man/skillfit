@@ -71,3 +71,4 @@ for callers; their cards describe workloads rather than a study sequence.
 | Bench | Purpose | Limits |
 | --- | --- | --- |
 | [waza-behavior](waza-behavior/README.md) | Hold instructions and verification receipts, adapted from MIT-licensed Waza contracts | Regression/diagnostic controls; inadmissible as independent evidence of Waza benefit |
+| [ocr-workflow](ocr-workflow/README.md) | Review execution, final file coverage and prior review reuse | Offline command records exercise the verifier with separate function, read, and workflow results |

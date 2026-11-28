@@ -158,7 +158,8 @@ const COMMAND_HELP: Record<string, string> = {
     `  skillfit report [--agent <id>] [--json]   Skill usage receipts from local session history (read-only)
   skillfit report eval <summary-or-run-dir>  Read paired, calibration or trigger reports (read-only)
   skillfit report eval <summary-or-run-dir> --json  Return a typed saved-evidence report for an Agent
-  skillfit report eval <run-dir> --export <new-dir>  Plan a portable offline replay package`,
+  skillfit report eval <run-dir> --export <new-dir>  Plan a portable offline replay package
+  skillfit report ocr-workspace <run-dir>... [--json]  Inspect historical OCR workspace evidence offline`,
     [agent, json, policy, records, replay, exportDir, inputRoot].join("\n"),
   ),
   eval: page(

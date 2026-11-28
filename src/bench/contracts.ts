@@ -1,5 +1,13 @@
 export type BenchClaim = "quality" | "efficiency" | "activation";
 
+export interface WorkflowExpectation {
+  question: string;
+  expectation: string;
+  tool: { command: string; version: string };
+  rules: string;
+  previousReview?: string;
+}
+
 export interface BenchTask {
   /** Schema 2 design support; absent in legacy schema 1. */
   claims?: BenchClaim[];
@@ -13,6 +21,7 @@ export interface BenchTask {
   verifierTimeoutSeconds?: number;
   oracle?: string;
   rubric?: string;
+  workflow?: WorkflowExpectation;
   shouldTrigger?: boolean;
   /** How a positive trigger task is phrased. Absent tasks stay in the pooled recall. */
   triggerClass?: "explicit" | "implicit" | "contextual";

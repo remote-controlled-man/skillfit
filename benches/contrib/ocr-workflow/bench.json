@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "name": "ocr-workflow",
+  "tasks": [
+    {
+      "id": "refresh-review",
+      "fixture": "tasks/refresh-review/fixture",
+      "prompt": "tasks/refresh-review/prompt.md",
+      "verifierKind": "command",
+      "verifier": "node verifiers/verify.mjs refresh-review",
+      "oracle": "node verifiers/oracle.mjs refresh-review",
+      "shouldTrigger": true,
+      "workflow": {
+        "question": "Did OCR review the final inputs exactly once before delivery?",
+        "expectation": "The prior review is stale. Complete one preview and one rule call covering the final implementation and new untracked regression test.",
+        "tool": { "command": "ocr", "version": "1.14.4" },
+        "rules": "AGENTS.md",
+        "previousReview": ".review/previous.json"
+      }
+    },
+    {
+      "id": "reuse-review",
+      "fixture": "tasks/reuse-review/fixture",
+      "prompt": "tasks/reuse-review/prompt.md",
+      "verifierKind": "command",
+      "verifier": "node verifiers/verify.mjs reuse-review",
+      "oracle": "node verifiers/oracle.mjs reuse-review",
+      "shouldTrigger": true,
+      "workflow": {
+        "question": "Did a still-valid previous review avoid duplicate review work?",
+        "expectation": "Verify the prior review against unchanged final files, requirements, rules and OCR version. Complete zero new rounds.",
+        "tool": { "command": "ocr", "version": "1.14.4" },
+        "rules": "AGENTS.md",
+        "previousReview": ".review/previous.json"
+      }
+    }
+  ]
+}

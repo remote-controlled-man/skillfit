@@ -76,6 +76,24 @@
         "shouldTrigger": {
           "type": "boolean"
         },
+        "workflow": {
+          "type": "object",
+          "required": ["question", "expectation", "tool", "rules"],
+          "properties": {
+            "question": { "type": "string", "minLength": 1 },
+            "expectation": { "type": "string", "minLength": 1 },
+            "tool": {
+              "type": "object",
+              "required": ["command", "version"],
+              "properties": {
+                "command": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$" },
+                "version": { "type": "string", "minLength": 1 }
+              }
+            },
+            "rules": { "type": "string", "minLength": 1 },
+            "previousReview": { "type": "string", "minLength": 1 }
+          }
+        },
         "triggerClass": {
           "enum": [
             "explicit",
@@ -85,6 +103,13 @@
         }
       },
       "allOf": [
+        {
+          "if": { "required": ["workflow"] },
+          "then": {
+            "required": ["verifierKind"],
+            "properties": { "verifierKind": { "const": "command" } }
+          }
+        },
         {
           "if": {
             "required": [

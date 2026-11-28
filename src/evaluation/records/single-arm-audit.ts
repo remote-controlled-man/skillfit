@@ -643,6 +643,7 @@ export async function auditSingleArmEvaluation(
                 task.verifier,
                 scratch,
                 task.verifierTimeoutSeconds,
+                mode === "trigger" ? "trigger" : "paired",
               ),
               verdict = verdictFromOutput(grade.output);
             assert.equal(grade.error, null, `Replay verifier failed: ${grade.error}`);

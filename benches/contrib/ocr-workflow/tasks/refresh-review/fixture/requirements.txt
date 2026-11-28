@@ -1,0 +1,1 @@
+Cancel a reservation exactly once and allow the same ID to be reserved again.

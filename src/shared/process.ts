@@ -15,13 +15,14 @@ export function runProcess(
   cwd: string,
   timeoutMs: number,
   signal?: AbortSignal,
+  environment?: NodeJS.ProcessEnv,
 ): Promise<ProcessResult> {
   if (signal?.aborted)
     return Promise.resolve({ exitCode: null, output: "", error: (signal.reason as Error).message });
   return new Promise((resolvePromise) => {
     let child;
     try {
-      const env = { ...process.env };
+      const env = { ...process.env, ...environment };
       delete env["NODE_TEST_CONTEXT"];
       child = spawn(command, args, { cwd, shell: false, env, ...treeSpawnOptions() });
     } catch (error) {

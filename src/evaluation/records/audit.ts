@@ -29,7 +29,8 @@ import { sha256File, sha256Text } from "../../shared/hash.js";
 import { collectInstalledSkillTarget } from "../targets/skill.js";
 import { runVerifier } from "../../bench/gates/verifier.js";
 import { summarizeJudge } from "../measurement/judge-protocol.js";
-import { verdictFromOutput } from "../../bench/gates/summary.js";
+import { parseVerifierSummary, verdictFromOutput } from "../../bench/gates/summary.js";
+import type { Bench } from "../../bench/contracts.js";
 import { parseEvalReport } from "./manifest.js";
 import { pairConditions, type PairOrder } from "../measurement/paired-contract.js";
 import { NATIVE_DIFF_PATH, NATIVE_DIFF_SNAPSHOT } from "../targets/native-diff.js";
@@ -178,6 +179,7 @@ export async function auditEvaluation(
       assert.equal(plan.modelIdentityProtocol, 1, "Unsupported model identity protocol.");
     const inputSnapshot = verifyInputSnapshot(root, plan);
     const details = record(plan.details, "native plan details");
+    let selectedBench: Bench | undefined;
     if (raw.measurementScope !== undefined || details.measurementScope !== undefined) {
       const frozen = inputSnapshot?.roots.get("bench");
       assert.ok(frozen, "measurementScope requires sealed bench inputs.");
@@ -185,6 +187,7 @@ export async function auditEvaluation(
         loadBench(frozen),
         report.tasks.map((t) => t.id),
       );
+      selectedBench = selected;
       const policy =
         raw.component === undefined
           ? undefined
@@ -355,12 +358,14 @@ export async function auditEvaluation(
     const rawTasks = raw.tasks as Record<string, unknown>[];
     for (const [taskIndex, task] of report.tasks.entries()) {
       assert.ok(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(task.id), "Unsafe task id.");
+      const workflow = selectedBench?.tasks.find((entry) => entry.id === task.id)?.workflow;
       const taskAll = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] },
         taskPaired = { baseline: [] as CostObservation[], treatment: [] as CostObservation[] };
       for (let trial = 1; trial <= report.trials; trial++) {
         const pair: Record<string, CostObservation> = {};
         for (const arm of ["baseline", "treatment"] as const) {
-          const rel = `${task.id}/${arm}/trial-${trial}/_result.json`;
+          const prefix = `${task.id}/${arm}/trial-${trial}`;
+          const rel = `${prefix}/_result.json`;
           assert.ok(typeof files[rel] === "string", `Receipt not sealed: ${rel}`);
           const r = receipt(readComponentJson(member(root, rel)).value);
           budgetReceipts.set(`${task.id}/${arm}/trial-${trial}`, r);
@@ -371,10 +376,37 @@ export async function auditEvaluation(
           if (r.executorInvoked) invoked++;
           if (plan.modelIdentityProtocol === 1 && r.executorInvoked)
             assert.ok(r.modelIdentity !== undefined, "New model identity receipt is missing.");
-          const transcriptPath = `${task.id}/${arm}/trial-${trial}/_transcript.jsonl`;
+          const transcriptPath = `${prefix}/_transcript.jsonl`;
           const transcript = files[transcriptPath]
             ? readFileSync(member(root, transcriptPath), "utf8")
             : undefined;
+          const verifier = `${prefix}/_verifier.txt`;
+          const workflowSummary =
+            workflow && files[verifier]
+              ? parseVerifierSummary(readFileSync(member(root, verifier), "utf8"))?.workflow
+              : undefined;
+          if (workflow) {
+            const prior = workflow.previousReview ? `${prefix}/${workflow.previousReview}` : null;
+            (audit.workflow ??= []).push({
+              taskId: task.id,
+              arm,
+              trial,
+              skillRead: typeof r.skillTriggered === "boolean" ? r.skillTriggered : null,
+              ...(workflowSummary ?? {
+                functional: "unknown" as const,
+                checks: [
+                  {
+                    name: "verifier evidence",
+                    status: "unknown" as const,
+                    detail: "No sealed workflow verdict was recorded.",
+                  },
+                ],
+              }),
+              transcript: files[transcriptPath] ? transcriptPath : null,
+              verifier: files[verifier] ? verifier : null,
+              priorReview: prior && files[prior] ? prior : null,
+            });
+          }
           assertModelIdentity(
             r.modelIdentity,
             transcript,
@@ -490,6 +522,13 @@ export async function auditEvaluation(
                   ? r.checks.map((c) => ({ name: c.name, pass: c.pass }))
                   : null,
               );
+              if (workflow) {
+                assert.deepEqual(
+                  parseVerifierSummary(grade.output)?.workflow,
+                  workflowSummary,
+                  "Replay workflow checks differ from the sealed verifier output.",
+                );
+              }
               audit.replayedDeliveries++;
             } finally {
               rmSync(scratch, { recursive: true, force: true });
@@ -812,6 +851,7 @@ export async function auditEvaluation(
   } catch (error) {
     audit.reasons.push(error instanceof Error ? error.message : String(error));
     audit.policyBound = false;
+    delete audit.workflow;
   }
   return audit;
 }

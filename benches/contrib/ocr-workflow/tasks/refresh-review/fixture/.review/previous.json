@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "toolVersion": "1.14.4",
+  "requirementsSha256": "28925623ef295c5f165d4750346e8110d27c9626aaf3797aa25ed34ed2a1ffd7",
+  "rulesSha256": "940f308bf746be321a16951aae664a38c848593ed6439bef206972ccb7ef76bf",
+  "files": [
+    {
+      "path": "inventory.mjs",
+      "sha256": "f3fa68c69ee0bd12c4bb28149b425c1c556ed821ff0d7b35c38644bb55f15ccd"
+    }
+  ]
+}
