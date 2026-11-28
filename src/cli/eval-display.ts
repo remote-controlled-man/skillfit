@@ -274,6 +274,23 @@ export function evaluationPlanLines(resolved: ResolvedEvalInputs): string[] {
       );
     }
   }
+  const workflow = resolved.preview.workflow;
+  if (workflow?.some((row) => row.capture === "trigger-only")) {
+    log(
+      "Workflow acceptance: trigger mode observes Skill reads only. Review execution and coverage are unmeasured.",
+    );
+  } else if (workflow) {
+    log("Workflow acceptance plan (outcomes pending)");
+    for (const row of workflow) {
+      log(`- ${row.taskId}: ${row.question}`);
+      log(`  Expectation: ${row.expectation}`);
+      log(`  Tool: ${row.tool.command} ${row.tool.version} (required version)`);
+      log(
+        `  Evidence: _transcript.jsonl, final workspace, rules ${row.fixture}/${row.rules}${row.previousReview ? `, prior review ${row.fixture}/${row.previousReview}` : ""}`,
+      );
+      log(`  ${row.capture === "unavailable" ? "Unavailable" : "Capture"}: ${row.reason}`);
+    }
+  }
   return result;
 }
 

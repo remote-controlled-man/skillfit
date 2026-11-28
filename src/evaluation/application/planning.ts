@@ -46,6 +46,7 @@ import { assertEvaluationOutputLayout } from "../targets/output-layout.js";
 import {
   inspectAgentEnvironment,
   assertAgentEnvironment,
+  findExecutable,
   type AgentEnvironmentPreflight,
   type EnvironmentRole,
 } from "../../agents/preflight.js";
@@ -177,6 +178,57 @@ function estimatePromptTokens(
   return { baseline, treatment: baseline + estimate(target.payload?.length ?? 0) };
 }
 
+function workflowPlan(
+  bench: Bench,
+  options: EvalOptions,
+  executor: Executor | null,
+  env: NodeJS.ProcessEnv,
+  trigger: boolean,
+): Pick<EvalPreview, "workflow"> {
+  const rows: NonNullable<EvalPreview["workflow"]> = [];
+  for (const task of bench.tasks) {
+    if (!task.workflow || (trigger && task.shouldTrigger === undefined)) continue;
+    const row = { taskId: task.id, fixture: task.fixture, ...task.workflow };
+    if (trigger) {
+      rows.push({
+        ...row,
+        capture: "trigger-only",
+        reason: "This mode observes Skill reads only.",
+      });
+    } else if (executor?.describe().kind === "mock") {
+      rows.push({
+        ...row,
+        capture: "fixture",
+        reason: "Synthetic executor supplies fixed evidence.",
+      });
+    } else if (
+      options.agent !== "codex" ||
+      options.executor ||
+      executor?.describe().kind !== "cli"
+    ) {
+      rows.push({
+        ...row,
+        capture: "unavailable",
+        reason: "Codex command events are required to evaluate the workflow.",
+      });
+    } else if (!findExecutable(row.tool.command, options.sessionOptions?.env ?? env)) {
+      rows.push({
+        ...row,
+        capture: "unavailable",
+        reason: `${row.tool.command} was not found on PATH. Tool output is required for this workflow.`,
+      });
+    } else {
+      rows.push({
+        ...row,
+        capture: "available",
+        reason:
+          "Codex command capture and tool path available. The verifier checks the observed version and evidence after execution.",
+      });
+    }
+  }
+  return rows.length ? { workflow: rows } : {};
+}
+
 function resolveTriggerInputs(
   options: EvalOptions,
   bench: Bench,
@@ -277,6 +329,7 @@ function resolveTriggerInputs(
     skills: competitors,
   };
   const preview: EvalPreview = {
+    ...workflowPlan(bench, options, executor, env, true),
     measurementScope: scope,
     mode: "trigger",
     target: {
@@ -517,7 +570,8 @@ export function resolveEvalInputs(
       env,
     );
   const agentPreflight = inspect();
-  if (capabilityError) assertAgentEnvironment(agentPreflight);
+  if (capabilityError && !bench.tasks.some((task) => task.workflow))
+    assertAgentEnvironment(agentPreflight);
   const spendingBudget =
     options.spendingBudget === undefined ? undefined : parseSpendingBudget(options.spendingBudget);
   assertTokenBudgetSupport([executor, judge], executorTimeoutSeconds, spendingBudget);
@@ -538,6 +592,7 @@ export function resolveEvalInputs(
     targetDirs: [target.sourceDir, ...(baselineTarget ? [baselineTarget.sourceDir] : [])],
   });
   const preview: EvalPreview = {
+    ...workflowPlan(bench, options, executor, env, false),
     measurementScope: scope,
     mode: installed ? "installed" : "inject",
     agentPreflight,

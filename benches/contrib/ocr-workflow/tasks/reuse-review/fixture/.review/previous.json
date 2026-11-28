@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "toolVersion": "1.14.4",
+  "requirementsSha256": "28925623ef295c5f165d4750346e8110d27c9626aaf3797aa25ed34ed2a1ffd7",
+  "rulesSha256": "940f308bf746be321a16951aae664a38c848593ed6439bef206972ccb7ef76bf",
+  "files": [
+    {
+      "path": "inventory.mjs",
+      "sha256": "fe9b3b54f3c02fdd6b108d76c436131662ddbd528c8b2c337ba14541fb11b109"
+    },
+    {
+      "path": "tests/inventory.test.mjs",
+      "sha256": "af769016a6436da52c3568a34eadc3f942f0ac97aa06cfa2b67177cb10baa5c8"
+    }
+  ]
+}

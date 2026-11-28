@@ -2,7 +2,7 @@ import { parseBenchClaims } from "./claims.js";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, resolve, sep } from "node:path";
 import { hashFileSet, listFilesRecursive } from "../shared/hash.js";
-import type { Bench, BenchTask } from "./contracts.js";
+import type { Bench, BenchTask, WorkflowExpectation } from "./contracts.js";
 import { parseCommand } from "../shared/command.js";
 import { parseVerifierTimeoutSeconds } from "./gates/timeout.js";
 
@@ -38,6 +38,34 @@ function assertCommandTokensExist(benchDir: string, command: string, label: stri
       throw new Error(`${label} references a missing file: ${token}`);
     }
   }
+}
+
+function readWorkflow(fixture: string, value: unknown, label: string): WorkflowExpectation {
+  const text = (value: unknown, field: string): string => {
+    if (typeof value !== "string" || !value.trim() || /[\x00-\x1f\x7f]/.test(value))
+      throw new Error(`${label}.${field} must be a nonempty line of text.`);
+    return value;
+  };
+  const source = value as Partial<WorkflowExpectation> | null;
+  const file = (value: unknown, field: string): string => {
+    const path = text(value, field);
+    const absolute = assertRelativeInside(fixture, path, `${label}.${field}`);
+    if (!existsSync(absolute) || !statSync(absolute).isFile())
+      throw new Error(`${label}.${field} must refer to a file in the task fixture: ${path}`);
+    return path;
+  };
+  const command = text(source?.tool?.command, "tool.command");
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(command))
+    throw new Error(`${label}.tool.command must be an executable name.`);
+  return {
+    question: text(source?.question, "question"),
+    expectation: text(source?.expectation, "expectation"),
+    tool: { command, version: text(source?.tool?.version, "tool.version") },
+    rules: file(source?.rules, "rules"),
+    ...(source?.previousReview === undefined
+      ? {}
+      : { previousReview: file(source.previousReview, "previousReview") }),
+  };
 }
 
 export function validateBenchTask(
@@ -119,6 +147,12 @@ export function validateBenchTask(
   if (!existsSync(fixtureAbs) || !statSync(fixtureAbs).isDirectory()) {
     throw new Error(`task "${id}" fixture directory not found: ${fixture}`);
   }
+  if (task.workflow !== undefined && verifierKind !== "command")
+    throw new Error(`task "${id}" workflow requires a command verifier.`);
+  const workflowField =
+    task.workflow === undefined
+      ? {}
+      : { workflow: readWorkflow(fixtureAbs, task.workflow, `task "${id}" workflow`) };
   const promptAbs = assertRelativeInside(benchDir, prompt, `task "${id}" prompt`);
   if (!existsSync(promptAbs) || !statSync(promptAbs).isFile()) {
     throw new Error(`task "${id}" prompt file not found: ${prompt}`);
@@ -157,6 +191,7 @@ export function validateBenchTask(
       prompt,
       verifier,
       rubric,
+      ...workflowField,
       ...triggerField,
       ...promptTriggerField,
       ...verifierKindField,
@@ -170,6 +205,7 @@ export function validateBenchTask(
     fixture,
     prompt,
     verifier,
+    ...workflowField,
     ...triggerField,
     ...promptTriggerField,
     ...verifierKindField,

@@ -8,7 +8,7 @@
     "schemaVersion": { "const": 1 },
     "kind": { "enum": ["skillfit.eval-result", "skillfit.eval-error"] },
     "status": { "enum": ["planned", "completed", "stopped", "incomplete", "reported", "error"] },
-    "plan": { "type": "object", "required": ["sha256", "evaluation"], "properties": { "evaluation": { "type": "object", "properties": { "measurementScope": { "$ref": "measurement-scope.schema.json" } } } } },
+    "plan": { "type": "object", "required": ["sha256", "evaluation"], "properties": { "evaluation": { "type": "object", "properties": { "measurementScope": { "$ref": "measurement-scope.schema.json" }, "workflow": { "type": "array", "items": { "allOf": [{ "$ref": "bench.schema.json#/$defs/task/properties/workflow" }, { "type": "object", "required": ["taskId", "fixture", "capture", "reason"], "properties": { "taskId": { "type": "string" }, "fixture": { "type": "string" }, "capture": { "enum": ["available", "unavailable", "fixture", "trigger-only"] }, "reason": { "type": "string" } } }] } } } } } },
     "manifest": { "type": ["object", "null"] },
     "casePreflight": { "anyOf": [{ "$ref": "eval-preflight.schema.json" }, { "type": "null" }] },
     "agentPreflight": { "anyOf": [{ "$ref": "agent-preflight.schema.json" }, { "type": "null" }] },
@@ -40,7 +40,7 @@
       }
     },
     "invocationCosts": { "anyOf": [{ "$ref": "invocation-costs.schema.json" }, { "type": "null" }] },
-    "evidence": { "type": "object", "required": ["verified"] },
+    "evidence": { "type": "object", "required": ["verified"], "properties": { "workflow": { "type": "array", "items": { "$ref": "#/$defs/workflowRow" } } } },
     "acceptance": {
       "type": "object", "required": ["decision", "eligibleForUpgrade", "automaticUpgrade"],
       "properties": {
@@ -63,6 +63,25 @@
     { "if": { "properties": { "kind": { "const": "skillfit.eval-error" } } }, "then": { "required": ["error"], "properties": { "status": { "const": "error" } } } }
   ],
   "$defs": {
+    "workflowRow": {
+      "type": "object",
+      "required": ["taskId", "trial", "arm", "functional", "skillRead", "checks", "transcript", "verifier", "priorReview"],
+      "properties": {
+        "taskId": { "type": "string" },
+        "trial": { "type": "integer", "minimum": 1 },
+        "arm": { "enum": ["baseline", "treatment"] },
+        "functional": { "$ref": "#/$defs/workflowCheckStatus" },
+        "skillRead": { "type": ["boolean", "null"] },
+        "transcript": { "type": ["string", "null"] },
+        "verifier": { "type": ["string", "null"] },
+        "priorReview": { "type": ["string", "null"] },
+        "checks": { "type": "array", "minItems": 1, "items": {
+          "type": "object", "required": ["name", "status", "detail"],
+          "properties": { "name": { "type": "string" }, "status": { "$ref": "#/$defs/workflowCheckStatus" }, "detail": { "type": "string" } }
+        } }
+      }
+    },
+    "workflowCheckStatus": { "enum": ["passed", "failed", "unknown"] },
     "mcnemarNumericErrorDetails": {
       "type": "object",
       "required": [

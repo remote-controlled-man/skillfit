@@ -6,6 +6,44 @@ export interface VerifierCheck {
 export interface VerifierSummary {
   passed: boolean | null;
   checks: VerifierCheck[];
+  workflow?: WorkflowSummary;
+}
+
+export type CheckStatus = "passed" | "failed" | "unknown";
+export interface WorkflowSummary {
+  functional: CheckStatus;
+  checks: { name: string; status: CheckStatus; detail: string }[];
+}
+
+export function workflowStatus({ checks }: WorkflowSummary): CheckStatus {
+  if (checks.some((check) => check.status === "failed")) return "failed";
+  if (checks.some((check) => check.status === "unknown")) return "unknown";
+  return "passed";
+}
+
+function checkStatus(value: unknown): value is CheckStatus {
+  return value === "passed" || value === "failed" || value === "unknown";
+}
+
+function parseWorkflow(value: unknown): WorkflowSummary | undefined {
+  if (typeof value !== "object" || value === null) return;
+  const { functional, checks } = value as Record<string, unknown>;
+  if (!checkStatus(functional) || !Array.isArray(checks) || checks.length === 0) return;
+  const normalized: WorkflowSummary["checks"] = [];
+  for (const item of checks) {
+    if (typeof item !== "object" || item === null) return;
+    const { name, status, detail } = item as Record<string, unknown>;
+    if (
+      typeof name !== "string" ||
+      !name.trim() ||
+      !checkStatus(status) ||
+      typeof detail !== "string" ||
+      !detail.trim()
+    )
+      return;
+    normalized.push({ name, status, detail });
+  }
+  return { functional, checks: normalized };
 }
 
 function parseChecks(raw: unknown): VerifierCheck[] | null {
@@ -27,7 +65,8 @@ function summarize(value: unknown): VerifierSummary | null {
   const passed = typeof obj["passed"] === "boolean" ? obj["passed"] : null;
   const checks = parseChecks(obj["checks"]);
   if (passed === null && checks === null) return null;
-  return { passed, checks: checks ?? [] };
+  const workflow = parseWorkflow(obj.workflow);
+  return { passed, checks: checks ?? [], ...(workflow ? { workflow } : {}) };
 }
 
 // The verifier's one-line JSON summary rides on merged stdout+stderr, so scan

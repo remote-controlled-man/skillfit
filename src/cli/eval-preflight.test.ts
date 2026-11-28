@@ -18,6 +18,7 @@ import { runBenchInit } from "./bench.js";
 import { componentError, reportEvalComponent } from "./eval-component.js";
 import { runEval } from "./eval.js";
 import { runEvalCli } from "./eval-cli.js";
+import { runEvalReport } from "./eval-report.js";
 import { exportEvaluation } from "../evaluation/application/export.js";
 import { CasePreflightFailed } from "./eval-preflight.js";
 import { MockExecutor } from "../evaluation/execution/mock-executor.js";
@@ -88,6 +89,78 @@ async function setup(t: TestContext, kind: "command" | "output" = "command") {
     oracle: join(bench, raw.tasks[0].oracle.slice("node ".length)),
   };
 }
+
+test("workflow dry run identifies selected expectations, evidence and unsupported capture before any calls", async (t) => {
+  const f = await setup(t);
+  const task = f.raw.tasks[0];
+  writeFileSync(join(f.bench, task.fixture, "AGENTS.md"), "Allow local review.\n");
+  writeFileSync(join(f.bench, task.fixture, "prior.json"), "{}\n");
+  task.workflow = {
+    question: "Did the final review run exactly once?",
+    expectation: "One preview and one rule for the final files",
+    tool: { command: "ocr", version: "1.14.4" },
+    rules: "AGENTS.md",
+    previousReview: "prior.json",
+  };
+  f.save();
+  const output: string[] = [];
+  await runEval({
+    ...f.base,
+    executor: { describe: () => ({ kind: "cli", model: "test model" }), run: f.base.executor.run },
+    dryRun: true,
+    log: (line) => output.push(line),
+  });
+  const plan = output.join("\n");
+  assert.match(plan, /Did the final review run exactly once\?/);
+  assert.match(plan, /One preview and one rule for the final files/);
+  assert.match(plan, /ocr 1\.14\.4/);
+  assert.match(plan, /_transcript\.jsonl.*final workspace/);
+  assert.match(plan, /prior\.json/);
+  assert.match(plan, /Unavailable.*Codex command events/);
+  assert.match(plan, /2 planned; ceiling 2/);
+  assert.equal(f.calls(), 0);
+  assert.ok(!existsSync(f.base.runsRoot));
+});
+
+test("the saved report preserves functional results when workflow evidence is missing", async (t) => {
+  const f = await setup(t);
+  const task = f.raw.tasks[0];
+  writeFileSync(join(f.bench, task.fixture, "AGENTS.md"), "Allow local review.\n");
+  task.workflow = {
+    question: "Was the final change reviewed?",
+    expectation: "One completed local review",
+    tool: { command: "ocr", version: "1.14.4" },
+    rules: "AGENTS.md",
+  };
+  f.save();
+  const source = readFileSync(f.verifier, "utf8");
+  writeFileSync(
+    f.verifier,
+    source.replace(
+      "JSON.stringify({",
+      `JSON.stringify({ workflow: {
+    functional: "passed", checks: [{name: "execution", status: "unknown", detail: "Missing command transcript"}]
+  },`,
+    ),
+  );
+  await runEval({
+    ...f.base,
+    executor: {
+      describe: () => ({ kind: "mock", model: "workflow test" }),
+      run: async (_prompt, dir) => {
+        writeFileSync(join(dir, "index.js"), "export const add = (a,b) => a+b;\n");
+        return { output: "done", tokens: { input: 10, cachedInput: 4, output: 2 } };
+      },
+    },
+  });
+  const output: string[] = [];
+  await runEvalReport(join(f.base.runsRoot, f.base.runGroup), (line) => output.push(line));
+  const report = output.join("\n");
+  assert.match(report, /## Workflow acceptance/);
+  assert.match(report, /\| example-task \/ baseline 1 \| Passed \| Unknown \| Unknown \|/);
+  assert.match(report, /execution.*Missing command transcript/);
+  assert.match(report, /\[verifier\]\(example-task\/baseline\/trial-1\/_verifier\.txt\)/);
+});
 
 test("grader load/runtime/reported errors block output and command tasks without an oracle or any executor call", async (t) => {
   for (const kind of ["command", "output"] as const)

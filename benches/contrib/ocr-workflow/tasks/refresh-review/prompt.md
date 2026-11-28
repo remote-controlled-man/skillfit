@@ -1,0 +1,1 @@
+Cancel a reservation exactly once. A missing or already canceled ID should return false, and a canceled ID should be reservable again. Add a regression test under `tests/` and deliver the change using the project rules.

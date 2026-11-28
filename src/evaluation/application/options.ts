@@ -12,9 +12,14 @@ import type { CASE_PREFLIGHT_POLICY } from "./preflight-error.js";
 import type { INPUT_SNAPSHOT_POLICY } from "../records/input-snapshot.js";
 import type { EvalRequest } from "./request.js";
 import type { ControlSuite } from "../../bench/controls.js";
+import type { WorkflowExpectation } from "../../bench/contracts.js";
 
 export interface EvalPreview {
   measurementScope?: MeasurementScope;
+  workflow?: ({ taskId: string; fixture: string } & WorkflowExpectation & {
+      capture: "available" | "unavailable" | "fixture" | "trigger-only";
+      reason: string;
+    })[];
   mode: "inject" | "installed" | "trigger";
   target: {
     kind: EvaluationTarget["kind"];

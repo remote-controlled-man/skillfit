@@ -1,0 +1,1 @@
+Verify that a reservation can be canceled exactly once and that its ID can be reserved again. The implementation and regression test are already present. Report what you verified and follow the project rules for any review work.

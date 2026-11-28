@@ -88,6 +88,10 @@ Register an oracle that applies a reference repair to a disposable fixture copy.
 **NOP** must fail; **Oracle** must pass with every named check green. Missing
 oracles are warnings about unverified winnability, never proof the task works.
 
+The source checkout includes `benches/contrib/ocr-workflow`, an example that
+grades local command events and final files alongside functional checks. Its
+offline demo runs the regular evaluation and report pipeline using fixed records.
+
 ## Label trigger tasks and controls
 
 A trigger prompt describes files on disk rather than pasting their contents.

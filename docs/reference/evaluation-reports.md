@@ -8,6 +8,36 @@ environment to invent historical usage, identity or claims. Saved format
 versions stay owned by the
 [architecture page](../maintainers/architecture.md#format-identity-and-replay-compatibility).
 
+## Historical OCR workspace report
+
+```bash
+skillfit report ocr-workspace /path/to/archived-run /path/to/another-run
+skillfit report ocr-workspace /path/to/archived-run --json
+```
+
+Pass one or more individual run directories in the OCR v1.14.4 Codex workspace
+archive layout. Each directory contains `raw.jsonl`, `verifier.txt`, `seed.json`,
+`seed.policy.json`, `.codex/review-policy.json`, and `project/` with its Git history
+and `.scratch/ocr-gate/` evidence. The report links to the retained files and, for
+matched delegate calls, the transcript line and event. JSON includes the original
+project path, the archived OCR binary SHA-256, and the final file hashes.
+
+The importer reads saved function checks, rebuilds the final scope from Git and
+the worktree, and checks the previous receipt against the final inputs. It
+correlates successful model-phase preview and rule calls with their archived
+responses. Coverage hashes the returned UTF-8 text and checks it against the
+final file. A missing text body for a non-deleted file leaves coverage unknown
+unless other evidence establishes failure. Setup calls are listed separately.
+The original absolute project path continues to bind the fingerprint after
+relocation. The importer does not write to an archive, run archived commands
+or verifiers, contact a model, or read the archive's precomputed result as a verdict.
+
+Missing or inconsistent evidence makes the corresponding check **Unknown**.
+This reader supports ordinary Git files with literal contents in this archive
+layout. When review necessity depends only on semantic comparison of modified
+Python or JSON files, the importer reports an unknown expected round count.
+Use `report eval --replay` for native skillfit runs.
+
 ## Human comparison summary
 
 Starting in 0.16.2, paired human reports start with the saved run state, native audit
@@ -39,7 +69,27 @@ Stopped or incomplete runs without a final manifest show recovery steps and
 retained costs without inventing quality counts. Existing session, ledger and
 plan references in that recovery summary are explicitly unverified. Reading a
 report neither resumes a run nor authorizes more calls or automatic adoption. Statistical verdicts,
-adoption policies, saved bytes and the paired JSON contract are unchanged.
+adoption policies and existing saved bytes are unchanged.
+
+## Workflow acceptance
+
+Unpublished source supports a separate workflow section for paired command tasks
+that declare `workflow` in their bench. The offline plan shows each selected
+scenario's question, expected outcome, declared tool version, and evidence paths.
+`plan.evaluation.workflow` records capture availability. Its supported live
+surface is Codex command events with the tool on PATH. `available` describes
+capture capability. Actual tool version and successful command output are checked
+by the verifier. In trigger mode, workflow execution remains unmeasured.
+
+For a verified native run, the Markdown section and optional `evidence.workflow`
+rows report the function result, Skill-read observation, workflow checks, and
+paths to available evidence. Each row identifies its task, arm and trial. Workflow
+status is failed if a check failed, unknown if a check is unknown and none failed,
+and passed when all checks passed. Existing named checks and verifier exits still
+own the ordinary paired grade. The example emits the existing verifier error
+when required workflow evidence is missing, excluding that pair from the grade
+while preserving its functional result in the workflow section. The runnable
+example is in `benches/contrib/ocr-workflow` in the source checkout.
 
 ## Frozen measurement scope
 

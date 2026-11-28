@@ -23,6 +23,7 @@ import { runEvalCli } from "./eval-cli.js";
 import { readComponentJson } from "../shared/read-json.js";
 import { parseSpendingBudget } from "../evaluation/execution/budget.js";
 import { runEvalReport } from "./eval-report.js";
+import { runOcrWorkspaceReport } from "./ocr-workspace-report.js";
 import { componentError, runEvalComponent } from "./eval-component.js";
 import { readEvaluationReport } from "./evaluation-report.js";
 import { runInstall, runMcpApply, runUninstall } from "../composition.js";
@@ -338,6 +339,12 @@ async function main(): Promise<void> {
       await runDoctor({ ...common, json: values.json ?? false, strict: values.strict ?? false });
       return;
     case "report":
+      if (positionals[1] === "ocr-workspace") {
+        if (!positionals[2])
+          throw new Error("Usage: skillfit report ocr-workspace <run-dir>... [--json]");
+        runOcrWorkspaceReport(positionals.slice(2), values.json ?? false);
+        return;
+      }
       if (positionals[1] === "eval") {
         if (!positionals[2]) {
           if (values.json)

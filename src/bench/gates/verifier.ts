@@ -10,6 +10,7 @@ export async function runVerifier(
   command: string,
   runDir: string,
   timeoutSeconds?: number,
+  mode: "paired" | "trigger" = "paired",
 ): Promise<ProcessResult> {
   const timeoutMs = parseVerifierTimeoutSeconds(timeoutSeconds) * 1000;
   let tokens: string[];
@@ -28,6 +29,7 @@ export async function runVerifier(
     benchDir,
     timeoutMs,
     currentSignal(),
+    { SKILLFIT_VERIFIER_MODE: mode },
   );
   return {
     ...result,

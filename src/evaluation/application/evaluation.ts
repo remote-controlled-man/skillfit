@@ -198,6 +198,11 @@ async function executePaired(
   const scope = resolved.preview.measurementScope!;
   const installed = resolved.preview.mode === "installed";
   const log = options.log ?? (() => {});
+  const unavailable = resolved.preview.workflow?.find((row) => row.capture === "unavailable");
+  if (unavailable)
+    throw new Error(
+      `Workflow evidence unavailable for ${unavailable.taskId}. ${unavailable.reason}`,
+    );
   assertAgentEnvironment(agentPreflight);
   if (!executor) {
     throw new Error("No executor available; pass --agent or set SKILLFIT_API_KEY.");
